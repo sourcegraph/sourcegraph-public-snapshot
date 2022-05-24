@@ -99,6 +99,24 @@
     padding-right: var(--hover-overlay-horizontal-padding);
 }
 
+.actions-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.actions-copy-link {
+    margin-right: var(--hover-overlay-horizontal-padding);
+    font-size: 0.75rem;
+    color: var(--link-color);
+    border-style: none;
+    background: transparent;
+
+    > span:last-child {
+        padding-left: 0.2rem;
+    }
+}
+
 .actions-inner {
     margin-right: auto;
     white-space: nowrap;

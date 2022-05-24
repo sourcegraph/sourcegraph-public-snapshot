@@ -356,7 +356,7 @@ func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboardId i
 	return nil
 }
 
-func (s *DBDashboardStore) EnsureLimitedAccessModeDashboard(ctx context.Context) (int, error) {
+func (s *DBDashboardStore) EnsureLimitedAccessModeDashboard(ctx context.Context) (_ int, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return 0, err

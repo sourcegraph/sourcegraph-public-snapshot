@@ -40,9 +40,13 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<
                         data-testid="streaming-progress-skipped"
                         as={Button}
                         aria-expanded={isOpen}
+                        aria-label="Open excluded results"
                     >
-                        {skippedWithWarningOrError ? <Icon className="mr-2" as={AlertCircleIcon} /> : null}
-                        Some results excluded <Icon data-caret={true} className="mr-0" as={ChevronDownIcon} />
+                        {skippedWithWarningOrError ? (
+                            <Icon role="img" aria-hidden={true} className="mr-2" as={AlertCircleIcon} />
+                        ) : null}
+                        Some results excluded{' '}
+                        <Icon role="img" aria-hidden={true} data-caret={true} className="mr-0" as={ChevronDownIcon} />
                     </PopoverTrigger>
                     <PopoverContent
                         position={Position.bottomStart}

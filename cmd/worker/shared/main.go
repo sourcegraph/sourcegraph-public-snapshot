@@ -47,7 +47,7 @@ func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpr
 		"codeintel-commitgraph-updater":         codeintel.NewCommitGraphUpdaterJob(),
 		"codeintel-documents-indexer":           codeintel.NewDocumentsIndexerJob(),
 		"codeintel-autoindexing-scheduler":      codeintel.NewAutoindexingSchedulerJob(),
-		"codeintel-dependencies-indexer":        codeintel.NewDependenciesIndexerJob(),
+		"codeintel-dependencies":                codeintel.NewDependenciesJob(),
 		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
 	}
 

@@ -1,15 +1,14 @@
 package main
 
 import (
-	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 )
 
 // addAnalyticsHooks wraps command actions with analytics hooks. We reconstruct commandPath
@@ -31,15 +30,8 @@ func addAnalyticsHooks(start time.Time, commandPath []string, commands []*cli.Co
 		// Wrap action with analytics
 		wrappedAction := command.Action
 		command.Action = func(cmd *cli.Context) error {
-			// Make sure analytics hook is called even on interrupts. Note that this only
-			// works if you 'go build' sg, not if you 'go run'.
-			interrupt := make(chan os.Signal, 1)
-			signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
-			go func() {
-				<-interrupt
-				analyticsHook(cmd, "cancelled")
-				os.Exit(1)
-			}()
+			// Make sure analytics hook gets called before exit
+			interrupt.Register(func() { analyticsHook(cmd, "cancelled") })
 
 			// Call the underlying action
 			actionErr := wrappedAction(cmd)
@@ -56,7 +48,7 @@ func addAnalyticsHooks(start time.Time, commandPath []string, commands []*cli.Co
 	}
 }
 
-func makeAnalyticsHook(start time.Time, commandPath []string) func(*cli.Context, ...string) {
+func makeAnalyticsHook(start time.Time, commandPath []string) func(ctx *cli.Context, events ...string) {
 	return func(cmd *cli.Context, events ...string) {
 		// Log an sg usage occurrence
 		analytics.LogEvent(cmd.Context, "sg_action", commandPath, start, events...)
@@ -64,7 +56,7 @@ func makeAnalyticsHook(start time.Time, commandPath []string) func(*cli.Context,
 		// Persist all tracked to disk
 		flagsUsed := cmd.FlagNames()
 		if err := analytics.Persist(cmd.Context, strings.Join(commandPath, " "), flagsUsed); err != nil {
-			writeSkippedLinef("failed to persist events: %s", err)
+			std.Out.WriteSkippedf("failed to persist events: %s", err)
 		}
 	}
 }

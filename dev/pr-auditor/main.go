@@ -21,6 +21,10 @@ type Flags struct {
 
 	IssuesRepoOwner string
 	IssuesRepoName  string
+
+	// ProtectedBranch designates a branch name that should always record an exception when a PR is opened
+	// against it. It's primary use case is to discourage PRs againt the release branch on sourcegraph/deploy-sourcegraph-cloud.
+	ProtectedBranch string
 }
 
 func (f *Flags) Parse() {
@@ -29,6 +33,7 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.GitHubRunURL, "github.run-url", "", "URL to GitHub actions run")
 	flag.StringVar(&f.IssuesRepoOwner, "issues.repo-owner", "sourcegraph", "owner of repo to create issues in")
 	flag.StringVar(&f.IssuesRepoName, "issues.repo-name", "sec-pr-audit-trail", "name of repo to create issues in")
+	flag.StringVar(&f.ProtectedBranch, "protected-branch", "", "name of branch that if set as the base branch in a PR, will always open an exception")
 	flag.Parse()
 }
 
@@ -58,6 +63,13 @@ func main() {
 	// allowlist of commonly used default branches.
 	case "main", "master", "release":
 		log.Printf("performing checks against allow-listed pull request base %q", ref)
+	case flags.ProtectedBranch:
+		if flags.ProtectedBranch == "" {
+			log.Printf("unknown pull request base %q - discarding\n", ref)
+			return
+		}
+
+		log.Printf("performing checks against protected pull request base %q", ref)
 	default:
 		log.Printf("unknown pull request base %q - discarding\n", ref)
 		return
@@ -95,10 +107,11 @@ const (
 func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayload, flags *Flags) error {
 	result := checkPR(ctx, ghc, payload, checkOpts{
 		ValidateReviews: true,
+		ProtectedBranch: flags.ProtectedBranch,
 	})
 	log.Printf("checkPR: %+v\n", result)
 
-	if result.HasTestPlan() && result.Reviewed {
+	if result.HasTestPlan() && result.Reviewed && !result.ProtectedBranch {
 		log.Println("Acceptance checked and PR reviewed, done")
 		// Don't create status that likely nobody will check anyway
 		return nil
@@ -154,6 +167,7 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayload, flags *Flags) error {
 	result := checkPR(ctx, ghc, payload, checkOpts{
 		ValidateReviews: false, // only validate reviews on post-merge
+		ProtectedBranch: flags.ProtectedBranch,
 	})
 	log.Printf("checkPR: %+v\n", result)
 
@@ -167,6 +181,9 @@ func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayloa
 		prState = "failure"
 		stateDescription = "No test plan detected - please provide one!"
 		stateURL = "https://docs.sourcegraph.com/dev/background-information/testing_principles#test-plans"
+	case result.ProtectedBranch:
+		prState = "success"
+		stateDescription = "No action needed, but an exception will be opened post-merge."
 	default:
 		prState = "success"
 		stateDescription = "No action needed, nice!"

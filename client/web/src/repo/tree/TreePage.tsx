@@ -15,7 +15,7 @@ import { gql } from '@sourcegraph/http-client'
 import { SearchContextProps } from '@sourcegraph/search'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -42,7 +42,7 @@ import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { ActionItemsBarProps } from '../../extensions/components/ActionItemsBar'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { RepositoryFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { RepositoryCompareArea } from '../compare/RepositoryCompareArea'
@@ -50,7 +50,7 @@ import { RepoRevisionWrapper } from '../components/RepoRevision'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { RepositoryFileTreePageProps } from '../RepositoryFileTreePage'
 import { RepositoryGitDataContainer } from '../RepositoryGitDataContainer'
-import { RepoCommits, RepoDocs } from '../routes'
+import { RepoCommits } from '../routes'
 import { RepositoryStatsContributorsPage } from '../stats/RepositoryStatsContributorsPage'
 
 import { RepositoryBranchesTab } from './BranchesTab'
@@ -64,7 +64,6 @@ import styles from './TreePage.module.scss'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
-        FeatureFlagProps,
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
@@ -108,7 +107,6 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     batchChangesEnabled,
     useActionItemsBar,
     match,
-    featureFlags,
     isSourcegraphDotCom,
     ...props
 }) => {
@@ -207,7 +205,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     // To start using the feature flag bellow, you can go to /site-admin/feature-flags and
     // create a new featurFlag named 'new-repo-page' and set its value to true.
     // https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag
-    const newRepoPage = featureFlags.get('new-repo-page')
+    const [isNewRepoPageEnabled] = useFeatureFlag('new-repo-page')
 
     const homeTabProps = {
         repo,
@@ -225,7 +223,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     const { path } = useRouteMatch()
 
     useMemo(() => {
-        if (newRepoPage && treeOrError && !isErrorLike(treeOrError)) {
+        if (isNewRepoPageEnabled && treeOrError && !isErrorLike(treeOrError)) {
             setShowPageTitle(false)
 
             switch (path) {
@@ -254,7 +252,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     break
             }
         }
-    }, [newRepoPage, path, treeOrError])
+    }, [isNewRepoPageEnabled, path, treeOrError])
 
     const RootHeaderSection = ({ tree }: { tree: TreeFields }): React.ReactElement => (
         <>
@@ -266,7 +264,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     />
                     {repo.description && <p>{repo.description}</p>}
                 </div>
-                {newRepoPage && (
+                {isNewRepoPageEnabled && (
                     <ButtonGroup>
                         <Button
                             to={`/search?q=${encodeURIPathComponent(
@@ -302,14 +300,15 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 outline={true}
                                 as={Link}
                                 className="ml-1"
+                                aria-label="Repository settings"
                             >
-                                <Icon as={SettingsIcon} />
+                                <Icon as={SettingsIcon} role="img" aria-hidden={true} />
                             </Button>
                         )}
                     </ButtonGroup>
                 )}
             </div>
-            {newRepoPage ? (
+            {isNewRepoPageEnabled ? (
                 <TreeTabList tree={tree} selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             ) : (
                 <TreeNavigation
@@ -352,7 +351,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             )}
                         </header>
 
-                        {newRepoPage ? (
+                        {isNewRepoPageEnabled ? (
                             <div>
                                 <section className={classNames('test-tree-entries mb-3', styles.section)}>
                                     <Switch>
@@ -360,17 +359,6 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                             path={`${treeOrError.url}/-/tag/tab`}
                                             render={routeComponentProps => (
                                                 <RepositoryTagTab repo={repo} {...routeComponentProps} />
-                                            )}
-                                        />
-                                        <Route
-                                            path={`${treeOrError.url}/-/docs/tab`}
-                                            render={routeComponentProps => (
-                                                <RepoDocs
-                                                    repo={repo}
-                                                    useBreadcrumb={useBreadcrumb}
-                                                    {...routeComponentProps}
-                                                    {...props}
-                                                />
                                             )}
                                         />
                                         <Route

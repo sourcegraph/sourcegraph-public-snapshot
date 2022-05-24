@@ -8,7 +8,7 @@ import { Subscription } from 'rxjs'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { BarChart } from '../components/d3/BarChart'
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
@@ -46,7 +46,7 @@ interface UsageChartPageProps {
 
 export const UsageChart: React.FunctionComponent<UsageChartPageProps> = (props: UsageChartPageProps) => (
     <div>
-        {props.header ? props.header : <h3>{chartGeneratorOptions[props.chartID].label}</h3>}
+        {props.header ? props.header : <Typography.H3>{chartGeneratorOptions[props.chartID].label}</Typography.H3>}
         <BarChart
             showLabels={true}
             showLegend={props.showLegend === undefined ? true : props.showLegend}
@@ -247,7 +247,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
         return (
             <div>
                 <PageTitle title="Usage statistics - Admin" />
-                <h2>Usage statistics</h2>
+                <Typography.H2>Usage statistics</Typography.H2>
                 {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
 
                 <Button
@@ -274,7 +274,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                         <UsageChart {...this.props} chartID={this.state.chartID} stats={this.state.stats} />
                     </>
                 )}
-                <h3 className="mt-4">All registered users</h3>
+                <Typography.H3 className="mt-4">All registered users</Typography.H3>
                 {!this.state.error && (
                     <FilteredUserConnection
                         listComponent="table"

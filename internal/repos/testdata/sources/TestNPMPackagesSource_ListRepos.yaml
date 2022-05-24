@@ -1,0 +1,214 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://registry.npmjs.org/urql/2.2.0
+    method: GET
+  response:
+    body: '{"name":"urql","version":"2.2.0","description":"A highly customizable and
+      versatile GraphQL client for React","sideEffects":false,"homepage":"https://formidable.com/open-source/urql/docs/","bugs":{"url":"https://github.com/FormidableLabs/urql/issues"},"license":"MIT","repository":{"type":"git","url":"git+https://github.com/FormidableLabs/urql.git","directory":"packages/react-urql"},"keywords":["graphql
+      client","state management","cache","formidablelabs","exchanges","react"],"main":"dist/urql.js","module":"dist/urql.es.js","types":"dist/types/index.d.ts","source":"src/index.ts","scripts":{"test":"jest","clean":"rimraf
+      dist","check":"tsc --noEmit","lint":"eslint --ext=js,jsx,ts,tsx .","build":"rollup
+      -c ../../scripts/rollup/config.js","prepare":"node ../../scripts/prepare/index.js","prepublishOnly":"run-s
+      clean build"},"jest":{"preset":"../../scripts/jest/preset"},"devDependencies":{"@testing-library/react":"^11.1.1","@testing-library/react-hooks":"^5.1.2","@types/react":"^17.0.4","@types/react-test-renderer":"^17.0.1","graphql":"^16.0.0","react":"^17.0.1","react-dom":"^17.0.1","react-is":"^17.0.1","react-ssr-prepass":"^1.1.2","react-test-renderer":"^17.0.1"},"peerDependencies":{"graphql":"^0.11.0
+      || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0","react":">= 16.8.0"},"dependencies":{"@urql/core":"^2.4.3","wonka":"^4.0.14"},"_id":"urql@2.2.0","_nodeVersion":"14.19.0","_npmVersion":"6.14.16","dist":{"integrity":"sha512-36wnWqDrpXqhwT5r2/qRSZXhb7Y4sXA0nLlYEd3uLgvfIdOA8kUaPdfTujzfrvfCcfiVVFxhzqVAhc8r17NMwQ==","shasum":"5eade2813f5b61497086a5038ecc7c6e7cbd7153","tarball":"https://registry.npmjs.org/urql/-/urql-2.2.0.tgz","fileCount":31,"unpackedSize":149897,"npm-signature":"-----BEGIN
+      PGP SIGNATURE-----\r\nVersion: OpenPGP.js v4.10.10\r\nComment: https://openpgpjs.org\r\n\r\nwsFzBAEBCAAGBQJiGWgGACEJED1NWxICdlZqFiEECWMYAoorWMhJKdjhPU1b\r\nEgJ2VmpUtxAAoD1+OjBQDz3Jhd0TMo20oWC8I+Mx4YTYUF0WLbRwr2xlYceu\r\nWrJEunLuTKi6+HHXIvxgKgAqd8NXNpaAkJ1eFUecghdHPiW8iicoyEJXo22r\r\nmmIYwQjmotevC6tToQsVCKCVeOR+S7iXK1h9sUtq6RWMoEcgcuhU/B8p27P6\r\nsJuV+7PnPx4d4oFpybrUWxaiJgcFn+S0cdnXVLwSI0u6u0dCValMXWJ79FH4\r\ndw5v0/To9YqaHjNHyypx5zKD8ukwQ1iNiMCf+duE9A5JcSdcmM1cZed5EpOQ\r\nGGnquaEYI5oZ1B3KL0n28rwqgJejveEmTJPykBF2vLmoJDWn7670OmI/75FD\r\noDMdekbQwHyAtF2DF43OhzxMKAJwO2oHbT9CMkDOHtdvc6wCdTv9VnAw6dNe\r\nBrgDxOwYtF/QNHUvXHARxqgIyAeoU7lVAO1QW8Jq0XOv2j3+VDAcpKyuT2wy\r\nWwmYjxZJVt5Sm6Brco+OziCN9bIWjcK9q2WKaTckSoshh/+dNHS0Jdw3plc4\r\n4mdkbRzUH+BBai51l2KTG/K0yUwV82Fnr60EYpm3PP6AYtkHC2fbUgf2G9F3\r\n49RlPlDNFbChrfjGEa21DyKU/XnMSo3O6WPDaBmL0f3e8RKLw0rLJioPlQ3R\r\nUIr8mmahmQHWO/In85+CtSXhA68aXUTqf08=\r\n=Dzpj\r\n-----END
+      PGP SIGNATURE-----\r\n"},"_npmUser":{"name":"npm-urql","email":"npm-urql@formidable.com"},"directories":{},"maintainers":[{"name":"jpdriver","email":"jpsdriver@gmail.com"},{"name":"yankovalera","email":"yankovalera@gmail.com"},{"name":"valgeorgiev","email":"valentin.al.georgiev@gmail.com"},{"name":"michaelmerrill","email":"michael@michaelmerrill.me"},{"name":"sarmeyer","email":"sarahmichellemeyer@gmail.com"},{"name":"mariano-formidable","email":"mariano.martinez@formidable.com"},{"name":"carlospaelinck","email":"me@carlos.dev"},{"name":"ryanisinallofus","email":"ryanrray@gmail.com"},{"name":"samwhale","email":"samuelestrella226@gmail.com"},{"name":"ryan.roemer","email":"ryan@loose-bits.com"},{"name":"formidable-owner","email":"admin@formidablelabs.com"},{"name":"eastridge","email":"ryan@eastridge.me"},{"name":"exogen","email":"exogen@gmail.com"},{"name":"beccanelson","email":"becca.bailey@formidable.com"},{"name":"philpl","email":"phil@kitten.sh"},{"name":"hartzis","email":"brianhartz@gmail.com"},{"name":"mfulgham","email":"monet.fulgham@formidable.com"},{"name":"jmcbee1","email":"jmcbee1@gmail.com"},{"name":"formidablelabs","email":"npm@formidablelabs.com"},{"name":"carbonrobot","email":"carbonrobot@gmail.com"},{"name":"manosim","email":"hello@manos.im"},{"name":"masiddee","email":"mansoor@msiddeeq.com"},{"name":"andyrichardson","email":"andy.john.richardson@gmail.com"},{"name":"jdecroock","email":"decroockjovi@gmail.com"},{"name":"parkerziegler","email":"parkerellisziegler@gmail.com"},{"name":"npm-urql","email":"npm-urql@formidable.com"},{"name":"thekenwheeler","email":"ken_wheeler@me.com"}],"_npmOperationalInternal":{"host":"s3://npm-registry-packages","tmp":"tmp/urql_2.2.0_1645832198372_0.6535972224370645"},"_hasShrinkwrap":false}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - max-age=300
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 709ec4b17b4c96cf-SJC
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 11 May 2022 23:41:57 GMT
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Server:
+      - cloudflare
+      Vary:
+      - accept-encoding, accept
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://registry.npmjs.org/lodash/4.17.15
+    method: GET
+  response:
+    body: '{"name":"lodash","version":"4.17.15","description":"Lodash modular utilities.","keywords":["modules","stdlib","util"],"homepage":"https://lodash.com/","repository":{"type":"git","url":"git+https://github.com/lodash/lodash.git"},"icon":"https://lodash.com/icon.svg","license":"MIT","main":"lodash.js","author":{"name":"John-David
+      Dalton","email":"john.david.dalton@gmail.com"},"contributors":[{"name":"John-David
+      Dalton","email":"john.david.dalton@gmail.com"},{"name":"Mathias Bynens","email":"mathias@qiwi.be"}],"scripts":{"test":"echo
+      \"See https://travis-ci.org/lodash-archive/lodash-cli for testing details.\""},"bugs":{"url":"https://github.com/lodash/lodash/issues"},"_id":"lodash@4.17.15","_nodeVersion":"12.2.0","_npmVersion":"6.10.1","dist":{"integrity":"sha512-8xOcRHvCjnocdS5cpwXQXVzmmh5e5+saE2QGoeQmbKmRS6J3VQppPOIt0MnmE+4xlZoumy0GPG0D0MVIQbNA1A==","shasum":"b447f6670a0455bbfeedd11392eff330ea097548","tarball":"https://registry.npmjs.org/lodash/-/lodash-4.17.15.tgz","fileCount":1049,"unpackedSize":1401029,"npm-signature":"-----BEGIN
+      PGP SIGNATURE-----\r\nVersion: OpenPGP.js v3.0.4\r\nComment: https://openpgpjs.org\r\n\r\nwsFcBAEBCAAQBQJdMSrfCRA9TVsSAnZWagAAwdsP/RhUWg82MeFBHu0zHeQd\nhslgH/+xAkHR3SGuT5q9t6qqkNsqgSl25RdtEJqqlV69Ni2W8y5YgNfrQTVq\ntcmjDoJejlU4qnNiUNP/R81Ph+bNKh0+DcCCo+2YKMEk5XVCNxTWxETyasYR\n0PNuRR6dbvhWij0AEL6Uk2VF0vI9T/hFje7NeNnNf9CLk+mfKtxydB62cTtZ\ntojexG52iH5w4Lk35gjyOgAoWCFSk09GRgOW3RmmiPU8Cg7gizcW/7ynimbV\nPXY/GpdZ4EcmZSb7F47TBl/Ymv4TE2+H8LEvdxdtFfsaCyu0i/9wyi34j6ja\nujYyWCiie2IkJYSONWc0UxIBtq6tjLrXanuhsL7caXZWyljvqLRPYcfWJVWQ\nheL1YGLBOWtZtM51h7uHfnz/3YViQxkT55z5eziAWFGKX/x8ByUO2LU+LGjv\nwzRb8fqi5l7Wz3BjNbDxLyA8X8FsSu2rzPogz9bHvqc5WYknpoPJp/aRUADz\nlLoO+fwQRA9PYKhTcLMDMJQ+NIxaA++6eJ8ZIokp5Qx9RvhIbr3pMgg13PbN\nuiV1LT6I2H7y9NC6yucgE4/siQmcRSi5y5XT3G1jx6SLOvTFa5d4Ae5CSk1L\nSUqRZ+/x8uDI7fr/DZP9gCUgKrhd/ATikrR2wloqOyv0x27KB1WzDsNie3am\nyCB9\r\n=KaV2\r\n-----END
+      PGP SIGNATURE-----\r\n","signatures":[{"keyid":"SHA256:jl3bwswu80PjjokCgh0o2w5c2U4LhQAE57gj9cz1kzA","sig":"MEQCIFbxnpX3GT/QFjnCfbrXnvHQn6m6hAQozAKbkZ08lXA3AiAqcTSxmEMqNHzpSpZrzp3rwW0Imc2nMNB6lTSMmVnukg=="}]},"maintainers":[{"name":"jdalton","email":"john.david.dalton@gmail.com"},{"name":"mathias","email":"mathias@qiwi.be"}],"_npmUser":{"name":"jdalton","email":"john.david.dalton@gmail.com"},"directories":{},"_npmOperationalInternal":{"host":"s3://npm-registry-packages","tmp":"tmp/lodash_4.17.15_1563503326395_0.45150483878351166"},"_hasShrinkwrap":false}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - max-age=300
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 709ec4b21c6f96cf-SJC
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 11 May 2022 23:41:57 GMT
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Server:
+      - cloudflare
+      Vary:
+      - accept-encoding, accept
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://registry.npmjs.org/async/3.2.3
+    method: GET
+  response:
+    body: '{"name":"async","description":"Higher-order functions and common patterns
+      for asynchronous code","version":"3.2.3","main":"dist/async.js","author":{"name":"Caolan
+      McMahon"},"homepage":"https://caolan.github.io/async/","repository":{"type":"git","url":"git+https://github.com/caolan/async.git"},"bugs":{"url":"https://github.com/caolan/async/issues"},"keywords":["async","callback","module","utility"],"devDependencies":{"babel-core":"^6.26.3","babel-eslint":"^8.2.6","babel-minify":"^0.5.0","babel-plugin-add-module-exports":"^0.2.1","babel-plugin-istanbul":"^5.1.4","babel-plugin-syntax-async-generators":"^6.13.0","babel-plugin-transform-es2015-modules-commonjs":"^6.26.2","babel-preset-es2015":"^6.3.13","babel-preset-es2017":"^6.22.0","babel-register":"^6.26.0","babelify":"^8.0.0","benchmark":"^2.1.1","bluebird":"^3.4.6","browserify":"^16.2.3","chai":"^4.2.0","cheerio":"^0.22.0","coveralls":"^3.0.4","es6-promise":"^2.3.0","eslint":"^6.0.1","eslint-plugin-prefer-arrow":"^1.1.5","fs-extra":"^0.26.7","jsdoc":"^3.6.2","karma":"^4.1.0","karma-browserify":"^5.3.0","karma-edge-launcher":"^0.4.2","karma-firefox-launcher":"^1.1.0","karma-junit-reporter":"^1.2.0","karma-mocha":"^1.2.0","karma-mocha-reporter":"^2.2.0","karma-safari-launcher":"^1.0.0","mocha":"^6.1.4","mocha-junit-reporter":"^1.18.0","native-promise-only":"^0.8.0-a","nyc":"^14.1.1","rollup":"^0.63.4","rollup-plugin-node-resolve":"^2.0.0","rollup-plugin-npm":"^2.0.0","rsvp":"^3.0.18","semver":"^5.5.0","yargs":"^11.0.0"},"scripts":{"coverage":"nyc
+      npm run mocha-node-test -- --grep @nycinvalid --invert","coveralls":"npm run
+      coverage && nyc report --reporter=text-lcov | coveralls","jsdoc":"jsdoc -c ./support/jsdoc/jsdoc.json
+      && node support/jsdoc/jsdoc-fix-html.js","lint":"eslint --fix lib/ test/ perf/memory.js
+      perf/suites.js perf/benchmark.js support/build/ support/*.js karma.conf.js","mocha-browser-test":"karma
+      start","mocha-node-test":"mocha","mocha-test":"npm run mocha-node-test && npm
+      run mocha-browser-test","test":"npm run lint && npm run mocha-node-test"},"license":"MIT","nyc":{"exclude":["test"]},"module":"dist/async.mjs","_id":"async@3.2.3","_nodeVersion":"14.7.0","_npmVersion":"6.14.7","dist":{"integrity":"sha512-spZRyzKL5l5BZQrr/6m/SqFdBN0q3OCI0f9rjfBzCMBIP4p75P620rR3gTmaksNOhmzgdxcaxdNfMy6anrbM0g==","shasum":"ac53dafd3f4720ee9e8a160628f18ea91df196c9","tarball":"https://registry.npmjs.org/async/-/async-3.2.3.tgz","fileCount":137,"unpackedSize":820507,"npm-signature":"-----BEGIN
+      PGP SIGNATURE-----\r\nVersion: OpenPGP.js v3.0.13\r\nComment: https://openpgpjs.org\r\n\r\nwsFcBAEBCAAQBQJh24AMCRA9TVsSAnZWagAA+loP/3QXGjSCmmNkz04uWaPt\n9PQJ2uycfydYdkUm96nVoMJZltSO2y6DbfhmdeqndRoKTQtnbwlmfq9ng6vz\n+srcqm4vjelRHPpYlZlTp2fBfNAw7uY4zlFsBUjAgYM4GE8L4wnHW4ARq84K\nuGLn1pDIUb2nzydrWwj3LFnooaPSTNwtkEGjBxgBjROpxJf/JmXX2XMWKw4G\nzq89y/5OK4LXIixgpl7m/5CvkETElVbqSTk/VPxFgRYw48vzEF4MZh+w79s9\nkrEWwmqiVxsWNB5E1+HtCfDKxh5cjmUpdx8DybAGRxb6Jfrg3gNuFXesIGeI\nE31+rIMD23oesDoVtx23ISotkGid2w7Eh7PTJMx1hDd6b39uwxDYJ+62UOvL\nEntW4t821oEbRTp6UUjuMZC2eimhygmy+FASQic5loGMcFwn91iCGGj4d3e5\nLJQmE+9ykucdgDL6/We/OyeLmiXYVjjmSP8HulioZw5eEuLMYlNZ5FO6Ijro\nOy8NxA+ngSBdOA8QPIjHYYkPIUqFalWTV2CciuHQAUtaou3TqRFRnLP/3OZ0\nLbqreVlOlv73s4g7UVwBny4yuJ0JI0DvzGlbX9kYbjvlWDWqBx6cQSiD39Qz\nPx8mWVs/hwgJBAxKB0Q8tm8sAyAKvqBmSWHsmTEpARF0JqkBGK+rQz2MvW19\n/2zV\r\n=8M/Z\r\n-----END
+      PGP SIGNATURE-----\r\n","signatures":[{"keyid":"SHA256:jl3bwswu80PjjokCgh0o2w5c2U4LhQAE57gj9cz1kzA","sig":"MEUCIQDz66uC2MbtiqkGR5ZPK2R3LyfFtEWXsF6SgdU49u/JrAIgeZ1T9uXz4rYbh3LsTK6ZMWbEHJFc66aiXvOwr58D3XU="}]},"_npmUser":{"name":"aearly","email":"alexander.early@gmail.com"},"directories":{},"maintainers":[{"name":"beaugunderson","email":"beau@beaugunderson.com"},{"name":"caolan","email":"caolan.mcmahon@gmail.com"},{"name":"aearly","email":"alexander.early@gmail.com"},{"name":"megawac","email":"megawac@gmail.com"},{"name":"hargasinski","email":"argasinski.hubert@gmail.com"}],"_npmOperationalInternal":{"host":"s3://npm-registry-packages","tmp":"tmp/async_3.2.3_1641775116794_0.1623085249174283"},"_hasShrinkwrap":false}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Age:
+      - "247"
+      Cache-Control:
+      - public, max-age=300
+      Cf-Cache-Status:
+      - HIT
+      Cf-Ray:
+      - 709ec4b2ada596cf-SJC
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 11 May 2022 23:41:57 GMT
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Last-Modified:
+      - Wed, 11 May 2022 23:37:50 GMT
+      Server:
+      - cloudflare
+      Vary:
+      - accept-encoding, accept
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://registry.npmjs.org/fastq/0.9.9
+    method: GET
+  response:
+    body: '"version not found: 0.9.9"'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Cf-Ray:
+      - 709ec4b2ada996cf-SJC
+      Content-Length:
+      - "26"
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 11 May 2022 23:41:57 GMT
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Server:
+      - cloudflare
+      Vary:
+      - Accept-Encoding
+    status: 404 Not Found
+    code: 404
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://registry.npmjs.org/react/18.1.0
+    method: GET
+  response:
+    body: '{"name":"react","description":"React is a JavaScript library for building
+      user interfaces.","keywords":["react"],"version":"18.1.0","homepage":"https://reactjs.org/","bugs":{"url":"https://github.com/facebook/react/issues"},"license":"MIT","main":"index.js","exports":{".":{"react-server":"./react.shared-subset.js","default":"./index.js"},"./package.json":"./package.json","./jsx-runtime":"./jsx-runtime.js","./jsx-dev-runtime":"./jsx-dev-runtime.js"},"repository":{"type":"git","url":"git+https://github.com/facebook/react.git","directory":"packages/react"},"engines":{"node":">=0.10.0"},"dependencies":{"loose-envify":"^1.1.0"},"browserify":{"transform":["loose-envify"]},"_id":"react@18.1.0","_nodeVersion":"14.19.0","_npmVersion":"6.14.16","dist":{"integrity":"sha512-4oL8ivCz5ZEPyclFQXaNksK3adutVS8l2xzZU0cqEFrE9Sb7fC0EFK5uEk74wIreL1DERyjvsU915j1pcT2uEQ==","shasum":"6f8620382decb17fdc5cc223a115e2adbf104890","tarball":"https://registry.npmjs.org/react/-/react-18.1.0.tgz","fileCount":20,"unpackedSize":315446,"signatures":[{"keyid":"SHA256:jl3bwswu80PjjokCgh0o2w5c2U4LhQAE57gj9cz1kzA","sig":"MEUCIQDGNJzg3daqQRyPUhTn3m06Ipa9a5hPzgl376UhhaSfzQIgaTI4w6/saWci7iZye1lc9nEJvcz0B1jdorXmvOqSxnM="}],"npm-signature":"-----BEGIN
+      PGP SIGNATURE-----\r\nVersion: OpenPGP.js v4.10.10\r\nComment: https://openpgpjs.org\r\n\r\nwsFzBAEBCAAGBQJiaFiuACEJED1NWxICdlZqFiEECWMYAoorWMhJKdjhPU1b\r\nEgJ2Vmrl3A/8CuKXr+86gafR8a7kECK9EfGE04qRQgbYeoRV98LU/0ILUuNH\r\n4fhkCYi3/dqtIgnoYL9BBAXnA2MAbNbXnGM6U3PhOEp1vZMesLFff5ne9bZ8\r\nFrubrVUoxTmrLj14mGp5q8kw4vYzNAVBw72QBZ2jfY0F1WA05AuGGBr+g2Lu\r\npRBVsaW9nnvLAHDdtRfLzzGCi8QbVxveqglWwoCPi3BiE4UCiSikCbKKI8pa\r\nkdw7nfnNXS1InPtcAipLdDUScW8jt22IhCCMirD6SMQZ0+i2PATwtmT9GKhH\r\nHbx8QPnenzoIABIrSbwEdi91xLH+/IhROobzFp/FPDA3X3oaI10xQGd4eIn6\r\nWoAfP9fIEeezwSgYfT8TBhOj5SisGyw82oVT/FRLFCu9HU6WMvQl74Vk/2S/\r\nXVX+n+WrjYsssllhYOxb6oxnfQgRSoBmyldZqsySlmC+ndK/CejrTgE/5Vzb\r\nmmACGD+ZOQWTWkXJskvfJNUUVvxxoSiXFyIbBqGvgbcdgn2OfY5CbcTI8Uc/\r\nE+x9bKZyXWObqzagXyG4/RLWjjtn87s7INoQybJtsQbpOFooxRgLvqlGVFSp\r\nW1dcEVPj3X17OyYiWSHESyshpxv+o9+8wPj/x33XGpdGxFIW4tVPF01djHtn\r\n0cXcESemvyJ13+veP8SzFWZ3ayT+6EWp5SQ=\r\n=Vi0c\r\n-----END
+      PGP SIGNATURE-----\r\n"},"_npmUser":{"name":"acdlite","email":"npm@andrewclark.io"},"directories":{},"maintainers":[{"name":"gaearon","email":"dan.abramov@gmail.com"},{"name":"acdlite","email":"npm@andrewclark.io"},{"name":"fb","email":"opensource+npm@fb.com"},{"name":"trueadm","email":"dg@domgan.com"},{"name":"sophiebits","email":"npm@sophiebits.com"},{"name":"lunaruan","email":"lunaris.ruan@gmail.com"}],"_npmOperationalInternal":{"host":"s3://npm-registry-packages","tmp":"tmp/react_18.1.0_1651005614236_0.013028299650699626"},"_hasShrinkwrap":false}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - max-age=300
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 709ec4b2adab96cf-SJC
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 11 May 2022 23:41:57 GMT
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Server:
+      - cloudflare
+      Vary:
+      - accept-encoding, accept
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://registry.npmjs.org/react/18.0.0
+    method: GET
+  response:
+    body: '{"name":"react","description":"React is a JavaScript library for building
+      user interfaces.","keywords":["react"],"version":"18.0.0","homepage":"https://reactjs.org/","bugs":{"url":"https://github.com/facebook/react/issues"},"license":"MIT","main":"index.js","exports":{".":{"react-server":"./react.shared-subset.js","default":"./index.js"},"./package.json":"./package.json","./jsx-runtime":"./jsx-runtime.js","./jsx-dev-runtime":"./jsx-dev-runtime.js"},"repository":{"type":"git","url":"git+https://github.com/facebook/react.git","directory":"packages/react"},"engines":{"node":">=0.10.0"},"dependencies":{"loose-envify":"^1.1.0"},"browserify":{"transform":["loose-envify"]},"_id":"react@18.0.0","_nodeVersion":"14.19.0","_npmVersion":"6.14.16","dist":{"integrity":"sha512-x+VL6wbT4JRVPm7EGxXhZ8w8LTROaxPXOqhlGyVSrv0sB1jkyFGgXxJ8LVoPRLvPR6/CIZGFmfzqUa2NYeMr2A==","shasum":"b468736d1f4a5891f38585ba8e8fb29f91c3cb96","tarball":"https://registry.npmjs.org/react/-/react-18.0.0.tgz","fileCount":20,"unpackedSize":315644,"npm-signature":"-----BEGIN
+      PGP SIGNATURE-----\r\nVersion: OpenPGP.js v4.10.10\r\nComment: https://openpgpjs.org\r\n\r\nwsFzBAEBCAAGBQJiQy0EACEJED1NWxICdlZqFiEECWMYAoorWMhJKdjhPU1b\r\nEgJ2Vmo2XBAAjFIUnS0JM35cS4xV6WKyVKM2fX8dlY9Cu286N+To3vRpDulw\r\nFh9jaSzMKVUEGua4teSpGpJE/niInMryih61E5HSZ6UhVdUc+tiPfZ3zJZjG\r\nUyIl8GHKAFyOXW/OQcrxLOS+9nqL8uxF0HkYsUAKX2yvyWWyAtu8J35JMa1K\r\nV6L9BKdvcBwGHLt5KHF8VcqTzlBxKmDJeCGA6BmU+DaPdaQmZHBxHRqQ1SR9\r\n24cRzAenA6pHn84Tqq/LCp31Sq70XiHSg0PjhdeJk7psi+031hU5BT2/R6hp\r\n0GcQcaISNdJ7CafbXcWET/J7WmGTEqk/99E27PKYfqwWxd1fUPBrjxJ6va6K\r\nizv9y6Qp5/ddIdJudR+CbfOKsV/K5V9rCb99VR81SJmVNtF3zgTz4j9A+gxx\r\nqz/AdD1KZ7x3xg4ChzLXEk+6m/GU01tIHe9E4ciOa8O+a5WLPvKDJ2TXDHva\r\nVyU9gQ2fuiYsHePW2432xF2Aeufh0nNl4dQGOaa4oVjENk//XBqmEEx/ojiR\r\n/i6kSZPX/XK29zTp0S7kvdVuDuR6/Bk5PsMtpC+talzOH6C1XWznLkdTq4gO\r\nDsB+iNN9Ks8xFlprNYuCqW9kv+cafJxfOzQc8QSBCSYPIwlUrOV4Tv0bucuJ\r\n2Lg2tqfOFXzpu2fx14oPQh7VynajyVGvwiA=\r\n=hoXG\r\n-----END
+      PGP SIGNATURE-----\r\n"},"_npmUser":{"name":"acdlite","email":"npm@andrewclark.io"},"directories":{},"maintainers":[{"name":"gaearon","email":"dan.abramov@gmail.com"},{"name":"acdlite","email":"npm@andrewclark.io"},{"name":"brianvaughn","email":"briandavidvaughn@gmail.com"},{"name":"fb","email":"opensource+npm@fb.com"},{"name":"trueadm","email":"dg@domgan.com"},{"name":"sophiebits","email":"npm@sophiebits.com"},{"name":"lunaruan","email":"lunaris.ruan@gmail.com"}],"_npmOperationalInternal":{"host":"s3://npm-registry-packages","tmp":"tmp/react_18.0.0_1648569603893_0.9485444480797844"},"_hasShrinkwrap":false}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - max-age=300
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 709ec4b2ada896cf-SJC
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 11 May 2022 23:41:57 GMT
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Server:
+      - cloudflare
+      Vary:
+      - accept-encoding, accept
+    status: 200 OK
+    code: 200
+    duration: ""

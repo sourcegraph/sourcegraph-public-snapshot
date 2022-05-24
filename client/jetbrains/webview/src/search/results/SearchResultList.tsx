@@ -8,9 +8,9 @@ import { decodeLineId, getElementFromId, getFirstResultId, getIdForMatch, getSib
 import styles from './SearchResultList.module.scss'
 
 interface Props {
-    onPreviewChange: (result: ContentMatch, lineIndex: number) => void
+    onPreviewChange: (result: ContentMatch, lineMatchIndex: number) => void
     onPreviewClear: () => void
-    onOpen: (result: ContentMatch, lineIndex: number) => void
+    onOpen: (result: ContentMatch, lineMatchIndex: number) => void
     results: SearchMatch[]
 }
 
@@ -37,10 +37,10 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
         (id: null | string) => {
             if (id !== null) {
                 getElementFromId(id)?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-                const [matchId, lineNumber] = decodeLineId(id)
+                const [matchId, lineMatchIndex] = decodeLineId(id)
                 const match = resultMap.get(matchId)
                 if (match) {
-                    onPreviewChange(match, lineNumber)
+                    onPreviewChange(match, lineMatchIndex)
                 }
             } else {
                 onPreviewClear()
@@ -83,11 +83,11 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                 return
             }
 
-            if (event.key === 'Enter' && event.ctrlKey === true) {
-                const [matchId, lineNumber] = decodeLineId(selectedResult)
+            if (event.key === 'Enter' && event.altKey) {
+                const [matchId, lineMatchIndex] = decodeLineId(selectedResult)
                 const match = resultMap.get(matchId)
                 if (match) {
-                    onOpen(match, lineNumber)
+                    onOpen(match, lineMatchIndex)
                 }
                 return
             }

@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+echo "!!!!!!!!!!!!!!!!!!"
+echo "!!! DEPRECATED !!!"
+echo "!!!!!!!!!!!!!!!!!!"
+echo "This script is deprecated!"
+echo "Add your checks to 'dev/sg/linters' instead."
+
 echo "--- go generate"
 
 trap "echo ^^^ +++" ERR

@@ -201,7 +201,7 @@ func validateSearchContextQuery(contextQuery string) error {
 		return err
 	}
 
-	q := plan.ToParseTree()
+	q := plan.ToQ()
 	var errs error
 
 	query.VisitParameter(q, func(field, value string, negated bool, a query.Annotation) {

@@ -27,7 +27,7 @@ exports[`ErrorBoundary passes through if non-error 1`] = `
         </p>
         <p>
           <code
-            class="text-wrap"
+            class="code text-wrap"
           >
             x
           </code>

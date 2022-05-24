@@ -7,6 +7,7 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Typography } from '..'
 import { Button } from '../Button'
 import { Input } from '../Form'
 import { Icon } from '../Icon'
@@ -35,18 +36,23 @@ export const Simple: Story = () => {
 
     return (
         <div>
-            <h2 className="my-3">Controlled collapse</h2>
+            <Typography.H2 className="my-3">Controlled collapse</Typography.H2>
             <Collapse isOpen={isOpened} onOpenChange={handleOpenChange}>
                 <CollapseHeader as={Button} outline={true} focusLocked={true} variant="secondary" className="w-50">
                     Collapsable
-                    <Icon as={isOpened ? ChevronDownIcon : ChevronLeftIcon} className="mr-1" />
+                    <Icon
+                        role="img"
+                        aria-hidden={true}
+                        as={isOpened ? ChevronDownIcon : ChevronLeftIcon}
+                        className="mr-1"
+                    />
                 </CollapseHeader>
                 <CollapsePanel className="w-50">
                     <Input placeholder="testing this one" />
                 </CollapsePanel>
             </Collapse>
 
-            <h2 className="my-3">Uncontrolled collapse</h2>
+            <Typography.H2 className="my-3">Uncontrolled collapse</Typography.H2>
             <Collapse>
                 {({ isOpen }) => (
                     <>
@@ -58,7 +64,12 @@ export const Simple: Story = () => {
                             className="w-50"
                         >
                             Collapsable
-                            <Icon as={isOpen ? ChevronDownIcon : ChevronLeftIcon} className="mr-1" />
+                            <Icon
+                                role="img"
+                                aria-hidden={true}
+                                as={isOpen ? ChevronDownIcon : ChevronLeftIcon}
+                                className="mr-1"
+                            />
                         </CollapseHeader>
                         <CollapsePanel className="w-50">
                             <Input placeholder="testing this one" />
@@ -67,7 +78,7 @@ export const Simple: Story = () => {
                 )}
             </Collapse>
 
-            <h2 className="my-3">Open by default collapse</h2>
+            <Typography.H2 className="my-3">Open by default collapse</Typography.H2>
             <Collapse openByDefault={true}>
                 {({ isOpen }) => (
                     <>
@@ -79,7 +90,12 @@ export const Simple: Story = () => {
                             className="w-50"
                         >
                             Collapsable
-                            <Icon as={isOpen ? ChevronDownIcon : ChevronLeftIcon} className="mr-1" />
+                            <Icon
+                                role="img"
+                                aria-hidden={true}
+                                as={isOpen ? ChevronDownIcon : ChevronLeftIcon}
+                                className="mr-1"
+                            />
                         </CollapseHeader>
                         <CollapsePanel className="w-50">
                             <Input placeholder="testing this one" />

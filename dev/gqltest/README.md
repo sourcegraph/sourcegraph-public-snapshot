@@ -49,7 +49,7 @@ GraphQL-based integration tests are running against a live Sourcegraph instance,
 docker run --publish 7080:7080 --rm sourcegraph/server:insiders
 ```
 
-Once the the instance is live (look for the log line `✱ Sourcegraph is ready at: http://127.0.0.1:7080`), you can open another terminal tab to run these tests under this directory (`dev/gqltest`):
+Once the instance is live (look for the log line `✱ Sourcegraph is ready at: http://127.0.0.1:7080`), you can open another terminal tab to run these tests under this directory (`dev/gqltest`):
 
 ```sh
 → go test -long

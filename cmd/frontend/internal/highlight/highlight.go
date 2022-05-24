@@ -425,6 +425,15 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 
 	resp, err := client.Highlight(ctx, query, filetypeQuery.Engine == EngineTreeSitter)
 
+	unhighlightedCode := func(err error, code string) (*HighlightedCode, bool, error) {
+		errCollector.Collect(&err)
+		plainResponse, tableErr := generatePlainTable(code)
+		if tableErr != nil {
+			return nil, true, errors.CombineErrors(err, tableErr)
+		}
+		return plainResponse, false, err
+	}
+
 	if ctx.Err() == context.DeadlineExceeded {
 		log15.Warn(
 			"syntax highlighting took longer than 3s, this *could* indicate a bug in Sourcegraph",
@@ -454,30 +463,26 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		if known, problem := identifyError(err); known {
 			// A problem that can sometimes be expected has occurred. We will
 			// identify such problems through metrics/logs and resolve them on
-			// a case-by-case basis, but they are frequent enough that we want
-			// to fallback to plaintext rendering instead of just giving the
-			// user an error.
+			// a case-by-case basis.
 			trace.Log(otlog.Bool(problem, true))
-			errCollector.Collect(&err)
 			prometheusStatus = problem
-			plainResponse, err := generatePlainTable(code)
-			return plainResponse, false, err
 		}
 
-		return nil, false, err
+		// It is not useful to surface errors in the UI, so fall back to
+		// unhighlighted text.
+		return unhighlightedCode(err, code)
 	}
 
 	if filetypeQuery.Engine == EngineTreeSitter {
 		document := new(lsiftyped.Document)
 		data, err := base64.StdEncoding.DecodeString(resp.Data)
 
-		// TODO: Should we generate the plaintext table here?
 		if err != nil {
-			return nil, false, err
+			return unhighlightedCode(err, code)
 		}
 		err = proto.Unmarshal(data, document)
 		if err != nil {
-			return nil, false, err
+			return unhighlightedCode(err, code)
 		}
 
 		// TODO(probably not this PR): I would like to not

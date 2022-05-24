@@ -9,12 +9,10 @@ BASE:
     20s
     (LIMIT
       500
-      (OR
-        (PARALLEL
-          CommitSearchJob
-          ComputeExcludedReposJob)
-        (PARALLEL
-          CommitSearchJob
+      (PARALLEL
+        CommitSearchJob
+        (OR
+          ComputeExcludedReposJob
           ComputeExcludedReposJob)))))
 
 OPTIMIZED:
@@ -26,10 +24,8 @@ OPTIMIZED:
       500
       (PARALLEL
         CommitSearchJob
-        (OR
-          (PARALLEL
-            NoopJob
-            ComputeExcludedReposJob)
-          (PARALLEL
-            NoopJob
+        (PARALLEL
+          NoopJob
+          (OR
+            ComputeExcludedReposJob
             ComputeExcludedReposJob))))))

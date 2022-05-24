@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // Provider implements authz.Provider for GitHub repository permissions.
@@ -48,7 +49,8 @@ type ProviderOptions struct {
 func NewProvider(urn string, opts ProviderOptions) *Provider {
 	if opts.GitHubClient == nil {
 		apiURL, _ := github.APIRoot(opts.GitHubURL)
-		opts.GitHubClient = github.NewV3Client(urn, apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
+		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
+			urn, apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
 	}
 
 	codeHost := extsvc.NewCodeHost(opts.GitHubURL, extsvc.TypeGitHub)

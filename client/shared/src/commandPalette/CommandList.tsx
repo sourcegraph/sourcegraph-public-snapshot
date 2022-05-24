@@ -19,7 +19,7 @@ import { Key } from 'ts-key-enum'
 
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
 import { memoizeObservable } from '@sourcegraph/common'
-import { Button, ButtonProps, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
+import { Button, ButtonProps, LoadingSpinner, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -192,7 +192,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                     <div className="d-flex py-5 align-items-center justify-content-center">
                         <LoadingSpinner inline={false} />
                         <span className="mx-2">Loading Sourcegraph extensions</span>
-                        <Icon as={PuzzleIcon} />
+                        <Icon role="img" as={PuzzleIcon} aria-hidden={true} />
                     </div>
                 </EmptyCommandListContainer>
             )
@@ -212,9 +212,9 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                 <header>
                     {/* eslint-disable-next-line react/forbid-elements */}
                     <form className={this.props.formClassName} onSubmit={this.onSubmit}>
-                        <label className="sr-only" htmlFor="command-list-input">
+                        <Typography.Label className="sr-only" htmlFor="command-list-input">
                             Command
-                        </label>
+                        </Typography.Label>
                         <input
                             id="command-list-input"
                             ref={input => input && this.state.autoFocus && input.focus({ preventScroll: true })}
@@ -393,8 +393,9 @@ export const CommandListPopoverButton: React.FunctionComponent<
 
     const id = useMemo(() => uniqueId('command-list-popover-button-'), [])
 
-    const MenuDropdownIcon = (): JSX.Element => (isOpen ? <Icon as={ChevronUpIcon} /> : <Icon as={ChevronDownIcon} />)
-
+    const MenuDropdownIcon = (): JSX.Element => (
+        <Icon role="img" as={isOpen ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
+    )
     return (
         <Button
             as={buttonElement}
@@ -405,7 +406,7 @@ export const CommandListPopoverButton: React.FunctionComponent<
             variant={variant}
             aria-label="Command list"
         >
-            <Icon as={ConsoleIcon} size="md" />
+            <Icon role="img" as={ConsoleIcon} size="md" aria-hidden={true} />
 
             {showCaret && <MenuDropdownIcon />}
 

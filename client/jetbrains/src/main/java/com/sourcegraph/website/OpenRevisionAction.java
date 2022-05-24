@@ -26,33 +26,33 @@ import java.util.Optional;
  * Jetbrains IDE action to open a selected revision in Sourcegraph.
  */
 public class OpenRevisionAction extends AnAction implements DumbAware {
-  private final Logger logger = Logger.getInstance(this.getClass());
+    private final Logger logger = Logger.getInstance(this.getClass());
 
-  private Optional<RevisionContext> getHistoryRevision(AnActionEvent e) {
-    VcsFileRevision revision = e.getDataContext().getData(VcsDataKeys.VCS_FILE_REVISION);
-    Project project = e.getProject();
+    private Optional<RevisionContext> getHistoryRevision(AnActionEvent e) {
+        VcsFileRevision revision = e.getDataContext().getData(VcsDataKeys.VCS_FILE_REVISION);
+        Project project = e.getProject();
 
-    if (project == null) {
-      return Optional.empty();
+        if (project == null) {
+            return Optional.empty();
+        }
+        if (revision == null) {
+            return Optional.empty();
+        }
+
+        String rev = revision.getRevisionNumber().toString();
+        return Optional.of(new RevisionContext(project, rev));
     }
-    if (revision == null) {
-      return Optional.empty();
-    }
 
-    String rev = revision.getRevisionNumber().toString();
-    return Optional.of(new RevisionContext(project, rev));
-  }
+    private Optional<RevisionContext> getLogRevision(AnActionEvent e) {
+        VcsLog log = e.getDataContext().getData(VcsLogDataKeys.VCS_LOG);
+        Project project = e.getProject();
 
-  private Optional<RevisionContext> getLogRevision(AnActionEvent e) {
-    VcsLog log = e.getDataContext().getData(VcsLogDataKeys.VCS_LOG);
-    Project project = e.getProject();
-
-    if (project == null) {
-      return Optional.empty();
-    }
-    if (log == null || log.getSelectedCommits().isEmpty()) {
-      return Optional.empty();
-    }
+        if (project == null) {
+            return Optional.empty();
+        }
+        if (log == null || log.getSelectedCommits().isEmpty()) {
+            return Optional.empty();
+        }
 
 
         String rev = log.getSelectedCommits().get(0).getHash().asString();
@@ -63,7 +63,7 @@ public class OpenRevisionAction extends AnAction implements DumbAware {
     public void actionPerformed(@NotNull AnActionEvent e) {
         // This action handles events for both log and history views, so attempt to load from any possible option.
         RevisionContext context = getHistoryRevision(e).or(() -> getLogRevision(e))
-                .orElseThrow(() -> new RuntimeException("Unable to determine revision from history or log."));
+            .orElseThrow(() -> new RuntimeException("Unable to determine revision from history or log."));
 
         try {
             String productName = ApplicationInfo.getInstance().getVersionName();

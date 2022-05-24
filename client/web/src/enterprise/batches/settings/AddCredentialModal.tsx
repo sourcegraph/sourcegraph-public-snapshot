@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Button, Modal, Link } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, Typography } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
@@ -33,24 +33,27 @@ const HELP_TEXT_LINK_URL = 'https://docs.sourcegraph.com/batch_changes/quickstar
 const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.GITHUB]: (
         <span>
-            with the <code>repo</code>, <code>read:org</code>, <code>user:email</code>, <code>read:discussion</code>,
-            and <code>workflow</code> scopes.
+            with the <Typography.Code>repo</Typography.Code>, <Typography.Code>read:org</Typography.Code>,{' '}
+            <Typography.Code>user:email</Typography.Code>, <Typography.Code>read:discussion</Typography.Code>, and{' '}
+            <Typography.Code>workflow</Typography.Code> scopes.
         </span>
     ),
     [ExternalServiceKind.GITLAB]: (
         <span>
-            with <code>api</code>, <code>read_repository</code>, and <code>write_repository</code> scopes.
+            with <Typography.Code>api</Typography.Code>, <Typography.Code>read_repository</Typography.Code>, and{' '}
+            <Typography.Code>write_repository</Typography.Code> scopes.
         </span>
     ),
     [ExternalServiceKind.BITBUCKETSERVER]: (
         <span>
-            with <code>write</code> permissions on the project and repository level.
+            with <Typography.Code>write</Typography.Code> permissions on the project and repository level.
         </span>
     ),
     [ExternalServiceKind.BITBUCKETCLOUD]: (
         <span>
-            with <code>account:read</code>, <code>repo:write</code>, <code>pr:write</code>, and{' '}
-            <code>pipeline:read</code> permissions.
+            with <Typography.Code>account:read</Typography.Code>, <Typography.Code>repo:write</Typography.Code>,{' '}
+            <Typography.Code>pr:write</Typography.Code>, and <Typography.Code>pipeline:read</Typography.Code>{' '}
+            permissions.
         </span>
     ),
 
@@ -179,7 +182,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                             <div className="form-group">
                                 {requiresUsername && (
                                     <>
-                                        <label htmlFor="username">Username</label>
+                                        <Typography.Label htmlFor="username">Username</Typography.Label>
                                         <input
                                             id="username"
                                             name="username"
@@ -194,7 +197,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                                         />
                                     </>
                                 )}
-                                <label htmlFor="token">{patLabel}</label>
+                                <Typography.Label htmlFor="token">{patLabel}</Typography.Label>
                                 <input
                                     id="token"
                                     name="token"

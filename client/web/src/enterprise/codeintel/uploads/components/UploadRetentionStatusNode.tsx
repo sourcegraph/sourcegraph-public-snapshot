@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 import { pluralize } from '@sourcegraph/common'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import {
     NormalizedUploadRetentionMatch,
@@ -42,10 +42,12 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<
             <div className="m-0">
                 {match.configurationPolicy ? (
                     <Link to={`../configuration/${match.configurationPolicy.id}`} className="p-0">
-                        <h3 className="m-0 d-block d-md-inline">{match.configurationPolicy.name}</h3>
+                        <Typography.H3 className="m-0 d-block d-md-inline">
+                            {match.configurationPolicy.name}
+                        </Typography.H3>
                     </Link>
                 ) : (
-                    <h3 className="m-0 d-block d-md-inline">{retentionByBranchTipTitle}</h3>
+                    <Typography.H3 className="m-0 d-block d-md-inline">{retentionByBranchTipTitle}</Typography.H3>
                 )}
                 <div className="mr-2 d-block d-mdinline-block">
                     Retained: {match.matches ? 'yes' : 'no'}
@@ -85,7 +87,7 @@ const UploadReferenceRetentionMatchNode: FunctionComponent<
 
         <div className={classNames(styles.information, 'd-flex flex-column')}>
             <div className="m-0">
-                <h3 className="m-0 d-block d-md-inline">{retentionByUploadTitle}</h3>
+                <Typography.H3 className="m-0 d-block d-md-inline">{retentionByUploadTitle}</Typography.H3>
                 <div className="mr-2 d-block d-mdinline-block">
                     Referenced by {match.total} {pluralize('upload', match.total, 'uploads')}, including{' '}
                     {match.uploadSlice

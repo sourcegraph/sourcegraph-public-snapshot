@@ -6,7 +6,7 @@ import TickIcon from 'mdi-react/TickIcon'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 
-import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link } from '../..'
+import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link, Typography } from '../..'
 import { useAutoFocus, useLocalStorage } from '../../..'
 import { Modal } from '../../Modal'
 
@@ -110,7 +110,7 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
             {submitResponse?.isHappinessFeedback ? (
                 <div className={styles.success}>
                     <TickIcon className={styles.successTick} />
-                    <h3>We‘ve received your feedback!</h3>
+                    <Typography.H3>We‘ve received your feedback!</Typography.H3>
                     <p className="d-inline">
                         Thank you for your help.
                         {productResearchEnabled && (
@@ -127,7 +127,7 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
                 </div>
             ) : (
                 <Form onSubmit={handleSubmit}>
-                    <h3 className="mb-3">What’s on your mind?</h3>
+                    <Typography.H3 className="mb-3">What’s on your mind?</Typography.H3>
 
                     <FlexTextArea
                         onChange={handleTextChange}

@@ -6,7 +6,6 @@ import sinon from 'sinon'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 
 import { AuthenticatedUser } from '../../auth'
-import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
 import { ListCodeMonitors, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 
 import { CodeMonitoringPage } from './CodeMonitoringPage'
@@ -26,7 +25,6 @@ const additionalProps = {
     toggleCodeMonitorEnabled: sinon.spy((id: string, enabled: boolean) => of({ id: 'test', enabled: true })),
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     isLightTheme: false,
-    featureFlags: EMPTY_FEATURE_FLAGS,
 }
 
 const generateMockFetchMonitors = (count: number) => ({ id, first, after }: ListUserCodeMonitorsVariables) => {

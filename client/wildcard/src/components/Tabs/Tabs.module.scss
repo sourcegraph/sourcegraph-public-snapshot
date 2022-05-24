@@ -1,6 +1,13 @@
 @import '@reach/tabs/styles';
 
 .wildcard-tabs {
+    --opacity-transition: 0.3s;
+    --scroll-gradient-color: var(--body-bg);
+
+    @mixin scroll-gradient($to) {
+        background: linear-gradient(to $to, var(--scroll-gradient-color) 15%, rgba(0, 0, 0, 0));
+    }
+
     --small-size-font: 0.75rem;
     --medium-size-font: 0.875rem;
     --large-size-font: 1rem;
@@ -70,22 +77,58 @@
     }
 
     .tablist-wrapper {
+        position: relative;
         border-bottom: 1px solid var(--border-color-2);
         padding-bottom: 0;
         display: flex;
         align-items: stretch;
         justify-content: space-between;
+
+        &::after,
+        &::before {
+            content: '';
+            position: absolute;
+            width: 5rem;
+            top: 0;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity var(--opacity-transition) ease;
+
+            @media (prefers-reduced-motion: reduce) {
+                transition: none;
+            }
+        }
+
+        &::before {
+            left: 0;
+            @include scroll-gradient(right);
+        }
+
+        &::after {
+            right: 0;
+            @include scroll-gradient(left);
+        }
+
+        &-obscured-left::before {
+            opacity: 1;
+        }
+
+        &-obscured-right::after {
+            opacity: 1;
+        }
     }
 
     .tab-list {
         display: flex;
         flex-wrap: wrap;
+        align-items: flex-start;
         gap: 0.75rem;
     }
 
     .tab-list-scroll {
         flex-wrap: nowrap;
-        overflow-y: scroll;
+        overflow-x: scroll;
     }
 
     .small {
