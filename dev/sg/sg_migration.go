@@ -45,6 +45,14 @@ var (
 		Value:       false,
 		Destination: &squashInContainer,
 	}
+
+	outputFilepath     string
+	outputFilepathFlag = &cli.StringFlag{
+		Name:        "f",
+		Usage:       "The output filepath",
+		Required:    true,
+		Destination: &outputFilepath,
+	}
 )
 
 var (
@@ -110,6 +118,15 @@ var (
 		Action:      execAdapter(squashExec),
 	}
 
+	squashAllCommand = &cli.Command{
+		Name:        "squash-all",
+		ArgsUsage:   "",
+		Usage:       "Collapse schema definitions into a single SQL file",
+		Description: cliutil.ConstructLongHelp(),
+		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, outputFilepathFlag},
+		Action:      execAdapter(squashAllExec),
+	}
+
 	migrationCommand = &cli.Command{
 		Name:     "migration",
 		Usage:    "Modifies and runs database migrations",
@@ -127,6 +144,7 @@ var (
 			addLogCommand,
 			leavesCommand,
 			squashCommand,
+			squashAllCommand,
 		},
 	}
 )
@@ -248,6 +266,24 @@ func squashExec(ctx context.Context, args []string) (err error) {
 	std.Out.Writef("Squashing migration files defined up through %s", commit)
 
 	return migration.Squash(database, commit, squashInContainer)
+}
+
+func squashAllExec(ctx context.Context, args []string) (err error) {
+	if len(args) != 0 {
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
+		return flag.ErrHelp
+	}
+
+	var (
+		databaseName = migrateTargetDatabase
+		database, ok = db.DatabaseByName(databaseName)
+	)
+	if !ok {
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: database %q not found :(", databaseName))
+		return flag.ErrHelp
+	}
+
+	return migration.SquashAll(database, squashInContainer, outputFilepath)
 }
 
 func leavesExec(ctx context.Context, args []string) (err error) {
