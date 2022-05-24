@@ -11,15 +11,15 @@ export interface SeriesChartProps<D> extends SeriesLikeChart<D>, Omit<SVGProps<S
     zeroYAxisMin?: boolean
     locked?: boolean
     isSeriesSelected?: (id: string) => boolean
-    hoveredId?: string | undefined
+    isSeriesHovered?: (id: string) => boolean
 }
 
 export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactElement {
-    const { type, locked, isSeriesSelected = () => true, ...otherProps } = props
+    const { type, locked, isSeriesSelected = () => true, isSeriesHovered = () => true, ...otherProps } = props
 
     if (locked) {
         return <LockedChart />
     }
 
-    return <LineChart isSeriesSelected={isSeriesSelected} {...otherProps} />
+    return <LineChart isSeriesSelected={isSeriesSelected} isSeriesHovered={isSeriesHovered} {...otherProps} />
 }

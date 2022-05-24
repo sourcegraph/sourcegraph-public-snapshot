@@ -31,7 +31,7 @@ export interface LineChartContentProps<Datum> extends SeriesLikeChart<Datum>, SV
     height: number
     zeroYAxisMin?: boolean
     isSeriesSelected: (id: string) => boolean
-    hoveredId?: string | undefined
+    isSeriesHovered: (id: string) => boolean
 }
 
 const sortByDataKey = (dataKey: string | number | symbol, activeDataKey: string): number =>
@@ -51,7 +51,7 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         onDatumClick = noop,
         className,
         isSeriesSelected,
-        hoveredId,
+        isSeriesHovered,
         ...attributes
     } = props
 
@@ -134,7 +134,7 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
     })
 
     const getHoverStyle = (id: string): CSSProperties => {
-        const opacity = isSeriesSelected(id) ? 1 : id === hoveredId ? 0.5 : 0
+        const opacity = isSeriesSelected(id) ? 1 : isSeriesHovered(id) ? 0.5 : 0
 
         return {
             opacity,

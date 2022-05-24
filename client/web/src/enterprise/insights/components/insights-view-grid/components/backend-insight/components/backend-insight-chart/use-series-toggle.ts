@@ -1,15 +1,13 @@
 import { Dispatch, SetStateAction, useState } from 'react'
 
 interface UseSeriesToggleReturn {
-    /* Currently hovered series id */
-    hoveredId: string | undefined
-
     /* List of currently selected series ids */
     selectedSeriesIds: string[]
 
     // These functions are exposed to keep all of the state
     // contained in the hook
     isSeriesSelected: (id: string) => boolean
+    isSeriesHovered: (id: string) => boolean
     setHoveredId: Dispatch<SetStateAction<string | undefined>>
     toggle: (id: string) => void
 }
@@ -38,11 +36,11 @@ export const useSeriesToggle = (): UseSeriesToggleReturn => {
 
     return {
         // state
-        hoveredId,
         selectedSeriesIds,
 
         // functions
         isSeriesSelected: isSelected,
+        isSeriesHovered: (seriesId: string) => seriesId === hoveredId,
         setHoveredId,
         toggle,
     }
