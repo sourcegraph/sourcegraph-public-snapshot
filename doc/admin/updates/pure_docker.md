@@ -8,6 +8,12 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
+## 3.39 -> 3.40
+
+TODO
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39).*
+
 ## Unreleased
 A fix that corrects the default behavior of the `migrator` service is included in this release. An attempt to standardize CLI packages in v3.39.0 unintentionally 
 broke the default behavior. In order to guard against this, all command line arguments are explicitly set in the deployment manifest.

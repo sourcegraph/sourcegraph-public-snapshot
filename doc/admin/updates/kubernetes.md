@@ -10,6 +10,12 @@
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
+## 3.39 -> 3.40
+
+TODO
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39).*
+
 ## Unreleased
 
 - `cadvisor` now defaults to run in `privileged` mode. This allows `cadvisor` to collect out of memory events happening to containers which can be used to discover underprovisoned resources. This is disabled by default in `non-privileged` overlay. [#4126](https://github.com/sourcegraph/deploy-sourcegraph/pull/4126)
