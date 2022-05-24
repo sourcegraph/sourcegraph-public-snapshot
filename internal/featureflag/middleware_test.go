@@ -51,49 +51,106 @@ func TestGetEvaluatedFlagsFromContext(t *testing.T) {
 
 func TestEvaluateForActorFromContext(t *testing.T) {
 	// TODO: case 1: test that for authenticated user GetUserFlagFunc is called
-	// TODO: case 2: test that for anonymous user GetAnonymousUserFlagFunc is called
-	// TODO: case 3: test that for rest GetGlobalFeatureFlagFunc is called
-	// TODO: case 4: test that for each above cases setEvaluatedFlagToCache has been called with proper args
-	mockStore := NewMockStore()
-	mockStore.GetUserFlagFunc.SetDefaultHook(func(_ context.Context, uid int32, flag string) (*bool, error) {
-		if flag == "test-flag-1" {
-			value := false
+	t.Run("authenticated user", func(t *testing.T) {
+		mockStore := NewMockStore()
 
-			if uid == 1 {
-				value = true
+		mockStore.GetUserFlagFunc.SetDefaultHook(func(_ context.Context, uid int32, flag string) (*bool, error) {
+			/**
+			const mockFlags = {
+				"1": [["f1", true]]
+			}
+			*/
+			if flag == "f1" {
+				value := false
+
+				if uid == 1 {
+					value = true
+				}
+
+				return &value, nil
 			}
 
-			return &value, nil
-		}
+			if flag == "f2" {
+				value := false
 
-		if flag == "test-flag-2" {
-			value := false
+				if uid == 2 {
+					value = true
+				}
 
-			if uid == 2 {
-				value = true
+				return &value, nil
 			}
 
-			return &value, nil
-		}
+			return nil, nil
+		})
 
-		return nil, nil
+		actor1 := actor.FromUser(1)
+		actor2 := actor.FromUser(2)
+
+		ctx := context.Background()
+		ctx = actor.WithActor(ctx, actor1)
+		ctx = WithFlags(ctx, mockStore)
+
+		// Make sure user1 flags are set
+		require.True(t, EvaluateForActorFromContext(ctx, "f1"))
+		require.False(t, EvaluateForActorFromContext(ctx, "f2"))
+
+		// With a new actor, the flag fetcher should re-fetch
+		ctx = actor.WithActor(ctx, actor2)
+		require.True(t, EvaluateForActorFromContext(ctx, "f2"))
+		require.False(t, EvaluateForActorFromContext(ctx, "f1"))
+
+		mockrequire.CalledN(t, mockStore.GetUserFlagFunc, 4)
+		// TODO: test that for each above cases setEvaluatedFlagToCache has been called with proper args
 	})
 
-	actor1 := actor.FromUser(1)
-	actor2 := actor.FromUser(2)
+	// TODO: case 2: test that for anonymous user GetAnonymousUserFlagFunc is called
+	t.Run("anonymous user", func(t *testing.T) {
+		// actor.FromAnonymousUser("test-user")
+		mockStore := NewMockStore()
 
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, actor1)
-	ctx = WithFlags(ctx, mockStore)
+		mockStore.GetAnonymousUserFlagFunc.SetDefaultHook(func(_ context.Context, anonymousUID string, flag string) (*bool, error) {
+			if flag == "f1" {
+				value := false
 
-	// Make sure user1 flags are set
-	require.True(t, EvaluateForActorFromContext(ctx, "test-flag-1"))
-	require.False(t, EvaluateForActorFromContext(ctx, "test-flag-2"))
+				if anonymousUID == "t1" {
+					value = true
+				}
 
-	// With a new actor, the flag fetcher should re-fetch
-	ctx = actor.WithActor(ctx, actor2)
-	require.True(t, EvaluateForActorFromContext(ctx, "test-flag-2"))
-	require.False(t, EvaluateForActorFromContext(ctx, "test-flag-1"))
+				return &value, nil
+			}
 
-	mockrequire.CalledN(t, mockStore.GetUserFlagFunc, 4)
+			if flag == "f2" {
+				value := false
+
+				if anonymousUID == "t2" {
+					value = true
+				}
+
+				return &value, nil
+			}
+
+			return nil, nil
+		})
+
+		actor1 := actor.FromAnonymousUser("t1")
+		actor2 := actor.FromAnonymousUser("t2")
+
+		ctx := context.Background()
+		ctx = actor.WithActor(ctx, actor1)
+		ctx = WithFlags(ctx, mockStore)
+
+		// Make sure user1 flags are set
+		require.True(t, EvaluateForActorFromContext(ctx, "f1"))
+		require.False(t, EvaluateForActorFromContext(ctx, "f2"))
+
+		// With a new actor, the flag fetcher should re-fetch
+		ctx = actor.WithActor(ctx, actor2)
+		require.True(t, EvaluateForActorFromContext(ctx, "f2"))
+		require.False(t, EvaluateForActorFromContext(ctx, "f1"))
+
+		mockrequire.CalledN(t, mockStore.GetAnonymousUserFlagFunc, 4)
+		// TODO: test that for each above cases setEvaluatedFlagToCache has been called with proper args
+	})
+	// TODO: case 3: test that for rest GetGlobalFeatureFlagFunc is called
+	t.Run("no user", func(t *testing.T) {})
 }
