@@ -154,7 +154,7 @@ const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBackendBasedInsight = {
         { id: '003', name: 'shared', query: '', stroke: 'red' },
     ],
     step: { weeks: 2 },
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
+    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
     dashboardReferenceCount: 0,
     isFrozen: false,
 }
@@ -170,7 +170,7 @@ const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBackendBasedInsight = {
         { id: '003', name: 'useMutation | useQuery | useConnection hooks', query: '', stroke: 'red' },
     ],
     step: { weeks: 2 },
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
+    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
     dashboardReferenceCount: 0,
     isFrozen: false,
 }
@@ -183,7 +183,7 @@ const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
     step: { weeks: 2 },
     repositories: [],
     query: '',
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
+    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
     dashboardReferenceCount: 0,
     isFrozen: false,
 }
@@ -193,7 +193,7 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
         query: GET_INSIGHT_VIEW_GQL,
         variables: {
             id: 'backend-mock',
-            filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [] },
+            filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
         },
     },
     result: {
@@ -455,7 +455,7 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
         query: GET_INSIGHT_VIEW_GQL,
         variables: {
             id: 'backend-mock',
-            filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [] },
+            filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
         },
     },
     result: {
@@ -717,7 +717,7 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
         query: GET_INSIGHT_VIEW_GQL,
         variables: {
             id: 'backend-mock',
-            filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [] },
+            filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
         },
     },
     result: {
