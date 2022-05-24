@@ -532,9 +532,15 @@ func DependsOn(dependency ...string) StepOpt {
 }
 
 // IfReadyForReview causes this step to only be added if this build is associated with a
-// pull request that is also ready for review.
-func IfReadyForReview() StepOpt {
+// pull request that is also ready for review. To add the step regardless of the review status
+// pass in true for force.
+func IfReadyForReview(forceReady bool) StepOpt {
 	return func(step *Step) {
+		if forceReady {
+			// we don't care whether the PR is a draft or not, as long it is a PR
+			step.If = "build.pull_request.id != null"
+			return
+		}
 		step.If = "build.pull_request.id != null && !build.pull_request.draft"
 	}
 }

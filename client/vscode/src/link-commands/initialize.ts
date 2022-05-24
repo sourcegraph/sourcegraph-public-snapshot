@@ -66,12 +66,14 @@ export function generateSourcegraphBlobLink(
     endLine: number,
     endChar: number
 ): string {
-    const instanceUrl = vscode.workspace.getConfiguration('sourcegraph').get<string>('url') || 'https://sourcegraph.com'
+    const instanceUrl = new URL(
+        vscode.workspace.getConfiguration('sourcegraph').get<string>('url') || 'https://sourcegraph.com'
+    )
     // Using SourcegraphUri.parse to properly decode repo revision
-    const decodedUri = SourcegraphUri.parse(uri.toString()).uri
-    return `${decodedUri.replace(uri.scheme, instanceUrl.startsWith('https') ? 'https' : 'http')}?L${encodeURIComponent(
-        String(startLine)
-    )}:${encodeURIComponent(String(startChar))}-${encodeURIComponent(String(endLine))}:${encodeURIComponent(
-        String(endChar)
-    )}${vsceUtms}`
+    const decodedUri = SourcegraphUri.parse(uri.toString())
+    const finalUri = new URL(decodedUri.uri)
+    finalUri.search = `L${encodeURIComponent(String(startLine))}:${encodeURIComponent(
+        String(startChar)
+    )}-${encodeURIComponent(String(endLine))}:${encodeURIComponent(String(endChar))}${vsceUtms}`
+    return finalUri.href.replace(finalUri.protocol, instanceUrl.protocol)
 }

@@ -520,7 +520,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                         onClick={runAllBlocks}
                         disabled={blocks.length === 0 || runningAllBlocks === LOADING}
                     >
-                        <Icon className="mr-1" as={PlayCircleOutlineIcon} />
+                        <Icon role="img" aria-hidden={true} className="mr-1" as={PlayCircleOutlineIcon} />
                         <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
                     </Button>
                     {!isEmbedded && (
@@ -531,7 +531,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                             onClick={exportNotebook}
                             data-testid="export-notebook-markdown-button"
                         >
-                            <Icon className="mr-1" as={DownloadIcon} />
+                            <Icon role="img" aria-hidden={true} className="mr-1" as={DownloadIcon} />
                             <span>Export as Markdown</span>
                         </Button>
                     )}
@@ -544,7 +544,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                             data-testid="copy-notebook-button"
                             disabled={copiedNotebookOrError === LOADING}
                         >
-                            <Icon className="mr-1" as={ContentCopyIcon} />
+                            <Icon role="img" aria-hidden={true} className="mr-1" as={ContentCopyIcon} />
                             <span>{copiedNotebookOrError === LOADING ? 'Copying...' : 'Copy to My Notebooks'}</span>
                         </Button>
                     )}

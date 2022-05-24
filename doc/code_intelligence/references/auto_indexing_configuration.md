@@ -116,23 +116,21 @@ indexer_args:
 root: dev/sg
 ```
 
-The following example uses the Docker image `sourcegraph/lsif-node` pinned at the tag `autoindex`. This index configuration will run `npm install` followed by the TypeScript indexer `lsif-tsc` in the `editors/code` directory. In this job, both commands run in the same workspace, but are invoked in different Docker containers. Both containers happen to be based on the same image, but that's not necessary.
+The following example uses the Docker image `sourcegraph/scip-typescript` pinned at the tag `autoindex`. This index configuration will run `npm install` followed by the TypeScript indexer `scip-typescript` in the `editors/code` directory. In this job, both commands run in the same workspace, but are invoked in different Docker containers. Both containers happen to be based on the same image, but that's not necessary.
 
 ```yaml
 steps:
-  - image: sourcegraph/lsif-node:autoindex
+  - image: sourcegraph/scip-typescript:autoindex
     commands:
       - npm install
     root: editors/code
 
-# sourcegraph/lsif-node does not define a Docker entrypoint, so we need 
+# sourcegraph/scip-typescript does not define a Docker entrypoint, so we need
 # to indicate which binary to invoke (along with any additional arguments).
-# Here, -p and . are passed to the underlying TypeScript language analyzer.
-indexer: sourcegraph/lsif-node:autoiondex
+indexer: sourcegraph/scip-typescript:autoiondex
 indexer_args:
-    - lsif-tsc
-    - -p
-    - .
+    - scip-typescript
+    - index
 
 root: editors/code
 ```

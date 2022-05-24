@@ -29,7 +29,7 @@ func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
 		}
 	}
 
-	report := golang.Generate(ctx, nil, golang.QuietOutput)
+	report := golang.Generate(ctx, nil, false, golang.QuietOutput)
 	if report.Err != nil {
 		return &lint.Report{
 			Header: header,

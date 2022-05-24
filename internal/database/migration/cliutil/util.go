@@ -11,12 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+type actionFunction func(ctx context.Context, cmd *cli.Context, out *output.Output) error
+
 // makeAction creates a new migration action function. It is expected that these
 // commands accept zero arguments and define their own flags.
-func makeAction(
-	outFactory func() *output.Output,
-	f func(ctx context.Context, cmd *cli.Context, out *output.Output) error,
-) func(cmd *cli.Context) error {
+func makeAction(outFactory OutputFactory, f actionFunction) func(cmd *cli.Context) error {
 	return func(cmd *cli.Context) error {
 		if cmd.NArg() != 0 {
 			return flagHelp(outFactory(), "too many arguments")

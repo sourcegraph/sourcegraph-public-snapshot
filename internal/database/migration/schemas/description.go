@@ -95,3 +95,15 @@ func Canonicalize(schemaDescription SchemaDescription) {
 	sortTables(schemaDescription.Tables)
 	sortViews(schemaDescription.Views)
 }
+
+type Namer interface{ GetName() string }
+
+func (d EnumDescription) GetName() string       { return d.Name }
+func (d FunctionDescription) GetName() string   { return d.Name }
+func (d SequenceDescription) GetName() string   { return d.Name }
+func (d TableDescription) GetName() string      { return d.Name }
+func (d ColumnDescription) GetName() string     { return d.Name }
+func (d IndexDescription) GetName() string      { return d.Name }
+func (d ConstraintDescription) GetName() string { return d.Name }
+func (d TriggerDescription) GetName() string    { return d.Name }
+func (d ViewDescription) GetName() string       { return d.Name }

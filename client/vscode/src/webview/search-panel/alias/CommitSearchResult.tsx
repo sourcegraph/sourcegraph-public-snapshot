@@ -4,8 +4,8 @@ import React from 'react'
 import { CommitSearchResultMatch } from '@sourcegraph/search-ui/src/components/CommitSearchResultMatch'
 // eslint-disable-next-line no-restricted-imports
 import styles from '@sourcegraph/search-ui/src/components/SearchResult.module.scss'
+import { CodeHostIcon } from '@sourcegraph/shared/src/components/CodeHostIcon'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -45,7 +45,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
             <div className={styles.title}>
-                <RepoIcon repoName={repoName} className="text-muted flex-shrink-0" />
+                <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0" />
                 <span className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate">
                     <>
                         <button

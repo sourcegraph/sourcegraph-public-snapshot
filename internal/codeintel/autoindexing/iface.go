@@ -1,4 +1,4 @@
-package enqueuer
+package autoindexing
 
 import (
 	"context"
@@ -54,7 +54,7 @@ type GitserverClient interface {
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
 }
 
-type InferenceService interface {
+type inferenceService interface {
 	InferIndexJobs(ctx context.Context, repo api.RepoName, commit, overrideScript string) ([]config.IndexJob, error)
 	InferIndexJobHints(ctx context.Context, repo api.RepoName, commit, overrideScript string) ([]config.IndexJobHint, error)
 }

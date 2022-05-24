@@ -15,6 +15,7 @@ exports[`PageHeader renders correctly 1`] = `
             href="/link-0"
           >
             <svg
+              aria-hidden="true"
               class="mdi-icon pathIcon"
               fill="currentColor"
               height="24"
