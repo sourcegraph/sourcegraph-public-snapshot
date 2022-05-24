@@ -99,15 +99,15 @@ func TestMatcherLookupByExtension(t *testing.T) {
 
 	input := map[string]string{
 		"file_without_extension": `
-/* comment foo(plain.empty) {} */
+/* This foo(plain.empty) {} is in a Go comment should not match in Go, but should match in plaintext */
 func foo(go.empty) {}
 `,
 		"file.go": `
-/* comment containing foo(plain.go) {} */
+/* This foo(plain.go) {} is in a Go comment should not match in Go, but should match in plaintext */
 func foo(go.go) {}
 `,
 		"file.txt": `
-/* comment containing foo(plain.txt) {} */
+/* This foo(plain.txt) {} is in a Go comment should not match in Go, but should match in plaintext */
 func foo(go.txt) {}
 `,
 	}
@@ -149,9 +149,9 @@ func foo(go.txt) {}
 	}{{
 		name: "No language and no file extension => .generic matcher",
 		want: []string{
-			"/* comment containing foo(plain.go) {} */",
-			"/* comment containing foo(plain.txt) {} */",
-			"/* comment foo(plain.empty) {} */",
+			"/* This foo(plain.empty) {} is in a Go comment should not match in Go, but should match in plaintext */",
+			"/* This foo(plain.go) {} is in a Go comment should not match in Go, but should match in plaintext */",
+			"/* This foo(plain.txt) {} is in a Go comment should not match in Go, but should match in plaintext */",
 			"func foo(go.empty) {}",
 			"func foo(go.go) {}",
 			"func foo(go.txt) {}",
