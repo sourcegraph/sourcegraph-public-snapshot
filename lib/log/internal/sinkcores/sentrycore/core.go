@@ -55,7 +55,7 @@ func NewCore(hub *sentry.Hub) *Core {
 	return &Core{
 		w: &worker{
 			hub:  hub.Clone(), // Avoid accidental side effects if the hub is modified elsewhere.
-			C:    make(chan *Core, 16),
+			C:    make(chan *Core, 512),
 			done: make(chan struct{}),
 		},
 	}
@@ -130,9 +130,10 @@ func (c *Core) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	c.base.Fields = append(sentryFields, c.base.Fields...)
 
 	c.w.in.Add(1)
-	go func() {
-		c.w.C <- c
-	}()
+	select {
+	case c.w.C <- c:
+	default: // if we can't queue, just drop the errors.
+	}
 	return nil
 }
 
