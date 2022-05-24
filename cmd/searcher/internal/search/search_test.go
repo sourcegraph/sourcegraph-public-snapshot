@@ -536,16 +536,8 @@ func fetchTimeoutForCI(t *testing.T) string {
 func toString(m []protocol.FileMatch) string {
 	buf := new(bytes.Buffer)
 	for _, f := range m {
-		if len(f.LineMatches) == 0 && len(f.MultilineMatches) == 0 {
+		if len(f.MultilineMatches) == 0 {
 			buf.WriteString(f.Path)
-			buf.WriteByte('\n')
-		}
-		for _, l := range f.LineMatches {
-			buf.WriteString(f.Path)
-			buf.WriteByte(':')
-			buf.WriteString(strconv.Itoa(l.LineNumber + 1))
-			buf.WriteByte(':')
-			buf.WriteString(l.Preview)
 			buf.WriteByte('\n')
 		}
 		for _, l := range f.MultilineMatches {
@@ -569,14 +561,9 @@ func sanityCheckSorted(m []protocol.FileMatch) error {
 		if i > 0 && m[i].Path == m[i-1].Path {
 			return errors.Errorf("duplicate FileMatch on %s", m[i].Path)
 		}
-		lm := m[i].LineMatches
+		lm := m[i].MultilineMatches
 		if !sort.IsSorted(sortByLineNumber(lm)) {
 			return errors.Errorf("unsorted LineMatches for %s", m[i].Path)
-		}
-		for j := range lm {
-			if j > 0 && lm[j].LineNumber == lm[j-1].LineNumber {
-				return errors.Errorf("duplicate LineNumber on %s:%d", m[i].Path, lm[j].LineNumber)
-			}
 		}
 	}
 	return nil
@@ -588,8 +575,8 @@ func (m sortByPath) Len() int           { return len(m) }
 func (m sortByPath) Less(i, j int) bool { return m[i].Path < m[j].Path }
 func (m sortByPath) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }
 
-type sortByLineNumber []protocol.LineMatch
+type sortByLineNumber []protocol.MultilineMatch
 
 func (m sortByLineNumber) Len() int           { return len(m) }
-func (m sortByLineNumber) Less(i, j int) bool { return m[i].LineNumber < m[j].LineNumber }
+func (m sortByLineNumber) Less(i, j int) bool { return m[i].Start.Line < m[j].Start.Line }
 func (m sortByLineNumber) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }

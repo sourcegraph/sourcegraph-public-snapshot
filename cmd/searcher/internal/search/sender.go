@@ -46,18 +46,12 @@ func (m *limitedStreamCollector) Send(match protocol.FileMatch) {
 	m.cancel()
 
 	// Can't truncate a path match
-	if len(match.LineMatches) == 0 {
+	if len(match.MultilineMatches) == 0 {
 		m.mux.Unlock()
 		return
 	}
 
-	// NOTE: this isn't strictly correct for structural search matches
-	// since a single match can be multiple lines. However, by the time we
-	// convert a structural search to a protocol.FileMatch, we lose the
-	// information required to properly limit. However, multiline matches
-	// are also not limited correctly in the frontend, so doing it correctly
-	// here won't fix that.
-	match.LineMatches = match.LineMatches[:m.remaining]
+	match.MultilineMatches = match.MultilineMatches[:m.remaining]
 	match.LimitHit = true
 	match.MatchCount = m.remaining
 	m.sentCount += m.remaining
@@ -125,18 +119,12 @@ func (m *limitedStream) Send(match protocol.FileMatch) {
 	m.cancel()
 
 	// Can't truncate a path match
-	if len(match.LineMatches) == 0 {
+	if len(match.MultilineMatches) == 0 {
 		m.mux.Unlock()
 		return
 	}
 
-	// NOTE: this isn't strictly correct for structural search matches
-	// since a single match can be multiple lines. However, by the time we
-	// convert a structural search to a protocol.FileMatch, we lose the
-	// information required to properly limit. However, multiline matches
-	// are also not limited correctly in the frontend, so doing it correctly
-	// here won't fix that.
-	match.LineMatches = match.LineMatches[:m.remaining]
+	match.MultilineMatches = match.MultilineMatches[:m.remaining]
 	match.LimitHit = true
 	match.MatchCount = m.remaining
 	m.sentCount += m.remaining

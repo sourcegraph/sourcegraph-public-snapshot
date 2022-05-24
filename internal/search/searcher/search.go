@@ -211,22 +211,7 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 	return func(searcherMatches []*protocol.FileMatch) []result.Match {
 		matches := make([]result.Match, 0, len(searcherMatches))
 		for _, fm := range searcherMatches {
-			multilineMatches := make([]result.MultilineMatch, 0, len(fm.LineMatches))
-			for _, lm := range fm.LineMatches {
-				for _, ol := range lm.OffsetAndLengths {
-					multilineMatches = append(multilineMatches, result.MultilineMatch{
-						Start: result.LineColumn{
-							Line:   int32(lm.LineNumber),
-							Column: int32(ol[0]),
-						},
-						End: result.LineColumn{
-							Line:   int32(lm.LineNumber),
-							Column: int32(ol[0] + ol[1]),
-						},
-						Preview: lm.Preview,
-					})
-				}
-			}
+			multilineMatches := make([]result.MultilineMatch, 0, len(fm.MultilineMatches))
 			for _, mm := range fm.MultilineMatches {
 				multilineMatches = append(multilineMatches, result.MultilineMatch{
 					Preview: mm.Preview,

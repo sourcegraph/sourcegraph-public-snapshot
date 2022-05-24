@@ -195,7 +195,6 @@ type FileMatch struct {
 	Path string
 
 	MultilineMatches []MultilineMatch
-	LineMatches      []LineMatch
 
 	// MatchCount is the number of matches.  Different from len(LineMatches), as multiple
 	// lines may correspond to one logical match when doing a structural search
