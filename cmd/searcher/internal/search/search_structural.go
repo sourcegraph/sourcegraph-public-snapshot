@@ -56,9 +56,9 @@ func toFileMatch(zipReader zip.Reader, combyMatch *comby.FileMatch) (protocol.Fi
 		}
 
 		multilineMatches = append(multilineMatches, protocol.MultilineMatch{
-			// NOTE: this is not strictly correct since the return value of a comby
-			// match does not extend to the previous line start and next line end.
-			// If possible, we should look at using the file content to extend the match.
+			// We don't use Comby's return value because it does not contain the full
+			// line contents. Instead, we use the ranges from comby to pull all the
+			// overlapped lines from the file contents.
 			Preview: string(fileBuf[firstLineStart:lastLineEnd]),
 			Start: protocol.LineColumn{
 				// Comby returns 1-based line numbers and columns
