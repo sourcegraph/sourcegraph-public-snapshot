@@ -1865,63 +1865,23 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+
+	cred, err := r.batchChangesCredentialByID(ctx, args.BatchChangesCredential)
+	if err != nil {
 		return nil, err
 	}
+	if cred == nil {
+		return nil, ErrIDIsZero{}
+	}
 
-	dbID, isSiteCredential, err := unmarshalBatchChangesCredentialID(args.BatchChangesCredential)
+	a, err := cred.Authenticator(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if dbID == 0 {
-		return nil, nil
-	}
-
-	var a auth.Authenticator
-	var i string
-	var t string
-	if isSiteCredential {
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
-			return nil, err
-		}
-
-		cred, err := r.store.GetSiteCredential(ctx, store.GetSiteCredentialOpts{ID: dbID})
-		if err != nil {
-			if err == store.ErrNoResults {
-				return nil, nil
-			}
-			return nil, err
-		}
-		a, err = cred.Authenticator(ctx)
-		if err != nil {
-			return nil, err
-		}
-		i = cred.ExternalServiceID
-		t = cred.ExternalServiceType
-	} else {
-		cred, err := r.store.UserCredentials().GetByID(ctx, dbID)
-		if err != nil {
-			if errcode.IsNotFound(err) {
-				return nil, nil
-			}
-			return nil, err
-		}
-
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), cred.UserID); err != nil {
-			return nil, err
-		}
-		a, err = cred.Authenticator(ctx)
-		if err != nil {
-			return nil, err
-		}
-		i = cred.ExternalServiceID
-		t = cred.ExternalServiceType
-	}
-
 	svc := service.New(r.store)
-	if err := svc.ValidateAuthenticator(ctx, i, t, a); err != nil {
-		return nil, err
+	if err = svc.ValidateAuthenticator(ctx, cred.ExternalServiceURL(), extsvc.KindToType(cred.ExternalServiceKind()), a); err != nil {
+		return nil, &ErrVerifyCredentialFailed{SourceErr: err}
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
