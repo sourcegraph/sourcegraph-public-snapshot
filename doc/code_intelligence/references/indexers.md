@@ -70,7 +70,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
       </tr>
       <tr>
          <td>Java</td>
-        <td><a href="https://github.com/sourcegraph/lsif-java">lsif-java</a></td>
+        <td><a href="https://github.com/sourcegraph/scip-java">scip-java</a></td>
         <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
         <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
