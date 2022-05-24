@@ -307,7 +307,7 @@ func (f *featureFlagStore) CreateOverride(ctx context.Context, override *ff.Over
 		&override.FlagName,
 		&override.Value))
 
-		return scanFeatureFlagOverride(row)
+	return scanFeatureFlagOverride(row)
 }
 
 func (f *featureFlagStore) getUserIDsForOverride(ctx context.Context, orgID, userID *int32) []*int32 {
