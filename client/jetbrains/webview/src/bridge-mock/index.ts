@@ -1,10 +1,10 @@
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
-import { Search } from '../search/App'
 import { Request } from '../search/jsToJavaBridgeUtil'
+import type { Search } from '../search/types'
 
 let savedSearch: Search = {
-    query: '',
+    query: 'r:github.com/sourcegraph/sourcegraph jetbrains',
     caseSensitive: false,
     patternType: SearchPatternType.literal,
     selectedSearchContextSpec: 'global',

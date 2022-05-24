@@ -1,5 +1,6 @@
 import { render } from 'react-dom'
 
+import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
 import { App } from './App'
@@ -7,13 +8,12 @@ import {
     getConfig,
     getTheme,
     indicateFinishedLoading,
+    loadLastSearch,
     onOpen,
     onPreviewChange,
     onPreviewClear,
-    PluginConfig,
-    Request,
-    Theme,
 } from './jsToJavaBridgeUtil'
+import type { Theme, PluginConfig, Search } from './types'
 
 setLinkComponent(AnchorLink)
 
@@ -21,13 +21,20 @@ let isDarkTheme = false
 let instanceURL = 'https://sourcegraph.com'
 let isGlobbingEnabled = false
 let accessToken: string | null = null
+let initialSearch: Search | null = null
 
-/* Add global functions to global window object */
-declare global {
-    interface Window {
-        initializeSourcegraph: () => void
-        callJava: (request: Request) => Promise<object>
-    }
+window.initializeSourcegraph = async () => {
+    const [theme, config, lastSearch] = await Promise.all([getTheme(), getConfig(), loadLastSearch()])
+
+    applyConfig(config)
+    applyTheme(theme)
+    applyLastSearch(lastSearch)
+
+    polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
+
+    renderReactApp()
+
+    await indicateFinishedLoading()
 }
 
 function renderReactApp(): void {
@@ -38,6 +45,7 @@ function renderReactApp(): void {
             instanceURL={instanceURL}
             isGlobbingEnabled={isGlobbingEnabled}
             accessToken={accessToken}
+            initialSearch={initialSearch}
             onOpen={onOpen}
             onPreviewChange={onPreviewChange}
             onPreviewClear={onPreviewClear}
@@ -68,10 +76,6 @@ function applyTheme(theme: Theme): void {
     root.style.setProperty('--primary', buttonColor)
 }
 
-window.initializeSourcegraph = async () => {
-    const [theme, config] = await Promise.all([getTheme(), getConfig()])
-    applyConfig(config)
-    applyTheme(theme)
-    renderReactApp()
-    await indicateFinishedLoading()
+function applyLastSearch(lastSearch: Search | null): void {
+    initialSearch = lastSearch
 }
