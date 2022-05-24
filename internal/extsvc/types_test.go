@@ -337,8 +337,9 @@ func TestWebhookURL(t *testing.T) {
 	const externalURL = "https://sourcegraph.com"
 
 	t.Run("unknown kind", func(t *testing.T) {
-		_, err := WebhookURL(KindOther, externalServiceID, nil, externalURL)
-		assert.NotNil(t, err)
+		u, err := WebhookURL(KindOther, externalServiceID, nil, externalURL)
+		assert.Nil(t, err)
+		assert.Equal(t, u, "")
 	})
 
 	t.Run("basic kinds", func(t *testing.T) {
