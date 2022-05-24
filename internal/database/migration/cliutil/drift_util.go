@@ -51,7 +51,6 @@ func compareSchemaDescriptions(out *output.Output, actual, expected schemas.Sche
 func compareExtensions(out *output.Output, actual, expected schemas.SchemaDescription) (outOfSync bool) {
 	compareExtension := func(extension *stringNamer, expectedExtension stringNamer) {
 		outOfSync = true
-		fmt.Printf("BAD EXTENSION\n")
 
 		if extension == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing extension %q", expectedExtension)))
@@ -67,7 +66,6 @@ func compareExtensions(out *output.Output, actual, expected schemas.SchemaDescri
 func compareEnums(out *output.Output, actual, expected schemas.SchemaDescription) (outOfSync bool) {
 	compareEnum := func(enum *schemas.EnumDescription, expectedEnum schemas.EnumDescription) {
 		outOfSync = true
-		fmt.Printf("BAD EMUM\n")
 
 		quotedLabels := make([]string, 0, len(expectedEnum.Labels))
 		for _, label := range expectedEnum.Labels {
@@ -168,7 +166,6 @@ func compareEnums(out *output.Output, actual, expected schemas.SchemaDescription
 func compareFunctions(out *output.Output, actual, expected schemas.SchemaDescription) (outOfSync bool) {
 	compareFunction := func(function *schemas.FunctionDescription, expectedFunction schemas.FunctionDescription) {
 		outOfSync = true
-		fmt.Printf("BAD FUNCTION\n")
 
 		if function == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing function %q", expectedFunction.Name)))
@@ -210,7 +207,6 @@ func compareSequences(out *output.Output, actual, expected schemas.SchemaDescrip
 func compareTables(out *output.Output, actual, expected schemas.SchemaDescription) (outOfSync bool) {
 	compareTables := func(table *schemas.TableDescription, expectedTable schemas.TableDescription) {
 		outOfSync = true
-		fmt.Printf("BAD TABLE\n")
 
 		if table == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing table %q", expectedTable.Name)))
@@ -287,7 +283,6 @@ func compareTriggers(out *output.Output, actualTable, expectedTable schemas.Tabl
 func compareViews(out *output.Output, actual, expected schemas.SchemaDescription) (outOfSync bool) {
 	compareView := func(view *schemas.ViewDescription, expectedView schemas.ViewDescription) {
 		outOfSync = true
-		fmt.Printf("BAD VIEW\n")
 
 		if view == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing view %q", expectedView.Name)))
