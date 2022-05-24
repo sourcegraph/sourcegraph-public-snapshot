@@ -203,6 +203,6 @@ func parseMessageFlags(msg string) MessageFlags {
 	return MessageFlags{
 		ProfilingEnabled:    strings.Contains(msg, "[buildkite-enable-profiling]"),
 		SkipHashCompare:     strings.Contains(msg, "[skip-hash-compare]"),
-		ForceReadyForReview: strings.Contains(msg, "[force-ready-for-review]"),
+		ForceReadyForReview: strings.Contains(msg, "[review-ready]"),
 	}
 }
