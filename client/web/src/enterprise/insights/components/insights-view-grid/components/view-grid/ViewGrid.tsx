@@ -11,7 +11,7 @@ import {
     WidthProvider,
 } from 'react-grid-layout'
 
-import { isFirefox } from '@sourcegraph/common'
+import { isFirefox } from '@sourcegraph/common/out/src'
 
 import styles from './ViewGrid.module.scss'
 
