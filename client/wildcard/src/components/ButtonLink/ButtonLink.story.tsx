@@ -75,7 +75,7 @@ export const Overview: Story = () => (
             onClick={console.log}
             className="mb-2"
         >
-            <Icon as={SearchIcon} className="mr-1" />
+            <Icon role="img" aria-hidden={true} as={SearchIcon} className="mr-1" />
             Search
         </ButtonLink>
         <Typography.H2>Smaller</Typography.H2>

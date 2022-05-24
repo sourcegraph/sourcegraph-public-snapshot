@@ -9,7 +9,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -32,12 +31,7 @@ type orgMemberStore struct {
 	*basestore.Store
 }
 
-// OrgMembers instantiates and returns a new OrgMemberStore with prepared statements.
-func OrgMembers(db dbutil.DB) OrgMemberStore {
-	return &orgMemberStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-// NewOrgMemberStoreWithDB instantiates and returns a new OrgMemberStore using the other store handle.
+// OrgMembersWith instantiates and returns a new OrgMemberStore using the other store handle.
 func OrgMembersWith(other basestore.ShareableStore) OrgMemberStore {
 	return &orgMemberStore{Store: basestore.NewWithHandle(other.Handle())}
 }

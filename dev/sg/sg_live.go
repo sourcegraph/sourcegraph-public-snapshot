@@ -15,7 +15,7 @@ import (
 
 var liveCommand = &cli.Command{
 	Name:        "live",
-	ArgsUsage:   "<environment>",
+	ArgsUsage:   "<environment-name-or-url>",
 	Usage:       "Reports which version of Sourcegraph is currently live in the given environment",
 	Category:    CategoryCompany,
 	Description: constructLiveCmdLongHelp(),
@@ -42,21 +42,21 @@ func constructLiveCmdLongHelp() string {
 
 func liveExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "No environment specified"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: No environment specified"))
 		return flag.ErrHelp
 	}
 
 	if len(args) != 1 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: Too many arguments"))
 		return flag.ErrHelp
 	}
 
 	e, ok := getEnvironment(args[0])
 	if !ok {
-		if customURL, err := url.Parse(args[0]); err == nil {
+		if customURL, err := url.Parse(args[0]); err == nil && customURL.Scheme != "" {
 			e = environment{Name: customURL.Host, URL: customURL.String()}
 		} else {
-			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: environment %q not found, or is not a valid URL :(", args[0]))
+			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: Environment %q not found, or is not a valid URL :(", args[0]))
 			return flag.ErrHelp
 		}
 	}

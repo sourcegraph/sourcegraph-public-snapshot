@@ -22,13 +22,14 @@ var Targets = []lint.Target{
 		Linters: []lint.Runner{
 			goFmt,
 			lintGoGenerate,
-			goLint,
+			goLint(),
 			goDBConnImport,
 			goEnterpriseImport,
 			noLocalHost,
 			lintGoDirectives,
 			lintLoggingLibraries(),
 			goModGuards(),
+			lintSGExit(),
 		},
 	},
 	{
@@ -53,6 +54,7 @@ var Targets = []lint.Target{
 			tsEnterpriseImport,
 			inlineTemplates,
 			lint.RunScript("Yarn duplicate", "dev/check/yarn-deduplicate.sh"),
+			checkUnversionedDocsLinks(),
 		},
 	},
 	{

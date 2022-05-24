@@ -19,6 +19,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
@@ -101,8 +102,10 @@ export function useBlobPanelViews({
 
     const maxPanelResults = maxPanelResultsFromSettings(settingsCascade)
     const preferAbsoluteTimestamps = preferAbsoluteTimestampsFromSettings(settingsCascade)
+    const [redesignedEnabled] = useTemporarySetting('codeintel.referencePanel.redesign.enabled', false)
     const experimentalReferencePanelEnabled =
-        !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true
+        (!isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true) ||
+        redesignedEnabled === true
 
     // Creates source for definition and reference panels
     const createLocationProvider = useCallback(

@@ -731,7 +731,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
 			}
 			appendEvent(&ChangesetEvent{
 				ChangesetID: c.ID,
-				Key:         status.UUID,
+				Key:         status.Key(),
 				Kind:        kind,
 				Metadata:    status,
 			})
@@ -1094,6 +1094,31 @@ func ChangesetEventKindFor(e any) (ChangesetEventKind, error) {
 		}
 	case *bitbucketcloud.PullRequestStatus:
 		return ChangesetEventKindBitbucketCloudCommitStatus, nil
+
+	case *bitbucketcloud.PullRequestApprovedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestApproved, nil
+	case *bitbucketcloud.PullRequestChangesRequestCreatedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestChangesRequestCreated, nil
+	case *bitbucketcloud.PullRequestChangesRequestRemovedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestChangesRequestRemoved, nil
+	case *bitbucketcloud.PullRequestCommentCreatedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestCommentCreated, nil
+	case *bitbucketcloud.PullRequestCommentDeletedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestCommentDeleted, nil
+	case *bitbucketcloud.PullRequestCommentUpdatedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestCommentUpdated, nil
+	case *bitbucketcloud.PullRequestFulfilledEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestFulfilled, nil
+	case *bitbucketcloud.PullRequestRejectedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestRejected, nil
+	case *bitbucketcloud.PullRequestUnapprovedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestUnapproved, nil
+	case *bitbucketcloud.PullRequestUpdatedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestUpdated, nil
+	case *bitbucketcloud.RepoCommitStatusCreatedEvent:
+		return ChangesetEventKindBitbucketCloudRepoCommitStatusCreated, nil
+	case *bitbucketcloud.RepoCommitStatusUpdatedEvent:
+		return ChangesetEventKindBitbucketCloudRepoCommitStatusUpdated, nil
 	}
 
 	return ChangesetEventKindInvalid, errors.Errorf("unknown changeset event kind for %T", e)
@@ -1111,6 +1136,31 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (any, error) {
 			return new(bitbucketcloud.Participant), nil
 		case ChangesetEventKindBitbucketCloudCommitStatus:
 			return new(bitbucketcloud.PullRequestStatus), nil
+
+		case ChangesetEventKindBitbucketCloudPullRequestApproved:
+			return new(bitbucketcloud.PullRequestApprovedEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestChangesRequestCreated:
+			return new(bitbucketcloud.PullRequestChangesRequestCreatedEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestChangesRequestRemoved:
+			return new(bitbucketcloud.PullRequestChangesRequestRemovedEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestCommentCreated:
+			return new(bitbucketcloud.PullRequestCommentCreatedEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestCommentDeleted:
+			return new(bitbucketcloud.PullRequestCommentDeletedEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestCommentUpdated:
+			return new(bitbucketcloud.PullRequestCommentUpdatedEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestFulfilled:
+			return new(bitbucketcloud.PullRequestFulfilledEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestRejected:
+			return new(bitbucketcloud.PullRequestRejectedEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestUnapproved:
+			return new(bitbucketcloud.PullRequestUnapprovedEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestUpdated:
+			return new(bitbucketcloud.PullRequestUpdatedEvent), nil
+		case ChangesetEventKindBitbucketCloudRepoCommitStatusCreated:
+			return new(bitbucketcloud.RepoCommitStatusCreatedEvent), nil
+		case ChangesetEventKindBitbucketCloudRepoCommitStatusUpdated:
+			return new(bitbucketcloud.RepoCommitStatusUpdatedEvent), nil
 		}
 	case strings.HasPrefix(string(k), "bitbucketserver"):
 		switch k {

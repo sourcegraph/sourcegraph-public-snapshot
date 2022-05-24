@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // Init initializes the app endpoints.
@@ -76,7 +77,7 @@ func Init(
 	if err != nil {
 		return errors.Wrap(err, "parse github.com")
 	}
-	client := github.NewV3Client(extsvc.URNGitHubAppCloud, apiURL, auther, nil)
+	client := github.NewV3Client(log.Scoped("app.github.v3", "github v3 client for frontend app"), extsvc.URNGitHubAppCloud, apiURL, auther, nil)
 
 	enterpriseServices.NewGitHubAppCloudSetupHandler = func() http.Handler {
 		return newGitHubAppCloudSetupHandler(db, apiURL, client)

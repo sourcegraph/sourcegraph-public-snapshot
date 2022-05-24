@@ -6,11 +6,11 @@ import (
 
 	"github.com/grafana/regexp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	gs "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -77,11 +77,6 @@ type LSIFStore interface {
 	MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) ([][]precise.MonikerData, error)
 	BulkMonikerResults(ctx context.Context, tableName string, ids []int, args []precise.MonikerData, limit, offset int) (_ []lsifstore.Location, _ int, err error)
 	PackageInformation(ctx context.Context, bundleID int, path string, packageInformationID string) (precise.PackageInformationData, bool, error)
-	DocumentationPage(ctx context.Context, bundleID int, pathID string) (*precise.DocumentationPageData, error)
-	DocumentationPathInfo(ctx context.Context, bundleID int, pathID string) (*precise.DocumentationPathInfoData, error)
-	DocumentationDefinitions(ctx context.Context, bundleID int, pathID string, limit, offset int) ([]lsifstore.Location, int, error)
-	DocumentationAtPosition(ctx context.Context, bundleID int, path string, line, character int) ([]string, error)
-	DocumentationSearch(ctx context.Context, table, query string, repos []string) ([]precise.DocumentationSearchResult, error)
 }
 
 type IndexEnqueuer interface {
@@ -90,7 +85,7 @@ type IndexEnqueuer interface {
 }
 
 type (
-	RepoUpdaterClient       = enqueuer.RepoUpdaterClient
-	EnqueuerDBStore         = enqueuer.DBStore
-	EnqueuerGitserverClient = enqueuer.GitserverClient
+	RepoUpdaterClient       = autoindexing.RepoUpdaterClient
+	EnqueuerDBStore         = autoindexing.DBStore
+	EnqueuerGitserverClient = autoindexing.GitserverClient
 )

@@ -8,11 +8,10 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ButtonLink, Container, Link, PageHeader, Typography } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
-import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import styles from './organizationList.module.scss'
-export interface OrganizationsListProps extends ThemeProps, FeatureFlagProps {
+export interface OrganizationsListProps extends ThemeProps {
     authenticatedUser: Pick<
         AuthenticatedUser,
         'id' | 'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'

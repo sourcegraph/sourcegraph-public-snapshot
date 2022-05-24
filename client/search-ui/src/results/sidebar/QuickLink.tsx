@@ -22,7 +22,7 @@ export const getQuickLinks = (settingsCascade: SettingsCascadeProps['settingsCas
             data-placement="right"
             className={styles.sidebarSectionListItem}
         >
-            <Icon className="pr-1 flex-shrink-0" as={LinkIcon} />
+            <Icon role="img" aria-hidden={true} className="pr-1 flex-shrink-0" as={LinkIcon} />
             {quickLink.name}
         </Link>
     ))

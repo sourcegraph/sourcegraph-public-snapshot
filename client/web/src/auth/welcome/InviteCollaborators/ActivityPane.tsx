@@ -91,20 +91,24 @@ export const ActivityPane: React.FunctionComponent<React.PropsWithChildren<Props
                 <Terminal>
                     {!isDoneCloning && (
                         <TerminalLine>
-                            <code className={classNames('mb-2', styles.loading)}>Cloning Repositories</code>
+                            <Typography.Code className={classNames('mb-2', styles.loading)}>
+                                Cloning Repositories
+                            </Typography.Code>
                         </TerminalLine>
                     )}
                     {isLoading && (
                         <TerminalLine>
                             <TerminalTitle>
-                                <code className={classNames('mb-2', styles.loading)}>Loading</code>
+                                <Typography.Code className={classNames('mb-2', styles.loading)}>
+                                    Loading
+                                </Typography.Code>
                             </TerminalTitle>
                         </TerminalLine>
                     )}
                     {fetchError && (
                         <TerminalLine>
                             <TerminalTitle>
-                                <code className="mb-2">Unexpected error</code>
+                                <Typography.Code className="mb-2">Unexpected error</Typography.Code>
                             </TerminalTitle>
                         </TerminalLine>
                     )}

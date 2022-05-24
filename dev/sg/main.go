@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
@@ -111,9 +112,15 @@ var sg = &cli.App{
 			return nil
 		}
 
+		// Let sg components register pre-exit hooks
+		interrupt.Listen()
+
 		// Configure output
 		std.Out = std.NewOutput(cmd.App.Writer, verbose)
-		log.Init(log.Resource{Name: "sg"})
+		os.Setenv("SRC_DEVELOPMENT", "true")
+		os.Setenv("SRC_LOG_FORMAT", "console")
+		syncLogs := log.Init(log.Resource{Name: "sg"})
+		interrupt.Register(func() { syncLogs() })
 
 		// Configure analytics - this should be the first thing to be configured.
 		if !cmd.Bool("disable-analytics") {
@@ -201,8 +208,7 @@ var sg = &cli.App{
 
 		// Show help text only
 		if errors.Is(err, flag.ErrHelp) {
-			cli.ShowAppHelp(cmd)
-			os.Exit(1)
+			cli.ShowSubcommandHelpAndExit(cmd, 1)
 		}
 
 		// Render error

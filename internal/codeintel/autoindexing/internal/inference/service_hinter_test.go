@@ -41,7 +41,6 @@ func testHinter(t *testing.T, testCase hinterTestCase) {
 			context.Background(),
 			api.RepoName("github.com/test/test"),
 			"HEAD",
-			// To be implemented in // See https://github.com/sourcegraph/sourcegraph/issues/33046
 			"",
 		)
 		if err != nil {

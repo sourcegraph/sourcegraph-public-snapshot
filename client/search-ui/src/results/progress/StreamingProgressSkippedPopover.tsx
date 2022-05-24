@@ -71,6 +71,8 @@ const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped:
                         >
                             <Typography.H4 className="d-flex align-items-center mb-0 w-100">
                                 <Icon
+                                    role="img"
+                                    aria-label={skipped.severity === 'info' ? 'Information' : 'Alert'}
                                     className={classNames(styles.icon, 'flex-shrink-0')}
                                     as={skipped.severity === 'info' ? InformationOutlineIcon : AlertCircleIcon}
                                 />
@@ -79,6 +81,8 @@ const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped:
 
                                 {skipped.message && (
                                     <Icon
+                                        role="img"
+                                        aria-hidden={true}
                                         className={classNames('flex-shrink-0', styles.chevron)}
                                         as={isOpen ? ChevronDownIcon : ChevronLeftIcon}
                                     />
@@ -144,14 +148,14 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                     <div className="mb-2 mt-3">Search again:</div>
                     <div className="form-check">
                         {sortedSkippedItems.map(
-                            skipped =>
+                            (skipped, index) =>
                                 skipped.suggested && (
                                     <Checkbox
                                         key={skipped.suggested.queryExpression}
                                         value={skipped.suggested.queryExpression}
                                         onChange={checkboxHandler}
-                                        data-testid="streaming-progress-skipped-suggest-check"
-                                        id="streaming-progress-skipped-suggest-check"
+                                        data-testid={`streaming-progress-skipped-suggest-check-${index}`}
+                                        id={`streaming-progress-skipped-suggest-check-${index}`}
                                         wrapperClassName="mb-1 d-block"
                                         label={
                                             <>
@@ -174,7 +178,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                         disabled={selectedSuggestedSearches.size === 0}
                         data-testid="skipped-popover-form-submit-btn"
                     >
-                        <Icon className="mr-1" as={SearchIcon} />
+                        <Icon role="img" aria-hidden={true} className="mr-1" as={SearchIcon} />
                         Search again
                     </Button>
                 </Form>

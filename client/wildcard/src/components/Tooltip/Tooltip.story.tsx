@@ -160,7 +160,7 @@ const ForceUpdateTooltip = () => {
     return (
         <>
             <Typography.H2>
-                Force update tooltip with <code>TooltipController.forceUpdate()</code>
+                Force update tooltip with <Typography.Code>TooltipController.forceUpdate()</Typography.Code>
             </Typography.H2>
             <p>
                 <Button variant="primary" onClick={onClick} data-tooltip={copied ? 'Copied!' : 'Click to copy'}>

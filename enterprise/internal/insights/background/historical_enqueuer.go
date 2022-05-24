@@ -13,7 +13,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/xhit/go-str2duration/v2"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -98,26 +97,6 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 	db := workerBaseStore.Handle().DB()
 	repoStore := database.Repos(db)
 
-	framesToBackfill := func() int {
-		if frames := conf.Get().InsightsHistoricalFrames; frames != 0 {
-			return frames
-		}
-		return 12 // 1 year by default
-	}
-
-	frameLength := func() time.Duration {
-		defaultLen := 30 * 24 * time.Hour
-		if s := conf.Get().InsightsHistoricalFrameLength; s != "" {
-			parsed, err := str2duration.ParseDuration(s)
-			if err != nil {
-				log15.Error("insights: failed to parse site config insights.historical.frameLength", "error", err)
-				return defaultLen
-			}
-			return parsed
-		}
-		return defaultLen
-	}
-
 	iterator := discovery.NewAllReposIterator(
 		dbcache.NewIndexableReposLister(repoStore),
 		repoStore,
@@ -130,13 +109,12 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 			Help:      "Counter of the number of repositories analyzed and queued for processing for insights.",
 		})
 
-	maxTime := time.Now().Add(-time.Duration(framesToBackfill()) * frameLength())
+	maxTime := time.Now().Add(-1 * 365 * 24 * time.Hour)
 
 	dbConn := database.NewDB(db)
 	historicalEnqueuer := &historicalEnqueuer{
 		now:             time.Now,
 		insightsStore:   insightsStore,
-		repoStore:       repoStore,
 		db:              dbConn,
 		dataSeriesStore: dataSeriesStore,
 		limiter:         limiter,
@@ -148,10 +126,6 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
 			return git.Commits(ctx, dbConn, repoName, git.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 		},
-
-		// Fill e.g. the last 52 weeks of data, recording 1 point per week.
-		framesToBackfill: framesToBackfill,
-		frameLength:      frameLength,
 
 		frameFilter: compression.NewHistoricalFilter(true, maxTime, insightsStore.Handle().DB()),
 
@@ -248,7 +222,6 @@ type historicalEnqueuer struct {
 	insightsStore         store.Interface
 	dataSeriesStore       store.DataSeriesStore
 	db                    database.DB
-	repoStore             RepoStore
 	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error
 	gitFirstEverCommit    func(ctx context.Context, db database.DB, repoName api.RepoName) (*gitdomain.Commit, error)
 	gitFindRecentCommit   func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error)

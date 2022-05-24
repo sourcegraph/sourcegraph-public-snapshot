@@ -90,7 +90,8 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<React.PropsWithChildr
                 <br />
                 <small>
                     <strong>Automatic update checking:</strong> {autoUpdateCheckingEnabled ? 'on' : 'off'}.{' '}
-                    <Link to="/site-admin/configuration">Configure</Link> <code>update.channel</code> to{' '}
+                    <Link to="/site-admin/configuration">Configure</Link>{' '}
+                    <Typography.Code>update.channel</Typography.Code> to{' '}
                     {autoUpdateCheckingEnabled ? 'disable' : 'enable'}.
                 </small>
             </p>

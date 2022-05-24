@@ -217,15 +217,38 @@ func (s *Service) setupRecognizers(ctx context.Context, sandbox *luasandbox.Sand
 		return nil, err
 	}
 
-	recognizers, err := luatypes.RecognizersFromUserDataMap(rawRecognizers)
+	recognizerMap, err := luatypes.NamedRecognizersFromUserDataMap(rawRecognizers, false)
 	if err != nil {
 		return nil, err
 	}
 
 	if overrideScript != "" {
-		// TODO - run this script and merge recognizer results
-		// See https://github.com/sourcegraph/sourcegraph/issues/33046
-		return nil, errors.Newf("unimplemented")
+		rawRecognizers, err := sandbox.RunScript(ctx, opts, overrideScript)
+		if err != nil {
+			return nil, err
+		}
+
+		// Allow false values here, which will be indicated by a nil recognizer. In the loop below we will
+		// add (or replace) any recognizer with the same name. To _unset_ a recognizer, we allow a user to
+		// add nil as the table value.
+
+		overrideRecognizerMap, err := luatypes.NamedRecognizersFromUserDataMap(rawRecognizers, true)
+		if err != nil {
+			return nil, err
+		}
+
+		for name, recognizer := range overrideRecognizerMap {
+			if recognizer == nil {
+				delete(recognizerMap, name)
+			} else {
+				recognizerMap[name] = recognizer
+			}
+		}
+	}
+
+	recognizers := make([]*luatypes.Recognizer, 0, len(recognizerMap))
+	for _, recognizer := range recognizerMap {
+		recognizers = append(recognizers, recognizer)
 	}
 
 	return recognizers, nil

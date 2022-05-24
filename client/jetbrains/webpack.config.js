@@ -36,6 +36,7 @@ const webviewConfig = {
   target: 'web',
   entry: {
     search: path.resolve(webviewSourcePath, 'search', 'index.tsx'),
+    bridgeMock: path.resolve(webviewSourcePath, 'bridge-mock', 'index.ts'),
     style: path.join(webviewSourcePath, 'index.scss'),
   },
   devtool: 'source-map',
@@ -43,7 +44,14 @@ const webviewConfig = {
     path: distPath,
     filename: '[name].js',
   },
-  plugins: [new MiniCssExtractPlugin(), getMonacoWebpackPlugin()],
+  plugins: [
+    new MiniCssExtractPlugin(),
+    getMonacoWebpackPlugin(),
+    new webpack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
+      process: 'process/browser', // provide a shim for the global `process` variable
+    }),
+  ],
   resolve: {
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
@@ -53,6 +61,9 @@ const webviewConfig = {
     fallback: {
       path: require.resolve('path-browserify'),
       process: require.resolve('process/browser'),
+      util: require.resolve('util'),
+      http: require.resolve('stream-http'),
+      https: require.resolve('https-browserify'),
     },
   },
   module: {

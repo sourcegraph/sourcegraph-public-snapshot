@@ -26,6 +26,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
@@ -291,10 +292,10 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     onClick={() => openSymbol(symbol.url)}
                 >
                     <SymbolIcon kind={symbol.kind} className="mr-1" />
-                    <code>
+                    <Typography.Code>
                         {symbol.name}{' '}
                         {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
-                    </code>
+                    </Typography.Code>
                 </button>
             ))}
 

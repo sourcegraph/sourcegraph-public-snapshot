@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
@@ -20,7 +21,7 @@ import (
 
 // Service encapsulates the resolution and persistence of dependencies at the repository and package levels.
 type Service struct {
-	dependenciesStore  Store
+	dependenciesStore  store.Store
 	gitSvc             localGitService
 	lockfilesSvc       LockfilesService
 	lockfilesSemaphore *semaphore.Weighted
@@ -30,7 +31,7 @@ type Service struct {
 }
 
 func newService(
-	dependenciesStore Store,
+	dependenciesStore store.Store,
 	gitSvc localGitService,
 	lockfilesSvc LockfilesService,
 	lockfilesSemaphore *semaphore.Weighted,
@@ -59,8 +60,9 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		}})
 	}()
 
-	// Resolve the revhashes for the source repo-commit pairs
-	repoCommits, err := s.resolveRepoCommits(ctx, repoRevs)
+	// Resolve the revhashes for the source repo-commit pairs.
+	// TODO - Process unresolved commits.
+	repoCommits, _, err := s.resolveRepoCommits(ctx, repoRevs)
 	if err != nil {
 		return nil, err
 	}
@@ -125,6 +127,27 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		return nil, err
 	}
 
+	if !enablePreciseQueries {
+		return dependencyRevs, nil
+	}
+
+	for _, repoCommit := range repoCommits {
+		// TODO - batch these requests in the store layer
+		preciseDeps, err := s.dependenciesStore.PreciseDependencies(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit)
+		if err != nil {
+			return nil, errors.Wrap(err, "store.PreciseDependencies")
+		}
+
+		for repoName, commits := range preciseDeps {
+			if _, ok := dependencyRevs[repoName]; !ok {
+				dependencyRevs[repoName] = types.RevSpecSet{}
+			}
+			for commit := range commits {
+				dependencyRevs[repoName][commit] = struct{}{}
+			}
+		}
+	}
+
 	return dependencyRevs, nil
 }
 
@@ -135,8 +158,8 @@ type repoCommitResolvedCommit struct {
 
 // resolveRepoCommits flattens the given map into a slice of api.RepoCommits with an extra
 // field indicating the canonical 40-character commit hash of the given revlike, which is
-// often symbolic.
-func (s *Service) resolveRepoCommits(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) ([]repoCommitResolvedCommit, error) {
+// often symbolic. The commits that failed to resolve are returned in a separate slice.
+func (s *Service) resolveRepoCommits(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) ([]repoCommitResolvedCommit, []api.RepoCommit, error) {
 	n := 0
 	for _, revs := range repoRevs {
 		n += len(revs)
@@ -152,29 +175,41 @@ func (s *Service) resolveRepoCommits(ctx context.Context, repoRevs map[api.RepoN
 		}
 	}
 
-	commits, err := s.gitSvc.GetCommits(ctx, repoCommits, false)
+	commits, err := s.gitSvc.GetCommits(ctx, repoCommits, true)
 	if err != nil {
-		return nil, errors.Wrap(err, "git.GetCommits")
+		return nil, nil, errors.Wrap(err, "git.GetCommits")
 	}
 	if len(commits) != len(repoCommits) {
 		// Add assertion here so that the blast radius of new or newly discovered errors
 		// southbound from the internal/vcs/git package does not leak into code intelligence.
-		return nil, errors.Newf("expected slice returned from git.GetCommits to have len %d, but has len %d", len(repoCommits), len(commits))
+		return nil, nil, errors.Newf("expected slice returned from git.GetCommits to have len %d, but has len %d", len(repoCommits), len(commits))
 	}
 
 	resolvedCommits := make([]repoCommitResolvedCommit, 0, len(repoCommits))
+	var unresolvedCommits []api.RepoCommit
 	for i, repoCommit := range repoCommits {
+		if commits[i] == nil {
+			unresolvedCommits = append(unresolvedCommits, repoCommit)
+			continue
+		}
 		resolvedCommits = append(resolvedCommits, repoCommitResolvedCommit{
 			RepoCommit:     repoCommit,
 			ResolvedCommit: string(commits[i].ID),
 		})
 	}
 
-	return resolvedCommits, nil
+	return resolvedCommits, unresolvedCommits, nil
 }
 
 // lockfileDependencies returns a flattened list of package dependencies for every repo-commit pair.
 func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, _ error) {
+	// Do not destroy the caller's slice. The filtering/fallback mechanism used here is strictly an
+	// implementation detail and its semantics should not leak out of this function. We make a copy
+	// of the incoming slice here so we can manipulate a shallow copy.
+	repoCommitsCopy := make([]repoCommitResolvedCommit, len(repoCommits))
+	copy(repoCommitsCopy, repoCommits)
+	repoCommits = repoCommitsCopy
+
 	// resolverFunc describes internal functions that perform bulk queries to gather the dependencies of
 	// some portion of the input. It is expected that if there are any unqueried repo-commit pairs remain
 	// that they are moved to the front of the given slice, and the number of unqueried elements returned.
@@ -331,11 +366,83 @@ func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 	return g.Wait()
 }
 
+// ResolveDependencies resolves the lockfile dependencies for a set of repository and revsisions
+// and writes them the database.
+//
+// This method is expected to be used only from background routines controlling lockfile indexing
+// scheduling. Additional users may impact the performance profile of the application as a whole.
+func (s *Service) ResolveDependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (err error) {
+	if !lockfileIndexingEnabled() {
+		return nil
+	}
+
+	// Resolve the revhashes for the source repo-commit pairs
+	repoCommits, _, err := s.resolveRepoCommits(ctx, repoRevs)
+	if err != nil {
+		return err
+	}
+
+	for _, repoCommit := range repoCommits {
+		if _, err := s.listAndPersistLockfileDependencies(ctx, repoCommit); err != nil {
+			return err
+		}
+	}
+
+	// TODO - also sync dependencies
+	return nil
+}
+
 // Dependents resolves the (transitive) inverse dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
-func (s *Service) Dependents(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependencyRevs map[api.RepoName]types.RevSpecSet, err error) {
-	// To be implemented after #31643
-	return nil, errors.New("unimplemented: dependencies.Dependents")
+func (s *Service) Dependents(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependentsRevs map[api.RepoName]types.RevSpecSet, err error) {
+	// Resolve the revhashes for the source repo-commit pairs.
+	// TODO - Process unresolved commits.
+	repoCommits, _, err := s.resolveRepoCommits(ctx, repoRevs)
+	if err != nil {
+		return nil, err
+	}
+
+	var deps []api.RepoCommit
+	for _, commit := range repoCommits {
+		// TODO - batch these requests in the store layer
+		repoDeps, err := s.dependenciesStore.LockfileDependents(ctx, string(commit.Repo), commit.ResolvedCommit)
+		if err != nil {
+			return nil, errors.Wrap(err, "store.LockfileDependents")
+		}
+		deps = append(deps, repoDeps...)
+
+	}
+
+	dependentsRevs = map[api.RepoName]types.RevSpecSet{}
+	for _, dep := range deps {
+		if _, ok := dependentsRevs[dep.Repo]; !ok {
+			dependentsRevs[dep.Repo] = types.RevSpecSet{}
+		}
+		dependentsRevs[dep.Repo][api.RevSpec(dep.CommitID)] = struct{}{}
+	}
+
+	if !enablePreciseQueries {
+		return dependentsRevs, nil
+	}
+
+	for _, repoCommit := range repoCommits {
+		// TODO - batch these requests in the store layer
+		preciseDeps, err := s.dependenciesStore.PreciseDependents(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit)
+		if err != nil {
+			return nil, errors.Wrap(err, "store.PreciseDependents")
+		}
+
+		for repoName, commits := range preciseDeps {
+			if _, ok := dependentsRevs[repoName]; !ok {
+				dependentsRevs[repoName] = types.RevSpecSet{}
+			}
+			for commit := range commits {
+				dependentsRevs[repoName][commit] = struct{}{}
+			}
+		}
+	}
+
+	return dependentsRevs, nil
 }
 
 func constructLogFields(repoRevs map[api.RepoName]types.RevSpecSet) []log.Field {
@@ -356,6 +463,14 @@ func constructLogFields(repoRevs map[api.RepoName]types.RevSpecSet) []log.Field 
 	return []log.Field{
 		log.Int("repoRevs", len(repoRevs)),
 	}
+}
+
+func (s *Service) SelectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration) (map[string][]string, error) {
+	return s.dependenciesStore.SelectRepoRevisionsToResolve(ctx, batchSize, minimumCheckInterval)
+}
+
+func (s *Service) UpdateResolvedRevisions(ctx context.Context, repoRevsToResolvedRevs map[string]map[string]string) error {
+	return s.dependenciesStore.UpdateResolvedRevisions(ctx, repoRevsToResolvedRevs)
 }
 
 type Repo = shared.Repo

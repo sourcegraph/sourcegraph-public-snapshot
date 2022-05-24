@@ -90,8 +90,8 @@ export const SearchStatsPage: React.FunctionComponent<React.PropsWithChildren<Pr
                 <Alert variant="danger">{stats.message}</Alert>
             ) : stats.limitHit ? (
                 <Alert variant="warning">
-                    Limit hit. Add <code>count:{DEFAULT_COUNT * 5}</code> (or an even larger number) to your query to
-                    retry with a higher limit.
+                    Limit hit. Add <Typography.Code>count:{DEFAULT_COUNT * 5}</Typography.Code> (or an even larger
+                    number) to your query to retry with a higher limit.
                 </Alert>
             ) : (
                 <SearchStatsLanguages query={query} stats={stats} />

@@ -26,6 +26,7 @@ const (
 	GitHubWebhooks          = "github.webhooks"
 	GitLabWebhooks          = "gitlab.webhooks"
 	BitbucketServerWebhooks = "bitbucketServer.webhooks"
+	BitbucketCloudWebhooks  = "bitbucketCloud.webhooks"
 
 	SettingsGetForSubject  = "internal.settings.get-for-subject"
 	OrgsListUsers          = "internal.orgs.list-users"
@@ -68,9 +69,10 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
 	base.Path("/gitlab-webhooks").Methods("POST").Name(GitLabWebhooks)
 	base.Path("/bitbucket-server-webhooks").Methods("POST").Name(BitbucketServerWebhooks)
+	base.Path("/bitbucket-cloud-webhooks").Methods("POST").Name(BitbucketCloudWebhooks)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(SearchStream)
-	base.Path("/compute/stream").Methods("GET").Name(ComputeStream)
+	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
 	base.Path("/src-cli/version").Methods("GET").Name(SrcCliVersion)
 	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCliDownload)
 
@@ -121,7 +123,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/telemetry").Methods("POST").Name(Telemetry)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(StreamingSearch)
-	base.Path("/compute/stream").Methods("GET").Name(ComputeStream)
+	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 

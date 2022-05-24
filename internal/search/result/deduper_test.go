@@ -41,7 +41,7 @@ func TestDeduper(t *testing.T) {
 		}
 	}
 
-	file := func(repo, commit, path string, lines []*LineMatch) *FileMatch {
+	file := func(repo, commit, path string, lines []MultilineMatch) *FileMatch {
 		return &FileMatch{
 			File: File{
 				Repo: types.MinimalRepo{
@@ -50,12 +50,12 @@ func TestDeduper(t *testing.T) {
 				CommitID: api.CommitID(commit),
 				Path:     path,
 			},
-			LineMatches: lines,
+			MultilineMatches: lines,
 		}
 	}
 
-	lm := func(s string) *LineMatch {
-		return &LineMatch{
+	lm := func(s string) MultilineMatch {
+		return MultilineMatch{
 			Preview: s,
 		}
 	}
@@ -83,11 +83,11 @@ func TestDeduper(t *testing.T) {
 		{
 			name: "merge files",
 			input: []Match{
-				file("a", "b", "c", []*LineMatch{lm("a"), lm("b")}),
-				file("a", "b", "c", []*LineMatch{lm("c"), lm("d")}),
+				file("a", "b", "c", []MultilineMatch{lm("a"), lm("b")}),
+				file("a", "b", "c", []MultilineMatch{lm("c"), lm("d")}),
 			},
 			expected: []Match{
-				file("a", "b", "c", []*LineMatch{lm("a"), lm("b"), lm("c"), lm("d")}),
+				file("a", "b", "c", []MultilineMatch{lm("a"), lm("b"), lm("c"), lm("d")}),
 			},
 		},
 		{

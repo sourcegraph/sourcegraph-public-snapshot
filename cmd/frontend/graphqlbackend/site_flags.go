@@ -33,7 +33,7 @@ func needsRepositoryConfiguration(ctx context.Context, db database.DB) (bool, er
 		}
 	}
 
-	count, err := database.ExternalServices(db).Count(ctx, database.ExternalServicesListOptions{
+	count, err := db.ExternalServices().Count(ctx, database.ExternalServicesListOptions{
 		Kinds: kinds,
 	})
 	if err != nil {
