@@ -3,7 +3,6 @@ package std
 
 import (
 	"io"
-	"os"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -27,7 +26,7 @@ func NewOutput(dst io.Writer, verbose bool) *Output {
 			ForceTTY:   true,
 			Verbose:    verbose,
 		}),
-		Buildkite: os.Getenv("BUILDKITE") == "true",
+		Buildkite: false,
 	}
 }
 
