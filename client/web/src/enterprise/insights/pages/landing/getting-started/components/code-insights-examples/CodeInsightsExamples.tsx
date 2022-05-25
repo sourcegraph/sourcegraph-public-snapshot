@@ -18,7 +18,8 @@ export interface CodeInsightsExamplesProps extends TelemetryProps, React.HTMLAtt
 
 const SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeSearchInsightUrl({
     title: CSS_MODULES_VS_GLOBAL_STYLES_INSIGHT.title,
-    series: CSS_MODULES_VS_GLOBAL_STYLES_INSIGHT.series,
+    // Convert chart-like series to the insight series model
+    series: CSS_MODULES_VS_GLOBAL_STYLES_INSIGHT.series.map(series => ({ ...series, stroke: series.color })),
 })
 
 const CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeCaptureInsightURL({

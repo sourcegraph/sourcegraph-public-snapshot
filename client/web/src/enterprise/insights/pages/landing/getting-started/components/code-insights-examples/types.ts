@@ -1,7 +1,6 @@
 import { Series, SeriesLikeChart } from '../../../../../../../charts'
 
 interface SeriesWithQuery<T> extends Series<T> {
-    name: string
     query: string
 }
 
