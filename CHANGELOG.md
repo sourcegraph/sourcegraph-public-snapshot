@@ -12,13 +12,22 @@ All notable changes to `src-cli` are documented in this file.
 ## Unreleased
 
 ### Added
-- `src code-intel` is a new alias for `src lsif`. [#748](https://github.com/sourcegraph/src-cli/pull/748)
 
 ### Changed
 
 ### Fixed
 
 ### Removed
+
+## 3.40.1
+
+### Added
+
+- `src code-intel` is a new alias for `src lsif`. [#748](https://github.com/sourcegraph/src-cli/pull/748)
+
+### Fixed
+
+- Updated to the latest SCIP version, fixing a bug in the `src lsif upload` conversion for "Find implementations". [sourcegraph/scip#27](https://github.com/sourcegraph/scip/pull/27)
 
 ## 3.40.0
 
