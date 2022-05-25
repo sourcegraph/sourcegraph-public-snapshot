@@ -914,7 +914,7 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	// with gitserver_repos table (checking for such repos that are present in repo but absent in gitserver_repos
 	// table) because repo table is strictly consistent with gitserver_repos table.
 	if opt.NoCloned {
-		where = append(where, sqlf.Sprintf("(gr.clone_status = ANY(ARRAY['not_cloned', 'cloning']))"))
+		where = append(where, sqlf.Sprintf("(gr.clone_status IN ('not_cloned', 'cloning'))"))
 	}
 	if opt.OnlyCloned {
 		where = append(where, sqlf.Sprintf("gr.clone_status = 'cloned'"))
