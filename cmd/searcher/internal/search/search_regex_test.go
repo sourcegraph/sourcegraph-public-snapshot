@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"testing"
 	"testing/iotest"
+	"unicode/utf8"
 
 	"github.com/grafana/regexp"
 	"github.com/grafana/regexp/syntax"
@@ -570,4 +571,44 @@ func Test_rangesToMatches(t *testing.T) {
 			require.Equal(t, tc.expected, got)
 		})
 	}
+}
+
+func Fuzz_rangesToMatches(f *testing.F) {
+	lenInBytes := func(input []rune) (out int) {
+		for _, r := range input {
+			out += utf8.RuneLen(r)
+		}
+		return out
+	}
+	f.Add("abc", uint8(0), uint8(1))
+	f.Fuzz(func(t *testing.T, input string, offset, length uint8) {
+		if !utf8.ValidString(input) {
+			t.Skip()
+		}
+		runes := []rune(input)
+		runeStart := int(offset)
+		if runeStart > len(runes) {
+			runeStart = len(runes)
+		}
+		runeEnd := runeStart + int(length)
+		if runeEnd > len(runes) {
+			runeEnd = len(runes)
+		}
+		start := lenInBytes(runes[:runeStart])
+		end := lenInBytes(runes[:runeEnd])
+
+		// the above ensures that we have valid UTF8 and that our
+		// slice does not partition a single codepoint.
+
+		matches := rangesToMatches([]byte(input), [][]int{{start, end}})
+		if len(matches) != 1 {
+			t.Fatalf("expected exactly one match")
+		}
+
+		expected := input[start:end]
+		got := matches[0].MatchedContent()
+		if expected != got {
+			t.Fatalf("expected %q, got %q", expected, got)
+		}
+	})
 }
