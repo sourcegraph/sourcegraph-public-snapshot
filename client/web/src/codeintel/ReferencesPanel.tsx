@@ -434,7 +434,7 @@ export const ReferencesList: React.FunctionComponent<
                 </div>
             </div>
             {activeLocation !== undefined && (
-                <div className={classNames('px-0 border-left', styles.rightSubPanel)}>
+                <div data-testid={"right-pane"} className={classNames('px-0 border-left', styles.rightSubPanel)}>
                     <CardHeader className={classNames('d-flex', styles.cardHeader)}>
                         <small>
                             <Button
