@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect } from 'react'
 
-import classNames from 'classnames'
 import { fromEvent } from 'rxjs'
 import { finalize, tap } from 'rxjs/operators'
 
@@ -122,7 +121,6 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<Pr
         <HoverOverlay
             {...propsToUse}
             className={styles.webHoverOverlay}
-            closeButtonClassName={classNames('btn btn-icon', styles.webHoverOverlayCloseButton)}
             actionItemClassName="border-0"
             onAlertDismissed={onAlertDismissed}
             getAlertVariant={getAlertVariant}

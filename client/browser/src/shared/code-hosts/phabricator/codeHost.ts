@@ -199,7 +199,6 @@ export const phabricatorCodeHost: CodeHost = {
     hoverOverlayClassProps: {
         className: classNames('aphront-dialog-view', styles.hoverOverlay),
         actionItemClassName: classNames('button grey', styles.hoverOverlayActionItem),
-        closeButtonClassName: 'button grey btn-icon--phabricator',
         iconClassName: styles.hoverOverlayActionItemIcon,
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
     },

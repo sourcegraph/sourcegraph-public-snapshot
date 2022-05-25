@@ -5,18 +5,7 @@ import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
 import { isEqual } from 'lodash'
-import {
-    BehaviorSubject,
-    combineLatest,
-    merge,
-    EMPTY,
-    from,
-    fromEvent,
-    of,
-    ReplaySubject,
-    Subscription,
-    Subject,
-} from 'rxjs'
+import { BehaviorSubject, combineLatest, merge, EMPTY, from, fromEvent, of, ReplaySubject, Subscription } from 'rxjs'
 import {
     catchError,
     concatMap,
@@ -25,8 +14,6 @@ import {
     first,
     map,
     mapTo,
-    pairwise,
-    share,
     switchMap,
     tap,
     throttleTime,
@@ -41,7 +28,6 @@ import {
     locateTarget,
     findPositionsFromEvents,
     createHoverifier,
-    HoverState,
 } from '@sourcegraph/codeintellify'
 import {
     asError,
@@ -64,7 +50,7 @@ import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/feature
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
-import { HoverContext, PinOptions } from '@sourcegraph/shared/src/hover/HoverOverlay'
+import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -205,25 +191,15 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         [hoverOverlayElements]
     )
 
-    const codeViewElementsSubject = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-    const codeViewElements = useMemo(() => codeViewElementsSubject.pipe(share()), [codeViewElementsSubject])
+    const codeViewElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
     const codeViewReference = useRef<HTMLElement | null>()
     const nextCodeViewElement = useCallback(
         (codeView: HTMLElement | null) => {
             codeViewReference.current = codeView
-            codeViewElementsSubject.next(codeView)
+            codeViewElements.next(codeView)
         },
-        [codeViewElementsSubject]
+        [codeViewElements]
     )
-
-    // Emits on changes from URL search params
-    const urlSearchParameters = useMemo(() => new ReplaySubject<URLSearchParams>(1), [])
-    const nextUrlSearchParameters = useCallback((value: URLSearchParams) => urlSearchParameters.next(value), [
-        urlSearchParameters,
-    ])
-    useEffect(() => {
-        nextUrlSearchParameters(new URLSearchParams(location.search))
-    }, [nextUrlSearchParameters, location.search])
 
     // Emits on position changes from URL hash
     const locationPositions = useMemo(() => new ReplaySubject<LineOrPositionOrRange>(1), [])
@@ -277,47 +253,9 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
     const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | undefined>()
 
-    const popoverCloses = useMemo(() => new Subject<void>(), [])
-    const nextPopoverClose = useCallback((click: void) => popoverCloses.next(click), [popoverCloses])
-
-    useObservable(
-        useMemo(
-            () =>
-                popoverCloses.pipe(
-                    withLatestFrom(urlSearchParameters),
-                    tap(([, parameters]) => {
-                        parameters.delete('popover')
-                        props.history.push({
-                            ...location,
-                            search: formatSearchParameters(parameters),
-                        })
-                    })
-                ),
-            [location, popoverCloses, props.history, urlSearchParameters]
-        )
-    )
-
-    const popoverParameter = useMemo(() => urlSearchParameters.pipe(map(parameters => parameters.get('popover'))), [
-        urlSearchParameters,
-    ])
-
     const hoverifier = useMemo(
         () =>
             createHoverifier<HoverContext, HoverMerged, ActionItemAction>({
-                pinOptions: {
-                    pins: popoverParameter.pipe(
-                        filter(value => value === 'pinned'),
-                        mapTo(undefined)
-                    ),
-                    closeButtonClicks: merge(
-                        popoverCloses,
-                        popoverParameter.pipe(
-                            pairwise(),
-                            filter(([previous, next]) => previous === 'pinned' && next !== 'pinned'),
-                            mapTo(undefined)
-                        )
-                    ),
-                },
                 hoverOverlayElements,
                 hoverOverlayRerenders: rerenders.pipe(
                     withLatestFrom(hoverOverlayElements, blobElements),
@@ -341,13 +279,12 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 getActions: context => getHoverActions({ extensionsController, platformContext }, context),
             }),
         [
-            popoverParameter,
-            popoverCloses,
-            hoverOverlayElements,
-            rerenders,
-            blobElements,
+            // None of these dependencies are likely to change
             extensionsController,
             platformContext,
+            hoverOverlayElements,
+            blobElements,
+            rerenders,
         ]
     )
 
@@ -389,24 +326,26 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                             query = toPositionOrRangeQueryParameter({ position })
                         }
 
-                        const parameters = new URLSearchParams(location.search)
-                        parameters.delete('popover')
-                        nextPopoverClose()
-
-                        props.history.push({
-                            ...location,
-                            search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
-                        })
+                        if (position && !('character' in position)) {
+                            // Only change the URL when clicking on blank space on the line (not on
+                            // characters). Otherwise, this would interfere with go to definition.
+                            props.history.push({
+                                ...location,
+                                search: formatSearchParameters(
+                                    addLineRangeQueryParameter(new URLSearchParams(location.search), query)
+                                ),
+                            })
+                        }
                     }),
                     mapTo(undefined)
                 ),
-            [codeViewElements, hoverifier.hoverState.selectedPosition, location, nextPopoverClose, props.history]
+            [codeViewElements, hoverifier, props.history, location]
         )
     )
 
     // Trigger line highlighting after React has finished putting new lines into the DOM via
     // `dangerouslySetInnerHTML`.
-    useEffect(() => codeViewElementsSubject.next(codeViewReference.current))
+    useEffect(() => codeViewElements.next(codeViewReference.current))
 
     // Line highlighting when position in hash changes
     useObservable(
@@ -499,11 +438,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                                 filter(isDefined),
                                 findPositionsFromEvents({ domFunctions })
                             ),
-                            positionJumps: combineLatest([
-                                locationPositions,
-                                codeViewElements.pipe(filter(isDefined)),
-                                blobElements.pipe(filter(isDefined)),
-                            ]).pipe(
+                            positionJumps: locationPositions.pipe(
+                                withLatestFrom(
+                                    codeViewElements.pipe(filter(isDefined)),
+                                    blobElements.pipe(filter(isDefined))
+                                ),
                                 map(([position, codeView, scrollElement]) => ({
                                     position,
                                     // locationPositions is derived from componentUpdates,
@@ -601,8 +540,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     )
 
     // Passed to HoverOverlay
-    const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
-        useObservable(hoverifier.hoverStateUpdates) || {}
+    const hoverState = useObservable(hoverifier.hoverStateUpdates) || {}
 
     // Status bar
     const getStatusBarItems = useCallback(
@@ -666,38 +604,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         )
     )
 
-    const pinOptions = useMemo<PinOptions>(
-        () => ({
-            showCloseButton: true,
-            onCloseButtonClick: nextPopoverClose,
-            onCopyLinkButtonClick: async () => {
-                const line = hoverifier.hoverState.hoveredToken?.line
-                const character = hoverifier.hoverState.hoveredToken?.character
-                if (line === undefined || character === undefined) {
-                    return
-                }
-                const point = { line, character }
-                const range = { start: point, end: point }
-                const context = { position: point, range }
-                const search = new URLSearchParams(location.search)
-                search.set('popover', 'pinned')
-                props.history.push({
-                    search: formatSearchParameters(
-                        addLineRangeQueryParameter(search, toPositionOrRangeQueryParameter(context))
-                    ),
-                })
-                await navigator.clipboard.writeText(window.location.href)
-            },
-        }),
-        [
-            hoverifier.hoverState.hoveredToken?.line,
-            hoverifier.hoverState.hoveredToken?.character,
-            location.search,
-            nextPopoverClose,
-            props.history,
-        ]
-    )
-
     return (
         <>
             <div className={classNames(props.className, styles.blob)} ref={nextBlobElement}>
@@ -715,7 +621,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         nav={url => (props.nav ? props.nav(url) : props.history.push(url))}
                         hoveredTokenElement={hoverState.hoveredTokenElement}
                         hoverRef={nextOverlayElement}
-                        pinOptions={pinOptions}
                         extensionsController={extensionsController}
                     />
                 )}
@@ -731,7 +636,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                                     getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
                                     line={line}
                                     decorations={decorations}
-                                    codeViewElements={codeViewElementsSubject}
+                                    codeViewElements={codeViewElements}
                                 />
                             )
                         })
