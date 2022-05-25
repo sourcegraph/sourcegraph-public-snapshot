@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useState } from 'react'
+import { FunctionComponent, useLayoutEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { throttle } from 'lodash'
@@ -6,7 +6,7 @@ import { throttle } from 'lodash'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Card, CardBody, Link, Typography, Text } from '@sourcegraph/wildcard'
 
-import { CodeInsightExample } from '../../../getting-started/components/code-insights-examples/CodeInsightsExamples'
+import { CodeInsightExampleCard } from '../../../getting-started/components/code-insights-examples/code-insight-example-card/CodeInsightExampleCard'
 
 import { CodeInsightsExamplesSlider } from './code-insights-examples-slider/CodeInsightsExamplesSlider'
 import { EXAMPLES } from './examples'
@@ -15,9 +15,8 @@ import styles from './CodeInsightsExamplesPicker.module.scss'
 
 interface CodeInsightsExamplesPickerProps extends TelemetryProps {}
 
-export const CodeInsightsExamplesPicker: React.FunctionComponent<
-    React.PropsWithChildren<CodeInsightsExamplesPickerProps>
-> = ({ telemetryService }) => {
+export const CodeInsightsExamplesPicker: FunctionComponent<CodeInsightsExamplesPickerProps> = props => {
+    const { telemetryService } = props
     const [activeExampleIndex, setActiveExampleIndex] = useState(0)
     const [windowSize, setWindowSize] = useState(0)
 
@@ -76,7 +75,7 @@ export const CodeInsightsExamplesPicker: React.FunctionComponent<
             </div>
 
             {!isMobileLayout && (
-                <CodeInsightExample
+                <CodeInsightExampleCard
                     {...EXAMPLES[activeExampleIndex]}
                     className={styles.section}
                     telemetryService={telemetryService}

@@ -1,11 +1,11 @@
 import { Meta } from '@storybook/react'
 
-import { WebStory } from '../../../../../../../../../components/WebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import { ScrollBox } from './ScrollBox'
 
 export default {
-    title: 'web/views',
+    title: 'web/charts/core/scroll-box',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 } as Meta
 

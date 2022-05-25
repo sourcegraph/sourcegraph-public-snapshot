@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { FunctionComponent, HTMLAttributes, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -40,11 +40,11 @@ function hasElementScroll(target: HTMLElement): boolean {
     return hasScroll
 }
 
-interface ScrollBoxProps extends React.HTMLAttributes<HTMLDivElement> {
+interface ScrollBoxProps extends HTMLAttributes<HTMLDivElement> {
     className?: string
 }
 
-export const ScrollBox: React.FunctionComponent<React.PropsWithChildren<ScrollBoxProps>> = props => {
+export const ScrollBox: FunctionComponent<ScrollBoxProps> = props => {
     const { children, className, ...otherProps } = props
 
     const [parentElement, setParentElement] = useState<HTMLDivElement | null>()

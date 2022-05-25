@@ -6,8 +6,7 @@ import useResizeObserver from 'use-resize-observer'
 
 import { useDebounce } from '@sourcegraph/wildcard'
 
-import { getLineColor, LegendItem, LegendList } from '../../../../../../../../charts'
-import { ScrollBox } from '../../../../../../../../views/components/view/content/chart-view-content/charts/line/components/scroll-box/ScrollBox'
+import { getLineColor, LegendItem, LegendList, ScrollBox } from '../../../../../../../../charts'
 import { BackendInsightData } from '../../../../../../core'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
