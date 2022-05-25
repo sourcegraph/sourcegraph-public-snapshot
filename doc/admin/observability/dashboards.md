@@ -18200,13 +18200,13 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^(frontend|sourcegr
 
 <br />
 
-## Code Intelligence Autoindexing
+## Code Intelligence > Autoindexing
 
 <p class="subtitle">The service at `internal/codeintel/autoindexing`.</p>
 
 To see this dashboard, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing` on your Sourcegraph instance.
 
-### Code Intelligence Autoindexing: Codeintel: Autoindexing > Service
+### Code Intelligence > Autoindexing: Codeintel: Autoindexing > Service
 
 #### codeintel-autoindexing: codeintel_autoindexing_total
 
@@ -18360,7 +18360,7 @@ Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}
 
 <br />
 
-### Code Intelligence Autoindexing: Codeintel: Autoindexing > GQL transport
+### Code Intelligence > Autoindexing: Codeintel: Autoindexing > GQL transport
 
 #### codeintel-autoindexing: codeintel_autoindexing_transport_graphql_total
 
@@ -18514,7 +18514,7 @@ Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors
 
 <br />
 
-### Code Intelligence Autoindexing: Codeintel: Autoindexing > Store (internal)
+### Code Intelligence > Autoindexing: Codeintel: Autoindexing > Store (internal)
 
 #### codeintel-autoindexing: codeintel_autoindexing_store_total
 
@@ -18668,7 +18668,7 @@ Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~
 
 <br />
 
-### Code Intelligence Autoindexing: Codeintel: Autoindexing > Inference service (internal)
+### Code Intelligence > Autoindexing: Codeintel: Autoindexing > Inference service (internal)
 
 #### codeintel-autoindexing: codeintel_autoindexing_inference_total
 
@@ -18822,7 +18822,7 @@ Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{j
 
 <br />
 
-### Code Intelligence Autoindexing: Codeintel: Luasandbox service
+### Code Intelligence > Autoindexing: Codeintel: Luasandbox service
 
 #### codeintel-autoindexing: luasandbox_total
 
