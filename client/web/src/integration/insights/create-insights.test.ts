@@ -11,8 +11,7 @@ import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../c
 import { percySnapshotWithVariants } from '../utils'
 
 import {
-    MIGRATION_TO_GQL_INSIGHT_COMMITS_FIXTURE,
-    MIGRATION_TO_GQL_INSIGHT_MATCHES_DATA_FIXTURE,
+    SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE,
     SOURCEGRAPH_LANG_STATS_INSIGHT_DATA_FIXTURE,
 } from './fixtures/runtime-insights'
 import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-api'
@@ -150,9 +149,8 @@ describe('Code insight create insight page', () => {
                     repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
                 }),
 
-                // Mocks of commits searching and data search itself for live preview chart
-                BulkSearchCommits: () => MIGRATION_TO_GQL_INSIGHT_COMMITS_FIXTURE,
-                BulkSearch: () => MIGRATION_TO_GQL_INSIGHT_MATCHES_DATA_FIXTURE,
+                // Mocks live preview chart
+                GetInsightPreview: () => SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE,
 
                 // Mock for repository suggest component
                 RepositorySearchSuggestions: () => ({
