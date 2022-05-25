@@ -42,8 +42,11 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	providers.MockProviders = []providers.Provider{mockGitLabCom.Provider}
 	defer func() { providers.MockProviders = nil }()
 
+	expiry := time.Now().Add(1 * time.Hour)
 	tok := &oauth2.Token{
-		AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness",
+		AccessToken:  "dummy-value-that-isnt-relevant-to-unit-correctness",
+		RefreshToken: "some-refresh-token",
+		Expiry:       expiry,
 	}
 	act := &actor.Actor{UID: 1}
 	glUser := &gitlab.User{
@@ -70,9 +73,12 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
   "url": "%s",
   "token": "%s",
   "token.type": "oauth",
+  "token.oauth.refresh": "%s",
+  "token.oauth.expiry": %d,
   "projectQuery": ["projects?id_before=0"]
 }
-`, mockGitLabCom.ServiceID, "a-token-that-should-be-replaced"),
+`, mockGitLabCom.ServiceID, "a-token-that-should-be-replaced", "old-refresh-token", expiry.Add(-1*time.Hour).Unix()),
+
 				NamespaceUserID: act.UID,
 				CreatedAt:       now,
 				UpdatedAt:       now,
@@ -106,9 +112,11 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
   "url": "%s",
   "token": "%s",
   "token.type": "oauth",
+  "token.oauth.refresh": "%s",
+  "token.oauth.expiry": %d,
   "projectQuery": ["projects?id_before=0"]
 }
-`, mockGitLabCom.ServiceID, tok.AccessToken),
+`, mockGitLabCom.ServiceID, tok.AccessToken, tok.RefreshToken, tok.Expiry.Unix()),
 		NamespaceUserID: act.UID,
 		CreatedAt:       now,
 		UpdatedAt:       now,
