@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func (j *janitor) HandleExpiredUploadDeleter(ctx context.Context) error {
@@ -13,7 +12,7 @@ func (j *janitor) HandleExpiredUploadDeleter(ctx context.Context) error {
 		return errors.Wrap(err, "SoftDeleteExpiredUploads")
 	}
 	if count > 0 {
-		log.Info("Deleted expired codeintel uploads", "count", count)
+		// log.Info("Deleted expired codeintel uploads", "count", count)
 		j.metrics.numUploadRecordsRemoved.Add(float64(count))
 	}
 
