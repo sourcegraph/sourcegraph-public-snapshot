@@ -24,14 +24,27 @@ func (j *janitor) Handle(ctx context.Context) error {
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33375
 
 	// Reconciliation and denormalization
-	j.HandleDeletedRepository(ctx)
-	j.HandleUnknownCommit(ctx)
+	if err := j.HandleDeletedRepository(ctx); err != nil {
+		return err
+	}
+	if err := j.HandleUnknownCommit(ctx); err != nil {
+		return err
+	}
 
 	// Expiration
-	j.HandleAbandonedUpload(ctx)
-	j.HandleExpiredUploadDeleter(ctx)
-	j.HandleHardDeleter(ctx)
-	j.HandleAuditLog(ctx)
+	if err := j.HandleAbandonedUpload(ctx); err != nil {
+		return err
+	}
+	if err := j.HandleExpiredUploadDeleter(ctx); err != nil {
+		return err
+	}
+	if err := j.HandleHardDeleter(ctx); err != nil {
+		return err
+	}
+	if err := j.HandleAuditLog(ctx); err != nil {
+		return err
+	}
+
 	return nil
 }
 

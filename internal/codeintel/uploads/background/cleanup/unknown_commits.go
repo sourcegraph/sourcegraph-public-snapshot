@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func (j *janitor) HandleUnknownCommit(ctx context.Context) (err error) {
@@ -33,7 +34,7 @@ func (j *janitor) HandleUnknownCommit(ctx context.Context) (err error) {
 
 // func (j *janitor) HandleError(err error) {
 // 	j.metrics.numErrors.Inc()
-// 	log15.Error("Failed to delete codeintel records with an unknown commit", "error", err)
+// 	log.Error("Failed to delete codeintel records with an unknown commit", "error", err)
 // }
 
 func (j *janitor) handleSourcedCommits(ctx context.Context, tx DBStore, sourcedCommits dbstore.SourcedCommits) error {
@@ -74,11 +75,11 @@ func (j *janitor) handleCommit(ctx context.Context, tx DBStore, repositoryID int
 		}
 
 		if uploadsDeleted > 0 {
-			// log15.Debug("Deleted upload records with unresolvable commits", "count", uploadsDeleted)
+			log.Debug("Deleted upload records with unresolvable commits", "count", uploadsDeleted)
 			j.metrics.numUploadRecordsRemoved.Add(float64(uploadsDeleted))
 		}
 		if indexesDeleted > 0 {
-			// log15.Debug("Deleted index records with unresolvable commits", "count", indexesDeleted)
+			log.Debug("Deleted index records with unresolvable commits", "count", indexesDeleted)
 			j.metrics.numIndexRecordsRemoved.Add(float64(indexesDeleted))
 		}
 
