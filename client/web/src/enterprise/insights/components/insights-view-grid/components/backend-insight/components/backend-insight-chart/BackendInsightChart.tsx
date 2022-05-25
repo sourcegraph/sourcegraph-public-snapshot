@@ -76,6 +76,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     width={parent.width}
                                     height={parent.height}
                                     locked={locked}
+                                    className={styles.chart}
                                     onDatumClick={onDatumClick}
                                     {...content}
                                 />
