@@ -18,16 +18,18 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/sourcegraph/sourcegraph/internal/honey"
+
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -126,7 +128,7 @@ type HighlightedCode struct {
 	// Formatted HTML. This is generally from syntect, as LSIF documents
 	// will be formatted on the fly using HighlightedCode.document
 	//
-	// Can be an empty string if we have an lsiftyped.Document instead.
+	// Can be an empty string if we have an scip.Document instead.
 	// Access via HighlightedCode.HTML()
 	html template.HTML
 
@@ -134,8 +136,8 @@ type HighlightedCode struct {
 	// to generate formatted HTML.
 	//
 	// This is optional because not every language has a treesitter parser
-	// and queries that can send back an lsiftyped.Document
-	document *lsiftyped.Document
+	// and queries that can send back an scip.Document
+	document *scip.Document
 }
 
 func (h *HighlightedCode) HTML() (template.HTML, error) {
@@ -152,7 +154,7 @@ func NewHighlightedCodeWithHTML(html template.HTML) HighlightedCode {
 	}
 }
 
-func (h *HighlightedCode) LSIF() *lsiftyped.Document {
+func (h *HighlightedCode) LSIF() *scip.Document {
 	return h.document
 }
 
@@ -206,7 +208,7 @@ func (h *HighlightedCode) SplitHighlightedLines(includeLineNumbers bool) ([]temp
 // LinesForRanges returns a list of list of strings (which are valid HTML). Each list of strings is a set
 // of HTML lines correspond to the range passed in ranges.
 //
-// This is the corresponding function for SplitLineRanges, but uses lsiftyped.
+// This is the corresponding function for SplitLineRanges, but uses SCIP.
 //
 // TODO(tjdevries): The call heirarchy could be reversed later to only have one entry point
 func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error) {
@@ -252,7 +254,7 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 		currentCell = cell
 	}
 
-	addText := func(kind lsiftyped.SyntaxKind, line string) {
+	addText := func(kind scip.SyntaxKind, line string) {
 		appendTextToNode(currentCell, kind, line)
 	}
 
@@ -474,7 +476,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	}
 
 	if filetypeQuery.Engine == EngineTreeSitter {
-		document := new(lsiftyped.Document)
+		document := new(scip.Document)
 		data, err := base64.StdEncoding.DecodeString(resp.Data)
 
 		if err != nil {
