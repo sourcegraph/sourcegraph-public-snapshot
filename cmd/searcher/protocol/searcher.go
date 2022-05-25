@@ -242,3 +242,15 @@ type MultilineMatch struct {
 	Start   LineColumn
 	End     LineColumn
 }
+
+func (m MultilineMatch) MatchedContent() string {
+	runePreview := []rune(m.Preview)
+	lastLineStart := 0
+	for i := len(runePreview) - 1; i >= 0; i-- {
+		if runePreview[i] == rune('\n') {
+			lastLineStart = i + 1
+			break
+		}
+	}
+	return string(runePreview[m.Start.Column : lastLineStart+int(m.End.Column)])
+}

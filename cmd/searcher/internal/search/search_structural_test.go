@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -36,17 +37,17 @@ func foo(go string) {}
 		{
 			Name:      "Language test for no language",
 			Languages: []string{},
-			Want:      []string{"/* This foo(plain string) {} is in a Go comment should not match in Go, but should match in plaintext */", "func foo(go string) {}"},
+			Want:      []string{"foo(plain string)", "foo(go string)"},
 		},
 		{
 			Name:      "Language test for Go",
 			Languages: []string{"go"},
-			Want:      []string{"func foo(go string) {}"},
+			Want:      []string{"foo(go string)"},
 		},
 		{
 			Name:      "Language test for plaintext",
 			Languages: []string{"text"},
-			Want:      []string{"/* This foo(plain string) {} is in a Go comment should not match in Go, but should match in plaintext */", "func foo(go string) {}"},
+			Want:      []string{"foo(plain string)", "foo(go string)"},
 		},
 	}
 
@@ -77,7 +78,7 @@ func foo(go string) {}
 				var got []string
 				for _, fileMatches := range sender.collected {
 					for _, m := range fileMatches.MultilineMatches {
-						got = append(got, m.Preview)
+						got = append(got, m.MatchedContent())
 					}
 				}
 
@@ -118,7 +119,7 @@ func foo(go.txt) {}
 	}
 	zf := tempZipFileOnDisk(t, zipData)
 
-	test := func(language, filename string) []string {
+	test := func(language, filename string) string {
 		var languages []string
 		if language != "" {
 			languages = []string{language}
@@ -129,60 +130,41 @@ func foo(go.txt) {}
 		defer cancel()
 		err := structuralSearch(ctx, zf, all, extensionHint, "foo(:[args])", "", languages, "repo_foo", sender)
 		if err != nil {
-			return []string{"ERROR: " + err.Error()}
+			return "ERROR: " + err.Error()
 		}
 		var got []string
 		for _, fileMatches := range sender.collected {
 			for _, m := range fileMatches.MultilineMatches {
-				got = append(got, m.Preview)
+				got = append(got, m.MatchedContent())
 			}
 		}
 		sort.Strings(got)
-		return got
+		return strings.Join(got, " ")
 	}
 
 	cases := []struct {
 		name     string
-		want     []string
+		want     string
 		language string
 		filename string
 	}{{
-		name: "No language and no file extension => .generic matcher",
-		want: []string{
-			"/* This foo(plain.empty) {} is in a Go comment should not match in Go, but should match in plaintext */",
-			"/* This foo(plain.go) {} is in a Go comment should not match in Go, but should match in plaintext */",
-			"/* This foo(plain.txt) {} is in a Go comment should not match in Go, but should match in plaintext */",
-			"func foo(go.empty) {}",
-			"func foo(go.go) {}",
-			"func foo(go.txt) {}",
-		},
+		name:     "No language and no file extension => .generic matcher",
+		want:     "foo(go.empty) foo(go.go) foo(go.txt) foo(plain.empty) foo(plain.go) foo(plain.txt)",
 		language: "",
 		filename: "file_without_extension",
 	}, {
-		name: "No language and .go file extension => .go matcher",
-		want: []string{
-			"func foo(go.empty) {}",
-			"func foo(go.go) {}",
-			"func foo(go.txt) {}",
-		},
+		name:     "No language and .go file extension => .go matcher",
+		want:     "foo(go.empty) foo(go.go) foo(go.txt)",
 		language: "",
 		filename: "a/b/c/file.go",
 	}, {
-		name: "Language Go and no file extension => .go matcher",
-		want: []string{
-			"func foo(go.empty) {}",
-			"func foo(go.go) {}",
-			"func foo(go.txt) {}",
-		},
+		name:     "Language Go and no file extension => .go matcher",
+		want:     "foo(go.empty) foo(go.go) foo(go.txt)",
 		language: "go",
 		filename: "",
 	}, {
-		name: "Language .go and .txt file extension => .go matcher",
-		want: []string{
-			"func foo(go.empty) {}",
-			"func foo(go.go) {}",
-			"func foo(go.txt) {}",
-		},
+		name:     "Language .go and .txt file extension => .go matcher",
+		want:     "foo(go.empty) foo(go.go) foo(go.txt)",
 		language: "go",
 		filename: "file.txt",
 	}}
@@ -217,7 +199,7 @@ func foo(real string) {}
 	}
 
 	pattern := "foo(:[args])"
-	want := "func foo(real string) {}"
+	want := "foo(real string)"
 
 	zipData, err := createZip(input)
 	if err != nil {
@@ -240,7 +222,7 @@ func foo(real string) {}
 	if err != nil {
 		t.Fatal(err)
 	}
-	got := sender.collected[0].MultilineMatches[0].Preview
+	got := sender.collected[0].MultilineMatches[0].MatchedContent()
 	if err != nil {
 		t.Fatal(err)
 	}
