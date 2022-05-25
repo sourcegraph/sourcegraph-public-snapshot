@@ -1,5 +1,4 @@
 import { storiesOf } from '@storybook/react'
-import { GraphQLError } from 'graphql'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -24,8 +23,6 @@ const checkCredResult = (): CheckBatchChangesCredentialResult => ({
     },
 })
 
-const checkCredErrors = (): GraphQLError[] => [new GraphQLError('Credential is not valid')]
-
 const sshCredential = (isSiteCredential: boolean): BatchChangesCredentialFields => ({
     id: '123',
     isSiteCredential,
@@ -33,7 +30,7 @@ const sshCredential = (isSiteCredential: boolean): BatchChangesCredentialFields 
         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
 })
 
-add('Not Checked', () => (
+add('Overview', () => (
     <WebStory>
         {props => (
             <MockedTestProvider
@@ -47,76 +44,6 @@ add('Not Checked', () => (
                         },
                         result: {
                             data: checkCredResult(),
-                        },
-                    },
-                ]}
-            >
-                <CodeHostConnectionNode
-                    {...props}
-                    node={{
-                        credential: sshCredential(false),
-                        externalServiceKind: ExternalServiceKind.GITHUB,
-                        externalServiceURL: 'https://github.com/',
-                        requiresSSH: false,
-                        requiresUsername: false,
-                    }}
-                    refetchAll={() => {}}
-                    userID="123"
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-))
-
-add('Checked and Valid', () => (
-    <WebStory>
-        {props => (
-            <MockedTestProvider
-                mocks={[
-                    {
-                        request: {
-                            query: getDocumentNode(CHECK_BATCH_CHANGES_CREDENTIAL),
-                            variables: {
-                                id: '123',
-                            },
-                        },
-                        result: {
-                            data: checkCredResult(),
-                        },
-                    },
-                ]}
-            >
-                <CodeHostConnectionNode
-                    {...props}
-                    node={{
-                        credential: sshCredential(false),
-                        externalServiceKind: ExternalServiceKind.GITHUB,
-                        externalServiceURL: 'https://github.com/',
-                        requiresSSH: false,
-                        requiresUsername: false,
-                    }}
-                    refetchAll={() => {}}
-                    userID="123"
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-))
-
-add('Checked and Invalid', () => (
-    <WebStory>
-        {props => (
-            <MockedTestProvider
-                mocks={[
-                    {
-                        request: {
-                            query: getDocumentNode(CHECK_BATCH_CHANGES_CREDENTIAL),
-                            variables: {
-                                id: '123',
-                            },
-                        },
-                        result: {
-                            errors: checkCredErrors(),
                         },
                     },
                 ]}
