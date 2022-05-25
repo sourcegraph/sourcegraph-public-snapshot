@@ -43,16 +43,16 @@ func (s *SurveyResponseStore) Transact(ctx context.Context) (*SurveyResponseStor
 }
 
 // Create creates a survey response.
-func (s *SurveyResponseStore) Create(ctx context.Context, userID *int32, email *string, score int, useCases *[]string, additionalInformation *string) (id int64, err error) {
+func (s *SurveyResponseStore) Create(ctx context.Context, userID *int32, email *string, score int, useCases *[]string, otherUseCase *string, additionalInformation *string) (id int64, err error) {
 	err = s.Handle().DB().QueryRowContext(ctx,
-		"INSERT INTO survey_responses(user_id, email, score, use_cases, additional_information) VALUES($1, $2, $3, $4, $5) RETURNING id",
-		userID, email, score, pq.Array(useCases), additionalInformation,
+		"INSERT INTO survey_responses(user_id, email, score, use_cases, other_use_case, additional_information) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
+		userID, email, score, pq.Array(useCases), otherUseCase, additionalInformation,
 	).Scan(&id)
 	return id, err
 }
 
 func (s *SurveyResponseStore) getBySQL(ctx context.Context, query string, args ...any) ([]*types.SurveyResponse, error) {
-	rows, err := s.Handle().DB().QueryContext(ctx, "SELECT id, user_id, email, score, reason, better, use_cases, additional_information, created_at FROM survey_responses "+query, args...)
+	rows, err := s.Handle().DB().QueryContext(ctx, "SELECT id, user_id, email, score, reason, better, use_cases, other_use_case, additional_information, created_at FROM survey_responses "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (s *SurveyResponseStore) getBySQL(ctx context.Context, query string, args .
 	defer rows.Close()
 	for rows.Next() {
 		r := types.SurveyResponse{}
-		err := rows.Scan(&r.ID, &r.UserID, &r.Email, &r.Score, &r.Reason, &r.Better, pq.Array(&r.UseCases), &r.AdditionalInformation, &r.CreatedAt)
+		err := rows.Scan(&r.ID, &r.UserID, &r.Email, &r.Score, &r.Reason, &r.Better, pq.Array(&r.UseCases), &r.OtherUseCase, &r.AdditionalInformation, &r.CreatedAt)
 		if err != nil {
 			return nil, err
 		}

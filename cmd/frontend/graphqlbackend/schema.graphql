@@ -1075,6 +1075,10 @@ input SurveySubmissionInput {
     """
     useCases: [String!]
     """
+    The answer to "What else are you using Sourcegraph to do?".
+    """
+    otherUseCase: String
+    """
     The answer to "Anything else you’d like to share with us?".
     """
     additionalInformation: String
@@ -5897,6 +5901,10 @@ type SurveyResponse {
     The answer to "You are using Sourcegraph to...".
     """
     useCases: [String!]
+    """
+    The answer to "What else are you using Sourcegraph to do?".
+    """
+    otherUseCase: String
     """
     The answer to "Anything else you’d like to share with us?".
     """

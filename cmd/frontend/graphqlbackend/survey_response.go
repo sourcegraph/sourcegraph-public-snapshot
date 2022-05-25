@@ -60,6 +60,10 @@ func (s *surveyResponseResolver) UseCases() *[]string {
 	return &s.surveyResponse.UseCases
 }
 
+func (s *surveyResponseResolver) OtherUseCase() *string {
+	return s.surveyResponse.OtherUseCase
+}
+
 func (s *surveyResponseResolver) AdditionalInformation() *string {
 	return s.surveyResponse.AdditionalInformation
 }
@@ -77,6 +81,8 @@ type SurveySubmissionInput struct {
 	Score int32
 	// UseCases is the answer to "You are using Sourcegraph to...".
 	UseCases *[]string
+	// OtherUseCase is the answer to "What else are you using Sourcegraph to do?".
+	OtherUseCase *string
 	// AdditionalInformation is the answer to "Anything else you’d like to share with us?".
 	AdditionalInformation *string
 }
@@ -85,6 +91,7 @@ type surveySubmissionForHubSpot struct {
 	Email                 *string   `url:"email"`
 	Score                 int32     `url:"nps_score"`
 	UseCases              *[]string `url:"nps_use_cases"`
+	OtherUseCase          *string   `url:"nps_other_use_case"`
 	AdditionalInformation *string   `url:"nps_additional_information"`
 	IsAuthenticated       bool      `url:"user_is_authenticated"`
 	SiteID                string    `url:"site_id"`
@@ -115,11 +122,12 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 		}
 	}
 
-	_, err := database.SurveyResponses(r.db).Create(ctx, uid, email, int(input.Score), input.UseCases, input.AdditionalInformation)
+	_, err := database.SurveyResponses(r.db).Create(ctx, uid, email, int(input.Score), input.UseCases, input.OtherUseCase, input.AdditionalInformation)
 	if err != nil {
 		return nil, err
 	}
 
+	// TODO: Generate new HubSpot form and update `SurveyFormID`.
 	// // Submit form to HubSpot
 	// if err := hubspotutil.Client().SubmitForm(hubspotutil.SurveyFormID, &surveySubmissionForHubSpot{
 	// 	Email:                 email,

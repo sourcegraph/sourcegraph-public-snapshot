@@ -15470,7 +15470,7 @@
       "Columns": [
         {
           "Name": "additional_information",
-          "Index": 9,
+          "Index": 10,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -15526,6 +15526,19 @@
           "TypeName": "bigint",
           "IsNullable": false,
           "Default": "nextval('survey_responses_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "other_use_case",
+          "Index": 9,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",

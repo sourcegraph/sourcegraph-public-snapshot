@@ -2429,6 +2429,7 @@ Responsible for storing permissions at a finer granularity than repo
  better                 | text                     |           |          | 
  created_at             | timestamp with time zone |           | not null | now()
  use_cases              | text[]                   |           |          | 
+ other_use_case         | text                     |           |          | 
  additional_information | text                     |           |          | 
 Indexes:
     "survey_responses_pkey" PRIMARY KEY, btree (id)
