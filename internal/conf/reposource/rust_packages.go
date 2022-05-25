@@ -57,7 +57,7 @@ func (p *RustDependency) PackageManagerSyntax() string {
 	if p.Version == "" {
 		return p.Name
 	}
-	return p.Name + "==" + p.Version
+	return p.Name + "@" + p.Version
 }
 
 func (p *RustDependency) PackageVersion() string {

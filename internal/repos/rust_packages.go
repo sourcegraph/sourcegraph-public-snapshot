@@ -13,9 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// NewRustPackagesSource returns a new PythonPackagesSource from the given external service.
+// NewRustPackagesSource returns a new RustPackagesSource from the given external service.
 func NewRustPackagesSource(svc *types.ExternalService, cf *httpcli.Factory) (*DependenciesSource, error) {
-	var c schema.PythonPackagesConnection
+	var c schema.RustPackagesConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
@@ -29,7 +29,7 @@ func NewRustPackagesSource(svc *types.ExternalService, cf *httpcli.Factory) (*De
 		svc:        svc,
 		configDeps: c.Dependencies,
 		scheme:     dependencies.RustPackagesScheme,
-		src:        &rustPackagesSource{client: crates.NewClient(cli)},
+		src:        &rustPackagesSource{client: crates.NewClient(svc.URN(), c.Urls, cli)},
 	}, nil
 }
 
@@ -52,5 +52,5 @@ func (rustPackagesSource) ParseDependency(dep string) (reposource.PackageDepende
 }
 
 func (rustPackagesSource) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
-	return reposource.ParsePythonDependencyFromRepoName(repoName)
+	return reposource.ParseRustDependencyFromRepoName(repoName)
 }
