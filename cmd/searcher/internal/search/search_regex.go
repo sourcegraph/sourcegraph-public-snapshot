@@ -197,73 +197,49 @@ func (rg *readerGrep) Find(zf *zipFile, f *srcFile, limit int) (matches []protoc
 // Invariant: `ranges` is consecutive, non-overlapping, and not range is outside
 // the bounds of `buf`
 func rangesToMatches(buf []byte, ranges [][]int) []protocol.MultilineMatch {
-	var last struct {
-		// match offset from beginning of file
-		start int32
-		end   int32
-
-		// offsets extending start and end back to the last newline
-		// and forward to the next newline
-		firstLineStart int32 // beginning of the first line
+	var prev struct {
+		end            int32 // end of the last match range
 		lastLineStart  int32 // beginning of the last line
-		lastLineEnd    int32 // end of the last line
-
-		// the line number the match begins on and ends on
-		lineNumberStart int32
-		lineNumberEnd   int32
+		lastLineNumber int32 // line number of the last line
 	}
 
 	matches := make([]protocol.MultilineMatch, 0, len(ranges))
-	for i, match := range ranges {
-		start, end := int32(match[0]), int32(match[1])
+	for _, r := range ranges {
+		start, end := int32(r[0]), int32(r[1])
 
-		lineNumberStart := last.lineNumberEnd + int32(bytes.Count(buf[last.end:start], []byte{'\n'}))
-		lineNumberEnd := lineNumberStart + int32(bytes.Count(buf[start:end], []byte{'\n'}))
+		firstLineNumber := prev.lastLineNumber + int32(bytes.Count(buf[prev.end:start], []byte{'\n'}))
+		lastLineNumber := firstLineNumber + int32(bytes.Count(buf[start:end], []byte{'\n'}))
 
-		firstLineStart := last.firstLineStart
-		if lineNumberStart != last.lineNumberStart {
-			// there must be a newline in [last.end:start] because we counted one
-			firstLineStart = int32(bytes.LastIndexByte(buf[last.end:start], '\n')) + last.end + 1
+		firstLineStart := prev.lastLineStart
+		if off := bytes.LastIndexByte(buf[prev.end:start], '\n'); off >= 0 {
+			firstLineStart = int32(off) + prev.end + 1
 		}
 
-		lastLineEnd := last.lastLineEnd
-		lastLineStart := last.lastLineStart
-		if lineNumberEnd != last.lineNumberEnd || i == 0 { // last cannot be trusted on first iteration
-			if lineNumberStart == lineNumberEnd {
-				lastLineStart = firstLineStart
-			} else {
-				// there must be a newline in [start:end] because we counted one
-				lastLineStart = int32(bytes.LastIndexByte(buf[start:end], '\n')) + start + 1
-			}
+		lastLineStart := prev.lastLineStart
+		if off := bytes.LastIndexByte(buf[:end], '\n'); off >= 0 {
+			lastLineStart = int32(off) + 1
+		}
 
-			if off := bytes.IndexByte(buf[end:], '\n'); off >= 0 {
-				// if there is another newline after `end`, extend to that
-				lastLineEnd = int32(off) + end
-			} else {
-				// there is no newline after end, so the `end` of the match is the end of the file
-				lastLineEnd = int32(len(buf))
-			}
+		lastLineEnd := int32(len(buf)) // pessimistically end the line at the end of the file
+		if off := bytes.IndexByte(buf[end:], '\n'); off >= 0 {
+			lastLineEnd = int32(off) + end
 		}
 
 		matches = append(matches, protocol.MultilineMatch{
 			Preview: string(buf[firstLineStart:lastLineEnd]),
 			Start: protocol.LineColumn{
-				Line:   lineNumberStart,
+				Line:   firstLineNumber,
 				Column: int32(utf8.RuneCount(buf[firstLineStart:start])),
 			},
 			End: protocol.LineColumn{
-				Line:   lineNumberEnd,
+				Line:   lastLineNumber,
 				Column: int32(utf8.RuneCount(buf[lastLineStart:end])),
 			},
 		})
 
-		last.start = start
-		last.end = end
-		last.firstLineStart = firstLineStart
-		last.lastLineStart = lastLineStart
-		last.lastLineEnd = lastLineEnd
-		last.lineNumberStart = lineNumberStart
-		last.lineNumberEnd = lineNumberEnd
+		prev.end = end
+		prev.lastLineStart = lastLineStart
+		prev.lastLineNumber = lastLineNumber
 	}
 
 	return matches
@@ -347,7 +323,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 	g, ctx := errgroup.WithContext(ctx)
 
 	// Start workers. They read from files and write to matches.
-	for i := 0; i < numWorkers; i++ {
+	for i := 0; i < 1; i++ {
 		rg := rg.Copy()
 		g.Go(func() error {
 			for ctx.Err() == nil {

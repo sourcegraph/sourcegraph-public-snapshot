@@ -64,77 +64,100 @@ func main() {
 		{protocol.PatternInfo{Pattern: "foo"}, ""},
 
 		{protocol.PatternInfo{Pattern: "World", IsCaseSensitive: true}, `
-README.md:1:# Hello World
+README.md:1:1
+# Hello World
 `},
 
 		{protocol.PatternInfo{Pattern: "world", IsCaseSensitive: true}, `
-README.md:3:Hello world example in go
-main.go:6:	fmt.Println("Hello world")
+README.md:3:3
+Hello world example in go
+main.go:6:6
+	fmt.Println("Hello world")
 `},
 
 		{protocol.PatternInfo{Pattern: "world"}, `
-README.md:1:# Hello World
-README.md:3:Hello world example in go
-main.go:6:	fmt.Println("Hello world")
+README.md:1:1
+# Hello World
+README.md:3:3
+Hello world example in go
+main.go:6:6
+	fmt.Println("Hello world")
 `},
 
 		{protocol.PatternInfo{Pattern: "func.*main"}, ""},
 
 		{protocol.PatternInfo{Pattern: "func.*main", IsRegExp: true}, `
-main.go:5:func main() {
+main.go:5:5
+func main() {
 `},
 
 		// https://github.com/sourcegraph/sourcegraph/issues/8155
 		{protocol.PatternInfo{Pattern: "^func", IsRegExp: true}, `
-main.go:5:func main() {
+main.go:5:5
+func main() {
 `},
 		{protocol.PatternInfo{Pattern: "^FuNc", IsRegExp: true}, `
-main.go:5:func main() {
+main.go:5:5
+func main() {
 `},
 
 		{protocol.PatternInfo{Pattern: "mai", IsWordMatch: true}, ""},
 
 		{protocol.PatternInfo{Pattern: "main", IsWordMatch: true}, `
-main.go:1:package main
-main.go:5:func main() {
+main.go:1:1
+package main
+main.go:5:5
+func main() {
 `},
 
 		// Ensure we handle CaseInsensitive regexp searches with
 		// special uppercase chars in pattern.
 		{protocol.PatternInfo{Pattern: `printL\B`, IsRegExp: true}, `
-main.go:6:	fmt.Println("Hello world")
+main.go:6:6
+	fmt.Println("Hello world")
 `},
 
 		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README.md"}, `
-main.go:6:	fmt.Println("Hello world")
+main.go:6:6
+	fmt.Println("Hello world")
 `},
 		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.md"}}, `
-README.md:1:# Hello World
-README.md:3:Hello world example in go
+README.md:1:1
+# Hello World
+README.md:3:3
+Hello world example in go
 `},
 
 		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"*.{md,txt}", "*.txt"}}, `
-abc.txt:1:w
+abc.txt:1:1
+w
 `},
 
 		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README\\.md", PathPatternsAreRegExps: true}, `
-main.go:6:	fmt.Println("Hello world")
+main.go:6:6
+	fmt.Println("Hello world")
 `},
 		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"\\.md"}, PathPatternsAreRegExps: true}, `
-README.md:1:# Hello World
-README.md:3:Hello world example in go
+README.md:1:1
+# Hello World
+README.md:3:3
+Hello world example in go
 `},
 
 		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"\\.(md|txt)", "README"}, PathPatternsAreRegExps: true}, `
-README.md:1:# Hello World
-README.md:3:Hello world example in go
+README.md:1:1
+# Hello World
+README.md:3:3
+Hello world example in go
 `},
 
 		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.{MD,go}"}, PathPatternsAreCaseSensitive: true}, `
-main.go:6:	fmt.Println("Hello world")
+main.go:6:6
+	fmt.Println("Hello world")
 `},
 		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)`}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: true}, `
-main.go:6:	fmt.Println("Hello world")
+main.go:6:6
+	fmt.Println("Hello world")
 `},
 
 		{protocol.PatternInfo{Pattern: "doesnotmatch"}, ""},
@@ -142,62 +165,97 @@ main.go:6:	fmt.Println("Hello world")
 milton.png
 `},
 		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:package main
-main.go:2:
-main.go:3:import "fmt"
+main.go:1:3
+package main
+
+import "fmt"
 `},
 		{protocol.PatternInfo{Pattern: "package main\n\\s*import \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:package main
-main.go:2:
-main.go:3:import "fmt"
+main.go:1:3
+package main
+
+import "fmt"
 `},
 		{protocol.PatternInfo{Pattern: "package main\n", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:package main
+main.go:1:2
+package main
+
 `},
 		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:package main
-main.go:2:
-`},
-		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:package main
-main.go:2:
+main.go:1:3
+package main
+
+import "fmt"
 `},
 		{protocol.PatternInfo{Pattern: "\nfunc", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:4:
-main.go:5:func main() {
+main.go:4:5
+
+func main() {
 `},
 		{protocol.PatternInfo{Pattern: "\n\\s*func", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:3:import "fmt"
-main.go:4:
-main.go:5:func main() {
+main.go:3:5
+import "fmt"
+
+func main() {
 `},
 		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"\n\nfunc main\\(\\) {", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:package main
-main.go:2:
-main.go:3:import "fmt"
-main.go:4:
-main.go:5:func main() {
+main.go:1:5
+package main
+
+import "fmt"
+
+func main() {
 `},
 		{protocol.PatternInfo{Pattern: "\n", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-README.md:1:# Hello World
-README.md:2:
-main.go:1:package main
-main.go:2:
-main.go:3:import "fmt"
-main.go:4:
-main.go:5:func main() {
-main.go:6:	fmt.Println("Hello world")
-main.go:7:}
+README.md:1:2
+# Hello World
+
+README.md:2:3
+
+Hello world example in go
+main.go:1:2
+package main
+
+main.go:2:3
+
+import "fmt"
+main.go:3:4
+import "fmt"
+
+main.go:4:5
+
+func main() {
+main.go:5:6
+func main() {
+	fmt.Println("Hello world")
+main.go:6:7
+	fmt.Println("Hello world")
+}
+main.go:7:8
+}
+
 `},
 
-		{protocol.PatternInfo{Pattern: "^$", IsRegExp: true}, ``},
+		{protocol.PatternInfo{Pattern: "^$", IsRegExp: true}, `
+README.md:2:2
+
+main.go:2:2
+
+main.go:4:4
+
+main.go:8:8
+
+milton.png:1:1
+
+`},
 		{protocol.PatternInfo{
 			Pattern:         "filename contains regex metachars",
 			IncludePatterns: []string{"file++.plus"},
 			IsStructuralPat: true,
 			IsRegExp:        true, // To test for a regression, imply that IsStructuralPat takes precedence.
 		}, `
-file++.plus:1:filename contains regex metachars
+file++.plus:1:1
+filename contains regex metachars
 `},
 
 		{protocol.PatternInfo{Pattern: "World", IsNegated: true}, `
@@ -224,10 +282,12 @@ symlink
 `},
 		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: true}, `
 abc.txt
-symlink:1:abc.txt
+symlink:1:1
+abc.txt
 `},
 		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: false, PatternMatchesContent: true}, `
-symlink:1:abc.txt
+symlink:1:1
+abc.txt
 `},
 		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: false}, `
 abc.txt
@@ -545,6 +605,8 @@ func toString(m []protocol.FileMatch) string {
 			buf.WriteByte(':')
 			buf.WriteString(strconv.Itoa(int(l.Start.Line) + 1))
 			buf.WriteByte(':')
+			buf.WriteString(strconv.Itoa(int(l.End.Line) + 1))
+			buf.WriteByte('\n')
 			buf.WriteString(l.Preview)
 			buf.WriteByte('\n')
 		}
