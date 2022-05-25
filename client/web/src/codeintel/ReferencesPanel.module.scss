@@ -28,7 +28,7 @@ $filter-input-height: 2.5rem;
     small {
         display: flex;
         align-items: center;
-        padding-right: 8px;
+        padding-right: 0.5rem;
     }
 }
 
@@ -155,7 +155,7 @@ $group-divider-height: 0.25rem;
 
     ul {
         border: 1px solid var(--gray-03);
-        padding: 9px 0;
+        padding: 0.5rem 0;
         border-radius: 3px;
         background-color: var(--white);
         overflow: scroll;
