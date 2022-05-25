@@ -18202,15 +18202,15 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^(frontend|sourcegr
 
 ## Code Intelligence Autoindexing
 
-<p class="subtitle">Todo.</p>
+<p class="subtitle">The service at `internal/codeintel/autoindexing`.</p>
 
 To see this dashboard, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing` on your Sourcegraph instance.
 
-### Code Intelligence Autoindexing: Codeintel: TODO 1
+### Code Intelligence Autoindexing: Codeintel: Autoindexing > Service
 
 #### codeintel-autoindexing: codeintel_autoindexing_total
 
-<p class="subtitle">Aggregate TODO 2 operations every 5m</p>
+<p class="subtitle">Aggregate service operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -18221,7 +18221,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_total{job=~"^.*.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18229,7 +18229,7 @@ Query: `sum(increase(src_codeintel_autoindexing_total{job=~"^.*.*"}[5m]))`
 
 #### codeintel-autoindexing: codeintel_autoindexing_99th_percentile_duration
 
-<p class="subtitle">Aggregate successful TODO 2 operation duration distribution over 5m</p>
+<p class="subtitle">Aggregate successful service operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -18240,7 +18240,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindexing_duration_seconds_bucket{job=~"^.*.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_duration_seconds_bucket{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18248,7 +18248,7 @@ Query: `sum  by (le)(rate(src_codeintel_autoindexing_duration_seconds_bucket{job
 
 #### codeintel-autoindexing: codeintel_autoindexing_errors_total
 
-<p class="subtitle">Aggregate TODO 2 operation errors every 5m</p>
+<p class="subtitle">Aggregate service operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -18259,7 +18259,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18267,7 +18267,7 @@ Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*.*"}[5m]))
 
 #### codeintel-autoindexing: codeintel_autoindexing_error_rate
 
-<p class="subtitle">Aggregate TODO 2 operation error rate over 5m</p>
+<p class="subtitle">Aggregate service operation error rate over 5m</p>
 
 This panel has no related alerts.
 
@@ -18278,7 +18278,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_total{job=~"^.*.*"}[5m])) + sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -18286,7 +18286,7 @@ Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*.*"}[5m]))
 
 #### codeintel-autoindexing: codeintel_autoindexing_total
 
-<p class="subtitle">TODO 2 operations every 5m</p>
+<p class="subtitle">Service operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -18297,7 +18297,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_total{job=~"^.*.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18305,7 +18305,7 @@ Query: `sum by (op)(increase(src_codeintel_autoindexing_total{job=~"^.*.*"}[5m])
 
 #### codeintel-autoindexing: codeintel_autoindexing_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful TODO 2 operation duration over 5m</p>
+<p class="subtitle">99th percentile successful service operation duration over 5m</p>
 
 This panel has no related alerts.
 
@@ -18316,7 +18316,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_duration_seconds_bucket{job=~"^.*.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_duration_seconds_bucket{job=~"^.*"}[5m])))`
 
 </details>
 
@@ -18324,7 +18324,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing
 
 #### codeintel-autoindexing: codeintel_autoindexing_errors_total
 
-<p class="subtitle">TODO 2 operation errors every 5m</p>
+<p class="subtitle">Service operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -18335,7 +18335,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18343,7 +18343,7 @@ Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*.*
 
 #### codeintel-autoindexing: codeintel_autoindexing_error_rate
 
-<p class="subtitle">TODO 2 operation error rate over 5m</p>
+<p class="subtitle">Service operation error rate over 5m</p>
 
 This panel has no related alerts.
 
@@ -18354,17 +18354,17 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_total{job=~"^.*.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-### Code Intelligence Autoindexing: Codeintel: TODO 3
+### Code Intelligence Autoindexing: Codeintel: Autoindexing > GQL transport
 
 #### codeintel-autoindexing: codeintel_autoindexing_transport_graphql_total
 
-<p class="subtitle">Aggregate TODO 4 operations every 5m</p>
+<p class="subtitle">Aggregate resolver operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -18375,7 +18375,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18383,7 +18383,7 @@ Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.
 
 #### codeintel-autoindexing: codeintel_autoindexing_transport_graphql_99th_percentile_duration
 
-<p class="subtitle">Aggregate successful TODO 4 operation duration distribution over 5m</p>
+<p class="subtitle">Aggregate successful resolver operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -18394,7 +18394,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindexing_transport_graphql_duration_seconds_bucket{job=~"^.*.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18402,7 +18402,7 @@ Query: `sum  by (le)(rate(src_codeintel_autoindexing_transport_graphql_duration_
 
 #### codeintel-autoindexing: codeintel_autoindexing_transport_graphql_errors_total
 
-<p class="subtitle">Aggregate TODO 4 operation errors every 5m</p>
+<p class="subtitle">Aggregate resolver operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -18413,7 +18413,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18421,7 +18421,7 @@ Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{j
 
 #### codeintel-autoindexing: codeintel_autoindexing_transport_graphql_error_rate
 
-<p class="subtitle">Aggregate TODO 4 operation error rate over 5m</p>
+<p class="subtitle">Aggregate resolver operation error rate over 5m</p>
 
 This panel has no related alerts.
 
@@ -18432,7 +18432,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*.*"}[5m])) + sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -18440,7 +18440,7 @@ Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{j
 
 #### codeintel-autoindexing: codeintel_autoindexing_transport_graphql_total
 
-<p class="subtitle">TODO 4 operations every 5m</p>
+<p class="subtitle">Resolver operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -18451,7 +18451,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18459,7 +18459,7 @@ Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_total{
 
 #### codeintel-autoindexing: codeintel_autoindexing_transport_graphql_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful TODO 4 operation duration over 5m</p>
+<p class="subtitle">99th percentile successful resolver operation duration over 5m</p>
 
 This panel has no related alerts.
 
@@ -18470,7 +18470,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_transport_graphql_duration_seconds_bucket{job=~"^.*.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m])))`
 
 </details>
 
@@ -18478,7 +18478,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing
 
 #### codeintel-autoindexing: codeintel_autoindexing_transport_graphql_errors_total
 
-<p class="subtitle">TODO 4 operation errors every 5m</p>
+<p class="subtitle">Resolver operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -18489,7 +18489,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18497,7 +18497,7 @@ Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors
 
 #### codeintel-autoindexing: codeintel_autoindexing_transport_graphql_error_rate
 
-<p class="subtitle">TODO 4 operation error rate over 5m</p>
+<p class="subtitle">Resolver operation error rate over 5m</p>
 
 This panel has no related alerts.
 
@@ -18508,17 +18508,17 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-### Code Intelligence Autoindexing: Codeintel: TODO 5
+### Code Intelligence Autoindexing: Codeintel: Autoindexing > Store (internal)
 
 #### codeintel-autoindexing: codeintel_autoindexing_store_total
 
-<p class="subtitle">Aggregate TODO 6 operations every 5m</p>
+<p class="subtitle">Aggregate store operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -18529,7 +18529,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_store_total{job=~"^.*.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18537,7 +18537,7 @@ Query: `sum(increase(src_codeintel_autoindexing_store_total{job=~"^.*.*"}[5m]))`
 
 #### codeintel-autoindexing: codeintel_autoindexing_store_99th_percentile_duration
 
-<p class="subtitle">Aggregate successful TODO 6 operation duration distribution over 5m</p>
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -18548,7 +18548,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindexing_store_duration_seconds_bucket{job=~"^.*.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_store_duration_seconds_bucket{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18556,7 +18556,7 @@ Query: `sum  by (le)(rate(src_codeintel_autoindexing_store_duration_seconds_buck
 
 #### codeintel-autoindexing: codeintel_autoindexing_store_errors_total
 
-<p class="subtitle">Aggregate TODO 6 operation errors every 5m</p>
+<p class="subtitle">Aggregate store operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -18567,7 +18567,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18575,7 +18575,7 @@ Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*.*"}
 
 #### codeintel-autoindexing: codeintel_autoindexing_store_error_rate
 
-<p class="subtitle">Aggregate TODO 6 operation error rate over 5m</p>
+<p class="subtitle">Aggregate store operation error rate over 5m</p>
 
 This panel has no related alerts.
 
@@ -18586,7 +18586,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_store_total{job=~"^.*.*"}[5m])) + sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -18594,7 +18594,7 @@ Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*.*"}
 
 #### codeintel-autoindexing: codeintel_autoindexing_store_total
 
-<p class="subtitle">TODO 6 operations every 5m</p>
+<p class="subtitle">Store operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -18605,7 +18605,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_store_total{job=~"^.*.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18613,7 +18613,7 @@ Query: `sum by (op)(increase(src_codeintel_autoindexing_store_total{job=~"^.*.*"
 
 #### codeintel-autoindexing: codeintel_autoindexing_store_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful TODO 6 operation duration over 5m</p>
+<p class="subtitle">99th percentile successful store operation duration over 5m</p>
 
 This panel has no related alerts.
 
@@ -18624,7 +18624,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_store_duration_seconds_bucket{job=~"^.*.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_store_duration_seconds_bucket{job=~"^.*"}[5m])))`
 
 </details>
 
@@ -18632,7 +18632,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing
 
 #### codeintel-autoindexing: codeintel_autoindexing_store_errors_total
 
-<p class="subtitle">TODO 6 operation errors every 5m</p>
+<p class="subtitle">Store operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -18643,7 +18643,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18651,7 +18651,7 @@ Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~
 
 #### codeintel-autoindexing: codeintel_autoindexing_store_error_rate
 
-<p class="subtitle">TODO 6 operation error rate over 5m</p>
+<p class="subtitle">Store operation error rate over 5m</p>
 
 This panel has no related alerts.
 
@@ -18662,17 +18662,17 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_store_total{job=~"^.*.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-### Code Intelligence Autoindexing: Codeintel: TODO 7
+### Code Intelligence Autoindexing: Codeintel: Autoindexing > Inference service (internal)
 
 #### codeintel-autoindexing: codeintel_autoindexing_inference_total
 
-<p class="subtitle">Aggregate TODO 8 operations every 5m</p>
+<p class="subtitle">Aggregate service operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -18683,7 +18683,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_inference_total{job=~"^.*.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18691,7 +18691,7 @@ Query: `sum(increase(src_codeintel_autoindexing_inference_total{job=~"^.*.*"}[5m
 
 #### codeintel-autoindexing: codeintel_autoindexing_inference_99th_percentile_duration
 
-<p class="subtitle">Aggregate successful TODO 8 operation duration distribution over 5m</p>
+<p class="subtitle">Aggregate successful service operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -18702,7 +18702,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{job=~"^.*.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18710,7 +18710,7 @@ Query: `sum  by (le)(rate(src_codeintel_autoindexing_inference_duration_seconds_
 
 #### codeintel-autoindexing: codeintel_autoindexing_inference_errors_total
 
-<p class="subtitle">Aggregate TODO 8 operation errors every 5m</p>
+<p class="subtitle">Aggregate service operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -18721,7 +18721,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18729,7 +18729,7 @@ Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*
 
 #### codeintel-autoindexing: codeintel_autoindexing_inference_error_rate
 
-<p class="subtitle">Aggregate TODO 8 operation error rate over 5m</p>
+<p class="subtitle">Aggregate service operation error rate over 5m</p>
 
 This panel has no related alerts.
 
@@ -18740,7 +18740,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_inference_total{job=~"^.*.*"}[5m])) + sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -18748,7 +18748,7 @@ Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*
 
 #### codeintel-autoindexing: codeintel_autoindexing_inference_total
 
-<p class="subtitle">TODO 8 operations every 5m</p>
+<p class="subtitle">Service operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -18759,7 +18759,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_total{job=~"^.*.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18767,7 +18767,7 @@ Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_total{job=~"^.
 
 #### codeintel-autoindexing: codeintel_autoindexing_inference_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful TODO 8 operation duration over 5m</p>
+<p class="subtitle">99th percentile successful service operation duration over 5m</p>
 
 This panel has no related alerts.
 
@@ -18778,7 +18778,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{job=~"^.*.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{job=~"^.*"}[5m])))`
 
 </details>
 
@@ -18786,7 +18786,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing
 
 #### codeintel-autoindexing: codeintel_autoindexing_inference_errors_total
 
-<p class="subtitle">TODO 8 operation errors every 5m</p>
+<p class="subtitle">Service operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -18797,7 +18797,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18805,7 +18805,7 @@ Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{j
 
 #### codeintel-autoindexing: codeintel_autoindexing_inference_error_rate
 
-<p class="subtitle">TODO 8 operation error rate over 5m</p>
+<p class="subtitle">Service operation error rate over 5m</p>
 
 This panel has no related alerts.
 
@@ -18816,17 +18816,17 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_inference_total{job=~"^.*.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-### Code Intelligence Autoindexing: Codeintel: TODO 9
+### Code Intelligence Autoindexing: Codeintel: Luasandbox service
 
 #### codeintel-autoindexing: luasandbox_total
 
-<p class="subtitle">Aggregate TODO 10 operations every 5m</p>
+<p class="subtitle">Aggregate service operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -18837,7 +18837,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_luasandbox_total{job=~"^.*.*"}[5m]))`
+Query: `sum(increase(src_luasandbox_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18845,7 +18845,7 @@ Query: `sum(increase(src_luasandbox_total{job=~"^.*.*"}[5m]))`
 
 #### codeintel-autoindexing: luasandbox_99th_percentile_duration
 
-<p class="subtitle">Aggregate successful TODO 10 operation duration distribution over 5m</p>
+<p class="subtitle">Aggregate successful service operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -18856,7 +18856,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_luasandbox_duration_seconds_bucket{job=~"^.*.*"}[5m]))`
+Query: `sum  by (le)(rate(src_luasandbox_duration_seconds_bucket{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18864,7 +18864,7 @@ Query: `sum  by (le)(rate(src_luasandbox_duration_seconds_bucket{job=~"^.*.*"}[5
 
 #### codeintel-autoindexing: luasandbox_errors_total
 
-<p class="subtitle">Aggregate TODO 10 operation errors every 5m</p>
+<p class="subtitle">Aggregate service operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -18875,7 +18875,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_luasandbox_errors_total{job=~"^.*.*"}[5m]))`
+Query: `sum(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18883,7 +18883,7 @@ Query: `sum(increase(src_luasandbox_errors_total{job=~"^.*.*"}[5m]))`
 
 #### codeintel-autoindexing: luasandbox_error_rate
 
-<p class="subtitle">Aggregate TODO 10 operation error rate over 5m</p>
+<p class="subtitle">Aggregate service operation error rate over 5m</p>
 
 This panel has no related alerts.
 
@@ -18894,7 +18894,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_luasandbox_errors_total{job=~"^.*.*"}[5m])) / (sum(increase(src_luasandbox_total{job=~"^.*.*"}[5m])) + sum(increase(src_luasandbox_errors_total{job=~"^.*.*"}[5m]))) * 100`
+Query: `sum(increase(src_luasandbox_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_luasandbox_total{job=~"^.*"}[5m])) + sum(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))) * 100`
 
 </details>
 
@@ -18902,7 +18902,7 @@ Query: `sum(increase(src_luasandbox_errors_total{job=~"^.*.*"}[5m])) / (sum(incr
 
 #### codeintel-autoindexing: luasandbox_total
 
-<p class="subtitle">TODO 10 operations every 5m</p>
+<p class="subtitle">Service operations every 5m</p>
 
 This panel has no related alerts.
 
@@ -18913,7 +18913,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_luasandbox_total{job=~"^.*.*"}[5m]))`
+Query: `sum by (op)(increase(src_luasandbox_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18921,7 +18921,7 @@ Query: `sum by (op)(increase(src_luasandbox_total{job=~"^.*.*"}[5m]))`
 
 #### codeintel-autoindexing: luasandbox_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful TODO 10 operation duration over 5m</p>
+<p class="subtitle">99th percentile successful service operation duration over 5m</p>
 
 This panel has no related alerts.
 
@@ -18932,7 +18932,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_luasandbox_duration_seconds_bucket{job=~"^.*.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_luasandbox_duration_seconds_bucket{job=~"^.*"}[5m])))`
 
 </details>
 
@@ -18940,7 +18940,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_luasandbox_duration_se
 
 #### codeintel-autoindexing: luasandbox_errors_total
 
-<p class="subtitle">TODO 10 operation errors every 5m</p>
+<p class="subtitle">Service operation errors every 5m</p>
 
 This panel has no related alerts.
 
@@ -18951,7 +18951,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*.*"}[5m]))`
+Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))`
 
 </details>
 
@@ -18959,7 +18959,7 @@ Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*.*"}[5m]))`
 
 #### codeintel-autoindexing: luasandbox_error_rate
 
-<p class="subtitle">TODO 10 operation error rate over 5m</p>
+<p class="subtitle">Service operation error rate over 5m</p>
 
 This panel has no related alerts.
 
@@ -18970,7 +18970,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*.*"}[5m])) / (sum by (op)(increase(src_luasandbox_total{job=~"^.*.*"}[5m])) + sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_luasandbox_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))) * 100`
 
 </details>
 
