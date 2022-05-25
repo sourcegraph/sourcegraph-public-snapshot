@@ -29,7 +29,6 @@ const (
 )
 
 func Generate(ctx context.Context, args []string, progressBar bool, verbosity OutputVerbosityType) *generate.Report {
-	println("generate", strings.Join(args, ","))
 	start := time.Now()
 	var sb strings.Builder
 	reportOut := output.NewOutput(&sb, output.OutputOpts{
