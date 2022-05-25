@@ -176,6 +176,11 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
         message:
           'Consider using useTemporarySetting instead of useLocalStorage so settings are synced when users log in elsewhere. More info at https://docs.sourcegraph.com/dev/background-information/web/temporary_settings',
       },
+      {
+        selector: 'JSXAttribute JSXIdentifier[name="data-tooltip"]',
+        message:
+          'The use of data-tooltip has been deprecated. Please wrap your trigger element with the <Tooltip> component from Wildcard instead. If there are problems using the new <Tooltip>, please contact the Frontend Platform Team.',
+      },
     ],
     // https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html#eslint
     'react/jsx-uses-react': 'off',

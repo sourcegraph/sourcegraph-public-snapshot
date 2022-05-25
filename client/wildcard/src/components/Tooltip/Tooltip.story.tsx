@@ -1,3 +1,5 @@
+import React, { useState } from 'react'
+
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -59,6 +61,20 @@ Basic.parameters = {
     },
 }
 
+export const DisabledTrigger: Story = () => (
+    <Tooltip content="Tooltip still works properly">
+        <Button variant="primary" disabled={true} style={{ pointerEvents: 'none' }}>
+            Disabled Button 🚫
+        </Button>
+    </Tooltip>
+)
+
+DisabledTrigger.parameters = {
+    chromatic: {
+        disable: true,
+    },
+}
+
 export const Pinned: Story = () => (
     <>
         <Tooltip content="My tooltip" defaultOpen={true}>
@@ -74,22 +90,6 @@ export const Pinned: Story = () => (
 )
 
 Pinned.parameters = {
-    chromatic: {
-        disable: true,
-    },
-}
-
-export const DisabledTrigger: Story = () => (
-    <>
-        <Tooltip content="Tooltip still works properly">
-            <Button variant="primary" disabled={true} style={{ pointerEvents: 'none' }}>
-                Disabled Button 🚫
-            </Button>
-        </Tooltip>
-    </>
-)
-
-DisabledTrigger.parameters = {
     chromatic: {
         disable: true,
     },
@@ -138,6 +138,30 @@ export const Positions: Story = () => (
 )
 
 Positions.parameters = {
+    chromatic: {
+        disable: true,
+    },
+}
+
+export const UpdateText: Story = () => {
+    const [copied, setCopied] = useState<boolean>(false)
+
+    function onClick(event: React.MouseEvent<HTMLButtonElement>) {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 1500)
+        event.target.dispatchEvent(new Event('focus'))
+    }
+
+    return (
+        <Tooltip content={copied ? 'Copied!' : 'Click to copy.'}>
+            <Button variant="primary" onClick={onClick}>
+                Copy
+            </Button>
+        </Tooltip>
+    )
+}
+
+UpdateText.parameters = {
     chromatic: {
         disable: true,
     },

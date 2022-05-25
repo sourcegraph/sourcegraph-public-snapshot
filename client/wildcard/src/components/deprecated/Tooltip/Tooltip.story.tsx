@@ -41,7 +41,11 @@ export default config
 export const Basic: Story = () => (
     <>
         <p>
-            You can <strong data-tooltip="Tooltip 1">hover me</strong> or <strong data-tooltip="Tooltip 2">me</strong>.
+            You can{' '}
+            <strong data-tooltip="Tooltip 1" data-placement="right">
+                hover me
+            </strong>{' '}
+            or <strong data-tooltip="Tooltip 2">me</strong>.
         </p>
     </>
 )
