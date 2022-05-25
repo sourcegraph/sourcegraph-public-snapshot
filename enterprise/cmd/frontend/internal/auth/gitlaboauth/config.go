@@ -20,17 +20,15 @@ func Init(db database.DB) {
 	})
 	go func() {
 		conf.Watch(func() {
-			fmt.Println("here.....")
 			newProviders, _ := parseConfig(conf.Get(), db)
 			if len(newProviders) == 0 {
 				fmt.Println("iffff")
 
 				providers.Update(PkgName, nil)
 			} else {
-				fmt.Println("else")
 				newProvidersList := make([]providers.Provider, 0, len(newProviders))
 				for _, p := range newProviders {
-					newProvidersList = append(newProvidersList, p)
+					newProvidersList = append(newProvidersList, p.Provider)
 				}
 				providers.Update(PkgName, newProvidersList)
 			}

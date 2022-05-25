@@ -189,6 +189,10 @@ func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData
 
 // verifyUserGroups checks whether the authenticated user belongs to one of the GitLab groups when the allowOrgs option is set
 func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gitlab.Client) bool {
+	if len(s.allowGroups) == 0 {
+		return true
+	}
+
 	allowed := make(map[string]bool, len(s.allowGroups))
 	for _, group := range s.allowGroups {
 		allowed[group] = true
