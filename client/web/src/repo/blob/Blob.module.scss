@@ -64,6 +64,20 @@
         }
     }
 
+    td:global(.decoration)[data-line-decoration-attachment-portal] {
+        max-width: 220px;
+        padding-right: 0.75rem;
+        padding-left: 0.75rem;
+        border-right: 1px solid #dbe2f0;
+
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        span::before {
+            content: attr(data-contents);
+        }
+    }
+
     &--wrapped {
         td:global(.code) {
             white-space: pre-wrap;

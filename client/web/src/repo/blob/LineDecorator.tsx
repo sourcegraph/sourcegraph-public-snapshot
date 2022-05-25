@@ -58,12 +58,17 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
                     // Apply line decoration styles
                     if (row) {
                         for (const decoration of decorations) {
-                            let decorated = false
                             const style = decorationStyleForTheme(decoration, isLightTheme)
+
                             if (style.backgroundColor) {
-                                row.style.backgroundColor = style.backgroundColor
-                                decorated = true
+                                for (const cell of row.cells) {
+                                    if (!cell.classList.contains('decoration')) {
+                                        cell.style.backgroundColor = style.backgroundColor
+                                    }
+                                }
                             }
+
+                            let decorated = false
                             if (style.border) {
                                 row.style.border = style.border
                                 decorated = true

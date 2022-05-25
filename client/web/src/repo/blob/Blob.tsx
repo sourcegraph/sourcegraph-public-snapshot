@@ -99,7 +99,7 @@ import styles from './Blob.module.scss'
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
-const extensionsInSeparateColumns = new Set(['sourcegraph/git-extras'])
+const extensionsInSeparateColumns = new Set(['sourcegraph/git-extras', 'git-extras'])
 
 export interface BlobProps
     extends SettingsCascadeProps,

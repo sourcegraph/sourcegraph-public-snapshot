@@ -15,7 +15,7 @@ import {
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import styles from './LineDecorator.module.scss'
+import styles from './ColumnDecorator.module.scss'
 
 export interface LineDecoratorProps extends ThemeProps {
     extensionID: string
@@ -24,7 +24,7 @@ export interface LineDecoratorProps extends ThemeProps {
 }
 
 /**
- * Component that decorates lines of code and appends line attachments set by extensions
+ * Component that prepends lines of code with attachments set by extensions
  */
 export const ColumnDecorator = React.memo<LineDecoratorProps>(
     ({ decorations, isLightTheme, codeViewElements, extensionID }) => {
@@ -32,12 +32,11 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
             Map<HTMLTableCellElement, TextDocumentDecoration[] | undefined>
         >()
 
-        // `LineDecorator` uses `useLayoutEffect` instead of `useEffect` in order to synchronously re-render
+        // `ColumnDecorator` uses `useLayoutEffect` instead of `useEffect` in order to synchronously re-render
         // after mount/decoration updates, but before the browser has painted DOM updates.
         // This prevents users from seeing inconsistent states where changes handled by React have been
         // painted, but DOM manipulation handled by these effects are painted on the next tick.
 
-        // Create portal node and attach to code cell
         useLayoutEffect(() => {
             const addedCells = new Map<HTMLTableCellElement, TextDocumentDecoration[] | undefined>()
 
@@ -56,17 +55,26 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                         const className = extensionID.replace(/\//g, '-')
 
                         const cell = row.querySelector<HTMLTableCellElement>(`td.${className}`) || row.insertCell(0)
-                        cell.classList.add(className)
+                        cell.classList.add('decoration', className)
                         cell.dataset.lineDecorationAttachmentPortal = 'true'
-                        cell.style.borderRight = '1px solid gray'
 
                         const currentLineDecorations = decorations.get(index + 1)
 
+                        // TODO: do we need this for cells with decorations or all cells?
                         for (const decoration of currentLineDecorations || []) {
                             const style = decorationStyleForTheme(decoration, isLightTheme)
 
-                            for (const styleProperty of ['backgroundColor', 'border', 'borderColor', 'borderWidth']) {
-                                cell.style[styleProperty] = style[styleProperty]
+                            if (style.backgroundColor) {
+                                cell.style.backgroundColor = style.backgroundColor
+                            }
+                            if (style.border) {
+                                cell.style.border = style.border
+                            }
+                            if (style.borderColor) {
+                                cell.style.borderColor = style.borderColor
+                            }
+                            if (style.borderWidth) {
+                                cell.style.borderWidth = style.borderWidth
                             }
                         }
 
@@ -102,11 +110,9 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
 
                                 return (
                                     <LinkOrSpan
-                                        // Key by content, use index to remove possibility of duplicate keys
                                         key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${
                                             portalRoot.dataset.line ?? ''
                                         }`}
-                                        className={styles.lineDecorationAttachment}
                                         data-line-decoration-attachment={true}
                                         to={attachment.linkURL}
                                         data-tooltip={attachment.hoverMessage}
@@ -128,9 +134,7 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                                 backgroundColor: style.backgroundColor,
                                             }}
                                             data-contents={attachment.contentText || ''}
-                                        >
-                                            {attachment.contentText || ''}
-                                        </span>
+                                        />
                                     </LinkOrSpan>
                                 )
                             }),
