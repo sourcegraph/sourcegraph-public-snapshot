@@ -29,14 +29,15 @@ func TestNewPlanJob(t *testing.T) {
     20s
     (LIMIT
       500
-      (PARALLEL
+      (SEQUENTIAL
         (REPOPAGER
           ZoektRepoSubsetSearchJob)
-        ComputeExcludedReposJob
         (PARALLEL
-          (REPOPAGER
-            SearcherJob)
-          RepoSearchJob)))))`),
+          ComputeExcludedReposJob
+          (PARALLEL
+            (REPOPAGER
+              SearcherJob)
+            RepoSearchJob))))))`),
 	}, {
 		query:      `foo context:global`,
 		protocol:   search.Streaming,
@@ -47,10 +48,11 @@ func TestNewPlanJob(t *testing.T) {
     20s
     (LIMIT
       500
-      (PARALLEL
+      (SEQUENTIAL
         ZoektGlobalSearchJob
-        ComputeExcludedReposJob
-        RepoSearchJob))))`),
+        (PARALLEL
+          ComputeExcludedReposJob
+          RepoSearchJob)))))`),
 	}, {
 		query:      `foo`,
 		protocol:   search.Streaming,
@@ -61,10 +63,11 @@ func TestNewPlanJob(t *testing.T) {
     20s
     (LIMIT
       500
-      (PARALLEL
+      (SEQUENTIAL
         ZoektGlobalSearchJob
-        ComputeExcludedReposJob
-        RepoSearchJob))))`),
+        (PARALLEL
+          ComputeExcludedReposJob
+          RepoSearchJob)))))`),
 	}, {
 		query:      `foo repo:sourcegraph/sourcegraph`,
 		protocol:   search.Streaming,
@@ -75,14 +78,15 @@ func TestNewPlanJob(t *testing.T) {
     20s
     (LIMIT
       500
-      (PARALLEL
+      (SEQUENTIAL
         (REPOPAGER
           ZoektRepoSubsetSearchJob)
-        ComputeExcludedReposJob
         (PARALLEL
-          (REPOPAGER
-            SearcherJob)
-          RepoSearchJob)))))`),
+          ComputeExcludedReposJob
+          (PARALLEL
+            (REPOPAGER
+              SearcherJob)
+            RepoSearchJob))))))`),
 	}, {
 		query:      `ok ok`,
 		protocol:   search.Streaming,
@@ -93,10 +97,11 @@ func TestNewPlanJob(t *testing.T) {
     20s
     (LIMIT
       500
-      (PARALLEL
+      (SEQUENTIAL
         ZoektGlobalSearchJob
-        ComputeExcludedReposJob
-        RepoSearchJob))))`),
+        (PARALLEL
+          ComputeExcludedReposJob
+          RepoSearchJob)))))`),
 	}, {
 		query:      `ok @thing`,
 		protocol:   search.Streaming,
@@ -107,10 +112,11 @@ func TestNewPlanJob(t *testing.T) {
     20s
     (LIMIT
       500
-      (PARALLEL
+      (SEQUENTIAL
         ZoektGlobalSearchJob
-        ComputeExcludedReposJob
-        RepoSearchJob))))`),
+        (PARALLEL
+          ComputeExcludedReposJob
+          RepoSearchJob)))))`),
 	}, {
 		query:      `@nope`,
 		protocol:   search.Streaming,
@@ -121,10 +127,11 @@ func TestNewPlanJob(t *testing.T) {
     20s
     (LIMIT
       500
-      (PARALLEL
+      (SEQUENTIAL
         ZoektGlobalSearchJob
-        ComputeExcludedReposJob
-        NoopJob))))`),
+        (PARALLEL
+          ComputeExcludedReposJob
+          NoopJob)))))`),
 	}, {
 		query:      `foo @bar`,
 		protocol:   search.Streaming,
@@ -135,10 +142,11 @@ func TestNewPlanJob(t *testing.T) {
     20s
     (LIMIT
       500
-      (PARALLEL
+      (SEQUENTIAL
         ZoektGlobalSearchJob
-        ComputeExcludedReposJob
-        NoopJob))))`),
+        (PARALLEL
+          ComputeExcludedReposJob
+          NoopJob)))))`),
 	}, {
 		query:      `type:symbol test`,
 		protocol:   search.Streaming,
@@ -149,10 +157,11 @@ func TestNewPlanJob(t *testing.T) {
     20s
     (LIMIT
       500
-      (PARALLEL
+      (SEQUENTIAL
         ZoektGlobalSymbolSearchJob
-        ComputeExcludedReposJob
-        NoopJob))))`),
+        (PARALLEL
+          ComputeExcludedReposJob
+          NoopJob)))))`),
 	}, {
 		query:      `type:commit test`,
 		protocol:   search.Streaming,
@@ -163,10 +172,12 @@ func TestNewPlanJob(t *testing.T) {
     20s
     (LIMIT
       500
-      (PARALLEL
-        CommitSearchJob
-        ComputeExcludedReposJob
-        NoopJob))))`),
+      (SEQUENTIAL
+        NoopJob
+        (PARALLEL
+          CommitSearchJob
+          ComputeExcludedReposJob
+          NoopJob)))))`),
 	}, {
 		query:      `type:diff test`,
 		protocol:   search.Streaming,
@@ -177,10 +188,12 @@ func TestNewPlanJob(t *testing.T) {
     20s
     (LIMIT
       500
-      (PARALLEL
-        DiffSearchJob
-        ComputeExcludedReposJob
-        NoopJob))))`),
+      (SEQUENTIAL
+        NoopJob
+        (PARALLEL
+          DiffSearchJob
+          ComputeExcludedReposJob
+          NoopJob)))))`),
 	}, {
 		query:      `type:file type:commit test`,
 		protocol:   search.Streaming,
@@ -191,11 +204,12 @@ func TestNewPlanJob(t *testing.T) {
     20s
     (LIMIT
       500
-      (PARALLEL
+      (SEQUENTIAL
         ZoektGlobalSearchJob
-        CommitSearchJob
-        ComputeExcludedReposJob
-        NoopJob))))`),
+        (PARALLEL
+          CommitSearchJob
+          ComputeExcludedReposJob
+          NoopJob)))))`),
 	}, {
 		query:      `type:file type:path type:repo type:commit type:symbol repo:test test`,
 		protocol:   search.Streaming,
@@ -206,19 +220,21 @@ func TestNewPlanJob(t *testing.T) {
     20s
     (LIMIT
       500
-      (PARALLEL
-        (REPOPAGER
-          ZoektRepoSubsetSearchJob)
-        (REPOPAGER
-          ZoektSymbolSearchJob)
-        CommitSearchJob
-        ComputeExcludedReposJob
+      (SEQUENTIAL
         (PARALLEL
           (REPOPAGER
-            SearcherJob)
+            ZoektRepoSubsetSearchJob)
           (REPOPAGER
-            SymbolSearcherJob)
-          RepoSearchJob)))))`),
+            ZoektSymbolSearchJob))
+        (PARALLEL
+          CommitSearchJob
+          ComputeExcludedReposJob
+          (PARALLEL
+            (REPOPAGER
+              SearcherJob)
+            (REPOPAGER
+              SymbolSearcherJob)
+            RepoSearchJob))))))`),
 	}, {
 		query:      `type:file type:commit test`,
 		protocol:   search.Streaming,
@@ -229,11 +245,12 @@ func TestNewPlanJob(t *testing.T) {
     20s
     (LIMIT
       500
-      (PARALLEL
+      (SEQUENTIAL
         ZoektGlobalSearchJob
-        CommitSearchJob
-        ComputeExcludedReposJob
-        NoopJob))))`),
+        (PARALLEL
+          CommitSearchJob
+          ComputeExcludedReposJob
+          NoopJob)))))`),
 	}, {
 		query:      `type:file type:path type:repo type:commit type:symbol repo:test test`,
 		protocol:   search.Streaming,
@@ -244,19 +261,21 @@ func TestNewPlanJob(t *testing.T) {
     20s
     (LIMIT
       500
-      (PARALLEL
-        (REPOPAGER
-          ZoektRepoSubsetSearchJob)
-        (REPOPAGER
-          ZoektSymbolSearchJob)
-        CommitSearchJob
-        ComputeExcludedReposJob
+      (SEQUENTIAL
         (PARALLEL
           (REPOPAGER
-            SearcherJob)
+            ZoektRepoSubsetSearchJob)
           (REPOPAGER
-            SymbolSearcherJob)
-          RepoSearchJob)))))`),
+            ZoektSymbolSearchJob))
+        (PARALLEL
+          CommitSearchJob
+          ComputeExcludedReposJob
+          (PARALLEL
+            (REPOPAGER
+              SearcherJob)
+            (REPOPAGER
+              SymbolSearcherJob)
+            RepoSearchJob))))))`),
 	}, {
 		query:      `(type:commit or type:diff) (a or b)`,
 		protocol:   search.Streaming,
@@ -269,22 +288,26 @@ func TestNewPlanJob(t *testing.T) {
       20s
       (LIMIT
         500
-        (PARALLEL
-          CommitSearchJob
-          ComputeExcludedReposJob
-          (OR
-            NoopJob
-            NoopJob))))
+        (SEQUENTIAL
+          NoopJob
+          (PARALLEL
+            CommitSearchJob
+            ComputeExcludedReposJob
+            (OR
+              NoopJob
+              NoopJob)))))
     (TIMEOUT
       20s
       (LIMIT
         500
-        (PARALLEL
-          DiffSearchJob
-          ComputeExcludedReposJob
-          (OR
-            NoopJob
-            NoopJob))))))`),
+        (SEQUENTIAL
+          NoopJob
+          (PARALLEL
+            DiffSearchJob
+            ComputeExcludedReposJob
+            (OR
+              NoopJob
+              NoopJob)))))))`),
 	}, {
 		query:      `(type:repo a) or (type:file b)`,
 		protocol:   search.Streaming,
@@ -296,17 +319,20 @@ func TestNewPlanJob(t *testing.T) {
       20s
       (LIMIT
         500
-        (PARALLEL
-          ComputeExcludedReposJob
-          RepoSearchJob)))
+        (SEQUENTIAL
+          NoopJob
+          (PARALLEL
+            ComputeExcludedReposJob
+            RepoSearchJob))))
     (TIMEOUT
       20s
       (LIMIT
         500
-        (PARALLEL
+        (SEQUENTIAL
           ZoektGlobalSearchJob
-          ComputeExcludedReposJob
-          NoopJob)))))`),
+          (PARALLEL
+            ComputeExcludedReposJob
+            NoopJob))))))`),
 	}, {
 		query:      `type:symbol a or b`,
 		protocol:   search.Streaming,
@@ -317,12 +343,13 @@ func TestNewPlanJob(t *testing.T) {
     20s
     (LIMIT
       500
-      (PARALLEL
+      (SEQUENTIAL
         ZoektGlobalSymbolSearchJob
-        ComputeExcludedReposJob
-        (OR
-          NoopJob
-          NoopJob)))))`),
+        (PARALLEL
+          ComputeExcludedReposJob
+          (OR
+            NoopJob
+            NoopJob))))))`),
 	}}
 
 	for _, tc := range cases {

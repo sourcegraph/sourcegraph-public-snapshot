@@ -44,6 +44,7 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 
 // NewBasicJob converts a query.Basic into its job tree representation.
 func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
+	var favouriteChildren []job.Job // you can admit it
 	var children []job.Job
 	addJob := func(j job.Job) {
 		children = append(children, j)
@@ -77,7 +78,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				if err != nil {
 					return nil, err
 				}
-				addJob(job)
+				favouriteChildren = append(favouriteChildren, job)
 			}
 
 			if !skipRepoSubsetSearch && runZoektOverRepos {
@@ -85,7 +86,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				if err != nil {
 					return nil, err
 				}
-				addJob(&repoPagerJob{
+				favouriteChildren = append(favouriteChildren, &repoPagerJob{
 					child:            job,
 					repoOpts:         repoOptions,
 					useIndex:         b.Index(),
@@ -101,7 +102,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				if err != nil {
 					return nil, err
 				}
-				addJob(job)
+				favouriteChildren = append(favouriteChildren, job)
 			}
 
 			if !skipRepoSubsetSearch && runZoektOverRepos {
@@ -109,7 +110,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				if err != nil {
 					return nil, err
 				}
-				addJob(&repoPagerJob{
+				favouriteChildren = append(favouriteChildren, &repoPagerJob{
 					child:            job,
 					repoOpts:         repoOptions,
 					useIndex:         b.Index(),
@@ -148,7 +149,22 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 		addJob(flatJob)
 	}
 
-	basicJob := NewParallelJob(children...)
+	var basicJob job.Job
+	if inputs.OnSourcegraphDotCom {
+		// WORKAROUND: On Sourcegraph.com not all repositories are indexed. So
+		// searcher (which does no ranking) can race with Zoekt (which does
+		// ranking). This leads to unpleasant results, especially due to the
+		// large index on Sourcegraph.com. We have this hacky workaround here
+		// to ensure we search Zoekt first. Context:
+		// - https://github.com/sourcegraph/sourcegraph/issues/35993
+		// - https://github.com/sourcegraph/sourcegraph/issues/35994
+		basicJob = NewSequentialJob(
+			NewParallelJob(favouriteChildren...),
+			NewParallelJob(children...),
+		)
+	} else {
+		basicJob = NewParallelJob(append(favouriteChildren, children...)...)
+	}
 
 	{ // Apply selectors
 		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
