@@ -172,18 +172,22 @@ export const CaptureGroupCreationContent: React.FunctionComponent<
                 disabled={!areAllFieldsForPreviewValid}
                 isAllReposMode={allReposMode.input.value}
                 repositories={repositories.meta.value}
-                series={[
-                    {
-                        generatedFromCaptureGroup: true,
-                        label: '',
-                        query: query.meta.value,
-                        stroke: '',
-                    },
-                ]}
+                series={captureGroupPreviewSeries(query.meta.value)}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}
                 className={styles.contentLivePreview}
             />
         </div>
     )
+}
+
+function captureGroupPreviewSeries(query: string): any {
+    return [
+        {
+            generatedFromCaptureGroup: true,
+            label: '',
+            query,
+            stroke: '',
+        },
+    ]
 }

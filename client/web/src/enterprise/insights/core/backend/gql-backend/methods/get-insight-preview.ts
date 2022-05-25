@@ -25,7 +25,19 @@ export const getInsightsPreview = (
 ): Promise<SeriesChartContent<BackendInsightDatum>> => {
     const [unit, value] = getStepInterval(input.step)
 
-    const inputMetadata = Object.fromEntries(input.series.map(previewSeries => [previewSeries.label, previewSeries]))
+    // inputMetadata creates a lookup so that the correct color can be later applied to the preview series
+    const inputMetadata = Object.fromEntries(
+        input.series.map((previewSeries, index) => [`${previewSeries.label}-${index}`, previewSeries])
+    )
+
+    // TODO(insights): inputMetadata and this function need to be re-evaluated in the future if/when support for
+    // mixing series types in a single insight is possible
+    function getColorForSeries(label: string, index: number): string {
+        return (
+            inputMetadata[`${label}-${index}`]?.stroke ||
+            DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length]
+        )
+    }
 
     return client
         .query<GetInsightPreviewResult, GetInsightPreviewVariables>({
@@ -65,9 +77,7 @@ export const getInsightsPreview = (
                 id: generatedSeries.seriesId,
                 name: generatedSeries.label,
                 query: inputMetadata[generatedSeries.label]?.query || '',
-                stroke:
-                    inputMetadata[generatedSeries.label]?.stroke ||
-                    DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length],
+                stroke: getColorForSeries(generatedSeries.label, index),
             }))
 
             const seriesDefinitionMap = Object.fromEntries(
@@ -87,9 +97,7 @@ export const getInsightsPreview = (
                         }),
                     })),
                     name: line.label,
-                    color:
-                        inputMetadata[line.label]?.stroke ||
-                        DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length],
+                    color: getColorForSeries(line.label, index),
                     getLinkURL: datum => datum.link,
                     getYValue: datum => datum.value,
                     getXValue: datum => datum.dateTime,
