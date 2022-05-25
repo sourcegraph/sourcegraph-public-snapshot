@@ -22,21 +22,21 @@ func NewRustDependency(name, version string) *RustDependency {
 	}
 }
 
-// ParseRustDependency parses a string in a '<name>(==<version>)?' format into an
+// ParseRustDependency parses a string in a '<name>(@version>)?' format into an
 // RustDependency.
 func ParseRustDependency(dependency string) (*RustDependency, error) {
 	var dep RustDependency
-	if i := strings.LastIndex(dependency, "=="); i == -1 {
+	if i := strings.LastIndex(dependency, "@"); i == -1 {
 		dep.Name = dependency
 	} else {
 		dep.Name = strings.TrimSpace(dependency[:i])
-		dep.Version = strings.TrimSpace(dependency[i+2:])
+		dep.Version = strings.TrimSpace(dependency[i+1:])
 	}
 	return &dep, nil
 }
 
 // ParseRustDependencyFromRepoName is a convenience function to parse a repo name in a
-// 'crates/<name>(==<version>)?' format into a RustDependency.
+// 'crates/<name>(@<version>)?' format into a RustDependency.
 func ParseRustDependencyFromRepoName(name string) (*RustDependency, error) {
 	dependency := strings.TrimPrefix(name, "crates/")
 	if len(dependency) == len(name) {

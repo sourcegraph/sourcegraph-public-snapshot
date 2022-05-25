@@ -70,7 +70,7 @@ func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep rep
 	}
 
 	if err = unpackPythonPackage(pkg, packageURL, dir); err != nil {
-		return errors.Wrap(err, "failed to unzip go module")
+		return errors.Wrap(err, "failed to unzip python module")
 	}
 
 	return nil

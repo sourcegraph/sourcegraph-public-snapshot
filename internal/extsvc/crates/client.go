@@ -21,7 +21,7 @@ type Client struct {
 	limiter *ratelimit.InstrumentedLimiter
 }
 
-type File struct {
+type RustFile struct {
 	Name string
 	URL  string
 }
@@ -34,8 +34,11 @@ func NewClient(urn string, urls []string, cli httpcli.Doer) *Client {
 	}
 }
 
-func (c *Client) Version(ctx context.Context, name string, version string) (*File, error) {
-	return nil, nil
+func (c *Client) Version(ctx context.Context, name string, version string) (*RustFile, error) {
+	return &RustFile{
+		Name: name,
+		URL:  fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s/download", name, version),
+	}, nil
 }
 
 func (c *Client) Download(ctx context.Context, url string) ([]byte, error) {
@@ -50,7 +53,7 @@ func (c *Client) Download(ctx context.Context, url string) ([]byte, error) {
 
 	b, err := c.do(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "PyPI")
+		return nil, errors.Wrap(err, "crates")
 	}
 	return b, nil
 }

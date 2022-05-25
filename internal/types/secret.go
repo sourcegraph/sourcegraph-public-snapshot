@@ -70,6 +70,13 @@ func (e *ExternalService) RedactedConfig() (string, error) {
 				return "", err
 			}
 		}
+	case *schema.RustPackagesConnection:
+		for i := range c.Urls {
+			err = es.redactURL(c.Urls[i], "urls", i)
+			if err != nil {
+				return "", err
+			}
+		}
 	case *schema.JVMPackagesConnection:
 		if c.Maven != nil {
 			es.redactString(c.Maven.Credentials, "maven", "credentials")
@@ -153,6 +160,11 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 		}
 	case *schema.PythonPackagesConnection:
 		err = es.unredactURLs(c.Urls, oldCfg.(*schema.PythonPackagesConnection).Urls)
+		if err != nil {
+			return err
+		}
+	case *schema.RustPackagesConnection:
+		err = es.unredactURLs(c.Urls, oldCfg.(*schema.RustPackagesConnection).Urls)
 		if err != nil {
 			return err
 		}

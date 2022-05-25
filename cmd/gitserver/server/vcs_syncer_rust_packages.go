@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/fs"
 	"net/url"
-	"path"
 	"strings"
 
 	"github.com/inconshreveable/log15"
@@ -24,7 +23,7 @@ func NewRustPackagesSyncer(
 	svc *dependencies.Service,
 	client *crates.Client,
 ) VCSSyncer {
-	placeholder, err := reposource.ParseRustDependency("sourcegraph.com/placeholder@v0.0.0")
+	placeholder, err := reposource.ParseRustDependency("sourcegraph.com/placeholder@0.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
 	}
@@ -70,22 +69,31 @@ func (s *rustPackagesSyncer) Download(ctx context.Context, dir string, dep repos
 	}
 
 	if err = unpackRustPackage(pkg, packageURL, dir); err != nil {
-		return errors.Wrap(err, "failed to unzip go module")
+		return errors.Wrap(err, "failed to unzip rust module")
 	}
 
 	return nil
 }
 
-// unpackRustPackages unpacks the given python package archive into workDir, skipping any
+// unpackRustPackages unpacks the given rust package archive into workDir, skipping any
 // files that aren't valid or that are potentially malicious. It detects the kind of archive
 // and compression used with the given packageURL.
 func unpackRustPackage(pkg []byte, packageURL, workDir string) error {
 	u, err := url.Parse(packageURL)
 	if err != nil {
-		return errors.Wrap(err, "bad python package URL")
+		return errors.Wrap(err, "bad rust package URL")
+	}
+	// u.Path
+
+	// splitPath := path.Split(u.Path, "/")
+	splitPath := strings.Split(u.Path, "/")
+	if len(splitPath) != 7 {
+		return errors.Wrap(err, "bad rust package URL")
 	}
 
-	filename := path.Base(u.Path)
+	name := splitPath[3]
+	version := splitPath[4]
+	filename := fmt.Sprintf("%s-%s.crate", name, version)
 
 	r := bytes.NewReader(pkg)
 	opts := unpack.Opts{

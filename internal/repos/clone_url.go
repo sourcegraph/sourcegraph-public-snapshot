@@ -82,6 +82,8 @@ func CloneURL(kind, config string, repo *types.Repo) (string, error) {
 		return string(repo.Name), nil
 	case *schema.PythonPackagesConnection:
 		return string(repo.Name), nil
+	case *schema.RustPackagesConnection:
+		return string(repo.Name), nil
 	case *schema.JVMPackagesConnection:
 		if r, ok := repo.Metadata.(*reposource.MavenMetadata); ok {
 			return r.Module.CloneURL(), nil

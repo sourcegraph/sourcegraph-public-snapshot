@@ -176,6 +176,8 @@ func KindToType(kind string) string {
 		return TypeJVMPackages
 	case KindPythonPackages:
 		return TypePythonPackages
+	case KindRustPackages:
+		return TypeRustPackages
 	case KindNpmPackages:
 		return TypeNpmPackages
 	case KindGoModules:
@@ -217,6 +219,8 @@ func TypeToKind(t string) string {
 		return KindJVMPackages
 	case TypePythonPackages:
 		return KindPythonPackages
+	case TypeRustPackages:
+		return KindRustPackages
 	case TypeGoModules:
 		return KindGoModules
 	case TypePagure:
@@ -236,6 +240,7 @@ var (
 	npmLower    = strings.ToLower(TypeNpmPackages)
 	goLower     = strings.ToLower(TypeGoModules)
 	pythonLower = strings.ToLower(TypePythonPackages)
+	rustLower   = strings.ToLower(TypeRustPackages)
 )
 
 // ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
@@ -268,6 +273,8 @@ func ParseServiceType(s string) (string, bool) {
 		return TypeNpmPackages, true
 	case pythonLower:
 		return TypePythonPackages, true
+	case rustLower:
+		return TypeRustPackages, true
 	case TypePagure:
 		return TypePagure, true
 	case TypeOther:
@@ -305,6 +312,8 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindJVMPackages, true
 	case KindPythonPackages:
 		return KindPythonPackages, true
+	case KindRustPackages:
+		return KindRustPackages, true
 	case KindPagure:
 		return KindPagure, true
 	case KindOther:
@@ -358,6 +367,8 @@ func ParseConfig(kind, config string) (cfg any, _ error) {
 		cfg = &schema.NpmPackagesConnection{}
 	case KindPythonPackages:
 		cfg = &schema.PythonPackagesConnection{}
+	case KindRustPackages:
+		cfg = &schema.RustPackagesConnection{}
 	case KindOther:
 		cfg = &schema.OtherExternalServiceConnection{}
 	default:
@@ -505,6 +516,13 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
+	case *schema.RustPackagesConnection:
+		// Unlike the GitHub or GitLab APIs, the pypi.org doesn't
+		// document an enforced req/s rate limit.
+		limit = rate.Limit(57600.0 / 3600.0) // 16/second same as default in rust-packages.schema.json
+		if c != nil && c.RateLimit != nil {
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+		}
 	default:
 		return limit, ErrRateLimitUnsupported{codehostKind: kind}
 	}
@@ -610,6 +628,8 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 		return KindNpmPackages, nil
 	case *schema.PythonPackagesConnection:
 		return KindPythonPackages, nil
+	case *schema.RustPackagesConnection:
+		return KindRustPackages, nil
 	case *schema.PagureConnection:
 		rawURL = c.Url
 	default:
