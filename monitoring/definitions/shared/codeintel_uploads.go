@@ -105,7 +105,7 @@ func (codeIntelligence) NewUploadsHTTPTransportGroup(containerName string) monit
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
-			DescriptionRoot: "Uploads > GQL Transport",
+			DescriptionRoot: "Uploads > HTTP Transport",
 			Hidden:          false,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
