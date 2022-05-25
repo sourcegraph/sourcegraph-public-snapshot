@@ -29,7 +29,7 @@ func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
 		}
 	}
 
-	report := golang.Generate(ctx, []string{"./enterprise/dev/ci"}, false, golang.VerboseOutput)
+	report := golang.Generate(ctx, []string{"./enterprise/dev/ci"}, true, golang.VerboseOutput)
 	if report.Err != nil {
 		return &lint.Report{
 			Header: header,
