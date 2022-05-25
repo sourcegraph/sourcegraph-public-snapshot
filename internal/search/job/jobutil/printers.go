@@ -54,7 +54,7 @@ func SexpFormat(j job.Job, sep, indent string) string {
 			b.WriteString(j.Name())
 
 		case *repoPagerJob:
-			b.WriteString("REPOPAGER")
+			b.WriteString("(REPOPAGER")
 			depth++
 			writeSep(b, sep, indent, depth)
 			writeSexp(j.child)
