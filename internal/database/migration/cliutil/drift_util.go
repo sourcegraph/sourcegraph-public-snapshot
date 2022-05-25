@@ -126,8 +126,10 @@ func compareSequences(out *output.Output, schemaName, version string, actual, ex
 			writeDiff(out, expectedSequence, *sequence)
 		}
 
-		url := makeSearchURL(schemaName, version, fmt.Sprintf("CREATE SEQUENCE %s", expectedSequence.Name))
-		writeSearchHint(out, "define or redefine the sequence", url)
+		writeSearchHint(out, "define or redefine the sequence", makeSearchURL(schemaName, version,
+			fmt.Sprintf("CREATE SEQUENCE %s", expectedSequence.Name),
+			fmt.Sprintf("nextval('%s'::regclass);", expectedSequence.Name),
+		))
 	}
 
 	compareNamedLists(actual.Sequences, expected.Sequences, compareSequence)
@@ -140,9 +142,11 @@ func compareTables(out *output.Output, schemaName, version string, actual, expec
 
 		if table == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing table %q", expectedTable.Name)))
-
-			url := makeSearchURL(schemaName, version, fmt.Sprintf("CREATE TABLE %s", expectedTable.Name))
-			writeSearchHint(out, "define the table", url)
+			writeSearchHint(out, "define the table", makeSearchURL(schemaName, version,
+				fmt.Sprintf("CREATE TABLE %s", expectedTable.Name),
+				fmt.Sprintf("ALTER TABLE ONLY %s", expectedTable.Name),
+				fmt.Sprintf("CREATE .*(INDEX|TRIGGER).* ON %s", expectedTable.Name),
+			))
 		} else {
 			compareColumns(out, schemaName, version, *table, expectedTable)
 			compareConstraints(out, schemaName, version, *table, expectedTable)
@@ -164,8 +168,10 @@ func compareColumns(out *output.Output, schemaName, version string, actualTable,
 			writeDiff(out, expectedColumn, *column)
 		}
 
-		url := makeSearchURL(schemaName, version, fmt.Sprintf("CREATE TABLE %s", expectedTable.Name))
-		writeSearchHint(out, "define or redefine the column", url)
+		writeSearchHint(out, "define or redefine the column", makeSearchURL(schemaName, version,
+			fmt.Sprintf("CREATE TABLE %s", expectedTable.Name),
+			fmt.Sprintf("ALTER TABLE ONLY %s", expectedTable.Name),
+		))
 	})
 }
 
@@ -275,16 +281,16 @@ func writeSearchHint(out *output.Output, description, url string) {
 
 // makeSearchURL returns a URL to a sourcegraph.com search query within the squashed
 // definition of the given schema.
-func makeSearchURL(schemaName, version, searchTerm string) string {
-	terms := strings.Split(searchTerm, " ")
-	for i, term := range terms {
-		terms[i] = regexp.QuoteMeta(term)
+func makeSearchURL(schemaName, version string, searchTerms ...string) string {
+	terms := make([]string, 0, len(searchTerms))
+	for _, searchTerm := range searchTerms {
+		terms = append(terms, quoteTerm(searchTerm))
 	}
 
 	queryParts := []string{
 		fmt.Sprintf(`repo:^github\.com/sourcegraph/sourcegraph$@%s`, version),
 		fmt.Sprintf(`file:^migrations/%s/squashed\.sql$`, schemaName),
-		"^" + strings.Join(terms, "\\s") + "\\b",
+		strings.Join(terms, " OR "),
 	}
 
 	qs := url.Values{}
@@ -294,6 +300,16 @@ func makeSearchURL(schemaName, version, searchTerm string) string {
 	url, _ := url.Parse("https://sourcegraph.com/search")
 	url.RawQuery = qs.Encode()
 	return url.String()
+}
+
+// quoteTerm converts the given literal search term into a regular expression.
+func quoteTerm(searchTerm string) string {
+	terms := strings.Split(searchTerm, " ")
+	for i, term := range terms {
+		terms[i] = regexp.QuoteMeta(term)
+	}
+
+	return "(^|\\b)" + strings.Join(terms, "\\s") + "($|\\b)"
 }
 
 // constructEnumRepairStatements returns a set of `ALTER ENUM ADD VALUE` statements to make
