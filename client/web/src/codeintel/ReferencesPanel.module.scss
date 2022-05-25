@@ -158,6 +158,11 @@ $group-divider-height: 0.25rem;
         padding: 9px 0;
         border-radius: 3px;
         background-color: var(--white);
+        overflow: scroll;
+        -ms-overflow-style: none;
+    }
+    ul::-webkit-scrollbar {
+        display: none;
     }
 }
 
