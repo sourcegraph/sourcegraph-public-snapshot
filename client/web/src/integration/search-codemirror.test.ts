@@ -56,6 +56,27 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     IsSearchContextAvailable: () => ({
         isSearchContextAvailable: true,
     }),
+    ViewerSettings: () => ({
+        viewerSettings: {
+            __typename: 'SettingsCascade',
+            subjects: [
+                {
+                    __typename: 'DefaultSettings',
+                    settingsURL: null,
+                    viewerCanAdminister: false,
+                    latestSettings: {
+                        id: 0,
+                        contents: JSON.stringify({
+                            experimentalFeatures: {
+                                editor: 'codemirror6',
+                            },
+                        }),
+                    },
+                },
+            ],
+            final: JSON.stringify({}),
+        },
+    }),
 }
 
 describe('Search (CodeMirror)', () => {
@@ -73,27 +94,6 @@ describe('Search (CodeMirror)', () => {
         })
         testContext.overrideGraphQL({
             ...commonSearchGraphQLResults,
-            ViewerSettings: () => ({
-                viewerSettings: {
-                    __typename: 'SettingsCascade',
-                    subjects: [
-                        {
-                            __typename: 'DefaultSettings',
-                            settingsURL: null,
-                            viewerCanAdminister: false,
-                            latestSettings: {
-                                id: 0,
-                                contents: JSON.stringify({
-                                    experimentalFeatures: {
-                                        editor: 'codemirror6',
-                                    },
-                                }),
-                            },
-                        },
-                    ],
-                    final: JSON.stringify({}),
-                },
-            }),
             UserAreaUserProfile: () => ({
                 user: {
                     __typename: 'User',
@@ -131,7 +131,6 @@ describe('Search (CodeMirror)', () => {
                 newText: '-file',
                 enterTextMethod: 'type',
             })
-            await driver.page.waitForSelector(COMPLETION_SELECTOR)
             await driver.findElementWithText('-file', {
                 action: 'click',
                 wait: { timeout: 5000 },
@@ -179,7 +178,6 @@ describe('Search (CodeMirror)', () => {
                 newText: 'repo:go-jwt-middlew',
                 enterTextMethod: 'type',
             })
-            await driver.page.waitForSelector(COMPLETION_SELECTOR)
             await driver.findElementWithText('github.com/auth0/go-jwt-middleware', {
                 action: 'click',
                 wait: { timeout: 5000 },
@@ -194,11 +192,17 @@ describe('Search (CodeMirror)', () => {
             await driver.page.waitForSelector(EDITOR_SELECTOR)
             await driver.page.focus(EDITOR_SELECTOR)
             await driver.page.keyboard.type('file:jwtmi')
-            await driver.page.waitForSelector(COMPLETION_SELECTOR)
             await driver.findElementWithText('jwtmiddleware.go', {
                 selector: COMPLETION_LABEL_SELECTOR,
                 wait: { timeout: 5000 },
             })
+            // This timeout seems to be necessary for Tab to select the entry
+            await driver.page.waitForTimeout(100)
+            // NOTE: This test assumes that that the the suggestions popover shows a
+            // single entry only (since the first entry is selected by default).
+            // It doesn't seem to be possible to otherwise "select" a specific
+            // entry from the list (other than simulating arrow key presses and
+            // somehow comparing the selected entry to the expected one).
             await driver.page.keyboard.press(Key.Tab)
             expect(await getSearchFieldValue(driver)).toStrictEqual(
                 'repo:^github\\.com/auth0/go-jwt-middleware$ file:^jwtmiddleware\\.go$ '
@@ -206,7 +210,6 @@ describe('Search (CodeMirror)', () => {
 
             // Symbol autocomplete in top search bar
             await driver.page.keyboard.type('On')
-            await driver.page.waitForSelector(COMPLETION_SELECTOR)
             await driver.findElementWithText('OnError', {
                 selector: COMPLETION_LABEL_SELECTOR,
                 wait: { timeout: 5000 },

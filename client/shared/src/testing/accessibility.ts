@@ -51,6 +51,10 @@ export async function accessibilityAudit(page: Page, config: AccessibilityAuditC
         .exclude(ACCESSIBILITY_AUDIT_IGNORE_CLASS)
         // https://github.com/microsoft/monaco-editor/issues/2448
         .exclude('.monaco-status')
+        // Rule: "aria-input-field-name" (ARIA input fields must have an accessible name)
+        // CodeMirror doesn't allow changes to it's main DOM elements, so we
+        // need to wait until this is fixed on their side.
+        .exclude('.cm-content')
         /*
             Rule: "aria-dialog-name" (ARIA dialog and alertdialog nodes should have an accessible name)
             Since shephered.js doesn't support aria attributes, adding title attribute to the tour-card element
