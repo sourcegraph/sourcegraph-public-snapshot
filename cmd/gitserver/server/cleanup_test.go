@@ -1342,7 +1342,7 @@ error message`),
 			wantRetries: 1,
 		},
 		{
-			content: []byte(`
+			content: []byte(`header text
 failed=2
 error message`),
 			wantRetries: 2,
@@ -1358,6 +1358,34 @@ error message`),
 
 error message`),
 			wantRetries: 0,
+		},
+		{
+			content: []byte(`failed
+failed=deadbeaf
+failed=1`),
+			wantRetries: 0,
+		},
+		{
+			content: []byte(`failed
+failed=1
+failed=deadbead`),
+			wantRetries: 1,
+		},
+		{
+			content: []byte(`failed=
+failed=
+error message`),
+			wantRetries: 0,
+		},
+		{
+			content: []byte(`header failed text
+
+failed=3
+failed=4
+
+error message
+`),
+			wantRetries: 3,
 		},
 	}
 
