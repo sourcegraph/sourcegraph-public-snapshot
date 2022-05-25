@@ -127,7 +127,7 @@ func compareSequences(out *output.Output, schemaName, version string, actual, ex
 		}
 
 		url := makeSearchURL(schemaName, version, fmt.Sprintf("CREATE SEQUENCE %s", expectedSequence.Name))
-		writeSearchHint(out, fmt.Sprintf("define or redefine the sequence given the definition provided at %s", url))
+		writeSearchHint(out, "define or redefine the sequence", url)
 	}
 
 	compareNamedLists(actual.Sequences, expected.Sequences, compareSequence)
@@ -142,7 +142,7 @@ func compareTables(out *output.Output, schemaName, version string, actual, expec
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing table %q", expectedTable.Name)))
 
 			url := makeSearchURL(schemaName, version, fmt.Sprintf("CREATE TABLE %s", expectedTable.Name))
-			writeSearchHint(out, fmt.Sprintf("define the table given the definition provided at %s", url))
+			writeSearchHint(out, "define the table", url)
 		} else {
 			compareColumns(out, schemaName, version, *table, expectedTable)
 			compareConstraints(out, schemaName, version, *table, expectedTable)
@@ -165,7 +165,7 @@ func compareColumns(out *output.Output, schemaName, version string, actualTable,
 		}
 
 		url := makeSearchURL(schemaName, version, fmt.Sprintf("CREATE TABLE %s", expectedTable.Name))
-		writeSearchHint(out, fmt.Sprintf("define or redefine the column given the definition provided at %s", url))
+		writeSearchHint(out, "define or redefine the column", url)
 	})
 }
 
@@ -264,12 +264,12 @@ func writeSQLSolution(out *output.Output, description string, statements ...stri
 }
 
 // writeSearchHint writes a block of text containing the given hint description and
-// instructions.
-func writeSearchHint(out *output.Output, description string, statements ...string) {
-	out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Hint: %s.", description)))
-	for _, s := range statements {
-		out.Write(s)
-	}
+// a link to a set of Sourcegraph search results relevant to the missing or unexpected
+// object definition.
+func writeSearchHint(out *output.Output, description, url string) {
+	out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Hint: %s using the definition at the following URL:", description)))
+	out.Write("")
+	out.WriteLine(output.Line(output.EmojiFingerPointRight, output.StyleUnderline, url))
 	out.Write("")
 }
 
