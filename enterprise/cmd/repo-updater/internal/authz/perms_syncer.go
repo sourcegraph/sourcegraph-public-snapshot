@@ -3,14 +3,17 @@ package authz
 import (
 	"container/heap"
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -24,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -230,6 +234,61 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 	return repoNames, nil
 }
 
+func (s *PermsSyncer) RefreshGitLabOAuthToken(ctx context.Context, acct *extsvc.Account) error {
+	if acct.ServiceType != extsvc.TypeGitLab {
+		return nil
+	}
+
+	var oauthConfig *oauth2.Config
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		fmt.Println()
+		if authProvider.Gitlab == nil ||
+			strings.TrimSuffix(acct.ServiceID, "/") != strings.TrimSuffix(authProvider.Gitlab.Url, "/") {
+			continue
+		}
+		url := strings.TrimSuffix(authProvider.Gitlab.Url, "/")
+
+		fmt.Println(1111, oauthConfig)
+		oauthConfig = &oauth2.Config{
+			ClientID:     authProvider.Gitlab.ClientID,
+			ClientSecret: authProvider.Gitlab.ClientSecret,
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  url + "/oauth/authorize",
+				TokenURL: url + "/oauth/token",
+			},
+			//RedirectURL: "",
+			Scopes: []string{"read_user", "api"},
+		}
+		break
+	}
+	if oauthConfig == nil {
+		return nil
+	}
+
+	fmt.Println(2222, oauthConfig)
+	_, tok, err := gitlab.GetExternalAccountData(&acct.AccountData)
+	if err != nil {
+		return errors.Wrap(err, "get external account data")
+	} else if tok == nil {
+		return errors.New("no token found in the external account data")
+	}
+
+	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
+	if err != nil {
+		return errors.Wrap(err, "refresh token")
+	}
+
+	fmt.Println(3333, refreshedToken)
+	if refreshedToken.AccessToken != "" && refreshedToken.AccessToken != tok.AccessToken {
+		acct.AccountData.SetAuthData(refreshedToken)
+		_, err := s.db.UserExternalAccounts().LookupUserAndSave(ctx, acct.AccountSpec, acct.AccountData)
+		if err != nil {
+			return errors.Wrap(err, "save refreshed token")
+		}
+	}
+	return nil
+}
+
 // fetchUserPermsViaExternalAccounts uses external accounts (aka. login
 // connections) to list all accessible private repositories on code hosts for
 // the given user.
@@ -320,6 +379,11 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 		if err := s.waitForRateLimit(ctx, provider.URN(), 1, "user"); err != nil {
 			return nil, nil, errors.Wrap(err, "wait for rate limiter")
+		}
+
+		err := s.RefreshGitLabOAuthToken(ctx, acct)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "refresh GitLab OAuth token")
 		}
 
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
