@@ -7,7 +7,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
 import { ParentSize } from '../../../../../charts'
-import { CodeInsightsBackendContext, LangStatsInsight, SearchRuntimeBasedInsight } from '../../../core'
+import { CodeInsightsBackendContext, LangStatsInsight } from '../../../core'
 import { InsightContentType } from '../../../core/types/insight/common'
 import { LazyQueryStatus } from '../../../hooks/use-parallel-requests/use-parallel-request'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../pings'
@@ -28,7 +28,7 @@ import { InsightContextMenu } from './insight-context-menu/InsightContextMenu'
 import { InsightContext } from './InsightContext'
 
 interface BuiltInInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
-    insight: SearchRuntimeBasedInsight | LangStatsInsight
+    insight: LangStatsInsight
     innerRef: Ref<HTMLElement>
     resizing: boolean
 }

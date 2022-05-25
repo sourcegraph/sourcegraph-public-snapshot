@@ -20,7 +20,6 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
 
     switch (insight.presentation.__typename) {
         case 'LineChartInsightViewPresentation': {
-            const isBackendInsight = insight.dataSeriesDefinitions.every(series => series.isCalculated)
             const isCaptureGroupInsight = insight.dataSeriesDefinitions.some(
                 series => series.generatedFromCaptureGroups
             )
@@ -65,32 +64,21 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                         : '',
             }))
 
-            if (isBackendInsight) {
-                const { presentation, appliedFilters } = insight
-
-                return {
-                    ...baseInsight,
-                    executionType: InsightExecutionType.Backend,
-                    type: InsightType.SearchBased,
-                    title: presentation.title,
-                    series,
-                    step,
-                    filters: {
-                        includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
-                        excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
-                        context: appliedFilters.searchContexts?.[0] ?? '',
-                    },
-                }
-            }
+            const { presentation, appliedFilters } = insight
 
             return {
                 ...baseInsight,
-                executionType: InsightExecutionType.Runtime,
+                executionType: InsightExecutionType.Backend,
                 type: InsightType.SearchBased,
-                title: insight.presentation.title,
-                step,
+                title: presentation.title,
                 repositories,
                 series,
+                step,
+                filters: {
+                    includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
+                    excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
+                    context: appliedFilters.searchContexts?.[0] ?? '',
+                },
             }
         }
 
