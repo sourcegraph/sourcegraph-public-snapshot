@@ -41,7 +41,7 @@ The following table outlines the kinds of dependency repositories that dependenc
 
 Kind                                  | How                       | Direct | Transitive
 -------------------------------       |-------------------------- |------- | ----------
-[npm](../../integration/npm.md)       | lsif-typescript uploads   | ✅     | ✅
+[npm](../../integration/npm.md)       | scip-typescript uploads   | ✅     | ✅
 [npm](../../integration/npm.md)       | `package-lock.json`       | ✅     | ✅
 [npm](../../integration/npm.md)       | `yarn.lock`               | ✅     | ✅
 [Python](../../integration/python.md) | lsif-python uploads       | ❌     | ❌

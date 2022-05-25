@@ -7,16 +7,14 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/Masterminds/semver"
+	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -38,6 +36,30 @@ var (
 		Usage:       "The target database `schema` to modify",
 		Value:       db.DefaultDatabase.Name,
 		Destination: &migrateTargetDatabase,
+	}
+
+	squashInContainer     bool
+	squashInContainerFlag = &cli.BoolFlag{
+		Name:        "in-container",
+		Usage:       "Launch Postgres in a Docker container for squashing; do not use the host",
+		Value:       false,
+		Destination: &squashInContainer,
+	}
+
+	skipTeardown     bool
+	skipTeardownFlag = &cli.BoolFlag{
+		Name:        "skip-teardown",
+		Usage:       "Skip tearing down the database created to run all registered migrations",
+		Value:       false,
+		Destination: &skipTeardown,
+	}
+
+	outputFilepath     string
+	outputFilepathFlag = &cli.StringFlag{
+		Name:        "f",
+		Usage:       "The output filepath",
+		Required:    true,
+		Destination: &outputFilepath,
 	}
 )
 
@@ -67,14 +89,11 @@ var (
 	// the local git clone. If the version is not resolvable as a git rev-like, then an error is
 	// returned.
 	expectedSchemaFactory = func(filename, version string) (descriptions.SchemaDescription, error) {
-		gitShow := exec.Command("git", "show", fmt.Sprintf("%s^:%s", version, filename))
-		content, err := run.InRoot(gitShow)
-		if err != nil {
-			return descriptions.SchemaDescription{}, err
-		}
+		ctx := context.Background()
+		output := root.Run(run.Cmd(ctx, "git", "show", fmt.Sprintf("%s^:%s", version, filename)))
 
 		var schemaDescription descriptions.SchemaDescription
-		if err := json.NewDecoder(strings.NewReader(content)).Decode(&schemaDescription); err != nil {
+		if err := json.NewDecoder(output).Decode(&schemaDescription); err != nil {
 			return schemaDescription, err
 		}
 
@@ -103,8 +122,17 @@ var (
 		ArgsUsage:   "<current-release>",
 		Usage:       "Collapse migration files from historic releases together",
 		Description: cliutil.ConstructLongHelp(),
-		Flags:       []cli.Flag{migrateTargetDatabaseFlag},
+		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, skipTeardownFlag},
 		Action:      execAdapter(squashExec),
+	}
+
+	squashAllCommand = &cli.Command{
+		Name:        "squash-all",
+		ArgsUsage:   "",
+		Usage:       "Collapse schema definitions into a single SQL file",
+		Description: cliutil.ConstructLongHelp(),
+		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, skipTeardownFlag, outputFilepathFlag},
+		Action:      execAdapter(squashAllExec),
 	}
 
 	migrationCommand = &cli.Command{
@@ -124,6 +152,7 @@ var (
 			addLogCommand,
 			leavesCommand,
 			squashCommand,
+			squashAllCommand,
 		},
 	}
 )
@@ -244,7 +273,25 @@ func squashExec(ctx context.Context, args []string) (err error) {
 	}
 	std.Out.Writef("Squashing migration files defined up through %s", commit)
 
-	return migration.Squash(database, commit)
+	return migration.Squash(database, commit, squashInContainer, skipTeardown)
+}
+
+func squashAllExec(ctx context.Context, args []string) (err error) {
+	if len(args) != 0 {
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
+		return flag.ErrHelp
+	}
+
+	var (
+		databaseName = migrateTargetDatabase
+		database, ok = db.DatabaseByName(databaseName)
+	)
+	if !ok {
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: database %q not found :(", databaseName))
+		return flag.ErrHelp
+	}
+
+	return migration.SquashAll(database, squashInContainer, skipTeardown, outputFilepath)
 }
 
 func leavesExec(ctx context.Context, args []string) (err error) {

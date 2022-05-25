@@ -1124,3 +1124,91 @@ func parseTags(in []byte) ([]*gitdomain.Tag, error) {
 	}
 	return tags, nil
 }
+
+// GetDefaultBranch returns the name of the default branch and the commit it's
+// currently at from the given repository.
+//
+// If the repository is empty or currently being cloned, empty values and no
+// error are returned.
+func (c *ClientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error) {
+	if Mocks.GetDefaultBranch != nil {
+		return Mocks.GetDefaultBranch(repo)
+	}
+	return c.getDefaultBranch(ctx, repo, false)
+}
+
+// GetDefaultBranchShort returns the short name of the default branch for the
+// given repository and the commit it's currently at. A short name would return
+// something like `main` instead of `refs/heads/main`.
+//
+// If the repository is empty or currently being cloned, empty values and no
+// error are returned.
+func (c *ClientImplementor) GetDefaultBranchShort(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error) {
+	if Mocks.GetDefaultBranchShort != nil {
+		return Mocks.GetDefaultBranchShort(repo)
+	}
+	return c.getDefaultBranch(ctx, repo, true)
+}
+
+// GetDefaultBranch returns the name of the default branch and the commit it's
+// currently at from the given repository.
+//
+// If the repository is empty or currently being cloned, empty values and no
+// error are returned.
+func (c *ClientImplementor) getDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
+	args := []string{"symbolic-ref", "HEAD"}
+	if short {
+		args = append(args, "--short")
+	}
+	refBytes, _, exitCode, err := c.execSafe(ctx, repo, args)
+	refName = string(bytes.TrimSpace(refBytes))
+
+	if err == nil && exitCode == 0 {
+		// Check that our repo is not empty
+		commit, err = c.ResolveRevision(ctx, repo, "HEAD", ResolveRevisionOptions{NoEnsureRevision: true})
+	}
+
+	// If we fail to get the default branch due to cloning or being empty, we return nothing.
+	if err != nil {
+		if gitdomain.IsCloneInProgress(err) || errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			return "", "", nil
+		}
+		return "", "", err
+	}
+
+	return refName, commit, nil
+}
+
+// execSafe executes a Git subcommand iff it is allowed according to a allowlist.
+//
+// An error is only returned when there is a failure unrelated to the actual
+// command being executed. If the executed command exits with a nonzero exit
+// code, err == nil. This is similar to how http.Get returns a nil error for HTTP
+// non-2xx responses.
+//
+// execSafe should NOT be exported. We want to limit direct git calls to this
+// package.
+func (c *ClientImplementor) execSafe(ctx context.Context, repo api.RepoName, params []string) (stdout, stderr []byte, exitCode int, err error) {
+	if Mocks.ExecSafe != nil {
+		return Mocks.ExecSafe(params)
+	}
+
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: execSafe")
+	defer span.Finish()
+
+	if len(params) == 0 {
+		return nil, nil, 0, errors.New("at least one argument required")
+	}
+
+	if !gitdomain.IsAllowedGitCmd(params) {
+		return nil, nil, 0, errors.Errorf("command failed: %q is not a allowed git command", params)
+	}
+
+	cmd := c.GitCommand(repo, params...)
+	stdout, stderr, err = cmd.DividedOutput(ctx)
+	exitCode = cmd.ExitStatus()
+	if exitCode != 0 && err != nil {
+		err = nil // the error must just indicate that the exit code was nonzero
+	}
+	return stdout, stderr, exitCode, err
+}

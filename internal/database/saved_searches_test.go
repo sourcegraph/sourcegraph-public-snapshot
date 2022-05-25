@@ -290,11 +290,11 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 		t.Fatalf("no saved search returned, create failed")
 	}
 
-	org1, err := Orgs(db).Create(ctx, "org1", nil)
+	org1, err := db.Orgs().Create(ctx, "org1", nil)
 	if err != nil {
 		t.Fatal("can't create org1", err)
 	}
-	org2, err := Orgs(db).Create(ctx, "org2", nil)
+	org2, err := db.Orgs().Create(ctx, "org2", nil)
 	if err != nil {
 		t.Fatal("can't create org2", err)
 	}

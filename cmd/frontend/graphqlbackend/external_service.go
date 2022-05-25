@@ -113,6 +113,10 @@ func (r *externalServiceResolver) WebhookURL() (*string, error) {
 		if err != nil {
 			r.webhookErr = errors.Wrap(err, "building webhook URL")
 		}
+		// If no webhook URL can be built for the kind, we bail out and don't throw an error.
+		if u == "" {
+			return
+		}
 		switch c := parsed.(type) {
 		case *schema.BitbucketCloudConnection:
 			if c.WebhookSecret != "" {

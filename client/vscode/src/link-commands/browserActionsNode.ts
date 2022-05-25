@@ -12,7 +12,9 @@ export async function browserActions(action: string, logRedirectEvent: (uri: str
         throw new Error('No active editor')
     }
     const uri = editor.document.uri
-    let sourcegraphUrl = String()
+    const instanceUrl =
+        vscode.workspace.getConfiguration('sourcegraph').get<string>('url') || 'https://sourcegraph.com/'
+    let sourcegraphUrl = ''
     // check if the current file is a remote file or not
     if (uri.scheme === 'sourcegraph') {
         sourcegraphUrl = generateSourcegraphBlobLink(
@@ -23,27 +25,33 @@ export async function browserActions(action: string, logRedirectEvent: (uri: str
             editor.selection.end.character
         )
     } else {
-        try {
-            const repositoryInfo = await repoInfo(editor.document.uri.fsPath)
-            if (!repositoryInfo) {
-                await vscode.window.showErrorMessage('Failed to get info for this repository.')
+        const repositoryInfo = await repoInfo(editor.document.uri.fsPath)
+        if (!repositoryInfo) {
+            await vscode.window.showErrorMessage('Cannot get git info for this repository.')
+            return
+        }
+        let { remoteURL, branch, fileRelative } = repositoryInfo
+        // construct sourcegraph url for current file
+        // set branch as 'HEAD' if user wants to open file in main
+        // else use the branch we have retreive from the repository info
+        // which will set branch as default or 'HEAD' if current branch does not exist
+        if (!branch) {
+            const userChoice = await vscode.window.showInformationMessage(
+                'Current branch does not exist on Sourcegraph. Publish your branch or continue to main branch.',
+                'Continue to main',
+                'Cancel'
+            )
+            branch = userChoice === 'Continue to main' ? 'HEAD' : ''
+            if (!branch) {
                 return
             }
-            const { remoteURL, branch, fileRelative } = repositoryInfo
-            const instanceUrl = vscode.workspace.getConfiguration('sourcegraph').get('url')
-            if (typeof instanceUrl === 'string') {
-                // construct sourcegraph url for current file
-                sourcegraphUrl = getSourcegraphFileUrl(instanceUrl, remoteURL, branch, fileRelative, editor) + vsceUtms
-            }
-        } catch (error) {
-            console.error(error)
         }
+        sourcegraphUrl = getSourcegraphFileUrl(instanceUrl, remoteURL, branch, fileRelative, editor) + vsceUtms
     }
+    // Decode URI
     const decodedUri = decodeURIComponent(sourcegraphUrl)
-
     // Log redirect events
     logRedirectEvent(sourcegraphUrl)
-
     // Open in browser or Copy file link
     switch (action) {
         case 'open':

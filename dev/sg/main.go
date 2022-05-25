@@ -208,8 +208,7 @@ var sg = &cli.App{
 
 		// Show help text only
 		if errors.Is(err, flag.ErrHelp) {
-			cli.ShowAppHelp(cmd)
-			os.Exit(1)
+			cli.ShowSubcommandHelpAndExit(cmd, 1)
 		}
 
 		// Render error

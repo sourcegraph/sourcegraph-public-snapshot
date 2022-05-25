@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -195,7 +194,7 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		refName, _, err := git.GetDefaultBranch(ctx, r.db, r.RepoName())
+		refName, _, err := gitserver.NewClient(r.db).GetDefaultBranch(ctx, r.RepoName())
 		if err != nil {
 			return nil, err
 		}

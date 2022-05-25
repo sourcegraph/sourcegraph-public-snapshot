@@ -275,7 +275,7 @@ func TestSearchContextWriteAccessValidation(t *testing.T) {
 	db := database.NewDB(dbtest.NewDB(t))
 	u := database.Users(db)
 
-	org, err := database.Orgs(db).Create(internalCtx, "myorg", nil)
+	org, err := db.Orgs().Create(internalCtx, "myorg", nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}

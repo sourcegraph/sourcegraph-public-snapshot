@@ -17,10 +17,13 @@ import (
 // that's done, we should take advantage of the generated mock client in this
 // package instead.
 var Mocks, emptyMocks struct {
-	ExecReader      func(args []string) (reader io.ReadCloser, err error)
-	ReadDir         func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error)
-	ResolveRevision func(spec string, opt ResolveRevisionOptions) (api.CommitID, error)
-	LsFiles         func(repo api.RepoName, commit api.CommitID) ([]string, error)
+	ExecReader            func(args []string) (reader io.ReadCloser, err error)
+	ExecSafe              func(params []string) (stdout, stderr []byte, exitCode int, err error)
+	ReadDir               func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error)
+	ResolveRevision       func(spec string, opt ResolveRevisionOptions) (api.CommitID, error)
+	LsFiles               func(repo api.RepoName, commit api.CommitID) ([]string, error)
+	GetDefaultBranch      func(repo api.RepoName) (refName string, commit api.CommitID, err error)
+	GetDefaultBranchShort func(repo api.RepoName) (refName string, commit api.CommitID, err error)
 }
 
 // ResetMocks clears the mock functions set on Mocks (so that subsequent tests don't inadvertently

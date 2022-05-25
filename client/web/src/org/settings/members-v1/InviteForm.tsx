@@ -131,8 +131,12 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
                                 data-tooltip="Add immediately without sending invitation (site admins only)"
                                 variant="primary"
                             >
-                                {loading === 'addUserToOrganization' ? <LoadingSpinner /> : <Icon as={AddIcon} />} Add
-                                member
+                                {loading === 'addUserToOrganization' ? (
+                                    <LoadingSpinner />
+                                ) : (
+                                    <Icon role="img" as={AddIcon} aria-hidden={true} />
+                                )}{' '}
+                                Add member
                             </Button>
                         )}
                         {(emailInvitesEnabled || !viewerCanAddUserToOrganization) && (
@@ -145,12 +149,13 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
                                         ? 'Send invitation email with link to join this organization'
                                         : 'Generate invitation link to manually send to user'
                                 }
+                                aria-label="Send or Generate Invitation link"
                                 onClick={viewerCanAddUserToOrganization ? onInviteClick : undefined}
                             >
                                 {loading === 'inviteUserToOrganization' ? (
                                     <LoadingSpinner />
                                 ) : (
-                                    <Icon as={EmailOpenOutlineIcon} />
+                                    <Icon role="img" as={EmailOpenOutlineIcon} aria-hidden={true} />
                                 )}{' '}
                                 {emailInvitesEnabled
                                     ? viewerCanAddUserToOrganization
@@ -273,7 +278,7 @@ const InvitedNotification: React.FunctionComponent<React.PropsWithChildren<Invit
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
         <Button variant="icon" title="Dismiss" onClick={onDismiss}>
-            <Icon as={CloseIcon} />
+            <Icon role="img" as={CloseIcon} aria-hidden={true} />
         </Button>
     </Alert>
 )

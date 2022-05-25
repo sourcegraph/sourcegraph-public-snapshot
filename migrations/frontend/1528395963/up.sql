@@ -41,9 +41,10 @@ WHERE user_id IS NOT NULL
 ORDER BY user_id, id DESC;
 
 
-INSERT INTO out_of_band_migrations(id, team, component, description, non_destructive,
+INSERT INTO out_of_band_migrations(id, team, component, description, created, non_destructive,
                                    apply_reverse, is_enterprise, introduced_version_major, introduced_version_minor)
 VALUES (14, 'code-insights', 'db.insights_settings_migration_jobs',
         'Migrating insight definitions from settings files to database tables as a last stage to use the GraphQL API.',
+        '2021-12-02 09:39:00.000000',
         TRUE, FALSE, TRUE, 3, 35)
 ON CONFLICT DO NOTHING;

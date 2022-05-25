@@ -265,7 +265,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                                     setImportState={setImportState}
                                 />
                                 <Button to={PageRoutes.NotebookCreate} variant="primary" as={Link} className="ml-2">
-                                    <Icon className="mr-1" as={PlusIcon} />
+                                    <Icon role="img" aria-hidden={true} className="mr-1" as={PlusIcon} />
                                     Create notebook
                                 </Button>
                             </>

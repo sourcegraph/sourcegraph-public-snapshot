@@ -22,7 +22,7 @@ var Targets = []lint.Target{
 		Linters: []lint.Runner{
 			goFmt,
 			lintGoGenerate,
-			goLint,
+			goLint(),
 			goDBConnImport,
 			goEnterpriseImport,
 			noLocalHost,

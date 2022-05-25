@@ -316,7 +316,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	}
 
 	displayName := "Acme org"
-	org, err := Orgs(db).Create(ctx, "acme", &displayName)
+	org, err := db.Orgs().Create(ctx, "acme", &displayName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1208,7 +1208,7 @@ func TestGetAffiliatedSyncErrors(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	org1, err := Orgs(db).Create(ctx, "ACME", nil)
+	org1, err := db.Orgs().Create(ctx, "ACME", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1484,7 +1484,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 
 	// Create test org
 	displayName := "Acme Org"
-	org, err := Orgs(db).Create(ctx, "acme", &displayName)
+	org, err := db.Orgs().Create(ctx, "acme", &displayName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1828,7 +1828,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Test setup error %s", err)
 		}
-		org, err := Orgs(db).Create(ctx, "acme", nil)
+		org, err := db.Orgs().Create(ctx, "acme", nil)
 		if err != nil {
 			t.Fatalf("Test setup error %s", err)
 		}

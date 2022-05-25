@@ -44,7 +44,7 @@ type DiffHunk struct {
 
 // GetDiff retrieves a parsed diff from the workspace, filtered by the given path glob.
 func (s *State) GetDiff(glob string) (Diff, error) {
-	// Compare from common ancestor by default
+	// Compare with common ancestor by default
 	target := s.MergeBase
 	if !s.Dirty && s.Ref == s.MergeBase {
 		// Compare previous commit, if we are already at merge base and in a clean workdir

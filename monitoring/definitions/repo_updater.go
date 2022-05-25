@@ -467,6 +467,26 @@ func RepoUpdater() *monitoring.Container {
 							Interpretation: "Indicates how long we're waiting on the rate limit once it has been exceeded",
 						},
 					},
+					{
+						{
+							Name:           "src_internal_rate_limit_wait_duration_bucket",
+							Description:    "95th percentile time spent successfully waiting on our internal rate limiter",
+							Query:          `histogram_quantile(0.95, sum(rate(src_internal_rate_limit_wait_duration_bucket{failed="false"}[5m])) by (le, urn))`,
+							Panel:          monitoring.Panel().LegendFormat("{{urn}}").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservableOwnerRepoManagement,
+							NoAlert:        true,
+							Interpretation: "Indicates how long we're waiting on our internal rate limiter when communicating with a code host",
+						},
+						{
+							Name:           "src_internal_rate_limit_wait_error_count",
+							Description:    "rate of failures waiting on our internal rate limiter",
+							Query:          `sum by (urn) (rate(src_internal_rate_limit_wait_duration_count{failed="true"}[5m]))`,
+							Panel:          monitoring.Panel().LegendFormat("{{urn}}"),
+							Owner:          monitoring.ObservableOwnerRepoManagement,
+							NoAlert:        true,
+							Interpretation: "The rate at which we fail our internal rate limiter.",
+						},
+					},
 				},
 			},
 
