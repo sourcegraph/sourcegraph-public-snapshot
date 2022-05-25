@@ -12,12 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
-// TODO
-// - test for setEvaluatedFlagToCache executation
-// - test for org feature flag override
-// - test for user feature flag override
-// - test for user & org feature flag override
-
 func TestMiddleware(t *testing.T) {
 	// Create a request with an actor on its context
 	req, err := http.NewRequest(http.MethodGet, "/test", nil)
@@ -45,21 +39,11 @@ func TestMiddleware(t *testing.T) {
 	handler.ServeHTTP(httptest.NewRecorder(), req)
 }
 
-func TestGetEvaluatedFlagsFromContext(t *testing.T) {
-	// TODO: test GetEvaluatedFlagsFromContext that whatever is returned by getEvaluatedFlagSetFromCache is used
-}
-
 func TestEvaluateForActorFromContext(t *testing.T) {
-	// TODO: case 1: test that for authenticated user GetUserFlagFunc is called
-	t.Run("authenticated user", func(t *testing.T) {
+	t.Run("for authenticated user", func(t *testing.T) {
 		mockStore := NewMockStore()
 
 		mockStore.GetUserFlagFunc.SetDefaultHook(func(_ context.Context, uid int32, flag string) (*bool, error) {
-			/**
-			const mockFlags = {
-				"1": [["f1", true]]
-			}
-			*/
 			if flag == "f1" {
 				value := false
 
@@ -100,12 +84,9 @@ func TestEvaluateForActorFromContext(t *testing.T) {
 		require.False(t, EvaluateForActorFromContext(ctx, "f1"))
 
 		mockrequire.CalledN(t, mockStore.GetUserFlagFunc, 4)
-		// TODO: test that for each above cases setEvaluatedFlagToCache has been called with proper args
 	})
 
-	// TODO: case 2: test that for anonymous user GetAnonymousUserFlagFunc is called
-	t.Run("anonymous user", func(t *testing.T) {
-		// actor.FromAnonymousUser("test-user")
+	t.Run("for anonymous user", func(t *testing.T) {
 		mockStore := NewMockStore()
 
 		mockStore.GetAnonymousUserFlagFunc.SetDefaultHook(func(_ context.Context, anonymousUID string, flag string) (*bool, error) {
@@ -149,8 +130,19 @@ func TestEvaluateForActorFromContext(t *testing.T) {
 		require.False(t, EvaluateForActorFromContext(ctx, "f1"))
 
 		mockrequire.CalledN(t, mockStore.GetAnonymousUserFlagFunc, 4)
-		// TODO: test that for each above cases setEvaluatedFlagToCache has been called with proper args
 	})
-	// TODO: case 3: test that for rest GetGlobalFeatureFlagFunc is called
-	t.Run("no user", func(t *testing.T) {})
+
+	t.Run("for no user", func(t *testing.T) {
+		mockStore := NewMockStore()
+
+		flagValue := true
+		mockStore.GetGlobalFeatureFlagFunc.SetDefaultReturn(&flagValue, nil)
+
+		ctx := context.Background()
+		ctx = WithFlags(ctx, mockStore)
+
+		require.True(t, EvaluateForActorFromContext(ctx, "test-flag"))
+
+		mockrequire.CalledN(t, mockStore.GetGlobalFeatureFlagFunc, 1)
+	})
 }
