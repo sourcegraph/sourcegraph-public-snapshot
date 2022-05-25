@@ -30,8 +30,8 @@ func getSchemaJSONFilename(schemaName string) (string, error) {
 
 var errOutOfSync = errors.Newf("database schema is out of sync")
 
-func compareSchemaDescriptions(out *output.Output, schemaName string, actual, expected schemas.SchemaDescription) (err error) {
-	for _, f := range []func(out *output.Output, schemaName string, actual, expected schemas.SchemaDescription) bool{
+func compareSchemaDescriptions(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (err error) {
+	for _, f := range []func(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) bool{
 		compareExtensions,
 		compareEnums,
 		compareFunctions,
@@ -39,7 +39,7 @@ func compareSchemaDescriptions(out *output.Output, schemaName string, actual, ex
 		compareTables,
 		compareViews,
 	} {
-		if f(out, schemaName, actual, expected) {
+		if f(out, schemaName, version, actual, expected) {
 			err = errOutOfSync
 		}
 	}
@@ -50,7 +50,7 @@ func compareSchemaDescriptions(out *output.Output, schemaName string, actual, ex
 	return err
 }
 
-func compareExtensions(out *output.Output, schemaName string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
+func compareExtensions(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
 	compareExtension := func(extension *stringNamer, expectedExtension stringNamer) {
 		outOfSync = true
 
@@ -64,7 +64,7 @@ func compareExtensions(out *output.Output, schemaName string, actual, expected s
 	return
 }
 
-func compareEnums(out *output.Output, schemaName string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
+func compareEnums(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
 	compareEnum := func(enum *schemas.EnumDescription, expectedEnum schemas.EnumDescription) {
 		outOfSync = true
 
@@ -95,7 +95,7 @@ func compareEnums(out *output.Output, schemaName string, actual, expected schema
 	return outOfSync
 }
 
-func compareFunctions(out *output.Output, schemaName string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
+func compareFunctions(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
 	compareFunction := func(function *schemas.FunctionDescription, expectedFunction schemas.FunctionDescription) {
 		outOfSync = true
 
@@ -115,7 +115,7 @@ func compareFunctions(out *output.Output, schemaName string, actual, expected sc
 	return outOfSync
 }
 
-func compareSequences(out *output.Output, schemaName string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
+func compareSequences(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
 	compareSequence := func(sequence *schemas.SequenceDescription, expectedSequence schemas.SequenceDescription) {
 		outOfSync = true
 
@@ -126,7 +126,7 @@ func compareSequences(out *output.Output, schemaName string, actual, expected sc
 			writeDiff(out, expectedSequence, *sequence)
 		}
 
-		url := makeSearchURL(schemaName, fmt.Sprintf("CREATE SEQUENCE %s", expectedSequence.Name))
+		url := makeSearchURL(schemaName, version, fmt.Sprintf("CREATE SEQUENCE %s", expectedSequence.Name))
 		writeSearchHint(out, fmt.Sprintf("define or redefine the sequence given the definition provided at %s", url))
 	}
 
@@ -134,20 +134,20 @@ func compareSequences(out *output.Output, schemaName string, actual, expected sc
 	return outOfSync
 }
 
-func compareTables(out *output.Output, schemaName string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
+func compareTables(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
 	compareTables := func(table *schemas.TableDescription, expectedTable schemas.TableDescription) {
 		outOfSync = true
 
 		if table == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing table %q", expectedTable.Name)))
 
-			url := makeSearchURL(schemaName, fmt.Sprintf("CREATE TABLE %s", expectedTable.Name))
+			url := makeSearchURL(schemaName, version, fmt.Sprintf("CREATE TABLE %s", expectedTable.Name))
 			writeSearchHint(out, fmt.Sprintf("define the table given the definition provided at %s", url))
 		} else {
-			compareColumns(out, schemaName, *table, expectedTable)
-			compareConstraints(out, schemaName, *table, expectedTable)
-			compareIndexes(out, schemaName, *table, expectedTable)
-			compareTriggers(out, schemaName, *table, expectedTable)
+			compareColumns(out, schemaName, version, *table, expectedTable)
+			compareConstraints(out, schemaName, version, *table, expectedTable)
+			compareIndexes(out, schemaName, version, *table, expectedTable)
+			compareTriggers(out, schemaName, version, *table, expectedTable)
 		}
 	}
 
@@ -155,7 +155,7 @@ func compareTables(out *output.Output, schemaName string, actual, expected schem
 	return outOfSync
 }
 
-func compareColumns(out *output.Output, schemaName string, actualTable, expectedTable schemas.TableDescription) {
+func compareColumns(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) {
 	compareNamedLists(actualTable.Columns, expectedTable.Columns, func(column *schemas.ColumnDescription, expectedColumn schemas.ColumnDescription) {
 		if column == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing column %q.%q", expectedTable.Name, expectedColumn.Name)))
@@ -164,12 +164,12 @@ func compareColumns(out *output.Output, schemaName string, actualTable, expected
 			writeDiff(out, expectedColumn, *column)
 		}
 
-		url := makeSearchURL(schemaName, fmt.Sprintf("CREATE TABLE %s", expectedTable.Name))
+		url := makeSearchURL(schemaName, version, fmt.Sprintf("CREATE TABLE %s", expectedTable.Name))
 		writeSearchHint(out, fmt.Sprintf("define or redefine the column given the definition provided at %s", url))
 	})
 }
 
-func compareConstraints(out *output.Output, schemaName string, actualTable, expectedTable schemas.TableDescription) {
+func compareConstraints(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) {
 	compareNamedLists(actualTable.Constraints, expectedTable.Constraints, func(constraint *schemas.ConstraintDescription, expectedConstraint schemas.ConstraintDescription) {
 		createConstraintStmt := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s %s;", expectedTable.Name, expectedConstraint.Name, expectedConstraint.ConstraintDefinition)
 		dropConstraintStmt := fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", expectedTable.Name, expectedConstraint.Name)
@@ -185,7 +185,7 @@ func compareConstraints(out *output.Output, schemaName string, actualTable, expe
 	})
 }
 
-func compareIndexes(out *output.Output, schemaName string, actualTable, expectedTable schemas.TableDescription) {
+func compareIndexes(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) {
 	compareNamedLists(actualTable.Indexes, expectedTable.Indexes, func(index *schemas.IndexDescription, expectedIndex schemas.IndexDescription) {
 		var createIndexStmt string
 		var dropIndexStmt string
@@ -212,7 +212,7 @@ func compareIndexes(out *output.Output, schemaName string, actualTable, expected
 	})
 }
 
-func compareTriggers(out *output.Output, schemaName string, actualTable, expectedTable schemas.TableDescription) {
+func compareTriggers(out *output.Output, schemaName, version string, actualTable, expectedTable schemas.TableDescription) {
 	compareNamedLists(actualTable.Triggers, expectedTable.Triggers, func(trigger *schemas.TriggerDescription, expectedTrigger schemas.TriggerDescription) {
 		createTriggerStmt := fmt.Sprintf("%s;", expectedTrigger.Definition)
 		dropTriggerStmt := fmt.Sprintf("DROP TRIGGER %s ON %s;", expectedTrigger.Name, expectedTable.Name)
@@ -228,7 +228,7 @@ func compareTriggers(out *output.Output, schemaName string, actualTable, expecte
 	})
 }
 
-func compareViews(out *output.Output, schemaName string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
+func compareViews(out *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
 	compareView := func(view *schemas.ViewDescription, expectedView schemas.ViewDescription) {
 		outOfSync = true
 
@@ -275,14 +275,14 @@ func writeSearchHint(out *output.Output, description string, statements ...strin
 
 // makeSearchURL returns a URL to a sourcegraph.com search query within the squashed
 // definition of the given schema.
-func makeSearchURL(schemaName, searchTerm string) string {
+func makeSearchURL(schemaName, version, searchTerm string) string {
 	terms := strings.Split(searchTerm, " ")
 	for i, term := range terms {
 		terms[i] = regexp.QuoteMeta(term)
 	}
 
 	queryParts := []string{
-		`repo:^github\.com/sourcegraph/sourcegraph$`,
+		fmt.Sprintf(`repo:^github\.com/sourcegraph/sourcegraph$@%s`, version),
 		fmt.Sprintf(`file:^migrations/%s/squashed\.sql$`, schemaName),
 		"^" + strings.Join(terms, "\\s") + "\\b",
 	}
