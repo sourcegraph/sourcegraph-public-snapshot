@@ -2008,7 +2008,7 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 
 		errs := apitest.Exec(actorCtx, t, s, input, &response, queryCheckCredential)
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fatal("expected single errors, but got none")
 		}
 		if have, want := errs[0].Extensions["code"], "ErrVerifyCredentialFailed"; have != want {
 			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
