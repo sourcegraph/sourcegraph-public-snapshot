@@ -326,8 +326,8 @@ github.com/sourcegraph/go-diff v0.6.1 h1:hmA1LzxW0n1c3Q4YbrFgg4P99GSnebYa3x8gr0H
 github.com/sourcegraph/go-diff v0.6.1/go.mod h1:iBszgVvyxdc8SFZ7gm69go2KDdt3ag071iBaWPF6cjs=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWiiMP/vkkHiMXqFXzl1XfUNOdxKJbd6bI=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf/go.mod h1:ppFaPm6kpcHnZGqQTFhUIAQRIEhdQDWP1PCv4/ON354=
-github.com/sourcegraph/scip v0.0.0-20220513191902-a9bebaa57565 h1:EKtJLeanygtO/BB3ZLGoHiCdYq9PJdgYzYzAErm7EdU=
-github.com/sourcegraph/scip v0.0.0-20220513191902-a9bebaa57565/go.mod h1:Y+5w4gBKMnbSDC/5yD03kLTM/sx3449lPrXxloueWDA=
+github.com/sourcegraph/scip v0.0.0-20220525190354-5922ee059bf9 h1:1+L7s9/gy6r3EH33eKNzzD2oyU3pXN5LhzmjdqpumXU=
+github.com/sourcegraph/scip v0.0.0-20220525190354-5922ee059bf9/go.mod h1:/AZ8RvsnRfeCZy232PJuVZqcl9f82fJnYwdWZeU2JCo=
 github.com/sourcegraph/sourcegraph/lib v0.0.0-20220511160847-5a43d3ea24eb h1:D8ciD0FEcPNnVm6BC8vg7gWJ9VxoJe6k/4j+Qxparj0=
 github.com/sourcegraph/sourcegraph/lib v0.0.0-20220511160847-5a43d3ea24eb/go.mod h1:iFiGPqnhOvQziDZkpWasU+Uo1BaEt/Au9kNK4VpqyOw=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
