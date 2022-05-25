@@ -273,7 +273,7 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthToken(ctx context.Context, acct *ex
 		return errors.Wrap(err, "refresh token")
 	}
 
-	if refreshedToken.AccessToken != "" && refreshedToken.AccessToken != tok.AccessToken {
+	if refreshedToken.AccessToken != tok.AccessToken {
 		acct.AccountData.SetAuthData(refreshedToken)
 		_, err := s.db.UserExternalAccounts().LookupUserAndSave(ctx, acct.AccountSpec, acct.AccountData)
 		if err != nil {
@@ -382,7 +382,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
 		if err != nil {
-			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
+			// The "401 Unauthorized" is returned by code hosts when the token is revoked
 			unauthorized := errcode.IsUnauthorized(err)
 
 			forbidden := errcode.IsForbidden(err)
@@ -394,6 +394,13 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				err = accounts.TouchExpired(ctx, acct.ID)
 				if err != nil {
 					return nil, nil, errors.Wrapf(err, "set expired for external account %d", acct.ID)
+				}
+				if unauthorized {
+					log15.Warn("PermsSyncer.fetchUserPermsViaExternalAccounts.setExternalAccountExpired, token is revoked",
+						"userID", user.ID,
+						"id", acct.ID,
+						"unauthorized", unauthorized,
+					)
 				}
 				log15.Debug("PermsSyncer.fetchUserPermsViaExternalAccounts.setExternalAccountExpired",
 					"userID", user.ID,
