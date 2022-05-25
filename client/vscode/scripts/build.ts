@@ -18,6 +18,7 @@ import {
 const watch = !!process.env.WATCH
 const minify = process.env.NODE_ENV === 'production'
 const outdir = path.join(__dirname, '../dist')
+const isTest = !!process.env.IS_TEST
 
 const TARGET_TYPE = process.env.TARGET_TYPE
 
@@ -25,6 +26,7 @@ const SHARED_CONFIG = {
     outdir,
     watch,
     minify,
+    sourcemap: true,
 }
 
 export async function build(): Promise<void> {
@@ -34,7 +36,6 @@ export async function build(): Promise<void> {
 
     const buildPromises = []
 
-    // TODO: extract core ext builds to fn w differences parameterized.
     if (TARGET_TYPE === 'node' || !TARGET_TYPE) {
         buildPromises.push(
             esbuild.build({
@@ -43,24 +44,28 @@ export async function build(): Promise<void> {
                 format: 'cjs',
                 platform: 'node',
                 external: ['vscode'],
-                // TODO alias
-                // define plugin IS_TEST,
+                banner: { js: 'global.Buffer = require("buffer").Buffer' },
+                define: {
+                    'process.env.IS_TEST': isTest ? 'true' : 'false',
+                },
                 ...SHARED_CONFIG,
                 outdir: path.join(SHARED_CONFIG.outdir, 'node'),
             })
         )
     }
     if (TARGET_TYPE === 'webworker' || !TARGET_TYPE) {
-        // TODO look inside webpack webworker target!!
         buildPromises.push(
             esbuild.build({
                 entryPoints: { extension: path.join(__dirname, '/../src/extension.ts') },
                 bundle: true,
                 format: 'cjs',
-                platform: 'node',
+                platform: 'browser',
                 external: ['vscode'],
-                // TODO alias. Buffer? check webviews as well?
-                // TODO stream http
+                define: {
+                    'process.env.IS_TEST': isTest ? 'true' : 'false',
+                    global: 'globalThis',
+                },
+                inject: ['./scripts/process-shim.js', './scripts/buffer-shim.js'],
                 plugins: [
                     packageResolutionPlugin({
                         process: require.resolve('process/browser'),
@@ -68,10 +73,12 @@ export async function build(): Promise<void> {
                         http: require.resolve('stream-http'),
                         https: require.resolve('https-browserify'),
                         stream: require.resolve('stream-browserify'),
+                        util: require.resolve('util'),
                         events: require.resolve('events'),
+                        buffer: require.resolve('buffer/'),
+                        './browserActionsNode': path.resolve(__dirname, '../src', 'link-commands', 'browserActionsWeb'),
                     }),
                 ],
-                // define plugin IS_TEST
                 ...SHARED_CONFIG,
                 outdir: path.join(SHARED_CONFIG.outdir, 'webworker'),
             })
@@ -98,7 +105,8 @@ export async function build(): Promise<void> {
                     ...RXJS_RESOLUTIONS,
                     './Link': require.resolve('../src/webview/search-panel/alias/Link'),
                     '../Link': require.resolve('../src/webview/search-panel/alias/Link'),
-                    './SearchResult': require.resolve('../src/webview/search-panel/alias/SearchResult'),
+                    './RepoSearchResult': require.resolve('../src/webview/search-panel/alias/RepoSearchResult'),
+                    './CommitSearchResult': require.resolve('../src/webview/search-panel/alias/CommitSearchResult'),
                     './FileMatchChildren': require.resolve('../src/webview/search-panel/alias/FileMatchChildren'),
                     './RepoFileLink': require.resolve('../src/webview/search-panel/alias/RepoFileLink'),
                     '../documentation/ModalVideo': require.resolve('../src/webview/search-panel/alias/ModalVideo'),
