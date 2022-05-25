@@ -19,3 +19,9 @@ func CodeIntelUploads() *monitoring.Container {
 		},
 	}
 }
+
+// TODO: Add these
+// src_codeintel_background_upload_records_removed_total
+// src_codeintel_background_index_records_removed_total
+// src_codeintel_background_uploads_purged_total
+// src_codeintel_background_audit_log_records_expired_t
