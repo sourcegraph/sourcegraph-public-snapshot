@@ -1623,7 +1623,7 @@ func TestGetCustomInterval(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			interval := getCustomInterval(tc.c, tc.repoName, testLogger)
+			interval := getCustomInterval(testLogger, tc.c, tc.repoName)
 			if tc.want != interval {
 				t.Fatalf("Want %v, got %v", tc.want, interval)
 			}
