@@ -3,6 +3,7 @@ package squirrel
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 )
 
 func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (ret *Node, err error) {
@@ -19,8 +20,13 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 			prev := cur
 			cur = cur.Parent()
 			if cur == nil {
-				squirrel.breadcrumb(swapNode(node, prev), fmt.Sprintf("no more parents"))
-				return nil, nil
+				return squirrel.symbolSearchOne(
+					ctx,
+					node.RepoCommitPath.Repo,
+					node.RepoCommitPath.Commit,
+					[]string{filepath.Dir(node.RepoCommitPath.Path)},
+					ident,
+				)
 			}
 
 			switch cur.Type() {
@@ -185,8 +191,13 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 			prev := cur
 			cur = cur.Parent()
 			if cur == nil {
-				squirrel.breadcrumb(swapNode(node, prev), fmt.Sprintf("no more parents"))
-				return nil, nil
+				return squirrel.symbolSearchOne(
+					ctx,
+					node.RepoCommitPath.Repo,
+					node.RepoCommitPath.Commit,
+					[]string{filepath.Dir(node.RepoCommitPath.Path)},
+					ident,
+				)
 			}
 
 			switch cur.Type() {

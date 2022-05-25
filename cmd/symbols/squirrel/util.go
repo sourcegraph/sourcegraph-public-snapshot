@@ -10,6 +10,9 @@ import (
 
 	sitter "github.com/smacker/go-tree-sitter"
 
+	symbolTypes "github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -268,6 +271,41 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 	return &Node{RepoCommitPath: repoCommitPath, Node: root, Contents: contents, LangSpec: langSpec}, nil
 }
 
+func (s *SquirrelService) getSymbols(ctx context.Context, repoCommitPath types.RepoCommitPath) (result.Symbols, error) {
+	root, err := s.parse(context.Background(), repoCommitPath)
+	if err != nil {
+		return nil, err
+	}
+
+	symbols := result.Symbols{}
+
+	query := root.LangSpec.topLevelSymbolsQuery
+	if query == "" {
+		return nil, nil
+	}
+
+	captures, err := allCaptures(query, root)
+	if err != nil {
+		return nil, err
+	}
+	for _, capture := range captures {
+		symbols = append(symbols, result.Symbol{
+			Name:        capture.Node.Content(root.Contents),
+			Path:        root.RepoCommitPath.Path,
+			Line:        int(capture.Node.StartPoint().Row),
+			Character:   int(capture.Node.StartPoint().Column),
+			Kind:        "",
+			Language:    root.LangSpec.name,
+			Parent:      "",
+			ParentKind:  "",
+			Signature:   "",
+			FileLimited: false,
+		})
+	}
+
+	return symbols, nil
+}
+
 func fatalIfError(t *testing.T, err error) {
 	if err != nil {
 		t.Fatal(err)
@@ -333,4 +371,41 @@ func lazyNodeStringer(node **Node) func() fmt.Stringer {
 			return String("<nil>")
 		}
 	}
+}
+
+func (s *SquirrelService) symbolSearchOne(ctx context.Context, repo string, commit string, include []string, ident string) (*Node, error) {
+	symbols, err := s.symbolSearch(ctx, symbolTypes.SearchArgs{
+		Repo:            api.RepoName(repo),
+		CommitID:        api.CommitID(commit),
+		Query:           fmt.Sprintf("^%s$", ident),
+		IsRegExp:        true,
+		IsCaseSensitive: true,
+		IncludePatterns: include,
+		ExcludePattern:  "",
+		First:           1,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(symbols) == 0 {
+		return nil, nil
+	}
+	symbol := symbols[0]
+	file, err := s.parse(ctx, types.RepoCommitPath{
+		Repo:   repo,
+		Commit: commit,
+		Path:   symbol.Path,
+	})
+	if err != nil {
+		return nil, err
+	}
+	point := sitter.Point{
+		Row:    uint32(symbol.Line),
+		Column: uint32(symbol.Character),
+	}
+	symbolNode := file.NamedDescendantForPointRange(point, point)
+	if symbolNode == nil {
+		return nil, nil
+	}
+	return swapNode(file, symbolNode), nil
 }

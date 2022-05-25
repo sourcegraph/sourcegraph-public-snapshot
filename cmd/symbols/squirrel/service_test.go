@@ -9,7 +9,10 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
 
+	symbolTypes "github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -24,6 +27,15 @@ func TestNonLocalDefinition(t *testing.T) {
 	fatalIfErrorLabel(t, err, "reading test_repos")
 
 	annotations := []annotation{}
+
+	readFile := func(ctx context.Context, path types.RepoCommitPath) ([]byte, error) {
+		contents, err := os.ReadFile(filepath.Join("test_repos", path.Repo, path.Path))
+		fatalIfErrorLabel(t, err, "reading a file")
+		return contents, nil
+	}
+
+	tempSquirrel := New(readFile, nil)
+	allSymbols := []result.Symbol{}
 
 	for _, repoDir := range repoDirs {
 		if !repoDir.IsDir() {
@@ -49,18 +61,30 @@ func TestNonLocalDefinition(t *testing.T) {
 
 			annotations = append(annotations, collectAnnotations(repoCommitPath, string(contents))...)
 
+			symbols, err := tempSquirrel.getSymbols(context.Background(), repoCommitPath)
+			fatalIfErrorLabel(t, err, "getSymbols")
+			allSymbols = append(allSymbols, symbols...)
+
 			return nil
 		})
 		fatalIfErrorLabel(t, err, "walking a repo dir")
 	}
 
-	readFile := func(ctx context.Context, path types.RepoCommitPath) ([]byte, error) {
-		contents, err := os.ReadFile(filepath.Join("test_repos", path.Repo, path.Path))
-		fatalIfErrorLabel(t, err, "reading a file")
-		return contents, nil
+	ss := func(ctx context.Context, args symbolTypes.SearchArgs) (result.Symbols, error) {
+		results := result.Symbols{}
+		for _, s := range allSymbols {
+			match, err := regexp.MatchString(args.Query, s.Name)
+			if err != nil {
+				return nil, err
+			}
+			if match {
+				results = append(results, s)
+			}
+		}
+		return results, nil
 	}
 
-	squirrel := New(readFile, nil)
+	squirrel := New(readFile, ss)
 	squirrel.errorOnParseFailure = true
 	defer squirrel.Close()
 

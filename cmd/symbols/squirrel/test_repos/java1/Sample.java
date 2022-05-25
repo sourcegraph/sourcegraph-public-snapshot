@@ -67,6 +67,10 @@ class C1 {
 
         // vv C2 ref
         C1.C2 c12; // < "C1" C1 ref
+
+        //   vv C3 ref
+        //      vv f3 ref
+        p1 = C3.f3;
     }
 
     //   vv m2 def
