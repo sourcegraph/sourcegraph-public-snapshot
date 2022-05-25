@@ -141,7 +141,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 	}
 	result, status, err := s.enqueueRepoUpdate(r.Context(), &req)
 	if err != nil {
-		s.Logger.Error("enqueueRepoUpdate failed", log.String("req", req.String()), log.Error(err))
+		s.Logger.Error("enqueueRepoUpdate failed", log.String("req", fmt.Sprint(req)), log.Error(err))
 		s.respond(w, status, err)
 		return
 	}
@@ -151,7 +151,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) (resp *protocol.RepoUpdateResponse, httpStatus int, err error) {
 	tr, ctx := trace.New(ctx, "enqueueRepoUpdate", req.String())
 	defer func() {
-		s.Logger.Debug("enqueueRepoUpdate", log.Int("httpStatus", httpStatus), log.String("resp", resp.String()), log.Error(err))
+		s.Logger.Debug("enqueueRepoUpdate", log.Int("httpStatus", httpStatus), log.String("resp", fmt.Sprint(resp)), log.Error(err))
 		if resp != nil {
 			tr.LogFields(
 				otlog.Int32("resp.id", int32(resp.ID)),
@@ -300,7 +300,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 
 	tr, ctx := trace.New(ctx, "repoLookup", args.String())
 	defer func() {
-		s.Logger.Debug("repoLookup", log.String("result", result.String()), log.Error(err))
+		s.Logger.Debug("repoLookup", log.String("result", fmt.Sprint(result)), log.Error(err))
 		if result != nil {
 			tr.LazyPrintf("result: %s", result)
 		}
