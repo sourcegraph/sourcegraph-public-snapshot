@@ -159,6 +159,11 @@ describe('ReferencesPanel', () => {
         expect(closeCodeViewButton).toBeVisible()
 
         const codeView = result.getByRole('table')
+
+        // This tests that the header of the "peek" code view on the right exists
+        const fileLink = within(codeView).getByRole('link', { name: 'diff/diff.go' })
+        expect(fileLink).toBeVisible()
+
         // Assert the code view is rendered, by doing a partial match against its content
         expect(codeView).toHaveTextContent('package diff import')
     })
