@@ -6,16 +6,12 @@ $path-icon-size: (22em / 26);
     align-items: center;
 
     // Separator shown between breadcrumbs.
-    &::after {
+    &:not(:last-child)::after {
         content: '/';
         display: block;
         margin-right: 0.5rem;
         color: var(--icon-color);
         font-weight: 400;
-    }
-
-    &:last-child::after {
-        display: none;
     }
 }
 
