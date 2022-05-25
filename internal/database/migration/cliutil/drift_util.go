@@ -148,6 +148,12 @@ func compareTables(out *output.Output, schemaName string, actual, expected schem
 			compareConstraints(out, schemaName, *table, expectedTable)
 			compareIndexes(out, schemaName, *table, expectedTable)
 			compareTriggers(out, schemaName, *table, expectedTable)
+
+			if table.Comment != expectedTable.Comment {
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected comment of table %q", expectedTable.Name)))
+				setDefaultStmt := fmt.Sprintf("COMMENT ON TABLE %s IS '%s';", expectedTable.Name, expectedTable.Comment)
+				writeSQLSolution(out, "change the table comment", setDefaultStmt)
+			}
 		}
 	}
 
@@ -162,6 +168,38 @@ func compareColumns(out *output.Output, schemaName string, actualTable, expected
 		} else {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of column %q.%q", expectedTable.Name, expectedColumn.Name)))
 			writeDiff(out, expectedColumn, *column)
+
+			equivIf := func(f func(*schemas.ColumnDescription)) bool {
+				c := *column
+				f(&c)
+				return cmp.Diff(c, expectedColumn) == ""
+			}
+
+			if equivIf(func(s *schemas.ColumnDescription) { s.TypeName = expectedColumn.TypeName }) {
+				// TODO
+			}
+			if equivIf(func(s *schemas.ColumnDescription) { s.IsNullable = expectedColumn.IsNullable }) {
+				var verb string
+				if expectedColumn.IsNullable {
+					verb = "DROP"
+				} else {
+					verb = "SET"
+				}
+
+				nullabilityStmt := fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s %s NOT NULL;", expectedTable.Name, expectedColumn.Name, verb)
+				writeSQLSolution(out, "change the column nullability constraint", nullabilityStmt)
+				return
+			}
+			if equivIf(func(s *schemas.ColumnDescription) { s.Default = expectedColumn.Default }) {
+				setDefaultStmt := fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s;", expectedTable.Name, expectedColumn.Name, expectedColumn.Default)
+				writeSQLSolution(out, "change the column default", setDefaultStmt)
+				return
+			}
+			if equivIf(func(s *schemas.ColumnDescription) { s.Comment = expectedColumn.Comment }) {
+				setDefaultStmt := fmt.Sprintf("COMMENT ON COLUMN %s.%s IS '%s';", expectedTable.Name, expectedColumn.Name, expectedColumn.Comment)
+				writeSQLSolution(out, "change the column comment", setDefaultStmt)
+				return
+			}
 		}
 
 		url := makeSearchURL(schemaName, fmt.Sprintf("CREATE TABLE %s", expectedTable.Name))
