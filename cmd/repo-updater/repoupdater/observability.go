@@ -52,7 +52,7 @@ func (m HandlerMetrics) MustRegister(r prometheus.Registerer) {
 // ObservedHandler returns a decorator that wraps an http.Handler
 // with logging, Prometheus metrics and tracing.
 func ObservedHandler(
-	log log.Logger,
+	logger log.Logger,
 	m HandlerMetrics,
 	tr opentracing.Tracer,
 ) func(http.Handler) http.Handler {
@@ -60,7 +60,7 @@ func ObservedHandler(
 		return ot.MiddlewareWithTracer(tr,
 			&observedHandler{
 				next:    next,
-				log:     log,
+				logger:  logger,
 				metrics: m,
 			},
 			nethttp.OperationNameFunc(func(r *http.Request) string {
@@ -76,7 +76,7 @@ func ObservedHandler(
 
 type observedHandler struct {
 	next    http.Handler
-	log     log.Logger
+	logger  log.Logger
 	metrics HandlerMetrics
 }
 
@@ -86,7 +86,7 @@ func (h *observedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func(begin time.Time) {
 		took := time.Since(begin)
 
-		h.log.Debug(
+		h.logger.Debug(
 			"http.request",
 			log.String("method", r.Method),
 			log.String("route", r.URL.Path),
