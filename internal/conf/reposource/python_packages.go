@@ -36,17 +36,17 @@ func ParsePythonDependency(dependency string) (*PythonDependency, error) {
 }
 
 // ParsePythonDependencyFromRepoName is a convenience function to parse a repo name in a
-// 'pip/<name>(==<version>)?' format into a PythonDependency.
+// 'pypi/<name>(==<version>)?' format into a PythonDependency.
 func ParsePythonDependencyFromRepoName(name string) (*PythonDependency, error) {
-	dependency := strings.TrimPrefix(name, "pip/")
+	dependency := strings.TrimPrefix(name, "pypi/")
 	if len(dependency) == len(name) {
-		return nil, errors.New("invalid python dependency repo name, missing pip/ prefix")
+		return nil, errors.New("invalid python dependency repo name, missing pypi/ prefix")
 	}
 	return ParsePythonDependency(dependency)
 }
 
 func (p *PythonDependency) Scheme() string {
-	return "pip"
+	return "pypi"
 }
 
 func (p *PythonDependency) PackageSyntax() string {
@@ -67,7 +67,7 @@ func (p *PythonDependency) PackageVersion() string {
 func (p *PythonDependency) Description() string { return "" }
 
 func (p *PythonDependency) RepoName() api.RepoName {
-	return api.RepoName("pip/" + p.Name)
+	return api.RepoName("pypi/" + p.Name)
 }
 
 func (p *PythonDependency) GitTagFromVersion() string {

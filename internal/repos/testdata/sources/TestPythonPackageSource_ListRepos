@@ -1,8 +1,8 @@
 [
   {
    "ID": 0,
-   "Name": "pip/requests",
-   "URI": "pip/requests",
+   "Name": "pypi/requests",
+   "URI": "pypi/requests",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -11,22 +11,22 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "pip/requests",
+    "ID": "pypi/requests",
     "ServiceType": "pythonPackages",
     "ServiceID": "pythonPackages"
    },
    "Sources": {
     "extsvc:pythonpackages:0": {
      "ID": "extsvc:pythonpackages:0",
-     "CloneURL": "pip/requests"
+     "CloneURL": "pypi/requests"
     }
    },
    "Metadata": {}
   },
   {
    "ID": 0,
-   "Name": "pip/lavaclient",
-   "URI": "pip/lavaclient",
+   "Name": "pypi/lavaclient",
+   "URI": "pypi/lavaclient",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -35,22 +35,22 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "pip/lavaclient",
+    "ID": "pypi/lavaclient",
     "ServiceType": "pythonPackages",
     "ServiceID": "pythonPackages"
    },
    "Sources": {
     "extsvc:pythonpackages:0": {
      "ID": "extsvc:pythonpackages:0",
-     "CloneURL": "pip/lavaclient"
+     "CloneURL": "pypi/lavaclient"
     }
    },
    "Metadata": {}
   },
   {
    "ID": 0,
-   "Name": "pip/randio",
-   "URI": "pip/randio",
+   "Name": "pypi/randio",
+   "URI": "pypi/randio",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -59,22 +59,22 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "pip/randio",
+    "ID": "pypi/randio",
     "ServiceType": "pythonPackages",
     "ServiceID": "pythonPackages"
    },
    "Sources": {
     "extsvc:pythonpackages:0": {
      "ID": "extsvc:pythonpackages:0",
-     "CloneURL": "pip/randio"
+     "CloneURL": "pypi/randio"
     }
    },
    "Metadata": {}
   },
   {
    "ID": 0,
-   "Name": "pip/pytimeparse",
-   "URI": "pip/pytimeparse",
+   "Name": "pypi/pytimeparse",
+   "URI": "pypi/pytimeparse",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -83,22 +83,22 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "pip/pytimeparse",
+    "ID": "pypi/pytimeparse",
     "ServiceType": "pythonPackages",
     "ServiceID": "pythonPackages"
    },
    "Sources": {
     "extsvc:pythonpackages:0": {
      "ID": "extsvc:pythonpackages:0",
-     "CloneURL": "pip/pytimeparse"
+     "CloneURL": "pypi/pytimeparse"
     }
    },
    "Metadata": {}
   },
   {
    "ID": 0,
-   "Name": "pip/numpy",
-   "URI": "pip/numpy",
+   "Name": "pypi/numpy",
+   "URI": "pypi/numpy",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -107,14 +107,14 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "pip/numpy",
+    "ID": "pypi/numpy",
     "ServiceType": "pythonPackages",
     "ServiceID": "pythonPackages"
    },
    "Sources": {
     "extsvc:pythonpackages:0": {
      "ID": "extsvc:pythonpackages:0",
-     "CloneURL": "pip/numpy"
+     "CloneURL": "pypi/numpy"
     }
    },
    "Metadata": {}
