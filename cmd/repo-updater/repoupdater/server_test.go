@@ -35,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestServer_handleRepoLookup(t *testing.T) {
@@ -621,7 +622,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				Sourcer: repos.NewFakeSourcer(nil, tc.src),
 			}
 
-			scheduler := repos.NewUpdateScheduler(database.NewMockDB())
+			scheduler := repos.NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
 
 			s := &Server{
 				Syncer:    syncer,
