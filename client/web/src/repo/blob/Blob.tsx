@@ -499,11 +499,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                                 filter(isDefined),
                                 findPositionsFromEvents({ domFunctions })
                             ),
-                            positionJumps: combineLatest([
-                                locationPositions,
-                                codeViewElements.pipe(filter(isDefined)),
-                                blobElements.pipe(filter(isDefined)),
-                            ]).pipe(
+                            positionJumps: locationPositions.pipe(
+                                withLatestFrom(
+                                    codeViewElements.pipe(filter(isDefined)),
+                                    blobElements.pipe(filter(isDefined))
+                                ),
                                 map(([position, codeView, scrollElement]) => ({
                                     position,
                                     // locationPositions is derived from componentUpdates,
