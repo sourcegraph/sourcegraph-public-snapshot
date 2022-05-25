@@ -100,9 +100,9 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                 .then(async ({ data }) => {
                     if (data?.currentUser) {
                         setState('success')
-                        // Update access token first before endpoint because reload is required
-                        await extensionCoreAPI.setAccessToken(accessToken)
-                        return extensionCoreAPI.setEndpointUri(endpointUrl)
+                        // Update access token and instance url in user config for the extension
+                        await extensionCoreAPI.setEndpointUri(endpointUrl, accessToken)
+                        return
                     }
                     setState('failure')
                     return
@@ -238,14 +238,16 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     restart VS Code if the instance URL has been updated.
                 </Alert>
             )}
-
-            <VSCodeLink onClick={() => setUsePrivateInstance(!usePrivateInstance)}>
-                {!usePrivateInstance ? 'Need to connect to a private instance?' : 'Not a private instance user?'}
-            </VSCodeLink>
-
-            <VSCodeLink href={signUpURL} onClick={onSignUpClick}>
-                Create an account
-            </VSCodeLink>
+            <p className="my-0">
+                <VSCodeLink onClick={() => setUsePrivateInstance(!usePrivateInstance)}>
+                    {!usePrivateInstance ? 'Need to connect to a private instance?' : 'Not a private instance user?'}
+                </VSCodeLink>
+            </p>
+            <p className="my-0">
+                <VSCodeLink href={signUpURL} onClick={onSignUpClick}>
+                    Create an account
+                </VSCodeLink>
+            </p>
         </>
     )
 }

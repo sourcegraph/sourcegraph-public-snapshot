@@ -17,7 +17,7 @@ export async function handleAccessTokenError(badToken?: string, endpointURL?: st
 
         const message = !badToken
             ? `A valid access token is required to connect to ${endpointURL}`
-            : `Connection to ${endpointURL} failed because the token is invalid`
+            : `Connection to ${endpointURL} failed because the token is invalid. Please reload VS Code if your Sourcegraph instance URL has changed.`
 
         await vscode.window.showErrorMessage(message)
         showingAccessTokenErrorMessage = false
