@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react'
 
+import { LazyQueryResult } from '@apollo/client'
 import classNames from 'classnames'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
@@ -27,6 +28,12 @@ export interface CodeHostConnectionNodeProps {
     node: BatchChangesCodeHostFields
     refetchAll: () => void
     userID: Scalars['ID'] | null
+
+    // Allow the storybook to fake a result.
+    _checkCredResult?: Pick<
+        LazyQueryResult<CheckBatchChangesCredentialResult, CheckBatchChangesCredentialVariables>,
+        'data' | 'error' | 'loading'
+    >
 }
 
 type OpenModal = 'add' | 'view' | 'delete'
@@ -35,14 +42,19 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
     node,
     refetchAll,
     userID,
+    _checkCredResult,
 }) => {
     const ExternalServiceIcon = defaultExternalServices[node.externalServiceKind].icon
     const codeHostDisplayName = defaultExternalServices[node.externalServiceKind].defaultDisplayName
 
-    const [checkCred, { data: checkCredData, loading: checkCredLoading, error: checkCredError }] = useLazyQuery<
+    const [checkCred, checkCredResult] = useLazyQuery<
         CheckBatchChangesCredentialResult,
         CheckBatchChangesCredentialVariables
     >(CHECK_BATCH_CHANGES_CREDENTIAL, {})
+
+    // Apply the fake _checkCredResult if present.
+    const { data: checkCredData, error: checkCredError, loading: checkCredLoading } =
+        _checkCredResult ?? checkCredResult
 
     const buttonReference = useRef<HTMLButtonElement | null>(null)
 

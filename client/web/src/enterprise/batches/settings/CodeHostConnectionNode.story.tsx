@@ -64,3 +64,82 @@ add('Overview', () => (
         )}
     </WebStory>
 ))
+
+add('Invalid', () => (
+    <WebStory>
+        {props => (
+            <CodeHostConnectionNode
+                {...props}
+                node={{
+                    credential: sshCredential(false),
+                    externalServiceKind: ExternalServiceKind.GITHUB,
+                    externalServiceURL: 'https://github.com/',
+                    requiresSSH: false,
+                    requiresUsername: false,
+                }}
+                refetchAll={() => {}}
+                userID="123"
+                _checkCredResult={{
+                    data: undefined,
+                    error: {
+                        message: 'validation failed',
+                        graphQLErrors: [],
+                        clientErrors: [],
+                        networkError: null,
+                        extraInfo: null,
+                        name: 'validation',
+                    },
+                    loading: false,
+                }}
+            />
+        )}
+    </WebStory>
+))
+
+add('Loading', () => (
+    <WebStory>
+        {props => (
+            <CodeHostConnectionNode
+                {...props}
+                node={{
+                    credential: sshCredential(false),
+                    externalServiceKind: ExternalServiceKind.GITHUB,
+                    externalServiceURL: 'https://github.com/',
+                    requiresSSH: false,
+                    requiresUsername: false,
+                }}
+                refetchAll={() => {}}
+                userID="123"
+                _checkCredResult={{
+                    data: undefined,
+                    error: undefined,
+                    loading: true,
+                }}
+            />
+        )}
+    </WebStory>
+))
+
+add('Valid', () => (
+    <WebStory>
+        {props => (
+            <CodeHostConnectionNode
+                {...props}
+                node={{
+                    credential: sshCredential(false),
+                    externalServiceKind: ExternalServiceKind.GITHUB,
+                    externalServiceURL: 'https://github.com/',
+                    requiresSSH: false,
+                    requiresUsername: false,
+                }}
+                refetchAll={() => {}}
+                userID="123"
+                _checkCredResult={{
+                    data: checkCredResult(),
+                    error: undefined,
+                    loading: false,
+                }}
+            />
+        )}
+    </WebStory>
+))
