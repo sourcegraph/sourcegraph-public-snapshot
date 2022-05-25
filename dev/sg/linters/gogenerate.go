@@ -3,7 +3,6 @@ package linters
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/sourcegraph/run"
@@ -42,7 +41,7 @@ func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
 	}
 
 	var out strings.Builder
-	err := root.Run(run.Cmd(ctx, "git", "diff", "--exit-code", "--", ".", ":!go.sum")).Stream(os.Stdout)
+	err := root.Run(run.Cmd(ctx, "git", "diff", "--exit-code", "--", ".", ":!go.sum")).Stream(&out)
 	if err != nil {
 		var sb strings.Builder
 		reportOut := std.NewOutput(&sb, true)
