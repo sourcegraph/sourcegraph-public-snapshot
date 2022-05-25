@@ -16,6 +16,7 @@ import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
 
 const EDITOR_SELECTOR = '#monaco-query-input'
+const EDITOR_INPUT_SELECTOR = `${EDITOR_SELECTOR} .cm-content`
 const COMPLETION_SELECTOR = `${EDITOR_SELECTOR} .cm-tooltip-autocomplete`
 const COMPLETION_LABEL_SELECTOR = `${COMPLETION_SELECTOR} .cm-completionLabel`
 
@@ -228,7 +229,7 @@ describe('Search (CodeMirror)', () => {
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
-            await driver.page.waitForSelector(EDITOR_SELECTOR)
+            await driver.page.waitForSelector(EDITOR_INPUT_SELECTOR)
             expect(await getSearchFieldValue(driver)).toStrictEqual('foo')
             // Field value is cleared when navigating to a non search-related page
             await driver.page.waitForSelector('a[href="/extensions"]')
