@@ -47,6 +47,7 @@ func main() {
 		definitions.Prometheus(),
 		definitions.Executor(),
 		definitions.Containers(),
+		definitions.CodeIntelAutoIndexing(),
 	); err != nil {
 		// Rely on the Generate function doing logging, so just exit with an appropriate
 		// error code here.
