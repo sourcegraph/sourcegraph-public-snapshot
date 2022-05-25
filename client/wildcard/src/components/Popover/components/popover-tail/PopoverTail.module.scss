@@ -1,0 +1,58 @@
+.tail {
+    display: block;
+    position: fixed;
+    z-index: 2;
+    width: 1rem;
+    height: 0.5rem;
+    top: 0;
+    left: 0;
+
+    &::after {
+        content: '';
+        z-index: 1;
+        position: relative;
+        display: block;
+        border-left: 8px solid transparent;
+        border-top: 8px solid var(--dropdown-bg);
+        border-right: 8px solid transparent;
+    }
+
+    &-absolute {
+        position: absolute;
+    }
+
+    /*
+     Shift tail in order to compensate border width of the popover content element
+
+     Example for the tail "right" position
+                   Border                        Border
+            ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+            ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+        Content▒▒▒▒░░▓                 Content▒▒▒▓░
+            ▒▒▒▒▒▒▒░░▓▓  Tail             ▒▒▒▒▒▒▒▓▓  Tail
+            ▒▒▒▒▒▒▒░░▓▓▓                  ▒▒▒▒▒▒▒▓▓▓
+            ▒▒▒▒▒▒▒░░▓▓▓▓      ───────▶   ▒▒▒▒▒▒▒▓▓▓▓
+            ▒▒▒▒▒▒▒░░▓▓▓                  ▒▒▒▒▒▒▒▓▓▓
+            ▒▒▒▒▒▒▒░░▓▓                   ▒▒▒▒▒▒▒▓▓
+            ▒▒▒▒▒▒▒░░▓                    ▒▒▒▒▒▒▒▓░
+            ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+            ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+            ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+     */
+
+    &[data-side='top'] {
+        top: -1px;
+    }
+
+    &[data-side='left'] {
+        left: -1px;
+    }
+
+    &[data-side='right'] {
+        left: 1px;
+    }
+
+    &[data-side='bottom'] {
+        top: 1px;
+    }
+}
