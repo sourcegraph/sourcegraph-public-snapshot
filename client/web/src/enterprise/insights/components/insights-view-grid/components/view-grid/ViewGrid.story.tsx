@@ -5,9 +5,9 @@ import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 
 import { Button, Menu, MenuButton, MenuItem, MenuList, Position } from '@sourcegraph/wildcard'
 
-import { WebStory } from '../../../components/WebStory'
-import { LINE_CHART_CONTENT_MOCK } from '../../mocks/charts-content'
-import * as View from '../view'
+import { WebStory } from '../../../../../../components/WebStory'
+import * as View from '../../../../../../views/components/view'
+import { LINE_CHART_CONTENT_MOCK } from '../../../../../../views/mocks/charts-content'
 
 import { ViewGrid } from './ViewGrid'
 
