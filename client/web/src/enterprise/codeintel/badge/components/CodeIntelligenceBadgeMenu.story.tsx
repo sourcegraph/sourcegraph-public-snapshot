@@ -19,8 +19,8 @@ const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
     __typename: 'LSIFUpload',
     inputCommit: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
     inputRoot: 'web/',
-    inputIndexer: 'lsif-typescript',
-    indexer: { name: 'lsif-typescript', url: 'https://github.com/sourcegraph/lsif-typescript' },
+    inputIndexer: 'scip-typescript',
+    indexer: { name: 'scip-typescript', url: 'https://github.com/sourcegraph/scip-typescript' },
     failure: null,
     isLatestForRepo: false,
     startedAt: null,
@@ -55,8 +55,8 @@ const indexPrototype: Omit<LsifIndexFields, 'id' | 'state' | 'queuedAt'> = {
     __typename: 'LSIFIndex',
     inputCommit: '',
     inputRoot: 'web/',
-    inputIndexer: 'lsif-typescript',
-    indexer: { name: 'lsif-typescript', url: 'https://github.com/sourcegraph/lsif-typescript' },
+    inputIndexer: 'scip-typescript',
+    indexer: { name: 'scip-typescript', url: 'https://github.com/sourcegraph/scip-typescript' },
     failure: null,
     startedAt: null,
     finishedAt: null,
@@ -93,7 +93,7 @@ const indexPrototype: Omit<LsifIndexFields, 'id' | 'state' | 'queuedAt'> = {
 
 const completedUpload = {
     root: 'lib/',
-    indexer: { name: 'lsif-typescript', url: 'https://github.com/sourcegraph/lsif-typescript' },
+    indexer: { name: 'scip-typescript', url: 'https://github.com/sourcegraph/scip-typescript' },
     uploads: [
         {
             ...uploadPrototype,
@@ -107,7 +107,7 @@ const completedUpload = {
 
 const failingUpload = {
     root: 'client/',
-    indexer: { name: 'lsif-typescript', url: 'https://github.com/sourcegraph/lsif-typescript' },
+    indexer: { name: 'scip-typescript', url: 'https://github.com/sourcegraph/scip-typescript' },
     uploads: [
         {
             ...uploadPrototype,
@@ -133,7 +133,7 @@ const failingUpload = {
 
 const failingIndex = {
     root: 'client/',
-    indexer: { name: 'lsif-typescript', url: 'https://github.com/sourcegraph/lsif-typescript' },
+    indexer: { name: 'scip-typescript', url: 'https://github.com/sourcegraph/scip-typescript' },
     indexes: [
         {
             ...indexPrototype,
@@ -183,8 +183,8 @@ const multiplePreciseSupport = [
         supportLevel: PreciseSupportLevel.NATIVE,
         indexers: [
             {
-                name: 'lsif-typescript',
-                url: 'https://github.com/sourcegraph/lsif-typescript',
+                name: 'scip-typescript',
+                url: 'https://github.com/sourcegraph/scip-typescript',
             },
             {
                 // Note: not shown

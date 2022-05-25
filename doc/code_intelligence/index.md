@@ -121,8 +121,6 @@ Once setup, code intelligence is available for use across popular development to
 ## [Tutorials](tutorials/index.md)
 
 - [Manually index a popular Go repository](tutorials/indexing_go_repo.md)
-- [Manually index a popular TypeScript repository](tutorials/indexing_ts_repo.md)
-
 
 ## [References](references/index.md)
 

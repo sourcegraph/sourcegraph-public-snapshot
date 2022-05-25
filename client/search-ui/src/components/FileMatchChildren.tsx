@@ -14,21 +14,20 @@ import {
     isErrorLike,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { CodeExcerpt, FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
+import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
+import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
+import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
 import { Link, Typography } from '@sourcegraph/wildcard'
 
-import { ActionItemAction } from '../actions/ActionItem'
-import { Controller as ExtensionsController } from '../extensions/controller'
-import { HoverContext } from '../hover/HoverOverlay.types'
-import { IHighlightLineRange } from '../schema'
-import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
-import { SettingsCascadeProps } from '../settings/settings'
-import { SymbolIcon } from '../symbols/SymbolIcon'
-import { TelemetryProps } from '../telemetry/telemetryService'
-import { useCodeIntelViewerUpdates } from '../util/useCodeIntelViewerUpdates'
-
-import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import { LastSyncedIcon } from './LastSyncedIcon'
-import { MatchGroup } from './ranking/PerFileResultRanking'
 
 import styles from './FileMatchChildren.module.scss'
 

@@ -14,7 +14,6 @@ import { SearchBox } from '@sourcegraph/search-ui'
 import { AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import {
     aggregateStreamingSearch,
     ContentMatch,
@@ -28,7 +27,9 @@ import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
 
+import { saveLastSearch } from './jsToJavaBridgeUtil'
 import { SearchResultList } from './results/SearchResultList'
+import { Search } from './types'
 
 import styles from './App.module.scss'
 
@@ -40,17 +41,11 @@ interface Props {
     onPreviewChange: (match: ContentMatch, lineIndex: number) => void
     onPreviewClear: () => void
     onOpen: (match: ContentMatch, lineIndex: number) => void
+    initialSearch: Search | null
 }
 
 function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
     return fetchStreamSuggestions(query, 'https://sourcegraph.com/.api')
-}
-
-export interface Search {
-    query: string | null
-    caseSensitive: boolean
-    patternType: SearchPatternType
-    selectedSearchContextSpec: string
 }
 
 export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -61,6 +56,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     onPreviewChange,
     onPreviewClear,
     onOpen,
+    initialSearch,
 }: Props) => {
     const [authState, setAuthState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
     const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
@@ -112,14 +108,16 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     }
 
     const [results, setResults] = useState<SearchMatch[]>([])
-    const [lastSearch, setLastSearch] = useState<Search>({
-        query: '',
-        caseSensitive: false,
-        patternType: SearchPatternType.literal,
-        selectedSearchContextSpec: 'global',
-    })
+    const [lastSearch, setLastSearch] = useState<Search>(
+        initialSearch ?? {
+            query: '',
+            caseSensitive: false,
+            patternType: SearchPatternType.literal,
+            selectedSearchContextSpec: 'global',
+        }
+    )
     const [userQueryState, setUserQueryState] = useState<QueryState>({
-        query: '',
+        query: lastSearch.query ?? '',
     })
     const [subscription, setSubscription] = useState<Subscription>()
 
@@ -129,16 +127,23 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     }, [instanceURL])
 
     const onSubmit = useCallback(
-        (options?: { caseSensitive?: boolean; patternType?: SearchPatternType; contextSpec?: string }) => {
+        (options?: {
+            caseSensitive?: boolean
+            patternType?: SearchPatternType
+            contextSpec?: string
+            forceNewSearch?: true
+        }) => {
             const query = userQueryState.query ?? ''
             const caseSensitive = options?.caseSensitive
             const patternType = options?.patternType
             const contextSpec = options?.contextSpec
+            const forceNewSearch = options?.forceNewSearch ?? false
 
             // When we submit a search that is already the last search, do nothing. This prevents the
             // search results from being reloaded and reapplied in a different order when a user
             // accidentally hits enter thinking that this would open the file
             if (
+                forceNewSearch !== true &&
                 query === lastSearch.query &&
                 (caseSensitive === undefined || caseSensitive === lastSearch.caseSensitive) &&
                 (patternType === undefined || patternType === lastSearch.patternType) &&
@@ -146,6 +151,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             ) {
                 return
             }
+
             // If we don't unsubscribe, the previous search will be continued after the new search and search results will be mixed
             subscription?.unsubscribe()
             setSubscription(
@@ -174,32 +180,25 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         [lastSearch, subscription, userQueryState.query]
     )
 
+    const [didInitialSubmit, setDidInitialSubmit] = useState(false)
     useEffect(() => {
-        window
-            .callJava({ action: 'loadLastSearch' })
-            .then(lastSavedSearch => {
-                console.log(`Loaded last search: ${JSON.stringify(lastSavedSearch)}`)
-                setLastSearch(lastSavedSearch as Search)
+        if (didInitialSubmit) {
+            return
+        }
+        setDidInitialSubmit(true)
+        if (initialSearch !== null) {
+            onSubmit({
+                caseSensitive: initialSearch.caseSensitive,
+                patternType: initialSearch.patternType,
+                contextSpec: initialSearch.selectedSearchContextSpec,
+                forceNewSearch: true,
             })
-            .catch(error => {
-                console.error(`Failed to load last search: ${(error as Error).message}`)
-            })
-    }, [])
+        }
+    }, [initialSearch, onSubmit, didInitialSubmit])
 
     useEffect(() => {
-        window
-            .callJava({ action: 'saveLastSearch', arguments: lastSearch })
-            .then(() => {
-                console.log(`Saved last search: ${JSON.stringify(lastSearch)}`)
-            })
-            .catch(error => {
-                console.error(`Failed to save last search: ${(error as Error).message}`)
-            })
+        saveLastSearch(lastSearch)
     }, [lastSearch, userQueryState])
-
-    useEffect(() => {
-        polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
-    }, [accessToken])
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
@@ -250,10 +249,10 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                     </form>
                 </div>
                 <div>Auth state: {authState}</div>
-                {/* We reset the search result list whenever a new search is started using key={lastSearchedQuery} */}
+                {/* We reset the search result list whenever a new search is initiated using key={getStableKeyForLastSearch(lastSearch)} */}
                 <SearchResultList
                     results={results}
-                    key={lastSearch.query}
+                    key={getStableKeyForLastSearch(lastSearch)}
                     onPreviewChange={onPreviewChange}
                     onPreviewClear={onPreviewClear}
                     onOpen={onOpen}
@@ -261,4 +260,10 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             </div>
         </WildcardThemeContext.Provider>
     )
+}
+
+function getStableKeyForLastSearch(lastSearch: Search): string {
+    return `${lastSearch.query ?? ''}-${lastSearch.caseSensitive}-${String(lastSearch.patternType)}-${
+        lastSearch.selectedSearchContextSpec
+    }`
 }

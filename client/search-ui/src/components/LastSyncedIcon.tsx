@@ -8,7 +8,7 @@ import { Icon } from '@sourcegraph/wildcard'
 
 import styles from './LastSyncedIcon.module.scss'
 
-export interface Props {
+interface Props {
     lastSyncedTime: string
     className?: string
 }
