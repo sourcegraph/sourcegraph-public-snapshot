@@ -60,6 +60,7 @@ func parseConfig(cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider
 		callbackURL.Path = "/.auth/gitlab/callback"
 
 		provider, providerMessages := parseProvider(db, callbackURL.String(), pr.Gitlab, pr)
+
 		problems = append(problems, conf.NewSiteProblems(providerMessages...)...)
 		ps = append(ps, Provider{
 			GitLabAuthProvider: pr.Gitlab,

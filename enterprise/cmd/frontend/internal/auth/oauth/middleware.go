@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -72,7 +73,8 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		p := GetProvider(serviceType, id)
 		if p == nil {
 			log15.Error("no OAuth provider found with ID and service type", "id", id, "serviceType", serviceType)
-			http.Error(w, "Misconfigured GitHub auth provider.", http.StatusInternalServerError)
+			msg := fmt.Sprintf("Misconfigured %s auth provider.", serviceType)
+			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
 		op := LoginStateOp(req.URL.Query().Get("op"))
