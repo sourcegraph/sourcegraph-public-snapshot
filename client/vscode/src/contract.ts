@@ -23,6 +23,7 @@ export interface ExtensionCoreAPI {
     observeSourcegraphSettings: () => ProxySubscribable<SettingsCascadeOrError>
     getAuthenticatedUser: () => ProxySubscribable<AuthenticatedUser | null>
     getInstanceURL: () => ProxySubscribable<string>
+    getAccessToken: string | undefined
     setAccessToken: (accessToken: string) => void
     setEndpointUri: (uri: string) => void
     /**

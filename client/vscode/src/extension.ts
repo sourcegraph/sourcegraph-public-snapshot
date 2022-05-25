@@ -85,6 +85,7 @@ export function activate(context: vscode.ExtensionContext): void {
         openLink: (uri: string) => vscode.env.openExternal(vscode.Uri.parse(uri)),
         copyLink: (uri: string) =>
             env.clipboard.writeText(uri).then(() => vscode.window.showInformationMessage('Link Copied!')),
+        getAccessToken: accessTokenSetting(),
         setAccessToken: accessToken => updateAccessTokenSetting(accessToken),
         setEndpointUri: uri => updateEndpointSetting(uri),
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),

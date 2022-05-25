@@ -9,15 +9,15 @@ export function accessTokenSetting(): string | undefined {
 // Ensure that only one access token error message is shown at a time.
 let showingAccessTokenErrorMessage = false
 
-export async function handleAccessTokenError(badToken?: string, sourcegraphURL?: string): Promise<void> {
+export async function handleAccessTokenError(badToken?: string, endpointURL?: string): Promise<void> {
     const currentValue = readConfiguration().get<string>('accessToken')
 
     if (currentValue === badToken && !showingAccessTokenErrorMessage) {
         showingAccessTokenErrorMessage = true
 
         const message = !badToken
-            ? `Sourcegraph extension requires an access token to make requests to ${sourcegraphURL}`
-            : `Sourcegraph extension is unable to use the access token ${badToken} for ${sourcegraphURL}.`
+            ? `A valid access token is required to connect to ${endpointURL}`
+            : `Connection to ${endpointURL} failed because the token is invalid`
 
         await vscode.window.showErrorMessage(message)
         showingAccessTokenErrorMessage = false
