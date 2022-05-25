@@ -325,7 +325,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 	g, ctx := errgroup.WithContext(ctx)
 
 	// Start workers. They read from files and write to matches.
-	for i := 0; i < 1; i++ {
+	for i := 0; i < numWorkers; i++ {
 		rg := rg.Copy()
 		g.Go(func() error {
 			for ctx.Err() == nil {
