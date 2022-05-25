@@ -253,7 +253,7 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthToken(ctx context.Context, acct *ex
 				AuthURL:  url + "/oauth/authorize",
 				TokenURL: url + "/oauth/token",
 			},
-			Scopes: []string{"read_user", "api"},
+			Scopes: gitlab.RequestedOAuthScopes(authProvider.Gitlab.ApiScope, nil),
 		}
 		break
 	}
