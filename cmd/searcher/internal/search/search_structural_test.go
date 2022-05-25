@@ -344,7 +344,7 @@ func TestRule(t *testing.T) {
 	}
 
 	input := map[string]string{
-		"file.go": "func foo(success) {}\nfunc bar(fail) {}",
+		"file.go": "func foo(success) {} func bar(fail) {}",
 	}
 
 	zipData, err := createZip(input)
@@ -371,7 +371,7 @@ func TestRule(t *testing.T) {
 		Path:     "file.go",
 		LimitHit: false,
 		MultilineMatches: []protocol.MultilineMatch{{
-			Preview: "func foo(success) {}",
+			Preview: "func foo(success) {} func bar(fail) {}",
 			Start:   protocol.LineColumn{Line: 0, Column: 0},
 			End:     protocol.LineColumn{Line: 0, Column: 17},
 		}},
