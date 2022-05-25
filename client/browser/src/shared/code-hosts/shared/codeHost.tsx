@@ -1396,7 +1396,9 @@ export async function handleCodeHost({
                             // The nested subscribe cannot be replaced with a switchMap()
                             // We manage the subscription correctly.
                             // eslint-disable-next-line rxjs/no-nested-subscribe
-                            .subscribe(([decorations, isLightTheme]) => update(decorations, isLightTheme))
+                            .subscribe(([decorations, isLightTheme]) =>
+                                update([...decorations.values()].flat(), isLightTheme)
+                            )
                     )
                 }
 

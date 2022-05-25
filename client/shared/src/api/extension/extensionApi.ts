@@ -341,6 +341,7 @@ export function createExtensionAPIFactory(
                             })
                     }
                 },
+                createDecorationType: () => createDecorationType(extensionID),
             },
 
             workspace,

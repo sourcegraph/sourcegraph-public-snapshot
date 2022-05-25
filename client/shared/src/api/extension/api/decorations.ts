@@ -12,7 +12,9 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 
 // LINE DECORATIONS
 
-export const createDecorationType = (): TextDocumentDecorationType => ({ key: uniqueId('TextDocumentDecorationType') })
+export const createDecorationType = (extensionID?: string): TextDocumentDecorationType => ({
+    key: extensionID || uniqueId('TextDocumentDecorationType'),
+})
 
 /**
  * Resolves the actual styles to use for the attachment based on the current theme.

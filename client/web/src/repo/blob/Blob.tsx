@@ -19,6 +19,7 @@ import {
     throttleTime,
     withLatestFrom,
 } from 'rxjs/operators'
+import { TextDocumentDecorationType } from 'sourcegraph'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -45,7 +46,7 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -74,6 +75,7 @@ import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
 import { HoverThresholdProps } from '../RepoContainer'
 
+import { ColumnDecorator } from './ColumnDecorator'
 import { LineDecorator } from './LineDecorator'
 
 import styles from './Blob.module.scss'
@@ -82,6 +84,8 @@ import styles from './Blob.module.scss'
  * toPortalID builds an ID that will be used for the {@link LineDecorator} portal containers.
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
+
+const extensionsInSeparateColumns = new Set(['sourcegraph/git-extras'])
 
 export interface BlobProps
     extends SettingsCascadeProps,
@@ -134,14 +138,14 @@ const domFunctions = {
         if (!row) {
             return null
         }
-        return row.cells[1]
+        return row.querySelector('td.code')
     },
     getLineNumberFromCodeElement: (codeCell: HTMLElement): number => {
         const row = codeCell.closest('tr')
         if (!row) {
             throw new Error('Could not find closest row for codeCell')
         }
-        const numberCell = row.cells[0]
+        const numberCell = row.querySelector<HTMLTableCellElement>('td.line')
         if (!numberCell || !numberCell.dataset.line) {
             throw new Error('Could not find line number')
         }
@@ -251,7 +255,9 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         }
     }, [blobInfo, nextBlobInfoChange, viewerUpdates])
 
-    const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | undefined>()
+    const [decorationsOrError, setDecorationsOrError] = useState<
+        Map<TextDocumentDecorationType, TextDocumentDecoration[]> | Error | undefined
+    >()
 
     const hoverifier = useMemo(
         () =>
@@ -520,7 +526,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         return wrapRemoteObservable(viewerData.extensionHostAPI.getTextDecorations(viewerData.viewerId))
                     }),
                     catchError(error => [asError(error)]),
-                    tap(decorations => setDecorationsOrError(decorations)),
+                    tap(setDecorationsOrError),
                     mapTo(undefined)
                 ),
             [viewerUpdates]
@@ -534,8 +540,13 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
     // Memoize `groupedDecorations` to avoid clearing and setting decorations in `LineDecorator`s on renders in which
     // decorations haven't changed.
-    const groupedDecorations = useMemo(
-        () => decorationsOrError && !isErrorLike(decorationsOrError) && groupDecorationsByLine(decorationsOrError),
+    const groupedDecorations: Map<TextDocumentDecorationType, DecorationMapByLine> | undefined = useMemo(
+        () =>
+            decorationsOrError && !isErrorLike(decorationsOrError)
+                ? new Map(
+                      [...decorationsOrError].map(([key, decorations]) => [key, groupDecorationsByLine(decorations)])
+                  )
+                : undefined,
         [decorationsOrError]
     )
 
@@ -626,19 +637,35 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 )}
                 {groupedDecorations &&
                     iterate(groupedDecorations)
-                        .map(([line, decorations]) => {
-                            const portalID = toPortalID(line)
-                            return (
-                                <LineDecorator
-                                    isLightTheme={isLightTheme}
-                                    key={`${portalID}-${blobInfo.filePath}`}
-                                    portalID={portalID}
-                                    getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
-                                    line={line}
-                                    decorations={decorations}
-                                    codeViewElements={codeViewElements}
-                                />
-                            )
+                        .map(([key, decorations]) => {
+                            if (extensionsInSeparateColumns.has(key.key)) {
+                                return (
+                                    <ColumnDecorator
+                                        key={key.key}
+                                        isLightTheme={isLightTheme}
+                                        extensionID={key.key}
+                                        decorations={decorations}
+                                        codeViewElements={codeViewElements}
+                                    />
+                                )
+                            }
+
+                            return iterate(decorations)
+                                .map(([line, items]) => {
+                                    const portalID = toPortalID(line)
+                                    return (
+                                        <LineDecorator
+                                            isLightTheme={isLightTheme}
+                                            key={`${portalID}-${blobInfo.filePath}`}
+                                            portalID={portalID}
+                                            getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
+                                            line={line}
+                                            decorations={items}
+                                            codeViewElements={codeViewElements}
+                                        />
+                                    )
+                                })
+                                .toArray()
                         })
                         .toArray()}
             </div>

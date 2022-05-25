@@ -180,8 +180,8 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
 
                     tap(([baseDecorations, headDecorations]) => {
                         setDecorations({
-                            base: groupDecorationsByLine(baseDecorations),
-                            head: groupDecorationsByLine(headDecorations),
+                            base: groupDecorationsByLine(baseDecorations && [...baseDecorations.values()].flat()),
+                            head: groupDecorationsByLine(headDecorations && [...headDecorations.values()].flat()),
                         })
                     })
                 ),

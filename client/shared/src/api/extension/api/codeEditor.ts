@@ -50,9 +50,13 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
 
     private _decorationsByType = new Map<sourcegraph.TextDocumentDecorationType, clientType.TextDocumentDecoration[]>()
 
-    private _mergedDecorations = new BehaviorSubject<clientType.TextDocumentDecoration[]>([])
-    public get mergedDecorations(): Observable<clientType.TextDocumentDecoration[]> {
-        return this._mergedDecorations
+    private _decorations = new BehaviorSubject<
+        Map<sourcegraph.TextDocumentDecorationType, clientType.TextDocumentDecoration[]>
+    >(new Map())
+    public get decorations(): Observable<
+        Map<sourcegraph.TextDocumentDecorationType, clientType.TextDocumentDecoration[]>
+    > {
+        return this._decorations
     }
 
     public setDecorations(
@@ -64,8 +68,14 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
         decorationType = decorationType || DEFAULT_DECORATION_TYPE
         // Replace previous decorations for this decorationType
         this._decorationsByType.set(decorationType, decorations.map(fromTextDocumentDecoration))
-        this._mergedDecorations.next(
-            [...this._decorationsByType.values()].flat().filter(decoration => !isDecorationEmpty(decoration))
+        this._decorations.next(
+            new Map(
+                [...this._decorationsByType].reduce((accumulator, [key, decorations]) => {
+                    const notEmtyDecorations = decorations.filter(decoration => !isDecorationEmpty(decoration))
+
+                    return notEmtyDecorations.length > 0 ? [...accumulator, [key, notEmtyDecorations]] : accumulator
+                }, [] as any)
+            )
         )
     }
 

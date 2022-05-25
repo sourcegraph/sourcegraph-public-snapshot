@@ -92,6 +92,10 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
     }
 
     const exposedToMain: FlatExtensionHostAPI = {
+        getManifest: (extensionID: string) => {
+            // request
+        },
+
         haveInitialExtensionsLoaded: () => proxySubscribable(state.haveInitialExtensionsLoaded.asObservable()),
 
         // Configuration
@@ -302,7 +306,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
         getTextDecorations: ({ viewerId }) => {
             const viewer = getViewer(viewerId)
             assertViewerType(viewer, 'CodeEditor')
-            return proxySubscribable(viewer.mergedDecorations)
+            return proxySubscribable(viewer.decorations)
         },
 
         addTextDocumentIfNotExists: textDocumentData => {
