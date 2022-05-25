@@ -8,7 +8,7 @@ import (
 func CodeIntelAutoIndexing() *monitoring.Container {
 	return &monitoring.Container{
 		Name:        "codeintel-autoindexing",
-		Title:       "Code Intelligence Autoindexing",
+		Title:       "Code Intelligence > Autoindexing",
 		Description: "The service at `internal/codeintel/autoindexing`.",
 		Variables:   []monitoring.ContainerVariable{},
 		Groups: []monitoring.Group{
