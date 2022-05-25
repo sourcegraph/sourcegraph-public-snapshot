@@ -40,13 +40,12 @@ func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
 		Header: header,
 	}
 
-	var out strings.Builder
-	err := root.Run(run.Cmd(ctx, "git", "diff", "--exit-code", "--", ".", ":!go.sum")).Stream(&out)
+	out, err := root.Run(run.Cmd(ctx, "git", "diff", "--exit-code", "--", ".", ":!go.sum")).String()
 	if err != nil {
 		var sb strings.Builder
 		reportOut := std.NewOutput(&sb, true)
 		reportOut.WriteLine(output.Line(output.EmojiFailure, output.StyleWarning, "Uncommitted changes found after running go generate:"))
-		reportOut.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", out.String()))
+		reportOut.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", out))
 		reportOut.Write("To fix this, run 'sg generate'.")
 		r.Err = err
 		r.Output = sb.String()
