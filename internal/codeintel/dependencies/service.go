@@ -73,57 +73,20 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		return nil, err
 	}
 
-	hash := func(dep Repo) string {
-		return strings.Join([]string{dep.Scheme, dep.Name, dep.Version}, ":")
-	}
-
-	// Populate return value map from the given information. In the same pass, populate
-	// auxiliary data structures that can be used to feed the upsert and sync operations
-	// below.
+	// Populate return value map from the given information.
 	dependencyRevs = make(map[api.RepoName]types.RevSpecSet, len(repoRevs))
-	dependencies := []Repo{}
-	repoNamesByDependency := map[string]api.RepoName{}
-
 	for _, dep := range deps {
 		repo := dep.RepoName()
 		rev := api.RevSpec(dep.GitTagFromVersion())
-		scheme := dep.Scheme()
-		name := dep.PackageSyntax()
-		version := dep.PackageVersion()
 
 		if _, ok := dependencyRevs[repo]; !ok {
 			dependencyRevs[repo] = types.RevSpecSet{}
 		}
 		dependencyRevs[repo][rev] = struct{}{}
-
-		dep := Repo{Scheme: scheme, Name: name, Version: version}
-		dependencies = append(dependencies, dep)
-		repoNamesByDependency[hash(dep)] = repo
-	}
-
-	// Write dependencies to database
-	newDependencies, err := s.dependenciesStore.UpsertDependencyRepos(ctx, dependencies)
-	if err != nil {
-		return nil, errors.Wrap(err, "store.UpsertDependencyRepos")
-	}
-
-	// Determine the set of repo names that were recently inserted. Package and repository
-	// names are generally distinct, so we need to re-translate the dependency scheme, name,
-	// and version back to the repository name.
-	newRepos := make([]api.RepoName, 0, len(newDependencies))
-	newReposSet := make(map[api.RepoName]struct{}, len(newDependencies))
-	for _, dep := range newDependencies {
-		repoName := repoNamesByDependency[hash(dep)]
-		if _, ok := newReposSet[repoName]; ok {
-			continue
-		}
-
-		newRepos = append(newRepos, repoName)
-		newReposSet[repoName] = struct{}{}
 	}
 
 	// Lazily sync all the repos that were newly added
-	if err := s.sync(ctx, newRepos); err != nil {
+	if err := s.upsertAndSyncDependencies(ctx, deps); err != nil {
 		return nil, err
 	}
 
@@ -382,14 +345,60 @@ func (s *Service) ResolveDependencies(ctx context.Context, repoRevs map[api.Repo
 		return err
 	}
 
+	var allDependencies []shared.PackageDependency
 	for _, repoCommit := range repoCommits {
-		if _, err := s.listAndPersistLockfileDependencies(ctx, repoCommit); err != nil {
+		deps, err := s.listAndPersistLockfileDependencies(ctx, repoCommit)
+		if err != nil {
 			return err
 		}
+		allDependencies = append(allDependencies, deps...)
 	}
 
-	// TODO - also sync dependencies
-	return nil
+	return s.upsertAndSyncDependencies(ctx, allDependencies)
+}
+
+func (s *Service) upsertAndSyncDependencies(ctx context.Context, deps []shared.PackageDependency) error {
+	hash := func(dep Repo) string {
+		return strings.Join([]string{dep.Scheme, dep.Name, dep.Version}, ":")
+	}
+
+	dependencies := []Repo{}
+	repoNamesByDependency := map[string]api.RepoName{}
+
+	for _, dep := range deps {
+		repo := dep.RepoName()
+		scheme := dep.Scheme()
+		name := dep.PackageSyntax()
+		version := dep.PackageVersion()
+
+		dep := Repo{Scheme: scheme, Name: name, Version: version}
+		dependencies = append(dependencies, dep)
+		repoNamesByDependency[hash(dep)] = repo
+	}
+
+	// Write dependencies to database
+	newDependencies, err := s.dependenciesStore.UpsertDependencyRepos(ctx, dependencies)
+	if err != nil {
+		return errors.Wrap(err, "store.UpsertDependencyRepos")
+	}
+
+	// Determine the set of repo names that were recently inserted. Package and repository
+	// names are generally distinct, so we need to re-translate the dependency scheme, name,
+	// and version back to the repository name.
+	newRepos := make([]api.RepoName, 0, len(newDependencies))
+	newReposSet := make(map[api.RepoName]struct{}, len(newDependencies))
+	for _, dep := range newDependencies {
+		repoName := repoNamesByDependency[hash(dep)]
+		if _, ok := newReposSet[repoName]; ok {
+			continue
+		}
+
+		newRepos = append(newRepos, repoName)
+		newReposSet[repoName] = struct{}{}
+	}
+
+	// Lazily sync all the repos that were newly added
+	return s.sync(ctx, newRepos)
 }
 
 // Dependents resolves the (transitive) inverse dependencies for a set of repository and revisions.
