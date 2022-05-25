@@ -279,7 +279,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(db, testLogger)
+			s := NewUpdateScheduler(testLogger, db)
 
 			for _, call := range test.calls {
 				s.updateQueue.enqueue(call.repo, call.priority)
@@ -447,7 +447,7 @@ func TestUpdateQueue_remove(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(database.NewMockDB(), testLogger)
+			s := NewUpdateScheduler(testLogger, database.NewMockDB())
 			setupInitialQueue(s, test.initialQueue)
 
 			// Perform the removals.
@@ -521,7 +521,7 @@ func TestUpdateQueue_acquireNext(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(database.NewMockDB(), testLogger)
+			s := NewUpdateScheduler(testLogger, database.NewMockDB())
 			setupInitialQueue(s, test.initialQueue)
 
 			// Test aquireNext.
@@ -653,7 +653,7 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 			_, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(database.NewMockDB(), testLogger)
+			s := NewUpdateScheduler(testLogger, database.NewMockDB())
 			setupInitialSchedule(s, test.initialSchedule)
 			setupInitialQueue(s, test.initialQueue)
 
@@ -801,7 +801,7 @@ func TestSchedule_upsert(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(database.NewMockDB(), testLogger)
+			s := NewUpdateScheduler(testLogger, database.NewMockDB())
 			setupInitialSchedule(s, test.initialSchedule)
 
 			for _, call := range test.upsertCalls {
@@ -823,7 +823,7 @@ func TestUpdateQueue_PrioritiseUncloned(t *testing.T) {
 	_, stop := startRecording()
 	defer stop()
 
-	s := NewUpdateScheduler(database.NewMockDB(), logtest.Scoped(t))
+	s := NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
 
 	assertFront := func(name api.RepoName) {
 		t.Helper()
@@ -861,7 +861,7 @@ func TestScheduleInsertNew(t *testing.T) {
 	_, stop := startRecording()
 	defer stop()
 
-	s := NewUpdateScheduler(database.NewMockDB(), logtest.Scoped(t))
+	s := NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
 
 	assertFront := func(name api.RepoName) {
 		t.Helper()
@@ -1054,7 +1054,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(database.NewMockDB(), testLogger)
+			s := NewUpdateScheduler(testLogger, database.NewMockDB())
 			setupInitialSchedule(s, test.initialSchedule)
 			s.schedule.randGenerator = &mockRandomGenerator{}
 
@@ -1155,7 +1155,7 @@ func TestSchedule_remove(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(database.NewMockDB(), testLogger)
+			s := NewUpdateScheduler(testLogger, database.NewMockDB())
 			setupInitialSchedule(s, test.initialSchedule)
 
 			for _, call := range test.removeCalls {
@@ -1319,7 +1319,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(database.NewMockDB(), testLogger)
+			s := NewUpdateScheduler(testLogger, database.NewMockDB())
 
 			setupInitialSchedule(s, test.initialSchedule)
 
@@ -1452,7 +1452,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			}
 			defer func() { requestRepoUpdate = nil }()
 
-			s := NewUpdateScheduler(database.NewMockDB(), testLogger)
+			s := NewUpdateScheduler(testLogger, database.NewMockDB())
 			s.schedule.randGenerator = &mockRandomGenerator{}
 
 			// unbuffer the channel

@@ -622,7 +622,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				Sourcer: repos.NewFakeSourcer(nil, tc.src),
 			}
 
-			scheduler := repos.NewUpdateScheduler(database.NewMockDB(), logtest.Scoped(t))
+			scheduler := repos.NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
 
 			s := &Server{
 				Syncer:    syncer,

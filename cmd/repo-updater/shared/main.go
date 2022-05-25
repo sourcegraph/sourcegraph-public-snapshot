@@ -141,7 +141,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		src = repos.NewSourcer(db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(log15.Root(), m))
 	}
 
-	updateScheduler := repos.NewUpdateScheduler(db, logger)
+	updateScheduler := repos.NewUpdateScheduler(logger, db)
 	server := &repoupdater.Server{
 		Store:                 store,
 		Scheduler:             updateScheduler,
@@ -199,7 +199,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	// Git fetches scheduler
-	go repos.RunScheduler(ctx, updateScheduler, logger)
+	go repos.RunScheduler(ctx, logger, updateScheduler)
 	logger.Debug("started scheduler")
 
 	host := ""

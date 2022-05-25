@@ -29,7 +29,7 @@ type schedulerConfig struct {
 }
 
 // RunScheduler runs the worker that schedules git fetches of synced repositories in git-server.
-func RunScheduler(ctx context.Context, scheduler *UpdateScheduler, logger log.Logger) {
+func RunScheduler(ctx context.Context, logger log.Logger, scheduler *UpdateScheduler) {
 	var (
 		have schedulerConfig
 		stop context.CancelFunc
@@ -125,7 +125,7 @@ type configuredRepo struct {
 const notifyChanBuffer = 1
 
 // NewUpdateScheduler returns a new scheduler.
-func NewUpdateScheduler(db database.DB, logger log.Logger) *UpdateScheduler {
+func NewUpdateScheduler(logger log.Logger, db database.DB) *UpdateScheduler {
 	updateSchedLogger := logger.Scoped("UpdateScheduler", "repo update scheduler")
 
 	return &UpdateScheduler{
