@@ -145,7 +145,7 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 
 // yarn ~41s + ~1s
 func addGraphQLLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: :graphql: GraphQL lint",
+	pipeline.AddStep(":lipstick: :graphql: GrapheQLeuuuu lint",
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh lint:graphql"))
 }
