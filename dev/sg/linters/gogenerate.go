@@ -2,15 +2,19 @@ package linters
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/golang"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
@@ -37,19 +41,18 @@ func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
 		Header: header,
 	}
 
-	// var out bytes.Buffer
+	var out strings.Builder
 	err := root.Run(run.Cmd(ctx, "git", "diff", "--exit-code", "--", ".", ":!go.sum")).Stream(os.Stdout)
-	// if err != nil {
-	// 	var sb strings.Builder
-	// 	reportOut := std.NewOutput(&sb, true)
-	// 	reportOut.WriteLine(output.Line(output.EmojiFailure, output.StyleWarning, "Uncommitted changes found after running go generate:"))
-	// 	reportOut.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", out.String()))
-	// 	reportOut.Write("To fix this, run 'sg generate'.")
-	// 	r.Err = err
-	// 	r.Output = sb.String()
-	// 	return &r
-	// }
-	r.Err = err
+	if err != nil {
+		var sb strings.Builder
+		reportOut := std.NewOutput(&sb, true)
+		reportOut.WriteLine(output.Line(output.EmojiFailure, output.StyleWarning, "Uncommitted changes found after running go generate:"))
+		reportOut.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", out.String()))
+		reportOut.Write("To fix this, run 'sg generate'.")
+		r.Err = err
+		r.Output = sb.String()
+		return &r
+	}
 
 	return &r
 }
