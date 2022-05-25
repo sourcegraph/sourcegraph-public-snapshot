@@ -233,7 +233,7 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 	return repoNames, nil
 }
 
-func (s *PermsSyncer) refreshGitLabOAuthToken(ctx context.Context, acct *extsvc.Account) error {
+func (s *PermsSyncer) maybeRefreshGitLabOAuthToken(ctx context.Context, acct *extsvc.Account) error {
 	if acct.ServiceType != extsvc.TypeGitLab {
 		return nil
 	}
@@ -375,7 +375,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			return nil, nil, errors.Wrap(err, "wait for rate limiter")
 		}
 
-		err := s.refreshGitLabOAuthToken(ctx, acct)
+		err := s.maybeRefreshGitLabOAuthToken(ctx, acct)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "refresh GitLab OAuth token")
 		}

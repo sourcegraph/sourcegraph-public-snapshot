@@ -915,7 +915,7 @@ func TestPermsSyncer_RefreshGitLabOAuthToken(t *testing.T) {
 				AccountData: accountData,
 			}
 
-			err := s.refreshGitLabOAuthToken(context.Background(), extAccount)
+			err := s.maybeRefreshGitLabOAuthToken(context.Background(), extAccount)
 			if err != nil {
 				t.Error(err)
 			}
