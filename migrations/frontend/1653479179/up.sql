@@ -1,6 +1,11 @@
-DROP TYPE IF EXISTS audit_log_operation;
--- delete is known by record_deleted_at
-CREATE TYPE audit_log_operation AS ENUM('create', 'modify');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'audit_log_operation') THEN
+        -- delete is known by record_deleted_at
+        CREATE TYPE audit_log_operation AS ENUM('create', 'modify');
+    END IF;
+END
+$$;
 
 CREATE SEQUENCE IF NOT EXISTS lsif_uploads_audit_logs_seq
     START WITH 1
