@@ -518,7 +518,6 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                         <div className="flex-grow-1" />
                         <Button
                             data-testid="search-context-delete-button"
-                            className="text-danger"
                             onClick={toggleDeleteModal}
                             outline={true}
                             variant="danger"

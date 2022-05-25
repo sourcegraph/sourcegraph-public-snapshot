@@ -13,7 +13,6 @@ exports[`RepositoryReleasesTagsPage renders 1`] = `
         class="w-100 d-inline-flex justify-content-between flex-row noncompact"
       >
         <input
-          aria-label="Search tags..."
           autocapitalize="off"
           autocomplete="off"
           autocorrect="off"
