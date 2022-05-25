@@ -17,7 +17,7 @@ New issues and feature requests can be filed through our [issue tracker](https:/
                                    ┌──────────────────────────┐
                                    │  env: Node OR Web Worker │
                        ┌───────────┤ VS Code extension "Core" ├───────────────┐
-                       │           │          (HERE)          │               │
+                       │           │                          │               │
                        │           └──────────────────────────┘               │
                        │                                                      │
          ┌─────────────▼────────────┐                          ┌──────────────▼───────────┐
