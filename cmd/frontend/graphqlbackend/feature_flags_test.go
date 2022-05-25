@@ -239,16 +239,16 @@ func TestEvaluateFeatureFlag(t *testing.T) {
 		orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
 		flags := database.NewMockFeatureFlagStore()
-		mockedFeatureFlag := featureflag.FeatureFlag{Name: "test-flag", Bool: &featureflag.FeatureFlagBool{Value: true}, Rollout: nil, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}
-
-		flags.GetFeatureFlagFunc.SetDefaultHook(func(ctx context.Context, flagName string) (*featureflag.FeatureFlag, error) {
-			return &mockedFeatureFlag, nil
+		flags.GetUserFlagFunc.SetDefaultHook(func(ctx context.Context, uid int32, flagName string) (*bool, error) {
+			value := true
+			return &value, nil
 		})
 
 		db := database.NewMockDB()
 		db.OrgsFunc.SetDefaultReturn(orgs)
 		db.UsersFunc.SetDefaultReturn(users)
 		db.FeatureFlagsFunc.SetDefaultReturn(flags)
+		ctx = featureflag.WithFlags(ctx, flags)
 
 		RunTests(t, []*Test{
 			{
