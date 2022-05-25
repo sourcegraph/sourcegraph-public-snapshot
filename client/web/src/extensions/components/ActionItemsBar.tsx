@@ -216,8 +216,9 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         onClick={onNegativeClicked}
                         tabIndex={-1}
                         variant="link"
+                        aria-label="Scroll up"
                     >
-                        <Icon as={MenuUpIcon} />
+                        <Icon role="img" as={MenuUpIcon} aria-hidden={true} />
                     </Button>
                 )}
                 <ActionsContainer
@@ -276,8 +277,9 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         onClick={onPositiveClicked}
                         tabIndex={-1}
                         variant="link"
+                        aria-label="Scroll down"
                     >
-                        <Icon as={MenuDownIcon} />
+                        <Icon role="img" as={MenuDownIcon} aria-hidden={true} />
                     </Button>
                 )}
                 {haveExtensionsLoaded && <ActionItemsDivider />}
@@ -289,7 +291,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                             data-tooltip="Add extensions"
                             aria-label="Add extensions"
                         >
-                            <Icon as={PlusIcon} />
+                            <Icon role="img" as={PlusIcon} aria-hidden={true} />
                         </Link>
                     </li>
                 </ul>
@@ -326,6 +328,7 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                 <div className={classNames(styles.toggleContainer, isOpen && styles.toggleContainerOpen)}>
                     <ButtonLink
                         data-tooltip={`${isOpen ? 'Close' : 'Open'} extensions panel`}
+                        aria-label={`${isOpen ? 'Close' : 'Open'} extensions panel`}
                         className={classNames(actionItemClassName, styles.auxIcon, styles.actionToggle)}
                         onSelect={toggle}
                         ref={toggleReference}
@@ -333,9 +336,14 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                         {!haveExtensionsLoaded ? (
                             <LoadingSpinner />
                         ) : isOpen ? (
-                            <Icon data-testid="action-items-toggle-open" as={ChevronDoubleUpIcon} />
+                            <Icon
+                                role="img"
+                                data-testid="action-items-toggle-open"
+                                as={ChevronDoubleUpIcon}
+                                aria-hidden={true}
+                            />
                         ) : (
-                            <Icon as={PuzzleOutlineIcon} />
+                            <Icon role="img" as={PuzzleOutlineIcon} aria-hidden={true} />
                         )}
                     </ButtonLink>
                 </div>

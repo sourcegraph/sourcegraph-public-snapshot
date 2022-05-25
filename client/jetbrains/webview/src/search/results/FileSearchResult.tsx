@@ -3,11 +3,8 @@ import React from 'react'
 import classNames from 'classnames'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 
-import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
-import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
+import { RepoFileLink, CodeHostIcon, SearchResultStar, formatRepositoryStarCount } from '@sourcegraph/search-ui'
 import { ContentMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
-import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { TrimmedCodeLineWithHighlights } from './TrimmedCodeLineWithHighlights'
@@ -61,7 +58,7 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
             <div className={classNames(styles.headerTitle)} data-testid="result-container-header">
                 <Icon role="img" aria-label="File" className="flex-shrink-0" as={FileDocumentIcon} />
                 <div className={classNames('mx-1', styles.headerDivider)} />
-                <RepoIcon repoName={result.repository} className="text-muted flex-shrink-0" />
+                <CodeHostIcon repoName={result.repository} className="text-muted flex-shrink-0" />
                 <RepoFileLink
                     repoName={result.repository}
                     repoURL={repoAtRevisionURL}

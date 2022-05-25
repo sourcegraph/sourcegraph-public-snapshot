@@ -154,7 +154,7 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 
 func (i *insightViewResolver) Dashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) graphqlbackend.InsightsDashboardConnectionResolver {
 	return &dashboardConnectionResolver{baseInsightResolver: i.baseInsightResolver,
-		orgStore:         database.Orgs(i.postgresDB),
+		orgStore:         i.postgresDB.Orgs(),
 		args:             args,
 		withViewUniqueID: &i.view.UniqueID,
 	}
@@ -424,7 +424,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 
 	if len(dashboardIds) > 0 {
 		if args.Input.Dashboards != nil {
-			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, database.Orgs(r.postgresDB))
+			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, r.postgresDB.Orgs())
 			if err != nil {
 				return nil, err
 			}
@@ -599,7 +599,7 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 
 	if len(dashboardIds) > 0 {
 		if args.Input.Dashboards != nil {
-			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, database.Orgs(r.postgresDB))
+			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, r.postgresDB.Orgs())
 			if err != nil {
 				return nil, err
 			}
@@ -810,7 +810,7 @@ func (d *InsightViewQueryConnectionResolver) PageInfo(ctx context.Context) (*gra
 
 func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) ([]types.Insight, string, error) {
 	r.once.Do(func() {
-		orgStore := database.Orgs(r.postgresDB)
+		orgStore := r.postgresDB.Orgs()
 
 		args := store.InsightQueryArgs{}
 		if r.args.After != nil {

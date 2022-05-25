@@ -21,7 +21,7 @@ func TestNamespaces(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	org, err := Orgs(db).Create(ctx, "Acme", nil)
+	org, err := db.Orgs().Create(ctx, "Acme", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

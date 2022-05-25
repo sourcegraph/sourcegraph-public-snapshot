@@ -182,7 +182,7 @@ func TestSingleNotebookCRUD(t *testing.T) {
 	testdb := database.NewDB(dbtest.NewDB(t))
 	db := database.NewDB(testdb)
 	u := database.Users(db)
-	o := database.Orgs(db)
+	o := db.Orgs()
 	om := db.OrgMembers()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -551,7 +551,7 @@ func TestListNotebooks(t *testing.T) {
 	db := database.NewDB(dbtest.NewDB(t))
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
-	o := database.Orgs(db)
+	o := db.Orgs()
 	om := db.OrgMembers()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})

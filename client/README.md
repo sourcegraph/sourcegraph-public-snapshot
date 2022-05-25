@@ -5,7 +5,6 @@
 - **web**: The web application deployed to http://sourcegraph.com/
 - **browser**: The Sourcegraph browser extension adds tooltips to code on different code hosts.
 - **vscode**: The Sourcegraph [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph).
-- **eslint-plugin-sourcegraph**: Not published package with custom ESLint rules for Sourcegraph. Isn't intended for reuse by other repositories in the Sourcegraph org.
 - **extension-api**: The Sourcegraph extension API types for the _Sourcegraph extensions_. Published as `sourcegraph`.
 - **extension-api-types**: The Sourcegraph extension API types for _client applications_ that embed Sourcegraph extensions and need to communicate with them. Published as `@sourcegraph/extension-api-types`.
 - **sandboxes**: All demos-mvp (minimum viable product) for the Sourcegraph web application.

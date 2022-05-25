@@ -157,6 +157,11 @@ pub fn index_language_with_config(
     code: &str,
     lang_config: &HighlightConfiguration,
 ) -> Result<Document, Error> {
+    // Normalize string to be always only \n endings.
+    //  We don't care that the byte offsets are "incorrect" now for this
+    //  because we are using a line,col based approach
+    let code = code.replace("\r\n", "\n");
+
     // TODO: We should automatically apply no highlights when we are
     // in an injected piece of code.
     //
@@ -168,58 +173,76 @@ pub fn index_language_with_config(
     })?;
 
     let mut emitter = LsifEmitter::new();
-    emitter.render(highlights, code, &get_syntax_kind_for_hl)
+    emitter.render(highlights, &code, &get_syntax_kind_for_hl)
 }
 
-struct LineManager {
+struct OffsetManager {
+    source: String,
     offsets: Vec<usize>,
 }
 
-impl LineManager {
+impl OffsetManager {
     fn new(s: &str) -> Result<Self, Error> {
         if s.is_empty() {
             // TODO: Make an error here
             // Error(
         }
 
+        let source = s.to_string();
+
         let mut offsets = Vec::new();
         let mut pos = 0;
         for line in s.lines() {
             offsets.push(pos);
+            // pos += line.chars().count() + 1;
+            //
+            // NOTE: This intentionally in bytes. The correct stuff is done in
+            // self.line_and_col later
             pos += line.len() + 1;
         }
 
-        Ok(Self { offsets })
+        Ok(Self { source, offsets })
     }
 
-    fn line_and_col(&self, offset: usize) -> (usize, usize) {
+    fn line_and_col(&self, offset_byte: usize) -> (usize, usize) {
+        // let offset_char = self.source.bytes
         let mut line = 0;
         for window in self.offsets.windows(2) {
             let curr = window[0];
             let next = window[1];
-            if next > offset {
-                return (line, offset - curr);
+            if next > offset_byte {
+                return (
+                    line,
+                    // Return the number of characters between the locations (which is the column)
+                    self.source[curr..offset_byte].chars().count(),
+                );
             }
 
             line += 1;
         }
 
-        (line, offset - self.offsets.last().unwrap())
+        (
+            line,
+            // Return the number of characters between the locations (which is the column)
+            self.source[*self.offsets.last().unwrap()..offset_byte]
+                .chars()
+                .count(),
+        )
     }
 
     // range takes in start and end offsets and returns start/end line/column.
-    fn range(&self, start: usize, end: usize) -> Vec<i32> {
-        let start_line = self.line_and_col(start);
-        let end_line = self.line_and_col(end);
+    fn range(&self, start_byte: usize, end_byte: usize) -> Vec<i32> {
+        let start_pos = self.line_and_col(start_byte);
+        let end_pos = self.line_and_col(end_byte);
 
-        if start_line.0 == end_line.0 {
-            vec![start_line.0 as i32, start_line.1 as i32, end_line.1 as i32]
+        if start_pos.0 == end_pos.0 {
+            vec![start_pos.0 as i32, start_pos.1 as i32, end_pos.1 as i32]
         } else {
             vec![
-                start_line.0 as i32,
-                start_line.1 as i32,
-                end_line.0 as i32,
-                end_line.1 as i32,
+                start_pos.0 as i32,
+                start_pos.1 as i32,
+                end_pos.0 as i32,
+                end_pos.1 as i32,
             ]
         }
     }
@@ -297,7 +320,7 @@ impl LsifEmitter {
     {
         let mut doc = Document::new();
 
-        let line_manager = LineManager::new(source)?;
+        let line_manager = OffsetManager::new(source)?;
 
         let mut highlights = vec![];
         for event in highlighter {
@@ -311,9 +334,12 @@ impl LsifEmitter {
                 HighlightEvent::Source { .. } if highlights.is_empty() => {}
 
                 // When a `start`->`end` has some highlights
-                HighlightEvent::Source { start, end } => {
+                HighlightEvent::Source {
+                    start: start_byte,
+                    end: end_byte,
+                } => {
                     let mut occurence = Occurrence::new();
-                    occurence.range = line_manager.range(start, end);
+                    occurence.range = line_manager.range(start_byte, end_byte);
                     occurence.syntax_kind = get_syntax_kind_for_hl(*highlights.last().unwrap());
 
                     doc.occurrences.push(occurence);
@@ -467,8 +493,6 @@ SELECT * FROM my_table
                 theme: "".to_string(),
                 code: contents.clone(),
             });
-
-            println!("Filetype: {filetype}");
 
             let document = index_language(filetype, &contents).unwrap();
             insta::assert_snapshot!(

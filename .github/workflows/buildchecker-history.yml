@@ -23,4 +23,4 @@ jobs:
         env:
           BUILDKITE_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_BUILDKITE_TOKEN }}
           HONEYCOMB_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_HONEYCOMB_TOKEN }}
-          OKAYHQ_TOKEN: ${{secrets.CI_OKAYHQ_TOKEN}}
+          CI_OKAYHQ_TOKEN: ${{ secrets.CI_OKAYHQ_TOKEN }}

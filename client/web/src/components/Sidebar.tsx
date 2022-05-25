@@ -75,9 +75,17 @@ export const SidebarCollapseItems: React.FunctionComponent<
                     className="bg-2 border-0 d-flex justify-content-between list-group-item-action py-2 w-100"
                 >
                     <span>
-                        {CollapseItemIcon && <Icon className="mr-1" as={CollapseItemIcon} />} {label}
+                        {CollapseItemIcon && (
+                            <Icon role="img" className="mr-1" as={CollapseItemIcon} aria-hidden={true} />
+                        )}{' '}
+                        {label}
                     </span>
-                    <Icon className={styles.chevron} as={isOpen ? MenuUpIcon : MenuDownIcon} />
+                    <Icon
+                        role="img"
+                        aria-hidden={true}
+                        className={styles.chevron}
+                        as={isOpen ? MenuUpIcon : MenuDownIcon}
+                    />
                 </CollapseHeader>
                 <CollapsePanel id={kebabCase(label)} className="border-top">
                     {children}
