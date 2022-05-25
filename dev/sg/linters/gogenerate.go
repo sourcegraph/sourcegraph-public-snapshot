@@ -43,7 +43,7 @@ func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
 		reportOut := std.NewOutput(&sb, true)
 		reportOut.WriteLine(output.Line(output.EmojiFailure, output.StyleWarning, "Uncommitted changes found after running go generate:"))
 		// _ = reportOut.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", out))
-		reportOut.WriteMarkdown("```diff" + `
+		reportOut.WriteMarkdown("```go" + `
 	report := golang.Generate(ctx, []string{"./enterprise/dev/ci"}, false, golang.QuietOutput)
 	if report.Err != nil {
 		return &lint.Report{
