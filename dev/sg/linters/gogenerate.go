@@ -2,6 +2,7 @@ package linters
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/run"
@@ -37,21 +38,21 @@ func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
 		Header: header,
 	}
 
-	_, err := root.Run(run.Cmd(ctx, "git", "diff", "--exit-code", "--", ".", ":!go.sum")).String()
+	out, err := root.Run(run.Cmd(ctx, "git", "diff", "--exit-code", "--", ".", ":!go.sum")).String()
 	if err != nil {
 		var sb strings.Builder
 		reportOut := std.NewOutput(&sb, true)
 		reportOut.WriteLine(output.Line(output.EmojiFailure, output.StyleWarning, "Uncommitted changes found after running go generate:"))
-		// _ = reportOut.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", out))
-		reportOut.WriteMarkdown("```go" + `
-	report := golang.Generate(ctx, []string{"./enterprise/dev/ci"}, false, golang.QuietOutput)
-	if report.Err != nil {
-		return &lint.Report{
-			Header: header,
-			Err:    report.Err,
-		}
-	}
-` + "```")
+		_ = reportOut.WriteMarkdown(fmt.Sprintf("```\n%s\n```", out))
+		// 		reportOut.WriteMarkdown("```" + `
+		// 	report := golang.Generate(ctx, []string{"./enterprise/dev/ci"}, false, golang.QuietOutput)
+		// 	if report.Err != nil {
+		// 		return &lint.Report{
+		// 			Header: header,
+		// 			Err:    report.Err,
+		// 		}
+		// 	}
+		// ` + "```")
 		reportOut.Write("To fix this, run 'sg generate'.")
 		r.Err = err
 		r.Output = sb.String()
