@@ -1966,15 +1966,18 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var validationErr error
-	service.Mocks.ValidateAuthenticator = func(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
-		return validationErr
+	mockValidateAuthenticator := func(t *testing.T, err error) {
+		service.Mocks.ValidateAuthenticator = func(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
+			return err
+		}
+		t.Cleanup(func() {
+			service.Mocks.Reset()
+		})
 	}
-	t.Cleanup(func() {
-		service.Mocks.Reset()
-	})
 
 	t.Run("valid site credential", func(t *testing.T) {
+		mockValidateAuthenticator(t, nil)
+
 		input := map[string]any{
 			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, true),
 		}
@@ -1986,6 +1989,8 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 	})
 
 	t.Run("valid user credential", func(t *testing.T) {
+		mockValidateAuthenticator(t, nil)
+
 		input := map[string]any{
 			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, false),
 		}
@@ -1997,7 +2002,7 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 	})
 
 	t.Run("invalid credential", func(t *testing.T) {
-		validationErr = errors.New("credential is not authorized")
+		mockValidateAuthenticator(t, errors.New("credential is not authorized"))
 
 		input := map[string]any{
 			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, true),
