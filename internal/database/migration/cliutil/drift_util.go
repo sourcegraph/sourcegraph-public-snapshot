@@ -2,6 +2,8 @@ package cliutil
 
 import (
 	"fmt"
+	"net/url"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -28,8 +30,8 @@ func getSchemaJSONFilename(schemaName string) (string, error) {
 
 var errOutOfSync = errors.Newf("database schema is out of sync")
 
-func compareSchemaDescriptions(out *output.Output, actual, expected schemas.SchemaDescription) (err error) {
-	for _, f := range []func(out *output.Output, actual, expected schemas.SchemaDescription) bool{
+func compareSchemaDescriptions(out *output.Output, schemaName string, actual, expected schemas.SchemaDescription) (err error) {
+	for _, f := range []func(out *output.Output, schemaName string, actual, expected schemas.SchemaDescription) bool{
 		compareExtensions,
 		compareEnums,
 		compareFunctions,
@@ -37,25 +39,24 @@ func compareSchemaDescriptions(out *output.Output, actual, expected schemas.Sche
 		compareTables,
 		compareViews,
 	} {
-		if f(out, actual, expected) {
+		if f(out, schemaName, actual, expected) {
 			err = errOutOfSync
 		}
 	}
 
 	if err == nil {
-		out.Write("No drift detected")
+		out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "No drift detected"))
 	}
 	return err
 }
 
-func compareExtensions(out *output.Output, actual, expected schemas.SchemaDescription) (outOfSync bool) {
+func compareExtensions(out *output.Output, schemaName string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
 	compareExtension := func(extension *stringNamer, expectedExtension stringNamer) {
 		outOfSync = true
 
 		if extension == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing extension %q", expectedExtension)))
-			out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Suggested action: install the extension:")))
-			out.WriteMarkdown(fmt.Sprintf("```sql\nCREATE EXTENSION %s;\n```", expectedExtension))
+			writeSQLSolution(out, "install the extension", fmt.Sprintf("CREATE EXTENSION %s;", expectedExtension))
 		}
 	}
 
@@ -63,7 +64,7 @@ func compareExtensions(out *output.Output, actual, expected schemas.SchemaDescri
 	return
 }
 
-func compareEnums(out *output.Output, actual, expected schemas.SchemaDescription) (outOfSync bool) {
+func compareEnums(out *output.Output, schemaName string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
 	compareEnum := func(enum *schemas.EnumDescription, expectedEnum schemas.EnumDescription) {
 		outOfSync = true
 
@@ -71,91 +72,22 @@ func compareEnums(out *output.Output, actual, expected schemas.SchemaDescription
 		for _, label := range expectedEnum.Labels {
 			quotedLabels = append(quotedLabels, fmt.Sprintf("'%s'", label))
 		}
+		createEnumStmt := fmt.Sprintf("CREATE TYPE %s AS ENUM (%s);", expectedEnum.Name, strings.Join(quotedLabels, ", "))
+		dropEnumStmt := fmt.Sprintf("DROP TYPE %s;", expectedEnum.Name)
 
 		if enum == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing enum %q", expectedEnum.Name)))
-			out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Suggested action: create the type:")))
-			out.WriteMarkdown(fmt.Sprintf("```sql\nCREATE TYPE %s AS ENUM (%s);\n```", expectedEnum.Name, strings.Join(quotedLabels, ", ")))
+			writeSQLSolution(out, "create the type", createEnumStmt)
 		} else {
-			labels := groupByName(wrapStrings(enum.Labels))
-			expectedLabels := groupByName(wrapStrings(expectedEnum.Labels))
+			if ordered, ok := constructEnumRepairStatements(*enum, expectedEnum); ok {
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing %d labels for enum %q", len(ordered), expectedEnum.Name)))
+				writeSQLSolution(out, "add the missing enum labels", ordered...)
+				return
+			}
 
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected labels for enum %q", expectedEnum.Name)))
-			out.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", cmp.Diff(enum.Labels, expectedEnum.Labels)))
-
-			for label := range labels {
-				if _, ok := expectedLabels[label]; !ok {
-					out.WriteLine(output.Line(output.EmojiWarningSign, output.StyleBold, fmt.Sprintf("Type contains additional values - this type will need to be dropped and re-created")))
-					out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Suggested action: drop and re-create the type:")))
-					out.WriteMarkdown(fmt.Sprintf("```sql\nDROP TYPE %s;\nCREATE TYPE %s AS ENUM (%s);\n```", expectedEnum.Name, expectedEnum.Name, strings.Join(quotedLabels, ", ")))
-					return
-				}
-			}
-
-			// If we're here then we're strictly missing labels and can add them in-place.
-			// Try to reconstruct the data we need to make the proper create type statement.
-
-			type missingLabel struct {
-				label    string
-				neighbor string
-				before   bool
-			}
-			missingLabels := make([]missingLabel, 0, len(expectedEnum.Labels))
-
-			after := ""
-			for _, label := range expectedEnum.Labels {
-				if _, ok := labels[label]; !ok && after != "" {
-					missingLabels = append(missingLabels, missingLabel{label: label, neighbor: after, before: false})
-				}
-				after = label
-			}
-
-			before := ""
-			for i := len(expectedEnum.Labels) - 1; i >= 0; i-- {
-				label := expectedEnum.Labels[i]
-
-				if _, ok := labels[label]; !ok && before != "" {
-					missingLabels = append(missingLabels, missingLabel{label: label, neighbor: before, before: true})
-				}
-				before = label
-			}
-
-			var (
-				ordered   []string
-				reachable = groupByName(wrapStrings(enum.Labels))
-			)
-
-		outer:
-			for len(missingLabels) > 0 {
-				for _, s := range missingLabels {
-					// Neighbor doesn't exist yet, blocked from creating
-					if _, ok := reachable[s.neighbor]; !ok {
-						continue
-					}
-
-					rel := "AFTER"
-					if s.before {
-						rel = "BEFORE"
-					}
-
-					filtered := missingLabels[:0]
-					for _, l := range missingLabels {
-						if l.label != s.label {
-							filtered = append(filtered, l)
-						}
-					}
-
-					missingLabels = filtered
-					reachable[s.label] = stringNamer(s.label)
-					ordered = append(ordered, fmt.Sprintf("ALTER TYPE %s ADD VALUE '%s' %s '%s';", expectedEnum.Name, s.label, rel, s.neighbor))
-					continue outer
-				}
-
-				panic("Infinite loop")
-			}
-
-			out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Suggested action: add the missing enum labels")))
-			out.WriteMarkdown(fmt.Sprintf("```sql\n%s\n```", strings.Join(ordered, "\n")))
+			writeDiff(out, enum.Labels, expectedEnum.Labels)
+			writeSQLSolution(out, "drop and re-create the type", dropEnumStmt, createEnumStmt)
 		}
 	}
 
@@ -163,21 +95,19 @@ func compareEnums(out *output.Output, actual, expected schemas.SchemaDescription
 	return outOfSync
 }
 
-func compareFunctions(out *output.Output, actual, expected schemas.SchemaDescription) (outOfSync bool) {
+func compareFunctions(out *output.Output, schemaName string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
 	compareFunction := func(function *schemas.FunctionDescription, expectedFunction schemas.FunctionDescription) {
 		outOfSync = true
 
+		definitionStmt := fmt.Sprintf("%s;", strings.TrimSpace(expectedFunction.Definition))
+
 		if function == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing function %q", expectedFunction.Name)))
-			out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Suggested action: define the function:")))
-			// TODO - remove leading from function body; it doesn't work with the
-			out.WriteMarkdown(fmt.Sprintf("```sql\n%s;\n```", strings.ReplaceAll(expectedFunction.Definition, "\\n", "\n")))
+			writeSQLSolution(out, "define the function", definitionStmt)
 		} else {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected definition of function %q", expectedFunction.Name)))
-			out.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", cmp.Diff(expectedFunction.Definition, function.Definition)))
-			out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Suggested action: replace the function definition:")))
-			// TODO - remove leading from function body; it doesn't work with the
-			out.WriteMarkdown(fmt.Sprintf("```sql\n%s;\n```", strings.ReplaceAll(expectedFunction.Definition, "\\n", "\n")))
+			writeDiff(out, expectedFunction.Definition, function.Definition)
+			writeSQLSolution(out, "replace the function definition", definitionStmt)
 		}
 	}
 
@@ -185,37 +115,39 @@ func compareFunctions(out *output.Output, actual, expected schemas.SchemaDescrip
 	return outOfSync
 }
 
-func compareSequences(out *output.Output, actual, expected schemas.SchemaDescription) (outOfSync bool) {
+func compareSequences(out *output.Output, schemaName string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
 	compareSequence := func(sequence *schemas.SequenceDescription, expectedSequence schemas.SequenceDescription) {
 		outOfSync = true
 
 		if sequence == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing sequence %q", expectedSequence.Name)))
-			out.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", cmp.Diff(expectedSequence, nil)))
-			// TODO - suggest an action
 		} else {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of sequence %q", expectedSequence.Name)))
-			out.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", cmp.Diff(expectedSequence, *sequence)))
-			// TODO - suggest an action
+			writeDiff(out, expectedSequence, *sequence)
 		}
+
+		url := makeSearchURL(schemaName, fmt.Sprintf("CREATE SEQUENCE %s", expectedSequence.Name))
+		writeSearchHint(out, fmt.Sprintf("define or redefine the sequence given the definition provided at %s", url))
 	}
 
 	compareNamedLists(actual.Sequences, expected.Sequences, compareSequence)
 	return outOfSync
 }
 
-func compareTables(out *output.Output, actual, expected schemas.SchemaDescription) (outOfSync bool) {
+func compareTables(out *output.Output, schemaName string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
 	compareTables := func(table *schemas.TableDescription, expectedTable schemas.TableDescription) {
 		outOfSync = true
 
 		if table == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing table %q", expectedTable.Name)))
-			// TODO - suggest an action
+
+			url := makeSearchURL(schemaName, fmt.Sprintf("CREATE TABLE %s", expectedTable.Name))
+			writeSearchHint(out, fmt.Sprintf("define the table given the definition provided at %s", url))
 		} else {
-			compareColumns(out, *table, expectedTable)
-			compareConstraints(out, *table, expectedTable)
-			compareIndexes(out, *table, expectedTable)
-			compareTriggers(out, *table, expectedTable)
+			compareColumns(out, schemaName, *table, expectedTable)
+			compareConstraints(out, schemaName, *table, expectedTable)
+			compareIndexes(out, schemaName, *table, expectedTable)
+			compareTriggers(out, schemaName, *table, expectedTable)
 		}
 	}
 
@@ -223,81 +155,225 @@ func compareTables(out *output.Output, actual, expected schemas.SchemaDescriptio
 	return outOfSync
 }
 
-func compareColumns(out *output.Output, actualTable, expectedTable schemas.TableDescription) {
+func compareColumns(out *output.Output, schemaName string, actualTable, expectedTable schemas.TableDescription) {
 	compareNamedLists(actualTable.Columns, expectedTable.Columns, func(column *schemas.ColumnDescription, expectedColumn schemas.ColumnDescription) {
 		if column == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing column %q.%q", expectedTable.Name, expectedColumn.Name)))
-			out.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", cmp.Diff(expectedColumn, nil)))
-			// TODO - suggest an action
 		} else {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of column %q.%q", expectedTable.Name, expectedColumn.Name)))
-			out.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", cmp.Diff(expectedColumn, *column)))
-			// TODO - suggest an action
+			writeDiff(out, expectedColumn, *column)
 		}
+
+		url := makeSearchURL(schemaName, fmt.Sprintf("CREATE TABLE %s", expectedTable.Name))
+		writeSearchHint(out, fmt.Sprintf("define or redefine the column given the definition provided at %s", url))
 	})
 }
 
-func compareConstraints(out *output.Output, actualTable, expectedTable schemas.TableDescription) {
+func compareConstraints(out *output.Output, schemaName string, actualTable, expectedTable schemas.TableDescription) {
 	compareNamedLists(actualTable.Constraints, expectedTable.Constraints, func(constraint *schemas.ConstraintDescription, expectedConstraint schemas.ConstraintDescription) {
+		createConstraintStmt := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s %s;", expectedTable.Name, expectedConstraint.Name, expectedConstraint.ConstraintDefinition)
+		dropConstraintStmt := fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", expectedTable.Name, expectedConstraint.Name)
+
 		if constraint == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing constraint %q.%q", expectedTable.Name, expectedConstraint.Name)))
-			out.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", cmp.Diff(expectedConstraint, nil)))
-			// TODO - suggest an action
+			writeSQLSolution(out, "define the constraint", createConstraintStmt)
 		} else {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of constraint %q.%q", expectedTable.Name, expectedConstraint.Name)))
-			out.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", cmp.Diff(expectedConstraint, *constraint)))
-			// TODO - suggest an action
+			writeDiff(out, expectedConstraint, *constraint)
+			writeSQLSolution(out, "redefine the constraint", dropConstraintStmt, createConstraintStmt)
 		}
 	})
 }
 
-func compareIndexes(out *output.Output, actualTable, expectedTable schemas.TableDescription) {
+func compareIndexes(out *output.Output, schemaName string, actualTable, expectedTable schemas.TableDescription) {
 	compareNamedLists(actualTable.Indexes, expectedTable.Indexes, func(index *schemas.IndexDescription, expectedIndex schemas.IndexDescription) {
+		var createIndexStmt string
+		var dropIndexStmt string
+
+		switch expectedIndex.ConstraintType {
+		case "u":
+			fallthrough
+		case "p":
+			createIndexStmt = fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s %s;", actualTable.Name, expectedIndex.Name, expectedIndex.ConstraintDefinition)
+			dropIndexStmt = fmt.Sprintf("DROP INDEX %s;", expectedIndex.Name)
+		default:
+			createIndexStmt = fmt.Sprintf("%s;", expectedIndex.IndexDefinition)
+			dropIndexStmt = fmt.Sprintf("DROP INDEX %s;", expectedIndex.Name)
+		}
+
 		if index == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing index %q.%q", expectedTable.Name, expectedIndex.Name)))
-			out.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", cmp.Diff(expectedIndex, nil)))
-			out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Suggested action: define the index:")))
-			out.WriteMarkdown(fmt.Sprintf("```sql\n%s;\n```", expectedIndex.IndexDefinition))
+			writeSQLSolution(out, "define the index", createIndexStmt)
 		} else {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of index %q.%q", expectedTable.Name, expectedIndex.Name)))
-			out.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", cmp.Diff(expectedIndex, *index)))
-			// TODO - suggest an action
+			writeDiff(out, expectedIndex, *index)
+			writeSQLSolution(out, "redefine the index", dropIndexStmt, createIndexStmt)
 		}
 	})
 }
 
-func compareTriggers(out *output.Output, actualTable, expectedTable schemas.TableDescription) {
+func compareTriggers(out *output.Output, schemaName string, actualTable, expectedTable schemas.TableDescription) {
 	compareNamedLists(actualTable.Triggers, expectedTable.Triggers, func(trigger *schemas.TriggerDescription, expectedTrigger schemas.TriggerDescription) {
+		createTriggerStmt := fmt.Sprintf("%s;", expectedTrigger.Definition)
+		dropTriggerStmt := fmt.Sprintf("DROP TRIGGER %s ON %s;", expectedTrigger.Name, expectedTable.Name)
+
 		if trigger == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing trigger %q.%q", expectedTable.Name, expectedTrigger.Name)))
-			out.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", cmp.Diff(expectedTrigger, nil)))
-			// TODO - suggest an action
+			writeSQLSolution(out, "define the trigger", createTriggerStmt)
 		} else {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of trigger %q.%q", expectedTable.Name, expectedTrigger.Name)))
-			out.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", cmp.Diff(expectedTrigger, *trigger)))
-			// TODO - suggest an action
+			writeDiff(out, expectedTrigger, *trigger)
+			writeSQLSolution(out, "redefine the trigger", dropTriggerStmt, createTriggerStmt)
 		}
 	})
 }
 
-func compareViews(out *output.Output, actual, expected schemas.SchemaDescription) (outOfSync bool) {
+func compareViews(out *output.Output, schemaName string, actual, expected schemas.SchemaDescription) (outOfSync bool) {
 	compareView := func(view *schemas.ViewDescription, expectedView schemas.ViewDescription) {
 		outOfSync = true
 
+		// pgsql has weird indents here
+		viewDefinition := strings.TrimSpace(stripIndent(" " + expectedView.Definition))
+		createViewStmt := fmt.Sprintf("CREATE VIEW %s AS %s", expectedView.Name, viewDefinition)
+		dropViewStmt := fmt.Sprintf("DROP VIEW %s;", expectedView.Name)
+
 		if view == nil {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing view %q", expectedView.Name)))
-			out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Suggested action: define the view:")))
-			out.WriteMarkdown(fmt.Sprintf("```sql\n CREATE VIEW %s AS\n%s\n```", expectedView.Name, strings.ReplaceAll(expectedView.Definition, "\\n", "\n")))
+			writeSQLSolution(out, "define the view", createViewStmt)
 		} else {
 			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected definition of view %q", expectedView.Name)))
-			out.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", cmp.Diff(expectedView.Definition, view.Definition)))
-			out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Suggested action: redefine the view:")))
-			out.WriteMarkdown(fmt.Sprintf("```sql\n DROP VIEW %s;\n CREATE VIEW %s AS\n%s\n```", expectedView.Name, expectedView.Name, strings.ReplaceAll(expectedView.Definition, "\\n", "\n")))
+			writeDiff(out, expectedView.Definition, view.Definition)
+			writeSQLSolution(out, "redefine the view", dropViewStmt, createViewStmt)
 		}
 	}
 
 	compareNamedLists(actual.Views, expected.Views, compareView)
 	return outOfSync
+}
+
+// writeDiff writes a colorized diff of the given objects.
+func writeDiff(out *output.Output, a, b any) {
+	out.WriteCode("diff", strings.TrimSpace(cmp.Diff(a, b)))
+}
+
+// writeSQLSolution writes a block of text containing the given solution deescription
+// and the given SQL statements formatted (and colorized) as code.
+func writeSQLSolution(out *output.Output, description string, statements ...string) {
+	out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Suggested action: %s.", description)))
+	out.WriteCode("sql", strings.Join(statements, "\n"))
+}
+
+// writeSearchHint writes a block of text containing the given hint description and
+// instructions.
+func writeSearchHint(out *output.Output, description string, statements ...string) {
+	out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Hint: %s.", description)))
+	for _, s := range statements {
+		out.Write(s)
+	}
+	out.Write("")
+}
+
+// makeSearchURL returns a URL to a sourcegraph.com search query within the squashed
+// definition of the given schema.
+func makeSearchURL(schemaName, searchTerm string) string {
+	terms := strings.Split(searchTerm, " ")
+	for i, term := range terms {
+		terms[i] = regexp.QuoteMeta(term)
+	}
+
+	queryParts := []string{
+		`repo:^github\.com/sourcegraph/sourcegraph$`,
+		fmt.Sprintf(`file:^migrations/%s/squashed\.sql$`, schemaName),
+		"^" + strings.Join(terms, "\\s") + "\\b",
+	}
+
+	qs := url.Values{}
+	qs.Add("patternType", "regexp")
+	qs.Add("q", strings.Join(queryParts, " "))
+
+	url, _ := url.Parse("https://sourcegraph.com/search")
+	url.RawQuery = qs.Encode()
+	return url.String()
+}
+
+// constructEnumRepairStatements returns a set of `ALTER ENUM ADD VALUE` statements to make
+// the given enum equivalent to the given expected enum. If the given enum is not a subset of
+// the expected enum, then additive statements cannot bring the enum to the expected state and
+// we return a false-valued flag. In this case the existing type must be dropped and re-created
+// as there's currently no way to *remove* values from an enum type.
+func constructEnumRepairStatements(enum, expectedEnum schemas.EnumDescription) ([]string, bool) {
+	labels := groupByName(wrapStrings(enum.Labels))
+	expectedLabels := groupByName(wrapStrings(expectedEnum.Labels))
+
+	for label := range labels {
+		if _, ok := expectedLabels[label]; !ok {
+			return nil, false
+		}
+	}
+
+	// If we're here then we're strictly missing labels and can add them in-place.
+	// Try to reconstruct the data we need to make the proper create type statement.
+
+	type missingLabel struct {
+		label    string
+		neighbor string
+		before   bool
+	}
+	missingLabels := make([]missingLabel, 0, len(expectedEnum.Labels))
+
+	after := ""
+	for _, label := range expectedEnum.Labels {
+		if _, ok := labels[label]; !ok && after != "" {
+			missingLabels = append(missingLabels, missingLabel{label: label, neighbor: after, before: false})
+		}
+		after = label
+	}
+
+	before := ""
+	for i := len(expectedEnum.Labels) - 1; i >= 0; i-- {
+		label := expectedEnum.Labels[i]
+
+		if _, ok := labels[label]; !ok && before != "" {
+			missingLabels = append(missingLabels, missingLabel{label: label, neighbor: before, before: true})
+		}
+		before = label
+	}
+
+	var (
+		ordered   []string
+		reachable = groupByName(wrapStrings(enum.Labels))
+	)
+
+outer:
+	for len(missingLabels) > 0 {
+		for _, s := range missingLabels {
+			// Neighbor doesn't exist yet, blocked from creating
+			if _, ok := reachable[s.neighbor]; !ok {
+				continue
+			}
+
+			rel := "AFTER"
+			if s.before {
+				rel = "BEFORE"
+			}
+
+			filtered := missingLabels[:0]
+			for _, l := range missingLabels {
+				if l.label != s.label {
+					filtered = append(filtered, l)
+				}
+			}
+
+			missingLabels = filtered
+			reachable[s.label] = stringNamer(s.label)
+			ordered = append(ordered, fmt.Sprintf("ALTER TYPE %s ADD VALUE '%s' %s '%s';", expectedEnum.Name, s.label, rel, s.neighbor))
+			continue outer
+		}
+
+		panic("Infinite loop")
+	}
+
+	return ordered, true
 }
 
 // compareNamedLists invokes the given callback with a pair of elements from slices
@@ -314,8 +390,6 @@ func compareNamedLists[T schemas.Namer](as, bs []T, f func(a *T, b T)) {
 			if cmp.Diff(av, bv) != "" {
 				f(&av, bv)
 			}
-		} else {
-			// f(&av, nil)
 		}
 	}
 	for _, k := range keys(bm) {
@@ -362,4 +436,21 @@ func wrapStrings(ss []string) []stringNamer {
 	}
 
 	return sn
+}
+
+// stripIndent removes the largest common indent from the given text.
+func stripIndent(s string) string {
+	lines := strings.Split(strings.TrimRight(s, "\n"), "\n")
+
+	min := len(lines[0])
+	for _, line := range lines {
+		if indent := len(line) - len(strings.TrimLeft(line, " ")); indent < min {
+			min = indent
+		}
+	}
+	for i, line := range lines {
+		lines[i] = line[min:]
+	}
+
+	return strings.Join(lines, "\n")
 }
