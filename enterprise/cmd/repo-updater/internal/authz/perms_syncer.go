@@ -3,7 +3,6 @@ package authz
 import (
 	"container/heap"
 	"context"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -234,21 +233,19 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 	return repoNames, nil
 }
 
-func (s *PermsSyncer) RefreshGitLabOAuthToken(ctx context.Context, acct *extsvc.Account) error {
+func (s *PermsSyncer) refreshGitLabOAuthToken(ctx context.Context, acct *extsvc.Account) error {
 	if acct.ServiceType != extsvc.TypeGitLab {
 		return nil
 	}
 
 	var oauthConfig *oauth2.Config
 	for _, authProvider := range conf.SiteConfig().AuthProviders {
-		fmt.Println()
 		if authProvider.Gitlab == nil ||
 			strings.TrimSuffix(acct.ServiceID, "/") != strings.TrimSuffix(authProvider.Gitlab.Url, "/") {
 			continue
 		}
 		url := strings.TrimSuffix(authProvider.Gitlab.Url, "/")
 
-		fmt.Println(1111, oauthConfig)
 		oauthConfig = &oauth2.Config{
 			ClientID:     authProvider.Gitlab.ClientID,
 			ClientSecret: authProvider.Gitlab.ClientSecret,
@@ -256,7 +253,6 @@ func (s *PermsSyncer) RefreshGitLabOAuthToken(ctx context.Context, acct *extsvc.
 				AuthURL:  url + "/oauth/authorize",
 				TokenURL: url + "/oauth/token",
 			},
-			//RedirectURL: "",
 			Scopes: []string{"read_user", "api"},
 		}
 		break
@@ -265,7 +261,6 @@ func (s *PermsSyncer) RefreshGitLabOAuthToken(ctx context.Context, acct *extsvc.
 		return nil
 	}
 
-	fmt.Println(2222, oauthConfig)
 	_, tok, err := gitlab.GetExternalAccountData(&acct.AccountData)
 	if err != nil {
 		return errors.Wrap(err, "get external account data")
@@ -278,7 +273,6 @@ func (s *PermsSyncer) RefreshGitLabOAuthToken(ctx context.Context, acct *extsvc.
 		return errors.Wrap(err, "refresh token")
 	}
 
-	fmt.Println(3333, refreshedToken)
 	if refreshedToken.AccessToken != "" && refreshedToken.AccessToken != tok.AccessToken {
 		acct.AccountData.SetAuthData(refreshedToken)
 		_, err := s.db.UserExternalAccounts().LookupUserAndSave(ctx, acct.AccountSpec, acct.AccountData)
@@ -381,7 +375,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			return nil, nil, errors.Wrap(err, "wait for rate limiter")
 		}
 
-		err := s.RefreshGitLabOAuthToken(ctx, acct)
+		err := s.refreshGitLabOAuthToken(ctx, acct)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "refresh GitLab OAuth token")
 		}

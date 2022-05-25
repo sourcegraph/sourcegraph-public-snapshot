@@ -57,11 +57,6 @@ func enterpriseInit(
 
 	permsStore := edb.Perms(db, timeutil.Now)
 	permsSyncer := authz.NewPermsSyncer(db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
-
-	//acct, err := db.UserExternalAccounts().Get(ctx, 3)
-	//fmt.Println("err1", err)
-	//err = permsSyncer.RefreshGitLabOAuthToken(ctx, acct)
-	//fmt.Println("err2", err)
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
 	debugDumpers = append(debugDumpers, permsSyncer)
 	if server != nil {
