@@ -166,39 +166,6 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
                             <PageTitle title={searchContextOrError.spec} />
                             <PageHeader
                                 className="mb-2"
-                                headingElement="h2"
-                                headingStyleAs="h1"
-                                path={[
-                                    {
-                                        icon: MagnifyIcon,
-                                        to: '/search',
-                                        ariaLabel: 'Code Search',
-                                    },
-                                    {
-                                        to: '/contexts',
-                                        text: 'Contexts',
-                                    },
-                                    {
-                                        text: (
-                                            <div className="d-flex align-items-center">
-                                                <span>{searchContextOrError.spec}</span>
-                                                {!searchContextOrError.public && (
-                                                    <Badge
-                                                        variant="secondary"
-                                                        pill={true}
-                                                        className={classNames(
-                                                            'ml-2',
-                                                            styles.searchContextPagePrivateBadge
-                                                        )}
-                                                        as="div"
-                                                    >
-                                                        Private
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        ),
-                                    },
-                                ]}
                                 actions={
                                     searchContextOrError.viewerCanManage && (
                                         <Button
@@ -211,7 +178,27 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
                                         </Button>
                                     )
                                 }
-                            />
+                            >
+                                <PageHeader.Heading as="h2" styleAs="h1">
+                                    <PageHeader.Breadcrumb icon={MagnifyIcon} to="/search" aria-label="Code Search" />
+                                    <PageHeader.Breadcrumb to="/contexts">Contexts</PageHeader.Breadcrumb>
+                                    <PageHeader.Breadcrumb>
+                                        <div className="d-flex align-items-center">
+                                            <span>{searchContextOrError.spec}</span>
+                                            {!searchContextOrError.public && (
+                                                <Badge
+                                                    variant="secondary"
+                                                    pill={true}
+                                                    className={classNames('ml-2', styles.searchContextPagePrivateBadge)}
+                                                    as="div"
+                                                >
+                                                    Private
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    </PageHeader.Breadcrumb>
+                                </PageHeader.Heading>
+                            </PageHeader>
                             {!searchContextOrError.autoDefined && (
                                 <div className="text-muted">
                                     <span className="ml-1">
