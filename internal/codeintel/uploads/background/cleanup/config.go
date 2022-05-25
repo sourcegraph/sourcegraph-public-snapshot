@@ -20,14 +20,13 @@ type config struct {
 var ConfigInst = &config{}
 
 func (c *config) Load() {
-	intervalName := env.ChooseFallbackVariableName("CODEINTEL_UPLOADS_INTERVAL", "CODEINTEL_UPLOAD_JANITOR_INTERVAL")
-	minimumTimeSinceLastCheckName := env.ChooseFallbackVariableName("CODEINTEL_UPLOADS_MINIMUM_TIME_SINCE_LAST_CHECK", "CODEINTEL_UPLOAD_MINIMUM_TIME_SINCE_LAST_CHECK")
+	minimumTimeSinceLastCheckName := env.ChooseFallbackVariableName("CODEINTEL_UPLOADS_MINIMUM_TIME_SINCE_LAST_CHECK", "PRECISE_CODE_INTEL_COMMIT_RESOLVER_MINIMUM_TIME_SINCE_LAST_CHECK")
 	commitResolverBatchSizeName := env.ChooseFallbackVariableName("CODEINTEL_UPLOADS_COMMIT_RESOLVER_BATCH_SIZE", "PRECISE_CODE_INTEL_COMMIT_RESOLVER_BATCH_SIZE")
 	auditLogMaxAgeName := env.ChooseFallbackVariableName("CODEINTEL_UPLOADS_AUDIT_LOG_MAX_AGE", "PRECISE_CODE_INTEL_AUDIT_LOG_MAX_AGE")
 	commitResolverMaximumCommitLagName := env.ChooseFallbackVariableName("CODEINTEL_UPLOADS_COMMIT_RESOLVER_MAXIMUM_COMMIT_LAG", "PRECISE_CODE_INTEL_COMMIT_RESOLVER_MAXIMUM_COMMIT_LAG")
 	uploadTimeoutName := env.ChooseFallbackVariableName("CODEINTEL_UPLOADS_UPLOAD_TIMEOUT", "PRECISE_CODE_INTEL_UPLOAD_TIMEOUT")
 
-	c.Interval = c.GetInterval(intervalName, "1m", "How frequently to run the updater janitor routine.")
+	c.Interval = c.GetInterval("CODEINTEL_UPLOADS_INTERVAL", "1m", "How frequently to run the updater janitor routine.")
 	c.MinimumTimeSinceLastCheck = c.GetInterval(minimumTimeSinceLastCheckName, "24h", "The minimum time the commit resolver will re-check an upload or index record.")
 	c.CommitResolverBatchSize = c.GetInt(commitResolverBatchSizeName, "100", "The maximum number of unique commits to resolve at a time.")
 	c.AuditLogMaxAge = c.GetInterval(auditLogMaxAgeName, "720h", "The maximum time a code intel audit log record can remain on the database.")
