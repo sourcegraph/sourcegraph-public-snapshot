@@ -1885,7 +1885,7 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 	}
 
 	svc := service.New(r.store)
-	if err = svc.ValidateAuthenticator(ctx, cred.ExternalServiceURL(), extsvc.KindToType(cred.ExternalServiceKind()), a); err != nil {
+	if err := svc.ValidateAuthenticator(ctx, cred.ExternalServiceURL(), extsvc.KindToType(cred.ExternalServiceKind()), a); err != nil {
 		return nil, &ErrVerifyCredentialFailed{SourceErr: err}
 	}
 
