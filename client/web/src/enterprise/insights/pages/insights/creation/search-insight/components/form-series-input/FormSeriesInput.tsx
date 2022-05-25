@@ -30,7 +30,7 @@ const validQuery = (value: string | undefined, validity: ValidityState | null | 
     }
 
     if (!isNotRepo) {
-        return 'Do not include the `repo:` filter; if needed `repo:` will be added automatically.'
+        return 'Do not include a `repo:` filter; add targeted repositories above, or filter repos on the filter panel after creation'
     }
 }
 
