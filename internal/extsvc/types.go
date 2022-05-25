@@ -86,6 +86,7 @@ const (
 	KindGoModules       = "GOMODULES"
 	KindJVMPackages     = "JVMPACKAGES"
 	KindPythonPackages  = "PYTHONPACKAGES"
+	KindRustPackages    = "RUSTPACKAGES"
 	KindPagure          = "PAGURE"
 	KindNpmPackages     = "NPMPACKAGES"
 	KindOther           = "OTHER"
@@ -141,6 +142,9 @@ const (
 
 	// TypePythonPackages is the (api.ExternalRepoSpec).ServiceType value for Python packages.
 	TypePythonPackages = "pythonPackages"
+
+	// TypeRustPackages is the (api.ExternalRepoSpec).ServiceType value for Python packages.
+	TypeRustPackages = "rustPackages"
 
 	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	TypeOther = "other"
