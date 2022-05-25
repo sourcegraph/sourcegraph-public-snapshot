@@ -401,6 +401,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 						"id", acct.ID,
 						"unauthorized", unauthorized,
 					)
+					continue
 				}
 				log15.Debug("PermsSyncer.fetchUserPermsViaExternalAccounts.setExternalAccountExpired",
 					"userID", user.ID,
