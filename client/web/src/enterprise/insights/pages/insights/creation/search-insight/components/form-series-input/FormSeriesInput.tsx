@@ -26,7 +26,7 @@ const validQuery = (value: string | undefined, validity: ValidityState | null | 
     const { isNotContext, isNotRepo } = searchQueryValidator(value || '', true)
 
     if (!isNotContext) {
-        return 'The `context:` filter is not currently supported.'
+        return 'The `context:` filter is not supported; instead, run over all repositories and use the `context:` on the filter panel after creation'
     }
 
     if (!isNotRepo) {
