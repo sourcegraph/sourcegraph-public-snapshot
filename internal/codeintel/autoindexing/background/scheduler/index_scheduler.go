@@ -1,4 +1,4 @@
-package indexing
+package scheduler
 
 import (
 	"context"
@@ -9,59 +9,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type IndexScheduler struct {
-	dbStore                DBStore
-	policyMatcher          PolicyMatcher
-	indexEnqueuer          IndexEnqueuer
-	repositoryProcessDelay time.Duration
-	repositoryBatchSize    int
-	policyBatchSize        int
-	operations             *schedulerOperations
-}
-
-var (
-	_ goroutine.Handler      = &IndexScheduler{}
-	_ goroutine.ErrorHandler = &IndexScheduler{}
-)
-
-func NewIndexScheduler(
-	dbStore DBStore,
-	policyMatcher PolicyMatcher,
-	indexEnqueuer IndexEnqueuer,
-	repositoryProcessDelay time.Duration,
-	repositoryBatchSize int,
-	policyBatchSize int,
-	interval time.Duration,
-	observationContext *observation.Context,
-) goroutine.BackgroundRoutine {
-	scheduler := &IndexScheduler{
-		dbStore:                dbStore,
-		policyMatcher:          policyMatcher,
-		indexEnqueuer:          indexEnqueuer,
-		repositoryProcessDelay: repositoryProcessDelay,
-		repositoryBatchSize:    repositoryBatchSize,
-		policyBatchSize:        policyBatchSize,
-		operations:             newOperations(observationContext),
-	}
-
-	return goroutine.NewPeriodicGoroutineWithMetrics(
-		context.Background(),
-		interval,
-		scheduler,
-		scheduler.operations.HandleIndexScheduler,
-	)
-}
-
 // For mocking in tests
 var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
 
-func (s *IndexScheduler) Handle(ctx context.Context) (err error) {
+func (s *scheduler) handle(ctx context.Context) (err error) {
 	if !autoIndexingEnabled() {
 		return nil
 	}
@@ -79,10 +34,10 @@ func (s *IndexScheduler) Handle(ctx context.Context) (err error) {
 		ctx,
 		"lsif_last_index_scan",
 		"last_index_scan_at",
-		s.repositoryProcessDelay,
+		ConfigInst.RepositoryProcessDelay,
 		conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 		repositoryMatchLimit,
-		s.repositoryBatchSize,
+		ConfigInst.RepositoryBatchSize,
 	)
 	if err != nil {
 		return errors.Wrap(err, "dbstore.SelectRepositoriesForIndexScan")
@@ -107,11 +62,11 @@ func (s *IndexScheduler) Handle(ctx context.Context) (err error) {
 	return err
 }
 
-func (s *IndexScheduler) HandleError(err error) {
+func (s *scheduler) handleError(err error) {
 	log15.Error("Failed to schedule index jobs", "err", err)
 }
 
-func (s *IndexScheduler) handleRepository(
+func (s *scheduler) handleRepository(
 	ctx context.Context,
 	repositoryID int,
 	now time.Time,
@@ -123,7 +78,7 @@ func (s *IndexScheduler) handleRepository(
 		policies, totalCount, err := s.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
 			RepositoryID: repositoryID,
 			ForIndexing:  true,
-			Limit:        s.policyBatchSize,
+			Limit:        ConfigInst.PolicyBatchSize,
 			Offset:       offset,
 		})
 		if err != nil {
@@ -143,7 +98,7 @@ func (s *IndexScheduler) handleRepository(
 			}
 
 			// Attempt to queue an index if one does not exist for each of the matching commits
-			if _, err := s.indexEnqueuer.QueueIndexes(ctx, repositoryID, commit, "", false); err != nil {
+			if _, err := s.autoindexingSvc.QueueIndexes(ctx, repositoryID, commit, "", false); err != nil {
 				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					continue
 				}
