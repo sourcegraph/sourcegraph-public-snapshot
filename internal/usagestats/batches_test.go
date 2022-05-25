@@ -21,7 +21,7 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	db := database.NewDB(dbtest.NewDB(t))
 
 	// Create stub repo.
-	repoStore := database.Repos(db)
+	repoStore := db.Repos()
 	esStore := db.ExternalServices()
 
 	now := time.Now()

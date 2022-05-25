@@ -593,7 +593,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		repo := &types.Repo{
 			Name: api.RepoName(r),
 		}
-		if err := database.Repos(db).Create(ctx, repo); err != nil {
+		if err := db.Repos().Create(ctx, repo); err != nil {
 			t.Fatal(err)
 		}
 		if err := db.GitserverRepos().Upsert(ctx, &types.GitserverRepo{
