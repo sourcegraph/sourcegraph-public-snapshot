@@ -11,7 +11,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { LoadingSpinner, Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -104,9 +104,9 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
     return (
         <div>
             <div className={styles.container}>
-                <label htmlFor="invite-form__username">
+                <Typography.Label htmlFor="invite-form__username">
                     {viewerCanAddUserToOrganization ? 'Add or invite member' : 'Invite member'}
-                </label>
+                </Typography.Label>
                 <Form className="form-inline align-items-start" onSubmit={onSubmit}>
                     <input
                         type="text"
@@ -131,8 +131,12 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
                                 data-tooltip="Add immediately without sending invitation (site admins only)"
                                 variant="primary"
                             >
-                                {loading === 'addUserToOrganization' ? <LoadingSpinner /> : <Icon as={AddIcon} />} Add
-                                member
+                                {loading === 'addUserToOrganization' ? (
+                                    <LoadingSpinner />
+                                ) : (
+                                    <Icon role="img" as={AddIcon} aria-hidden={true} />
+                                )}{' '}
+                                Add member
                             </Button>
                         )}
                         {(emailInvitesEnabled || !viewerCanAddUserToOrganization) && (
@@ -145,12 +149,13 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
                                         ? 'Send invitation email with link to join this organization'
                                         : 'Generate invitation link to manually send to user'
                                 }
+                                aria-label="Send or Generate Invitation link"
                                 onClick={viewerCanAddUserToOrganization ? onInviteClick : undefined}
                             >
                                 {loading === 'inviteUserToOrganization' ? (
                                     <LoadingSpinner />
                                 ) : (
-                                    <Icon as={EmailOpenOutlineIcon} />
+                                    <Icon role="img" as={EmailOpenOutlineIcon} aria-hidden={true} />
                                 )}{' '}
                                 {emailInvitesEnabled
                                     ? viewerCanAddUserToOrganization
@@ -165,8 +170,9 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
             {authenticatedUser?.siteAdmin && !emailInvitesEnabled && (
                 <DismissibleAlert variant="info" partialStorageKey="org-invite-email-config">
                     <p className=" mb-0">
-                        Set <code>email.smtp</code> in <Link to="/site-admin/configuration">site configuration</Link> to
-                        send email notifications about invitations.
+                        Set <Typography.Code>email.smtp</Typography.Code> in{' '}
+                        <Link to="/site-admin/configuration">site configuration</Link> to send email notifications about
+                        invitations.
                     </p>
                 </DismissibleAlert>
             )}
@@ -269,10 +275,10 @@ const InvitedNotification: React.FunctionComponent<React.PropsWithChildren<Invit
             ) : (
                 <>Generated invitation link. Copy and send it to {username}:</>
             )}
-            <CopyableText text={invitationURL} size={40} className="mt-2" />
+            <CopyableText label="Invitation URL" text={invitationURL} size={40} className="mt-2" />
         </div>
         <Button variant="icon" title="Dismiss" onClick={onDismiss}>
-            <Icon as={CloseIcon} />
+            <Icon role="img" as={CloseIcon} aria-hidden={true} />
         </Button>
     </Alert>
 )

@@ -36,6 +36,10 @@ func (s *SequentialJob) Name() string {
 	return "SequentialJob"
 }
 
+func (s *SequentialJob) Tags() []log.Field {
+	return []log.Field{}
+}
+
 func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	var maxAlerter search.MaxAlerter
 	var errs errors.MultiError
@@ -71,6 +75,10 @@ type ParallelJob struct {
 
 func (p *ParallelJob) Name() string {
 	return "ParallelJob"
+}
+
+func (p *ParallelJob) Tags() []log.Field {
+	return []log.Field{}
 }
 
 func (p *ParallelJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
@@ -110,9 +118,8 @@ type TimeoutJob struct {
 }
 
 func (t *TimeoutJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, s, finish := job.StartSpan(ctx, s, t)
+	_, ctx, s, finish := job.StartSpan(ctx, s, t)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(t.Tags))
 
 	ctx, cancel := context.WithTimeout(ctx, t.timeout)
 	defer cancel()
@@ -150,9 +157,8 @@ type LimitJob struct {
 }
 
 func (l *LimitJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, s, finish := job.StartSpan(ctx, s, l)
+	_, ctx, s, finish := job.StartSpan(ctx, s, l)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(l.Tags))
 
 	ctx, s, cancel := streaming.WithLimit(ctx, s, l.limit)
 	defer cancel()
@@ -187,3 +193,7 @@ func (e *NoopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*s
 }
 
 func (e *NoopJob) Name() string { return "NoopJob" }
+
+func (e *NoopJob) Tags() []log.Field {
+	return []log.Field{}
+}

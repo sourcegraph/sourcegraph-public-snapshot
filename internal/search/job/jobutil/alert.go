@@ -34,9 +34,8 @@ type alertJob struct {
 }
 
 func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := job.StartSpan(ctx, stream, j)
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(j.Tags))
 
 	start := time.Now()
 	countingStream := streaming.NewResultCountingStream(stream)

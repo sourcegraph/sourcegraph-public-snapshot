@@ -127,7 +127,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                             rel="noopener noreferrer"
                             to="https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MQ=="
                         >
-                            Find Log4J dependencies <Icon as={OpenInNewIcon} />
+                            Find Log4J dependencies <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />
                         </Link>
                         <div className="mt-2">Find Log4J dependencies across all your code.</div>
                     </Container>
@@ -139,7 +139,8 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                             rel="noopener noreferrer"
                             to="https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTM="
                         >
-                            Learn Sourcegraph / Find code across all of your repositories <Icon as={OpenInNewIcon} />
+                            Learn Sourcegraph / Find code across all of your repositories{' '}
+                            <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />
                         </Link>
                         <div className="mt-2">Learn how to find and reference code across all your repositories.</div>
                     </Container>
@@ -207,7 +208,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     </div>
                     <div className="mb-2">Read in-depth material about all of notebooks' features.</div>
                     <Link target="_blank" rel="noopener noreferrer" to="/help/notebooks">
-                        Documentation <Icon as={OpenInNewIcon} />
+                        Documentation <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />
                     </Link>
                 </div>
             </div>

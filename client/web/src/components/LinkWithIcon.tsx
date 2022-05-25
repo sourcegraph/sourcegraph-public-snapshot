@@ -29,7 +29,7 @@ export const LinkWithIcon: React.FunctionComponent<React.PropsWithChildren<LinkW
             variant="link"
             data-testid={kebabCase(text)}
         >
-            <Icon className="mr-1" as={linkIcon} />
+            <Icon role="img" className="mr-1" as={linkIcon} aria-hidden={true} />
             <span className="inline-block">{text}</span>
         </Button>
     )

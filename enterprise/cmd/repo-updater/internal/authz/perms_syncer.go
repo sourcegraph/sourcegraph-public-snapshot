@@ -5,12 +5,14 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -24,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -230,6 +233,56 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 	return repoNames, nil
 }
 
+func (s *PermsSyncer) maybeRefreshGitLabOAuthToken(ctx context.Context, acct *extsvc.Account) error {
+	if acct.ServiceType != extsvc.TypeGitLab {
+		return nil
+	}
+
+	var oauthConfig *oauth2.Config
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Gitlab == nil ||
+			strings.TrimSuffix(acct.ServiceID, "/") != strings.TrimSuffix(authProvider.Gitlab.Url, "/") {
+			continue
+		}
+		url := strings.TrimSuffix(authProvider.Gitlab.Url, "/")
+
+		oauthConfig = &oauth2.Config{
+			ClientID:     authProvider.Gitlab.ClientID,
+			ClientSecret: authProvider.Gitlab.ClientSecret,
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  url + "/oauth/authorize",
+				TokenURL: url + "/oauth/token",
+			},
+			Scopes: gitlab.RequestedOAuthScopes(authProvider.Gitlab.ApiScope, nil),
+		}
+		break
+	}
+	if oauthConfig == nil {
+		return nil
+	}
+
+	_, tok, err := gitlab.GetExternalAccountData(&acct.AccountData)
+	if err != nil {
+		return errors.Wrap(err, "get external account data")
+	} else if tok == nil {
+		return errors.New("no token found in the external account data")
+	}
+
+	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
+	if err != nil {
+		return errors.Wrap(err, "refresh token")
+	}
+
+	if refreshedToken.AccessToken != tok.AccessToken {
+		acct.AccountData.SetAuthData(refreshedToken)
+		_, err := s.db.UserExternalAccounts().LookupUserAndSave(ctx, acct.AccountSpec, acct.AccountData)
+		if err != nil {
+			return errors.Wrap(err, "save refreshed token")
+		}
+	}
+	return nil
+}
+
 // fetchUserPermsViaExternalAccounts uses external accounts (aka. login
 // connections) to list all accessible private repositories on code hosts for
 // the given user.
@@ -322,9 +375,14 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			return nil, nil, errors.Wrap(err, "wait for rate limiter")
 		}
 
+		err := s.maybeRefreshGitLabOAuthToken(ctx, acct)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "refresh GitLab OAuth token")
+		}
+
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
 		if err != nil {
-			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
+			// The "401 Unauthorized" is returned by code hosts when the token is revoked
 			unauthorized := errcode.IsUnauthorized(err)
 
 			forbidden := errcode.IsForbidden(err)
@@ -336,6 +394,14 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				err = accounts.TouchExpired(ctx, acct.ID)
 				if err != nil {
 					return nil, nil, errors.Wrapf(err, "set expired for external account %d", acct.ID)
+				}
+				if unauthorized {
+					log15.Warn("PermsSyncer.fetchUserPermsViaExternalAccounts.setExternalAccountExpired, token is revoked",
+						"userID", user.ID,
+						"id", acct.ID,
+						"unauthorized", unauthorized,
+					)
+					continue
 				}
 				log15.Debug("PermsSyncer.fetchUserPermsViaExternalAccounts.setExternalAccountExpired",
 					"userID", user.ID,

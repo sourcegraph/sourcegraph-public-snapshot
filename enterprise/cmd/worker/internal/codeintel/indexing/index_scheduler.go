@@ -77,6 +77,8 @@ func (s *IndexScheduler) Handle(ctx context.Context) (err error) {
 	// the backlog.
 	repositories, err := s.dbStore.SelectRepositoriesForIndexScan(
 		ctx,
+		"lsif_last_index_scan",
+		"last_index_scan_at",
 		s.repositoryProcessDelay,
 		conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 		repositoryMatchLimit,

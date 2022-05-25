@@ -1,5 +1,5 @@
-FROM gcr.io/cadvisor/cadvisor:v0.42.0@sha256:f240a164f49ec49c5e633c1871c24e641e5dfdd8d2ea54aeb2f2b06d7e7cc980
-LABEL com.sourcegraph.cadvisor.version=v0.42.0
+FROM gcr.io/cadvisor/cadvisor@sha256:8938726fe00fd7a3889f7c4fb50a54b728f1d02fb5f6cbdbea604824ad11ff3f
+LABEL com.sourcegraph.cadvisor.version=v0.44.0
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -12,6 +12,7 @@ LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
 LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 
+# hadolint ignore=SC2261
 RUN apk add --upgrade --no-cache apk-tools>=2.10.8-r0 krb5-libs>=1.18.4-r0 \
     busybox \
     wget

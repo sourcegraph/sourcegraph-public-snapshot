@@ -332,7 +332,7 @@ export const SourcegraphURLForm: React.FunctionComponent<React.PropsWithChildren
     return (
         // eslint-disable-next-line react/forbid-elements
         <form onSubmit={preventDefault} noValidate={true}>
-            <label htmlFor="sourcegraph-url">Sourcegraph URL</label>
+            <Typography.Label htmlFor="sourcegraph-url">Sourcegraph URL</Typography.Label>
             <Combobox openOnFocus={true} onSelect={nextUrlFieldChange}>
                 <LoaderInput loading={urlState.kind === 'LOADING'} className={deriveInputClassName(urlState)}>
                     <ComboboxInput

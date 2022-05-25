@@ -242,7 +242,11 @@ describe('Code insight edit insight page', () => {
                     title: 'Test insight title',
                 },
                 viewControls: {
-                    filters: {},
+                    filters: {
+                        excludeRepoRegex: '',
+                        includeRepoRegex: '',
+                        searchContexts: [],
+                    },
                 },
             },
             id: '001',

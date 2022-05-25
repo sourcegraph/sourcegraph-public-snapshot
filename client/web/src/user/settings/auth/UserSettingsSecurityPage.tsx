@@ -293,7 +293,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                 />
                                 {this.shouldShowOldPasswordInput() && (
                                     <div className="form-group">
-                                        <label htmlFor="oldPassword">Old password</label>
+                                        <Typography.Label htmlFor="oldPassword">Old password</Typography.Label>
                                         <PasswordInput
                                             value={this.state.oldPassword}
                                             onChange={this.onOldPasswordFieldChange}
@@ -308,7 +308,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                 )}
 
                                 <div className="form-group">
-                                    <label htmlFor="newPassword">New password</label>
+                                    <Typography.Label htmlFor="newPassword">New password</Typography.Label>
                                     <PasswordInput
                                         value={this.state.newPassword}
                                         onChange={this.onNewPasswordFieldChange}
@@ -329,7 +329,9 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                     {this.getPasswordRequirements()}
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="newPasswordConfirmation">Confirm new password</label>
+                                    <Typography.Label htmlFor="newPasswordConfirmation">
+                                        Confirm new password
+                                    </Typography.Label>
                                     <PasswordInput
                                         value={this.state.newPasswordConfirmation}
                                         onChange={this.onNewPasswordConfirmationFieldChange}

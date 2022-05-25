@@ -132,7 +132,7 @@ const PrivateContent: FunctionComponent = () => (
 
 const OrganizationContent: FunctionComponent<{ organizations: string[] }> = ({ organizations }) => (
     <>
-        <p className="mb-2">Only people added to following Organizations can see this insight:</p>
+        <p className="mb-2">Only people added to the following organizations can see this insight:</p>
         {organizations.map(organization => (
             <Badge variant="secondary" key={organization} className="mr-2">
                 {organization}

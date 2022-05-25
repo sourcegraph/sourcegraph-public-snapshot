@@ -67,8 +67,8 @@ func TestCleanup_computeStats(t *testing.T) {
 
 	if _, err := s.DB.ExecContext(context.Background(), `
 insert into repo(id, name) values (1, 'a'), (2, 'b/d'), (3, 'c');
-insert into gitserver_repos(repo_id, shard_id) values (1, 1), (2, 1);
-insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (3, 1, 228);
+update gitserver_repos set shard_id = 1;
+update gitserver_repos set repo_size_bytes = 228 where repo_id = 3;
 `); err != nil {
 		t.Fatalf("unexpected error while inserting test data: %s", err)
 	}
@@ -1240,8 +1240,8 @@ insert into repo(id, name)
 values (1, 'ghe.sgdev.org/sourcegraph/gorilla-websocket'),
        (2, 'ghe.sgdev.org/sourcegraph/gorilla-mux'),
        (3, 'ghe.sgdev.org/sourcegraph/gorilla-sessions');
-insert into gitserver_repos(repo_id, shard_id) values (2, 1), (3, 1);
-insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (1, 1, 228);
+update gitserver_repos set shard_id = 1;
+update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 `); err != nil {
 		t.Fatalf("unexpected error while inserting test data: %s", err)
 	}
@@ -1296,6 +1296,10 @@ func TestSGMLogFile(t *testing.T) {
 	}
 	mustHaveLogFile(t)
 
+	if got := bestEffortReadFailed(dir); got != 1 {
+		t.Fatalf("want 1, got %d", got)
+	}
+
 	// fix the repo
 	os.Remove(fakeRef)
 
@@ -1315,5 +1319,81 @@ func TestSGMLogFile(t *testing.T) {
 	}
 	if _, err := os.Stat(dir.Path(sgmLog)); err == nil {
 		t.Fatalf("%s should have been removed", sgmLog)
+	}
+}
+
+func TestBestEffortReadFailed(t *testing.T) {
+	tc := []struct {
+		content     []byte
+		wantRetries int
+	}{
+		{
+			content:     nil,
+			wantRetries: 0,
+		},
+		{
+			content:     []byte("any content"),
+			wantRetries: 0,
+		},
+		{
+			content: []byte(`failed=1
+
+error message`),
+			wantRetries: 1,
+		},
+		{
+			content: []byte(`header text
+failed=2
+error message`),
+			wantRetries: 2,
+		},
+		{
+			content: []byte(`failed=
+
+error message`),
+			wantRetries: 0,
+		},
+		{
+			content: []byte(`failed=deadbeaf
+
+error message`),
+			wantRetries: 0,
+		},
+		{
+			content: []byte(`failed
+failed=deadbeaf
+failed=1`),
+			wantRetries: 0,
+		},
+		{
+			content: []byte(`failed
+failed=1
+failed=deadbead`),
+			wantRetries: 1,
+		},
+		{
+			content: []byte(`failed=
+failed=
+error message`),
+			wantRetries: 0,
+		},
+		{
+			content: []byte(`header failed text
+
+failed=3
+failed=4
+
+error message
+`),
+			wantRetries: 3,
+		},
+	}
+
+	for _, tt := range tc {
+		t.Run(string(tt.content), func(t *testing.T) {
+			if got := bestEffortParseFailed(tt.content); got != tt.wantRetries {
+				t.Fatalf("want %d, got %d", tt.wantRetries, got)
+			}
+		})
 	}
 }

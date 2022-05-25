@@ -20,7 +20,7 @@ export const QuickLinks: React.FunctionComponent<React.PropsWithChildren<Props>>
             {quickLinks.map((quickLink, index) => (
                 <small className={classNames('text-nowrap mr-2', styles.quicklink)} key={index}>
                     <Link to={quickLink.url} data-tooltip={quickLink.description}>
-                        <Icon className="pr-1" as={LinkIcon} />
+                        <Icon role="img" aria-hidden={true} className="pr-1" as={LinkIcon} />
                         {quickLink.name}
                     </Link>
                 </small>

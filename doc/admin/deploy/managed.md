@@ -45,7 +45,9 @@ As part of this service you will receive a number of benefits from our team, inc
 
 ## Backup and Restore
 
-- Snapshots are taken every week and kept for 90 days.
+<span class="badge badge-note">SOC2/CI-79</span>
+
+- Snapshots are taken daily and kept for 90 days.
 
 ## Training, feedback, and engagement
 

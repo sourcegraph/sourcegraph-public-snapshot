@@ -25,7 +25,7 @@ func TestOrgs_ValidNames(t *testing.T) {
 	for _, test := range usernamesForTests {
 		t.Run(test.name, func(t *testing.T) {
 			valid := true
-			if _, err := Orgs(db).Create(ctx, test.name, nil); err != nil {
+			if _, err := db.Orgs().Create(ctx, test.name, nil); err != nil {
 				if strings.Contains(err.Error(), "org name invalid") {
 					valid = false
 				} else {
@@ -44,22 +44,22 @@ func TestOrgs_Count(t *testing.T) {
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
-	org, err := Orgs(db).Create(ctx, "a", nil)
+	org, err := db.Orgs().Create(ctx, "a", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := Orgs(db).Count(ctx, OrgsListOptions{}); err != nil {
+	if count, err := db.Orgs().Count(ctx, OrgsListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	if err := Orgs(db).Delete(ctx, org.ID); err != nil {
+	if err := db.Orgs().Delete(ctx, org.ID); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := Orgs(db).Count(ctx, OrgsListOptions{}); err != nil {
+	if count, err := db.Orgs().Count(ctx, OrgsListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -72,22 +72,22 @@ func TestOrgs_Delete(t *testing.T) {
 	ctx := context.Background()
 
 	displayName := "a"
-	org, err := Orgs(db).Create(ctx, "a", &displayName)
+	org, err := db.Orgs().Create(ctx, "a", &displayName)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Delete org.
-	if err := Orgs(db).Delete(ctx, org.ID); err != nil {
+	if err := db.Orgs().Delete(ctx, org.ID); err != nil {
 		t.Fatal(err)
 	}
 
 	// Org no longer exists.
-	_, err = Orgs(db).GetByID(ctx, org.ID)
+	_, err = db.Orgs().GetByID(ctx, org.ID)
 	if !errors.HasType(err, &OrgNotFoundError{}) {
 		t.Errorf("got error %v, want *OrgNotFoundError", err)
 	}
-	orgs, err := Orgs(db).List(ctx, &OrgsListOptions{Query: "a"})
+	orgs, err := db.Orgs().List(ctx, &OrgsListOptions{Query: "a"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +96,7 @@ func TestOrgs_Delete(t *testing.T) {
 	}
 
 	// Can't delete already-deleted org.
-	err = Orgs(db).Delete(ctx, org.ID)
+	err = db.Orgs().Delete(ctx, org.ID)
 	if !errors.HasType(err, &OrgNotFoundError{}) {
 		t.Errorf("got error %v, want *OrgNotFoundError", err)
 	}
@@ -108,47 +108,47 @@ func TestOrgs_HardDelete(t *testing.T) {
 	ctx := context.Background()
 
 	displayName := "org1"
-	org, err := Orgs(db).Create(ctx, "org1", &displayName)
+	org, err := db.Orgs().Create(ctx, "org1", &displayName)
 	require.NoError(t, err)
 
 	// Hard Delete org.
-	if err := Orgs(db).HardDelete(ctx, org.ID); err != nil {
+	if err := db.Orgs().HardDelete(ctx, org.ID); err != nil {
 		t.Fatal(err)
 	}
 
 	// Org no longer exists.
-	_, err = Orgs(db).GetByID(ctx, org.ID)
+	_, err = db.Orgs().GetByID(ctx, org.ID)
 	if !errors.HasType(err, &OrgNotFoundError{}) {
 		t.Errorf("got error %v, want *OrgNotFoundError", err)
 	}
 
-	orgs, err := Orgs(db).List(ctx, &OrgsListOptions{Query: "org1"})
+	orgs, err := db.Orgs().List(ctx, &OrgsListOptions{Query: "org1"})
 	require.NoError(t, err)
 	if len(orgs) > 0 {
 		t.Errorf("got %d orgs, want 0", len(orgs))
 	}
 
 	// Cannot hard delete an org that doesn't exist.
-	err = Orgs(db).HardDelete(ctx, org.ID)
+	err = db.Orgs().HardDelete(ctx, org.ID)
 	if !errors.HasType(err, &OrgNotFoundError{}) {
 		t.Errorf("got error %v, want *OrgNotFoundError", err)
 	}
 
 	// Can hard delete an org that has been soft deleted.
 	displayName2 := "org2"
-	org2, err := Orgs(db).Create(ctx, "org2", &displayName2)
+	org2, err := db.Orgs().Create(ctx, "org2", &displayName2)
 	require.NoError(t, err)
 
-	err = Orgs(db).Delete(ctx, org2.ID)
+	err = db.Orgs().Delete(ctx, org2.ID)
 	require.NoError(t, err)
 
-	err = Orgs(db).HardDelete(ctx, org2.ID)
+	err = db.Orgs().HardDelete(ctx, org2.ID)
 	require.NoError(t, err)
 }
 
 func TestOrgs_GetByID(t *testing.T) {
 	createOrg := func(ctx context.Context, db DB, name string, displayName string) *types.Org {
-		org, err := Orgs(db).Create(ctx, name, &displayName)
+		org, err := db.Orgs().Create(ctx, name, &displayName)
 		if err != nil {
 			t.Fatal(err)
 			return nil
@@ -186,7 +186,7 @@ func TestOrgs_GetByID(t *testing.T) {
 	user := createUser(ctx, db, "user")
 	createOrgMember(ctx, db, user.ID, org2.ID)
 
-	orgs, err := Orgs(db).GetByUserID(ctx, user.ID)
+	orgs, err := db.Orgs().GetByUserID(ctx, user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -200,7 +200,7 @@ func TestOrgs_GetByID(t *testing.T) {
 
 func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 	createOrg := func(ctx context.Context, db DB, name string, displayName string) *types.Org {
-		org, err := Orgs(db).Create(ctx, name, &displayName)
+		org, err := db.Orgs().Create(ctx, name, &displayName)
 		if err != nil {
 			t.Fatal(err)
 			return nil
@@ -253,7 +253,7 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	orgs, err := Orgs(db).GetOrgsWithRepositoriesByUserID(ctx, user.ID)
+	orgs, err := db.Orgs().GetOrgsWithRepositoriesByUserID(ctx, user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -282,7 +282,7 @@ func TestOrgs_AddOrgsOpenBetaStats(t *testing.T) {
 	}
 
 	t.Run("When adding stats, returns valid UUID", func(t *testing.T) {
-		id, err := Orgs(db).AddOrgsOpenBetaStats(ctx, userID, string(data))
+		id, err := db.Orgs().AddOrgsOpenBetaStats(ctx, userID, string(data))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -293,11 +293,11 @@ func TestOrgs_AddOrgsOpenBetaStats(t *testing.T) {
 	})
 
 	t.Run("Can add stats multiple times by the same user", func(t *testing.T) {
-		_, err := Orgs(db).AddOrgsOpenBetaStats(ctx, userID, string(data))
+		_, err := db.Orgs().AddOrgsOpenBetaStats(ctx, userID, string(data))
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = Orgs(db).AddOrgsOpenBetaStats(ctx, userID, string(data))
+		_, err = db.Orgs().AddOrgsOpenBetaStats(ctx, userID, string(data))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -311,13 +311,13 @@ func TestOrgs_UpdateOrgsOpenBetaStats(t *testing.T) {
 
 	userID := int32(42)
 	orgID := int32(10)
-	statsID, err := Orgs(db).AddOrgsOpenBetaStats(ctx, userID, "{}")
+	statsID, err := db.Orgs().AddOrgsOpenBetaStats(ctx, userID, "{}")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("Updates stats with orgID if the UUID exists in the DB", func(t *testing.T) {
-		err := Orgs(db).UpdateOrgsOpenBetaStats(ctx, statsID, orgID)
+		err := db.Orgs().UpdateOrgsOpenBetaStats(ctx, statsID, orgID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -328,7 +328,7 @@ func TestOrgs_UpdateOrgsOpenBetaStats(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = Orgs(db).UpdateOrgsOpenBetaStats(ctx, randomUUID.String(), orgID)
+		err = db.Orgs().UpdateOrgsOpenBetaStats(ctx, randomUUID.String(), orgID)
 		if err != nil {
 			t.Fatal(err)
 		}

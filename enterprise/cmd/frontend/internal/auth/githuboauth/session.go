@@ -30,10 +30,11 @@ import (
 
 type sessionIssuerHelper struct {
 	*extsvc.CodeHost
-	db          database.DB
-	clientID    string
-	allowSignup bool
-	allowOrgs   []string
+	db           database.DB
+	clientID     string
+	allowSignup  bool
+	allowOrgs    []string
+	allowOrgsMap map[string][]string
 }
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
@@ -60,9 +61,11 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, "Could not get verified email for GitHub user. Check that your GitHub account has a verified email that matches one of your Sourcegraph verified emails.", errors.New("no verified email")
 	}
 
-	// 🚨 SECURITY: Ensure that the user is part of one of the white listed orgs, if any.
-	if !s.verifyUserOrgs(ctx, ghClient) {
-		return nil, "Could not verify user is part of the allowed GitHub organizations.", errors.New("couldn't verify user is part of allowed GitHub organizations")
+	// 🚨 SECURITY: Ensure that the user is part of one of the allow listed orgs or teams, if any.
+	userBelongsToAllowedOrgsOrTeams := s.verifyUserOrgsAndTeams(ctx, ghClient)
+	if !userBelongsToAllowedOrgsOrTeams {
+		message := "user does not belong to allowed GitHub organizations or teams."
+		return nil, message, errors.New(message)
 	}
 
 	// Try every verified email in succession until the first that succeeds
@@ -272,12 +275,10 @@ func getVerifiedEmails(ctx context.Context, ghClient *githubsvc.V3Client) (verif
 	return verifiedEmails
 }
 
+// verifyUserOrgs checks whether the authenticated user belongs to one of the GitHub orgs listed in auth.provider > allowOrgs configuration
 func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *githubsvc.V3Client) bool {
-	if len(s.allowOrgs) == 0 {
-		return true
-	}
-
 	userOrgs, err := ghClient.GetAuthenticatedUserOrgs(ctx)
+
 	if err != nil {
 		log15.Warn("Could not get GitHub authenticated user organizations", "error", err)
 		return false
@@ -292,6 +293,58 @@ func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *gith
 		if allowed[org.Login] {
 			return true
 		}
+	}
+
+	return false
+}
+
+// verifyUserTeams checks whether the authenticated user belongs to one of the GitHub teams listed in the auth.provider > allowOrgsMap configuration
+func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *githubsvc.V3Client) bool {
+	var err error
+	hasNextPage := true
+	allowedTeams := make(map[string]map[string]bool, len(s.allowOrgsMap))
+
+	for org, teams := range s.allowOrgsMap {
+		teamsMap := make(map[string]bool)
+		for _, team := range teams {
+			teamsMap[team] = true
+		}
+
+		allowedTeams[org] = teamsMap
+	}
+
+	for page := 1; hasNextPage; page++ {
+		var githubTeams []*githubsvc.Team
+
+		githubTeams, hasNextPage, _, err = ghClient.GetAuthenticatedUserTeams(ctx, page)
+		if err != nil {
+			log15.Warn("Could not get GitHub authenticated user teams", "error", err)
+			return false
+		}
+
+		for _, ghTeam := range githubTeams {
+			_, ok := allowedTeams[ghTeam.Organization.Login][ghTeam.Name]
+			if ok {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// verifyUserOrgsAndTeams checks if the user belongs to one of the allowed listed orgs or teams provided in the auth.provider configuration.
+func (s *sessionIssuerHelper) verifyUserOrgsAndTeams(ctx context.Context, ghClient *githubsvc.V3Client) bool {
+	if len(s.allowOrgs) == 0 && len(s.allowOrgsMap) == 0 {
+		return true
+	}
+
+	if len(s.allowOrgs) > 0 && s.verifyUserOrgs(ctx, ghClient) {
+		return true
+	}
+
+	if len(s.allowOrgsMap) > 0 && s.verifyUserTeams(ctx, ghClient) {
+		return true
 	}
 
 	return false

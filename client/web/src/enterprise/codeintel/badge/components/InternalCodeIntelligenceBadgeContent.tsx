@@ -60,7 +60,7 @@ export const InternalCodeIntelligenceBadgeContent: React.FunctionComponent<
                     <ul>
                         {preciseSupportLevels.map(supportLevel => (
                             <li key={`precise-support-level-${supportLevel}`}>
-                                <code>{supportLevel}</code>
+                                <Typography.Code>{supportLevel}</Typography.Code>
                                 <ul>
                                     {data.preciseSupport
                                         ?.filter(support => support.supportLevel === supportLevel)
@@ -81,7 +81,7 @@ export const InternalCodeIntelligenceBadgeContent: React.FunctionComponent<
 
                         {searchBasedSupportLevels.map(supportLevel => (
                             <li key={`search-support-level-${supportLevel}`}>
-                                <code>{supportLevel}</code>
+                                <Typography.Code>{supportLevel}</Typography.Code>
                                 <ul>
                                     {data.searchBasedSupport
                                         ?.filter(support => support.supportLevel === supportLevel)

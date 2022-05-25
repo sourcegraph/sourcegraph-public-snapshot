@@ -9,9 +9,15 @@ Each section comprehensively describes the changes needed in Docker images, envi
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
 ## Unreleased
-A fix that corrects the default behavior of the `migrator` service is included in this release. An attempt to standardize CLI packages in v3.39.0 unintentionally 
-broke the default behavior. In order to guard against this, all command line arguments are explicitly set in the deployment manifest.
 
+## 3.39 -> 3.40
+
+- A fix that corrects the default behavior of the `migrator` service is included in this release. An attempt to standardize CLI packages in v3.39.0 unintentionally
+broke the default behavior. In order to guard against this, all command line arguments are explicitly set in the deployment manifest.
+- **CAUTION** Added the ability to customize postgres server configuration by mounting external configuration files. If you have customized the config in any way, you should copy your changes to the added `postgresql.conf` files [sourcegraph/deploy-sourcegraph-docker#806](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/806)
+
+To upgrade, please perform the changes in the following diff:
+[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2c94a1fb5fa396759d4800a717af6658548943f7](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2c94a1fb5fa396759d4800a717af6658548943f7)
 
 ## 3.39 -> 3.39.1
 

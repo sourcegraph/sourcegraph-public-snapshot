@@ -73,8 +73,8 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                                 </Link>
                             </Typography.H4>
                             <p className="text-muted mb-0">
-                                A Sourcegraph query plus a simple <code>sed</code> command creates changesets required
-                                to manage a large scale change.
+                                A Sourcegraph query plus a simple <Typography.Code>sed</Typography.Code> command creates
+                                changesets required to manage a large scale change.
                             </p>
                         </div>
                     </CardBody>

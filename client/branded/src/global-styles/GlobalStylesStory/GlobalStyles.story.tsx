@@ -64,7 +64,8 @@ export const Code: Story = () => (
 
         <Typography.H2>Inline Code</Typography.H2>
         <p>
-            Example of <code>inline code</code> that can be achieved with the <code>{'<code>'}</code> element.
+            Example of <Typography.Code>inline code</Typography.Code> that can be achieved with the{' '}
+            <Typography.Code>{'<code>'}</Typography.Code> element.
         </p>
 
         <Typography.H2>Highlighted multi-line code</Typography.H2>
@@ -72,7 +73,7 @@ export const Code: Story = () => (
 
         <Typography.H3>TypeScript</Typography.H3>
         <pre>
-            <code
+            <Typography.Code
                 dangerouslySetInnerHTML={{
                     __html: highlightCodeSafe(
                         ['const foo = 123', 'const bar = "Hello World!"', 'console.log(foo)'].join('\n'),
@@ -84,7 +85,7 @@ export const Code: Story = () => (
 
         <Typography.H3>JSON</Typography.H3>
         <pre>
-            <code
+            <Typography.Code
                 dangerouslySetInnerHTML={{
                     __html: highlightCodeSafe(
                         ['{', '  "someString": "Hello World!",', '  "someNumber": 123', '}'].join('\n'),
@@ -96,7 +97,7 @@ export const Code: Story = () => (
 
         <Typography.H3>Diffs</Typography.H3>
         <pre>
-            <code
+            <Typography.Code
                 dangerouslySetInnerHTML={{
                     __html: highlightCodeSafe(
                         [
@@ -113,13 +114,14 @@ export const Code: Story = () => (
 
         <Typography.H2>Keyboard shortcuts</Typography.H2>
         <p>
-            Keyboard shortcuts should use <code>{'<kbd>'}</code>, not <code>{'<code>'}</code>. For example,{' '}
-            <kbd>cmd</kbd>+<kbd>C</kbd> is used to copy text to the clipboard.
+            Keyboard shortcuts should use <Typography.Code>{'<kbd>'}</Typography.Code>, not{' '}
+            <Typography.Code>{'<code>'}</Typography.Code>. For example, <kbd>cmd</kbd>+<kbd>C</kbd> is used to copy text
+            to the clipboard.
         </p>
         <Typography.H3>Code snippets</Typography.H3>
         <p>
             Highlighted code pieces should go in a panel separating it from the surrounding content. Use{' '}
-            <code>{'<CodeSnippet />'}</code> for these uses.
+            <Typography.Code>{'<CodeSnippet />'}</Typography.Code> for these uses.
         </p>
         <CodeSnippet code="property: 1" language="yaml" />
     </>
@@ -150,7 +152,8 @@ export const Layout: Story = () => (
 
         <Typography.H2>Spacing</Typography.H2>
         <p>
-            Use margin <code>m-*</code> and padding <code>p-*</code> utilities to align with the{' '}
+            Use margin <Typography.Code>m-*</Typography.Code> and padding <Typography.Code>p-*</Typography.Code>{' '}
+            utilities to align with the{' '}
             <Link
                 to="https://builttoadapt.io/intro-to-the-8-point-grid-system-d2573cde8632"
                 target="_blank"
@@ -158,7 +161,8 @@ export const Layout: Story = () => (
             >
                 8pt grid
             </Link>
-            . When hand-writing CSS, use <code>rem</code> units in multiples of <code>0.25</code>.
+            . When hand-writing CSS, use <Typography.Code>rem</Typography.Code> units in multiples of{' '}
+            <Typography.Code>0.25</Typography.Code>.
         </p>
 
         <Typography.H2>One-dimensional layout</Typography.H2>
@@ -262,7 +266,7 @@ export const ButtonGroups: Story = () => {
                         <Button variant="secondary">Middle</Button>
                         <Button variant="secondary">Right</Button>
                     </ButtonGroup>{' '}
-                    Example with <code>btn-secondary</code>
+                    Example with <Typography.Code>btn-secondary</Typography.Code>
                 </div>
                 <div className="mb-2">
                     <ButtonGroup aria-label="Basic example">
@@ -276,7 +280,7 @@ export const ButtonGroups: Story = () => {
                             Right
                         </Button>
                     </ButtonGroup>{' '}
-                    Example with <code>btn-outline-secondary</code>
+                    Example with <Typography.Code>btn-outline-secondary</Typography.Code>
                 </div>
                 <div className="mb-2">
                     <ButtonGroup aria-label="Basic example">
@@ -290,13 +294,14 @@ export const ButtonGroups: Story = () => {
                             Right
                         </Button>
                     </ButtonGroup>{' '}
-                    Example with <code>btn-outline-primary</code>
+                    Example with <Typography.Code>btn-outline-primary</Typography.Code>
                 </div>
             </div>
 
             <Typography.H2 className="mt-3">Sizing</Typography.H2>
             <p>
-                Just like buttons, button groups have <code>sm</code> and <code>lg</code> size variants.
+                Just like buttons, button groups have <Typography.Code>sm</Typography.Code> and{' '}
+                <Typography.Code>lg</Typography.Code> size variants.
             </p>
             <div className="mb-2">
                 {buttonSizes.map(size => (
@@ -318,7 +323,7 @@ export const ButtonGroups: Story = () => {
 
             <Typography.H2 className="mt-3">Active state</Typography.H2>
             <p>
-                The <code>active</code> class can be used to craft toggles out of button groups.
+                The <Typography.Code>active</Typography.Code> class can be used to craft toggles out of button groups.
             </p>
             <div className="mb-2">
                 <ButtonGroup aria-label="Basic example">
@@ -335,7 +340,7 @@ export const ButtonGroups: Story = () => {
                         </Button>
                     ))}
                 </ButtonGroup>{' '}
-                Example with <code>btn-outline-secondary</code>
+                Example with <Typography.Code>btn-outline-secondary</Typography.Code>
             </div>
             <div className="mb-2">
                 <ButtonGroup aria-label="Basic example">
@@ -352,7 +357,7 @@ export const ButtonGroups: Story = () => {
                         </Button>
                     ))}
                 </ButtonGroup>{' '}
-                Example with <code>btn-outline-primary</code>
+                Example with <Typography.Code>btn-outline-primary</Typography.Code>
             </div>
         </>
     )
@@ -406,7 +411,7 @@ export const Forms: Story = () => (
         </p>
         <Form onSubmit={preventDefault}>
             <div className="form-group">
-                <label htmlFor="example-email-input">Email address</label>
+                <Typography.Label htmlFor="example-email-input">Email address</Typography.Label>
                 <input
                     type="email"
                     className="form-control"
@@ -419,7 +424,7 @@ export const Forms: Story = () => (
                 </small>
             </div>
             <div className="form-group">
-                <label htmlFor="example-input-password">Password</label>
+                <Typography.Label htmlFor="example-input-password">Password</Typography.Label>
                 <input type="password" className="form-control" id="example-input-password" />
             </div>
 
@@ -444,7 +449,7 @@ export const Forms: Story = () => (
         <Form>
             <fieldset disabled={true}>
                 <div className="form-group">
-                    <label htmlFor="disabledTextInput">Disabled input</label>
+                    <Typography.Label htmlFor="disabledTextInput">Disabled input</Typography.Label>
                     <input type="text" id="disabledTextInput" className="form-control" placeholder="Disabled input" />
                 </div>
 
@@ -579,7 +584,7 @@ export const Meter: Story = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                 >
-                    <code>{'<meter>'}</code>
+                    <Typography.Code>{'<meter>'}</Typography.Code>
                 </Link>{' '}
                 element represents either a scalar value within a known range or a fractional value.
             </p>

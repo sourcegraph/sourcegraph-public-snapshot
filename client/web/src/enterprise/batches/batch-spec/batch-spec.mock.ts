@@ -433,7 +433,9 @@ export const mockWorkspaces = (
         __typename: 'BatchSpec',
         id: 'spec1234',
         workspaceResolution: {
+            __typename: 'BatchSpecWorkspaceResolution',
             workspaces: {
+                __typename: 'BatchSpecWorkspaceConnection',
                 totalCount: count,
                 pageInfo: {
                     endCursor: 'cursor',

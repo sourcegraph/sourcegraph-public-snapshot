@@ -161,9 +161,8 @@ type StructuralSearchJob struct {
 }
 
 func (s *StructuralSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(s.Tags))
 
 	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOpts}
 	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {

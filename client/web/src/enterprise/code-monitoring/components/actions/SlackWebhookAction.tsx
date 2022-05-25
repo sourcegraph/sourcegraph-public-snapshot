@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { gql, useMutation } from '@apollo/client'
 import { noop } from 'lodash'
 
-import { Alert, Input, Link, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Alert, Input, Link, ProductStatusBadge, Typography } from '@sourcegraph/wildcard'
 
 import { SendTestSlackWebhookResult, SendTestSlackWebhookVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
@@ -135,12 +135,12 @@ export const SlackWebhookAction: React.FunctionComponent<React.PropsWithChildren
                 </Link>{' '}
                 to create a webhook URL.
                 <br />
-                <Link to="https://docs.sourcegraph.com/code_monitoring/how-tos/slack" target="_blank" rel="noopener">
+                <Link to="/help/code_monitoring/how-tos/slack" target="_blank" rel="noopener">
                     Read more about how to set up Slack webhooks in the docs.
                 </Link>
             </Alert>
             <div className="form-group">
-                <label htmlFor="code-monitor-slack-webhook-url">Webhook URL</label>
+                <Typography.Label htmlFor="code-monitor-slack-webhook-url">Webhook URL</Typography.Label>
                 <Input
                     id="code-monitor-slack-webhook-url"
                     type="url"

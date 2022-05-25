@@ -68,7 +68,7 @@ export const NotebookTitle: React.FunctionComponent<React.PropsWithChildren<Note
             >
                 <span>{title}</span>
                 <span className={styles.titleEditIcon}>
-                    <Icon as={PencilOutlineIcon} />
+                    <Icon role="img" aria-hidden={true} as={PencilOutlineIcon} />
                 </span>
             </button>
         )

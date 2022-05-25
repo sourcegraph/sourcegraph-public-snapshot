@@ -107,7 +107,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                         onClick={toggleExpand}
                         size="sm"
                     >
-                        <Icon as={expanded ? ChevronDownIcon : ChevronRightIcon} />
+                        <Icon role="img" as={expanded ? ChevronDownIcon : ChevronRightIcon} aria-hidden={true} />
                     </Button>
                     <div className={classNames('align-items-baseline', styles.headerPathStat)}>
                         {!node.oldPath && (
