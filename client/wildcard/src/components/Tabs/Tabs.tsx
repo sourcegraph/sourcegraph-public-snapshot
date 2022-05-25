@@ -142,22 +142,41 @@ export const TabList = React.forwardRef((props, reference) => {
     return <TabListPlain ref={reference} {...props} />
 }) as ForwardReferenceComponent<'div', TabListProps>
 
-const TabListScrolled = React.forwardRef((props, reference) => {
-    const elementReference = React.useRef(null) || reference
-    const obscuredArea = useElementObscuredArea(elementReference)
+const TabListScrolled = React.forwardRef((props, passedReference) => {
+    const ownReference = React.useRef<HTMLDivElement | null>(null)
+
+    // This is required because ref can be passed as a ref object
+    // or callback. We need to support both cases
+    const saveAndPassReference = React.useCallback(
+        (element: HTMLDivElement) => {
+            ownReference.current = element
+            if (!passedReference) {
+                return
+            }
+            if ('current' in passedReference) {
+                passedReference.current = element
+            }
+            if (typeof passedReference === 'function') {
+                passedReference(element)
+            }
+        },
+        [passedReference]
+    )
+
+    const obscuredArea = useElementObscuredArea(ownReference)
 
     const extraWrapperClasses = [
         obscuredArea.left > 0 ? styles.tablistWrapperObscuredLeft : undefined,
         obscuredArea.right > 0 ? styles.tablistWrapperObscuredRight : undefined,
     ]
 
-    useScrollBackToActive(elementReference)
+    useScrollBackToActive(ownReference)
 
     return (
         <TabListPlain
             extraClasses={[styles.tabListScroll]}
             extraWrapperClasses={extraWrapperClasses}
-            ref={elementReference}
+            ref={saveAndPassReference}
             {...props}
         />
     )
