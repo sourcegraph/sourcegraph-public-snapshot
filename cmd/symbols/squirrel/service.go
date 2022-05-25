@@ -70,7 +70,7 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 		}
 
 		// Now find the definition.
-		found, err := squirrel.getDef(ctx, WithNodePtr(root, startNode))
+		found, err := squirrel.getDef(ctx, swapNode(root, startNode))
 		if err != nil {
 			return nil, err
 		}
@@ -103,7 +103,7 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 	}
 
 	// Now find the hover.
-	result := findHover(WithNode(*root, endNode))
+	result := findHover(*swapNode(root, endNode))
 	hover := &result
 
 	// We have a def, and maybe a hover.

@@ -218,16 +218,7 @@ type Node struct {
 	LangSpec LangSpec
 }
 
-func WithNode(other Node, newNode *sitter.Node) Node {
-	return Node{
-		RepoCommitPath: other.RepoCommitPath,
-		Node:           newNode,
-		Contents:       other.Contents,
-		LangSpec:       other.LangSpec,
-	}
-}
-
-func WithNodePtr(other *Node, newNode *sitter.Node) *Node {
+func swapNode(other *Node, newNode *sitter.Node) *Node {
 	return &Node{
 		RepoCommitPath: other.RepoCommitPath,
 		Node:           newNode,

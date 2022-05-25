@@ -10,13 +10,16 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 
 	switch node.Type() {
 	case "identifier":
+		ident := node.Content(node.Contents)
+
 		cur := node.Node
+
 	outer:
 		for {
 			prev := cur
 			cur = cur.Parent()
 			if cur == nil {
-				squirrel.breadcrumb(WithNodePtr(node, prev), fmt.Sprintf("no more parents"))
+				squirrel.breadcrumb(swapNode(node, prev), fmt.Sprintf("no more parents"))
 				return nil, nil
 			}
 
@@ -30,12 +33,11 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 				}
 				field := cur.ChildByFieldName("field")
 				if field != nil {
-					found, err := squirrel.getFieldJava(ctx, WithNodePtr(node, object), field.Content(node.Contents))
+					found, err := squirrel.getFieldJava(ctx, swapNode(node, object), field.Content(node.Contents))
 					if err != nil {
 						return nil, err
 					}
 					if found != nil {
-						squirrel.breadcrumb(found, fmt.Sprintf("found field access"))
 						return found, nil
 					}
 				}
@@ -52,13 +54,13 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 						continue outer
 					}
 					query := "(local_variable_declaration declarator: (variable_declarator name: (identifier) @ident))"
-					captures, err := allCaptures(query, WithNodePtr(node, blockChild))
+					captures, err := allCaptures(query, swapNode(node, blockChild))
 					if err != nil {
 						return nil, err
 					}
 					for _, capture := range captures {
-						if capture.Content(capture.Contents) == node.Content(node.Contents) {
-							return WithNodePtr(node, capture.Node), nil
+						if capture.Content(capture.Contents) == ident {
+							return swapNode(node, capture.Node), nil
 						}
 					}
 				}
@@ -68,13 +70,13 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 					(constructor_declaration parameters: (formal_parameters (formal_parameter name: (identifier) @ident)))
 					(constructor_declaration parameters: (formal_parameters (spread_parameter (variable_declarator name: (identifier) @ident))))
 				]`
-				captures, err := allCaptures(query, WithNodePtr(node, cur))
+				captures, err := allCaptures(query, swapNode(node, cur))
 				if err != nil {
 					return nil, err
 				}
 				for _, capture := range captures {
-					if capture.Content(capture.Contents) == node.Content(node.Contents) {
-						return WithNodePtr(node, capture.Node), nil
+					if capture.Content(capture.Contents) == ident {
+						return swapNode(node, capture.Node), nil
 					}
 				}
 				continue
@@ -84,13 +86,13 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 					(method_declaration parameters: (formal_parameters (formal_parameter name: (identifier) @ident)))
 					(method_declaration parameters: (formal_parameters (spread_parameter (variable_declarator name: (identifier) @ident))))
 				]`
-				captures, err := allCaptures(query, WithNodePtr(node, cur))
+				captures, err := allCaptures(query, swapNode(node, cur))
 				if err != nil {
 					return nil, err
 				}
 				for _, capture := range captures {
-					if capture.Content(capture.Contents) == node.Content(node.Contents) {
-						return WithNodePtr(node, capture.Node), nil
+					if capture.Content(capture.Contents) == ident {
+						return swapNode(node, capture.Node), nil
 					}
 				}
 				continue
@@ -98,11 +100,11 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 			case "class_declaration":
 				name := cur.ChildByFieldName("name")
 				if name != nil {
-					if name.Content(node.Contents) == node.Content(node.Contents) {
-						return WithNodePtr(node, name), nil
+					if name.Content(node.Contents) == ident {
+						return swapNode(node, name), nil
 					}
 				}
-				found, err := squirrel.lookupFieldJava(ctx, (*Type)(WithNodePtr(node, cur)), node.Content(node.Contents))
+				found, err := squirrel.lookupFieldJava(ctx, (*Type)(swapNode(node, cur)), ident)
 				if err != nil {
 					return nil, err
 				}
@@ -118,52 +120,52 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 					(lambda_expression parameters: (formal_parameters (spread_parameter (variable_declarator name: (identifier) @ident))))
 					(lambda_expression parameters: (inferred_parameters (identifier) @ident))
 				]`
-				captures, err := allCaptures(query, WithNodePtr(node, cur))
+				captures, err := allCaptures(query, swapNode(node, cur))
 				if err != nil {
 					return nil, err
 				}
 				for _, capture := range captures {
-					if capture.Content(capture.Contents) == node.Content(node.Contents) {
-						return WithNodePtr(node, capture.Node), nil
+					if capture.Content(capture.Contents) == ident {
+						return swapNode(node, capture.Node), nil
 					}
 				}
 				continue
 
 			case "catch_clause":
 				query := `(catch_clause (catch_formal_parameter name: (identifier) @ident))`
-				captures, err := allCaptures(query, WithNodePtr(node, cur))
+				captures, err := allCaptures(query, swapNode(node, cur))
 				if err != nil {
 					return nil, err
 				}
 				for _, capture := range captures {
-					if capture.Content(capture.Contents) == node.Content(node.Contents) {
-						return WithNodePtr(node, capture.Node), nil
+					if capture.Content(capture.Contents) == ident {
+						return swapNode(node, capture.Node), nil
 					}
 				}
 				continue
 
 			case "for_statement":
 				query := `(for_statement init: (local_variable_declaration declarator: (variable_declarator name: (identifier) @ident)))`
-				captures, err := allCaptures(query, WithNodePtr(node, cur))
+				captures, err := allCaptures(query, swapNode(node, cur))
 				if err != nil {
 					return nil, err
 				}
 				for _, capture := range captures {
-					if capture.Content(capture.Contents) == node.Content(node.Contents) {
-						return WithNodePtr(node, capture.Node), nil
+					if capture.Content(capture.Contents) == ident {
+						return swapNode(node, capture.Node), nil
 					}
 				}
 				continue
 
 			case "enhanced_for_statement":
 				query := `(enhanced_for_statement name: (identifier) @ident)`
-				captures, err := allCaptures(query, WithNodePtr(node, cur))
+				captures, err := allCaptures(query, swapNode(node, cur))
 				if err != nil {
 					return nil, err
 				}
 				for _, capture := range captures {
-					if capture.Content(capture.Contents) == node.Content(node.Contents) {
-						return WithNodePtr(node, capture.Node), nil
+					if capture.Content(capture.Contents) == ident {
+						return swapNode(node, capture.Node), nil
 					}
 				}
 				continue
@@ -173,9 +175,79 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 				continue
 			}
 		}
-	}
 
-	return nil, nil
+	case "type_identifier":
+		ident := node.Content(node.Contents)
+
+		cur := node.Node
+
+		for {
+			prev := cur
+			cur = cur.Parent()
+			if cur == nil {
+				squirrel.breadcrumb(swapNode(node, prev), fmt.Sprintf("no more parents"))
+				return nil, nil
+			}
+
+			switch cur.Type() {
+			case "program":
+				query := `[
+					(program (class_declaration name: (identifier) @ident))
+					(program (enum_declaration name: (identifier) @ident))
+					(program (interface_declaration name: (identifier) @ident))
+				]`
+				captures, err := allCaptures(query, swapNode(node, cur))
+				if err != nil {
+					return nil, err
+				}
+				for _, capture := range captures {
+					if capture.Content(capture.Contents) == ident {
+						return swapNode(node, capture.Node), nil
+					}
+				}
+				continue
+			case "class_declaration":
+				query := `[
+					(class_declaration name: (identifier) @ident)
+					(class_declaration body: (class_body (class_declaration name: (identifier) @ident)))
+					(class_declaration body: (class_body (enum_declaration name: (identifier) @ident)))
+					(class_declaration body: (class_body (interface_declaration name: (identifier) @ident)))
+				]`
+				captures, err := allCaptures(query, swapNode(node, cur))
+				if err != nil {
+					return nil, err
+				}
+				for _, capture := range captures {
+					if capture.Content(capture.Contents) == ident {
+						return swapNode(node, capture.Node), nil
+					}
+				}
+				continue
+			case "scoped_type_identifier":
+				object := cur.Child(0)
+				if object != nil && nodeId(prev) == nodeId(object) {
+					continue
+				}
+				field := cur.Child(int(cur.ChildCount()) - 1)
+				if field != nil {
+					found, err := squirrel.getFieldJava(ctx, swapNode(node, object), field.Content(node.Contents))
+					if err != nil {
+						return nil, err
+					}
+					if found != nil {
+						return found, nil
+					}
+				}
+				continue
+			default:
+				continue
+			}
+		}
+
+	// No other nodes have a definition
+	default:
+		return nil, nil
+	}
 }
 
 func (squirrel *SquirrelService) getFieldJava(ctx context.Context, object *Node, field string) (ret *Node, err error) {
@@ -208,7 +280,7 @@ func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty *Type, 
 					continue
 				}
 				if name.Content(ty.Contents) == field {
-					return WithNodePtr((*Node)(ty), name), nil
+					return swapNode((*Node)(ty), name), nil
 				}
 			case "class_declaration":
 				name := child.ChildByFieldName("name")
@@ -216,17 +288,17 @@ func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty *Type, 
 					continue
 				}
 				if name.Content(ty.Contents) == field {
-					return WithNodePtr((*Node)(ty), name), nil
+					return swapNode((*Node)(ty), name), nil
 				}
 			case "field_declaration":
 				query := "(field_declaration declarator: (variable_declarator name: (identifier) @ident))"
-				captures, err := allCaptures(query, WithNodePtr((*Node)(ty), child))
+				captures, err := allCaptures(query, swapNode((*Node)(ty), child))
 				if err != nil {
 					return nil, err
 				}
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == field {
-						return WithNodePtr((*Node)(ty), capture.Node), nil
+						return swapNode((*Node)(ty), capture.Node), nil
 					}
 				}
 			}
@@ -260,7 +332,7 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node *Node)
 		if field == nil {
 			return nil, nil
 		}
-		objectType, err := squirrel.getTypeDefJava(ctx, WithNodePtr(node, object))
+		objectType, err := squirrel.getTypeDefJava(ctx, swapNode(node, object))
 		if err != nil {
 			return nil, err
 		}
@@ -289,16 +361,16 @@ func (squirrel *SquirrelService) defToType(def *Node) *Type {
 	}
 	switch parent.Type() {
 	case "class_declaration":
-		return (*Type)(WithNodePtr(def, parent))
+		return (*Type)(swapNode(def, parent))
 	default:
-		squirrel.breadcrumb(WithNodePtr(def, parent), fmt.Sprintf("unrecognized def parent %q", parent.Type()))
+		squirrel.breadcrumb(swapNode(def, parent), fmt.Sprintf("unrecognized def parent %q", parent.Type()))
 		return nil
 	}
 }
 
 func lazyTypeStringer(ty **Type) func() fmt.Stringer {
 	return func() fmt.Stringer {
-		if ty != nil {
+		if ty != nil && *ty != nil {
 			return String(fmt.Sprintf("%s ...%s...", (*ty).Type(), snippet((*Node)(*ty))))
 		} else {
 			return String("<nil>")

@@ -62,6 +62,11 @@ class C1 {
         //       v enhanced_for.i def
         //                      v enhanced_for.i ref
         for (int i : p2) { p1 = i; }
+
+        C2 c2; // < "C2" C2 ref
+
+        // vv C2 ref
+        C1.C2 c12; // < "C1" C1 ref
     }
 
     //   vv m2 def
