@@ -1,18 +1,15 @@
 import { ApolloClient, gql } from '@apollo/client'
 
-import {
-    GetCaptureGroupInsightPreviewResult,
-    GetCaptureGroupInsightPreviewVariables,
-} from '../../../../../../graphql-operations'
-import { CaptureInsightSettings, SeriesChartContent } from '../../code-insights-backend-types'
+import { GetInsightPreviewResult, GetInsightPreviewVariables } from '../../../../../../graphql-operations'
+import { BackendInsightDatum, InsightPreviewSettings, SeriesChartContent } from '../../code-insights-backend-types'
 import { generateLinkURL, InsightDataSeriesData } from '../../utils/create-line-chart-content'
 import { getStepInterval } from '../utils/get-step-interval'
 
 import { DATA_SERIES_COLORS_LIST, MAX_NUMBER_OF_SERIES } from './get-backend-insight-data/deserializators'
 
-const GET_CAPTURE_GROUP_INSIGHT_PREVIEW_GQL = gql`
-    query GetCaptureGroupInsightPreview($input: SearchInsightLivePreviewInput!) {
-        searchInsightLivePreview(input: $input) {
+const GET_INSIGHT_PREVIEW_GQL = gql`
+    query GetInsightPreview($input: SearchInsightPreviewInput!) {
+        searchInsightPreview(input: $input) {
             points {
                 dateTime
                 value
@@ -21,28 +18,39 @@ const GET_CAPTURE_GROUP_INSIGHT_PREVIEW_GQL = gql`
         }
     }
 `
-export interface CaptureGroupInsightDatum {
-    dateTime: Date
-    value: number | null
-    link?: string
-}
 
-export const getCaptureGroupInsightsPreview = (
+export const getInsightsPreview = (
     client: ApolloClient<unknown>,
-    input: CaptureInsightSettings
-): Promise<SeriesChartContent<CaptureGroupInsightDatum>> => {
+    input: InsightPreviewSettings
+): Promise<SeriesChartContent<BackendInsightDatum>> => {
     const [unit, value] = getStepInterval(input.step)
 
+    // inputMetadata creates a lookup so that the correct color can be later applied to the preview series
+    const inputMetadata = Object.fromEntries(
+        input.series.map((previewSeries, index) => [`${previewSeries.label}-${index}`, previewSeries])
+    )
+
+    // TODO(insights): inputMetadata and this function need to be re-evaluated in the future if/when support for
+    // mixing series types in a single insight is possible
+    function getColorForSeries(label: string, index: number): string {
+        return (
+            inputMetadata[`${label}-${index}`]?.stroke ||
+            DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length]
+        )
+    }
+
     return client
-        .query<GetCaptureGroupInsightPreviewResult, GetCaptureGroupInsightPreviewVariables>({
-            query: GET_CAPTURE_GROUP_INSIGHT_PREVIEW_GQL,
+        .query<GetInsightPreviewResult, GetInsightPreviewVariables>({
+            query: GET_INSIGHT_PREVIEW_GQL,
             variables: {
                 input: {
-                    query: input.query,
-                    label: '',
                     repositoryScope: { repositories: input.repositories },
-                    generatedFromCaptureGroups: true,
                     timeScope: { stepInterval: { unit, value: +value } },
+                    series: input.series.map(previewSeries => ({
+                        generatedFromCaptureGroups: previewSeries.generatedFromCaptureGroup,
+                        query: previewSeries.query,
+                        label: previewSeries.label,
+                    })),
                 },
             },
         })
@@ -51,7 +59,7 @@ export const getCaptureGroupInsightsPreview = (
                 throw error
             }
 
-            const { searchInsightLivePreview: series } = data
+            const { searchInsightPreview: series } = data
 
             if (series.length === 0) {
                 throw new Error('Found no matches')
@@ -68,8 +76,8 @@ export const getCaptureGroupInsightsPreview = (
             const seriesMetadata = indexedSeries.map((generatedSeries, index) => ({
                 id: generatedSeries.seriesId,
                 name: generatedSeries.label,
-                query: input.query,
-                stroke: DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length],
+                query: inputMetadata[generatedSeries.label]?.query || '',
+                stroke: getColorForSeries(generatedSeries.label, index),
             }))
 
             const seriesDefinitionMap = Object.fromEntries(
@@ -89,7 +97,7 @@ export const getCaptureGroupInsightsPreview = (
                         }),
                     })),
                     name: line.label,
-                    color: DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length],
+                    color: getColorForSeries(line.label, index),
                     getLinkURL: datum => datum.link,
                     getYValue: datum => datum.value,
                     getXValue: datum => datum.dateTime,
