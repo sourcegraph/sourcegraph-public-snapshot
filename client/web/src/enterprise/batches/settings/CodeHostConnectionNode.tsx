@@ -53,11 +53,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
     const onClickCheck = useCallback<React.MouseEventHandler>(
         async event => {
             event.preventDefault()
-            try {
-                await checkCred({ variables: { id: node?.credential?.id ?? '' } })
-            } catch (error) {
-                console.log(error)
-            }
+            await checkCred({ variables: { id: node?.credential?.id ?? '' } })
         },
         [node, checkCred]
     )
