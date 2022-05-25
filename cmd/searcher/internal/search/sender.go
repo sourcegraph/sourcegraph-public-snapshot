@@ -55,7 +55,9 @@ func (m *limitedStreamCollector) Send(match protocol.FileMatch) {
 	match.LimitHit = true
 	m.sentCount += m.remaining
 	m.remaining = 0
-	m.collected = append(m.collected, match)
+	if len(match.MultilineMatches) > 0 {
+		m.collected = append(m.collected, match)
+	}
 	m.mux.Unlock()
 }
 
