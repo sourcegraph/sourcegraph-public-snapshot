@@ -45,7 +45,7 @@ func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
 		var sb strings.Builder
 		reportOut := std.NewOutput(&sb, true)
 		reportOut.WriteLine(output.Line(output.EmojiFailure, output.StyleWarning, "Uncommitted changes found after running go generate:"))
-		reportOut.Write(fmt.Sprintf("\n%s\n", out))
+		reportOut.WriteMarkdown(fmt.Sprintf("\n%s\n", out))
 		reportOut.Write("To fix this, run 'sg generate'.")
 		r.Err = err
 		r.Output = sb.String()
