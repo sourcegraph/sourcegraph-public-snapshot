@@ -260,7 +260,12 @@ func (r *Resolver) changesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 	return NewChangesetSpecResolver(ctx, r.store, changesetSpec)
 }
 
-func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangesCredentialResolver, error) {
+type batchChangesCredentialResolver interface {
+	graphqlbackend.BatchChangesCredentialResolver
+	authenticator(context.Context) (auth.Authenticator, error)
+}
+
+func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID) (batchChangesCredentialResolver, error) {
 	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
@@ -281,7 +286,7 @@ func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID
 	return r.batchChangesUserCredentialByID(ctx, dbID)
 }
 
-func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64) (graphqlbackend.BatchChangesCredentialResolver, error) {
+func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64) (batchChangesCredentialResolver, error) {
 	cred, err := r.store.UserCredentials().GetByID(ctx, id)
 	if err != nil {
 		if errcode.IsNotFound(err) {
@@ -297,7 +302,7 @@ func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64)
 	return &batchChangesUserCredentialResolver{credential: cred}, nil
 }
 
-func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64) (graphqlbackend.BatchChangesCredentialResolver, error) {
+func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64) (batchChangesCredentialResolver, error) {
 	// Todo: Is this required? Should everyone be able to see there are _some_ credentials?
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
@@ -1874,7 +1879,7 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 		return nil, ErrIDIsZero{}
 	}
 
-	a, err := cred.Authenticator(ctx)
+	a, err := cred.authenticator(ctx)
 	if err != nil {
 		return nil, err
 	}

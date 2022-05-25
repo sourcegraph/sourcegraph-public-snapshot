@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
@@ -545,7 +544,6 @@ type BatchChangesCredentialResolver interface {
 	SSHPublicKey(ctx context.Context) (*string, error)
 	CreatedAt() DateTime
 	IsSiteCredential() bool
-	Authenticator(ctx context.Context) (auth.Authenticator, error)
 }
 
 type ChangesetCountsArgs struct {
