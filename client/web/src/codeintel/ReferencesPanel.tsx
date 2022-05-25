@@ -343,14 +343,24 @@ export const ReferencesList: React.FunctionComponent<
 
     // Manual management of the open/closed state of collapsible lists so they
     // stay open/closed across re-renders and re-mounts.
+    const location = useLocation()
+    const initialCollapseState = useMemo((): Record<string, boolean> => {
+        const { viewState } = parseQueryAndHash(location.search, location.hash)
+        return {
+            references: viewState === 'references',
+            definitions: viewState === 'definitions',
+            implementations: viewState?.startsWith('implementations_') ?? false,
+        }
+    }, [location])
     const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
     const handleOpenChange = (id: string, isOpen: boolean): void =>
         setCollapsed(previous => ({ ...previous, [id]: isOpen }))
+
     const isOpen = (id: string): boolean | undefined => collapsed[id]
     // But when the input changes, we reset the collapse state
     useEffect(() => {
-        setCollapsed({})
-    }, [props.token])
+        setCollapsed(initialCollapseState)
+    }, [props.token, initialCollapseState])
 
     if (loading && !data) {
         return <LoadingCodeIntel />
