@@ -155,7 +155,22 @@ func NewScopedBackfiller(workerBaseStore *basestore.Store, insightsStore *store.
 
 }
 
-func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, repositories []string, definitions []itypes.InsightSeries) error {
+func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []itypes.InsightSeries) error {
+	var repositories []string
+	uniques := make(map[string]any)
+	stats := make(statistics)
+
+	// build a unique set of repositories - this will be useful to construct an inverted index of repo -> series
+	for _, definition := range definitions {
+		stats[definition.SeriesID] = &repoBackfillStatistics{}
+		for _, repository := range definition.Repositories {
+			if _, ok := uniques[repository]; !ok {
+				repositories = append(repositories, repository)
+				uniques[repository] = struct{}{}
+			}
+		}
+	}
+
 	frontend := database.NewDB(s.workerBaseStore.Handle().DB())
 	iterator, err := discovery.NewScopedRepoIterator(ctx, repositories, frontend.Repos())
 	if err != nil {
@@ -163,15 +178,14 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, repositories []st
 	}
 
 	// index of repository -> series that include it will help us construct this work
-	var index map[string][]itypes.InsightSeries
+	index := make(map[string][]itypes.InsightSeries)
 	for _, definition := range definitions {
 		for _, repository := range definition.Repositories {
 			index[repository] = append(index[repository], definition)
 		}
 	}
 
-	statistics := make(statistics)
-	analyzer := baseAnalyzer(frontend, statistics)
+	analyzer := baseAnalyzer(frontend, stats)
 	var multi error
 	var totalJobs []*queryrunner.Job
 	var totalPreempted []store.RecordSeriesPointArgs
@@ -191,6 +205,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, repositories []st
 		return err
 	}
 
+	log15.Info("writing jobs")
 	for _, job := range totalJobs {
 		// todo: fix this transactionality
 		err := s.enqueueQueryRunnerJob(ctx, job)
@@ -198,11 +213,11 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, repositories []st
 			return err
 		}
 	}
+	log15.Info("writing preempted")
 	err = s.insightsStore.RecordSeriesPoints(ctx, totalPreempted)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
