@@ -107,7 +107,7 @@ func (c *batchChangesUserCredentialResolver) IsSiteCredential() bool {
 	return false
 }
 
-func (c *batchChangesUserCredentialResolver) Authenticator(ctx context.Context) (auth.Authenticator, error) {
+func (c *batchChangesUserCredentialResolver) authenticator(ctx context.Context) (auth.Authenticator, error) {
 	return c.credential.Authenticator(ctx)
 }
 
@@ -151,6 +151,6 @@ func (c *batchChangesSiteCredentialResolver) IsSiteCredential() bool {
 	return true
 }
 
-func (c *batchChangesSiteCredentialResolver) Authenticator(ctx context.Context) (auth.Authenticator, error) {
+func (c *batchChangesSiteCredentialResolver) authenticator(ctx context.Context) (auth.Authenticator, error) {
 	return c.credential.Authenticator(ctx)
 }
