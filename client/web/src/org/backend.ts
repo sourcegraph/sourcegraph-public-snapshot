@@ -108,7 +108,7 @@ export function updateOrganization(id: Scalars['ID'], displayName: string): Prom
     )
         .pipe(
             map(({ data, errors }) => {
-                if (!data || (errors && errors.length > 0)) {
+                if (!data) {
                     eventLogger.log('UpdateOrgSettingsFailed')
                     throw createAggregateError(errors)
                 }
