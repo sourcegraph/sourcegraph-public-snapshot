@@ -85,7 +85,7 @@ func (gt generateTargets) Commands() (cmds []*cli.Command) {
 			if err != nil {
 				return err
 			}
-			report := c.Runner(cmd.Context, cmd.Args().Tail())
+			report := c.Runner(cmd.Context, cmd.Args().Slice())
 			fmt.Printf(report.Output)
 			std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "(%ds)", report.Duration/time.Second))
 			return nil
