@@ -222,7 +222,7 @@
     "build": "yarn run version:check && yarn task:gulp webpack",
     "build:esbuild": "NODE_ENV=development yarn task:gulp esbuild",
     "build:esbuild:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp esbuild",
-    "watch:esbuild": "NODE_ENV=development WATCH=true yarn task:guild esbuild",
+    "watch:esbuild": "NODE_ENV=development WATCH=true yarn task:gulp esbuild",
     "build:node": "NODE_ENV=production TARGET_TYPE=node yarn task:gulp webpack",
     "build:web": "NODE_ENV=production TARGET_TYPE=webworker yarn task:gulp webpack",
     "build:test": "NODE_ENV=production TARGET_TYPE=webworker IS_TEST=true yarn task:gulp webpack",
