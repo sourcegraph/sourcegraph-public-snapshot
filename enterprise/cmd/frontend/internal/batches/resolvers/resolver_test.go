@@ -13,6 +13,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
@@ -2012,12 +2014,9 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 		errs := apitest.Exec(actorCtx, t, s, input, &response, queryCheckCredential)
-		if len(errs) != 1 {
-			t.Fatal("expected single errors, but got none")
-		}
-		if have, want := errs[0].Extensions["code"], "ErrVerifyCredentialFailed"; have != want {
-			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
-		}
+
+		assert.Len(t, errs, 1)
+		assert.Equal(t, errs[0].Extensions["code"], "ErrVerifyCredentialFailed")
 	})
 }
 
