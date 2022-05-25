@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react'
-
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { version } from '../../../../package.json'
 import {
     VSCE_LINK_FEEDBACK,
     VSCE_LINK_ISSUES,
-    VSCE_LINK_AUTH,
     VSCE_LINK_TROUBLESHOOT,
     VSCE_SG_LOGOMARK_DARK,
     VSCE_SG_LOGOMARK_LIGHT,
+    VSCE_LINK_SIGNUP,
 } from '../../../common/links'
 import { WebviewPageProps } from '../../platform/context'
 import { AuthSidebarView } from '../auth/AuthSidebarView'
@@ -53,50 +53,46 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
 
     return (
         <div className={classNames(styles.sidebarContainer)}>
-            <button
-                type="button"
+            <VSCodeButton
                 onClick={() => onHelpItemClick(VSCE_LINK_FEEDBACK, 'Feedback')}
-                className={classNames(styles.itemContainer, 'btn btn-text text-left')}
+                className="btn btn-text text-left p-0 m-0"
             >
-                <i className="codicon codicon-github" />
-                <span>Give feedback</span>
-            </button>
-            <button
-                type="button"
+                <i className="codicon codicon-github" slot="start" />
+                Give feedback
+            </VSCodeButton>
+            <VSCodeButton
                 onClick={() => onHelpItemClick(VSCE_LINK_ISSUES, 'Issues')}
-                className={classNames(styles.itemContainer, 'btn btn-text text-left')}
+                className="btn btn-text text-left p-0 m-0"
             >
-                <i className="codicon codicon-bug" />
-                <span>Report issue</span>
-            </button>
-            <button
-                type="button"
+                <i className="codicon codicon-bug" slot="start" />
+                Report issue
+            </VSCodeButton>
+            <VSCodeButton
                 onClick={() => onHelpItemClick(VSCE_LINK_TROUBLESHOOT, 'Troubleshoot')}
-                className={classNames(styles.itemContainer, 'btn btn-text text-left')}
+                className="btn btn-text text-left p-0 m-0"
             >
-                <i className="codicon codicon-notebook" />
-                <span>Troubleshooting docs</span>
-            </button>
-            <button
-                type="button"
-                onClick={() => onHelpItemClick(VSCE_LINK_AUTH('sign-up'), 'Authenticate')}
-                className={classNames(styles.itemContainer, 'btn btn-text text-left')}
+                <i className="codicon codicon-notebook" slot="start" />
+                Troubleshooting docs
+            </VSCodeButton>
+            <VSCodeButton
+                onClick={() => onHelpItemClick(VSCE_LINK_SIGNUP, 'Authenticate')}
+                className="btn btn-text text-left p-0 m-0"
             >
                 <img
                     alt="sg-logo"
-                    className="codicon"
+                    className={classNames(styles.icon, 'codicon')}
+                    slot="start"
                     src={isLightTheme ? VSCE_SG_LOGOMARK_DARK : VSCE_SG_LOGOMARK_LIGHT}
                 />
-                <span>Create an account</span>
-            </button>
-            <button
-                type="button"
-                className={classNames(styles.itemContainer, 'btn btn-text text-left')}
+                Create an account
+            </VSCodeButton>
+            <VSCodeButton
                 onClick={() => setOpenAuthPanel(previousOpenAuthPanel => !previousOpenAuthPanel)}
+                className="btn btn-text text-left p-0 m-0"
             >
-                <i className="codicon codicon-account" />
-                <span>Authenticate account</span>
-            </button>
+                <i className="codicon codicon-account" slot="start" />
+                {authenticatedUser ? `User: ${authenticatedUser.username}` : 'Authenticate account'}
+            </VSCodeButton>
             {openAuthPanel && (
                 <div className="ml-3 mt-1">
                     {!authenticatedUser ? (
@@ -107,14 +103,14 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
                             authenticatedUser={authenticatedUser}
                         />
                     ) : (
-                        <p className="ml-2">Authenticated as {authenticatedUser.username}</p>
+                        <p className="ml-2">Connected to {new URL(instanceURL).hostname}</p>
                     )}
                 </div>
             )}
-            <button type="button" className={classNames(styles.itemContainer, 'btn btn-text text-left')}>
-                <i className="codicon codicon-calendar" />
-                <span>Version v{version}</span>
-            </button>
+            <VSCodeButton className="btn btn-text text-left p-0 m-0">
+                <i className="codicon codicon-calendar" slot="start" />
+                Version v{version}
+            </VSCodeButton>
         </div>
     )
 }
