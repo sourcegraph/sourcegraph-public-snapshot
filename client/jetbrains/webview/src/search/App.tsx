@@ -18,17 +18,22 @@ import {
     aggregateStreamingSearch,
     ContentMatch,
     LATEST_VERSION,
+    Progress,
     SearchMatch,
+    StreamingResultsState,
 } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
+// Add root Tooltip for JetBrains
+// eslint-disable-next-line no-restricted-imports
+import { useObservable, WildcardThemeContext, Tooltip } from '@sourcegraph/wildcard'
 
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
 
 import { saveLastSearch } from './jsToJavaBridgeUtil'
 import { SearchResultList } from './results/SearchResultList'
+import { Title } from './Title'
 import { Search } from './types'
 
 import styles from './App.module.scss'
@@ -108,6 +113,8 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     }
 
     const [results, setResults] = useState<SearchMatch[]>([])
+    const [progress, setProgress] = useState<Progress>({ durationMs: 0, matchCount: 0, skipped: [] })
+    const [state, setState] = useState<StreamingResultsState | null>(null)
     const [lastSearch, setLastSearch] = useState<Search>(
         initialSearch ?? {
             query: '',
@@ -167,9 +174,13 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                     }
                 ).subscribe(searchResults => {
                     setResults(searchResults.results)
+                    setProgress(searchResults.progress)
+                    setState(searchResults.state)
                 })
             )
             setResults([])
+            setProgress({ durationMs: 0, matchCount: 0, skipped: [] })
+            setState('loading')
             setLastSearch(current => ({
                 query,
                 caseSensitive: caseSensitive ?? current.caseSensitive,
@@ -202,11 +213,13 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
+            <Tooltip />
             <div className={styles.root}>
+                <Title progress={progress} state={state} />
                 <div className={styles.searchBoxContainer}>
                     {/* eslint-disable-next-line react/forbid-elements */}
                     <form
-                        className="d-flex my-2"
+                        className="d-flex mb-2 mt-0"
                         onSubmit={event => {
                             event.preventDefault()
                             onSubmit()

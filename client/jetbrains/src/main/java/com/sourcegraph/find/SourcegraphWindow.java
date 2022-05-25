@@ -36,7 +36,7 @@ public class SourcegraphWindow implements Disposable {
 
         if (shouldHideInsteadOfCancel()) {
             popup.setUiVisible(true);
-        }
+        }ä
 
         // If the popup is already shown, hitting alt + a gain should behave the same as the native find in files
         // feature and focus the search field.
@@ -59,7 +59,6 @@ public class SourcegraphWindow implements Disposable {
     @NotNull
     private JBPopup createPopup() {
         ComponentPopupBuilder builder = JBPopupFactory.getInstance().createComponentPopupBuilder(mainPanel, mainPanel)
-            .setTitle("Find on Sourcegraph")
             .setCancelOnClickOutside(true)
             .setResizable(true)
             .setModalContext(false)
