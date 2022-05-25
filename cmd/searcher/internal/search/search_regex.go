@@ -194,8 +194,8 @@ func (rg *readerGrep) Find(zf *zipFile, f *srcFile, limit int) (matches []protoc
 
 // rangesToMatches converts the output of `regexp.FindAllIndex` to a set of
 // multiline matches given the contents of the matched file.
-// Invariant: `ranges` is consecutive, non-overlapping, and not range is outside
-// the bounds of `buf`
+// Invariant: `ranges` is consecutive, non-overlapping, and none of the ranges
+// extend outside the bounds of `buf`.
 func rangesToMatches(buf []byte, ranges [][]int) []protocol.MultilineMatch {
 	var prev struct {
 		end            int32 // end of the last match range
