@@ -20,7 +20,7 @@ import {
     toViewStateHash,
 } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -375,14 +375,27 @@ export const ReferencesList: React.FunctionComponent<
                     </Typography.Code>
                     {canShowSpinner && (
                         <small className="ml-3 text-muted d-flex align-items-center">
-                            <Icon as={LoadingSpinner} size="sm" inline={true} className="mr-1" />
+                            <Icon
+                                role="img"
+                                aria-hidden={true}
+                                as={LoadingSpinner}
+                                size="sm"
+                                inline={true}
+                                className="mr-1"
+                            />
                             <i>Loading...</i>
                         </small>
                     )}
                 </CardHeader>
                 <div className={classNames('d-flex justify-content-start', styles.filter)}>
                     <small>
-                        <Icon as={FilterOutlineIcon} size="sm" className={styles.filterIcon} />
+                        <Icon
+                            role="img"
+                            aria-hidden={true}
+                            as={FilterOutlineIcon}
+                            size="sm"
+                            className={styles.filterIcon}
+                        />
                     </small>
                     <Input
                         className={classNames('py-0 my-0 w-100 text-small')}
@@ -450,7 +463,13 @@ export const ReferencesList: React.FunctionComponent<
                                 data-placement="left"
                                 size="sm"
                             >
-                                <Icon size="sm" as={ArrowCollapseRightIcon} className="border-0" />
+                                <Icon
+                                    role="img"
+                                    aria-hidden={true}
+                                    size="sm"
+                                    as={ArrowCollapseRightIcon}
+                                    className="border-0"
+                                />
                             </Button>
                             <Link
                                 to={activeLocation.url}
@@ -517,9 +536,9 @@ const CollapsibleLocationList: React.FunctionComponent<
                         className="d-flex p-0 justify-content-start w-100"
                     >
                         {isOpen ? (
-                            <Icon aria-label="Close" as={ChevronDownIcon} />
+                            <Icon role="img" aria-label="Close" as={ChevronDownIcon} />
                         ) : (
-                            <Icon aria-label="Expand" as={ChevronRightIcon} />
+                            <Icon role="img" aria-label="Expand" as={ChevronRightIcon} />
                         )}{' '}
                         <Typography.H4 className="mb-0">{capitalize(props.name)}</Typography.H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
@@ -736,9 +755,9 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                     className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
                 >
                     {open ? (
-                        <Icon aria-label="Close" as={ChevronDownIcon} />
+                        <Icon role="img" aria-label="Close" as={ChevronDownIcon} />
                     ) : (
-                        <Icon aria-label="Expand" as={ChevronRightIcon} />
+                        <Icon role="img" aria-label="Expand" as={ChevronRightIcon} />
                     )}
                     <small>
                         <Link
@@ -803,9 +822,9 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     )}
                 >
                     {open ? (
-                        <Icon aria-label="Close" as={ChevronDownIcon} />
+                        <Icon role="img" aria-label="Close" as={ChevronDownIcon} />
                     ) : (
-                        <Icon aria-label="Expand" as={ChevronRightIcon} />
+                        <Icon role="img" aria-label="Expand" as={ChevronRightIcon} />
                     )}
                     <small className={styles.locationGroupHeaderFilename}>
                         {highlighted.length === 2 ? (

@@ -15,7 +15,7 @@ import {
     LSIFUploadState,
     LSIFIndexState,
 } from '../../../../graphql-operations'
-import { TelemetricRedirect } from '../../../../tracking/TelemetricRedirect'
+import { TelemetricLink } from '../../../../tracking/TelemetricLink'
 import {
     useRequestedLanguageSupportQuery as defaultUseRequestedLanguageSupportQuery,
     useRequestLanguageSupportQuery as defaultUseRequestLanguageSupportQuery,
@@ -84,7 +84,7 @@ export const IndexerSummary: React.FunctionComponent<React.PropsWithChildren<Ind
 
                     {summary.uploads.length + summary.indexes.length === 0 ? (
                         summary.indexer?.url ? (
-                            <TelemetricRedirect
+                            <TelemetricLink
                                 to={summary.indexer.url}
                                 label="Set up for this repository"
                                 alwaysShowLabel={true}
@@ -108,7 +108,7 @@ export const IndexerSummary: React.FunctionComponent<React.PropsWithChildren<Ind
                             {failedUploads.length > 0 && (
                                 <p className="mb-1 text-muted">
                                     <AlertIcon size={16} className="text-danger" />{' '}
-                                    <TelemetricRedirect
+                                    <TelemetricLink
                                         to={`/${repoName}/-/code-intelligence/uploads?filters=errored`}
                                         label="Latest upload processing"
                                         alwaysShowLabel={true}
@@ -121,7 +121,7 @@ export const IndexerSummary: React.FunctionComponent<React.PropsWithChildren<Ind
                             {failedIndexes.length > 0 && (
                                 <p className="mb-1 text-muted">
                                     <AlertIcon size={16} className="text-danger" />{' '}
-                                    <TelemetricRedirect
+                                    <TelemetricLink
                                         to={`/${repoName}/-/code-intelligence/indexes?filters=errored`}
                                         label="Latest indexing"
                                         alwaysShowLabel={true}

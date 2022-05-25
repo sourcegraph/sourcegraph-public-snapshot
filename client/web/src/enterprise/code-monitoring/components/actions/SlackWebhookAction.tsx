@@ -135,7 +135,7 @@ export const SlackWebhookAction: React.FunctionComponent<React.PropsWithChildren
                 </Link>{' '}
                 to create a webhook URL.
                 <br />
-                <Link to="https://docs.sourcegraph.com/code_monitoring/how-tos/slack" target="_blank" rel="noopener">
+                <Link to="/help/code_monitoring/how-tos/slack" target="_blank" rel="noopener">
                     Read more about how to set up Slack webhooks in the docs.
                 </Link>
             </Alert>

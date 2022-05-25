@@ -101,16 +101,16 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 	}
 
 	t.Run("iterate with default options", func(t *testing.T) {
-		assert(t, 2, 1, IterateRepoGitserverStatusOptions{})
+		assert(t, 2, 2, IterateRepoGitserverStatusOptions{})
 	})
 	t.Run("iterate only repos without shard", func(t *testing.T) {
-		assert(t, 1, 0, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true})
+		assert(t, 1, 1, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true})
 	})
 	t.Run("include deleted", func(t *testing.T) {
-		assert(t, 3, 1, IterateRepoGitserverStatusOptions{IncludeDeleted: true})
+		assert(t, 3, 3, IterateRepoGitserverStatusOptions{IncludeDeleted: true})
 	})
 	t.Run("include deleted and without shard", func(t *testing.T) {
-		assert(t, 2, 0, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true, IncludeDeleted: true})
+		assert(t, 2, 2, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true, IncludeDeleted: true})
 	})
 }
 
@@ -710,7 +710,7 @@ func TestSetRepoSize(t *testing.T) {
 	}
 	gitserverRepo2 := &types.GitserverRepo{
 		RepoID:        repo2.ID,
-		ShardID:       shardID,
+		ShardID:       "",
 		RepoSizeBytes: 300,
 	}
 	if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "LastFetched", "LastChanged", "CloneStatus")); diff != "" {

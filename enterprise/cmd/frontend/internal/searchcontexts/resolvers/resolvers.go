@@ -307,7 +307,7 @@ func (r *Resolver) IsSearchContextAvailable(ctx context.Context, args graphqlbac
 		return a.UID == searchContext.NamespaceUserID, nil
 	} else {
 		// Is search context created by one of the users' organizations
-		orgs, err := database.Orgs(r.db).GetByUserID(ctx, a.UID)
+		orgs, err := r.db.Orgs().GetByUserID(ctx, a.UID)
 		if err != nil {
 			return false, err
 		}

@@ -15,9 +15,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         class="h4 d-flex align-items-center mb-0 w-100"
       >
         <svg
+          aria-label="Alert"
           class="mdi-icon iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -31,9 +33,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           Error loading results
         </span>
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -73,9 +77,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         class="h4 d-flex align-items-center mb-0 w-100"
       >
         <svg
+          aria-label="Alert"
           class="mdi-icon iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -89,9 +95,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           Search timed out
         </span>
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -131,9 +139,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         class="h4 d-flex align-items-center mb-0 w-100"
       >
         <svg
+          aria-label="Information"
           class="mdi-icon iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -147,9 +157,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           10k forked repositories excluded
         </span>
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -189,9 +201,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         class="h4 d-flex align-items-center mb-0 w-100"
       >
         <svg
+          aria-label="Information"
           class="mdi-icon iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -205,9 +219,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           60k archived repositories excluded
         </span>
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -247,9 +263,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         class="h4 d-flex align-items-center mb-0 w-100"
       >
         <svg
+          aria-label="Information"
           class="mdi-icon iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -263,9 +281,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           1 archived
         </span>
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -442,9 +462,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       type="submit"
     >
       <svg
+        aria-hidden="true"
         class="mdi-icon iconInline mr-1"
         fill="currentColor"
         height="24"
+        role="img"
         viewBox="0 0 24 24"
         width="24"
       >

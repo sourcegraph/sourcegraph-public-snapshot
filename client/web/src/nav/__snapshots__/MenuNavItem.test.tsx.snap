@@ -5,15 +5,18 @@ exports[`MenuNavItem add menu children 1`] = `
   <button
     aria-controls=""
     aria-haspopup="true"
+    aria-label="Open menu"
     class="bg-transparent menuNavItem"
     data-reach-menu-button=""
     id="menu-button-2"
     type="button"
   >
     <svg
+      aria-hidden="true"
       class="mdi-icon iconInline"
       fill="currentColor"
       height="24"
+      role="img"
       viewBox="0 0 24 24"
       width="24"
     >
@@ -22,9 +25,11 @@ exports[`MenuNavItem add menu children 1`] = `
       />
     </svg>
     <svg
+      aria-hidden="true"
       class="mdi-icon iconInline"
       fill="currentColor"
       height="24"
+      role="img"
       viewBox="0 0 24 24"
       width="24"
     >

@@ -1,8 +1,8 @@
-import { splitPath } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { splitPath } from '@sourcegraph/shared/src/components/RepoLink'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 
-import { Search } from './App'
 import { loadContent } from './lib/blob'
+import { PluginConfig, Theme, Search } from './types'
 
 interface MatchRequest {
     action: 'preview' | 'open'
@@ -49,6 +49,87 @@ export type Request =
     | ClearPreviewRequest
     | IndicateFinishedLoadingRequest
 
+export async function getConfig(): Promise<PluginConfig> {
+    try {
+        return (await callJava({ action: 'getConfig' })) as PluginConfig
+    } catch (error) {
+        console.error(`Failed to get config: ${(error as Error).message}`)
+        return {
+            instanceURL: 'https://sourcegraph.com',
+            isGlobbingEnabled: false,
+            accessToken: null,
+        }
+    }
+}
+
+export async function getTheme(): Promise<Theme> {
+    try {
+        return (await callJava({ action: 'getTheme' })) as Theme
+    } catch (error) {
+        console.error(`Failed to get theme: ${(error as Error).message}`)
+        return {
+            isDarkTheme: true,
+            buttonColor: '#0078d4',
+        }
+    }
+}
+
+export async function indicateFinishedLoading(): Promise<void> {
+    try {
+        await callJava({ action: 'indicateFinishedLoading' })
+    } catch (error) {
+        console.error(`Failed to indicate “finished loading”: ${(error as Error).message}`)
+    }
+}
+
+export async function onPreviewChange(match: ContentMatch, lineMatchIndex: number): Promise<void> {
+    const request = await createRequestForMatch(match, lineMatchIndex, 'preview')
+    try {
+        await callJava(request)
+    } catch (error) {
+        console.error(`Failed to preview match: ${(error as Error).message}`, request)
+    }
+}
+
+export async function onPreviewClear(): Promise<void> {
+    try {
+        await callJava({ action: 'clearPreview' })
+    } catch (error) {
+        console.error(`Failed to clear preview: ${(error as Error).message}`)
+    }
+}
+
+export async function onOpen(match: ContentMatch, lineMatchIndex: number): Promise<void> {
+    try {
+        await callJava(await createRequestForMatch(match, lineMatchIndex, 'open'))
+    } catch (error) {
+        console.error(`Failed to open match: ${(error as Error).message}`)
+    }
+}
+
+export async function loadLastSearch(): Promise<Search | null> {
+    try {
+        return (await callJava({ action: 'loadLastSearch' })) as Search
+    } catch (error) {
+        console.error(`Failed to get last search: ${(error as Error).message}`)
+        return null
+    }
+}
+
+export function saveLastSearch(lastSearch: Search): void {
+    callJava({ action: 'saveLastSearch', arguments: lastSearch })
+        .then(() => {
+            console.log(`Saved last search: ${JSON.stringify(lastSearch)}`)
+        })
+        .catch((error: Error) => {
+            console.error(`Failed to save last search: ${error.message}`)
+        })
+}
+
+async function callJava(request: Request): Promise<object> {
+    return window.callJava(request)
+}
+
 export async function createRequestForMatch(
     match: ContentMatch,
     lineMatchIndex: number,
@@ -74,6 +155,9 @@ export async function createRequestForMatch(
     }
 }
 
+// NOTE: This might be slow when the content is a really large file and the match is in the beginning of the file
+// because we convert all rows to an array first.
+// If we ever run into issues with large files, this is a place to get some wins.
 function getCharacterCountUntilLine(content: string, lineNumber: number): number {
     let count = 0
     const lines = content.split('\n') // This logic should handle \r\n well, too.

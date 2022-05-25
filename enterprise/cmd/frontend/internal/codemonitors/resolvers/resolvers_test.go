@@ -212,7 +212,7 @@ func TestIsAllowedToCreate(t *testing.T) {
 	siteAdmin := insertTestUser(t, db, "cm-user3", true)
 
 	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin.ID))
-	org, err := database.Orgs(db).Create(admContext, "cm-test-org", nil)
+	org, err := db.Orgs().Create(admContext, "cm-test-org", nil)
 	require.NoError(t, err)
 	addUserToOrg(t, db, member.ID, org.ID)
 

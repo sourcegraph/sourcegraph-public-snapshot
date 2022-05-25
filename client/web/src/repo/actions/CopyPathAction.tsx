@@ -4,7 +4,7 @@ import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import { useLocation } from 'react-router'
 
-import { Button, TooltipController, Icon } from '@sourcegraph/wildcard'
+import { Button, TooltipController, Icon, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { parseBrowserRepoURL } from '../../util/url'
@@ -28,21 +28,17 @@ export const CopyPathAction: React.FunctionComponent<React.PropsWithChildren<unk
         const { repoName, filePath } = parseBrowserRepoURL(location.pathname)
         copy(filePath || repoName) // copy the file path if present; else it's the repo path.
         setCopied(true)
+        screenReaderAnnounce('Path copied to clipboard')
 
         setTimeout(() => {
             setCopied(false)
         }, 1000)
     }
 
+    const label = copied ? 'Copied!' : 'Copy path to clipboard'
+
     return (
-        <Button
-            variant="icon"
-            className="p-2"
-            data-tooltip={copied ? 'Copied!' : 'Copy path to clipboard'}
-            aria-label="Copy path"
-            onClick={onClick}
-            size="sm"
-        >
+        <Button variant="icon" className="p-2" data-tooltip={label} aria-label={label} onClick={onClick} size="sm">
             <Icon className={styles.copyIcon} as={ContentCopyIcon} />
         </Button>
     )
