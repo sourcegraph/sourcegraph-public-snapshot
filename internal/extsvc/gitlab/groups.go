@@ -2,32 +2,33 @@ package gitlab
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 )
 
 type Group struct {
 	ID       int32  `json:"id"`
-	Name     string `json:"name"`
-	Path     string `json:"path"`
-	FullName string `json:"full_name"`
+	FullPath string `json:"full_path"`
 }
 
-var MockListGroups func(ctx context.Context) ([]*Group, error)
+var MockListGroups func(ctx context.Context, page int) ([]*Group, bool, error)
 
-// TODO: handle pagination
-func (c *Client) ListGroups(ctx context.Context) (groups []*Group, err error) {
+// ListGroups returns a list of groups for the authenticated user.
+func (c *Client) ListGroups(ctx context.Context, page int) (groups []*Group, hasNextPage bool, err error) {
 	if MockListGroups != nil {
-		return MockListGroups(ctx)
+		return MockListGroups(ctx, 1)
 	}
 
-	req, err := http.NewRequest("GET", "groups/", nil)
+	url := fmt.Sprintf("/user/teams?per_page=100&page=%d", page)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	if _, _, err := c.do(ctx, req, &groups); err != nil {
-		return nil, err
+	_, _, err = c.do(ctx, req, &groups)
+	if err != nil {
+		return
 	}
 
-	return groups, nil
+	return groups, len(groups) > 0, nil
 }

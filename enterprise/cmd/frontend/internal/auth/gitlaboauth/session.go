@@ -43,6 +43,9 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
 	}
 
+	fmt.Println("configuration from session helper", s)
+	fmt.Println("configuration from session helper 2", s.allowGroups)
+
 	provider := gitlab.NewClientProvider(extsvc.URNGitLabOAuth, s.BaseURL, nil)
 	glClient := provider.GetOAuthClient(token.AccessToken)
 
@@ -187,8 +190,12 @@ func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData
 	}
 }
 
-// verifyUserGroups checks whether the authenticated user belongs to one of the GitLab groups when the allowOrgs option is set
+// verifyUserGroups checks whether the authenticated user belongs to one of the GitLab groups when the allowGroups option is set
 func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gitlab.Client) bool {
+	var err error
+	var gitlabGroups []*gitlab.Group
+	hasNextPage := true
+
 	if len(s.allowGroups) == 0 {
 		return true
 	}
@@ -198,15 +205,20 @@ func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gi
 		allowed[group] = true
 	}
 
-	userGroups, err := glClient.ListGroups(ctx)
-	if err != nil {
-		log15.Warn("Could not get GitLab groups for the authenticated user", "error", err)
-		return false
-	}
+	for page := 1; hasNextPage; page++ {
+		gitlabGroups, hasNextPage, err = glClient.ListGroups(ctx, page)
+		if err != nil {
+			log15.Warn("Could not get GitLab groups for the authenticated user", "error", err)
+			return false
+		}
 
-	for _, uGroup := range userGroups {
-		if allowed[uGroup.Name] {
-			return true
+		// Check the full path instead of name so we can better handle subgroups.
+		// For groups, the format is just "groups".
+		// For subgroups, it includes all the subgroup's parents  "group/subgroup/subsubgroup"
+		for _, gGroup := range gitlabGroups {
+			if allowed[gGroup.FullPath] {
+				return true
+			}
 		}
 	}
 
