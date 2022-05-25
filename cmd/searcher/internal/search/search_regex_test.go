@@ -14,6 +14,7 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/grafana/regexp/syntax"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -460,6 +461,113 @@ func TestRegexSearch(t *testing.T) {
 			if gotLimitHit != tt.wantLimitHit {
 				t.Errorf("regexSearch() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
 			}
+		})
+	}
+}
+
+func Test_rangesToMatches(t *testing.T) {
+	cases := []struct {
+		buf      string
+		ranges   [][]int
+		expected []protocol.MultilineMatch
+	}{{
+		buf:    "0.2.4.\n7.9.11\n14.17.20\n",
+		ranges: [][]int{{2, 4}},
+		expected: []protocol.MultilineMatch{{
+			Preview: "0.2.4.",
+			Start:   protocol.LineColumn{Line: 0, Column: 2},
+			End:     protocol.LineColumn{Line: 0, Column: 4},
+		}},
+	}, {
+		buf:    "0.2.4.\n7.9.11\n14.17.20\n",
+		ranges: [][]int{{2, 4}, {7, 8}, {8, 9}, {9, 10}, {11, 17}, {20, 23}},
+		expected: []protocol.MultilineMatch{{
+			Preview: "0.2.4.",
+			Start:   protocol.LineColumn{Line: 0, Column: 2},
+			End:     protocol.LineColumn{Line: 0, Column: 4},
+		}, {
+			Preview: "7.9.11",
+			Start:   protocol.LineColumn{Line: 1, Column: 0},
+			End:     protocol.LineColumn{Line: 1, Column: 1},
+		}, {
+			Preview: "7.9.11",
+			Start:   protocol.LineColumn{Line: 1, Column: 1},
+			End:     protocol.LineColumn{Line: 1, Column: 2},
+		}, {
+			Preview: "7.9.11",
+			Start:   protocol.LineColumn{Line: 1, Column: 2},
+			End:     protocol.LineColumn{Line: 1, Column: 3},
+		}, {
+			Preview: "7.9.11\n14.17.20",
+			Start:   protocol.LineColumn{Line: 1, Column: 4},
+			End:     protocol.LineColumn{Line: 2, Column: 3},
+		}, {
+			Preview: "14.17.20\n",
+			Start:   protocol.LineColumn{Line: 2, Column: 6},
+			End:     protocol.LineColumn{Line: 3, Column: 0},
+		}},
+	}, {
+		buf:    "0.2.4.\n7.9.11\n14.17.20\n",
+		ranges: [][]int{{2, 8}},
+		expected: []protocol.MultilineMatch{{
+			Preview: "0.2.4.\n7.9.11",
+			Start:   protocol.LineColumn{Line: 0, Column: 2},
+			End:     protocol.LineColumn{Line: 1, Column: 1},
+		}},
+	}, {
+		buf:    "0.2.4.\n7.9.11\n14.17.20\n",
+		ranges: [][]int{{2, 7}},
+		expected: []protocol.MultilineMatch{{
+			Preview: "0.2.4.\n7.9.11",
+			Start:   protocol.LineColumn{Line: 0, Column: 2},
+			End:     protocol.LineColumn{Line: 1, Column: 0},
+		}},
+	}, {
+		buf:    "0.2.4.\n7.9.11\n14.17.20\n",
+		ranges: [][]int{{2, 6}},
+		expected: []protocol.MultilineMatch{{
+			Preview: "0.2.4.",
+			Start:   protocol.LineColumn{Line: 0, Column: 2},
+			End:     protocol.LineColumn{Line: 0, Column: 6},
+		}},
+	}, {
+		buf:    "0.2.4.\n\n8.10.13.\n",
+		ranges: [][]int{{7, 7}},
+		expected: []protocol.MultilineMatch{{
+			Preview: "",
+			Start:   protocol.LineColumn{Line: 1, Column: 0},
+			End:     protocol.LineColumn{Line: 1, Column: 0},
+		}},
+	}, {
+		buf:    "",
+		ranges: [][]int{{0, 0}},
+		expected: []protocol.MultilineMatch{{
+			Preview: "",
+			Start:   protocol.LineColumn{Line: 0, Column: 0},
+			End:     protocol.LineColumn{Line: 0, Column: 0},
+		}},
+	}, {
+		buf:    "0",
+		ranges: [][]int{{0, 1}},
+		expected: []protocol.MultilineMatch{{
+			Preview: "0",
+			Start:   protocol.LineColumn{Line: 0, Column: 0},
+			End:     protocol.LineColumn{Line: 0, Column: 1},
+		}},
+	}, {
+		buf:    "0.2.\n5.7.",
+		ranges: [][]int{{7, 9}},
+		expected: []protocol.MultilineMatch{{
+			Preview: "5.7.",
+			Start:   protocol.LineColumn{Line: 1, Column: 2},
+			End:     protocol.LineColumn{Line: 1, Column: 4},
+		}},
+	}}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			got := rangesToMatches([]byte(tc.buf), tc.ranges)
+			require.Equal(t, tc.expected, got)
 		})
 	}
 }

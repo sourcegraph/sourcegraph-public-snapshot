@@ -215,12 +215,14 @@ func rangesToMatches(buf []byte, ranges [][]int) []protocol.MultilineMatch {
 			firstLineStart = int32(off) + prev.end + 1
 		}
 
-		lastLineStart := prev.lastLineStart
+		lastLineStart := firstLineStart
 		if off := bytes.LastIndexByte(buf[:end], '\n'); off >= 0 {
 			lastLineStart = int32(off) + 1
 		}
 
-		lastLineEnd := int32(len(buf)) // pessimistically end the line at the end of the file
+		// pessimistically end the line at the end of the file
+		// in case there is no trailing newline
+		lastLineEnd := int32(len(buf))
 		if off := bytes.IndexByte(buf[end:], '\n'); off >= 0 {
 			lastLineEnd = int32(off) + end
 		}
