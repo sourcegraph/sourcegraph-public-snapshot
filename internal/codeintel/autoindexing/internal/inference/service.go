@@ -195,7 +195,7 @@ func (s *Service) createSandbox(ctx context.Context) (_ *luasandbox.Sandbox, err
 	defer endObservation(1, observation.Args{})
 
 	opts := luasandbox.CreateOptions{
-		Modules: defaultModules,
+		GoModules: defaultModules,
 	}
 	sandbox, err := s.sandboxService.CreateSandbox(ctx, opts)
 	if err != nil {

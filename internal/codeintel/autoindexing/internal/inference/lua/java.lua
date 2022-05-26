@@ -2,6 +2,8 @@ local path = require("path")
 local patterns = require("sg.patterns")
 local recognizers = require("sg.recognizers")
 
+local fun = require("fun")
+
 local indexer = "sourcegraph/scip-java"
 local outfile = "index.scip"
 

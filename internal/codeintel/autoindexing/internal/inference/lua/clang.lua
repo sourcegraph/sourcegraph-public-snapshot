@@ -31,6 +31,7 @@ return recognizers.path_recognizer {
         local hints = {}
         local visited = {}
 
+        -- filter(paths, require('sg.filters').basename(is_cmakelist_file)):map(
         for i = 1, #paths do
             local dir = path.dirname(paths[i])
             local base = path.basename(paths[i])
