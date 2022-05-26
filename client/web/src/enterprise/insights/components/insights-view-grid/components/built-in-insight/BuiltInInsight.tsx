@@ -6,11 +6,11 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
-import { ParentSize } from '../../../../../charts'
-import { CodeInsightsBackendContext, LangStatsInsight } from '../../../core'
-import { InsightContentType } from '../../../core/types/insight/common'
-import { LazyQueryStatus } from '../../../hooks/use-parallel-requests/use-parallel-request'
-import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../pings'
+import { ParentSize } from '../../../../../../charts'
+import { CodeInsightsBackendContext, LangStatsInsight } from '../../../../core'
+import { InsightContentType } from '../../../../core/types/insight/common'
+import { LazyQueryStatus } from '../../../../hooks/use-parallel-requests/use-parallel-request'
+import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
 import {
     CategoricalBasedChartTypes,
     CategoricalChart,
@@ -21,11 +21,12 @@ import {
     InsightCardLoading,
     SeriesBasedChartTypes,
     SeriesChart,
-} from '../../views'
-import { useInsightData } from '../hooks/use-insight-data'
+} from '../../../views'
+import { useInsightData } from '../../hooks/use-insight-data'
+import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
+import { InsightContext } from '../InsightContext'
 
-import { InsightContextMenu } from './insight-context-menu/InsightContextMenu'
-import { InsightContext } from './InsightContext'
+import styles from './BuiltInInsight.module.scss'
 
 interface BuiltInInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
     insight: LangStatsInsight
@@ -91,7 +92,7 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
                 <ErrorAlert error={state.error} />
             ) : (
                 <>
-                    <ParentSize>
+                    <ParentSize className={styles.chartContainer}>
                         {parent =>
                             state.data.type === InsightContentType.Series ? (
                                 <SeriesChart
@@ -100,6 +101,7 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
                                     height={parent.height}
                                     zeroYAxisMin={zeroYAxisMin}
                                     locked={insight.isFrozen}
+                                    className={styles.chart}
                                     onDatumClick={trackDatumClicks}
                                     {...state.data.content}
                                 />
@@ -109,6 +111,7 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
                                     width={parent.width}
                                     height={parent.height}
                                     locked={insight.isFrozen}
+                                    className={styles.chart}
                                     onDatumLinkClick={trackDatumClicks}
                                     {...state.data.content}
                                 />
