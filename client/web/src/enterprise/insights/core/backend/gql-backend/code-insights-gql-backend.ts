@@ -1,6 +1,6 @@
 import { ApolloCache, ApolloClient, ApolloQueryResult, gql } from '@apollo/client'
 import { from, Observable, of } from 'rxjs'
-import { map, mapTo, switchMap } from 'rxjs/operators'
+import { catchError, map, mapTo, switchMap } from 'rxjs/operators'
 import {
     AddInsightViewToDashboardResult,
     DeleteDashboardResult,
@@ -106,7 +106,8 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 }
 
                 return createInsightView(insightData) ?? null
-            })
+            }),
+            catchError(() => of(null))
         )
 
     public hasInsights = (first: number): Observable<boolean> =>
