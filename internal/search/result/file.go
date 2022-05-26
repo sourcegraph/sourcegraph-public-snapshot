@@ -166,6 +166,55 @@ func (fm *FileMatch) Key() Key {
 	return k
 }
 
+type HunkMatch struct {
+	Preview         string
+	LineNumberStart int32
+	LineNumberEnd   int32
+	Ranges          Ranges
+}
+
+func (h HunkMatch) AsLineMatches() []*LineMatch {
+	lines := strings.Split(h.Preview, "\n")
+	lineMatches := make([]*LineMatch, len(lines))
+	for i, line := range lines {
+		lineNumber := h.LineNumberStart + i
+		var offsetAndLengths [][2]int32
+		for _, rr := range h.Ranges {
+			for rangeLine := rr.Start.Line; rangeLine <= rr.End.Line; rangeLine++ {
+				if rangeLine == lineNumber {
+					start := 0
+					if rangeLine == rr.Start.Line {
+						start = rr.Start.Column
+					}
+
+					end := len(line)
+					if rangeLine == rr.End.Line {
+						end = rr.End.Column
+					}
+
+					offsetAndLengths = append(offsetAndLengths, [2]int32{int32(start), int32(end - start)})
+				}
+			}
+		}
+		lineMatches[i] = &LineMatch{
+			Preview:          line,
+			LineNumber:       lineNumber,
+			OffsetAndLengths: offsetAndLengths,
+		}
+	}
+	return lineMatches
+}
+
+type HunkMatches []HunkMatch
+
+func (hs HunkMatches) AsLineMatches() []*LineMatch {
+	res := make([]*LineMatch, 0, len(hs))
+	for _, h := range hs {
+		res = append(res, h.AsLineMatches()...)
+	}
+	return res
+}
+
 type MultilineMatch struct {
 	// Preview is a possibly-multiline string that contains all the
 	// lines that the match overlaps.
