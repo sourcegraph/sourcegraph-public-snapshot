@@ -52,6 +52,7 @@ func TestOverrideGenerators(t *testing.T) {
 
 				local recognizers = {}
 				recognizers["custom.test"] = custom_recognizer
+				recognizers["__type"] = "sg.recognizer"
 				return recognizers
 			`,
 			repositoryContents: map[string]string{
@@ -103,6 +104,7 @@ func TestOverrideGenerators(t *testing.T) {
 				local recognizers = {}
 				recognizers["sg.test"] = false -- Disable builtin recognizer
 				recognizers["mycompany.test"] = custom_recognizer
+				recognizers["__type"] = "sg.recognizer"
 				return recognizers
 			`,
 			repositoryContents: map[string]string{

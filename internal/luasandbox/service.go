@@ -12,6 +12,7 @@ import (
 	lua "github.com/yuin/gopher-lua"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Service struct {
@@ -47,7 +48,7 @@ func init() {
 	var err error
 	LuaRuntimeContents, err = CreateLuaRuntimeFromFS(luaRuntime, "lua", "")
 	if err != nil {
-		panic("SQS???")
+		panic(fmt.Sprintf("error loading lua runtime files: %s", err))
 	}
 }
 
@@ -80,11 +81,11 @@ func CreateLuaRuntimeFromFS(runtime embed.FS, dir, prefix string) (map[string]st
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("FILES:", files)
 
+	// TODO: Handle init.lua
 	contents := map[string]string{}
 	for _, file := range files {
-		fileHandle, err := luaRuntime.Open(file)
+		fileHandle, err := runtime.Open(file)
 		if err != nil {
 			return nil, err
 		}
@@ -117,7 +118,15 @@ func (s *Service) CreateSandbox(ctx context.Context, opts CreateOptions) (_ *San
 
 	// Default LuaModules to our runtime files
 	if opts.LuaModules == nil {
-		opts.LuaModules = LuaRuntimeContents
+		opts.LuaModules = map[string]string{}
+	}
+
+	for k, v := range LuaRuntimeContents {
+		if _, ok := opts.LuaModules[k]; ok {
+			return nil, errors.Newf("Cannot have lua modules that overwrite each other: %s", k)
+		}
+
+		opts.LuaModules[k] = v
 	}
 
 	state := lua.NewState(lua.Options{

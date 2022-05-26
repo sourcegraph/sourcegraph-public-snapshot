@@ -129,7 +129,21 @@ func LinearizeHinter(recognizer *Recognizer) (recognizers []*Recognizer) {
 func NamedRecognizersFromUserDataMap(value lua.LValue, allowFalseAsNil bool) (recognizers map[string]*Recognizer, err error) {
 	recognizers = map[string]*Recognizer{}
 
+	table, ok := value.(*lua.LTable)
+	if !ok {
+		return nil, util.NewTypeError("table", value)
+	}
+
+	jobType, ok := table.RawGetString("__type").(lua.LString)
+	if !ok || jobType.String() != "sg.recognizer" {
+		return nil, util.NewTypeError("sg.recognizer", table.RawGetString("__type"))
+	}
+
 	err = util.ForEach(value, func(key, value lua.LValue) error {
+		if key.String() == "__type" {
+			return nil
+		}
+
 		name := key.String()
 
 		if value.Type() == lua.LTBool && !lua.LVAsBool(value) {
