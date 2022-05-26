@@ -2,18 +2,16 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { CodeHostIcon } from '@sourcegraph/shared/src/components/CodeHostIcon'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
-import { CommitMatch, getCommitMatchUrl, getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
-import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
+import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 // eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Link, Typography, useIsTruncated } from '@sourcegraph/wildcard'
+import { Typography, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { getResultIdForCommitMatch } from './utils'
 
-import styles from './SearchResult.module.scss'
+import styles from './CommitSearchResult.module.scss'
 
 interface Props {
     selectResult: (id: string) => void
@@ -47,20 +45,10 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({ match, sele
                 onMouseEnter={checkTruncation}
                 ref={titleReference}
                 data-tooltip={(truncated && `${match.authorName}: ${match.message.split('\n', 1)[0]}`) || null}
-            >
-                <>
-                    <Link to={getRepositoryUrl(match.repository)}>{displayRepoName(match.repository)}</Link>
-                    {' › '}
-                    <Link to={getCommitMatchUrl(match)}>{match.authorName}</Link>
-                    {': '}
-                    <Link to={getCommitMatchUrl(match)}>{match.message.split('\n', 1)[0]}</Link>
-                </>
-            </span>
+            >{`${displayRepoName(match.repository)} › ${match.authorName}: ${match.message.split('\n', 1)[0]}`}</span>
             <span className={styles.spacer} />
-            <Link to={getCommitMatchUrl(match)}>
-                <Typography.Code className={styles.commitOid}>{match.oid.slice(0, 7)}</Typography.Code>{' '}
-                <Timestamp date={match.authorDate} noAbout={true} strict={true} />
-            </Link>
+            <Typography.Code className={styles.commitOid}>{match.oid.slice(0, 7)}</Typography.Code>{' '}
+            <Timestamp date={match.authorDate} noAbout={true} strict={true} />
             {formattedRepositoryStarCount && (
                 <>
                     <div className={styles.divider} />

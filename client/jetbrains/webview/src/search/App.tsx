@@ -138,7 +138,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             // search results from being reloaded and reapplied in a different order when a user
             // accidentally hits enter thinking that this would open the file
             if (
-                forceNewSearch !== true &&
+                !forceNewSearch &&
                 query === lastSearch.query &&
                 (caseSensitive === undefined || caseSensitive === lastSearch.caseSensitive) &&
                 (patternType === undefined || patternType === lastSearch.patternType) &&
