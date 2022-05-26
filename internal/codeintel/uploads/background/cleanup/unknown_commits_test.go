@@ -1,4 +1,4 @@
-package janitor
+package cleanup
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -18,15 +17,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
+func init() {
+	ConfigInst.MinimumTimeSinceLastCheck = 1 * time.Hour
+	ConfigInst.CommitResolverBatchSize = 10
+	ConfigInst.AuditLogMaxAge = 1 * time.Hour
+	ConfigInst.CommitResolverMaximumCommitLag = 1 * time.Hour
+	ConfigInst.UploadTimeout = 1 * time.Hour
+}
+
 func TestUnknownCommitsJanitor(t *testing.T) {
 	resolveRevisionFunc := func(commit string) error {
 		return nil
 	}
 
 	testUnknownCommitsJanitor(t, resolveRevisionFunc, []updateInvocation{
-		{1, "foo-x", false}, {1, "foo-y", false}, {1, "foo-z", false},
-		{2, "bar-x", false}, {2, "bar-y", false}, {2, "bar-z", false},
-		{3, "baz-x", false}, {3, "baz-y", false}, {3, "baz-z", false},
+		{1, "foo-x", false},
+		{1, "foo-y", false},
+		{1, "foo-z", false},
+		{2, "bar-x", false},
+		{2, "bar-y", false},
+		{2, "bar-z", false},
+		{3, "baz-x", false},
+		{3, "baz-y", false},
+		{3, "baz-z", false},
 	})
 }
 
@@ -40,9 +53,15 @@ func TestUnknownCommitsJanitorUnknownCommit(t *testing.T) {
 	}
 
 	testUnknownCommitsJanitor(t, resolveRevisionFunc, []updateInvocation{
-		{1, "foo-x", false}, {1, "foo-y", true}, {1, "foo-z", false},
-		{2, "bar-x", true}, {2, "bar-y", false}, {2, "bar-z", false},
-		{3, "baz-x", false}, {3, "baz-y", false}, {3, "baz-z", true},
+		{1, "foo-x", false},
+		{1, "foo-y", true},
+		{1, "foo-z", false},
+		{2, "bar-x", true},
+		{2, "bar-y", false},
+		{2, "bar-z", false},
+		{3, "baz-x", false},
+		{3, "baz-y", false},
+		{3, "baz-z", true},
 	})
 }
 
@@ -56,9 +75,15 @@ func TestUnknownCommitsJanitorUnknownRepository(t *testing.T) {
 	}
 
 	testUnknownCommitsJanitor(t, resolveRevisionFunc, []updateInvocation{
-		{1, "foo-x", false}, {1, "foo-y", false}, {1, "foo-z", false},
-		{2, "bar-x", false}, {2, "bar-y", false}, {2, "bar-z", false},
-		{3, "baz-x", false}, {3, "baz-y", false}, {3, "baz-z", false},
+		{1, "foo-x", false},
+		{1, "foo-y", false},
+		{1, "foo-z", false},
+		{2, "bar-x", false},
+		{2, "bar-y", false},
+		{2, "bar-z", false},
+		{3, "baz-x", false},
+		{3, "baz-y", false},
+		{3, "baz-z", false},
 	})
 }
 
@@ -84,8 +109,13 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 	dbStore.TransactFunc.SetDefaultReturn(dbStore, nil)
 	dbStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	dbStore.StaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
-	clock := glock.NewMockClock()
-	janitor := newJanitor(dbStore, time.Minute, 100, time.Minute, newMetrics(&observation.TestContext), clock)
+
+	lsifStore := NewMockLSIFStore()
+	janitor := newJanitor(
+		dbStore,
+		lsifStore,
+		newMetrics(&observation.TestContext),
+	)
 
 	if err := janitor.Handle(context.Background()); err != nil {
 		t.Fatalf("unexpected error running janitor: %s", err)

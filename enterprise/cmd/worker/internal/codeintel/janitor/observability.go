@@ -12,12 +12,8 @@ type metrics struct {
 	numUploadsScanned               prometheus.Counter
 	numCommitsScanned               prometheus.Counter
 	numUploadsExpired               prometheus.Counter
-	numUploadRecordsRemoved         prometheus.Counter
-	numIndexRecordsRemoved          prometheus.Counter
-	numUploadsPurged                prometheus.Counter
 	numDocumentSearchRecordsRemoved prometheus.Counter
 	numPoliciesUpdated              prometheus.Counter
-	numAuditLogRecordsExpired       prometheus.Counter
 	numErrors                       prometheus.Counter
 
 	// Resetter metrics
@@ -61,18 +57,6 @@ func newMetrics(observationContext *observation.Context) *metrics {
 		"src_codeintel_background_upload_records_expired_total",
 		"The number of codeintel upload records marked as expired.",
 	)
-	numUploadRecordsRemoved := counter(
-		"src_codeintel_background_upload_records_removed_total",
-		"The number of codeintel upload records removed.",
-	)
-	numIndexRecordsRemoved := counter(
-		"src_codeintel_background_index_records_removed_total",
-		"The number of codeintel index records removed.",
-	)
-	numUploadsPurged := counter(
-		"src_codeintel_background_uploads_purged_total",
-		"The number of uploads for which records in the codeintel database were removed.",
-	)
 	numDocumentSearchRecordsRemoved := counter(
 		"src_codeintel_background_documentation_search_records_removed_total",
 		"The number of documentation search records removed.",
@@ -81,10 +65,7 @@ func newMetrics(observationContext *observation.Context) *metrics {
 		"src_codeintel_background_policies_updated_total",
 		"The number of configuration policies whose repository membership list was updated.",
 	)
-	numAuditLogRecordsExpired := counter(
-		"src_codeintel_background_audit_log_records_expired_total",
-		"The number of audit log records removed due to age.",
-	)
+
 	numErrors := counter(
 		"src_codeintel_background_errors_total",
 		"The number of errors that occur during a codeintel expiration job.",
@@ -134,12 +115,8 @@ func newMetrics(observationContext *observation.Context) *metrics {
 		numUploadsScanned:               numUploadsScanned,
 		numCommitsScanned:               numCommitsScanned,
 		numUploadsExpired:               numUploadsExpired,
-		numUploadRecordsRemoved:         numUploadRecordsRemoved,
-		numIndexRecordsRemoved:          numIndexRecordsRemoved,
-		numUploadsPurged:                numUploadsPurged,
 		numDocumentSearchRecordsRemoved: numDocumentSearchRecordsRemoved,
 		numPoliciesUpdated:              numPoliciesUpdated,
-		numAuditLogRecordsExpired:       numAuditLogRecordsExpired,
 		numErrors:                       numErrors,
 		numUploadResets:                 numUploadResets,
 		numUploadResetFailures:          numUploadResetFailures,

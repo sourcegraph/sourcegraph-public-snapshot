@@ -1,4 +1,4 @@
-package janitor
+package cleanup
 
 import (
 	"context"
@@ -7,28 +7,10 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type deletedRepositoryJanitor struct {
-	dbStore DBStore
-	metrics *metrics
-}
-
-var _ goroutine.Handler = &deletedRepositoryJanitor{}
-var _ goroutine.ErrorHandler = &deletedRepositoryJanitor{}
-
-// NewDeletedRepositoryJanitor returns a background routine that periodically
-// deletes upload and index records for repositories that have been soft-deleted.
-func NewDeletedRepositoryJanitor(dbStore DBStore, interval time.Duration, metrics *metrics) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &deletedRepositoryJanitor{
-		dbStore: dbStore,
-		metrics: metrics,
-	})
-}
-
-func (j *deletedRepositoryJanitor) Handle(ctx context.Context) (err error) {
+func (j *janitor) HandleDeletedRepository(ctx context.Context) (err error) {
 	tx, err := j.dbStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -60,10 +42,10 @@ func (j *deletedRepositoryJanitor) Handle(ctx context.Context) (err error) {
 	return nil
 }
 
-func (j *deletedRepositoryJanitor) HandleError(err error) {
-	j.metrics.numErrors.Inc()
-	log15.Error("Failed to delete codeintel records with a deleted repository", "error", err)
-}
+// func (j *janitor) HandleError(err error) {
+// 	j.metrics.numErrors.Inc()
+// 	log15.Error("Failed to delete codeintel records with a deleted repository", "error", err)
+// }
 
 type recordCount struct {
 	repoID       int
