@@ -23,6 +23,18 @@ export interface LineDecoratorProps extends ThemeProps {
     codeViewElements: ReplaySubject<HTMLElement | null>
 }
 
+const selectRow = (event: React.FocusEvent | React.MouseEvent): void => {
+    if (event.target instanceof HTMLElement) {
+        event.target.closest('tr')?.classList.add('highlighted')
+    }
+}
+
+const deselectRow = (event: React.FocusEvent | React.MouseEvent): void => {
+    if (event.target instanceof HTMLElement) {
+        event.target.closest('tr')?.classList.remove('highlighted')
+    }
+}
+
 /**
  * Component that prepends lines of code with attachments set by extensions
  */
@@ -113,8 +125,8 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                         key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${
                                             portalRoot.dataset.line ?? ''
                                         }`}
-                                        to={attachment.linkURL}
                                         data-tooltip={attachment.hoverMessage}
+                                        to={attachment.linkURL}
                                         // Use target to open external URLs
                                         target={
                                             attachment.linkURL && isAbsoluteUrl(attachment.linkURL)
@@ -123,6 +135,10 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                         }
                                         // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
                                         rel="noreferrer noopener"
+                                        onMouseEnter={selectRow}
+                                        onMouseLeave={deselectRow}
+                                        onFocus={selectRow}
+                                        onBlur={deselectRow}
                                     >
                                         <span
                                             className={styles.contents}
