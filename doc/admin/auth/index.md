@@ -134,7 +134,7 @@ Then add the following lines to your site configuration:
       "clientSecret": "replace-with-the-oauth-client-secret",
       "allowSignup": false,  // CAUTION: Set to true to enable signup. If nothing is specified in `allowOrgs`, any GitHub user can sign up.
       "allowOrgs": ["your-org-name"] // Restrict logins and signups if enabled to members of these orgs.
-       "allowOrgsMap": { "orgName": ["your-team-name"]} // Restrict logins and signups if enabled to members of teams that belong to a given org.
+      "allowOrgsMap": { "orgName": ["your-team-name"]} // Restrict logins and signups if enabled to members of teams that belong to a given org.
     }
   ]
 }

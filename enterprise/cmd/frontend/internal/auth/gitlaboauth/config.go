@@ -1,7 +1,6 @@
 package gitlaboauth
 
 import (
-	"fmt"
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -22,8 +21,6 @@ func Init(db database.DB) {
 		conf.Watch(func() {
 			newProviders, _ := parseConfig(conf.Get(), db)
 			if len(newProviders) == 0 {
-				fmt.Println("iffff")
-
 				providers.Update(PkgName, nil)
 			} else {
 				newProvidersList := make([]providers.Provider, 0, len(newProviders))

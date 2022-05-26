@@ -210,8 +210,6 @@ func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gi
 		}
 
 		// Check the full path instead of name so we can better handle subgroups.
-		// For groups, the format is just "groups".
-		// For subgroups, it includes all the subgroup's parents  "group/subgroup/subsubgroup"
 		for _, gGroup := range gitlabGroups {
 			if allowed[gGroup.FullPath] {
 				return true
