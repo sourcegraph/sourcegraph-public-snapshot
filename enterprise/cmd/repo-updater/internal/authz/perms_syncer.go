@@ -27,17 +27,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var scheduleReposCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_repoupdater_perms_syncer_schedule_repos_total",
 	Help: "Counts number of repos for which permissions syncing request has been scheduled.",
+})
+
+var gitlabTokenRefreshCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_repoupdater_gitlab_token_refresh_count",
+	Help: "Counts the number of times we refresh a GitLab OAuth token",
+}, []string{"source", "success"})
+
+var gitlabTokenMissingRefresh = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_repoupdater_gitlab_token_missing_refresh_count",
+	Help: "Counts the number of times we see a token without a refresh token",
 })
 
 // PermsSyncer is a permissions syncing manager that is in charge of keeping
@@ -233,7 +245,20 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 	return repoNames, nil
 }
 
-func (s *PermsSyncer) maybeRefreshGitLabOAuthToken(ctx context.Context, acct *extsvc.Account) error {
+func oauth2ConfigFromGitLabProvider(p *schema.GitLabAuthProvider) *oauth2.Config {
+	url := strings.TrimSuffix(p.Url, "/")
+	return &oauth2.Config{
+		ClientID:     p.ClientID,
+		ClientSecret: p.ClientSecret,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  url + "/oauth/authorize",
+			TokenURL: url + "/oauth/token",
+		},
+		Scopes: gitlab.RequestedOAuthScopes(p.ApiScope, nil),
+	}
+}
+
+func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Context, acct *extsvc.Account) (err error) {
 	if acct.ServiceType != extsvc.TypeGitLab {
 		return nil
 	}
@@ -244,21 +269,11 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthToken(ctx context.Context, acct *ex
 			strings.TrimSuffix(acct.ServiceID, "/") != strings.TrimSuffix(authProvider.Gitlab.Url, "/") {
 			continue
 		}
-		url := strings.TrimSuffix(authProvider.Gitlab.Url, "/")
-
-		oauthConfig = &oauth2.Config{
-			ClientID:     authProvider.Gitlab.ClientID,
-			ClientSecret: authProvider.Gitlab.ClientSecret,
-			Endpoint: oauth2.Endpoint{
-				AuthURL:  url + "/oauth/authorize",
-				TokenURL: url + "/oauth/token",
-			},
-			Scopes: gitlab.RequestedOAuthScopes(authProvider.Gitlab.ApiScope, nil),
-		}
+		oauthConfig = oauth2ConfigFromGitLabProvider(authProvider.Gitlab)
 		break
 	}
 	if oauthConfig == nil {
-		log15.Warn("PermsSyncer.maybeRefreshGitLabOAuthToken, external service has no auth.provider",
+		log15.Warn("PermsSyncer.maybeRefreshGitLabOAuthToken, external account has no auth.provider",
 			"externalAccountID", acct.ID,
 		)
 		return nil
@@ -277,10 +292,88 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthToken(ctx context.Context, acct *ex
 	}
 
 	if refreshedToken.AccessToken != tok.AccessToken {
+		defer func() {
+			success := err == nil
+			gitlabTokenRefreshCounter.WithLabelValues("external_account", strconv.FormatBool(success)).Inc()
+		}()
 		acct.AccountData.SetAuthData(refreshedToken)
 		_, err := s.db.UserExternalAccounts().LookupUserAndSave(ctx, acct.AccountSpec, acct.AccountData)
 		if err != nil {
 			return errors.Wrap(err, "save refreshed token")
+		}
+	}
+	return nil
+}
+
+func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Context, svc *types.ExternalService) (err error) {
+	if svc.Kind != extsvc.KindGitLab {
+		return nil
+	}
+
+	parsed, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+	if err != nil {
+		return errors.Wrap(err, "parsing external service config")
+	}
+
+	config, ok := parsed.(*schema.GitLabConnection)
+	if !ok {
+		return errors.Errorf("want *schema.GitLabConnection, got %T", parsed)
+	}
+
+	// We may have old config without a refresh token
+	if config.TokenOauthRefresh == "" {
+		gitlabTokenMissingRefresh.Inc()
+		return nil
+	}
+
+	var oauthConfig *oauth2.Config
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Gitlab == nil ||
+			strings.TrimSuffix(config.Url, "/") != strings.TrimSuffix(authProvider.Gitlab.Url, "/") {
+			continue
+		}
+		oauthConfig = oauth2ConfigFromGitLabProvider(authProvider.Gitlab)
+		break
+	}
+
+	if oauthConfig == nil {
+		log15.Warn("PermsSyncer.maybeRefreshGitLabOAuthTokenFromCodeHost, external service has no auth.provider",
+			"externalServiceID", svc.ID,
+		)
+		return nil
+	}
+
+	tok := &oauth2.Token{
+		AccessToken:  config.Token,
+		RefreshToken: config.TokenOauthRefresh,
+		Expiry:       time.Unix(int64(config.TokenOauthExpiry), 0),
+	}
+
+	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
+	if err != nil {
+		return errors.Wrap(err, "refresh token")
+	}
+
+	if refreshedToken.AccessToken != tok.AccessToken {
+		defer func() {
+			success := err == nil
+			gitlabTokenRefreshCounter.WithLabelValues("codehost", strconv.FormatBool(success)).Inc()
+		}()
+		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.AccessToken, "token")
+		if err != nil {
+			return errors.Wrap(err, "updating OAuth token")
+		}
+		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.RefreshToken, "token.oauth.refresh")
+		if err != nil {
+			return errors.Wrap(err, "updating OAuth refresh token")
+		}
+		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.Expiry.Unix(), "token.oauth.expiry")
+		if err != nil {
+			return errors.Wrap(err, "updating OAuth token expiry")
+		}
+		svc.UpdatedAt = time.Now()
+		if err := s.db.ExternalServices().Upsert(ctx, svc); err != nil {
+			return errors.Wrap(err, "upserting external service")
 		}
 	}
 	return nil
@@ -292,17 +385,12 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthToken(ctx context.Context, acct *ex
 //
 // It returns a list of internal database repository IDs and is a noop when
 // `envvar.SourcegraphDotComMode()` is true.
-func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, user *types.User, noPerms bool, fetchOpts authz.FetchPermsOptions) (repoIDs []uint32, subRepoPerms map[api.ExternalRepoSpec]*authz.SubRepoPermissions, err error) {
+func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, user *types.User, accts []*extsvc.Account, noPerms bool, fetchOpts authz.FetchPermsOptions) (repoIDs []uint32, subRepoPerms map[api.ExternalRepoSpec]*authz.SubRepoPermissions, err error) {
 	// NOTE: OAuth scope on sourcegraph.com does not grant access to read private
 	//  repositories, therefore it is no point wasting effort and code host API rate
 	//  limit quota on trying.
 	if envvar.SourcegraphDotComMode() {
 		return []uint32{}, nil, nil
-	}
-
-	accts, err := s.permsStore.ListExternalAccounts(ctx, user.ID)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "list external accounts")
 	}
 
 	serviceToAccounts := make(map[string]*extsvc.Account)
@@ -376,11 +464,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 		if err := s.waitForRateLimit(ctx, provider.URN(), 1, "user"); err != nil {
 			return nil, nil, errors.Wrap(err, "wait for rate limiter")
-		}
-
-		err := s.maybeRefreshGitLabOAuthToken(ctx, acct)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "refresh GitLab OAuth token")
 		}
 
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
@@ -671,6 +754,37 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "get user")
 	}
 
+	// GitLab OAuth tokens expire every two hours and this code path is the best
+	// place to refresh them. Tokens can exist in user code host connections or via a
+	// login connection or both and they can be different so we need to refresh them
+	// in both places.
+
+	// Update tokens stored in external accounts:
+	accts, err := s.permsStore.ListExternalAccounts(ctx, user.ID)
+	if err != nil {
+		return errors.Wrap(err, "list external accounts")
+	}
+	for _, acct := range accts {
+		log15.Info("maybe refresh account", "userID", acct.UserID)
+		if err := s.maybeRefreshGitLabOAuthTokenFromAccount(ctx, acct); err != nil {
+			return errors.Wrap(err, "refreshing GitLab OAuth token for account")
+		}
+	}
+
+	// Update tokens stored in user code host connections:
+	svcs, err := s.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
+		NamespaceUserID: userID,
+		Kinds:           []string{extsvc.KindGitLab},
+	})
+	if err != nil {
+		return errors.Wrap(err, "list external services")
+	}
+	for _, svc := range svcs {
+		if err := s.maybeRefreshGitLabOAuthTokenFromCodeHost(ctx, svc); err != nil {
+			return errors.Wrap(err, "refreshing GitLab OAuth token for code host")
+		}
+	}
+
 	// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
 	//  table, the user has proven that they have read access to the repository.
 	repoIDs, err := s.reposStore.ListExternalServicePrivateRepoIDsByUserID(ctx, user.ID)
@@ -678,7 +792,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "list external service repo IDs by user ID")
 	}
 
-	externalAccountsRepoIDs, subRepoPerms, err := s.fetchUserPermsViaExternalAccounts(ctx, user, noPerms, fetchOpts)
+	externalAccountsRepoIDs, subRepoPerms, err := s.fetchUserPermsViaExternalAccounts(ctx, user, accts, noPerms, fetchOpts)
 	if err != nil {
 		return errors.Wrap(err, "fetch user permissions via external accounts")
 	}

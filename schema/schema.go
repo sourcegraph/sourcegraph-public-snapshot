@@ -884,6 +884,10 @@ type GitLabConnection struct {
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 	// Token description: A GitLab access token with "api" scope. Can be a personal access token (PAT) or an OAuth token. If you are enabling permissions with identity provider type "external", this token should also have "sudo" scope.
 	Token string `json:"token"`
+	// TokenOauthExpiry description: The OAuth token expiry (Unix timestamp in seconds)
+	TokenOauthExpiry int `json:"token.oauth.expiry,omitempty"`
+	// TokenOauthRefresh description: The OAuth refresh token
+	TokenOauthRefresh string `json:"token.oauth.refresh,omitempty"`
 	// TokenType description: The type of the token
 	TokenType string `json:"token.type,omitempty"`
 	// Url description: URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com.
