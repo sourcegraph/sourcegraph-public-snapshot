@@ -43,13 +43,9 @@ exports[`ProductSubscriptionForm edit existing subscription 1`] = `
           >
             Plan
           </h4>
-          <div
-            class="product-plan-form-control"
-          >
-            <div
-              class="iconInline loadingSpinner"
-            />
-          </div>
+          <productplanformcontrol
+            value="p"
+          />
         </div>
         <div
           class="col-md-6 mt-3 mt-md-0"
@@ -59,23 +55,17 @@ exports[`ProductSubscriptionForm edit existing subscription 1`] = `
           >
             Billing
           </h3>
-          <div
-            class="new-product-subscription-payment-section"
-          >
-            <div
-              class="form-text mb-2"
-            >
-              <div
-                class="iconInline loadingSpinner"
-              />
-            </div>
-          </div>
+          <newproductsubscriptionpaymentsection
+            accountid="a"
+            productsubscription="[object Object]"
+            subscriptionid="s"
+          />
           <div
             class="payment-token-form-control"
           >
             <cardelement
               class="form-control card cardDisabled"
-              disabled=""
+              options="[object Object]"
             />
           </div>
           <div
@@ -139,13 +129,7 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
           >
             Plan
           </h4>
-          <div
-            class="product-plan-form-control"
-          >
-            <div
-              class="iconInline loadingSpinner"
-            />
-          </div>
+          <productplanformcontrol />
         </div>
         <div
           class="col-md-6 mt-3 mt-md-0"
@@ -155,15 +139,7 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
           >
             Billing
           </h3>
-          <div
-            class="new-product-subscription-payment-section"
-          >
-            <div
-              class="form-text mb-2"
-            >
-              —
-            </div>
-          </div>
+          <newproductsubscriptionpaymentsection />
           <div
             class="form-group mt-3"
           >
@@ -192,7 +168,7 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
           >
             <cardelement
               class="form-control card cardDisabled"
-              disabled=""
+              options="[object Object]"
             />
           </div>
           <div
@@ -256,13 +232,7 @@ exports[`ProductSubscriptionForm new subscription for existing account 1`] = `
           >
             Plan
           </h4>
-          <div
-            class="product-plan-form-control"
-          >
-            <div
-              class="iconInline loadingSpinner"
-            />
-          </div>
+          <productplanformcontrol />
         </div>
         <div
           class="col-md-6 mt-3 mt-md-0"
@@ -272,21 +242,15 @@ exports[`ProductSubscriptionForm new subscription for existing account 1`] = `
           >
             Billing
           </h3>
-          <div
-            class="new-product-subscription-payment-section"
-          >
-            <div
-              class="form-text mb-2"
-            >
-              —
-            </div>
-          </div>
+          <newproductsubscriptionpaymentsection
+            accountid="a"
+          />
           <div
             class="payment-token-form-control"
           >
             <cardelement
               class="form-control card cardDisabled"
-              disabled=""
+              options="[object Object]"
             />
           </div>
           <div

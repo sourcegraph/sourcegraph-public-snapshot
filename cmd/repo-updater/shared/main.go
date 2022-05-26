@@ -91,6 +91,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	trace.Init()
 	profiler.Init()
 
+	logger := sglog.Scoped("repo updater", "repo updater service")
+
 	// Signals health of startup
 	ready := make(chan struct{})
 
@@ -139,7 +141,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		src = repos.NewSourcer(db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(log15.Root(), m))
 	}
 
-	updateScheduler := repos.NewUpdateScheduler(db)
+	updateScheduler := repos.NewUpdateScheduler(logger, db)
 	server := &repoupdater.Server{
 		Store:                 store,
 		Scheduler:             updateScheduler,
@@ -197,8 +199,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	// Git fetches scheduler
-	go repos.RunScheduler(ctx, updateScheduler)
-	log15.Debug("started scheduler")
+	go repos.RunScheduler(ctx, logger, updateScheduler)
+	logger.Debug("started scheduler")
 
 	host := ""
 	if env.InsecureDev {
@@ -206,7 +208,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	addr := net.JoinHostPort(host, port)
-	log15.Info("repo-updater: listening", "addr", addr)
+	logger.Info("listening", sglog.String("addr", addr))
 
 	var handler http.Handler
 	{

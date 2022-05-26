@@ -7,7 +7,9 @@ import (
 	"sync"
 
 	"github.com/charmbracelet/glamour"
+	glamouransi "github.com/charmbracelet/glamour/ansi"
 	"github.com/mattn/go-runewidth"
+	"github.com/muesli/termenv"
 )
 
 // Writer defines a common set of methods that can be used to output status
@@ -220,14 +222,33 @@ func (o *Output) ProgressWithStatusBars(bars []ProgressBar, statusBars []*Status
 
 // WriteMarkdown renders Markdown nicely, unless color is disabled.
 func (o *Output) WriteMarkdown(str string) error {
+	return o.writeMarkdown(str, false)
+}
+
+func (o *Output) writeMarkdown(str string, noMargin bool) error {
 	if !o.caps.Color {
 		o.Write(str)
 		return nil
 	}
 
+	var style glamouransi.StyleConfig
+	if termenv.HasDarkBackground() {
+		style = glamour.DarkStyleConfig
+	} else {
+		style = glamour.LightStyleConfig
+	}
+
+	if noMargin {
+		z := uint(0)
+		style.CodeBlock.Margin = &z
+		style.Document.Margin = &z
+		style.Document.BlockPrefix = ""
+		style.Document.BlockSuffix = ""
+	}
+
 	r, err := glamour.NewTermRenderer(
 		// detect background color and pick either the default dark or light theme
-		glamour.WithAutoStyle(),
+		glamour.WithStyles(style),
 		// wrap output at slightly less than terminal width
 		glamour.WithWordWrap(o.caps.Width*4/5),
 		glamour.WithEmoji(),
@@ -242,6 +263,11 @@ func (o *Output) WriteMarkdown(str string) error {
 	}
 	o.Write(rendered)
 	return nil
+}
+
+// WriteCode renders the given code snippet as Markdown, unless color is disabled.
+func (o *Output) WriteCode(languageName, str string) error {
+	return o.writeMarkdown(fmt.Sprintf("```%s\n%s\n```", languageName, str), true)
 }
 
 // The utility functions below do not make checks for whether the terminal is a

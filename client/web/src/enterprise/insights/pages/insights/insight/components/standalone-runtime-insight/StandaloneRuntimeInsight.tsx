@@ -17,7 +17,7 @@ import {
     SeriesChart,
 } from '../../../../../components'
 import { useInsightData } from '../../../../../components/insights-view-grid/hooks/use-insight-data'
-import { CodeInsightsBackendContext, LangStatsInsight, SearchRuntimeBasedInsight } from '../../../../../core'
+import { CodeInsightsBackendContext, LangStatsInsight } from '../../../../../core'
 import { InsightContentType } from '../../../../../core/types/insight/common'
 import { LazyQueryStatus } from '../../../../../hooks/use-parallel-requests/use-parallel-request'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../../pings'
@@ -26,7 +26,7 @@ import { StandaloneInsightContextMenu } from '../context-menu/StandaloneInsightC
 import styles from './StandaloneRuntimeInsight.module.scss'
 
 interface StandaloneRuntimeInsightProps extends TelemetryProps {
-    insight: SearchRuntimeBasedInsight | LangStatsInsight
+    insight: LangStatsInsight
     className?: string
 }
 

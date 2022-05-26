@@ -275,7 +275,7 @@ const InvitedNotification: React.FunctionComponent<React.PropsWithChildren<Invit
             ) : (
                 <>Generated invitation link. Copy and send it to {username}:</>
             )}
-            <CopyableText text={invitationURL} size={40} className="mt-2" />
+            <CopyableText label="Invitation URL" text={invitationURL} size={40} className="mt-2" />
         </div>
         <Button variant="icon" title="Dismiss" onClick={onDismiss}>
             <Icon role="img" as={CloseIcon} aria-hidden={true} />
