@@ -223,9 +223,8 @@ func roundJVMVersionToNearestStableVersion(javaVersion int) int {
 	if javaVersion <= 11 {
 		return 11
 	}
-	// TODO: bump this up to 17 once Java 17 LTS has been released, see https://github.com/sourcegraph/lsif-java/issues/263
-	if javaVersion <= 16 {
-		return 16
+	if javaVersion <= 17 {
+		return 17
 	}
 	// Version from the future, do not round up to the next stable release.
 	return javaVersion
