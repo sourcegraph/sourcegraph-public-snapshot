@@ -4,10 +4,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (c *Client) GetInsights() ([]string, error) {
+type InsightViewsArgs struct {
+	First *int
+	After *string
+	Id    *string
+}
+
+func (c *Client) GetInsights(args InsightViewsArgs) ([]string, error) {
 	const query = `
-		query InsightViews {
-			insightViews {
+		query InsightViews ($first: Int, $after: String, $id: ID) {
+			insightViews (first: $first, after: $after, id: $id) {
 				nodes { id }
 			}
 		}
@@ -21,7 +27,18 @@ func (c *Client) GetInsights() ([]string, error) {
 			} `json:"insightviews"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", query, map[string]any{}, &resp)
+
+	variables := map[string]any{}
+	if args.First != nil {
+		variables["first"] = args.First
+	}
+	if args.After != nil {
+		variables["after"] = args.After
+	}
+	if args.Id != nil {
+		variables["id"] = args.Id
+	}
+	err := c.GraphQL("", query, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
