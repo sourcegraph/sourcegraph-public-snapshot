@@ -1,4 +1,4 @@
-package janitor
+package expiration
 
 import (
 	"context"
@@ -14,21 +14,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
+func init() {
+	ConfigInst.RepositoryProcessDelay = 24 * time.Hour
+	ConfigInst.RepositoryBatchSize = 100
+	ConfigInst.UploadProcessDelay = 24 * time.Hour
+	ConfigInst.UploadBatchSize = 100
+	ConfigInst.CommitBatchSize = 100
+	ConfigInst.BranchesCacheMaxKeys = 10000
+}
+
 func TestUploadExpirer(t *testing.T) {
 	now := timeutil.Now()
 	dbStore := testUploadExpirerMockDBStore(now)
 	policyMatcher := testUploadExpirerMockPolicyMatcher()
 
-	uploadExpirer := &uploadExpirer{
-		dbStore:                dbStore,
-		policyMatcher:          policyMatcher,
-		metrics:                newMetrics(&observation.TestContext),
-		repositoryProcessDelay: 24 * time.Hour,
-		repositoryBatchSize:    100,
-		uploadProcessDelay:     24 * time.Hour,
-		uploadBatchSize:        100,
-		commitBatchSize:        100,
-		branchesCacheMaxKeys:   10000,
+	uploadExpirer := &expirer{
+		dbStore:       dbStore,
+		policyMatcher: policyMatcher,
+		metrics:       newMetrics(&observation.TestContext),
 	}
 
 	if err := uploadExpirer.Handle(context.Background()); err != nil {
