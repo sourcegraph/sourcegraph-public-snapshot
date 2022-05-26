@@ -54,7 +54,7 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                         const row = table.rows[index]
                         const className = extensionID.replace(/\//g, '-')
 
-                        const cell = row.querySelector<HTMLTableCellElement>(`td.${className}`) || row.insertCell(0)
+                        const cell = row.querySelector<HTMLTableCellElement>(`td.${className}`) || row.insertCell(1)
                         cell.classList.add('decoration', className)
                         cell.dataset.lineDecorationAttachmentPortal = 'true'
 
@@ -113,7 +113,6 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                         key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${
                                             portalRoot.dataset.line ?? ''
                                         }`}
-                                        data-line-decoration-attachment={true}
                                         to={attachment.linkURL}
                                         data-tooltip={attachment.hoverMessage}
                                         // Use target to open external URLs

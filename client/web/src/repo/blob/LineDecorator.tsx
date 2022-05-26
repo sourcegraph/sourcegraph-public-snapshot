@@ -61,10 +61,10 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
                             const style = decorationStyleForTheme(decoration, isLightTheme)
 
                             if (style.backgroundColor) {
-                                for (const cell of row.cells) {
-                                    if (!cell.classList.contains('decoration')) {
-                                        cell.style.backgroundColor = style.backgroundColor
-                                    }
+                                const codeCell = row.querySelector<HTMLTableCellElement>('.code')
+
+                                if (codeCell) {
+                                    codeCell.style.backgroundColor = style.backgroundColor
                                 }
                             }
 
