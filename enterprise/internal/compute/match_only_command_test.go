@@ -35,12 +35,12 @@ func Test_matchOnly(t *testing.T) {
 			Name: "codehost.com/myorg/myrepo",
 		}},
 		HunkMatches: result.HunkMatches{{
-				Preview: "abcdefgh",
-				Ranges: result.Ranges{{
-					Start: result.Location{Line: 1},
-					End:   result.Location{Line: 1},
-				}},
+			Preview: "abcdefgh",
+			Ranges: result.Ranges{{
+				Start: result.Location{Line: 1},
+				End:   result.Location{Line: 1},
 			}},
+		}},
 	}
 
 	test := func(input string, serialize serializer) string {
