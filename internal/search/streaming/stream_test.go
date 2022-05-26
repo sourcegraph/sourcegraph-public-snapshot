@@ -172,12 +172,12 @@ func TestWithSelect(t *testing.T) {
 	autogold.Want("dedupe paths for select:file.directory", `[
   {
     "Path": "pokeman/",
-    "MultilineMatches": null,
+    "HunkMatches": null,
     "LimitHit": false
   },
   {
     "Path": "digiman/",
-    "MultilineMatches": null,
+    "HunkMatches": null,
     "LimitHit": false
   }
 ]`).Equal(t, test("file.directory"))
@@ -185,17 +185,17 @@ func TestWithSelect(t *testing.T) {
 	autogold.Want("dedupe paths select:file", `[
   {
     "Path": "pokeman/charmandar",
-    "MultilineMatches": null,
+    "HunkMatches": null,
     "LimitHit": false
   },
   {
     "Path": "pokeman/bulbosaur",
-    "MultilineMatches": null,
+    "HunkMatches": null,
     "LimitHit": false
   },
   {
     "Path": "digiman/ummm",
-    "MultilineMatches": null,
+    "HunkMatches": null,
     "LimitHit": false
   }
 ]`).Equal(t, test("file"))
@@ -203,99 +203,114 @@ func TestWithSelect(t *testing.T) {
 	autogold.Want("don't dedupe file matches for select:content", `[
   {
     "Path": "pokeman/charmandar",
-    "MultilineMatches": [
+    "HunkMatches": [
       {
         "Preview": "",
-        "Range": {
-          "start": [
-            0,
-            0,
-            0
-          ],
-          "end": [
-            0,
-            0,
-            0
-          ]
-        }
+        "LineNumberStart": 0,
+        "Ranges": [
+          {
+            "start": [
+              0,
+              0,
+              0
+            ],
+            "end": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
       },
       {
         "Preview": "",
-        "Range": {
-          "start": [
-            0,
-            0,
-            0
-          ],
-          "end": [
-            0,
-            0,
-            0
-          ]
-        }
+        "LineNumberStart": 0,
+        "Ranges": [
+          {
+            "start": [
+              0,
+              0,
+              0
+            ],
+            "end": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
       }
     ],
     "LimitHit": false
   },
   {
     "Path": "pokeman/charmandar",
-    "MultilineMatches": [
+    "HunkMatches": [
       {
         "Preview": "",
-        "Range": {
-          "start": [
-            0,
-            0,
-            0
-          ],
-          "end": [
-            0,
-            0,
-            0
-          ]
-        }
+        "LineNumberStart": 0,
+        "Ranges": [
+          {
+            "start": [
+              0,
+              0,
+              0
+            ],
+            "end": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
       }
     ],
     "LimitHit": false
   },
   {
     "Path": "pokeman/bulbosaur",
-    "MultilineMatches": [
+    "HunkMatches": [
       {
         "Preview": "",
-        "Range": {
-          "start": [
-            0,
-            0,
-            0
-          ],
-          "end": [
-            0,
-            0,
-            0
-          ]
-        }
+        "LineNumberStart": 0,
+        "Ranges": [
+          {
+            "start": [
+              0,
+              0,
+              0
+            ],
+            "end": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
       }
     ],
     "LimitHit": false
   },
   {
     "Path": "digiman/ummm",
-    "MultilineMatches": [
+    "HunkMatches": [
       {
         "Preview": "",
-        "Range": {
-          "start": [
-            0,
-            0,
-            0
-          ],
-          "end": [
-            0,
-            0,
-            0
-          ]
-        }
+        "LineNumberStart": 0,
+        "Ranges": [
+          {
+            "start": [
+              0,
+              0,
+              0
+            ],
+            "end": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
       }
     ],
     "LimitHit": false
