@@ -238,7 +238,7 @@ https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4629ddfcdfd070b4
 ### Note new services
 
 This upgrade includes a new code-intel DB (`deploy-codeintel-db.sh`) and a new service `minio` (`deploy-minio.sh`)
-to store LSIF indices.
+to store precise code intel indexes.
 There is a new environment variable for frontend and frontend-internal called `CODEINTEL_PGHOST`.
 
 (both of these changes are described exactly in the diff above)
