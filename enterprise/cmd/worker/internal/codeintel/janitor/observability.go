@@ -8,10 +8,6 @@ import (
 
 type metrics struct {
 	// Data retention metrics
-	numRepositoriesScanned          prometheus.Counter
-	numUploadsScanned               prometheus.Counter
-	numCommitsScanned               prometheus.Counter
-	numUploadsExpired               prometheus.Counter
 	numDocumentSearchRecordsRemoved prometheus.Counter
 	numPoliciesUpdated              prometheus.Counter
 	numErrors                       prometheus.Counter
@@ -41,22 +37,6 @@ func newMetrics(observationContext *observation.Context) *metrics {
 		return counter
 	}
 
-	numRepositoriesScanned := counter(
-		"src_codeintel_background_repositories_scanned_total",
-		"The number of repositories scanned for data retention.",
-	)
-	numUploadsScanned := counter(
-		"src_codeintel_background_upload_records_scanned_total",
-		"The number of codeintel upload records scanned for data retention.",
-	)
-	numCommitsScanned := counter(
-		"src_codeintel_background_commits_scanned_total",
-		"The number of commits reachable from a codeintel upload record scanned for data retention.",
-	)
-	numUploadsExpired := counter(
-		"src_codeintel_background_upload_records_expired_total",
-		"The number of codeintel upload records marked as expired.",
-	)
 	numDocumentSearchRecordsRemoved := counter(
 		"src_codeintel_background_documentation_search_records_removed_total",
 		"The number of documentation search records removed.",
@@ -111,10 +91,6 @@ func newMetrics(observationContext *observation.Context) *metrics {
 	)
 
 	return &metrics{
-		numRepositoriesScanned:          numRepositoriesScanned,
-		numUploadsScanned:               numUploadsScanned,
-		numCommitsScanned:               numCommitsScanned,
-		numUploadsExpired:               numUploadsExpired,
 		numDocumentSearchRecordsRemoved: numDocumentSearchRecordsRemoved,
 		numPoliciesUpdated:              numPoliciesUpdated,
 		numErrors:                       numErrors,

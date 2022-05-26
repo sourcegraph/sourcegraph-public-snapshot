@@ -17,6 +17,7 @@ func CodeIntelUploads() *monitoring.Container {
 			shared.CodeIntelligence.NewUploadsGraphQLTransportGroup(""),
 			shared.CodeIntelligence.NewUploadsHTTPTransportGroup(""),
 			shared.CodeIntelligence.NewUploadsCleanupTaskGroup(""),
+			shared.CodeIntelligence.NewUploadsExpirationTaskGroup(""),
 		},
 	}
 }
