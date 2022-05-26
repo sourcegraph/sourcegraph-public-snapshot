@@ -347,15 +347,15 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Conte
 			success := err == nil
 			gitlabTokenRefreshCounter.WithLabelValues("codehost", strconv.FormatBool(success)).Inc()
 		}()
-		svc.Config, err = jsonc.Edit(svc.Config, tok.AccessToken, "token")
+		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.AccessToken, "token")
 		if err != nil {
 			return errors.Wrap(err, "updating OAuth token")
 		}
-		svc.Config, err = jsonc.Edit(svc.Config, tok.RefreshToken, "token.oauth.refresh")
+		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.RefreshToken, "token.oauth.refresh")
 		if err != nil {
 			return errors.Wrap(err, "updating OAuth refresh token")
 		}
-		svc.Config, err = jsonc.Edit(svc.Config, tok.Expiry.Unix(), "token.oauth.expiry")
+		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.Expiry.Unix(), "token.oauth.expiry")
 		if err != nil {
 			return errors.Wrap(err, "updating OAuth token expiry")
 		}
