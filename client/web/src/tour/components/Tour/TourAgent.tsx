@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useMemo } from 'react'
 
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import ReactDOM from 'react-dom'
@@ -18,19 +18,9 @@ interface TourAgentProps extends TelemetryProps {
     onStepComplete: (step: TourTaskStepType) => void
 }
 
-export function useTourQueryParameters(): ReturnType<typeof parseURIMarkers> | undefined {
+export function useTourQueryParameters(): ReturnType<typeof parseURIMarkers> {
     const location = useLocation()
-    const [data, setData] = useState<ReturnType<typeof parseURIMarkers> | undefined>()
-    useEffect(() => {
-        const { isTour, stepId } = parseURIMarkers(location.search)
-        if (!isTour || !stepId) {
-            setData(undefined)
-        } else {
-            setData({ isTour, stepId })
-        }
-    }, [location])
-
-    return data
+    return useMemo(() => parseURIMarkers(location.search), [location])
 }
 
 /**
@@ -55,20 +45,20 @@ export const TourAgent: React.FunctionComponent<React.PropsWithChildren<TourAgen
         const tourQueryParameters = useTourQueryParameters()
 
         useEffect(() => {
-            const info = tasks.flatMap(task => task.steps).find(step => tourQueryParameters?.stepId === step.id)?.info
+            const info = tasks.flatMap(task => task.steps).find(step => tourQueryParameters.stepId === step.id)?.info
             setInfo(info)
-        }, [tasks, tourQueryParameters?.stepId])
+        }, [tasks, tourQueryParameters.stepId])
 
-        const domNode = useRef(document.querySelector('#' + GETTING_STARTED_TOUR_MARKER))
+        const infoContainerReference = useRef(document.querySelector('#' + GETTING_STARTED_TOUR_MARKER))
         useEffect(() => {
             if (info) {
-                domNode.current?.classList.remove('d-none')
+                infoContainerReference.current?.classList.remove('d-none')
             } else {
-                domNode.current?.classList.add('d-none')
+                infoContainerReference.current?.classList.add('d-none')
             }
         }, [info])
 
-        if (!info || !domNode.current) {
+        if (!info || !infoContainerReference.current) {
             return null
         }
 
@@ -77,7 +67,7 @@ export const TourAgent: React.FunctionComponent<React.PropsWithChildren<TourAgen
                 <Icon role="img" as={CheckCircleIcon} className={styles.infoIcon} aria-hidden={true} />
                 <span>{info}</span>
             </div>,
-            domNode.current
+            infoContainerReference.current
         )
     }
 )
