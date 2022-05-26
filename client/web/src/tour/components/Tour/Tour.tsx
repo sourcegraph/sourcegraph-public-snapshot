@@ -1,15 +1,12 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
-import { uniq } from 'lodash'
-
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-
-import { useQuickStartTourListState } from '../../../stores/quickStartTourState'
 
 import { TourContext } from './context'
 import { TourAgent } from './TourAgent'
 import { TourContent } from './TourContent'
 import { TourTaskType, TourLanguage, TourTaskStepType } from './types'
+import { useTour } from './useTour'
 import { isLanguageRequired } from './utils'
 
 export type TourProps = TelemetryProps & {
@@ -25,25 +22,8 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
     telemetryService,
     ...props
 }) => {
-    const {
-        completedStepIds = [],
-        language,
-        status,
-        setLanguage,
-        setCompletedStepIds,
-        setStatus,
-        resetTour,
-    } = useQuickStartTourListState(
-        useCallback(
-            ({ tours, setLanguage, setCompletedStepIds, setStatus, resetTour }) => ({
-                ...tours[tourId],
-                setLanguage,
-                setCompletedStepIds,
-                setStatus,
-                resetTour,
-            }),
-            [tourId]
-        )
+    const { completedStepIds = [], language, status, setLanguage, setStepCompleted, setStatus, restart } = useTour(
+        tourId
     )
     const onLogEvent = useCallback(
         (eventName: string, eventProperties?: any, publicArgument?: any) => {
@@ -58,15 +38,14 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
 
     const onClose = useCallback(() => {
         onLogEvent('Closed')
-        setStatus(tourId, 'closed')
-    }, [onLogEvent, setStatus, tourId])
+        setStatus('closed')
+    }, [onLogEvent, setStatus])
 
     const onStepComplete = useCallback(
         (step: TourTaskStepType) => {
-            const newCompletedStepIds = uniq([...completedStepIds, step.id])
-            setCompletedStepIds(tourId, newCompletedStepIds)
+            setStepCompleted(step.id)
         },
-        [completedStepIds, setCompletedStepIds, tourId]
+        [setStepCompleted]
     )
 
     const onStepClick = useCallback(
@@ -82,18 +61,18 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
 
     const onLanguageSelect = useCallback(
         (language: TourLanguage) => {
-            setLanguage(tourId, language)
+            setLanguage(language)
             onLogEvent('LanguageClicked', { language }, { language })
         },
-        [onLogEvent, setLanguage, tourId]
+        [onLogEvent, setLanguage]
     )
 
     const onRestart = useCallback(
         (step: TourTaskStepType) => {
             onLogEvent(step.id + 'Clicked')
-            resetTour(tourId)
+            restart()
         },
-        [onLogEvent, resetTour, tourId]
+        [onLogEvent, restart]
     )
 
     const extendedTasks: TourTaskType[] = useMemo(
@@ -121,7 +100,7 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
             extendedTasks.filter(step => step.completed === 100).length === extendedTasks.length
         ) {
             onLogEvent('Completed')
-            setStatus(tourId, 'completed')
+            setStatus('completed')
         }
     }, [status, extendedTasks, onLogEvent, setStatus, tourId])
 

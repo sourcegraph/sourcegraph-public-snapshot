@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 import { useObservable } from '@sourcegraph/wildcard'
 
@@ -21,7 +21,7 @@ export const useTemporarySetting = <K extends keyof TemporarySettings>(
     defaultValue?: TemporarySettings[K]
 ): [
     TemporarySettings[K],
-    (newValue: TemporarySettings[K] | ((oldValue: TemporarySettings[K]) => TemporarySettings[K])) => void
+    (newValue: TemporarySettings[K] | ((previousValue: TemporarySettings[K]) => TemporarySettings[K])) => void
 ] => {
     const temporarySettings = useContext(TemporarySettingsContext)
 
@@ -37,26 +37,24 @@ export const useTemporarySetting = <K extends keyof TemporarySettings>(
         )
     )
 
-    // We want to avoid the setter function to be recreated whenever the
-    // temporary settings value changes. To do this, we create a reference that
-    // always points to the latest updated value.
-    const updatedValueReference = useRef<TemporarySettings[K] | undefined>(updatedValue)
-    useEffect(() => {
-        updatedValueReference.current = updatedValue
-    }, [updatedValue])
+    // Using local useState to handle all changes
+    // since when using temporary settings directly
+    // there is a period between setting value and getting new value
+    const [value, setValue] = useState(updatedValue)
 
-    const setValueAndSave = useCallback(
-        (newValue: TemporarySettings[K] | ((oldValue: TemporarySettings[K]) => TemporarySettings[K])): void => {
-            let finalValue: TemporarySettings[K]
-            if (typeof newValue === 'function') {
-                finalValue = newValue(updatedValueReference.current)
-            } else {
-                finalValue = newValue
-            }
-            temporarySettings.set(key, finalValue)
-        },
+    useEffect(() => {
+        setValue(updatedValue)
+    }, [key, updatedValue])
+
+    const setValueAndSave: typeof setValue = useCallback(
+        newValue =>
+            setValue(previousValue => {
+                const finalValue = typeof newValue === 'function' ? newValue(previousValue) : newValue
+                temporarySettings.set(key, finalValue)
+                return finalValue
+            }),
         [key, temporarySettings]
     )
 
-    return [updatedValue, setValueAndSave]
+    return [value, setValueAndSave]
 }
