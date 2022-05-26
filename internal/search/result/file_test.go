@@ -166,6 +166,44 @@ func TestConvertMatches(t *testing.T) {
 				LineNumber:       4,
 				OffsetAndLengths: [][2]int32{{0, 1}},
 			}},
+		}, {
+			input: []MultilineMatch{{
+				Preview: "line1\nline2\nline3",
+				Start:   LineColumn{1, 1},
+				End:     LineColumn{3, 1},
+			}, {
+				Preview: "line4\nline5\nline6",
+				Start:   LineColumn{4, 1},
+				End:     LineColumn{6, 1},
+			}},
+			output: []*LineMatch{{
+				Preview:          "line1",
+				LineNumber:       1,
+				OffsetAndLengths: [][2]int32{{1, 4}},
+			}, {
+				Preview:          "line2",
+				LineNumber:       2,
+				OffsetAndLengths: [][2]int32{{0, 5}},
+			}, {
+				Preview:          "line3",
+				LineNumber:       3,
+				OffsetAndLengths: [][2]int32{{0, 1}},
+			}, {
+				Preview:          "line4",
+				LineNumber:       4,
+				OffsetAndLengths: [][2]int32{{1, 4}},
+			}, {
+				Preview:          "line5",
+				LineNumber:       5,
+				OffsetAndLengths: [][2]int32{{0, 5}},
+			}, {
+				Preview:          "line6",
+				LineNumber:       6,
+				OffsetAndLengths: [][2]int32{{0, 1}},
+			}},
+		}, {
+			input:  []MultilineMatch{},
+			output: []*LineMatch{},
 		}}
 
 		for _, tc := range cases {
