@@ -340,23 +340,7 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 		return err
 	}
 
-	tx, err := r.insightsStore.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
-		// The purpose of the snapshot is for low fidelity but recently updated data points.
-		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
-		if err := tx.DeleteSnapshots(ctx, series); err != nil {
-			return err
-		}
-	}
-
-	if recordErr := tx.RecordSeriesPoints(ctx, recordings); recordErr != nil {
-		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
-	}
+	err = persistRecordings(ctx, r.insightsStore, job, series, recordings)
 	return err
 }
 
@@ -376,7 +360,16 @@ func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *type
 		return err
 	}
 
-	tx, err := r.insightsStore.Transact(ctx)
+	err = persistRecordings(ctx, r.insightsStore, job, series, recordings)
+	return err
+}
+
+func persistRecordings(ctx context.Context, insightStore *store.Store, job *Job, series *types.InsightSeries, recordings []store.RecordSeriesPointArgs) (err error) {
+	if insightStore == nil {
+		return errors.New("no store available")
+	}
+
+	tx, err := insightStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
