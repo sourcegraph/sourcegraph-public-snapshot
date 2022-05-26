@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
@@ -428,7 +430,9 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 		}
 	}
 
-	if len(scoped) > 0 {
+	flags := featureflag.FromContext(ctx)
+	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", false)
+	if len(scoped) > 0 && deprecateJustInTime {
 		insightPermStore := store.NewInsightPermissionStore(r.postgresDB)
 		insightsStore := store.New(r.insightsDB, insightPermStore)
 		backfiller := background.NewScopedBackfiller(r.workerBaseStore, insightsStore)
@@ -926,6 +930,9 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 		}
 	}
 
+	flags := featureflag.FromContext(ctx)
+	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", false)
+
 	if !foundSeries {
 		repos := series.RepositoryScope.Repositories
 		seriesToAdd, err = tx.CreateSeries(ctx, types.InsightSeries{
@@ -936,8 +943,8 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 			SampleIntervalUnit:         series.TimeScope.StepInterval.Unit,
 			SampleIntervalValue:        int(series.TimeScope.StepInterval.Value),
 			GeneratedFromCaptureGroups: dynamic,
-			// JustInTime:                 service.IsJustInTime(repos),
-			JustInTime:       false,
+			JustInTime:                 service.IsJustInTime(repos) && !deprecateJustInTime,
+			// JustInTime:       false,
 			GenerationMethod: searchGenerationMethod(series),
 		})
 		if err != nil {
