@@ -33,74 +33,148 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 	codeHost := extsvc.NewCodeHost(glURL, extsvc.TypeGitLab)
 	clientID := "client-id"
 
-	var expErr bool
 	authSaveableUsers := map[string]int32{
-		"alice": 111,
+		"alice": 1,
 	}
 
-	glUser := &gitlab.User{ID: int32(101), Username: string("alice"), Email: string("alice@example.com")}
-	glUserGroups := []*gitlab.Group{
-		{Name: "group1"},
+	type input struct {
+		description     string
+		glUser          *gitlab.User
+		glUserGroups    []*gitlab.Group
+		glUserGroupsErr error
+		allowGroups     []string
 	}
 
-	expActor := &actor.Actor{UID: 111}
-	expAuthUserOp := &auth.GetAndSaveUserOp{
-		UserProps:        u("alice", "alice@example.com", true),
-		ExternalAccount:  acct(extsvc.TypeGitLab, "https://gitlab.com/", clientID, "101"),
-		CreateIfNotExist: true,
+	cases := []struct {
+		inputs        []input
+		expActor      *actor.Actor
+		expErr        bool
+		expAuthUserOp *auth.GetAndSaveUserOp
+	}{
+		{
+			inputs: []input{{
+				description: "glUser, allowedGroups not set -> session created",
+				glUser: &gitlab.User{
+					ID:       int32(101),
+					Username: string("alice"),
+					Email:    string("alice@example.com"),
+				},
+			}},
+			expActor: &actor.Actor{UID: 1},
+			expAuthUserOp: &auth.GetAndSaveUserOp{
+				UserProps:        u("alice", "alice@example.com", true),
+				ExternalAccount:  acct(extsvc.TypeGitLab, "https://gitlab.com/", clientID, "101"),
+				CreateIfNotExist: true,
+			},
+		},
+		{
+			inputs: []input{{
+				description: "glUser, not in allowed groups -> no session created",
+				allowGroups: []string{"group2"},
+				glUser: &gitlab.User{
+					ID:       int32(101),
+					Username: string("alice"),
+					Email:    string("alice@example.com"),
+				},
+			}},
+			expErr: true,
+		},
+		{
+			inputs: []input{{
+				description: "glUser, in allowed groups, error getting user groups -> no session created",
+				allowGroups: []string{"group1"},
+				glUser: &gitlab.User{
+					ID:       int32(101),
+					Username: string("alice"),
+					Email:    string("alice@example.com"),
+				},
+				glUserGroups: []*gitlab.Group{
+					{FullPath: "group1"},
+					{FullPath: "group2"},
+				},
+				glUserGroupsErr: errors.New("boom"),
+			}},
+			expErr: true,
+		},
+		{
+			inputs: []input{{
+				description: "glUser, in allowed groups -> session created",
+				allowGroups: []string{"group1"},
+				glUser: &gitlab.User{
+					ID:       int32(101),
+					Username: string("alice"),
+					Email:    string("alice@example.com"),
+				},
+				glUserGroups: []*gitlab.Group{
+					{FullPath: "group1"},
+					{FullPath: "group2"},
+				},
+			}},
+			expActor: &actor.Actor{UID: 1},
+			expAuthUserOp: &auth.GetAndSaveUserOp{
+				UserProps:        u("alice", "alice@example.com", true),
+				ExternalAccount:  acct(extsvc.TypeGitLab, "https://gitlab.com/", clientID, "101"),
+				CreateIfNotExist: true,
+			},
+		},
 	}
 
-	t.Run("gitlab signin - session created", func(t *testing.T) {
-		var gotAuthUserOp *auth.GetAndSaveUserOp
+	for _, c := range cases {
+		for _, ci := range c.inputs {
+			c, ci := c, ci
 
-		gitlab.MockListGroups = func(ctx context.Context) (groups []*gitlab.Group, err error) {
-			return glUserGroups, errors.New("error getting GitLab groups")
+			t.Run(ci.description, func(t *testing.T) {
+
+				gitlab.MockListGroups = func(ctx context.Context, page int) (groups []*gitlab.Group, hasNextPage bool, err error) {
+					return ci.glUserGroups, false, ci.glUserGroupsErr
+				}
+
+				var gotAuthUserOp *auth.GetAndSaveUserOp
+				auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+					if gotAuthUserOp != nil {
+						t.Fatal("GetAndSaveUser called more than once")
+					}
+
+					op.ExternalAccountData = extsvc.AccountData{}
+					gotAuthUserOp = &op
+
+					if uid, ok := authSaveableUsers[op.UserProps.Username]; ok {
+						return uid, "", nil
+					}
+
+					return 0, "safeErr", errors.New("error mocking get and save user")
+				}
+
+				defer func() {
+					auth.MockGetAndSaveUser = nil
+				}()
+
+				ctx := WithUser(context.Background(), ci.glUser)
+				s := &sessionIssuerHelper{
+					CodeHost:    codeHost,
+					clientID:    clientID,
+					allowGroups: ci.allowGroups,
+				}
+
+				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
+				actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+
+				if got, exp := actr, c.expActor; !reflect.DeepEqual(got, exp) {
+					t.Errorf("expected actor %v, got %v", exp, got)
+				}
+
+				if c.expErr && err == nil {
+					t.Errorf("expected err %v, but was nil", c.expErr)
+				} else if !c.expErr && err != nil {
+					t.Errorf("expected no error, but was %v", err)
+				}
+
+				if got, exp := gotAuthUserOp, c.expAuthUserOp; !reflect.DeepEqual(got, exp) {
+					t.Error(cmp.Diff(got, exp))
+				}
+			})
 		}
-
-		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-			if gotAuthUserOp != nil {
-				t.Fatal("GetAndSaveUser called more than once")
-			}
-
-			op.ExternalAccountData = extsvc.AccountData{}
-			gotAuthUserOp = &op
-
-			if uid, ok := authSaveableUsers[op.UserProps.Username]; ok {
-				return uid, "", nil
-			}
-
-			return 0, "safeErr", errors.New("error mocking get and save user")
-		}
-
-		defer func() {
-			auth.MockGetAndSaveUser = nil
-		}()
-
-		ctx := context.Background()
-		ctx = actor.WithActor(ctx, expActor)
-		ctx = WithUser(ctx, glUser)
-
-		s := &sessionIssuerHelper{
-			CodeHost: codeHost,
-			clientID: clientID,
-		}
-
-		tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-		actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
-
-		if got, exp := actr, expActor; !reflect.DeepEqual(got, exp) {
-			t.Errorf("expected actor %v, got %v", exp, got)
-		}
-
-		if expErr && err == nil {
-			t.Errorf("expected err %v, but was nil", expErr)
-		} else if !expErr && err != nil {
-		}
-
-		if got, exp := gotAuthUserOp, expAuthUserOp; !reflect.DeepEqual(got, exp) {
-			t.Error(cmp.Diff(got, exp))
-		}
-	})
+	}
 
 }
 

@@ -126,9 +126,7 @@ func TestParseConfig(t *testing.T) {
 						ClientSecret: "my-client-secret",
 						DisplayName:  "GitLab",
 						Type:         extsvc.TypeGitLab,
-						Url:          "https://gitlab.com",
-						AllowGroups:  []string{"mygroup"},
-					},
+						Url:          "https://gitlab.com"},
 				}},
 			}}},
 			wantProviders: []Provider{

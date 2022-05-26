@@ -43,16 +43,13 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
 	}
 
-	fmt.Println("configuration from session helper", s)
-	fmt.Println("configuration from session helper 2", s.allowGroups)
-
 	provider := gitlab.NewClientProvider(extsvc.URNGitLabOAuth, s.BaseURL, nil)
 	glClient := provider.GetOAuthClient(token.AccessToken)
 
-	// 🚨 SECURITY: Ensure that the user is part of one of the allowed groups when the allowGroups option is set.
+	// 🚨 SECURITY: Ensure that the user is part of one of the allowed groups or subgroups when the allowGroups option is set.
 	userBelongsToAllowedGroups := s.verifyUserGroups(ctx, glClient)
 	if !userBelongsToAllowedGroups {
-		message := "user does not belong to allowed GitLab groups."
+		message := "user does not belong to allowed GitLab groups or subgroups."
 		return nil, message, errors.New(message)
 	}
 
