@@ -481,6 +481,13 @@ func (squirrel *SquirrelService) defToType(ctx context.Context, def Node) (Type,
 			ret:  retTy,
 			noad: swapNode(def, parent),
 		}), nil
+	case "formal_parameter":
+		tyNode := parent.ChildByFieldName("type")
+		if tyNode == nil {
+			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find parameter type")
+			return nil, nil
+		}
+		return squirrel.getTypeDefJava(ctx, swapNode(def, tyNode))
 	default:
 		squirrel.breadcrumb(swapNode(def, parent), fmt.Sprintf("unrecognized def parent %q", parent.Type()))
 		return nil, nil

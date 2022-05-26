@@ -80,6 +80,11 @@ class C1 {
         return new C3();
     }
 
+    void m4(C2 c2) {
+        //         vv f2 ref
+        int _ = c2.f2;
+    }
+
     //    vv C2 def
     class C2 {
         //         vv f2 def
