@@ -252,7 +252,7 @@ func TestThatAllRuntimeFilesLoad(t *testing.T) {
 	}
 	defer sandbox.Close()
 
-	for mod, script := range luaRuntimeContents {
+	for mod, script := range LuaRuntimeContents {
 		_, err := sandbox.RunScript(ctx, RunOptions{}, script)
 		if err != nil {
 			t.Fatalf("unexpected error loading runtime file %s: %s", mod, err)

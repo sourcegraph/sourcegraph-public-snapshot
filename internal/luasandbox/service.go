@@ -3,7 +3,9 @@ package luasandbox
 import (
 	"context"
 	"embed"
+	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -37,30 +39,76 @@ type CreateOptions struct {
 }
 
 //go:embed lua/*
-var LuaRuntime embed.FS
+var luaRuntime embed.FS
 
-var luaRuntimeContents = map[string]string{}
+var LuaRuntimeContents = map[string]string{}
 
 func init() {
-	files, err := LuaRuntime.ReadDir("lua")
+	var err error
+	LuaRuntimeContents, err = CreateLuaRuntimeFromFS(luaRuntime, "lua", "")
 	if err != nil {
-		panic("sqs? more like sos!")
+		panic("SQS???")
+	}
+}
+
+func getAllFilepaths(fs embed.FS, path string) (out []string, err error) {
+	if len(path) == 0 {
+		path = "."
 	}
 
+	entries, err := fs.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+	for _, entry := range entries {
+		fp := filepath.Join(path, entry.Name())
+		if entry.IsDir() {
+			res, err := getAllFilepaths(fs, fp)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, res...)
+			continue
+		}
+		out = append(out, fp)
+	}
+	return
+}
+
+func CreateLuaRuntimeFromFS(runtime embed.FS, dir, prefix string) (map[string]string, error) {
+	files, err := getAllFilepaths(runtime, dir)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("FILES:", files)
+
+	contents := map[string]string{}
 	for _, file := range files {
-		fileHandle, err := LuaRuntime.Open(filepath.Join("lua", file.Name()))
+		fileHandle, err := luaRuntime.Open(file)
 		if err != nil {
-			panic("sqs? more like slacking off? amirite?")
+			return nil, err
 		}
 
 		bytesRead, err := io.ReadAll(fileHandle)
 		if err != nil {
-			panic("where is ?")
+			return nil, err
 		}
 
-		name := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-		luaRuntimeContents[name] = string(bytesRead)
+		// change "lua/fun.lua" -> "fun.lua"
+		file = strings.TrimPrefix(file, dir+string(os.PathSeparator))
+		// change "fun.lua" -> "fun"
+		file = strings.TrimSuffix(file, filepath.Ext(file))
+
+		parts := filepath.SplitList(file)
+		name := strings.Join(parts, ".")
+		if prefix != "" {
+			name = prefix + "." + name
+		}
+
+		contents[name] = string(bytesRead)
 	}
+
+	return contents, nil
 }
 
 func (s *Service) CreateSandbox(ctx context.Context, opts CreateOptions) (_ *Sandbox, err error) {
@@ -69,7 +117,7 @@ func (s *Service) CreateSandbox(ctx context.Context, opts CreateOptions) (_ *San
 
 	// Default LuaModules to our runtime files
 	if opts.LuaModules == nil {
-		opts.LuaModules = luaRuntimeContents
+		opts.LuaModules = LuaRuntimeContents
 	}
 
 	state := lua.NewState(lua.Options{

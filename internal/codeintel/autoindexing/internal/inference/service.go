@@ -196,6 +196,7 @@ func (s *Service) createSandbox(ctx context.Context) (_ *luasandbox.Sandbox, err
 
 	opts := luasandbox.CreateOptions{
 		GoModules: defaultModules,
+		// LuaModules: map[string]string{},
 	}
 	sandbox, err := s.sandboxService.CreateSandbox(ctx, opts)
 	if err != nil {
