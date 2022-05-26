@@ -47,6 +47,11 @@ var gitlabTokenRefreshCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Counts the number of times we refresh a GitLab OAuth token",
 }, []string{"source", "success"})
 
+var gitlabTokenMissingRefresh = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_repoupdater_gitlab_token_missing_refresh_count",
+	Help: "Counts the number of times we see a token without a refresh token",
+})
+
 // PermsSyncer is a permissions syncing manager that is in charge of keeping
 // permissions up-to-date for users and repositories.
 //
@@ -317,6 +322,7 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Conte
 
 	// We may have old config without a refresh token
 	if config.TokenOauthRefresh == "" {
+		gitlabTokenMissingRefresh.Inc()
 		return nil
 	}
 
