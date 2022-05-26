@@ -146,7 +146,7 @@ func forEachCapture(query string, node *Node, f func(captureName string, node No
 	return nil
 }
 
-func allCaptures(query string, node *Node) ([]Node, error) {
+func allCaptures(query string, node Node) ([]Node, error) {
 	sitterQuery, err := sitter.NewQuery([]byte(query), node.LangSpec.language)
 	if err != nil {
 		return nil, errors.Newf("failed to parse query: %s\n%s", err, query)
@@ -221,13 +221,18 @@ type Node struct {
 	LangSpec LangSpec
 }
 
-func swapNode(other *Node, newNode *sitter.Node) *Node {
-	return &Node{
+func swapNode(other Node, newNode *sitter.Node) Node {
+	return Node{
 		RepoCommitPath: other.RepoCommitPath,
 		Node:           newNode,
 		Contents:       other.Contents,
 		LangSpec:       other.LangSpec,
 	}
+}
+
+func swapNodePtr(other Node, newNode *sitter.Node) *Node {
+	ret := swapNode(other, newNode)
+	return &ret
 }
 
 var unrecognizedFileExtensionError = errors.New("unrecognized file extension")
@@ -284,7 +289,7 @@ func (s *SquirrelService) getSymbols(ctx context.Context, repoCommitPath types.R
 		return nil, nil
 	}
 
-	captures, err := allCaptures(query, root)
+	captures, err := allCaptures(query, *root)
 	if err != nil {
 		return nil, err
 	}
@@ -407,5 +412,6 @@ func (s *SquirrelService) symbolSearchOne(ctx context.Context, repo string, comm
 	if symbolNode == nil {
 		return nil, nil
 	}
-	return swapNode(file, symbolNode), nil
+	ret := swapNode(*file, symbolNode)
+	return &ret, nil
 }

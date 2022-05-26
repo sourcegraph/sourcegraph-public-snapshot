@@ -70,7 +70,7 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 		}
 
 		// Now find the definition.
-		found, err := squirrel.getDef(ctx, swapNode(root, startNode))
+		found, err := squirrel.getDef(ctx, swapNode(*root, startNode))
 		if err != nil {
 			return nil, err
 		}
@@ -103,7 +103,7 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 	}
 
 	// Now find the hover.
-	result := findHover(*swapNode(root, endNode))
+	result := findHover(swapNode(*root, endNode))
 	hover := &result
 
 	// We have a def, and maybe a hover.
@@ -139,7 +139,7 @@ func (dirOrNode *DirOrNode) String() string {
 	return fmt.Sprintf("%s", dirOrNode.Node)
 }
 
-func (squirrel *SquirrelService) getDef(ctx context.Context, node *Node) (*Node, error) {
+func (squirrel *SquirrelService) getDef(ctx context.Context, node Node) (*Node, error) {
 	switch node.LangSpec.name {
 	case "java":
 		return squirrel.getDefJava(ctx, node)
@@ -156,7 +156,7 @@ func (squirrel *SquirrelService) getDef(ctx context.Context, node *Node) (*Node,
 	}
 }
 
-func (squirrel *SquirrelService) onCall(node *Node, arg fmt.Stringer, ret func() fmt.Stringer) func() {
+func (squirrel *SquirrelService) onCall(node Node, arg fmt.Stringer, ret func() fmt.Stringer) func() {
 	caller := ""
 	pc, _, _, ok := runtime.Caller(1)
 	details := runtime.FuncForPC(pc)
@@ -177,11 +177,11 @@ func (squirrel *SquirrelService) onCall(node *Node, arg fmt.Stringer, ret func()
 }
 
 // add adds a breadcrumb.
-func (squirrel *SquirrelService) breadcrumb(node *Node, message string) {
+func (squirrel *SquirrelService) breadcrumb(node Node, message string) {
 	squirrel.breadcrumbWithOpts(node, func() string { return message }, 2)
 }
 
-func (squirrel *SquirrelService) breadcrumbWithOpts(node *Node, message func() string, callerN int) {
+func (squirrel *SquirrelService) breadcrumbWithOpts(node Node, message func() string, callerN int) {
 	caller := ""
 	pc, _, _, ok := runtime.Caller(callerN)
 	details := runtime.FuncForPC(pc)

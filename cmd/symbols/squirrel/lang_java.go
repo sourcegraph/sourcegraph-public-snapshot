@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (ret *Node, err error) {
+func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node, err error) {
 	defer squirrel.onCall(node, String(node.Type()), lazyNodeStringer(&ret))()
 
 	switch node.Type() {
@@ -66,7 +66,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 					}
 					for _, capture := range captures {
 						if capture.Content(capture.Contents) == ident {
-							return swapNode(node, capture.Node), nil
+							return swapNodePtr(node, capture.Node), nil
 						}
 					}
 				}
@@ -82,7 +82,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 				}
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
-						return swapNode(node, capture.Node), nil
+						return swapNodePtr(node, capture.Node), nil
 					}
 				}
 				continue
@@ -98,7 +98,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 				}
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
-						return swapNode(node, capture.Node), nil
+						return swapNodePtr(node, capture.Node), nil
 					}
 				}
 				continue
@@ -107,10 +107,10 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 				name := cur.ChildByFieldName("name")
 				if name != nil {
 					if name.Content(node.Contents) == ident {
-						return swapNode(node, name), nil
+						return swapNodePtr(node, name), nil
 					}
 				}
-				found, err := squirrel.lookupFieldJava(ctx, (*Type)(swapNode(node, cur)), ident)
+				found, err := squirrel.lookupFieldJava(ctx, ClassType{def: swapNode(node, cur)}, ident)
 				if err != nil {
 					return nil, err
 				}
@@ -132,7 +132,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 				}
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
-						return swapNode(node, capture.Node), nil
+						return swapNodePtr(node, capture.Node), nil
 					}
 				}
 				continue
@@ -145,7 +145,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 				}
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
-						return swapNode(node, capture.Node), nil
+						return swapNodePtr(node, capture.Node), nil
 					}
 				}
 				continue
@@ -158,7 +158,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 				}
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
-						return swapNode(node, capture.Node), nil
+						return swapNodePtr(node, capture.Node), nil
 					}
 				}
 				continue
@@ -171,7 +171,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 				}
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
-						return swapNode(node, capture.Node), nil
+						return swapNodePtr(node, capture.Node), nil
 					}
 				}
 				continue
@@ -213,7 +213,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 				}
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
-						return swapNode(node, capture.Node), nil
+						return swapNodePtr(node, capture.Node), nil
 					}
 				}
 				continue
@@ -230,7 +230,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 				}
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
-						return swapNode(node, capture.Node), nil
+						return swapNodePtr(node, capture.Node), nil
 					}
 				}
 				continue
@@ -261,7 +261,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 	}
 }
 
-func (squirrel *SquirrelService) getFieldJava(ctx context.Context, object *Node, field string) (ret *Node, err error) {
+func (squirrel *SquirrelService) getFieldJava(ctx context.Context, object Node, field string) (ret *Node, err error) {
 	defer squirrel.onCall(object, &Tuple{String(object.Type()), String(field)}, lazyNodeStringer(&ret))()
 
 	ty, err := squirrel.getTypeDefJava(ctx, object)
@@ -274,12 +274,12 @@ func (squirrel *SquirrelService) getFieldJava(ctx context.Context, object *Node,
 	return squirrel.lookupFieldJava(ctx, ty, field)
 }
 
-func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty *Type, field string) (ret *Node, err error) {
-	defer squirrel.onCall((*Node)(ty), &Tuple{String(ty.Type()), String(field)}, lazyNodeStringer(&ret))()
+func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty Type, field string) (ret *Node, err error) {
+	defer squirrel.onCall(ty.node(), &Tuple{String(ty.variant()), String(field)}, lazyNodeStringer(&ret))()
 
-	switch ty.Type() {
-	case "class_declaration":
-		body := ty.ChildByFieldName("body")
+	switch ty2 := ty.(type) {
+	case ClassType:
+		body := ty2.def.ChildByFieldName("body")
 		if body == nil {
 			return nil, nil
 		}
@@ -290,41 +290,46 @@ func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty *Type, 
 				if name == nil {
 					continue
 				}
-				if name.Content(ty.Contents) == field {
-					return swapNode((*Node)(ty), name), nil
+				if name.Content(ty2.def.Contents) == field {
+					return swapNodePtr(ty2.def, name), nil
 				}
 			case "class_declaration":
 				name := child.ChildByFieldName("name")
 				if name == nil {
 					continue
 				}
-				if name.Content(ty.Contents) == field {
-					return swapNode((*Node)(ty), name), nil
+				if name.Content(ty2.def.Contents) == field {
+					return swapNodePtr(ty2.def, name), nil
 				}
 			case "field_declaration":
 				query := "(field_declaration declarator: (variable_declarator name: (identifier) @ident))"
-				captures, err := allCaptures(query, swapNode((*Node)(ty), child))
+				captures, err := allCaptures(query, swapNode(ty2.def, child))
 				if err != nil {
 					return nil, err
 				}
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == field {
-						return swapNode((*Node)(ty), capture.Node), nil
+						return swapNodePtr(ty2.def, capture.Node), nil
 					}
 				}
 			}
 		}
 		return nil, nil
+	case FnType:
+		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldJava: unexpected object type fn"))
+		return nil, nil
 	default:
-		squirrel.breadcrumb((*Node)(ty), fmt.Sprintf("lookupFieldJava: unrecognized node type %q", ty.Type()))
+		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldJava: unrecognized type variant %q", ty.variant()))
 		return nil, nil
 	}
 }
 
-func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node *Node) (ret *Type, err error) {
+func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) (ret Type, err error) {
 	defer squirrel.onCall(node, String(node.Type()), lazyTypeStringer(&ret))()
 
 	switch node.Type() {
+	case "type_identifier":
+		fallthrough
 	case "identifier":
 		found, err := squirrel.getDefJava(ctx, node)
 		if err != nil {
@@ -333,7 +338,7 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node *Node)
 		if found == nil {
 			return nil, nil
 		}
-		return squirrel.defToType(found), nil
+		return squirrel.defToType(ctx, *found)
 	case "field_access":
 		object := node.ChildByFieldName("object")
 		if object == nil {
@@ -354,35 +359,100 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node *Node)
 		if err != nil {
 			return nil, err
 		}
-		return squirrel.defToType(found), nil
+		if found == nil {
+			return nil, nil
+		}
+		return squirrel.defToType(ctx, *found)
+	case "method_invocation":
+		name := node.ChildByFieldName("name")
+		if name == nil {
+			return nil, nil
+		}
+		ty, err := squirrel.getTypeDefJava(ctx, swapNode(node, name))
+		if err != nil {
+			return nil, err
+		}
+		if ty == nil {
+			return nil, nil
+		}
+		switch ty2 := ty.(type) {
+		case FnType:
+			return ty2.ret, nil
+		default:
+			squirrel.breadcrumb(ty.node(), fmt.Sprintf("getTypeDefJava: expected method, got %q", ty.variant()))
+			return nil, nil
+		}
+	default:
+		squirrel.breadcrumb(node, fmt.Sprintf("getTypeDefJava: unrecognized node type %q", node.Type()))
+		return nil, nil
 	}
-
-	return nil, nil
 }
 
-type Type Node
+type Type interface {
+	variant() string
+	node() Node
+}
 
-func (squirrel *SquirrelService) defToType(def *Node) *Type {
-	if def == nil {
-		return nil
-	}
+type FnType struct {
+	ret  Type
+	noad Node
+}
+
+func (t FnType) variant() string {
+	return "fn"
+}
+
+func (t FnType) node() Node {
+	return t.noad
+}
+
+type ClassType struct {
+	def Node
+}
+
+func (t ClassType) variant() string {
+	return "class"
+}
+
+func (t ClassType) node() Node {
+	return t.def
+}
+
+func (squirrel *SquirrelService) defToType(ctx context.Context, def Node) (Type, error) {
 	parent := def.Node.Parent()
 	if parent == nil {
-		return nil
+		return nil, nil
 	}
 	switch parent.Type() {
 	case "class_declaration":
-		return (*Type)(swapNode(def, parent))
+		return (Type)(ClassType{def: swapNode(def, parent)}), nil
+	case "method_declaration":
+		retTyNode := parent.ChildByFieldName("type")
+		if retTyNode == nil {
+			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find return type")
+			return (Type)(FnType{
+				ret:  nil,
+				noad: swapNode(def, parent),
+			}), nil
+		}
+		retTy, err := squirrel.getTypeDefJava(ctx, swapNode(def, retTyNode))
+		if err != nil {
+			return nil, err
+		}
+		return (Type)(FnType{
+			ret:  retTy,
+			noad: swapNode(def, parent),
+		}), nil
 	default:
 		squirrel.breadcrumb(swapNode(def, parent), fmt.Sprintf("unrecognized def parent %q", parent.Type()))
-		return nil
+		return nil, nil
 	}
 }
 
-func lazyTypeStringer(ty **Type) func() fmt.Stringer {
+func lazyTypeStringer(ty *Type) func() fmt.Stringer {
 	return func() fmt.Stringer {
 		if ty != nil && *ty != nil {
-			return String(fmt.Sprintf("%s ...%s...", (*ty).Type(), snippet((*Node)(*ty))))
+			return String((*ty).variant())
 		} else {
 			return String("<nil>")
 		}

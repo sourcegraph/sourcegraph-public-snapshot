@@ -70,11 +70,14 @@ class C1 {
 
         //   vv C3 ref
         //      vv f3 ref
-        p1 = C3.f3;
+        //                vv f3 ref
+        p1 = C3.f3 + m2().f3;
     }
 
-    //   vv m2 def
-    void m2() { }
+    // vv m2 def
+    C3 m2() {
+        return new C3();
+    }
 
     //    vv C2 def
     class C2 {
