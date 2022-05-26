@@ -742,10 +742,10 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "get user")
 	}
 
-	// GitLab OAuth token expire every two hours and this code path is the best place
-	// to refresh them. Tokens can exist in user code host connections or via a login
-	// connection, or both and they can be different tokens so we need to refresh
-	// them in both places.
+	// GitLab OAuth tokens expire every two hours and this code path is the best
+	// place to refresh them. Tokens can exist in user code host connections or via a
+	// login connection or both and they can be different so we need to refresh them
+	// in both places.
 
 	// Update tokens stored in external accounts:
 	accts, err := s.permsStore.ListExternalAccounts(ctx, user.ID)
