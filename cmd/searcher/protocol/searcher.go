@@ -216,6 +216,10 @@ type LineMatch struct {
 	// 1-based line numbers, but internally vscode uses 0-based.
 	LineNumber int
 
+	// LineOffset is the number of bytes from the beginning of the
+	// file to the beginning of the line.
+	LineOffset int
+
 	// OffsetAndLengths is a slice of 2-tuples (Offset, Length)
 	// representing each match on a line.
 	// Offsets and lengths are measured in characters, not bytes.
