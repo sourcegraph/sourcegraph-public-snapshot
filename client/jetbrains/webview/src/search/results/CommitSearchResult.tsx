@@ -11,7 +11,7 @@ import { Typography, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { getResultIdForCommitMatch } from './utils'
 
-import styles from './CommitSearchResult.module.scss'
+import styles from './SearchResult.module.scss'
 
 interface Props {
     selectResult: (id: string) => void
