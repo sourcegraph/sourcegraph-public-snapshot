@@ -2,7 +2,7 @@ DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'audit_log_operation') THEN
         -- delete is known by record_deleted_at
-        CREATE TYPE audit_log_operation AS ENUM('create', 'modify');
+        CREATE TYPE audit_log_operation AS ENUM('create', 'modify', 'delete');
     END IF;
 END
 $$;

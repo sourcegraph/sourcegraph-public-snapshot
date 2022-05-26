@@ -2,14 +2,12 @@ ALTER TABLE lsif_uploads_audit_logs
 DROP COLUMN IF EXISTS sequence,
 DROP COLUMN IF EXISTS operation;
 
-ALTER SEQUENCE IF EXISTS lsif_uploads_audit_logs_seq OWNED BY NONE;
 DROP SEQUENCE IF EXISTS lsif_uploads_audit_logs_seq;
 
 ALTER TABLE configuration_policies_audit_logs
 DROP COLUMN IF EXISTS sequence,
 DROP COLUMN IF EXISTS operation;
 
-ALTER SEQUENCE IF EXISTS configuration_policies_audit_logs_seq OWNED BY NONE;
 DROP SEQUENCE IF EXISTS configuration_policies_audit_logs_seq;
 
 DROP TYPE IF EXISTS audit_log_operation;
