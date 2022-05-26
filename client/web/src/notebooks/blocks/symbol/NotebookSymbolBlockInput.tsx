@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 
 import * as Monaco from 'monaco-editor'
 
-import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { RepoFileLink } from '@sourcegraph/search-ui'
 import { getFileMatchUrl, getRepositoryUrl, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

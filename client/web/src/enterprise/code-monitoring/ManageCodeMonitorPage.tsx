@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
@@ -104,7 +105,8 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
                     <>
                         Code monitors watch your code for specific triggers and run actions in response.{' '}
                         <Link to="/help/code_monitoring" target="_blank" rel="noopener">
-                            Learn more
+                            <VisuallyHidden>Learn more about code monitors</VisuallyHidden>
+                            <span aria-hidden={true}>Learn more</span>
                         </Link>
                     </>
                 }

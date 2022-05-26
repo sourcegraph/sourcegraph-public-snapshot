@@ -2222,7 +2222,7 @@ func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	name, err := Repos(db).GetFirstRepoNamesByCloneURL(ctx, "https://github.com/foo/bar")
+	name, err := Repos(db).GetFirstRepoNameByCloneURL(ctx, "https://github.com/foo/bar")
 	if err != nil {
 		t.Fatal(err)
 	}

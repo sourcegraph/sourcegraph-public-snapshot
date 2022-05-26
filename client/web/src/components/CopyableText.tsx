@@ -24,6 +24,9 @@ interface Props {
     /** Whether or not the text to be copied is a password. */
     password?: boolean
 
+    /** The label used for screen readers */
+    label?: string
+
     /** Callback for when the content is copied  */
     onCopy?: () => void
 }
@@ -48,14 +51,21 @@ export class CopyableText extends React.PureComponent<Props, State> {
                     <input
                         type={this.props.password ? 'password' : 'text'}
                         className={classNames('form-control', styles.input)}
+                        aria-label={this.props.label}
                         value={this.props.text}
                         size={this.props.size}
                         readOnly={true}
                         onClick={this.onClickInput}
                     />
                     <div className="input-group-append">
-                        <Button onClick={this.onClickButton} disabled={this.state.copied} variant="secondary">
-                            <Icon as={ContentCopyIcon} /> {this.state.copied ? 'Copied' : 'Copy'}
+                        <Button
+                            onClick={this.onClickButton}
+                            disabled={this.state.copied}
+                            variant="secondary"
+                            aria-label="Copy"
+                        >
+                            <Icon role="img" as={ContentCopyIcon} aria-hidden={true} />{' '}
+                            {this.state.copied ? 'Copied' : 'Copy'}
                         </Button>
                     </div>
                 </div>

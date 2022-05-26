@@ -35,7 +35,7 @@ func rawArgs(args Args) (rawArgs []string) {
 	if len(args.FilePatterns) > 0 {
 		rawArgs = append(rawArgs, "-f", strings.Join(args.FilePatterns, ","))
 	}
-	rawArgs = append(rawArgs, "-json-lines")
+	rawArgs = append(rawArgs, "-json-lines", "-match-newline-at-toplevel")
 
 	switch args.ResultKind {
 	case MatchOnly:

@@ -1,17 +1,18 @@
 import React from 'react'
 
-import { CodeHostIcon } from '@sourcegraph/shared/src/components/CodeHostIcon'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
-import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl, getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
-import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 // eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Link, Typography, useIsTruncated } from '@sourcegraph/wildcard'
 
+import { formatRepositoryStarCount } from '../util/stars'
+
+import { CodeHostIcon } from './CodeHostIcon'
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
+import { ResultContainer } from './ResultContainer'
+import { SearchResultStar } from './SearchResultStar'
 
 import styles from './SearchResult.module.scss'
 

@@ -9,12 +9,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -59,7 +56,7 @@ func FetchSources(ctx context.Context, client Client, dependency *reposource.Npm
 type HTTPClient struct {
 	registryURL string
 	doer        httpcli.Doer
-	limiter     *rate.Limiter
+	limiter     *ratelimit.InstrumentedLimiter
 	credentials string
 }
 
@@ -116,12 +113,8 @@ func (client *HTTPClient) do(ctx context.Context, req *http.Request) (*http.Resp
 		nethttp.OperationName("npm"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
-	startWait := time.Now()
 	if err := client.limiter.Wait(ctx); err != nil {
 		return nil, err
-	}
-	if d := time.Since(startWait); d > 200*time.Millisecond {
-		log15.Warn("npm self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 	return client.doer.Do(req)
 }

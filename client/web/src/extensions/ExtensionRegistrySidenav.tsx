@@ -81,7 +81,7 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
 
             <Menu>
                 <MenuButton size="sm" variant="secondary" outline={true}>
-                    {enablementFilterToLabel[enablementFilter]} <Icon as={MenuDownIcon} />
+                    {enablementFilterToLabel[enablementFilter]} <Icon role="img" as={MenuDownIcon} aria-hidden={true} />
                 </MenuButton>
                 <MenuList>
                     <MenuItem onSelect={showAll} disabled={enablementFilter === 'all'}>

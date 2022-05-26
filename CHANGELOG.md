@@ -25,7 +25,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Support expiring OAuth tokens for GitLab which became the default in version 15.0
+- Fix external service resolver erroring when webhooks not supported. [##35932](https://github.com/sourcegraph/sourcegraph/pull/35932)
 
 ### Removed
 

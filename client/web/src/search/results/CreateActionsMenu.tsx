@@ -36,7 +36,7 @@ export const CreateActionsMenu: React.FunctionComponent<CreateActionsMenuProps> 
                         outline={true}
                         size="sm"
                     >
-                        <Icon className="mr-1" as={PlusIcon} />
+                        <Icon role="img" aria-hidden={true} className="mr-1" as={PlusIcon} />
                         Create …
                     </MenuButton>
                 </li>
@@ -58,7 +58,7 @@ export const CreateActionsMenu: React.FunctionComponent<CreateActionsMenuProps> 
                             }
                             to={createCodeMonitorAction.url}
                         >
-                            <Icon className="mr-1" as={createCodeMonitorAction.icon} />
+                            <Icon role="img" aria-hidden={true} className="mr-1" as={createCodeMonitorAction.icon} />
                             Create Monitor
                         </MenuLink>
                     )}

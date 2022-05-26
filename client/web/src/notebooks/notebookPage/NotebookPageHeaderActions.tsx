@@ -250,11 +250,17 @@ const NotebookStarsButton: React.FunctionComponent<React.PropsWithChildren<Noteb
             outline={true}
             disabled={disabled}
             onClick={() => onStarToggle(viewerHasStarred)}
+            aria-label={viewerHasStarred ? 'Unstar notebook' : 'Star notebook'}
         >
             {viewerHasStarred ? (
-                <Icon className={classNames(styles.notebookStarIcon, styles.notebookStarIconActive)} as={StarIcon} />
+                <Icon
+                    role="img"
+                    aria-hidden={true}
+                    className={classNames(styles.notebookStarIcon, styles.notebookStarIconActive)}
+                    as={StarIcon}
+                />
             ) : (
-                <Icon className={styles.notebookStarIcon} as={StarOutlineIcon} />
+                <Icon role="img" aria-hidden={true} className={styles.notebookStarIcon} as={StarOutlineIcon} />
             )}
             <span className="ml-1">{starsCount}</span>
         </Button>

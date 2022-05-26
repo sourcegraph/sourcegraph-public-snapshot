@@ -356,7 +356,7 @@ const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProp
                     size="sm"
                     className={styles.notepadCtaCloseButton}
                 >
-                    <Icon as={CloseIcon} />
+                    <Icon role="img" aria-hidden={true} as={CloseIcon} />
                 </Button>
                 <img
                     className="flex-shrink-0 mr-3"

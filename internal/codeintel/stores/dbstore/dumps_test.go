@@ -58,7 +58,7 @@ func TestGetDumpsByIDs(t *testing.T) {
 		FinishedAt:        &finishedAt,
 		RepositoryID:      50,
 		RepositoryName:    "n-50",
-		Indexer:           "lsif-tsc",
+		Indexer:           "scip-typescript",
 		IndexerVersion:    "1.2.3",
 		AssociatedIndexID: nil,
 	}
@@ -730,7 +730,7 @@ func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
 	}{
 		{makeCommit(2), "cmd/", "lsif-go"},
 		{makeCommit(1), "cmds/", "lsif-go"},
-		{makeCommit(1), "cmd/", "lsif-tsc"},
+		{makeCommit(1), "cmd/", "scip-typescript"},
 	}
 
 	for _, testCase := range testCases {
