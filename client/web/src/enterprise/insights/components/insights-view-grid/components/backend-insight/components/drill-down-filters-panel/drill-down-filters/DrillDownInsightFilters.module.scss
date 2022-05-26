@@ -56,8 +56,11 @@
 
 .panel {
     min-width: 0;
-    flex-basis: 22rem;
     flex-grow: 1;
+
+    &--horizontal-mode {
+        flex-basis: 22rem;
+    }
 }
 
 .reg-exp-filters {
