@@ -1,4 +1,4 @@
-import { FunctionComponent, useMemo, useState, forwardRef } from 'react'
+import { FunctionComponent, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
@@ -74,7 +74,7 @@ interface DrillDownInsightFilters {
     onCreateInsightRequest: () => void
 }
 
-export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters> = forwardRef((props, reference) => {
+export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters> = props => {
     const {
         initialValues,
         originalValues,
@@ -309,7 +309,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
             </footer>
         </form>
     )
-})
+}
 
 export function hasActiveFilters(filters: DrillDownFiltersFormValues): boolean {
     const { excludeRepoRegexp, includeRepoRegexp, context } = filters
