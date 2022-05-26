@@ -1,4 +1,8 @@
-import { SeriesDisplayOptionsInput } from '../../../../../../../../../graphql-operations'
+import {
+    SeriesDisplayOptionsInput,
+    SeriesSortDirection,
+    SeriesSortMode,
+} from '../../../../../../../../../graphql-operations'
 import { DEFAULT_SERIES_DISPLAY_OPTIONS } from '../../../../../../../core'
 import { SeriesDisplayOptions, SeriesDisplayOptionsInputRequired } from '../../../../../../../core/types/insight/common'
 import { Validator } from '../../../../../../form/hooks/useField'
@@ -28,6 +32,32 @@ export function getSerializedRepositoriesFilter(filter: InsightRepositoriesFilte
     const excludeString = exclude ? `-repo:${exclude}` : ''
 
     return `${includeString} ${excludeString}`.trim()
+}
+
+export const getSortPreview = (seriesDisplayOptions: SeriesDisplayOptionsInputRequired): string => {
+    const {
+        sortOptions: { mode, direction },
+        limit,
+    } = seriesDisplayOptions
+    const ascending = direction === SeriesSortDirection.ASC
+    let sortBy
+
+    switch (mode) {
+        case SeriesSortMode.LEXICOGRAPHICAL:
+            sortBy = ascending ? 'A-Z' : 'Z-A'
+            break
+        case SeriesSortMode.RESULT_COUNT:
+            sortBy = `by result count ${ascending ? 'low to high' : 'high to low'}`
+            break
+        case SeriesSortMode.DATE_ADDED:
+            sortBy = `by date ${ascending ? 'newest to oldest' : 'oldest to newest'}`
+            break
+        default:
+            sortBy = 'ERROR: Unknown sort type.'
+            break
+    }
+
+    return `Sorted ${sortBy}, limit ${limit} series`
 }
 
 type InsightContextsFilter = string

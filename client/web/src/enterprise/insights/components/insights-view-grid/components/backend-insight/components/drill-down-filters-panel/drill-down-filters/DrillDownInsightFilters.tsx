@@ -9,11 +9,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Icon, Link, Typography } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
-import {
-    SeriesDisplayOptionsInput,
-    SeriesSortDirection,
-    SeriesSortMode,
-} from '../../../../../../../../../graphql-operations'
+import { SeriesDisplayOptionsInput } from '../../../../../../../../../graphql-operations'
 import { SeriesDisplayOptionsInputRequired } from '../../../../../../../core/types/insight/common'
 import { useField } from '../../../../../../form/hooks/useField'
 import { FormChangeEvent, SubmissionResult, useForm, FORM_ERROR } from '../../../../../../form/hooks/useForm'
@@ -25,6 +21,7 @@ import { DrillDownSearchContextFilter } from '../search-context/DrillDownSearchC
 import {
     getSerializedRepositoriesFilter,
     getSerializedSearchContextFilter,
+    getSortPreview,
     parseSeriesDisplayOptions,
     validRegexp,
 } from './utils'
@@ -334,30 +331,4 @@ function getSubmitButtonText(input: SubmitButtonTextProps): string {
         : hasAppliedFilters
         ? 'Update default filters'
         : 'Save default filters'
-}
-
-const getSortPreview = (seriesDisplayOptions: SeriesDisplayOptionsInputRequired): string => {
-    const {
-        sortOptions: { mode, direction },
-        limit,
-    } = seriesDisplayOptions
-    const ascending = direction === SeriesSortDirection.ASC
-    let sortBy
-
-    switch (mode) {
-        case SeriesSortMode.LEXICOGRAPHICAL:
-            sortBy = ascending ? 'A-Z' : 'Z-A'
-            break
-        case SeriesSortMode.RESULT_COUNT:
-            sortBy = `by result count ${ascending ? 'low to high' : 'high to low'}`
-            break
-        case SeriesSortMode.DATE_ADDED:
-            sortBy = `by date ${ascending ? 'newest to oldest' : 'oldest to newest'}`
-            break
-        default:
-            sortBy = 'ERROR: Unknown sort type.'
-            break
-    }
-
-    return `Sorted ${sortBy}, limit ${limit} series`
 }
