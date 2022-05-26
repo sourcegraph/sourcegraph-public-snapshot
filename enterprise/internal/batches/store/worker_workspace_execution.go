@@ -52,6 +52,10 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 	MaxNumResets:      batchSpecWorkspaceExecutionJobMaximumNumResets,
 	// Explicitly disable retries.
 	MaxNumRetries: 0,
+
+	// This view ranks different jobs in a workspace in round-robin fashion
+	// so as to ensure fairness when dequeuing from a workspace.
+	ViewName: "batch_spec_workspace_execution_queue",
 }
 
 type BatchSpecWorkspaceExecutionWorkerStore interface {
