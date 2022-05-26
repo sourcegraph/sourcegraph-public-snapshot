@@ -597,8 +597,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         useMemo(() => haveInitialExtensionsLoaded(extensionsController.extHostAPI), [extensionsController.extHostAPI])
     )
 
-    // Memoize `groupedDecorations` to avoid clearing and setting decorations in `LineDecorator`s on renders in which
-    // decorations haven't changed.
+    // Memoize `groupedDecorations` to avoid clearing and setting decorations in `ColumnDecorator`s or `LineDecorator`s
+    // on renders in which decorations haven't changed.
     const groupedDecorations: Map<TextDocumentDecorationType, DecorationMapByLine> | undefined = useMemo(
         () =>
             decorationsOrError && !isErrorLike(decorationsOrError)
@@ -730,13 +730,13 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 )}
                 {groupedDecorations &&
                     iterate(groupedDecorations)
-                        .map(([key, decorations]) => {
-                            if (extensionsInSeparateColumns.has(key.key)) {
+                        .map(([{ key: extensionID }, decorations]) => {
+                            if (extensionsInSeparateColumns.has(extensionID)) {
                                 return (
                                     <ColumnDecorator
-                                        key={key.key}
+                                        key={extensionID}
                                         isLightTheme={isLightTheme}
-                                        extensionID={key.key}
+                                        extensionID={extensionID}
                                         decorations={decorations}
                                         codeViewElements={codeViewElements}
                                     />
