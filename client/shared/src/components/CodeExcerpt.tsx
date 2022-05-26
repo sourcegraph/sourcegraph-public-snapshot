@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
-import { range, isEqual } from 'lodash'
+import { range, noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import VisibilitySensor from 'react-visibility-sensor'
 import { of, combineLatest, Observable, Subscription, BehaviorSubject, NEVER } from 'rxjs'
-import { catchError, filter, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
+import { catchError, filter, map, distinctUntilChanged } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
@@ -96,6 +96,7 @@ const domFunctions: DOMFunctions = {
 }
 
 const makeTableHTML = (blobLines: string[]): string => '<table>' + blobLines.join('') + '</table>'
+const visibilitySensorOffset = { bottom: -500 }
 
 /**
  * A code excerpt that displays syntax highlighting and match range highlighting.
@@ -105,32 +106,33 @@ export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
     const [tableContainerElements] = useState(new BehaviorSubject<HTMLElement | null>(null))
     const [propsChanges] = useState(new BehaviorSubject<Props>(props))
     const [visibilityChanges] = useState(new BehaviorSubject<boolean | null>(null))
-    const visibilitySensorOffset = { bottom: -500 }
+    const [isVisible, setIsVisible] = useState(false)
+
+    const { blobLines, fetchHighlightedFileRangeLines, isFirst, startLine, endLine } = props
 
     useEffect(() => {
         propsChanges.next(props)
     }, [props, propsChanges])
 
     // Get the syntax highlighted blob lines
+
     useEffect(() => {
-        const subscription = combineLatest([propsChanges, visibilityChanges])
-            .pipe(
-                filter(([, isVisible]) => isVisible === true),
-                map(([props]) => props),
-                distinctUntilChanged((a, b) => isEqual(a, b)),
-                switchMap(({ blobLines, isFirst, startLine, endLine }) => {
-                    if (blobLines) {
-                        return of(blobLines)
-                    }
-                    return props.fetchHighlightedFileRangeLines(isFirst, startLine, endLine)
-                }),
-                catchError(error => [asError(error)])
-            )
-            .subscribe(blobLinesOrError => {
+        if (isVisible) {
+            let observable: Observable<string[]>
+            if (blobLines) {
+                observable = of(blobLines)
+            } else {
+                observable = fetchHighlightedFileRangeLines(isFirst, startLine, endLine)
+            }
+
+            const subscription = observable.pipe(catchError(error => [asError(error)])).subscribe(blobLinesOrError => {
                 setBlobLinesOrError(blobLinesOrError)
             })
-        return () => subscription.unsubscribe()
-    }, [props, propsChanges, visibilityChanges])
+
+            return () => subscription.unsubscribe()
+        }
+        return noop
+    }, [blobLines, endLine, fetchHighlightedFileRangeLines, isFirst, isVisible, startLine])
 
     // Highlight the search matches
     useEffect(() => {
@@ -187,6 +189,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
     const onChangeVisibility = useCallback(
         (isVisible: boolean): void => {
             visibilityChanges.next(isVisible)
+            setIsVisible(isVisible)
         },
         [visibilityChanges]
     )
