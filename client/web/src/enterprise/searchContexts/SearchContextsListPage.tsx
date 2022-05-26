@@ -70,16 +70,6 @@ export const SearchContextsListPage: React.FunctionComponent<
         <div data-testid="search-contexts-list-page" className="w-100">
             <Page>
                 <PageHeader
-                    path={[
-                        {
-                            icon: MagnifyIcon,
-                            to: '/search',
-                            ariaLabel: 'Code Search',
-                        },
-                        {
-                            text: 'Contexts',
-                        },
-                    ]}
                     actions={
                         <Button to="/contexts/new" variant="primary" as={Link}>
                             <Icon as={PlusIcon} />
@@ -99,7 +89,12 @@ export const SearchContextsListPage: React.FunctionComponent<
                         </span>
                     }
                     className="mb-3"
-                />
+                >
+                    <PageHeader.Heading as="h2" styleAs="h1">
+                        <PageHeader.Breadcrumb icon={MagnifyIcon} to="/search" aria-label="Code Search" />
+                        <PageHeader.Breadcrumb>Contexts</PageHeader.Breadcrumb>
+                    </PageHeader.Heading>
+                </PageHeader>
                 <div className="mb-4">
                     <div className="nav nav-tabs">
                         <div className="nav-item">
