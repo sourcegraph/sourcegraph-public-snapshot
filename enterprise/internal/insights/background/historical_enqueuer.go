@@ -234,7 +234,6 @@ func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer 
 		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
 			return git.Commits(ctx, frontend, repoName, git.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 		},
-		db: frontend,
 	}
 }
 
