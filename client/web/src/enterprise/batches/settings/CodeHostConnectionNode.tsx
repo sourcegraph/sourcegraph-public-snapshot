@@ -3,10 +3,8 @@ import React, { useCallback, useRef, useState } from 'react'
 import classNames from 'classnames'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
-
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useLazyQuery } from '@sourcegraph/http-client'
-import { Alert, Badge, Button, Icon, LoadingSpinner, Typography } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, LoadingSpinner, Typography } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import {
@@ -22,6 +20,8 @@ import { RemoveCredentialModal } from './RemoveCredentialModal'
 import { ViewCredentialModal } from './ViewCredentialModal'
 
 import styles from './CodeHostConnectionNode.module.scss'
+import CheckIcon from 'mdi-react/CheckIcon'
+import CloseIcon from 'mdi-react/CloseIcon'
 
 export interface CodeHostConnectionNodeProps {
     node: BatchChangesCodeHostFields
@@ -92,10 +92,6 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                     'list-group-item test-code-host-connection-node'
                 )}
             >
-                {!checkCredLoading && node.credential && checkCredError && <ErrorAlert error={checkCredError} />}
-                {!checkCredLoading && node.credential && checkCredData && !checkCredError && (
-                    <Alert variant="success">Credential is valid</Alert>
-                )}
                 <div
                     className={classNames(
                         styles.wrapper,
@@ -135,18 +131,35 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                             </Badge>
                         )}
                     </Typography.H3>
-                    <div className="mb-0 d-flex justify-content-end flex-grow-1">
+                    <div className="mb-0 d-flex justify-content-end flex-grow-1 align-items-baseline">
                         {isEnabled ? (
                             <>
-                                <Button
-                                    className="text-primary text-nowrap"
-                                    onClick={onClickCheck}
-                                    variant="link"
-                                    aria-label={`Check credentials for ${codeHostDisplayName}`}
-                                    ref={buttonReference}
-                                >
-                                    {checkCredLoading ? <LoadingSpinner /> : 'Check'}
-                                </Button>
+                                {!checkCredLoading && !checkCredData && !checkCredError && (
+                                    <Button
+                                        className="text-primary text-nowrap"
+                                        onClick={onClickCheck}
+                                        variant="link"
+                                        aria-label={`Check credentials for ${codeHostDisplayName}`}
+                                        ref={buttonReference}
+                                    >
+                                        Check
+                                    </Button>
+                                )}
+                                {checkCredLoading && (
+                                    <div className="text-white-50">
+                                        <LoadingSpinner /> Checking
+                                    </div>
+                                )}
+                                {checkCredData && !checkCredError && (
+                                    <div className="text-success">
+                                        <CheckIcon /> Credential is valid
+                                    </div>
+                                )}
+                                {checkCredError && (
+                                    <div className="text-danger">
+                                        <CloseIcon /> {checkCredError}
+                                    </div>
+                                )}
                                 <Button
                                     className="text-danger text-nowrap test-code-host-connection-node-btn-remove"
                                     onClick={onClickRemove}
