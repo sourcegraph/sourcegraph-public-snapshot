@@ -526,11 +526,11 @@ func bar() {
 			MultilineMatches: []protocol.MultilineMatch{{
 				Preview: "func foo() {\n    fmt.Println(\"foo\")\n}",
 				Start:   protocol.Location{Offset: 12, Line: 1, Column: 11},
-				End:     protocol.Location{Offset: 26, Line: 3, Column: 1},
+				End:     protocol.Location{Offset: 38, Line: 3, Column: 1},
 			}, {
 				Preview: "func bar() {\n    fmt.Println(\"bar\")\n}",
-				Start:   protocol.Location{Offset: 39, Line: 5, Column: 11},
-				End:     protocol.Location{Offset: 65, Line: 7, Column: 1},
+				Start:   protocol.Location{Offset: 51, Line: 5, Column: 11},
+				End:     protocol.Location{Offset: 77, Line: 7, Column: 1},
 			}},
 		}}
 		require.Equal(t, expected, matches)
