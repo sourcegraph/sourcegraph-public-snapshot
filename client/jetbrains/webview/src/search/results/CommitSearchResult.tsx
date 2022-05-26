@@ -14,9 +14,9 @@ import { getResultIdForCommitMatch } from './utils'
 import styles from './SearchResult.module.scss'
 
 interface Props {
-    selectResult: (id: string) => void
-    selectedResult: null | string
     match: CommitMatch
+    selectedResult: null | string
+    selectResult: (id: string) => void
 }
 
 export const CommitSearchResult: React.FunctionComponent<Props> = ({ match, selectedResult, selectResult }: Props) => {
