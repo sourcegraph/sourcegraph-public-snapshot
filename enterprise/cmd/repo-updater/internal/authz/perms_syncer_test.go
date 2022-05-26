@@ -951,12 +951,21 @@ func TestPermsSyncer_maybeRefreshGitLabOAuthTokenFromCodeHost(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var databaseHit bool
 			var httpServerHit bool
+			var newToken string
 
 			// perms syncer mocking
 			db := database.NewMockDB()
 			externalServices := database.NewMockExternalServiceStore()
-			externalServices.UpsertFunc.SetDefaultHook(func(ctx context.Context, service ...*types.ExternalService) error {
+			externalServices.UpsertFunc.SetDefaultHook(func(ctx context.Context, services ...*types.ExternalService) error {
 				databaseHit = true
+				svc := services[0]
+				parsed, err := extsvc.ParseConfig(extsvc.KindGitLab, svc.Config)
+				if err != nil {
+					t.Fatal(err)
+				}
+				config := parsed.(*schema.GitLabConnection)
+				newToken = config.Token
+
 				return nil
 			})
 			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
@@ -1034,6 +1043,9 @@ func TestPermsSyncer_maybeRefreshGitLabOAuthTokenFromCodeHost(t *testing.T) {
 			}
 			if want != httpServerHit {
 				t.Errorf("HTTP Server hit:\ngot: %v\nwant: %v", httpServerHit, want)
+			}
+			if test.expired {
+				assert.Equal(t, "cafebabea66306277915a6919a90ac7972853317d9df385a828b17d9200b7d4c", newToken)
 			}
 		})
 	}
