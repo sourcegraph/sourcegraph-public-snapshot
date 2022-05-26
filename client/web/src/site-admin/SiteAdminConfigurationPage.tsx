@@ -10,6 +10,7 @@ import { catchError, concatMap, delay, mergeMap, retryWhen, tap, timeout } from 
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import * as GQL from '@sourcegraph/shared/src/schema'
+// eslint-disable-next-line import/extensions
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

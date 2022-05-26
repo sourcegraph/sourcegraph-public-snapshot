@@ -2,6 +2,7 @@ import React, { Suspense } from 'react'
 
 import classNames from 'classnames'
 
+// eslint-disable-next-line import/extensions
 import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 

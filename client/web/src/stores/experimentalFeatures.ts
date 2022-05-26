@@ -1,6 +1,7 @@
 import create from 'zustand'
 
 import { isErrorLike } from '@sourcegraph/common'
+// eslint-disable-next-line import/extensions
 import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 

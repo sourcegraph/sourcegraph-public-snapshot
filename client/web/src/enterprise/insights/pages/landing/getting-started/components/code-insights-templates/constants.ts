@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/extensions
 import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 
 import { InsightType } from '../../../../../core'

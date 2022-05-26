@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+// eslint-disable-next-line import/extensions
 import { Notice, Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Alert, AlertProps } from '@sourcegraph/wildcard'

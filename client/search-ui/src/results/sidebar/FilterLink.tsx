@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { pluralize } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery, CodeHostIcon } from '@sourcegraph/search-ui'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+// eslint-disable-next-line import/extensions
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'

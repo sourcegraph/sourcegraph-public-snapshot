@@ -6,6 +6,7 @@ import InformationIcon from 'mdi-react/InformationIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
+// eslint-disable-next-line import/extensions
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'

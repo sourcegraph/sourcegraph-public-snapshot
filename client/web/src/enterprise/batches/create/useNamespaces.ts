@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
+// eslint-disable-next-line import/extensions
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     SettingsOrgSubject,

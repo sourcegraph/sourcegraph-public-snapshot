@@ -5,6 +5,7 @@ import addFormats from 'ajv-formats'
 import { load as loadYAML } from 'js-yaml'
 import { debounce } from 'lodash'
 
+// eslint-disable-next-line import/extensions
 import { BatchSpec } from '@sourcegraph/shared/src/schema/batch_spec.schema'
 import { useDebounce } from '@sourcegraph/wildcard'
 

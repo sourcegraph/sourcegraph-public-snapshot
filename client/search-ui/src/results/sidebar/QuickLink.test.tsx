@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/extensions
 import { QuickLink } from '@sourcegraph/shared/src/schema/settings.schema'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 

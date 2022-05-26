@@ -2,6 +2,7 @@ import React from 'react'
 
 import LinkIcon from 'mdi-react/LinkIcon'
 
+// eslint-disable-next-line import/extensions
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Link, Icon } from '@sourcegraph/wildcard'
