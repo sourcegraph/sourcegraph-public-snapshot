@@ -135,10 +135,6 @@ export async function createPreviewOrOpenRequest(
     lineMatchIndex: number | undefined,
     action: MatchRequest['action']
 ): Promise<MatchRequest> {
-    if (match.type === 'content') {
-        return createPreviewOrOpenRequestForContentMatch(match, lineMatchIndex as number, 'preview')
-    }
-
     if (match.type === 'commit') {
         return {
             action,
@@ -146,6 +142,23 @@ export async function createPreviewOrOpenRequest(
                 fileName: '',
                 path: '',
                 content: match.message,
+                lineNumber: -1,
+                absoluteOffsetAndLengths: [],
+            },
+        }
+    }
+
+    if (match.type === 'content') {
+        return createPreviewOrOpenRequestForContentMatch(match, lineMatchIndex as number, 'preview')
+    }
+
+    if (match.type === 'repo') {
+        return {
+            action,
+            arguments: {
+                fileName: '',
+                path: '',
+                content: '(No preview available)',
                 lineNumber: -1,
                 absoluteOffsetAndLengths: [],
             },

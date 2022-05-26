@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 
@@ -9,7 +9,7 @@ import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Typography, useIsTruncated } from '@sourcegraph/wildcard'
 
-import { getResultIdForCommitMatch } from './utils'
+import { getResultId } from './utils'
 
 import styles from './SearchResult.module.scss'
 
@@ -24,10 +24,8 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({ match, sele
 
     const formattedRepositoryStarCount = formatRepositoryStarCount(match.repoStars)
 
-    const resultId = getResultIdForCommitMatch(match)
-    const onClick = (): void => {
-        selectResult(resultId)
-    }
+    const resultId = getResultId(match)
+    const onClick = useCallback((): void => selectResult(resultId), [selectResult, resultId])
 
     return (
         // The below element's accessibility is handled via a document level event listener.

@@ -1,4 +1,4 @@
-import { CommitMatch, ContentMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { ContentMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 export function getFirstResultId(results: SearchMatch[]): string | null {
     const firstContentMatch: null | ContentMatch = results.find(result => result.type === 'content') as ContentMatch
@@ -9,12 +9,16 @@ export function getFirstResultId(results: SearchMatch[]): string | null {
 }
 
 export function getMatchId(match: SearchMatch): string {
+    if (match.type === 'commit') {
+        return `${match.repository}-${match.oid.slice(0, 7)}`
+    }
+
     if (match.type === 'content') {
         return `${match.repository}-${match.path}`
     }
 
-    if (match.type === 'commit') {
-        return `${match.repository}-${match.oid.slice(0, 7)}`
+    if (match.type === 'repo') {
+        return match.repository
     }
 
     console.error('Unknown match type:', match.type)
@@ -29,7 +33,11 @@ export function getResultIdForContentMatch(match: ContentMatch, lineMatch: Conte
     return `${getMatchId(match)}-#-${match.lineMatches.indexOf(lineMatch)}`
 }
 
-export function getResultIdForCommitMatch(match: CommitMatch): string {
+export function getResultId(match: SearchMatch, lineMatch?: ContentMatch['lineMatches'][0]): string {
+    if (match.type === 'content') {
+        return `${getMatchId(match)}-#-${match.lineMatches.indexOf(lineMatch as ContentMatch['lineMatches'][0])}`
+    }
+
     return getMatchId(match)
 }
 

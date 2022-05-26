@@ -4,6 +4,7 @@ import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { CommitSearchResult } from './CommitSearchResult'
 import { FileSearchResult } from './FileSearchResult'
+import { RepoSearchResult } from './RepoSearchResult'
 import {
     getFirstResultId,
     getLineMatchIndexForContentMatch,
@@ -34,7 +35,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
     const matchIdToMatchMap = useMemo((): Map<string, SearchMatch> => {
         const map = new Map<string, SearchMatch>()
         for (const match of matches) {
-            if (['content', 'commit'].includes(match.type)) {
+            if (['content', 'commit', 'repo'].includes(match.type)) {
                 map.set(getMatchId(match), match)
             }
         }
@@ -142,25 +143,34 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
         <div className={styles.list} ref={scrollViewReference}>
             {matches.map((match: SearchMatch) => {
                 switch (match.type) {
-                    case 'content':
-                        return (
-                            <FileSearchResult
-                                key={`${match.repository}-${match.path}`}
-                                match={match}
-                                selectResult={selectResult}
-                                selectedResult={selectedResultId}
-                            />
-                        )
-                    // TODO: Add more types
                     case 'commit':
                         return (
                             <CommitSearchResult
                                 key={`${match.repository}-${match.url}`}
                                 match={match}
-                                selectResult={selectResult}
                                 selectedResult={selectedResultId}
+                                selectResult={selectResult}
                             />
                         )
+                    case 'content':
+                        return (
+                            <FileSearchResult
+                                key={`${match.repository}-${match.path}`}
+                                match={match}
+                                selectedResult={selectedResultId}
+                                selectResult={selectResult}
+                            />
+                        )
+                    case 'repo':
+                        return (
+                            <RepoSearchResult
+                                key={`${match.repository}`}
+                                match={match}
+                                selectedResult={selectedResultId}
+                                selectResult={selectResult}
+                            />
+                        )
+                    // TODO: Add more types
                     default:
                         console.log('Unknown search result type:', match.type)
                         return null
