@@ -37,8 +37,10 @@ func Test_matchOnly(t *testing.T) {
 		MultilineMatches: []result.MultilineMatch{
 			{
 				Preview: "abcdefgh",
-				Start:   result.LineColumn{Line: 1},
-				End:     result.LineColumn{Line: 1},
+				Range: result.Range{
+					Start: result.Location{Line: 1},
+					End:   result.Location{Line: 1},
+				},
 			},
 		},
 	}
