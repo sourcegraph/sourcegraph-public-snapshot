@@ -45,6 +45,8 @@ add('Overview', () => (
                         result: {
                             data: checkCredResult(),
                         },
+                        // Some sort of delay to see the spinner
+                        delay: 1000,
                     },
                 ]}
             >
