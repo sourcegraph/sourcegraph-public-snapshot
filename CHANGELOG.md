@@ -27,7 +27,7 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
-- Updated to the latest SCIP version, fixing a bug in the `src lsif upload` conversion for "Find implementations". [sourcegraph/scip#27](https://github.com/sourcegraph/scip/pull/27)
+- Updated to the latest SCIP version, fixing a bug in the `src code-intel upload` conversion for "Find implementations". [sourcegraph/scip#27](https://github.com/sourcegraph/scip/pull/27)
 
 ## 3.40.0
 
