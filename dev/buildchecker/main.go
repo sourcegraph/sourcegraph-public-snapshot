@@ -411,10 +411,12 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 		}
 
 		message := fmt.Sprintf(`
-		Welcome to your weekly CI report for week ending: %s
+		:bar_chart: Welcome to your weekly CI report for week ending: %s
 		Total builds: %d
 		Total incident duration: %s
 		Total flakes: %d÷
+
+		For more information, view the dashboards in [OKAYHQ](https://app.okayhq.com/dashboards/3856903d-33ea-4d60-9719-68fec0eb4313/build-stats-kpis).
 		`, historyFlags.createdToDate, totalBuilds, minutesToHours(totalTime), totalFlakes)
 
 		if _, err := postSlackUpdate([]string{historyFlags.slackReportWebHook}, message); err != nil {
