@@ -37,12 +37,16 @@ func TestToResultResolverList(t *testing.T) {
 		&result.FileMatch{
 			MultilineMatches: []result.MultilineMatch{{
 				Preview: "a",
-				Start:   result.LineColumn{Line: 1, Column: 0},
-				End:     result.LineColumn{Line: 1, Column: 1},
+				Range: result.Range{
+					Start: result.Location{Line: 1, Column: 0},
+					End:   result.Location{Line: 1, Column: 1},
+				},
 			}, {
 				Preview: "b",
-				Start:   result.LineColumn{Line: 2, Column: 0},
-				End:     result.LineColumn{Line: 2, Column: 1},
+				Range: result.Range{
+					Start: result.Location{Line: 2, Column: 0},
+					End:   result.Location{Line: 2, Column: 1},
+				},
 			}},
 		},
 	}
