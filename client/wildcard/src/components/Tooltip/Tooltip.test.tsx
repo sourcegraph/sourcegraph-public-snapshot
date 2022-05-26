@@ -13,7 +13,6 @@ const TooltipTest = () => (
         <Tooltip content="Tooltip 2">
             <strong data-testid="trigger-2">me</strong>
         </Tooltip>
-        <script />
     </>
 )
 

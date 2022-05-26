@@ -55,114 +55,155 @@ export const Basic: Story = () => (
     </>
 )
 
-Basic.parameters = {
-    chromatic: {
-        disable: true,
-    },
+export const Conditional: Story = () => {
+    const [clicked, setClicked] = useState<boolean>(false)
+
+    function onClick() {
+        setClicked(true)
+        setTimeout(() => setClicked(false), 1500)
+    }
+
+    return (
+        <Grid columnCount={1}>
+            <div>
+                <Tooltip content={clicked ? "Now there's a Tooltip!" : null}>
+                    <Button variant="primary" onClick={onClick}>
+                        Click Me to See a Tooltip!
+                    </Button>
+                </Tooltip>
+            </div>
+
+            <p>
+                A Tooltip can be conditionally shown by alternating between passing{' '}
+                <Typography.Code>null</Typography.Code> and a <Typography.Code>string</Typography.Code> in as{' '}
+                <Typography.Code>content</Typography.Code>.
+            </p>
+        </Grid>
+    )
 }
 
 export const DisabledTrigger: Story = () => (
-    <Tooltip content="Tooltip still works properly">
-        <Button variant="primary" disabled={true} style={{ pointerEvents: 'none' }}>
-            Disabled Button 🚫
-        </Button>
-    </Tooltip>
-)
-
-DisabledTrigger.parameters = {
-    chromatic: {
-        disable: true,
-    },
-}
-
-export const Pinned: Story = () => (
-    <>
-        <Tooltip content="My tooltip" defaultOpen={true}>
-            Example
-        </Tooltip>
+    <Grid columnCount={1}>
+        <div>
+            <Tooltip content="Tooltip still works properly">
+                <Button variant="primary" disabled={true} style={{ pointerEvents: 'none' }}>
+                    Disabled Button 🚫
+                </Button>
+            </Tooltip>
+        </div>
 
         <p>
-            <small>
-                (A pinned tooltip is shown when the target element is rendered, without any user interaction needed.)
-            </small>
+            {/**
+             * This is necessary to support our current implementation using Radix.
+             * Reference: https://www.radix-ui.com/docs/primitives/components/tooltip#displaying-a-tooltip-from-a-disabled-button
+             * */}
+            When rendering a Tooltip for a disabled <Typography.Code>{'<Button>'}</Typography.Code>, the button element
+            also needs to have the CSS property <Typography.Code>pointer-events: none</Typography.Code>.
         </p>
-    </>
+    </Grid>
 )
 
-Pinned.parameters = {
+export const LongContent: Story = () => (
+    <Grid columnCount={1}>
+        <div>
+            <Tooltip content="Nulla porttitor accumsan tincidunt. Proin eget tortor risus. Quisque velit nisi, pretium ut lacinia in, elementum id enim. Donec rutrum congue leo eget malesuada.">
+                <Button variant="primary">Example</Button>
+            </Tooltip>
+        </div>
+
+        <p>
+            Tooltips with long text will not exceed the width specified by{' '}
+            <Typography.Code>--tooltip-max-width</Typography.Code>.
+        </p>
+    </Grid>
+)
+
+export const DefaultOpen: Story = () => (
+    <Grid columnCount={1}>
+        <div>
+            <Tooltip content="Click me!" defaultOpen={true}>
+                <Button variant="primary">Example</Button>
+            </Tooltip>
+        </div>
+
+        <p>
+            A pinned tooltip is shown on initial render (no user input required) by setting{' '}
+            <Typography.Code>defaultOpen={'{true}'}</Typography.Code>.
+        </p>
+    </Grid>
+)
+
+DefaultOpen.storyName = 'Default Open (Pinned)'
+DefaultOpen.parameters = {
     chromatic: {
-        disable: true,
+        enableDarkMode: true,
+        disableSnapshot: false,
     },
 }
 
-export const Positions: Story = () => (
+export const PlacementOptions: Story = () => (
     <>
-        <Typography.H1>Tooltip</Typography.H1>
-        <Typography.H2>Positions</Typography.H2>
-
-        <Grid columnCount={4}>
+        <Grid columnCount={5}>
             <div>
                 <Tooltip content="Tooltip on top" placement="top">
-                    <Button variant="secondary">Top</Button>
-                </Tooltip>
-            </div>
-
-            <div>
-                <Tooltip content="Tooltip on bottom" placement="bottom">
-                    <Button variant="secondary">Bottom</Button>
-                </Tooltip>
-            </div>
-
-            <div>
-                <Tooltip content="Tooltip on left" placement="left">
-                    <Button variant="secondary">Left</Button>
+                    <Button variant="primary">top</Button>
                 </Tooltip>
             </div>
 
             <div>
                 <Tooltip content="Tooltip on right" placement="right">
-                    <Button variant="secondary">Right</Button>
+                    <Button variant="primary">right</Button>
+                </Tooltip>
+            </div>
+
+            <div>
+                <Tooltip content="Tooltip on bottom" placement="bottom">
+                    <Button variant="primary">bottom</Button>
+                </Tooltip>
+            </div>
+
+            <div>
+                <Tooltip content="Tooltip on left" placement="left">
+                    <Button variant="primary">left</Button>
+                </Tooltip>
+            </div>
+
+            <div>
+                <Tooltip content="Default Tooltip placement">
+                    <Button variant="primary">(default)</Button>
                 </Tooltip>
             </div>
         </Grid>
 
-        <Typography.H2>Max width</Typography.H2>
-        <Grid columnCount={1}>
-            <div>
-                <Tooltip content="Nulla porttitor accumsan tincidunt. Proin eget tortor risus. Quisque velit nisi, pretium ut lacinia in, elementum id enim. Donec rutrum congue leo eget malesuada.">
-                    <Button variant="secondary">Tooltip with long text</Button>
-                </Tooltip>
-            </div>
-        </Grid>
+        <p>
+            The Tooltip will use the specified <Typography.Code>placement</Typography.Code> unless a viewport collision
+            is detected, in which case it will be mirrored.
+        </p>
     </>
 )
 
-Positions.parameters = {
-    chromatic: {
-        disable: true,
-    },
-}
+export const UpdateContent: Story = () => {
+    const [clicked, setClicked] = useState<boolean>(false)
 
-export const UpdateText: Story = () => {
-    const [copied, setCopied] = useState<boolean>(false)
-
-    function onClick(event: React.MouseEvent<HTMLButtonElement>) {
-        setCopied(true)
-        setTimeout(() => setCopied(false), 1500)
-        event.target.dispatchEvent(new Event('focus'))
+    function onClick() {
+        setClicked(true)
+        setTimeout(() => setClicked(false), 1500)
     }
 
     return (
-        <Tooltip content={copied ? 'Copied!' : 'Click to copy.'}>
-            <Button variant="primary" onClick={onClick}>
-                Copy
-            </Button>
-        </Tooltip>
-    )
-}
+        <Grid columnCount={1}>
+            <div>
+                <Tooltip content={clicked ? 'New message!' : 'Click to change the message.'}>
+                    <Button variant="primary" onClick={onClick}>
+                        Click Me
+                    </Button>
+                </Tooltip>
+            </div>
 
-UpdateText.parameters = {
-    chromatic: {
-        disable: true,
-    },
+            <p>
+                The string passed in as <Typography.Code>content</Typography.Code> can be modified without any
+                controlled or forced updates required.
+            </p>
+        </Grid>
+    )
 }
