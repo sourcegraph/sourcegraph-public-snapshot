@@ -139,7 +139,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                                     onClick={onClickCheck}
                                     loading={checkCredLoading}
                                     successMessage={checkCredData ? 'Credential is valid' : undefined}
-                                    failedMessage={checkCredError?.message ?? undefined}
+                                    failedMessage={checkCredError ? 'Credential is not authorized' : undefined}
                                 />
                                 <Button
                                     className="text-danger text-nowrap test-code-host-connection-node-btn-remove"
