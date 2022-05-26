@@ -1,6 +1,6 @@
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
-import { Request } from '../search/jsToJavaBridgeUtil'
+import type { MatchRequest, Request, SaveLastSearchRequest } from '../search/jsToJavaBridgeUtil'
 import type { Search } from '../search/types'
 
 let savedSearch: Search = {
@@ -62,10 +62,10 @@ function handleRequest(
         }
 
         case 'preview': {
-            const { content, absoluteOffsetAndLengths } = request.arguments
+            const { content, absoluteOffsetAndLengths } = (request as MatchRequest).arguments
 
-            const start = absoluteOffsetAndLengths[0][0]
-            const length = absoluteOffsetAndLengths[0][1]
+            const start = absoluteOffsetAndLengths.length > 0 ? absoluteOffsetAndLengths[0][0] : 0
+            const length = absoluteOffsetAndLengths.length > 0 ? absoluteOffsetAndLengths[0][1] : 0
 
             let htmlContent: string = escapeHTML(content.slice(0, start))
             htmlContent += `<span id="code-details-highlight">${escapeHTML(
@@ -88,14 +88,14 @@ function handleRequest(
         }
 
         case 'open': {
-            const { path } = request.arguments
+            const { path } = (request as MatchRequest).arguments
             alert(`Opening ${path}`)
             onSuccessCallback('{}')
             break
         }
 
         case 'saveLastSearch': {
-            savedSearch = request.arguments
+            savedSearch = (request as SaveLastSearchRequest).arguments
             onSuccessCallback('{}')
             break
         }

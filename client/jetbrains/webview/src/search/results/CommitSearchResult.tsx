@@ -25,7 +25,10 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({ match, sele
     const formattedRepositoryStarCount = formatRepositoryStarCount(match.repoStars)
 
     const resultId = getResultIdForCommitMatch(match)
-    const onClick = (): void => selectResult(resultId)
+    const onClick = (): void => {
+        console.log('clicked', resultId)
+        selectResult(resultId)
+    }
 
     return (
         // The below element's accessibility is handled via a document level event listener.
@@ -36,7 +39,6 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({ match, sele
             className={classNames(styles.line, {
                 [styles.lineActive]: resultId === selectedResult,
             })}
-            onMouseDown={preventAll}
             onClick={onClick}
             key={resultId}
         >
@@ -58,9 +60,4 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({ match, sele
             )}
         </div>
     )
-}
-
-function preventAll(event: React.MouseEvent): void {
-    event.stopPropagation()
-    event.preventDefault()
 }

@@ -2,9 +2,9 @@ import { splitPath } from '@sourcegraph/shared/src/components/RepoLink'
 import { ContentMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { loadContent } from './lib/blob'
-import { PluginConfig, Theme, Search } from './types'
+import { PluginConfig, Search, Theme } from './types'
 
-interface MatchRequest {
+export interface MatchRequest {
     action: 'preview' | 'open'
     arguments: {
         fileName: string
@@ -23,7 +23,7 @@ interface GetThemeRequest {
     action: 'getTheme'
 }
 
-interface SaveLastSearchRequest {
+export interface SaveLastSearchRequest {
     action: 'saveLastSearch'
     arguments: Search
 }
@@ -82,7 +82,7 @@ export async function indicateFinishedLoading(): Promise<void> {
     }
 }
 
-export async function onPreviewChange(match: SearchMatch, lineMatchIndex: number): Promise<void> {
+export async function onPreviewChange(match: SearchMatch, lineMatchIndex?: number): Promise<void> {
     const request = await createPreviewOrOpenRequest(match, lineMatchIndex, 'preview')
     try {
         await callJava(request)
@@ -99,7 +99,7 @@ export async function onPreviewClear(): Promise<void> {
     }
 }
 
-export async function onOpen(match: SearchMatch, lineMatchIndex: number): Promise<void> {
+export async function onOpen(match: SearchMatch, lineMatchIndex?: number): Promise<void> {
     try {
         await callJava(await createPreviewOrOpenRequest(match, lineMatchIndex, 'open'))
     } catch (error) {
@@ -132,11 +132,11 @@ async function callJava(request: Request): Promise<object> {
 
 export async function createPreviewOrOpenRequest(
     match: SearchMatch,
-    lineMatchIndex: number,
+    lineMatchIndex: number | undefined,
     action: MatchRequest['action']
 ): Promise<MatchRequest> {
     if (match.type === 'content') {
-        return createPreviewOrOpenRequestForContentMatch(match, lineMatchIndex, 'preview')
+        return createPreviewOrOpenRequestForContentMatch(match, lineMatchIndex as number, 'preview')
     }
 
     if (match.type === 'commit') {

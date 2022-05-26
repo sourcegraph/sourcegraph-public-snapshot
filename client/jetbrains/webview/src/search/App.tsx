@@ -33,9 +33,9 @@ interface Props {
     instanceURL: string
     isGlobbingEnabled: boolean
     accessToken: string | null
-    onPreviewChange: (match: SearchMatch, lineIndex: number) => void
+    onPreviewChange: (match: SearchMatch, lineMatchIndex?: number) => void
     onPreviewClear: () => void
-    onOpen: (match: SearchMatch, lineIndex: number) => void
+    onOpen: (match: SearchMatch, lineMatchIndex?: number) => void
     initialSearch: Search | null
 }
 

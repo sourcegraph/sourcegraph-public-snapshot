@@ -21,6 +21,10 @@ export function getMatchId(match: SearchMatch): string {
     return ''
 }
 
+export function getMatchIdForResult(resultId: string): string {
+    return resultId.split('-#-')[0]
+}
+
 export function getResultIdForContentMatch(match: ContentMatch, lineMatch: ContentMatch['lineMatches'][0]): string {
     return `${getMatchId(match)}-#-${match.lineMatches.indexOf(lineMatch)}`
 }
@@ -29,9 +33,8 @@ export function getResultIdForCommitMatch(match: CommitMatch): string {
     return getMatchId(match)
 }
 
-export function splitResultIdForContentMatch(resultId: string): [matchId: string, lineMatchIndex: number] {
-    const [fileId, lineMatchIndex] = resultId.split('-#-')
-    return [fileId, parseInt(lineMatchIndex, 10)]
+export function getLineMatchIndexForContentMatch(resultId: string): number {
+    return parseInt(resultId.split('-#-')[1], 10)
 }
 
 export function getSearchResultElement(resultId: string): null | Element {

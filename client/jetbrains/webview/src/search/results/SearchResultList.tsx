@@ -6,18 +6,19 @@ import { CommitSearchResult } from './CommitSearchResult'
 import { FileSearchResult } from './FileSearchResult'
 import {
     getFirstResultId,
+    getLineMatchIndexForContentMatch,
     getMatchId,
+    getMatchIdForResult,
     getSearchResultElement,
     getSiblingResultElement,
-    splitResultIdForContentMatch,
 } from './utils'
 
 import styles from './SearchResultList.module.scss'
 
 interface Props {
-    onPreviewChange: (result: SearchMatch, lineMatchIndex: number) => void
+    onPreviewChange: (result: SearchMatch, lineMatchIndex?: number) => void
     onPreviewClear: () => void
-    onOpen: (result: SearchMatch, lineMatchIndex: number) => void
+    onOpen: (result: SearchMatch, lineMatchIndex?: number) => void
     matches: SearchMatch[]
 }
 
@@ -41,18 +42,21 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
     }, [matches])
 
     const selectResult = useCallback(
-        (id: null | string) => {
-            if (id !== null) {
-                getSearchResultElement(id)?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-                const [matchId, lineMatchIndex] = splitResultIdForContentMatch(id)
+        (resultId: null | string) => {
+            if (resultId !== null) {
+                getSearchResultElement(resultId)?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+                const matchId = getMatchIdForResult(resultId)
                 const match = matchIdToMatchMap.get(matchId)
                 if (match) {
-                    onPreviewChange(match, lineMatchIndex)
+                    onPreviewChange(
+                        match,
+                        match.type === 'content' ? getLineMatchIndexForContentMatch(resultId) : undefined
+                    )
                 }
             } else {
                 onPreviewClear()
             }
-            setSelectedResultId(id)
+            setSelectedResultId(resultId)
         },
         [onPreviewChange, onPreviewClear, matchIdToMatchMap]
     )
@@ -91,10 +95,13 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
             }
 
             if (event.key === 'Enter' && event.altKey) {
-                const [matchId, lineMatchIndex] = splitResultIdForContentMatch(selectedResultId)
+                const matchId = getMatchIdForResult(selectedResultId)
                 const match = matchIdToMatchMap.get(matchId)
                 if (match) {
-                    onOpen(match, lineMatchIndex)
+                    onOpen(
+                        match,
+                        match.type === 'content' ? getLineMatchIndexForContentMatch(selectedResultId) : undefined
+                    )
                 }
                 return
             }
