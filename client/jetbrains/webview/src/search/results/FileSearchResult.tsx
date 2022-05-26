@@ -4,10 +4,10 @@ import classNames from 'classnames'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 
 import { appendSubtreeQueryParameter } from '@sourcegraph/common'
-import { CodeHostIcon, SearchResultStar, formatRepositoryStarCount } from '@sourcegraph/search-ui'
+import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
 import { displayRepoName, splitPath } from '@sourcegraph/shared/src/components/RepoLink'
 import { ContentMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
-import { useIsTruncated, Link, Icon } from '@sourcegraph/wildcard'
+import { Icon, Link, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { TrimmedCodeLineWithHighlights } from './TrimmedCodeLineWithHighlights'
 import { getResultIdForContentMatch } from './utils'
@@ -55,7 +55,7 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({ match, select
                 <Icon role="img" aria-label="File" className="flex-shrink-0" as={FileDocumentIcon} />
                 <div className={classNames('mx-1', styles.headerDivider)} />
                 <CodeHostIcon repoName={match.repository} className="text-muted flex-shrink-0" />
-                <UntabableRepoFileLink
+                <RepoFileLinkWithoutTabStop
                     repoName={match.repository}
                     repoURL={repoAtRevisionURL}
                     filePath={match.path}
@@ -85,7 +85,7 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({ match, select
  * This is a fork of RepoFileLink with an added tabIndex of -1 so that it's not possible to tab
  * navigate to the individual links (since we want to use manual arrow navigation instead)
  */
-interface UntabableRepoFileLinkProps {
+interface RepoFileLinkWithoutTabStopProps {
     repoName: string
     repoURL: string
     filePath: string
@@ -93,7 +93,8 @@ interface UntabableRepoFileLinkProps {
     repoDisplayName?: string
     className?: string
 }
-const UntabableRepoFileLink: React.FunctionComponent<React.PropsWithChildren<UntabableRepoFileLinkProps>> = ({
+
+const RepoFileLinkWithoutTabStop: React.FunctionComponent<React.PropsWithChildren<RepoFileLinkWithoutTabStopProps>> = ({
     repoDisplayName,
     repoName,
     repoURL,
@@ -103,7 +104,7 @@ const UntabableRepoFileLink: React.FunctionComponent<React.PropsWithChildren<Unt
 }) => {
     const [fileBase, fileName] = splitPath(filePath)
     /**
-     * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
+     * Use the custom hook useIsTruncated to check for an overflow: ellipsis is activated for the element
      * We want to do it on mouse enter as browser window size might change after the element has been
      * loaded initially
      */
