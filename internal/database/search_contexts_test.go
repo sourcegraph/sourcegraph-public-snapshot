@@ -362,7 +362,7 @@ func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	sc := SearchContexts(db)
-	r := Repos(db)
+	r := db.Repos()
 
 	err := r.Create(ctx, &types.Repo{Name: "testA", URI: "https://example.com/a"}, &types.Repo{Name: "testB", URI: "https://example.com/b"})
 	if err != nil {
@@ -790,7 +790,7 @@ func TestSearchContexts_GetAllRevisionsForRepos(t *testing.T) {
 	// Required for this DB query.
 	internalCtx := actor.WithInternalActor(context.Background())
 	sc := SearchContexts(db)
-	r := Repos(db)
+	r := db.Repos()
 
 	repos := []*types.Repo{
 		{Name: "testA", URI: "https://example.com/a"},

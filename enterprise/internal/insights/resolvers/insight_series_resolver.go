@@ -436,7 +436,7 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 }
 
 func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
+	executor := query.NewCaptureGroupExecutor(r.postgresDB, time.Now)
 	interval := timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
 		Value: definition.SampleIntervalValue,
@@ -462,7 +462,7 @@ func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.In
 }
 
 func streamingSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	executor := query.NewStreamingExecutor(r.postgresDB, r.insightsDB, time.Now)
+	executor := query.NewStreamingExecutor(r.postgresDB, time.Now)
 	interval := timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
 		Value: definition.SampleIntervalValue,

@@ -2,10 +2,8 @@ package database
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -17,11 +15,6 @@ type OrgStatsStore interface {
 
 type orgStatsStore struct {
 	*basestore.Store
-}
-
-// OrgStats instantiates and returns a new OrgStatsStore with prepared statements.
-func OrgStats(db dbutil.DB) OrgStatsStore {
-	return &orgStatsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // OrgStatsWith instantiates and returns a new OrgStatsStore using the other store handle.
