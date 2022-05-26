@@ -1,0 +1,1 @@
+DROP VIEW batch_spec_workspace_execution_queue;
