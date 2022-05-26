@@ -101,22 +101,25 @@ const visibilitySensorOffset = { bottom: -500 }
 /**
  * A code excerpt that displays syntax highlighting and match range highlighting.
  */
-export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
+export const CodeExcerpt: React.FunctionComponent<Props> = ({
+    blobLines,
+    fetchHighlightedFileRangeLines,
+    isFirst,
+    startLine,
+    endLine,
+    highlightRanges,
+    viewerUpdates,
+    hoverifier,
+    className,
+}) => {
     const [blobLinesOrError, setBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
-    const tableContainerElements = useMemo(() => new BehaviorSubject<HTMLElement | null>(null), [])
-    const [tableContainerElement, setTableContainerElement] = useState<HTMLElement | null>(null)
     const [isVisible, setIsVisible] = useState(false)
 
-    const {
-        blobLines,
-        fetchHighlightedFileRangeLines,
-        isFirst,
-        startLine,
-        endLine,
-        highlightRanges,
-        viewerUpdates,
-        hoverifier,
-    } = props
+    // Both the behavior subject and the React state are needed here. The behavior subject is
+    // used for hoverified events while the React state is used for match highlighting.
+    // The state is needed because React won't re-render when the behavior subject's value changes.
+    const tableContainerElements = useMemo(() => new BehaviorSubject<HTMLElement | null>(null), [])
+    const [tableContainerElement, setTableContainerElement] = useState<HTMLElement | null>(null)
 
     // Get the syntax highlighted blob lines
     useEffect(() => {
@@ -143,8 +146,8 @@ export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
             const visibleRows = tableContainerElement.querySelectorAll('table tr')
             for (const highlight of highlightRanges) {
                 // Select the HTML row in the excerpt that corresponds to the line to be highlighted.
-                // highlight.line is the 0-indexed line number in the code file, and this.props.startLine is the 0-indexed
-                // line number of the first visible line in the excerpt. So, subtract this.props.startLine
+                // highlight.line is the 0-indexed line number in the code file, and startLine is the 0-indexed
+                // line number of the first visible line in the excerpt. So, subtract startLine
                 // from highlight.line to get the correct 0-based index in visibleRows that holds the HTML row.
                 const tableRow = visibleRows[highlight.line - startLine]
                 if (tableRow) {
@@ -197,7 +200,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
                 data-testid="code-excerpt"
                 className={classNames(
                     styles.codeExcerpt,
-                    props.className,
+                    className,
                     isErrorLike(blobLinesOrError) && styles.codeExcerptError
                 )}
             >
@@ -216,7 +219,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
                 {!blobLinesOrError && (
                     <table>
                         <tbody>
-                            {range(props.startLine, props.endLine).map(index => (
+                            {range(startLine, endLine).map(index => (
                                 <tr key={index}>
                                     <td className="line">{index + 1}</td>
                                     {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
