@@ -1865,7 +1865,7 @@
             "type": "string",
             "minLength": 1
           },
-          "examples":[["group", "group/subgroup", "group/subgroup/subgroup"]]
+          "examples": [["group", "group/subgroup", "group/subgroup/subgroup"]]
         }
       }
     },
