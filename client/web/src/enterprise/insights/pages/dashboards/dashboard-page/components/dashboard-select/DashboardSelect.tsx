@@ -22,6 +22,9 @@ import { MenuButton, SelectDashboardOption, SelectOption } from './components'
 import styles from './DashboardSelect.module.scss'
 
 const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = event => {
+    // ReachUI intercepts the space key to use for selecting menu items
+    // This prevents that from happening if the search input is focused
+    // so that the user can enter a space character in the search input
     if (document.activeElement === event.currentTarget && event.code === 'Space') {
         event.stopPropagation()
     }
