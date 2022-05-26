@@ -10,7 +10,7 @@ import { catchError } from 'rxjs/operators'
 
 import { QueryState } from '@sourcegraph/search'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { Icon, PageHeader, useObservable, Typography } from '@sourcegraph/wildcard'
 

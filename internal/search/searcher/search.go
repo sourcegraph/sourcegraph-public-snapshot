@@ -211,16 +211,27 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 	return func(searcherMatches []*protocol.FileMatch) []result.Match {
 		matches := make([]result.Match, 0, len(searcherMatches))
 		for _, fm := range searcherMatches {
-			lineMatches := make([]*result.LineMatch, 0, len(fm.LineMatches))
+			multilineMatches := make([]result.MultilineMatch, 0, len(fm.LineMatches))
 			for _, lm := range fm.LineMatches {
-				ranges := make([][2]int32, 0, len(lm.OffsetAndLengths))
 				for _, ol := range lm.OffsetAndLengths {
-					ranges = append(ranges, [2]int32{int32(ol[0]), int32(ol[1])})
+					multilineMatches = append(multilineMatches, result.MultilineMatch{
+						Start: result.LineColumn{
+							Line:   int32(lm.LineNumber),
+							Column: int32(ol[0]),
+						},
+						End: result.LineColumn{
+							Line:   int32(lm.LineNumber),
+							Column: int32(ol[0] + ol[1]),
+						},
+						Preview: lm.Preview,
+					})
 				}
-				lineMatches = append(lineMatches, &result.LineMatch{
-					Preview:          lm.Preview,
-					OffsetAndLengths: ranges,
-					LineNumber:       int32(lm.LineNumber),
+			}
+			for _, mm := range fm.MultilineMatches {
+				multilineMatches = append(multilineMatches, result.MultilineMatch{
+					Preview: mm.Preview,
+					Start:   result.LineColumn{Line: mm.Start.Line, Column: mm.Start.Column},
+					End:     result.LineColumn{Line: mm.End.Line, Column: mm.End.Column},
 				})
 			}
 
@@ -231,8 +242,8 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 					CommitID: commit,
 					InputRev: rev,
 				},
-				LineMatches: lineMatches,
-				LimitHit:    fm.LimitHit,
+				MultilineMatches: multilineMatches,
+				LimitHit:         fm.LimitHit,
 			})
 		}
 		return matches

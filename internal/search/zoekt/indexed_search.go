@@ -366,9 +366,9 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 			continue
 		}
 
-		var lines []*result.LineMatch
+		var lines []result.MultilineMatch
 		if typ != search.SymbolRequest {
-			lines = zoektFileMatchToLineMatches(&file)
+			lines = zoektFileMatchToMultilineMatches(&file)
 		}
 
 		for _, inputRev := range inputRevs {
@@ -379,8 +379,8 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 				symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
 			}
 			fm := result.FileMatch{
-				LineMatches: lines,
-				Symbols:     symbols,
+				MultilineMatches: lines,
+				Symbols:          symbols,
 				File: result.File{
 					InputRev: &inputRev,
 					CommitID: api.CommitID(file.Version),
@@ -400,25 +400,31 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 	})
 }
 
-func zoektFileMatchToLineMatches(file *zoekt.FileMatch) []*result.LineMatch {
-	lines := make([]*result.LineMatch, 0, len(file.LineMatches))
+func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) []result.MultilineMatch {
+	lines := make([]result.MultilineMatch, 0, len(file.LineMatches))
 
 	for _, l := range file.LineMatches {
 		if l.FileName {
 			continue
 		}
 
-		offsets := make([][2]int32, len(l.LineFragments))
-		for k, m := range l.LineFragments {
+		for _, m := range l.LineFragments {
 			offset := utf8.RuneCount(l.Line[:m.LineOffset])
 			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
-			offsets[k] = [2]int32{int32(offset), int32(length)}
+
+			lines = append(lines, result.MultilineMatch{
+				Preview: string(l.Line),
+				Start: result.LineColumn{
+					// zoekt line numbers are 1-based rather than 0-based so subtract 1
+					Line:   int32(l.LineNumber - 1),
+					Column: int32(offset),
+				},
+				End: result.LineColumn{
+					Line:   int32(l.LineNumber - 1),
+					Column: int32(offset + length),
+				},
+			})
 		}
-		lines = append(lines, &result.LineMatch{
-			Preview:          string(l.Line),
-			LineNumber:       int32(l.LineNumber - 1),
-			OffsetAndLengths: offsets,
-		})
 	}
 
 	return lines

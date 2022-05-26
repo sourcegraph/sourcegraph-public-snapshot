@@ -141,7 +141,7 @@ export const InvitedNotification: React.FunctionComponent<React.PropsWithChildre
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
         <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
-            <Icon as={CloseIcon} />
+            <Icon role="img" as={CloseIcon} aria-hidden={true} />
         </Button>
     </Alert>
 )

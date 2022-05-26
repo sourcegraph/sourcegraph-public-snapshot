@@ -77,7 +77,7 @@ func TestDefinitionDumps(t *testing.T) {
 		FinishedAt:        &finishedAt,
 		RepositoryID:      50,
 		RepositoryName:    "n-50",
-		Indexer:           "lsif-tsc",
+		Indexer:           "scip-typescript",
 		IndexerVersion:    "1.2.3",
 		AssociatedIndexID: nil,
 	}

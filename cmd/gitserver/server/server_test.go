@@ -535,7 +535,7 @@ func TestCloneRepo(t *testing.T) {
 		Description: "Test",
 	}
 	// Insert the repo into our database
-	if err := database.Repos(db).Create(ctx, dbRepo); err != nil {
+	if err := db.Repos().Create(ctx, dbRepo); err != nil {
 		t.Fatal(err)
 	}
 	assertRepoState := func(status types.CloneStatus, size int64) {
@@ -650,7 +650,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 	}
 
 	// Insert the repo into our database
-	if err := database.Repos(db).Create(ctx, dbRepo); err != nil {
+	if err := db.Repos().Create(ctx, dbRepo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -704,10 +704,10 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 	}
 
 	if deletedInDB {
-		if err := database.Repos(db).Delete(ctx, dbRepo.ID); err != nil {
+		if err := db.Repos().Delete(ctx, dbRepo.ID); err != nil {
 			t.Fatal(err)
 		}
-		repos, err := database.Repos(db).List(ctx, database.ReposListOptions{IncludeDeleted: true, IDs: []api.RepoID{dbRepo.ID}})
+		repos, err := db.Repos().List(ctx, database.ReposListOptions{IncludeDeleted: true, IDs: []api.RepoID{dbRepo.ID}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -766,7 +766,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 		Description: "Test",
 	}
 	// Insert the repo into our database
-	if err := database.Repos(db).Create(ctx, dbRepo); err != nil {
+	if err := db.Repos().Create(ctx, dbRepo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -885,7 +885,7 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 		Description: "Test",
 	}
 	// Insert the repo into our database
-	if err := database.Repos(db).Create(ctx, dbRepo); err != nil {
+	if err := db.Repos().Create(ctx, dbRepo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1224,7 +1224,7 @@ func TestSyncRepoState(t *testing.T) {
 	}
 
 	// Insert the repo into our database
-	err := database.Repos(db).Create(ctx, dbRepo)
+	err := db.Repos().Create(ctx, dbRepo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1261,7 +1261,7 @@ func TestSyncRepoState(t *testing.T) {
 		}
 
 		// We should continue to sync deleted repos
-		if err := database.Repos(db).Delete(ctx, dbRepo.ID); err != nil {
+		if err := db.Repos().Delete(ctx, dbRepo.ID); err != nil {
 			t.Fatal(err)
 		}
 

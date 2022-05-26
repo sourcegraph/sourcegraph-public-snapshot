@@ -4,7 +4,6 @@ import {
     UpdateLineChartSearchInsightInput,
     UpdatePieChartSearchInsightInput,
 } from '../../../../../../../graphql-operations'
-import { InsightExecutionType } from '../../../../types'
 import {
     MinimalCaptureGroupInsightData,
     MinimalLangStatsInsightData,
@@ -13,16 +12,13 @@ import {
 import { getStepInterval } from '../../utils/get-step-interval'
 
 export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightData): UpdateLineChartSearchInsightInput {
-    const repositories = insight.executionType !== InsightExecutionType.Backend ? insight.repositories : []
+    const repositories = insight.repositories
     const [unit, value] = getStepInterval(insight.step)
-    const filters: InsightViewFiltersInput =
-        insight.executionType === InsightExecutionType.Backend
-            ? {
-                  includeRepoRegex: insight.filters.includeRepoRegexp,
-                  excludeRepoRegex: insight.filters.excludeRepoRegexp,
-                  searchContexts: insight.filters.context ? [insight.filters.context] : [],
-              }
-            : {}
+    const filters: InsightViewFiltersInput = {
+        includeRepoRegex: insight.filters.includeRepoRegexp,
+        excludeRepoRegex: insight.filters.excludeRepoRegexp,
+        searchContexts: insight.filters.context ? [insight.filters.context] : [],
+    }
 
     return {
         dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({

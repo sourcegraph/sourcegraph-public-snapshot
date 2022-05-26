@@ -39,7 +39,7 @@ const (
 	bitbucketCloudDestinationHash    = "abcdefabcdefabcdefabcdefabcdefabcdefabcd"
 )
 
-func testBitbucketCloudWebhook(db *sql.DB, userID int32) func(*testing.T) {
+func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 

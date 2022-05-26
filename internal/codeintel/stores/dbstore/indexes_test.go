@@ -49,8 +49,8 @@ func TestGetIndexByID(t *testing.T) {
 		},
 		LocalSteps:  []string{"echo hello"},
 		Root:        "/foo/bar",
-		Indexer:     "sourcegraph/lsif-tsc:latest",
-		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
+		Indexer:     "sourcegraph/scip-typescript:latest",
+		IndexerArgs: []string{"index", "--yarn-workspaces"},
 		Outfile:     "dump.lsif",
 		ExecutionLogs: []workerutil.ExecutionLogEntry{
 			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
@@ -376,8 +376,8 @@ func TestInsertIndexes(t *testing.T) {
 			},
 			LocalSteps:  []string{"echo hello"},
 			Root:        "/foo/bar",
-			Indexer:     "sourcegraph/lsif-tsc:latest",
-			IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
+			Indexer:     "sourcegraph/scip-typescript:latest",
+			IndexerArgs: []string{"index", "--yarn-workspaces"},
 			Outfile:     "dump.lsif",
 			ExecutionLogs: []workerutil.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
@@ -433,8 +433,8 @@ func TestInsertIndexes(t *testing.T) {
 			},
 			LocalSteps:  []string{"echo hello"},
 			Root:        "/foo/bar",
-			Indexer:     "sourcegraph/lsif-tsc:latest",
-			IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
+			Indexer:     "sourcegraph/scip-typescript:latest",
+			IndexerArgs: []string{"index", "--yarn-workspaces"},
 			Outfile:     "dump.lsif",
 			ExecutionLogs: []workerutil.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},

@@ -3,7 +3,6 @@ package webhooks
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -37,7 +36,7 @@ import (
 )
 
 // Run from integration_test.go
-func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
+func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 	return func(t *testing.T) {
 		now := timeutil.Now()
 		clock := func() time.Time { return now }
@@ -56,8 +55,8 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		if token == "" {
 			token = "no-GITHUB_TOKEN-set"
 		}
-		repoStore := database.Repos(db)
-		esStore := database.NewDB(db).ExternalServices()
+		repoStore := db.Repos()
+		esStore := db.ExternalServices()
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",

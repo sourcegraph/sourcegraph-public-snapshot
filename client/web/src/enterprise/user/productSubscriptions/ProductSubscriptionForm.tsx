@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 
+import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import * as H from 'history'
-import { ReactStripeElements } from 'react-stripe-elements'
 import { from, of, throwError, Observable } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
@@ -90,9 +90,7 @@ const DEFAULT_USER_COUNT = MIN_USER_COUNT
 /**
  * Displays a form for a product subscription.
  */
-const _ProductSubscriptionForm: React.FunctionComponent<
-    React.PropsWithChildren<Props & ReactStripeElements.InjectedStripeProps>
-> = ({
+const _ProductSubscriptionForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     accountID,
     subscriptionID,
     onSubmit: parentOnSubmit,
@@ -102,11 +100,10 @@ const _ProductSubscriptionForm: React.FunctionComponent<
     primaryButtonTextNoPaymentRequired = primaryButtonText,
     afterPrimaryButton,
     isLightTheme,
-    stripe,
 }) => {
-    if (!stripe) {
-        throw new Error('billing service is not available')
-    }
+    const stripe = useStripe()
+    const stripeElements = useElements()
+    const cardElement = stripeElements?.getElement(CardElement)
 
     /** The selected product plan. */
     const [billingPlanID, setBillingPlanID] = useState<string | null>(initialValue?.billingPlanID || null)
@@ -135,13 +132,14 @@ const _ProductSubscriptionForm: React.FunctionComponent<
                 submits.pipe(
                     switchMap(() =>
                         // TODO(sqs): store name, address, company, etc., in token
-                        (paymentValidity !== PaymentValidity.NoPaymentRequired
-                            ? from(stripe.createToken())
-                            : of({ token: undefined, error: undefined })
+                        from(
+                            stripe && cardElement && paymentValidity !== PaymentValidity.NoPaymentRequired
+                                ? from(stripe.createToken(cardElement))
+                                : of({ token: undefined, error: undefined })
                         ).pipe(
-                            switchMap(({ token, error }) => {
+                            switchMap(({ error, token }) => {
                                 if (error) {
-                                    return throwError(error)
+                                    return throwError(new Error(`Stripe error: ${error.message || 'unknown'}`))
                                 }
                                 if (!accountID) {
                                     return throwError(new Error('no account (unauthenticated user)'))
@@ -170,7 +168,7 @@ const _ProductSubscriptionForm: React.FunctionComponent<
                         )
                     )
                 ),
-            [accountID, billingPlanID, parentOnSubmit, paymentValidity, stripe, userCount]
+            [stripe, cardElement, paymentValidity, accountID, billingPlanID, userCount, parentOnSubmit]
         )
     )
     const onSubmit = useCallback<React.FormEventHandler>(
@@ -279,5 +277,7 @@ const _ProductSubscriptionForm: React.FunctionComponent<
 }
 
 export const ProductSubscriptionForm: React.FunctionComponent<React.PropsWithChildren<Props>> = props => (
-    <StripeWrapper<Props> component={_ProductSubscriptionForm} {...props} />
+    <StripeWrapper>
+        <_ProductSubscriptionForm {...props} />
+    </StripeWrapper>
 )

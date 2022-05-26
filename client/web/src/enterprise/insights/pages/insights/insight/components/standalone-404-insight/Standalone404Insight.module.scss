@@ -1,0 +1,26 @@
+.container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.chart {
+    margin-bottom: 5rem;
+
+    --static-chart-purple: #e3c0fc;
+    --static-chart-orange: #fbd1cd;
+    --static-chart-blue: #bbeef7;
+
+    :global(.theme-dark) & {
+        --static-chart-purple: #4c1579;
+        --static-chart-orange: #72302d;
+        --static-chart-blue: var(--logo-blue);
+    }
+}
+
+.redirect-button {
+    margin-top: 2rem;
+}

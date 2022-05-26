@@ -255,7 +255,7 @@ you@sourcegraph-executor-h0rv:~$ curl <your externalURL here>
 ```
 
 9. Go back to the site admin page, expand **Code intelligence**, click **Configuration**, click **Create new policy**, and fill in:
-  - Name: `LSIF`
+  - Name: `TEST`
   - Click **add a repository pattern**
   - Repository pattern #1: set this to an existing repository on your Sourcegraph instance (e.g. `github.com/gorilla/mux`)
   - Type: `HEAD`
@@ -264,8 +264,8 @@ you@sourcegraph-executor-h0rv:~$ curl <your externalURL here>
   - Try clicking **Enqueue**
   - Try setting a higher update frequency: `PRECISE_CODE_INTEL_AUTO_INDEXING_TASK_INTERVAL=10s`
   - Try setting a lower delay: `PRECISE_CODE_INTEL_AUTO_INDEXING_REPOSITORY_PROCESS_DELAY=10s`
-11. Once you have a completed indexing job, click **Uploads** and check to see that the LSIF dump has been uploaded.
-12. Once the dump has been uploaded, you should see the **`PRECISE`** badge in the hover popover! 🎉
+11. Once you have a completed indexing job, click **Uploads** and check to see that an index has been uploaded.
+12. Once the index has been uploaded, you should see the **`PRECISE`** badge in the hover popover! 🎉
 13. Optionally, add `.terraform`, `terraform.tfstate`, and `terraform.tfstate.backup` to your `.gitignore`.
 
 ## Configuring auto scaling

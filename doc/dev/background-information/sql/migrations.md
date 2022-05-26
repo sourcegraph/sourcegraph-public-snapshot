@@ -8,7 +8,7 @@ Database migrations may be applied arbitrarily long before the new version is de
 
 ## Common migrations
 
-Some migrations are difficult to do in a single step. For instance, renaming a column, table, or view, or adding a column with a non-nullable constraint will all break existing code that accesses that table or view. In order to do such changes you may need to break your changes into several parts separated by a minor release.
+Some migrations are difficult to do in a single step or idempotently. For instance, renaming a column, table, or view, or adding a column with a non-nullable constraint will all break existing code that accesses that table or view. In order to do such changes you may need to break your changes into several parts separated by a minor release.
 
 The remainder of this document is formatted as a recipe book of common types of migrations. We encourage any developer to add a recipe here when a specific type of migration is under-documented.
 
@@ -60,3 +60,17 @@ _On the `3.{X+1}` branch:_
 If using a regular migration, continue immediately. If using an out-of-band migration, mark it deprecated at some future version `3.{X+Y}` and wait for this version's branch cut; out-of-band migrations are not guaranteed to have completed until the underlying instance has been upgraded past the migration's deprecation version. This means there may exist yet-to-be-migrated rows with a value for `c1` but no value for column `c2` until this version.
 
 1. Remove the fallback reads from column `c1`. There should be no remaining references to column `c1`, which can now be removed or abandoned in-place.
+
+**Creating a new type (enum etc).**
+
+When creating new types, such as enums, you may hit upon issues with the migration idempotency tests caused by `CREATE TYPE` not supporting the `IF NOT EXISTS` clause commonly found in other statements. When trying to use `DROP TYPE` in the up-migration, you'll notice you would first have to drop the newly added columns that reference that type too, and quickly you can end up having your down-migration duplicated between both up- and down-migration. We can emulate the `IF NOT EXISTS` clause with the following:
+
+```sql
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'YOUR_TYPENAME_HERE') THEN
+        -- create YOUR_TYPENAME_HERE type here
+    END IF;
+END
+$$;
+```
