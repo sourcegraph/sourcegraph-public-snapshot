@@ -55,7 +55,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
     const isHorizontalMode = hasViewManySeries && hasEnoughXSpace
 
     return (
-        <div ref={ref} className={classNames(className, styles.chart, { [styles.chartHorizontal]: isHorizontalMode })}>
+        <div ref={ref} className={classNames(className, styles.root, { [styles.rootHorizontal]: isHorizontalMode })}>
             {width && (
                 <>
                     <ParentSize
