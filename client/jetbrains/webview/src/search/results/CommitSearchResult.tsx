@@ -26,7 +26,6 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({ match, sele
 
     const resultId = getResultIdForCommitMatch(match)
     const onClick = (): void => {
-        console.log('clicked', resultId)
         selectResult(resultId)
     }
 
