@@ -258,6 +258,9 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthToken(ctx context.Context, acct *ex
 		break
 	}
 	if oauthConfig == nil {
+		log15.Warn("PermsSyncer.maybeRefreshGitLabOAuthToken, external service has no auth.provider",
+			"externalAccountID", acct.ID,
+		)
 		return nil
 	}
 
