@@ -35,7 +35,7 @@ export const Popover: FunctionComponent<PropsWithChildren<PopoverProps>> = props
     const { children, anchor, isOpen, onOpenChange = noop } = props
 
     const [targetElement, setTargetElement] = useState<HTMLElement | null>(null)
-    const [tailElement, setTailElement] = useState<HTMLElement | null>(null)
+    const [tailElement, setTailElement] = useState<SVGGElement | null>(null)
 
     const [isInternalOpen, setInternalOpen] = useState<boolean>(false)
     const isControlled = isOpen !== undefined

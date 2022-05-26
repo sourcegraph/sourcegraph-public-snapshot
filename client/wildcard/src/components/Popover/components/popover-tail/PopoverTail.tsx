@@ -17,7 +17,7 @@ export const PopoverTail: FunctionComponent<PopoverTailProps> = props => {
 
     return createPortal(
         <svg {...props} width="17.2" height="11" viewBox="0 0 200 130" className={style.tail} ref={setTailElement}>
-            <path d="M0,0 L100,130 200,0" className={style.tailTriaglePath} />
+            <path d="M0,0 L100,130 200,0" className={style.tailTrianglePath} />
         </svg>,
         document.body
     )
