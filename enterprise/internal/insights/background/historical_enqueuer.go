@@ -205,7 +205,6 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 		return err
 	}
 
-	log15.Info("writing jobs")
 	for _, job := range totalJobs {
 		// todo: fix this transactionality
 		err := s.enqueueQueryRunnerJob(ctx, job)
