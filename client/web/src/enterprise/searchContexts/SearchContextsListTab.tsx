@@ -215,6 +215,7 @@ export const SearchContextsListTab: React.FunctionComponent<React.PropsWithChild
                 cursorPaging={true}
                 inputClassName={styles.filterInput}
                 inputPlaceholder="Filter search contexts..."
+                inputAriaLabel="Filter search contexts"
             />
         </>
     )

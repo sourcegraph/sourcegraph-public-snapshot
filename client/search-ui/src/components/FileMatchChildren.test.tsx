@@ -38,7 +38,7 @@ const defaultProps = {
     ],
     grouped: [
         {
-            matches: [{ line: 3, character: 7, highlightLength: 4, isInContext: true }],
+            matches: [{ line: 3, character: 7, highlightLength: 4 }],
             position: { line: 3, character: 7 },
             startLine: 3,
             endLine: 4,

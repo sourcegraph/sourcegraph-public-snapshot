@@ -141,7 +141,7 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	indexer := &searchIndexerServer{
 		db:            db,
 		ListIndexable: backend.NewRepos(db).ListIndexable,
-		RepoStore:     database.Repos(db),
+		RepoStore:     db.Repos(),
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
 		},

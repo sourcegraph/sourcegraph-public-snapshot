@@ -426,18 +426,6 @@
           "type": "boolean",
           "default": true
         },
-        "enableGitserverClientLookupTable": {
-          "description": "Enable getting repository location from the database. Works only on Cloud.",
-          "type": "boolean",
-          "default": false
-        },
-        "gitserverClientLookupTable.Rate": {
-          "description": "Percentage of calls to AddrFromRepo that read from the database. Only used if enableGitserverClientLookupTable is true.",
-          "type": "integer",
-          "default": 0,
-          "minimum": 0,
-          "maximum": 100
-        },
         "gitServerPinnedRepos": {
           "description": "List of repositories pinned to specific gitserver instances. The specified repositories will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the repository, then it must be re-cloned to the specified server.",
           "type": "object",

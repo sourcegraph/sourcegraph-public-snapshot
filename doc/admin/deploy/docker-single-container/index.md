@@ -138,7 +138,7 @@ Before upgrading, refer to the [update notes for single-container Sourcegraph wi
 
 To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
 
-You can always find the version number details of the latest release via the [changelog](https://docs.sourcegraph.com/changelog).
+You can always find the version number details of the latest release via the [changelog](https://docs.sourcegraph.com/CHANGELOG).
 
 - As a precaution, before updating, we recommend backing up the contents of the Docker volumes used by Sourcegraph.
 - If you need a HA deployment, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph).

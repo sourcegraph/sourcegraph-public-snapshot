@@ -1075,4 +1075,3 @@ INSERT INTO lsif_data_apidocs_num_dumps_indexed VALUES (0);
 INSERT INTO lsif_data_apidocs_num_pages VALUES (0);
 INSERT INTO lsif_data_apidocs_num_search_results_private VALUES (0);
 INSERT INTO lsif_data_apidocs_num_search_results_public VALUES (0);
-INSERT INTO rockskip_ancestry VALUES (0);

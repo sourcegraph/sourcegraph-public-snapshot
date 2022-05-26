@@ -5,17 +5,15 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
-
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -24,11 +22,11 @@ type StreamingQueryExecutor struct {
 	justInTimeExecutor
 }
 
-func NewStreamingExecutor(postgres, insightsDb dbutil.DB, clock func() time.Time) *StreamingQueryExecutor {
+func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *StreamingQueryExecutor {
 	return &StreamingQueryExecutor{
 		justInTimeExecutor: justInTimeExecutor{
 			db:        database.NewDB(postgres),
-			repoStore: database.Repos(postgres),
+			repoStore: postgres.Repos(),
 			filter:    &compression.NoopFilter{},
 			clock:     clock,
 		},
