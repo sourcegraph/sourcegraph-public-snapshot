@@ -9,8 +9,6 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -215,7 +213,6 @@ func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gi
 	for page := 1; hasNextPage; page++ {
 		gitlabGroups, hasNextPage, err = glClient.ListGroups(ctx, page)
 		if err != nil {
-			log15.Warn("Could not get GitLab groups for the authenticated user", "error", err)
 			return false
 		}
 
