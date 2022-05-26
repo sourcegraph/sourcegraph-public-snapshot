@@ -26,11 +26,11 @@ TRUNCATE TABLE lsif_uploads_audit_logs;
 TRUNCATE TABLE configuration_policies_audit_logs;
 
 ALTER TABLE lsif_uploads_audit_logs
-ADD COLUMN IF NOT EXISTS sequence BIGINT NOT NULL,
+ADD COLUMN IF NOT EXISTS sequence BIGINT NOT NULL DEFAULT nextval('lsif_uploads_audit_logs_seq'::regclass),
 ADD COLUMN IF NOT EXISTS operation audit_log_operation NOT NULL;
 
 ALTER TABLE configuration_policies_audit_logs
-ADD COLUMN IF NOT EXISTS sequence BIGINT NOT NULL,
+ADD COLUMN IF NOT EXISTS sequence BIGINT NOT NULL DEFAULT nextval('configuration_policies_audit_logs_seq'::regclass),
 ADD COLUMN IF NOT EXISTS operation audit_log_operation NOT NULL;
 
 ALTER SEQUENCE lsif_uploads_audit_logs_seq OWNED BY lsif_uploads_audit_logs.sequence;
