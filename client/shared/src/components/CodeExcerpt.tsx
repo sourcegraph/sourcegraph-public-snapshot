@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import { range, noop } from 'lodash'
+import { range } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import VisibilitySensor from 'react-visibility-sensor'
 import { of, Observable, Subscription, BehaviorSubject } from 'rxjs'
@@ -120,28 +120,28 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     // The state is needed because React won't re-render when the behavior subject's value changes.
     const tableContainerElements = useMemo(() => new BehaviorSubject<HTMLElement | null>(null), [])
     const [tableContainerElement, setTableContainerElement] = useState<HTMLElement | null>(null)
+    const updateTableContainerElementReference = useCallback(
+        (reference: HTMLElement | null): void => {
+            tableContainerElements.next(reference)
+            setTableContainerElement(reference)
+        },
+        [tableContainerElements]
+    )
 
     // Get the syntax highlighted blob lines
     useEffect(() => {
+        let subscription: Subscription | undefined
         if (isVisible) {
-            let observable: Observable<string[]>
-            if (blobLines) {
-                observable = of(blobLines)
-            } else {
-                observable = fetchHighlightedFileRangeLines(isFirst, startLine, endLine)
-            }
-
-            const subscription = observable.pipe(catchError(error => [asError(error)])).subscribe(blobLinesOrError => {
+            const observable = blobLines ? of(blobLines) : fetchHighlightedFileRangeLines(isFirst, startLine, endLine)
+            subscription = observable.pipe(catchError(error => [asError(error)])).subscribe(blobLinesOrError => {
                 setBlobLinesOrError(blobLinesOrError)
             })
-
-            return () => subscription.unsubscribe()
         }
-        return noop
+        return () => subscription?.unsubscribe()
     }, [blobLines, endLine, fetchHighlightedFileRangeLines, isFirst, isVisible, startLine])
 
     // Highlight the search matches
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (tableContainerElement) {
             const visibleRows = tableContainerElement.querySelectorAll('table tr')
             for (const highlight of highlightRanges) {
@@ -185,14 +185,6 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
             hoverifierSubscription?.unsubscribe()
         }
     }, [hoverifier, tableContainerElements, viewerUpdates])
-
-    const updateTableContainerElementReference = useCallback(
-        (reference: HTMLElement | null): void => {
-            tableContainerElements.next(reference)
-            setTableContainerElement(reference)
-        },
-        [tableContainerElements]
-    )
 
     return (
         <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={visibilitySensorOffset}>
