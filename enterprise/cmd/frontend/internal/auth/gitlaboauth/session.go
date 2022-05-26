@@ -154,7 +154,7 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 		}
 		svc.Config, err = jsonc.Edit(svc.Config, token.Expiry.Unix(), "token.oauth.expiry")
 		if err != nil {
-			return nil, "Error updating refresh token", err
+			return nil, "Error updating token expiry", err
 		}
 		svc.UpdatedAt = now
 	}

@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -287,6 +288,72 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 	return nil
 }
 
+func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Context, svc *types.ExternalService) error {
+	if svc.Kind != extsvc.KindGitLab {
+		return nil
+	}
+
+	parsed, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+	if err != nil {
+		return errors.Wrap(err, "parsing external service config")
+	}
+
+	config, ok := parsed.(*schema.GitLabConnection)
+	if !ok {
+		return errors.Errorf("want *schema.GitLabConnection, got %T", parsed)
+	}
+
+	// We may have old config without a refresh token
+	if config.TokenOauthRefresh == "" {
+		return nil
+	}
+
+	var oauthConfig *oauth2.Config
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Gitlab == nil ||
+			strings.TrimSuffix(config.Url, "/") != strings.TrimSuffix(authProvider.Gitlab.Url, "/") {
+			continue
+		}
+		oauthConfig = oauth2ConfigFromGitLabProvider(authProvider.Gitlab)
+		break
+	}
+
+	if oauthConfig == nil {
+		return nil
+	}
+
+	tok := &oauth2.Token{
+		AccessToken:  config.Token,
+		RefreshToken: config.TokenOauthRefresh,
+		Expiry:       time.Unix(int64(config.TokenOauthExpiry), 0),
+	}
+
+	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
+	if err != nil {
+		return errors.Wrap(err, "refresh token")
+	}
+
+	if refreshedToken.AccessToken != tok.AccessToken {
+		svc.Config, err = jsonc.Edit(svc.Config, tok.AccessToken, "token")
+		if err != nil {
+			return errors.Wrap(err, "updating OAuth token")
+		}
+		svc.Config, err = jsonc.Edit(svc.Config, tok.RefreshToken, "token.oauth.refresh")
+		if err != nil {
+			return errors.Wrap(err, "updating OAuth refresh token")
+		}
+		svc.Config, err = jsonc.Edit(svc.Config, tok.Expiry.Unix(), "token.oauth.expiry")
+		if err != nil {
+			return errors.Wrap(err, "updating OAuth token expiry")
+		}
+		svc.UpdatedAt = time.Now()
+		if err := s.db.ExternalServices().Upsert(ctx, svc); err != nil {
+			return errors.Wrap(err, "upserting external service")
+		}
+	}
+	return nil
+}
+
 // fetchUserPermsViaExternalAccounts uses external accounts (aka. login
 // connections) to list all accessible private repositories on code hosts for
 // the given user.
@@ -372,11 +439,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 		if err := s.waitForRateLimit(ctx, provider.URN(), 1, "user"); err != nil {
 			return nil, nil, errors.Wrap(err, "wait for rate limiter")
-		}
-
-		err := s.maybeRefreshGitLabOAuthTokenFromAccount(ctx, acct)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "refresh GitLab OAuth token")
 		}
 
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
@@ -669,8 +731,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 	// GitLab OAuth token expire every two hours and this code path is the best place
 	// to refresh them. Tokens can exist in user code host connections or via a login
-	// connection, or both and they can be different tokens so we need to update them
-	// in both places.
+	// connection, or both and they can be different tokens so we need to refresh
+	// them in both places.
 
 	// Update tokens stored in external accounts:
 	accts, err := s.permsStore.ListExternalAccounts(ctx, user.ID)
@@ -678,13 +740,25 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "list external accounts")
 	}
 	for _, acct := range accts {
+		log15.Info("maybe refresh account", "userID", acct.UserID)
 		if err := s.maybeRefreshGitLabOAuthTokenFromAccount(ctx, acct); err != nil {
-			return errors.Wrap(err, "refreshing GitLab OAuth token")
+			return errors.Wrap(err, "refreshing GitLab OAuth token for account")
 		}
 	}
 
 	// Update tokens stored in user code host connections:
-	// TODO
+	svcs, err := s.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
+		NamespaceUserID: userID,
+		Kinds:           []string{extsvc.KindGitLab},
+	})
+	if err != nil {
+		return errors.Wrap(err, "list external services")
+	}
+	for _, svc := range svcs {
+		if err := s.maybeRefreshGitLabOAuthTokenFromCodeHost(ctx, svc); err != nil {
+			return errors.Wrap(err, "refreshing GitLab OAuth token for code host")
+		}
+	}
 
 	// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
 	//  table, the user has proven that they have read access to the repository.
