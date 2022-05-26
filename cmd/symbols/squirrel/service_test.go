@@ -72,7 +72,17 @@ func TestNonLocalDefinition(t *testing.T) {
 
 	ss := func(ctx context.Context, args symbolTypes.SearchArgs) (result.Symbols, error) {
 		results := result.Symbols{}
+	nextSymbol:
 		for _, s := range allSymbols {
+			if args.IncludePatterns != nil {
+				for _, p := range args.IncludePatterns {
+					match, err := regexp.MatchString(p, s.Path)
+					fatalIfErrorLabel(t, err, "matching a pattern")
+					if !match {
+						continue nextSymbol
+					}
+				}
+			}
 			match, err := regexp.MatchString(args.Query, s.Name)
 			if err != nil {
 				return nil, err

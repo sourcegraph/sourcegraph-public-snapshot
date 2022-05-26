@@ -1,3 +1,5 @@
+package sub;
+
 //    vv C1 def
 class C1 {
 

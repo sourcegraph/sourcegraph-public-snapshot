@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"sort"
 )
 
 func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node, err error) {
@@ -20,16 +21,14 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 			prev := cur
 			cur = cur.Parent()
 			if cur == nil {
-				return squirrel.symbolSearchOne(
-					ctx,
-					node.RepoCommitPath.Repo,
-					node.RepoCommitPath.Commit,
-					[]string{filepath.Dir(node.RepoCommitPath.Path)},
-					ident,
-				)
+				squirrel.breadcrumb(node, "getDefJava: ran out of parents")
+				return nil, nil
 			}
 
 			switch cur.Type() {
+
+			case "program":
+				return squirrel.getDefInImportsOrCurrentPackageJava(ctx, swapNode(node, cur), ident)
 
 			// Check for field access
 			case "field_access":
@@ -211,13 +210,8 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 			prev := cur
 			cur = cur.Parent()
 			if cur == nil {
-				return squirrel.symbolSearchOne(
-					ctx,
-					node.RepoCommitPath.Repo,
-					node.RepoCommitPath.Commit,
-					[]string{filepath.Dir(node.RepoCommitPath.Path)},
-					ident,
-				)
+				squirrel.breadcrumb(node, "getDefJava: ran out of parents")
+				return nil, nil
 			}
 
 			switch cur.Type() {
@@ -236,7 +230,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 						return swapNodePtr(node, capture.Node), nil
 					}
 				}
-				continue
+				return squirrel.getDefInImportsOrCurrentPackageJava(ctx, swapNode(node, cur), ident)
 			case "class_declaration":
 				query := `[
 					(class_declaration name: (identifier) @ident)
@@ -411,6 +405,95 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 		squirrel.breadcrumb(node, fmt.Sprintf("getTypeDefJava: unrecognized node type %q", node.Type()))
 		return nil, nil
 	}
+}
+
+func (squirrel *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context.Context, program Node, ident string) (ret *Node, err error) {
+	defer squirrel.onCall(program, String(program.Type()), lazyNodeStringer(&ret))()
+
+	// Collect imports
+	imports := [][]string{}
+	for _, importNode := range children(program.Node) {
+		if importNode.Type() != "import_declaration" {
+			continue
+		}
+		query := `(identifier) @ident`
+		captures, err := allCaptures(query, swapNode(program, importNode))
+		if err != nil {
+			return nil, err
+		}
+		sort.Slice(captures, func(i, j int) bool {
+			return captures[i].StartByte() < captures[j].StartByte()
+		})
+		components := []string{}
+		for _, capture := range captures {
+			components = append(components, capture.Content(capture.Contents))
+		}
+		for _, child := range children(importNode) {
+			if child.Type() == "asterisk" {
+				components = append(components, "*")
+				break
+			}
+		}
+		if len(components) == 0 {
+			continue
+		}
+		imports = append(imports, components)
+	}
+
+	// Check explicit imports (faster) before running symbol searches (slower)
+	for _, importPath := range imports {
+		last := importPath[len(importPath)-1]
+		if last == "*" {
+			continue
+		}
+		if last == ident {
+			return squirrel.symbolSearchOne(
+				ctx,
+				program.RepoCommitPath.Repo,
+				program.RepoCommitPath.Commit,
+				[]string{filepath.Join(importPath[:len(importPath)-1]...)},
+				ident,
+			)
+		}
+	}
+
+	// Search in current package
+	found, err := squirrel.symbolSearchOne(
+		ctx,
+		program.RepoCommitPath.Repo,
+		program.RepoCommitPath.Commit,
+		[]string{filepath.Dir(program.RepoCommitPath.Path)},
+		ident,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if found != nil {
+		return found, nil
+	}
+
+	// Search in packages imported with an asterisk
+	for _, importPath := range imports {
+		if importPath[len(importPath)-1] != "*" {
+			continue
+		}
+
+		found, err := squirrel.symbolSearchOne(
+			ctx,
+			program.RepoCommitPath.Repo,
+			program.RepoCommitPath.Commit,
+			[]string{filepath.Join(importPath[:len(importPath)-1]...)},
+			ident,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if found != nil {
+			return found, nil
+		}
+	}
+
+	return nil, nil
 }
 
 type Type interface {
