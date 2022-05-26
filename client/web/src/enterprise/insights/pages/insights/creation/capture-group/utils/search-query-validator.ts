@@ -6,6 +6,7 @@ export interface Checks {
     isValidOperator: true | false | undefined
     isValidPatternType: true | false | undefined
     isNotRepo: true | false | undefined
+    isNotContext: true | false | undefined
     isNotCommitOrDiff: true | false | undefined
     isNoNewLines: true | false | undefined
 }
@@ -16,6 +17,7 @@ export const searchQueryValidator = (value: string, touched: boolean): Checks =>
             isValidOperator: undefined,
             isValidPatternType: undefined,
             isNotRepo: undefined,
+            isNotContext: undefined,
             isNotCommitOrDiff: undefined,
             isNoNewLines: undefined,
         }
@@ -47,6 +49,10 @@ export const searchQueryValidator = (value: string, touched: boolean): Checks =>
             filter => resolveFilter(filter.field.value)?.type === FilterType.repo && filter.value
         )
 
+        const hasContext = filters.some(
+            filter => resolveFilter(filter.field.value)?.type === FilterType.context && filter.value
+        )
+
         const hasCommit = filters.some(
             filter => resolveFilter(filter.field.value)?.type === FilterType.type && filter.value?.value === 'commit'
         )
@@ -61,6 +67,7 @@ export const searchQueryValidator = (value: string, touched: boolean): Checks =>
             isValidOperator: !hasAnd && !hasOr && !hasNot,
             isValidPatternType: !hasLiteralPattern && !hasStructuralPattern,
             isNotRepo: !hasRepo,
+            isNotContext: !hasContext,
             isNotCommitOrDiff: !hasCommit && !hasDiff,
             isNoNewLines: !hasNewLines,
         }
@@ -70,6 +77,7 @@ export const searchQueryValidator = (value: string, touched: boolean): Checks =>
         isValidOperator: false,
         isValidPatternType: false,
         isNotRepo: false,
+        isNotContext: false,
         isNotCommitOrDiff: false,
         isNoNewLines: false,
     }

@@ -1,27 +1,38 @@
-$filter-input-height: 1.5rem;
+$filter-input-height: 2.5rem;
 .filter {
     height: $filter-input-height;
     padding-left: 1rem;
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
-
-    border-bottom: 1px solid var(--body-bg);
+    padding-right: 1rem;
 
     input {
-        height: 1rem;
+        height: 2rem;
         font-size: 0.75rem;
         padding-left: 0.5rem;
         padding-top: 0;
         padding-bottom: 0;
         border: none;
+        border: 1px solid var(--gray-04);
+    }
+
+    input::placeholder {
+        font-size: 0.6875rem;
+        color: var(--gray-07);
     }
 
     &--icon {
         color: var(--icon-muted);
     }
+
+    small {
+        display: flex;
+        align-items: center;
+        padding-right: 0.5rem;
+    }
 }
 
-$group-header-font-size: 0.875rem;
+$group-header-font-size: 0.75rem;
 $group-divider-height: 0.25rem;
 
 .repo-location-group {
@@ -58,13 +69,17 @@ $group-divider-height: 0.25rem;
         padding-left: 3.75rem;
         padding-top: 0.2rem;
         padding-bottom: 0.2rem;
+        padding-right: 1rem;
         width: 100%;
         text-align: left;
 
         transition: none !important;
 
         &--filename {
-            padding-left: 0.6rem;
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+
             font-weight: 400;
             font-size: $group-header-font-size;
 
@@ -79,7 +94,6 @@ $group-divider-height: 0.25rem;
 
 .location {
     button {
-        padding-left: 3.9rem;
         padding-top: 0;
         padding-bottom: 0;
         width: 100%;
@@ -89,6 +103,9 @@ $group-divider-height: 0.25rem;
 
         // Avoid line number and filename getting put on different lines
         white-space: nowrap;
+        padding-left: 0;
+        border: none;
+        font-family: 'SF Mono', monospace;
     }
 
     button:hover {
@@ -96,8 +113,17 @@ $group-divider-height: 0.25rem;
     }
 
     code {
+        font-family: 'SF Mono', monospace;
         overflow: hidden;
-        color: var(--body-color);
+        color: var(--gray-08);
+        font-weight: 400;
+        font-size: 0.75rem;
+    }
+
+    mark {
+        font-family: 'SF Mono', monospace;
+        font-weight: 400;
+        font-size: 0.75rem;
     }
 
     &--active {
@@ -108,10 +134,35 @@ $group-divider-height: 0.25rem;
         color: inherit;
 
         &--line-number {
-            font-family: monospace;
+            font-family: 'SF Mono', monospace;
             font-weight: 400;
-            color: var(--link-color);
+            color: var(--gray-06);
+            min-width: 2.5rem;
+            text-align: right;
+            display: inline-block;
+            margin-right: 0.5rem;
+
+            font-style: normal;
+            font-size: 0.75rem;
+            line-height: 136%;
         }
+    }
+}
+
+.location-container {
+    padding-left: 3.9rem;
+    padding-right: 1rem;
+
+    ul {
+        border: 1px solid var(--gray-03);
+        padding: 0.5rem 0;
+        border-radius: 3px;
+        background-color: var(--white);
+        overflow: scroll;
+        -ms-overflow-style: none;
+    }
+    ul::-webkit-scrollbar {
+        display: none;
     }
 }
 
@@ -160,6 +211,7 @@ $card-header-height: 1.5rem;
     flex: 1;
     overflow: auto;
     height: 100%;
+    background-color: var(--gray-01);
 }
 
 // Right side of the panel

@@ -63,7 +63,7 @@ func TestWorkspacesListArgsToDBOpts(t *testing.T) {
 				State: strPtr("PENDING"),
 			},
 			want: store.ListBatchSpecWorkspacesOpts{
-				OnlyWithoutExecution: true,
+				OnlyWithoutExecutionAndNotCached: true,
 			},
 		},
 		{

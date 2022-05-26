@@ -33,7 +33,12 @@ func NewDependencySyncScheduler(
 	workerStore dbworkerstore.Store,
 	externalServiceStore ExternalServiceStore,
 	metrics workerutil.WorkerMetrics,
+	observationContext *observation.Context,
 ) *workerutil.Worker {
+	// Init metrics here now after we've moved the autoindexing scheduler
+	// into the autoindexing service
+	newOperations(observationContext)
+
 	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
 
 	handler := &dependencySyncSchedulerHandler{

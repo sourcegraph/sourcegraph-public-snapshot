@@ -22,6 +22,7 @@ import {
     DrillDownInsightCreationFormValues,
     BackendInsightChart,
 } from './components'
+import { useSeriesToggle } from './components/backend-insight-chart/use-series-toggle'
 
 import styles from './BackendInsight.module.scss'
 
@@ -35,13 +36,14 @@ interface BackendInsightProps
 }
 
 /**
- * Renders BE search based insight. Fetches insight data by gql api handler.
+ * Renders search based insight. Fetches insight data by gql api handler.
  */
 export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren<BackendInsightProps>> = props => {
     const { telemetryService, insight, innerRef, resizing, ...otherProps } = props
 
     const { currentDashboard, dashboards } = useContext(InsightContext)
     const { getBackendInsightData, createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
+    const { toggle, isSeriesSelected, isSeriesHovered, setHoveredId } = useSeriesToggle()
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
@@ -169,7 +171,15 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
             ) : state.status === LazyQueryStatus.Error ? (
                 <BackendInsightErrorAlert error={state.error} />
             ) : (
-                <BackendInsightChart {...state.data} locked={insight.isFrozen} onDatumClick={trackDatumClicks} />
+                <BackendInsightChart
+                    {...state.data}
+                    locked={insight.isFrozen}
+                    onDatumClick={trackDatumClicks}
+                    toggle={toggle}
+                    isSeriesSelected={isSeriesSelected}
+                    isSeriesHovered={isSeriesHovered}
+                    setHoveredId={setHoveredId}
+                />
             )}
             {
                 // Passing children props explicitly to render any top-level content like

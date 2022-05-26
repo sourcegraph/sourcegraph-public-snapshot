@@ -1,2 +1,4 @@
-name: unqiue batch changes
-parents: [1644471839, 1644583379]
+name: squashed migrations (privileged)
+parents: []
+privileged: true
+nonIdempotent: true

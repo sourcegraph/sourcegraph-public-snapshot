@@ -22,9 +22,11 @@ export interface ExtensionCoreAPI {
     ) => Promise<GraphQLResult<any>>
     observeSourcegraphSettings: () => ProxySubscribable<SettingsCascadeOrError>
     getAuthenticatedUser: () => ProxySubscribable<AuthenticatedUser | null>
+    /** Endpoint settings */
     getInstanceURL: () => ProxySubscribable<string>
+    getAccessToken: string | undefined
     setAccessToken: (accessToken: string) => void
-    setEndpointUri: (uri: string) => void
+    setEndpointUri: (uri: string, accessToken?: string) => void
     /**
      * Observe search box query state.
      * Used to send current query from panel to sidebar.
@@ -35,43 +37,29 @@ export interface ExtensionCoreAPI {
      * aggressively memoize top-level "View" components (i.e. don't just take whole state as prop).
      */
     observePanelQueryState: () => ProxySubscribable<VSCEQueryState>
-
+    /** State Management*/
     observeState: () => ProxySubscribable<VSCEState>
     emit: VSCEStateMachine['emit']
-
     /** Opens a remote file given a serialized SourcegraphUri */
     openSourcegraphFile: (uri: string) => void
     openLink: (uri: string) => void
     copyLink: (uri: string) => void
     reloadWindow: () => void
     focusSearchPanel: () => void
-
-    /**
-     * Cancels previous search when called.
-     */
+    /** Cancels previous search when called. */
     streamSearch: (query: string, options: StreamSearchOptions) => void
     fetchStreamSuggestions: (query: string, sourcegraphURL: string) => ProxySubscribable<SearchMatch[]>
     setSelectedSearchContextSpec: (spec: string) => void
-    /**
-     * Used to send current query from panel to sidebar.
-     */
+    /** Used to send current query from panel to sidebar. */
     setSidebarQueryState: (queryState: VSCEQueryState) => void
-    /**
-     * Local Storage Item
-     */
+    /** Local Storage Item */
     getLocalStorageItem: (key: string) => string
     setLocalStorageItem: (key: string, value: string) => Promise<boolean>
-    /**
-     * For Telemetry Service / logging
-     */
+    /**  For Telemetry Service / logging */
     logEvents: (variables: Event) => void
-    /**
-     * Get EventSource Type to use based on instance version
-     */
+    /** Get EventSource Type to use based on instance version */
     getEventSource: EventSource
-    /**
-     * Get EventSource Type to use based on instance version
-     */
+    /** Get EventSource Type to use based on instance version */
     getEditorTheme: string
 }
 
