@@ -222,15 +222,15 @@ type LineMatch struct {
 	OffsetAndLengths [][2]int
 }
 
-// LineColumn is a subset of the fields on Location because we don't
-// have the rune offset necessary to build a full Location yet.
-// Eventually, the two structs should be merged.
-type LineColumn struct {
-	// Line is the count of newlines before the offset in the matched text.
+type Location struct {
+	// The byte offset from the beginning of the file.
+	Offset int32
+
+	// Line is the count of newlines before the offset in the file.
 	// Line is 0-based.
 	Line int32
 
-	// Column is the count of unicode code points after the last newline in the matched text
+	// Column is the rune offset from the beginning of the last line.
 	Column int32
 }
 
@@ -239,8 +239,8 @@ type MultilineMatch struct {
 	// lines that the match overlaps.
 	// The number of lines in Preview should be End.Line - Start.Line + 1
 	Preview string
-	Start   LineColumn
-	End     LineColumn
+	Start   Location
+	End     Location
 }
 
 func (m MultilineMatch) MatchedContent() string {
