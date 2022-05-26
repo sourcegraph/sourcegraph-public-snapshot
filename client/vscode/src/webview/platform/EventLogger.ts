@@ -18,7 +18,9 @@ export class EventLogger implements VsceTelemetryService {
     private listeners: Set<(eventName: string) => void> = new Set()
     private vsceAPI: Comlink.Remote<ExtensionCoreAPI>
     private newInstall = false
-    private editorInfo = { editor: 'vscode', version }
+    private editorInfo: VSCEEditorInfo = { editor: 'vscode', version }
+    private appHost = 'desktop'
+    private remoteName: string | undefined = undefined
 
     constructor(extensionAPI: Comlink.Remote<ExtensionCoreAPI>) {
         this.vsceAPI = extensionAPI
@@ -101,8 +103,10 @@ export class EventLogger implements VsceTelemetryService {
      * And a new ide install event will be logged
      */
     private async initializeLogParameters(): Promise<void> {
-        const appHost = await this.vsceAPI.appHost
-        this.editorInfo = { editor: 'vscode', version: `version ${appHost}` }
+        const platform = await this.vsceAPI.platform
+        this.appHost = platform.appHost
+        this.remoteName = this.getRemoteName(platform.remoteName)
+        this.editorInfo = this.getEditorInfo()
         let anonymousUserID = await this.vsceAPI.getLocalStorageItem(ANONYMOUS_USER_ID_KEY)
         const source = await this.vsceAPI.getEventSource
         if (!anonymousUserID) {
@@ -116,6 +120,19 @@ export class EventLogger implements VsceTelemetryService {
             this.log('IDEInstalled')
             this.newInstall = false
         }
+    }
+
+    private getRemoteName(remote: string | undefined): string | undefined {
+        if (remote === undefined) {
+            return undefined
+        }
+        if (remote.includes('gitpod.io')) {
+            return 'gitpod'
+        }
+        if (remote.includes('gitlab')) {
+            return 'gitlab'
+        }
+        return undefined
     }
 
     /**
@@ -135,12 +152,23 @@ export class EventLogger implements VsceTelemetryService {
         return this.evenSourceType
     }
 
+    private getEditorInfo(): VSCEEditorInfo {
+        const editorInfo = {
+            editor: 'vscode',
+            version,
+            appHost: this.appHost,
+            remoteName: this.remoteName,
+        }
+        this.editorInfo = editorInfo
+        return editorInfo
+    }
+
     /**
      * Event ID is used to deduplicate events in Amplitude.
      * This is used in the case that multiple events with the same userID and timestamp
      * are sent. https://developers.amplitude.com/docs/http-api-v2#optional-keys
      */
-    public getEventID(): number {
+    private getEventID(): number {
         this.eventID++
         return this.eventID
     }
@@ -167,4 +195,11 @@ export class EventLogger implements VsceTelemetryService {
             .then(() => {})
             .catch(error => console.log(error))
     }
+}
+
+export interface VSCEEditorInfo {
+    editor: string
+    version: string
+    appHost?: string
+    remoteName?: string | undefined
 }

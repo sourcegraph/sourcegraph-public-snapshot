@@ -45,7 +45,7 @@ export interface ExtensionCoreAPI {
     openLink: (uri: string) => void
     copyLink: (uri: string) => void
     /** Get the name of the app where VS Code is running. ex. 'desktop', 'github.dev', 'gitpod',*/
-    appHost: string
+    platform: { appHost: string; remoteName: string | undefined }
     reloadWindow: () => void
     focusSearchPanel: () => void
     /** Cancels previous search when called. */
