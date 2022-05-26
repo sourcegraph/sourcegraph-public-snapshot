@@ -215,6 +215,14 @@ func (hs HunkMatches) AsLineMatches() []*LineMatch {
 	return res
 }
 
+func (hs HunkMatches) MatchCount() int {
+	count := 0
+	for _, h := range hs {
+		count += len(h.Ranges)
+	}
+	return count
+}
+
 type MultilineMatch struct {
 	// Preview is a possibly-multiline string that contains all the
 	// lines that the match overlaps.
