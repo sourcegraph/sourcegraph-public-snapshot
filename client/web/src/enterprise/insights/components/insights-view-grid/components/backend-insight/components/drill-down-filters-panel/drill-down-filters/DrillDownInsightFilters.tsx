@@ -178,8 +178,8 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     title="Search context"
                     preview={getSerializedSearchContextFilter(contexts.input.value)}
                     hasActiveFilter={hasActiveUnaryFilter(contexts.input.value)}
-                    className={styles.panel}
                     withSeparators={!isHorizontalMode}
+                    className={classNames(styles.panel, { [styles.panelHorizontalMode]: isHorizontalMode })}
                     onOpenChange={opened => handleCollapseState(FilterSection.SearchContext, opened)}
                 >
                     <small className={styles.sectionDescription}>
@@ -197,7 +197,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     <DrillDownSearchContextFilter
                         spellCheck={false}
                         autoComplete="off"
-                        autoFocus={true}
+                        autoFocus={!isHorizontalMode}
                         className={styles.input}
                         status={getFilterInputStatus(contexts)}
                         {...contexts.input}
@@ -211,8 +211,8 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     hasActiveFilter={
                         hasActiveUnaryFilter(includeRegex.input.value) || hasActiveUnaryFilter(excludeRegex.input.value)
                     }
-                    className={styles.panel}
                     withSeparators={!isHorizontalMode}
+                    className={classNames(styles.panel, { [styles.panelHorizontalMode]: isHorizontalMode })}
                     onOpenChange={opened => handleCollapseState(FilterSection.RegularExpressions, opened)}
                 >
                     <small className={styles.sectionDescription}>

@@ -1,4 +1,4 @@
-import { ChangeEvent, forwardRef, memo, useState } from 'react'
+import { ChangeEvent, FocusEvent, forwardRef, memo, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import { Combobox, ComboboxInput, ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
@@ -35,8 +35,8 @@ interface DrillDownSearchContextFilter extends InputProps {}
 
 export const DrillDownSearchContextFilter = forwardRef<HTMLInputElement, DrillDownSearchContextFilter>(
     (props, reference) => {
-        const { value = '', className, onChange = noop, ...attributes } = props
-        const [showSuggest, setShowSuggest] = useState<boolean>(true)
+        const { value = '', className, onChange = noop, onFocus = noop, ...attributes } = props
+        const [showSuggest, setShowSuggest] = useState<boolean>(false)
         const debouncedQuery = useDebounce(value, 700)
 
         const handleSelect = (value: string): void => {
@@ -47,6 +47,11 @@ export const DrillDownSearchContextFilter = forwardRef<HTMLInputElement, DrillDo
         const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
             setShowSuggest(true)
             onChange(event)
+        }
+
+        const handleFocus = (event: FocusEvent<HTMLInputElement>): void => {
+            setShowSuggest(true)
+            onFocus(event)
         }
 
         return (
@@ -60,6 +65,7 @@ export const DrillDownSearchContextFilter = forwardRef<HTMLInputElement, DrillDo
                     value={value.toString()}
                     className={classNames(className, styles.input)}
                     onChange={handleChange}
+                    onFocus={handleFocus}
                 />
 
                 {showSuggest && (
