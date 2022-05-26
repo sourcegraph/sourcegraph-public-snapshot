@@ -42,6 +42,11 @@ var scheduleReposCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "Counts number of repos for which permissions syncing request has been scheduled.",
 })
 
+var gitlabTokenRefreshCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_repoupdater_gitlab_token_refresh_count",
+	Help: "Counts the number of times we refresh a GitLab OAuth token",
+}, []string{"source", "success"})
+
 // PermsSyncer is a permissions syncing manager that is in charge of keeping
 // permissions up-to-date for users and repositories.
 //
@@ -248,7 +253,7 @@ func oauth2ConfigFromGitLabProvider(p *schema.GitLabAuthProvider) *oauth2.Config
 	}
 }
 
-func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Context, acct *extsvc.Account) error {
+func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Context, acct *extsvc.Account) (err error) {
 	if acct.ServiceType != extsvc.TypeGitLab {
 		return nil
 	}
@@ -279,6 +284,10 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 	}
 
 	if refreshedToken.AccessToken != tok.AccessToken {
+		defer func() {
+			success := err == nil
+			gitlabTokenRefreshCounter.WithLabelValues("external_account", strconv.FormatBool(success)).Inc()
+		}()
 		acct.AccountData.SetAuthData(refreshedToken)
 		_, err := s.db.UserExternalAccounts().LookupUserAndSave(ctx, acct.AccountSpec, acct.AccountData)
 		if err != nil {
@@ -288,7 +297,7 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 	return nil
 }
 
-func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Context, svc *types.ExternalService) error {
+func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Context, svc *types.ExternalService) (err error) {
 	if svc.Kind != extsvc.KindGitLab {
 		return nil
 	}
@@ -334,6 +343,10 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Conte
 	}
 
 	if refreshedToken.AccessToken != tok.AccessToken {
+		defer func() {
+			success := err == nil
+			gitlabTokenRefreshCounter.WithLabelValues("codehost", strconv.FormatBool(success)).Inc()
+		}()
 		svc.Config, err = jsonc.Edit(svc.Config, tok.AccessToken, "token")
 		if err != nil {
 			return errors.Wrap(err, "updating OAuth token")
