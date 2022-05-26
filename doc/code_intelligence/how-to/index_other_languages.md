@@ -31,7 +31,7 @@ Install the indexer for the required programming language of your repository by 
   1. [Dart](https://github.com/sourcegraph/lsif-dart)
   1. [Go](https://github.com/sourcegraph/lsif-go)
   1. [Haskell](https://github.com/mpickering/hie-lsif)
-  1. [Java](https://github.com/sourcegraph/lsif-java)
+  1. [Java](https://github.com/sourcegraph/scip-java)
   1. [JavaScript/TypeScript](https://github.com/sourcegraph/scip-typescript)
   1. [Jsonnet](https://github.com/sourcegraph/lsif-jsonnet)
   1. [Python](https://github.com/sourcegraph/lsif-py)

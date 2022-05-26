@@ -30,11 +30,11 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       500
       (PARALLEL
-        REPOPAGER
+        (REPOPAGER
           ZoektRepoSubsetSearchJob)
         ComputeExcludedReposJob
         (PARALLEL
-          REPOPAGER
+          (REPOPAGER
             SearcherJob)
           RepoSearchJob)))))`),
 	}, {
@@ -76,11 +76,11 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       500
       (PARALLEL
-        REPOPAGER
+        (REPOPAGER
           ZoektRepoSubsetSearchJob)
         ComputeExcludedReposJob
         (PARALLEL
-          REPOPAGER
+          (REPOPAGER
             SearcherJob)
           RepoSearchJob)))))`),
 	}, {
@@ -207,16 +207,16 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       500
       (PARALLEL
-        REPOPAGER
+        (REPOPAGER
           ZoektRepoSubsetSearchJob)
-        REPOPAGER
+        (REPOPAGER
           ZoektSymbolSearchJob)
         CommitSearchJob
         ComputeExcludedReposJob
         (PARALLEL
-          REPOPAGER
+          (REPOPAGER
             SearcherJob)
-          REPOPAGER
+          (REPOPAGER
             SymbolSearcherJob)
           RepoSearchJob)))))`),
 	}, {
@@ -245,16 +245,16 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       500
       (PARALLEL
-        REPOPAGER
+        (REPOPAGER
           ZoektRepoSubsetSearchJob)
-        REPOPAGER
+        (REPOPAGER
           ZoektSymbolSearchJob)
         CommitSearchJob
         ComputeExcludedReposJob
         (PARALLEL
-          REPOPAGER
+          (REPOPAGER
             SearcherJob)
-          REPOPAGER
+          (REPOPAGER
             SymbolSearcherJob)
           RepoSearchJob)))))`),
 	}, {

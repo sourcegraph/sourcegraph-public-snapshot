@@ -110,7 +110,7 @@ func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
 // soft-deleted nor blocked.
 func hasRepos(ctx context.Context, db database.DB) (_ bool, err error) {
 	defer recordOperation("hasRepos")(&err)
-	rs, err := database.Repos(db).List(ctx, database.ReposListOptions{
+	rs, err := db.Repos().List(ctx, database.ReposListOptions{
 		LimitOffset: &database.LimitOffset{Limit: 1},
 	})
 	return len(rs) > 0, err

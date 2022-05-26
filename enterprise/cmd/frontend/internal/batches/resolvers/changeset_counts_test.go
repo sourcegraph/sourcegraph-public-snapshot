@@ -79,7 +79,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
-	repoStore := database.Repos(db)
+	repoStore := db.Repos()
 	esStore := db.ExternalServices()
 
 	gitHubToken := os.Getenv("GITHUB_TOKEN")
