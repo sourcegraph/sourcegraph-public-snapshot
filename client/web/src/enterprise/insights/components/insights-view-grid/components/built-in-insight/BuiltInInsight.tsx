@@ -2,9 +2,9 @@ import React, { Ref, useContext, useMemo, useRef, useState } from 'react'
 
 import { useMergeRefs } from 'use-callback-ref'
 
-import { ErrorAlert } from '@sourcegraph/branded/out/src/components/alerts'
-import { TelemetryProps } from '@sourcegraph/shared/out/src/telemetry/telemetryService'
-import { useDeepMemo } from '@sourcegraph/wildcard/out/src'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useDeepMemo } from '@sourcegraph/wildcard'
 
 import { ParentSize } from '../../../../../../charts'
 import { CodeInsightsBackendContext, LangStatsInsight } from '../../../../core'
