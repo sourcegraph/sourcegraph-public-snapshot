@@ -539,6 +539,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 	for _, setup := range []struct {
 		jobs                       []*btypes.BatchSpecWorkspaceExecutionJob
 		additionalWorkspace        int
+		additionalCachedWorkspace  int
 		additionalSkippedWorkspace int
 	}{
 		{
@@ -551,6 +552,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(1)},
 			},
 			additionalWorkspace:        1,
+			additionalCachedWorkspace:  1,
 			additionalSkippedWorkspace: 2,
 		},
 		{
@@ -604,6 +606,14 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 			}
 		}
 
+		// Workspaces with cached result
+		for i := 0; i < setup.additionalCachedWorkspace; i++ {
+			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID, CachedResultFound: true}
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+		}
+
 		// Workspaces without execution job and skipped
 		if setup.additionalSkippedWorkspace > 0 {
 			for i := 0; i < setup.additionalSkippedWorkspace; i++ {
@@ -647,7 +657,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 		specIDs[0]: {
 			StartedAt:         minAgo(99),
 			FinishedAt:        minAgo(1),
-			Workspaces:        9,
+			Workspaces:        10,
 			SkippedWorkspaces: 2,
 			Executions:        6,
 			Queued:            1,
@@ -656,6 +666,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 			Canceling:         1,
 			Canceled:          1,
 			Failed:            1,
+			CachedWorkspaces:  1,
 		},
 		specIDs[1]: {
 			StartedAt:         minAgo(55),

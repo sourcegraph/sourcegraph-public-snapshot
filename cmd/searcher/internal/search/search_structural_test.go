@@ -2,7 +2,6 @@ package search
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -14,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
@@ -79,8 +77,8 @@ func foo(go string) {}
 				}
 				var got []string
 				for _, fileMatches := range sender.collected {
-					for _, m := range fileMatches.LineMatches {
-						got = append(got, m.Preview)
+					for _, m := range fileMatches.MultilineMatches {
+						got = append(got, m.MatchedContent())
 					}
 				}
 
@@ -136,8 +134,8 @@ func foo(go.txt) {}
 		}
 		var got []string
 		for _, fileMatches := range sender.collected {
-			for _, m := range fileMatches.LineMatches {
-				got = append(got, m.Preview)
+			for _, m := range fileMatches.MultilineMatches {
+				got = append(got, m.MatchedContent())
 			}
 		}
 		sort.Strings(got)
@@ -224,7 +222,7 @@ func foo(real string) {}
 	if err != nil {
 		t.Fatal(err)
 	}
-	got := sender.collected[0].LineMatches[0].Preview
+	got := sender.collected[0].MultilineMatches[0].MatchedContent()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -294,19 +292,19 @@ func TestIncludePatterns(t *testing.T) {
 	}
 
 	input := map[string]string{
-		"/a/b/c":         "",
-		"/a/b/c/foo.go":  "",
-		"c/foo.go":       "",
-		"bar.go":         "",
-		"/x/y/z/bar.go":  "",
-		"/a/b/c/nope.go": "",
-		"nope.go":        "",
+		"a/b/c":         "",
+		"a/b/c/foo.go":  "",
+		"c/foo.go":      "",
+		"bar.go":        "",
+		"x/y/z/bar.go":  "",
+		"a/b/c/nope.go": "",
+		"nope.go":       "",
 	}
 
 	want := []string{
-		"/a/b/c/foo.go",
-		"/x/y/z/bar.go",
+		"a/b/c/foo.go",
 		"bar.go",
+		"x/y/z/bar.go",
 	}
 
 	includePatterns := []string{"a/b/c/foo.go", "bar.go"}
@@ -369,20 +367,16 @@ func TestRule(t *testing.T) {
 	}
 	got := sender.collected
 
-	want := []protocol.FileMatch{
-		{
-			Path:     "file.go",
-			LimitHit: false,
-			LineMatches: []protocol.LineMatch{
-				{
-					LineNumber:       0,
-					OffsetAndLengths: [][2]int{{0, 17}},
-					Preview:          "func foo(success)",
-				},
-			},
-			MatchCount: 1,
-		},
-	}
+	want := []protocol.FileMatch{{
+		Path:     "file.go",
+		LimitHit: false,
+		MultilineMatches: []protocol.MultilineMatch{{
+			Preview: "func foo(success) {} func bar(fail) {}",
+			Start:   protocol.LineColumn{Line: 0, Column: 0},
+			End:     protocol.LineColumn{Line: 0, Column: 17},
+		}},
+		MatchCount: 1,
+	}}
 
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got file matches %v, want %v", got, want)
@@ -446,101 +440,6 @@ func bar() {
 	t.Run("many", test(12, 8, &protocol.PatternInfo{Pattern: "(:[_])"}))
 }
 
-func TestHighlightMultipleLines(t *testing.T) {
-	cases := []struct {
-		Name  string
-		Match *comby.Match
-		Want  []protocol.LineMatch
-	}{
-		{
-			Name: "Single line",
-			Match: &comby.Match{
-				Range: comby.Range{
-					Start: comby.Location{
-						Line:   1,
-						Column: 1,
-					},
-					End: comby.Location{
-						Line:   1,
-						Column: 2,
-					},
-				},
-				Matched: "this is a single line match",
-			},
-			Want: []protocol.LineMatch{
-				{
-					LineNumber: 0,
-					OffsetAndLengths: [][2]int{
-						{
-							0,
-							1,
-						},
-					},
-					Preview: "this is a single line match",
-				},
-			},
-		},
-		{
-			Name: "Three lines",
-			Match: &comby.Match{
-				Range: comby.Range{
-					Start: comby.Location{
-						Line:   1,
-						Column: 1,
-					},
-					End: comby.Location{
-						Line:   3,
-						Column: 5,
-					},
-				},
-				Matched: "this is a match across\nthree\nlines",
-			},
-			Want: []protocol.LineMatch{
-				{
-					LineNumber: 0,
-					OffsetAndLengths: [][2]int{
-						{
-							0,
-							22,
-						},
-					},
-					Preview: "this is a match across",
-				},
-				{
-					LineNumber: 1,
-					OffsetAndLengths: [][2]int{
-						{
-							0,
-							5,
-						},
-					},
-					Preview: "three",
-				},
-				{
-					LineNumber: 2,
-					OffsetAndLengths: [][2]int{
-						{
-							0,
-							4, // don't include trailing newline
-						},
-					},
-					Preview: "lines",
-				},
-			},
-		},
-	}
-	for _, tt := range cases {
-		t.Run(tt.Name, func(t *testing.T) {
-			got := highlightMultipleLines(tt.Match)
-			if !reflect.DeepEqual(got, tt.Want) {
-				jsonGot, _ := json.Marshal(got)
-				jsonWant, _ := json.Marshal(tt.Want)
-				t.Errorf("got: %s, want: %s", jsonGot, jsonWant)
-			}
-		})
-	}
-}
-
 func TestMatchCountForMultilineMatches(t *testing.T) {
 	// If we are not on CI skip the test.
 	if os.Getenv("CI") == "" {
@@ -584,6 +483,57 @@ func bar() {
 		if gotMatchCount != wantMatchCount {
 			t.Fatalf("got match count %d, want %d", gotMatchCount, wantMatchCount)
 		}
+	})
+}
+
+func TestMultilineMatches(t *testing.T) {
+	// If we are not on CI skip the test.
+	if os.Getenv("CI") == "" {
+		t.Skip("Not on CI, skipping comby-dependent test")
+	}
+
+	input := map[string]string{
+		"main.go": `
+func foo() {
+    fmt.Println("foo")
+}
+
+func bar() {
+    fmt.Println("bar")
+}
+`,
+	}
+
+	p := &protocol.PatternInfo{Pattern: "{:[body]}"}
+
+	zipData, err := createZip(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zf := tempZipFileOnDisk(t, zipData)
+
+	t.Run("Strutural search match count", func(t *testing.T) {
+		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
+		defer cancel()
+		err := structuralSearch(ctx, zf, subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+		if err != nil {
+			t.Fatal(err)
+		}
+		matches := sender.collected
+		expected := []protocol.FileMatch{{
+			Path:       "main.go",
+			MatchCount: 2,
+			MultilineMatches: []protocol.MultilineMatch{{
+				Preview: "func foo() {\n    fmt.Println(\"foo\")\n}",
+				Start:   protocol.LineColumn{Line: 1, Column: 11},
+				End:     protocol.LineColumn{Line: 3, Column: 1},
+			}, {
+				Preview: "func bar() {\n    fmt.Println(\"bar\")\n}",
+				Start:   protocol.LineColumn{Line: 5, Column: 11},
+				End:     protocol.LineColumn{Line: 7, Column: 1},
+			}},
+		}}
+		require.Equal(t, expected, matches)
 	})
 }
 
