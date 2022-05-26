@@ -68,7 +68,6 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
 
                         const cell = row.querySelector<HTMLTableCellElement>(`td.${className}`) || row.insertCell(1)
                         cell.classList.add('decoration', className)
-                        cell.dataset.lineDecorationAttachmentPortal = 'true'
 
                         const currentLineDecorations = decorations.get(index + 1)
 

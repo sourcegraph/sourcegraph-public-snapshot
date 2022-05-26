@@ -68,24 +68,15 @@
         }
     }
 
-    td:global(.decoration)[data-line-decoration-attachment-portal] {
+    td:global(.decoration) {
         max-width: 220px;
         padding-right: 0.75rem;
         padding-left: 0.75rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
 
-        a,
-        span {
-            display: inline-block;
-            max-width: 100%;
-        }
-
-        span {
-            overflow: hidden;
-            text-overflow: ellipsis;
-
-            &::before {
-                content: attr(data-contents);
-            }
+        span::before {
+            content: attr(data-contents);
         }
     }
 

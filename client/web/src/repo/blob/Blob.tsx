@@ -143,7 +143,7 @@ const domFunctions = {
         if (!row) {
             return null
         }
-        return row.cells[1]
+        return row.querySelector('td.code')
     },
     getCodeElementFromLineNumber: (codeView: HTMLElement, line: number): HTMLTableCellElement | null => {
         const table = codeView.firstElementChild as HTMLTableElement
@@ -608,6 +608,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 : undefined,
         [decorationsOrError]
     )
+
+    console.log(groupedDecorations)
 
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
