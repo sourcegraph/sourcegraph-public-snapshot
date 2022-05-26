@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var scheduleReposCounter = promauto.NewCounter(prometheus.CounterOpts{
@@ -233,7 +234,20 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 	return repoNames, nil
 }
 
-func (s *PermsSyncer) maybeRefreshGitLabOAuthToken(ctx context.Context, acct *extsvc.Account) error {
+func oauth2ConfigFromGitLabProvider(p *schema.GitLabAuthProvider) *oauth2.Config {
+	url := strings.TrimSuffix(p.Url, "/")
+	return &oauth2.Config{
+		ClientID:     p.ClientID,
+		ClientSecret: p.ClientSecret,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  url + "/oauth/authorize",
+			TokenURL: url + "/oauth/token",
+		},
+		Scopes: gitlab.RequestedOAuthScopes(p.ApiScope, nil),
+	}
+}
+
+func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Context, acct *extsvc.Account) error {
 	if acct.ServiceType != extsvc.TypeGitLab {
 		return nil
 	}
@@ -244,17 +258,7 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthToken(ctx context.Context, acct *ex
 			strings.TrimSuffix(acct.ServiceID, "/") != strings.TrimSuffix(authProvider.Gitlab.Url, "/") {
 			continue
 		}
-		url := strings.TrimSuffix(authProvider.Gitlab.Url, "/")
-
-		oauthConfig = &oauth2.Config{
-			ClientID:     authProvider.Gitlab.ClientID,
-			ClientSecret: authProvider.Gitlab.ClientSecret,
-			Endpoint: oauth2.Endpoint{
-				AuthURL:  url + "/oauth/authorize",
-				TokenURL: url + "/oauth/token",
-			},
-			Scopes: gitlab.RequestedOAuthScopes(authProvider.Gitlab.ApiScope, nil),
-		}
+		oauthConfig = oauth2ConfigFromGitLabProvider(authProvider.Gitlab)
 		break
 	}
 	if oauthConfig == nil {
@@ -370,7 +374,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			return nil, nil, errors.Wrap(err, "wait for rate limiter")
 		}
 
-		err := s.maybeRefreshGitLabOAuthToken(ctx, acct)
+		err := s.maybeRefreshGitLabOAuthTokenFromAccount(ctx, acct)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "refresh GitLab OAuth token")
 		}
@@ -674,7 +678,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "list external accounts")
 	}
 	for _, acct := range accts {
-		if err := s.maybeRefreshGitLabOAuthToken(ctx, acct); err != nil {
+		if err := s.maybeRefreshGitLabOAuthTokenFromAccount(ctx, acct); err != nil {
 			return errors.Wrap(err, "refreshing GitLab OAuth token")
 		}
 	}
