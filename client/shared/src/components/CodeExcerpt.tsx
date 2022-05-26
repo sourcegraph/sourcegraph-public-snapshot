@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { range, noop } from 'lodash'
@@ -103,19 +103,20 @@ const visibilitySensorOffset = { bottom: -500 }
  */
 export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
     const [blobLinesOrError, setBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
-    const [tableContainerElements] = useState(new BehaviorSubject<HTMLElement | null>(null))
-    const [propsChanges] = useState(new BehaviorSubject<Props>(props))
-    const [visibilityChanges] = useState(new BehaviorSubject<boolean | null>(null))
+    const tableContainerElements = useMemo(() => new BehaviorSubject<HTMLElement | null>(null), [])
+    const [tableContainerElement, setTableContainerElement] = useState<HTMLElement | null>(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const propsChanges = useMemo(() => new BehaviorSubject<Props>(props), [])
+    const visibilityChanges = useMemo(() => new BehaviorSubject<boolean | null>(null), [])
     const [isVisible, setIsVisible] = useState(false)
 
-    const { blobLines, fetchHighlightedFileRangeLines, isFirst, startLine, endLine } = props
+    const { blobLines, fetchHighlightedFileRangeLines, isFirst, startLine, endLine, highlightRanges } = props
 
     useEffect(() => {
         propsChanges.next(props)
     }, [props, propsChanges])
 
     // Get the syntax highlighted blob lines
-
     useEffect(() => {
         if (isVisible) {
             let observable: Observable<string[]>
@@ -136,25 +137,22 @@ export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
 
     // Highlight the search matches
     useEffect(() => {
-        const subscription = tableContainerElements.subscribe(tableContainerElement => {
-            if (tableContainerElement) {
-                const visibleRows = tableContainerElement.querySelectorAll('table tr')
-                for (const highlight of props.highlightRanges) {
-                    // Select the HTML row in the excerpt that corresponds to the line to be highlighted.
-                    // highlight.line is the 0-indexed line number in the code file, and this.props.startLine is the 0-indexed
-                    // line number of the first visible line in the excerpt. So, subtract this.props.startLine
-                    // from highlight.line to get the correct 0-based index in visibleRows that holds the HTML row.
-                    const tableRow = visibleRows[highlight.line - props.startLine]
-                    if (tableRow) {
-                        // Take the lastChild of the row to select the code portion of the table row (each table row consists of the line number and code).
-                        const code = tableRow.lastChild as HTMLTableCellElement
-                        highlightNode(code, highlight.character, highlight.highlightLength)
-                    }
+        if (tableContainerElement) {
+            const visibleRows = tableContainerElement.querySelectorAll('table tr')
+            for (const highlight of highlightRanges) {
+                // Select the HTML row in the excerpt that corresponds to the line to be highlighted.
+                // highlight.line is the 0-indexed line number in the code file, and this.props.startLine is the 0-indexed
+                // line number of the first visible line in the excerpt. So, subtract this.props.startLine
+                // from highlight.line to get the correct 0-based index in visibleRows that holds the HTML row.
+                const tableRow = visibleRows[highlight.line - startLine]
+                if (tableRow) {
+                    // Take the lastChild of the row to select the code portion of the table row (each table row consists of the line number and code).
+                    const code = tableRow.lastChild as HTMLTableCellElement
+                    highlightNode(code, highlight.character, highlight.highlightLength)
                 }
             }
-        })
-        return () => subscription.unsubscribe()
-    }, [props.highlightRanges, props.startLine, tableContainerElements])
+        }
+    }, [highlightRanges, startLine, tableContainerElement])
 
     // Hook up the hover tooltips
     useEffect(() => {
@@ -194,9 +192,10 @@ export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
         [visibilityChanges]
     )
 
-    const setTableContainerElement = useCallback(
+    const updateTableContainerElementReference = useCallback(
         (reference: HTMLElement | null): void => {
             tableContainerElements.next(reference)
+            setTableContainerElement(reference)
         },
         [tableContainerElements]
     )
@@ -213,7 +212,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
             >
                 {blobLinesOrError && !isErrorLike(blobLinesOrError) && (
                     <div
-                        ref={setTableContainerElement}
+                        ref={updateTableContainerElementReference}
                         dangerouslySetInnerHTML={{ __html: makeTableHTML(blobLinesOrError) }}
                     />
                 )}
