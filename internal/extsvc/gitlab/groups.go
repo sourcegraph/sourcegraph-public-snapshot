@@ -22,12 +22,12 @@ func (c *Client) ListGroups(ctx context.Context, page int) (groups []*Group, has
 	url := fmt.Sprintf("groups?per_page=100&page=%d", page)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return
+		return nil, false, err
 	}
 
 	_, _, err = c.do(ctx, req, &groups)
 	if err != nil {
-		return
+		return nil, false, err
 	}
 
 	return groups, len(groups) > 0, nil

@@ -210,8 +210,8 @@ func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gi
 		}
 
 		// Check the full path instead of name so we can better handle subgroups.
-		for _, gGroup := range gitlabGroups {
-			if allowed[gGroup.FullPath] {
+		for _, glGroup := range gitlabGroups {
+			if allowed[glGroup.FullPath] {
 				return true
 			}
 		}
