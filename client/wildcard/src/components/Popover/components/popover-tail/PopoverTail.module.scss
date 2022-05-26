@@ -1,24 +1,15 @@
 .tail {
-    display: block;
     position: fixed;
-    z-index: 2;
-    width: 1rem;
-    height: 0.5rem;
     top: 0;
     left: 0;
+    z-index: 1;
 
-    &::after {
-        content: '';
-        z-index: 1;
-        position: relative;
-        display: block;
-        border-left: 8px solid transparent;
-        border-top: 8px solid var(--dropdown-bg);
-        border-right: 8px solid transparent;
-    }
-
-    &-absolute {
-        position: absolute;
+    &-triagle-path {
+        fill: var(--dropdown-bg);
+        stroke: var(--dropdown-border-color);
+        stroke-width: 12;
+        stroke-linejoin: round;
+        stroke-linecap: round;
     }
 
     /*

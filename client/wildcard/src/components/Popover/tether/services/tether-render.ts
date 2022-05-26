@@ -31,14 +31,14 @@ export function render(tether: Tether, eventTarget: HTMLElement | null, preserve
 
     // Restore visibility for correct measure in layout service
     setVisibility(tether.element, true)
-    setVisibility(tether.marker ?? null, true)
+    setVisibility((tether.marker as HTMLElement) ?? null, true)
 
     const layout = getLayout(tether)
     const state = getState(layout)
 
     if (state === null || !isVisible(tether.target)) {
         setVisibility(tether.element, false)
-        setVisibility(tether.marker ?? null, false)
+        setVisibility((tether.marker as HTMLElement) ?? null, false)
 
         return
     }

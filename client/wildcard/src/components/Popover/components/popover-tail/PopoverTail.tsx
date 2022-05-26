@@ -6,10 +6,19 @@ import { PopoverContext } from '../../context'
 
 import style from './PopoverTail.module.scss'
 
-interface PopoverTailProps extends HTMLAttributes<HTMLDivElement> {}
+interface PopoverTailProps extends HTMLAttributes<SVGElement> {}
 
 export const PopoverTail: FunctionComponent<PopoverTailProps> = props => {
-    const { setTailElement } = useContext(PopoverContext)
+    const { setTailElement, isOpen } = useContext(PopoverContext)
 
-    return createPortal(<div {...props} className={style.tail} ref={setTailElement} />, document.body)
+    if (!isOpen) {
+        return null
+    }
+
+    return createPortal(
+        <svg {...props} width="17.2" height="11" viewBox="0 0 200 130" className={style.tail} ref={setTailElement}>
+            <path d="M0,0 L100,130 200,0" className={style.tailTriaglePath} />
+        </svg>,
+        document.body
+    )
 }
