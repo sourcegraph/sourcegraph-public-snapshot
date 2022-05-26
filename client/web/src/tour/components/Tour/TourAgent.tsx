@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import ReactDOM from 'react-dom'
@@ -24,9 +24,10 @@ export function useTourQueryParameters(): ReturnType<typeof parseURIMarkers> | u
     useEffect(() => {
         const { isTour, stepId } = parseURIMarkers(location.search)
         if (!isTour || !stepId) {
-            return
+            setData(undefined)
+        } else {
+            setData({ isTour, stepId })
         }
-        setData({ isTour, stepId })
     }, [location])
 
     return data
@@ -55,17 +56,19 @@ export const TourAgent: React.FunctionComponent<React.PropsWithChildren<TourAgen
 
         useEffect(() => {
             const info = tasks.flatMap(task => task.steps).find(step => tourQueryParameters?.stepId === step.id)?.info
-            if (info) {
-                setInfo(info)
-            }
+            setInfo(info)
         }, [tasks, tourQueryParameters?.stepId])
 
-        if (!info) {
-            return null
-        }
+        const domNode = useRef(document.querySelector('#' + GETTING_STARTED_TOUR_MARKER))
+        useEffect(() => {
+            if (info) {
+                domNode.current?.classList.remove('d-none')
+            } else {
+                domNode.current?.classList.add('d-none')
+            }
+        }, [info])
 
-        const domNode = document.querySelector('.' + GETTING_STARTED_TOUR_MARKER)
-        if (!domNode) {
+        if (!info || !domNode.current) {
             return null
         }
 
@@ -74,7 +77,7 @@ export const TourAgent: React.FunctionComponent<React.PropsWithChildren<TourAgen
                 <Icon role="img" as={CheckCircleIcon} className={styles.infoIcon} aria-hidden={true} />
                 <span>{info}</span>
             </div>,
-            domNode
+            domNode.current
         )
     }
 )
