@@ -46,7 +46,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - The number of queries with three or more patterns
 - Aggregate daily, weekly, and monthly user counts of search queries with the above properties
 - Code intelligence usage data
-  - Total number of repositories with and without an uploaded LSIF index
+  - Total number of repositories with and without an uploaded precise code intel index
   - Total number of code intelligence queries (e.g., hover tooltips) per week grouped by language
   - Number of users performing code intelligence queries (e.g., hover tooltips) per week grouped by language
 <!-- depends-on-source: ~/internal/usagestats/batches.go -->

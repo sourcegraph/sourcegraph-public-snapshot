@@ -7,61 +7,6 @@ import (
 )
 
 func TestConvertMatches(t *testing.T) {
-	// single line matches should always be roundtrippable
-	t.Run("roundtrip", func(t *testing.T) {
-		t.Run("multiline", func(t *testing.T) {
-			cases := []MultilineMatch{{
-				Preview: "abcd",
-				Start:   LineColumn{0, 0},
-				End:     LineColumn{0, 4},
-			}, {
-				Preview: "abcd",
-				Start:   LineColumn{0, 0},
-				End:     LineColumn{0, 3},
-			}, {
-				Preview: "abcd",
-				Start:   LineColumn{3, 1},
-				End:     LineColumn{3, 2},
-			}}
-
-			for _, tc := range cases {
-				t.Run("", func(t *testing.T) {
-					lineMatches := tc.AsLineMatches()
-					require.Len(t, lineMatches, 1)
-					multilineMatches := lineMatches[0].AsMultilineMatches()
-					require.Len(t, multilineMatches, 1)
-					require.Equal(t, tc, multilineMatches[0])
-				})
-			}
-		})
-
-		t.Run("oneline", func(t *testing.T) {
-			cases := []*LineMatch{{
-				Preview:          "abcd",
-				LineNumber:       0,
-				OffsetAndLengths: [][2]int32{{0, 4}},
-			}, {
-				Preview:          "abcd",
-				LineNumber:       0,
-				OffsetAndLengths: [][2]int32{{0, 3}},
-			}, {
-				Preview:          "abcd",
-				LineNumber:       3,
-				OffsetAndLengths: [][2]int32{{1, 1}},
-			}}
-
-			for _, tc := range cases {
-				t.Run("", func(t *testing.T) {
-					multilineMatches := tc.AsMultilineMatches()
-					require.Len(t, multilineMatches, 1)
-					lineMatches := multilineMatches[0].AsLineMatches()
-					require.Len(t, lineMatches, 1)
-					require.Equal(t, tc, lineMatches[0])
-				})
-			}
-		})
-	})
-
 	t.Run("AsLineMatches", func(t *testing.T) {
 		cases := []struct {
 			input  MultilineMatch
@@ -69,8 +14,10 @@ func TestConvertMatches(t *testing.T) {
 		}{{
 			input: MultilineMatch{
 				Preview: "line1\nline2\nline3",
-				Start:   LineColumn{1, 1},
-				End:     LineColumn{3, 1},
+				Range: Range{
+					Start: Location{1, 1, 1},
+					End:   Location{13, 3, 1},
+				},
 			},
 			output: []*LineMatch{{
 				Preview:          "line1",
@@ -88,8 +35,10 @@ func TestConvertMatches(t *testing.T) {
 		}, {
 			input: MultilineMatch{
 				Preview: "line1",
-				Start:   LineColumn{1, 1},
-				End:     LineColumn{1, 3},
+				Range: Range{
+					Start: Location{1, 1, 1},
+					End:   Location{1, 1, 3},
+				},
 			},
 			output: []*LineMatch{
 				{
@@ -107,30 +56,88 @@ func TestConvertMatches(t *testing.T) {
 		}
 	})
 
-	t.Run("AsMultilineMatches", func(t *testing.T) {
+	t.Run("MultilineSliceAsLineMatchSlice", func(t *testing.T) {
 		cases := []struct {
-			input  LineMatch
-			output []MultilineMatch
+			input  []MultilineMatch
+			output []*LineMatch
 		}{{
-			input: LineMatch{
-				Preview:          "0.2.4.6.8.10.13.16.19",
-				LineNumber:       42,
-				OffsetAndLengths: [][2]int32{{2, 2}, {8, 5}},
-			},
-			output: []MultilineMatch{{
-				Preview: "0.2.4.6.8.10.13.16.19",
-				Start:   LineColumn{42, 2},
-				End:     LineColumn{42, 4},
+			input: []MultilineMatch{{
+				Preview: "line1\nline2\nline3",
+				Range: Range{
+					Start: Location{1, 1, 1},
+					End:   Location{13, 3, 1},
+				},
 			}, {
-				Preview: "0.2.4.6.8.10.13.16.19",
-				Start:   LineColumn{42, 8},
-				End:     LineColumn{42, 13},
+				Preview: "line2\nline3\nline4",
+				Range: Range{
+					Start: Location{7, 2, 1},
+					End:   Location{13, 4, 1},
+				},
 			}},
+			output: []*LineMatch{{
+				Preview:          "line1",
+				LineNumber:       1,
+				OffsetAndLengths: [][2]int32{{1, 4}},
+			}, {
+				Preview:          "line2",
+				LineNumber:       2,
+				OffsetAndLengths: [][2]int32{{0, 5}, {1, 4}},
+			}, {
+				Preview:          "line3",
+				LineNumber:       3,
+				OffsetAndLengths: [][2]int32{{0, 1}, {0, 5}},
+			}, {
+				Preview:          "line4",
+				LineNumber:       4,
+				OffsetAndLengths: [][2]int32{{0, 1}},
+			}},
+		}, {
+			input: []MultilineMatch{{
+				Preview: "line1\nline2\nline3",
+				Range: Range{
+					Start: Location{1, 1, 1},
+					End:   Location{13, 3, 1},
+				},
+			}, {
+				Preview: "line4\nline5\nline6",
+				Range: Range{
+					Start: Location{19, 4, 1},
+					End:   Location{31, 6, 1},
+				},
+			}},
+			output: []*LineMatch{{
+				Preview:          "line1",
+				LineNumber:       1,
+				OffsetAndLengths: [][2]int32{{1, 4}},
+			}, {
+				Preview:          "line2",
+				LineNumber:       2,
+				OffsetAndLengths: [][2]int32{{0, 5}},
+			}, {
+				Preview:          "line3",
+				LineNumber:       3,
+				OffsetAndLengths: [][2]int32{{0, 1}},
+			}, {
+				Preview:          "line4",
+				LineNumber:       4,
+				OffsetAndLengths: [][2]int32{{1, 4}},
+			}, {
+				Preview:          "line5",
+				LineNumber:       5,
+				OffsetAndLengths: [][2]int32{{0, 5}},
+			}, {
+				Preview:          "line6",
+				LineNumber:       6,
+				OffsetAndLengths: [][2]int32{{0, 1}},
+			}},
+		}, {
+			input:  []MultilineMatch{},
+			output: []*LineMatch{},
 		}}
 
 		for _, tc := range cases {
 			t.Run("", func(t *testing.T) {
-				require.Equal(t, tc.output, tc.input.AsMultilineMatches())
+				require.Equal(t, MultilineSliceAsLineMatchSlice(tc.input), tc.output)
 			})
 		}
 	})
