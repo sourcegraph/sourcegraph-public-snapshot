@@ -158,11 +158,14 @@ describe('ReferencesPanel', () => {
         const closeCodeViewButton = result.getByRole('button', { name: 'Close code view' })
         expect(closeCodeViewButton).toBeVisible()
 
-        const fileLink = result.getByRole('link', { name: 'diff/diff.go' })
+        const rightPane = result.getByTestId('right-pane')
+
+        // This tests that the header of the "peek" code view on the right exists
+        const fileLink = within(rightPane).getByRole('link', { name: 'diff/diff.go' })
         expect(fileLink).toBeVisible()
 
-        const codeView = result.getByRole('table')
         // Assert the code view is rendered, by doing a partial match against its content
+        const codeView = within(rightPane).getByRole('table')
         expect(codeView).toHaveTextContent('package diff import')
     })
 })

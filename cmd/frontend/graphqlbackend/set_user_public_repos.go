@@ -31,7 +31,7 @@ func (r *schemaResolver) SetUserPublicRepos(ctx context.Context, args struct {
 		return nil, errors.Errorf("Too many repository URLs, please specify %v or fewer", maxUserPublicRepos)
 	}
 	var (
-		repoStore = database.Repos(r.db)
+		repoStore = r.db.Repos()
 		uprs      = database.UserPublicRepos(r.db)
 		repos     = make([]database.UserPublicRepo, len(args.RepoURIs))
 		eg        errgroup.Group

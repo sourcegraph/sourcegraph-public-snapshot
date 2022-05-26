@@ -9,11 +9,11 @@ import (
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 )
 
 // DocumentToSplitHTML returns a list of each line of HTML.
-func DocumentToSplitHTML(code string, document *lsiftyped.Document, includeLineNumbers bool) ([]template.HTML, error) {
+func DocumentToSplitHTML(code string, document *scip.Document, includeLineNumbers bool) ([]template.HTML, error) {
 	rows := []*html.Node{}
 	var currentCell *html.Node
 
@@ -27,7 +27,7 @@ func DocumentToSplitHTML(code string, document *lsiftyped.Document, includeLineN
 		currentCell = cell
 	}
 
-	addText := func(kind lsiftyped.SyntaxKind, line string) {
+	addText := func(kind scip.SyntaxKind, line string) {
 		appendTextToNode(currentCell, kind, line)
 	}
 
@@ -48,7 +48,7 @@ func DocumentToSplitHTML(code string, document *lsiftyped.Document, includeLineN
 }
 
 // DocumentToHTML creates one HTML blob for the entire document
-func DocumentToHTML(code string, document *lsiftyped.Document) (template.HTML, error) {
+func DocumentToHTML(code string, document *scip.Document) (template.HTML, error) {
 	table := &html.Node{Type: html.ElementNode, DataAtom: atom.Table, Data: atom.Table.String()}
 	var currentCell *html.Node
 
@@ -62,7 +62,7 @@ func DocumentToHTML(code string, document *lsiftyped.Document) (template.HTML, e
 		currentCell = cell
 	}
 
-	addText := func(kind lsiftyped.SyntaxKind, line string) {
+	addText := func(kind scip.SyntaxKind, line string) {
 		appendTextToNode(currentCell, kind, line)
 	}
 
@@ -100,9 +100,9 @@ func safeSlice(text []rune, start, finish int32) string {
 // which can be used to generate different kinds of HTML.
 func lsifToHTML(
 	code string,
-	document *lsiftyped.Document,
+	document *scip.Document,
 	addRow func(row int32),
-	addText func(kind lsiftyped.SyntaxKind, line string),
+	addText func(kind scip.SyntaxKind, line string),
 	validLines map[int32]bool,
 ) {
 	splitStringLines := strings.Split(code, "\n")
@@ -152,7 +152,7 @@ func lsifToHTML(
 			occ := occurences[occIndex]
 			occIndex += 1
 
-			startRow, startCharacter, endRow, endCharacter := normalizeLsifTypedRange(occ.Range)
+			startRow, startCharacter, endRow, endCharacter := normalizeSCIPRange(occ.Range)
 
 			addText(occ.SyntaxKind, safeSlice(line, lineCharacter, startCharacter))
 
@@ -179,7 +179,7 @@ func lsifToHTML(
 			lineCharacter = endCharacter
 		}
 
-		addText(lsiftyped.SyntaxKind_UnspecifiedSyntaxKind, safeSlice(line, lineCharacter, int32(len(line))))
+		addText(scip.SyntaxKind_UnspecifiedSyntaxKind, safeSlice(line, lineCharacter, int32(len(line))))
 
 		row += 1
 	}
@@ -187,14 +187,14 @@ func lsifToHTML(
 
 // appendTextToNode formats the text to the right css class and appends to the current
 // html node
-func appendTextToNode(tr *html.Node, kind lsiftyped.SyntaxKind, text string) {
+func appendTextToNode(tr *html.Node, kind scip.SyntaxKind, text string) {
 	if text == "" {
 		return
 	}
 
 	var class string
-	if kind != lsiftyped.SyntaxKind_UnspecifiedSyntaxKind {
-		class = "hl-typed-" + lsiftyped.SyntaxKind_name[int32(kind)]
+	if kind != scip.SyntaxKind_UnspecifiedSyntaxKind {
+		class = "hl-typed-" + scip.SyntaxKind_name[int32(kind)]
 	}
 
 	span := &html.Node{Type: html.ElementNode, DataAtom: atom.Span, Data: atom.Span.String()}
@@ -224,7 +224,7 @@ func newHtmlRow(row int32, includeLineNumbers bool) (htmlRow, htmlCode *html.Nod
 	return tr, codeCell
 }
 
-func normalizeLsifTypedRange(r []int32) (int32, int32, int32, int32) {
+func normalizeSCIPRange(r []int32) (int32, int32, int32, int32) {
 	if len(r) == 3 {
 		return r[0], r[1], r[0], r[2]
 	} else {
