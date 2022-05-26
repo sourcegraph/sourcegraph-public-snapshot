@@ -182,7 +182,7 @@ export async function createPreviewOrOpenRequestForContentMatch(
         arguments: {
             fileName,
             path: match.path,
-            content,
+            content: content.replaceAll('\r\n', '\n'),
             lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
             absoluteOffsetAndLengths,
         },
