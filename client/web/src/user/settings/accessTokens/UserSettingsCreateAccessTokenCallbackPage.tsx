@@ -47,11 +47,13 @@ interface TokenRequester {
     /** A description of where the request is coming from */
     description: string
     /** The message to show users when the token has been created successfully */
-    message?: string
+    successMessage?: string
+    /** The message to show users in case the token cannot be imported automatically */
+    infoMessage?: string
     /** How the redirect URL should be open: open in same tab vs open in a new-tab */
     /** Default: Open link in same tab */
     callbackType?: 'open' | 'new-tab'
-    /** Show button to redirect URL on click */
+    /** Show button to redirect URL on click (eg: button to import token) */
     showRedirectButton?: boolean
 }
 
@@ -61,8 +63,10 @@ const REQUESTERS: Record<string, TokenRequester> = {
         name: 'VS Code Extension',
         redirectURL: 'vscode://sourcegraph.sourcegraph?code=$TOKEN',
         description: 'Auth from VS Code Extension for Sourcegraph',
-        message:
-            'If you do not see an open dialog in your browser, please make sure you have VS Code running on your machine, and then click the import button below. You can also import the token manually.',
+        successMessage:
+            'Importing your token will automatically connect your Sourcegraph account in the VS Code extension.',
+        infoMessage:
+            'If you do not see an open dialog in your browser, please make sure you have VS Code running on your machine.',
         callbackType: 'new-tab',
         showRedirectButton: true,
     },
@@ -152,63 +156,77 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
     if (creationOrError === 'loading') {
         return <LoadingSpinner />
     }
+
+    if (!requester) {
+        return null
+    }
+
     return (
         <div className="user-settings-create-access-token-page">
             <PageTitle title="Create access token" />
             <PageHeader
-                path={[{ text: `New access token ${requester ? 'for ' + requester.name : ''}` }]}
+                path={[{ text: `Connect my account to ${requester ? requester.name : ''}` }]}
                 headingElement="h2"
                 className="mb-3"
             />
+            {requester?.infoMessage && (
+                <Alert className="my-2" variant="warning">
+                    <p className="my-2">{requester?.infoMessage}</p>
+                </Alert>
+            )}
             {newToken && requester && (
                 <Form>
                     <Container className="mb-3">
-                        <div className="form-group">
-                            <Typography.Label htmlFor="user-settings-create-access-token-page__note">
-                                Token description
-                            </Typography.Label>
-                            <input
-                                type="text"
-                                className="form-control test-create-access-token-description"
-                                id="user-settings-create-access-token-page__note"
-                                placeholder={note}
-                                disabled={true}
-                            />
-                        </div>
-                        <div className="form-group mb-0">
-                            <Typography.Label
-                                htmlFor="user-settings-create-access-token-page__scope-user:all"
-                                className="mb-0"
-                            >
-                                Token scope
-                            </Typography.Label>
+                        {!requester && (
+                            <div>
+                                <div className="form-group">
+                                    <Typography.Label htmlFor="user-settings-create-access-token-page__note">
+                                        Token description
+                                    </Typography.Label>
+                                    <input
+                                        type="text"
+                                        className="form-control test-create-access-token-description"
+                                        id="user-settings-create-access-token-page__note"
+                                        placeholder={note}
+                                        disabled={true}
+                                    />
+                                </div>
+                                <div className="form-group mb-0">
+                                    <Typography.Label
+                                        htmlFor="user-settings-create-access-token-page__scope-user:all"
+                                        className="mb-0"
+                                    >
+                                        Token scope
+                                    </Typography.Label>
+                                    <Checkbox
+                                        id="user-settings-create-access-token-page__scope-user:all"
+                                        checked={true}
+                                        label={
+                                            <>
+                                                <strong>{AccessTokenScopes.UserAll}</strong> — Full control of all
+                                                resources accessible to the user account
+                                            </>
+                                        }
+                                        value={AccessTokenScopes.UserAll}
+                                        onChange={() => {
+                                            setScopes([AccessTokenScopes.UserAll])
+                                        }}
+                                        disabled={true}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        <Alert className="access-token-created-alert mt-3" variant="success">
+                            <p className="mt-4 mb-2 font-weight-bold">
+                                {requester.name} access token successfully generated
+                            </p>
+                            <p>{requester?.successMessage}</p>
+                            <CopyableText className="test-access-token" text={newToken} size={48} />
                             <p>
                                 <small className="form-help text-muted">
-                                    Tokens with limited user scopes are not yet supported.
+                                    This is a one-time access token to connect your account to {requester.name}.
                                 </small>
                             </p>
-                            <Checkbox
-                                id="user-settings-create-access-token-page__scope-user:all"
-                                checked={true}
-                                label={
-                                    <>
-                                        <strong>{AccessTokenScopes.UserAll}</strong> — Full control of all resources
-                                        accessible to the user account
-                                    </>
-                                }
-                                value={AccessTokenScopes.UserAll}
-                                onChange={() => {
-                                    setScopes([AccessTokenScopes.UserAll])
-                                }}
-                                disabled={true}
-                            />
-                        </div>
-                        <Alert className="access-token-created-alert mt-3" variant="success">
-                            <p>Copy the new access token now. You won't be able to see it again.</p>
-                            <CopyableText className="test-access-token" text={newToken} size={48} />
-                            <Typography.H5 className="mt-4 mb-2">
-                                <strong>{requester?.message}</strong>
-                            </Typography.H5>
                         </Alert>
                     </Container>
                     <div className="mb-3">
