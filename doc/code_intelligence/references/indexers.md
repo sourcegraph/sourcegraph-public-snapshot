@@ -116,6 +116,18 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
         <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
         <td><a href="https://rust-analyzer.github.io/">See notes</a></td> <!-- Build tooling -->
       </tr>
+     <tr>
+        <td>Python</td>
+        <td><a href="https://github.com/sourcegraph/scip-python">scip-python</a></td>
+        <td><a href="#status-definitions" class="indexer-status">🟠</a></td>
+        <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
+        <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
+        <td class="indexer-implemented-y">✓</td> <!-- Find references -->
+        <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
+        <td class="indexer-implemented-n">✗</td> <!-- Cross-repository -->
+        <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
+        <td><a href="https://github.com/sourcegraph/scip-python">See notes</a></td> <!-- Build tooling -->
+      </tr>
    </tbody>
 </table>
 
