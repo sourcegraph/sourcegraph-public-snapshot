@@ -168,8 +168,7 @@ func (fm *FileMatch) Key() Key {
 
 type HunkMatch struct {
 	Preview         string
-	LineNumberStart int32
-	LineNumberEnd   int32
+	LineNumberStart int
 	Ranges          Ranges
 }
 
@@ -198,7 +197,7 @@ func (h HunkMatch) AsLineMatches() []*LineMatch {
 		}
 		lineMatches[i] = &LineMatch{
 			Preview:          line,
-			LineNumber:       lineNumber,
+			LineNumber:       int32(lineNumber),
 			OffsetAndLengths: offsetAndLengths,
 		}
 	}
