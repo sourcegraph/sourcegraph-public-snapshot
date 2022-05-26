@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"sort"
 	"strconv"
 	"time"
@@ -105,9 +104,9 @@ func mapToRecords(m map[string]int) (records [][]string) {
 	return
 }
 
-func minutesToHours(inMinutes int) string {
-	hours := inMinutes / 60
-	minutes := inMinutes % 60
-	str := fmt.Sprintf("%d hours %d minutes", hours, minutes)
-	return str
-}
+// func minutesToHours(inMinutes int) string {
+// 	hours := inMinutes / 60
+// 	minutes := inMinutes % 60
+// 	str := fmt.Sprintf("%d hours %d minutes", hours, minutes)
+// 	return str
+// }

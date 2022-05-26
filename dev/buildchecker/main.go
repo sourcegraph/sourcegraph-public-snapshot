@@ -350,7 +350,6 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 			}
 		}
 	}
-
 	if historyFlags.okayHQToken != "" {
 		okayCli := okay.NewClient(http.DefaultClient, historyFlags.okayHQToken)
 
@@ -383,17 +382,12 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 			if err != nil {
 				log.Fatal("Error storing OKAYHQ event okay.Push: ", err.Error())
 			}
-
 		}
-
 		if err := okayCli.Flush(); err != nil {
 			log.Fatal("Error posting to OKAYHQ okay.Flush: ", err.Error())
 		}
-
 	}
-
 	if historyFlags.slackReportWebHook != "" {
-
 		var totalBuilds int
 		var totalTime int
 		var totalFlakes int
@@ -410,21 +404,18 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 			totalFlakes += flake
 		}
 
-		message := fmt.Sprintf(`
-		:bar_chart: Welcome to your weekly CI report for week ending: %s
-		Total builds: %d
-		Total incident duration: %s
-		Total flakes: %d÷
+		message := fmt.Sprintf(`:bar_chart: Welcome to your weekly CI report for week ending %s!
+	• Total builds: *%d*
+	• Total incident duration: *%v*
+	• Total flakes: *%d*
 
-		For more information, view the dashboards in [OKAYHQ](https://app.okayhq.com/dashboards/3856903d-33ea-4d60-9719-68fec0eb4313/build-stats-kpis).
-		`, historyFlags.createdToDate, totalBuilds, minutesToHours(totalTime), totalFlakes)
+	For more information, view the dashboards at <https://app.okayhq.com/dashboards/3856903d-33ea-4d60-9719-68fec0eb4313/build-stats-kpis|OKAYHQ>.
+`, historyFlags.createdToDate, totalBuilds, time.Duration(totalTime*int(time.Minute)), totalFlakes)
 
 		if _, err := postSlackUpdate([]string{historyFlags.slackReportWebHook}, message); err != nil {
 			log.Fatal("postSlackUpdate: ", err)
 		}
-
 	}
-
 	log.Println("done!")
 }
 
