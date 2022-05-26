@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -19,43 +18,9 @@ import (
 // the upload processing as it is likely that we are processing multiple uploads concurrently
 // for the same repository and should not repeat the work since the last calculation performed
 // will always be the one we want.
-type Updater struct {
-	dbStore                   DBStore
-	locker                    Locker
-	gitserverClient           GitserverClient
-	maxAgeForNonStaleBranches time.Duration
-	maxAgeForNonStaleTags     time.Duration
-	operations                *operations
-}
 
-var (
-	_ goroutine.Handler      = &Updater{}
-	_ goroutine.ErrorHandler = &Updater{}
-)
-
-// NewUpdater returns a background routine that periodically updates the commit graph
-// and visible uploads for each repository marked as dirty.
-func NewUpdater(
-	dbStore DBStore,
-	locker Locker,
-	gitserverClient GitserverClient,
-	maxAgeForNonStaleBranches time.Duration,
-	maxAgeForNonStaleTags time.Duration,
-	interval time.Duration,
-	observationContext *observation.Context,
-) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &Updater{
-		dbStore:                   dbStore,
-		locker:                    locker,
-		gitserverClient:           gitserverClient,
-		maxAgeForNonStaleBranches: maxAgeForNonStaleBranches,
-		maxAgeForNonStaleTags:     maxAgeForNonStaleTags,
-		operations:                newOperations(dbStore, observationContext),
-	})
-}
-
-// Handle checks for dirty repositories and invokes the underlying updater on each one.
-func (u *Updater) Handle(ctx context.Context) error {
+// HandleUpdater checks for dirty repositories and invokes the underlying updater on each one.
+func (u *updater) HandleUpdater(ctx context.Context) error {
 	repositoryIDs, err := u.dbStore.DirtyRepositories(ctx)
 	if err != nil {
 		return errors.Wrap(err, "dbstore.DirtyRepositories")
@@ -75,14 +40,14 @@ func (u *Updater) Handle(ctx context.Context) error {
 	return updateErr
 }
 
-func (u *Updater) HandleError(err error) {
-	log15.Error("Failed to run update process", "err", err)
-}
+// func (u *updater) HandleError(err error) {
+// 	log15.Error("Failed to run update process", "err", err)
+// }
 
 // tryUpdate will call update while holding an advisory lock to give exclusive access to the
 // update procedure for this repository. If the lock is already held, this method will simply
 // do nothing.
-func (u *Updater) tryUpdate(ctx context.Context, repositoryID, dirtyToken int) (err error) {
+func (u *updater) tryUpdate(ctx context.Context, repositoryID, dirtyToken int) (err error) {
 	ok, unlock, err := u.locker.Lock(ctx, int32(repositoryID), false)
 	if err != nil || !ok {
 		return errors.Wrap(err, "locker.Lock")
@@ -101,7 +66,7 @@ func (u *Updater) tryUpdate(ctx context.Context, repositoryID, dirtyToken int) (
 // The user should supply a dirty token that is associated with the given repository so that
 // the repository can be unmarked as long as the repository is not marked as dirty again before
 // the update completes.
-func (u *Updater) update(ctx context.Context, repositoryID, dirtyToken int) (err error) {
+func (u *updater) update(ctx context.Context, repositoryID, dirtyToken int) (err error) {
 	ctx, trace, endObservation := u.operations.commitUpdate.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
@@ -126,7 +91,7 @@ func (u *Updater) update(ctx context.Context, repositoryID, dirtyToken int) (err
 	// Decorate the commit graph with the set of processed uploads are visible from each commit,
 	// then bulk update the denormalized view in Postgres. We call this with an empty graph as well
 	// so that we end up clearing the stale data and bulk inserting nothing.
-	if err := u.dbStore.CalculateVisibleUploads(ctx, repositoryID, commitGraph, refDescriptions, u.maxAgeForNonStaleBranches, u.maxAgeForNonStaleTags, dirtyToken); err != nil {
+	if err := u.dbStore.CalculateVisibleUploads(ctx, repositoryID, commitGraph, refDescriptions, ConfigInst.MaxAgeForNonStaleBranches, ConfigInst.MaxAgeForNonStaleTags, dirtyToken); err != nil {
 		return errors.Wrap(err, "dbstore.CalculateVisibleUploads")
 	}
 
@@ -144,7 +109,7 @@ func (u *Updater) update(ctx context.Context, repositoryID, dirtyToken int) (err
 // The number of commits pulled back here should not grow over time unless the repo is growing at an
 // accelerating rate, as we routinely expire old information for active repositories in a janitor
 // process.
-func (u *Updater) getCommitGraph(ctx context.Context, repositoryID int) (*gitdomain.CommitGraph, error) {
+func (u *updater) getCommitGraph(ctx context.Context, repositoryID int) (*gitdomain.CommitGraph, error) {
 	commitDate, ok, err := u.dbStore.GetOldestCommitDate(ctx, repositoryID)
 	if err != nil {
 		return nil, err

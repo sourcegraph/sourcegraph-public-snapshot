@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -20,6 +21,7 @@ type DBStore interface {
 		dirtyToken int,
 	) error
 	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)
+	MaxStaleAge(ctx context.Context) (_ time.Duration, err error)
 }
 
 type Locker interface {
@@ -30,3 +32,5 @@ type GitserverClient interface {
 	RefDescriptions(ctx context.Context, repositoryID int, gitOjbs ...string) (map[string][]gitdomain.RefDescription, error)
 	CommitGraph(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (*gitdomain.CommitGraph, error)
 }
+
+type DBStoreShim struct{ *dbstore.Store }
