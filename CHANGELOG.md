@@ -34,10 +34,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.40.0
 
-- Code Insights: Fixed incorrect Line Chart size calculation in FireFox
-- The Grafana dashboard now has a global container resource usage view to help site-admin quickly identify potential scaling issues. [#34808](https://github.com/sourcegraph/sourcegraph/pull/34808)
-- Deployment: Nginx ingress controller updated to v1.2.0
-
 ### Added
 
 - Code Insights: Added fuzzy search filter for dashboard select drop down
@@ -52,6 +48,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Pings for server-side batch changes [#34308](https://github.com/sourcegraph/sourcegraph/pull/34308)
 - Indexed search will detect when it is misconfigured and has multiple replicas writing to the same directory. [#35513](https://github.com/sourcegraph/sourcegraph/pull/35513)
 - A new token creation callback feature that sends a token back to a trusted program automatically after the user has signed in [#35339](https://github.com/sourcegraph/sourcegraph/pull/35339)
+- The Grafana dashboard now has a global container resource usage view to help site-admin quickly identify potential scaling issues. [#34808](https://github.com/sourcegraph/sourcegraph/pull/34808)
 
 ### Changed
 
@@ -60,10 +57,12 @@ All notable changes to Sourcegraph are documented in this file.
 - Capture group Code Insights now use the Compute streaming endpoint. [#34905](https://github.com/sourcegraph/sourcegraph/pull/34905)
 - Code Insights will now automatically generate queries with a default value of `fork:no` and `archived:no` if these fields are not specified by the user. This removes the need to manually add these fields to have consistent behavior from historical to non-historical results. [#30204](https://github.com/sourcegraph/sourcegraph/issues/30204)
 - Search Code Insights now use the Search streaming endpoint. [#35286](https://github.com/sourcegraph/sourcegraph/pull/35286)
+- Deployment: Nginx ingress controller updated to v1.2.0
 
 ### Fixed
 
 - Code Insights: Fixed line chart data series hover effect. Now the active line will be rendered on top of the others.
+- Code Insights: Fixed incorrect Line Chart size calculation in FireFox
 - Unverified primary emails no longer breaks the Emails-page for users and Users-page for Site Admin. [#34312](https://github.com/sourcegraph/sourcegraph/pull/34312)
 - Button to download raw file in blob page is now working correctly. [#34558](https://github.com/sourcegraph/sourcegraph/pull/34558)
 - Searches containing `or` expressions are now optimized to evaluate natively on the backends that support it ([#34382](https://github.com/sourcegraph/sourcegraph/pull/34382)), and both commit and diff search have been updated to run optimized `and`, `or`, and `not` queries. [#34595](https://github.com/sourcegraph/sourcegraph/pull/34595)
