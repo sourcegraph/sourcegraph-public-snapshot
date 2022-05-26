@@ -2022,7 +2022,7 @@
         },
         {
           "Name": "cached_result_found",
-          "Index": 16,
+          "Index": 15,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
@@ -2061,7 +2061,7 @@
         },
         {
           "Name": "created_at",
-          "Index": 11,
+          "Index": 10,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
@@ -2100,7 +2100,7 @@
         },
         {
           "Name": "ignored",
-          "Index": 13,
+          "Index": 12,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
@@ -2152,32 +2152,6 @@
         },
         {
           "Name": "skipped",
-          "Index": 15,
-          "TypeName": "boolean",
-          "IsNullable": false,
-          "Default": "false",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "step_cache_results",
-          "Index": 18,
-          "TypeName": "jsonb",
-          "IsNullable": false,
-          "Default": "'{}'::jsonb",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "unsupported",
           "Index": 14,
           "TypeName": "boolean",
           "IsNullable": false,
@@ -2190,8 +2164,34 @@
           "Comment": ""
         },
         {
+          "Name": "step_cache_results",
+          "Index": 16,
+          "TypeName": "jsonb",
+          "IsNullable": false,
+          "Default": "'{}'::jsonb",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "unsupported",
+          "Index": 13,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "updated_at",
-          "Index": 12,
+          "Index": 11,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
@@ -8186,7 +8186,7 @@
         },
         {
           "Name": "last_changed",
-          "Index": 8,
+          "Index": 7,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
@@ -8199,7 +8199,7 @@
         },
         {
           "Name": "last_error",
-          "Index": 5,
+          "Index": 4,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -8212,7 +8212,7 @@
         },
         {
           "Name": "last_fetched",
-          "Index": 7,
+          "Index": 6,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
@@ -8238,7 +8238,7 @@
         },
         {
           "Name": "repo_size_bytes",
-          "Index": 9,
+          "Index": 8,
           "TypeName": "bigint",
           "IsNullable": true,
           "Default": "",
@@ -8251,7 +8251,7 @@
         },
         {
           "Name": "shard_id",
-          "Index": 4,
+          "Index": 3,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
@@ -8264,7 +8264,7 @@
         },
         {
           "Name": "updated_at",
-          "Index": 6,
+          "Index": 5,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",

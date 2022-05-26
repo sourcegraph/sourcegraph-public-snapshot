@@ -15,6 +15,11 @@ type operations struct {
 	infer                       *observation.Operation
 	list                        *observation.Operation
 	updateIndexingConfiguration *observation.Operation
+
+	// temporary
+	inferIndexConfiguration *observation.Operation
+	queueIndex              *observation.Operation
+	queueIndexForPackage    *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -39,7 +44,10 @@ func newOperations(observationContext *observation.Context) *operations {
 		get:                         op("Get"),
 		getBatch:                    op("GetBatch"),
 		infer:                       op("Infer"),
+		inferIndexConfiguration:     op("InferIndexConfiguration"),
 		list:                        op("List"),
+		queueIndex:                  op("QueueIndex"),
+		queueIndexForPackage:        op("QueueIndexForPackage"),
 		updateIndexingConfiguration: op("UpdateIndexingConfiguration"),
 	}
 }

@@ -235,7 +235,7 @@ func TestStatusMessages(t *testing.T) {
 				}
 			}
 
-			err := database.Repos(db).Create(ctx, stored...)
+			err := db.Repos().Create(ctx, stored...)
 			require.NoError(t, err)
 
 			t.Cleanup(func() {
@@ -243,7 +243,7 @@ func TestStatusMessages(t *testing.T) {
 				for _, r := range stored {
 					ids = append(ids, r.ID)
 				}
-				err := database.Repos(db).Delete(ctx, ids...)
+				err := db.Repos().Delete(ctx, ids...)
 				require.NoError(t, err)
 			})
 
