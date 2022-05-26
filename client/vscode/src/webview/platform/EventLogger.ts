@@ -10,6 +10,7 @@ import { ANONYMOUS_USER_ID_KEY } from '../../settings/LocalStorageService'
 import { VsceTelemetryService } from './telemetryService'
 
 // Event Logger for VS Code Extension
+// looker: https://sourcegraph.looker.com/dashboards/294?Company+Type=Customer&Idekind=-NULL
 export class EventLogger implements VsceTelemetryService {
     private anonymousUserID = ''
     private evenSourceType = EventSource.BACKEND || EventSource.IDEEXTENSION
@@ -100,6 +101,8 @@ export class EventLogger implements VsceTelemetryService {
      * And a new ide install event will be logged
      */
     private async initializeLogParameters(): Promise<void> {
+        const appHost = await this.vsceAPI.appHost
+        this.editorInfo = { editor: 'vscode', version: `version ${appHost}` }
         let anonymousUserID = await this.vsceAPI.getLocalStorageItem(ANONYMOUS_USER_ID_KEY)
         const source = await this.vsceAPI.getEventSource
         if (!anonymousUserID) {

@@ -36,7 +36,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
     authenticatedUser,
 }) => {
     const [state, setState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
-    const [hasAccount, setHasAccount] = useState(!authenticatedUser)
+    const [hasAccount, setHasAccount] = useState(authenticatedUser?.username !== undefined)
     const [usePrivateInstance, setUsePrivateInstance] = useState(false)
     const [useAccessToken, setUseAccessToken] = useState(false)
     const signUpURL = VSCE_LINK_AUTH('sign-up')
@@ -121,6 +121,13 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
         platformContext.telemetryService.log('VSCESidebarCreateAccount')
     }
 
+    const onBrowserSigninClick = (): void => {
+        setHasAccount(true)
+        setUsePrivateInstance(false)
+        setUseAccessToken(!useAccessToken)
+        platformContext.telemetryService.log('VSCESidebarBrowserSignin')
+    }
+
     const onEnterpriseSigninClick = (): void => {
         setUsePrivateInstance(!usePrivateInstance)
         setUseAccessToken(!useAccessToken)
@@ -149,32 +156,46 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
 
     if (!hasAccount && !accessToken) {
         return renderCommon(
-            <>
+            <div>
                 <p className={classNames(styles.ctaParagraph)}>
                     Create an account to search across your private repositories and access advanced features: search
                     multiple repositories & commit history, monitor code changes, save searches, and more.
                 </p>
-                <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
-                    <VSCodeLink onClick={onSignUpClick} href={signUpURL}>
+                <Link to={signUpURL}>
+                    <VSCodeButton
+                        type="button"
+                        onClick={onSignUpClick}
+                        className={classNames(
+                            'btn my-1 p-0',
+                            styles.ctaButton,
+                            styles.ctaButtonWrapperWithContextBelow
+                        )}
+                        autofocus={false}
+                        disabled={usePrivateInstance}
+                    >
                         Create an account
-                    </VSCodeLink>
-                </p>
-                <VSCodeLink onClick={() => setHasAccount(true)}>Have an account?</VSCodeLink>
-            </>
+                    </VSCodeButton>
+                </Link>
+                <VSCodeLink className="my-0" onClick={() => setHasAccount(true)}>
+                    Have an account?
+                </VSCodeLink>
+            </div>
         )
     }
 
     return renderCommon(
         <>
             <p className={classNames(styles.ctaParagraph)}>
-                Connect your Sourcegraph account to enable searches on your private code.
+                {hasAccount
+                    ? 'Connect your Sourcegraph account to enable searches on your private code.'
+                    : 'Create an account to search across your private repositories and access advanced features: search multiple repositories & commit history, monitor code changes, save searches, and more.'}
             </p>
             {/* ----------- LOGIN WITH BROWSER FOR CLOUD USERS ONLY ----------- */}
             {isSourcegraphDotCom && (
                 <Link to={isSourcegraphDotCom}>
                     <VSCodeButton
                         type="button"
-                        onClick={() => setUseAccessToken(true)}
+                        onClick={() => onBrowserSigninClick()}
                         className={classNames(
                             'btn my-1 p-0',
                             styles.ctaButton,

@@ -44,6 +44,8 @@ export interface ExtensionCoreAPI {
     openSourcegraphFile: (uri: string) => void
     openLink: (uri: string) => void
     copyLink: (uri: string) => void
+    /** Get the name of the app where VS Code is running. ex. 'desktop', 'github.dev', 'gitpod',*/
+    appHost: string
     reloadWindow: () => void
     focusSearchPanel: () => void
     /** Cancels previous search when called. */

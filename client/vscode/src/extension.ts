@@ -89,6 +89,7 @@ export function activate(context: vscode.ExtensionContext): void {
         getAccessToken: accessTokenSetting(),
         setAccessToken: accessToken => updateAccessTokenSetting(accessToken),
         setEndpointUri: (uri, accessToken) => updateEndpointSetting(uri, accessToken),
+        appHost: vscode.env.appHost,
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),
         focusSearchPanel,
         streamSearch,
