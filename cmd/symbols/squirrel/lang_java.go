@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"sort"
+	"strings"
 )
 
 func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node, err error) {
@@ -410,14 +411,9 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 func (squirrel *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context.Context, program Node, ident string) (ret *Node, err error) {
 	defer squirrel.onCall(program, String(program.Type()), lazyNodeStringer(&ret))()
 
-	// Collect imports
-	imports := [][]string{}
-	for _, importNode := range children(program.Node) {
-		if importNode.Type() != "import_declaration" {
-			continue
-		}
+	getPath := func(node Node) ([]string, error) {
 		query := `(identifier) @ident`
-		captures, err := allCaptures(query, swapNode(program, importNode))
+		captures, err := allCaptures(query, node)
 		if err != nil {
 			return nil, err
 		}
@@ -428,16 +424,42 @@ func (squirrel *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context
 		for _, capture := range captures {
 			components = append(components, capture.Content(capture.Contents))
 		}
+		return components, nil
+	}
+
+	// Determine project root
+	root := strings.Split(filepath.Dir(program.RepoCommitPath.Path), "/")
+	for _, pkgNode := range children(program.Node) {
+		if pkgNode.Type() != "package_declaration" {
+			continue
+		}
+		pkg, err := getPath(swapNode(program, pkgNode))
+		if err != nil {
+			return nil, err
+		}
+		root = root[:len(root)-len(pkg)]
+	}
+
+	// Collect imports
+	imports := [][]string{}
+	for _, importNode := range children(program.Node) {
+		if importNode.Type() != "import_declaration" {
+			continue
+		}
+		path, err := getPath(swapNode(program, importNode))
+		if err != nil {
+			return nil, err
+		}
 		for _, child := range children(importNode) {
 			if child.Type() == "asterisk" {
-				components = append(components, "*")
+				path = append(path, "*")
 				break
 			}
 		}
-		if len(components) == 0 {
+		if len(path) == 0 {
 			continue
 		}
-		imports = append(imports, components)
+		imports = append(imports, path)
 	}
 
 	// Check explicit imports (faster) before running symbol searches (slower)
@@ -451,7 +473,7 @@ func (squirrel *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context
 				ctx,
 				program.RepoCommitPath.Repo,
 				program.RepoCommitPath.Commit,
-				[]string{filepath.Join(importPath[:len(importPath)-1]...)},
+				[]string{fmt.Sprintf("^%s/%s", filepath.Join(root...), filepath.Join(importPath[:len(importPath)-1]...))},
 				ident,
 			)
 		}
@@ -482,7 +504,7 @@ func (squirrel *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context
 			ctx,
 			program.RepoCommitPath.Repo,
 			program.RepoCommitPath.Commit,
-			[]string{filepath.Join(importPath[:len(importPath)-1]...)},
+			[]string{fmt.Sprintf("^%s/%s", filepath.Join(root...), filepath.Join(importPath[:len(importPath)-1]...))},
 			ident,
 		)
 		if err != nil {
