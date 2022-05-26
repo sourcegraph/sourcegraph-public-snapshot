@@ -4,8 +4,8 @@ import classNames from 'classnames'
 import { range, noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import VisibilitySensor from 'react-visibility-sensor'
-import { of, combineLatest, Observable, Subscription, BehaviorSubject, NEVER } from 'rxjs'
-import { catchError, filter, map, distinctUntilChanged } from 'rxjs/operators'
+import { of, Observable, Subscription, BehaviorSubject } from 'rxjs'
+import { catchError, filter } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
@@ -105,16 +105,18 @@ export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
     const [blobLinesOrError, setBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
     const tableContainerElements = useMemo(() => new BehaviorSubject<HTMLElement | null>(null), [])
     const [tableContainerElement, setTableContainerElement] = useState<HTMLElement | null>(null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const propsChanges = useMemo(() => new BehaviorSubject<Props>(props), [])
-    const visibilityChanges = useMemo(() => new BehaviorSubject<boolean | null>(null), [])
     const [isVisible, setIsVisible] = useState(false)
 
-    const { blobLines, fetchHighlightedFileRangeLines, isFirst, startLine, endLine, highlightRanges } = props
-
-    useEffect(() => {
-        propsChanges.next(props)
-    }, [props, propsChanges])
+    const {
+        blobLines,
+        fetchHighlightedFileRangeLines,
+        isFirst,
+        startLine,
+        endLine,
+        highlightRanges,
+        viewerUpdates,
+        hoverifier,
+    } = props
 
     // Get the syntax highlighted blob lines
     useEffect(() => {
@@ -157,40 +159,29 @@ export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
     // Hook up the hover tooltips
     useEffect(() => {
         let hoverifierSubscription: Subscription | null
-        const subscription = combineLatest([
-            props.viewerUpdates ?? NEVER,
-            propsChanges.pipe(
-                map(props => props.hoverifier),
-                distinctUntilChanged(),
-                filter(isDefined)
-            ),
-        ]).subscribe(([{ viewerId, ...hoverContext }, hoverifier]) => {
-            if (hoverifierSubscription) {
-                hoverifierSubscription.unsubscribe()
-            }
 
-            hoverifierSubscription = hoverifier.hoverify({
-                positionEvents: tableContainerElements.pipe(
-                    filter(isDefined),
-                    findPositionsFromEvents({ domFunctions })
-                ),
-                resolveContext: () => hoverContext,
-                dom: domFunctions,
-            })
+        const subscription = viewerUpdates?.subscribe(({ viewerId, ...hoverContext }) => {
+            if (hoverifier) {
+                if (hoverifierSubscription) {
+                    hoverifierSubscription.unsubscribe()
+                }
+
+                hoverifierSubscription = hoverifier.hoverify({
+                    positionEvents: tableContainerElements.pipe(
+                        filter(isDefined),
+                        findPositionsFromEvents({ domFunctions })
+                    ),
+                    resolveContext: () => hoverContext,
+                    dom: domFunctions,
+                })
+            }
         })
+
         return () => {
-            subscription.unsubscribe()
+            subscription?.unsubscribe()
             hoverifierSubscription?.unsubscribe()
         }
-    }, [props.viewerUpdates, propsChanges, tableContainerElements])
-
-    const onChangeVisibility = useCallback(
-        (isVisible: boolean): void => {
-            visibilityChanges.next(isVisible)
-            setIsVisible(isVisible)
-        },
-        [visibilityChanges]
-    )
+    }, [hoverifier, tableContainerElements, viewerUpdates])
 
     const updateTableContainerElementReference = useCallback(
         (reference: HTMLElement | null): void => {
@@ -201,7 +192,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
     )
 
     return (
-        <VisibilitySensor onChange={onChangeVisibility} partialVisibility={true} offset={visibilitySensorOffset}>
+        <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={visibilitySensorOffset}>
             <Typography.Code
                 data-testid="code-excerpt"
                 className={classNames(
