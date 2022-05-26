@@ -620,6 +620,7 @@ func TestServer_RepoLookup(t *testing.T) {
 
 			clock := clock
 			syncer := &repos.Syncer{
+				Logger:  logger,
 				Now:     clock.Now,
 				Store:   store,
 				Sourcer: repos.NewFakeSourcer(nil, tc.src),
@@ -786,7 +787,6 @@ func TestServer_handleExternalServiceSync(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			src := testSource{

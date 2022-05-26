@@ -162,14 +162,13 @@ func Main(enterpriseInit EnterpriseInit) {
 		debugDumpers = enterpriseInit(db, store, keyring.Default(), cf, server)
 	}
 
-	// TODO(burmudar): update syncer to use lib/log
 	syncer := &repos.Syncer{
+		Logger:  logger.Scoped("syncer", "repo syncer"),
 		Sourcer: src,
 		Store:   store,
 		// We always want to listen on the Synced channel since external service syncing
 		// happens on both Cloud and non Cloud instances.
 		Synced:     make(chan repos.Diff),
-		Logger:     log15.Root(),
 		Now:        clock,
 		Registerer: prometheus.DefaultRegisterer,
 	}

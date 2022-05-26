@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -531,6 +532,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			)
 		}
 
+		logger := logtest.Scoped(t)
 		for _, tc := range testCases {
 			if tc.name == "" {
 				t.Error("Test case name is blank")
@@ -568,6 +570,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				syncer := &repos.Syncer{
+					Logger:  logger,
 					Sourcer: tc.sourcer,
 					Store:   st,
 					Now:     now,
@@ -702,6 +705,8 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 			after:    types.Repos{repo},
 		}}
 
+		logger := logtest.Scoped(t)
+
 		for _, tc := range testCases {
 			tc := tc
 			ctx := context.Background()
@@ -720,6 +725,7 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 				}
 
 				syncer := &repos.Syncer{
+					Logger: logger,
 					Now:    time.Now,
 					Store:  s,
 					Synced: make(chan repos.Diff, 1),
@@ -791,6 +797,7 @@ func testSyncRun(store repos.Store) func(t *testing.T) {
 		}
 
 		syncer := &repos.Syncer{
+			Logger:  logtest.Scoped(t),
 			Sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc, nil, sourced...)),
 			Store:   store,
 			Synced:  make(chan repos.Diff),
@@ -931,6 +938,7 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 		}
 
 		syncer := &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s, ok := sourcers[service.ID]
 				if !ok {
@@ -1059,6 +1067,8 @@ func testOrphanedRepo(store repos.Store) func(*testing.T) {
 
 		// Sync first service
 		syncer := &repos.Syncer{
+
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
 				return s, nil
@@ -1157,7 +1167,9 @@ func testCloudDefaultExternalServicesDontSync(store repos.Store) func(*testing.T
 			},
 		}
 
+		logger := logtest.Scoped(t)
 		syncer := &repos.Syncer{
+			Logger: logger,
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
 				return s, nil
@@ -1216,6 +1228,7 @@ func testConflictingSyncers(store repos.Store) func(*testing.T) {
 
 		// Sync first service
 		syncer := &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
 				return s, nil
@@ -1229,6 +1242,7 @@ func testConflictingSyncers(store repos.Store) func(*testing.T) {
 
 		// Sync second service
 		syncer = &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc2, nil, githubRepo)
 				return s, nil
@@ -1273,6 +1287,7 @@ func testConflictingSyncers(store repos.Store) func(*testing.T) {
 
 		// Start syncing using tx1
 		syncer = &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, updatedRepo)
 				return s, nil
@@ -1285,6 +1300,7 @@ func testConflictingSyncers(store repos.Store) func(*testing.T) {
 		}
 
 		syncer2 := &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc2, nil, githubRepo.With(func(r *types.Repo) {
 					r.Description = newDescription
@@ -1370,6 +1386,7 @@ func testSyncRepoMaintainsOtherSources(store repos.Store) func(*testing.T) {
 
 		// Sync first service
 		syncer := &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
 				return s, nil
@@ -1383,6 +1400,7 @@ func testSyncRepoMaintainsOtherSources(store repos.Store) func(*testing.T) {
 
 		// Sync second service
 		syncer = &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc2, nil, githubRepo)
 				return s, nil
@@ -1485,6 +1503,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 
 		// Admin service will sync both repos
 		syncer := &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(adminService, nil, publicRepo, privateRepo)
 				return s, nil
@@ -1501,6 +1520,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 
 		// Unsync the repo to clean things up
 		syncer = &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(adminService, nil)
 				return s, nil
@@ -1517,6 +1537,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 
 		// By default, user service can only sync public code, even if they have access to private code
 		syncer = &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
 				return s, nil
@@ -1539,6 +1560,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 		})
 
 		syncer = &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
 				return s, nil
@@ -1566,6 +1588,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 		}
 
 		syncer = &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
 				return s, nil
@@ -1587,6 +1610,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 
 		// Attempt to add some repos with a per user limit set
 		syncer = &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(userService, nil, publicRepo, publicRepo2)
 				return s, nil
@@ -1601,6 +1625,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 
 		// Attempt to add some repos with a total limit set
 		syncer = &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(userService, nil, publicRepo, publicRepo2)
 				return s, nil
@@ -1669,6 +1694,7 @@ func testNameOnConflictOnRename(store repos.Store) func(*testing.T) {
 
 		// Sync first service
 		syncer := &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo1)
 				return s, nil
@@ -1682,6 +1708,7 @@ func testNameOnConflictOnRename(store repos.Store) func(*testing.T) {
 
 		// Sync second service
 		syncer = &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(*types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc2, nil, githubRepo2)
 				return s, nil
@@ -1700,6 +1727,7 @@ func testNameOnConflictOnRename(store repos.Store) func(*testing.T) {
 
 		// Sync first service
 		syncer = &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(*types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, renamedRepo1)
 				return s, nil
@@ -1773,6 +1801,7 @@ func testDeleteExternalService(store repos.Store) func(*testing.T) {
 
 		// Sync first service
 		syncer := &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
 				return s, nil
@@ -1786,6 +1815,7 @@ func testDeleteExternalService(store repos.Store) func(*testing.T) {
 
 		// Sync second service
 		syncer = &repos.Syncer{
+			Logger: logtest.Scoped(t),
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc2, nil, githubRepo)
 				return s, nil
@@ -1894,9 +1924,11 @@ func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) 
 			},
 		}
 
+		logger := logtest.Scoped(t)
 		for _, svc := range svcs {
 			// Sync first service
 			syncer := &repos.Syncer{
+				Logger: logger,
 				Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 					s := repos.NewFakeSource(svc, nil, githubRepo, githubRepo2)
 					return s, nil
@@ -2029,9 +2061,12 @@ func testUserAndOrgReposAreCountedCorrectly(store repos.Store) func(*testing.T) 
 		}
 
 		repoIdx := 0
+
+		logger := logtest.Scoped(t)
 		for _, svc := range svcs {
 			// Sync first service
 			syncer := &repos.Syncer{
+				Logger: logger,
 				Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 					s := repos.NewFakeSource(svc, nil, reposToSync[repoIdx], reposToSync[repoIdx+1])
 					return s, nil
@@ -2187,6 +2222,8 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	logger := logtest.Scoped(t)
 	for _, repoName := range repoNames {
 		dbRepo := (&types.Repo{
 			Name:        repoName,
@@ -2219,6 +2256,7 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 	}
 
 	syncer := &repos.Syncer{
+		Logger: logger,
 		Now:    time.Now,
 		Store:  s,
 		Synced: make(chan repos.Diff, 1),

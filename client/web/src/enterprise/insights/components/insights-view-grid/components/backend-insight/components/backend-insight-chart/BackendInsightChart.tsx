@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Dispatch, SetStateAction } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
@@ -43,10 +43,24 @@ interface BackendInsightChartProps<Datum> extends BackendInsightData {
     locked: boolean
     className?: string
     onDatumClick: () => void
+    toggle: (id: string) => void
+    isSeriesSelected: (id: string) => boolean
+    isSeriesHovered: (id: string) => boolean
+    setHoveredId: Dispatch<SetStateAction<string | undefined>>
 }
 
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
-    const { locked, isFetchingHistoricalData, content, className, onDatumClick } = props
+    const {
+        locked,
+        isFetchingHistoricalData,
+        content,
+        className,
+        onDatumClick,
+        toggle,
+        isSeriesSelected,
+        isSeriesHovered,
+        setHoveredId,
+    } = props
     const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
 
     const hasViewManySeries = content.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
@@ -78,20 +92,28 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     locked={locked}
                                     className={styles.chart}
                                     onDatumClick={onDatumClick}
+                                    isSeriesSelected={isSeriesSelected}
+                                    isSeriesHovered={isSeriesHovered}
                                     {...content}
                                 />
                             </>
                         )}
                     </ParentSize>
 
-                    <ScrollBox className={styles.legendListContainer}>
+                    <ScrollBox className={styles.legendListContainer} onMouseLeave={() => setHoveredId(undefined)}>
                         <LegendList className={styles.legendList}>
                             {content.series.map(series => (
                                 <LegendItem
                                     key={series.id as string}
                                     color={getLineColor(series)}
                                     name={series.name}
+                                    selected={isSeriesSelected(`${series.id}`)}
+                                    hovered={isSeriesHovered(`${series.id}`)}
                                     className={styles.legendListItem}
+                                    onClick={() => toggle(`${series.id}`)}
+                                    onMouseEnter={() => setHoveredId(`${series.id}`)}
+                                    // prevent accidental dragging events
+                                    onMouseDown={event => event.stopPropagation()}
                                 />
                             ))}
                         </LegendList>

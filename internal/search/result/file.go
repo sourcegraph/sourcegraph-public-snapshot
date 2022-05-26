@@ -3,6 +3,7 @@ package result
 import (
 	"net/url"
 	"path"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
@@ -191,7 +192,23 @@ func MultilineSliceAsLineMatchSlice(matches []MultilineMatch) []*LineMatch {
 	for _, m := range matches {
 		lineMatches = append(lineMatches, m.AsLineMatches()...)
 	}
-	return lineMatches
+	sort.Slice(lineMatches, func(i, j int) bool {
+		return lineMatches[i].LineNumber < lineMatches[j].LineNumber
+	})
+	res := lineMatches[:0]
+	for i, lm := range lineMatches {
+		if i == 0 {
+			res = append(res, lm)
+			continue
+		}
+		last := len(res) - 1
+		if lm.LineNumber == res[last].LineNumber {
+			res[last].OffsetAndLengths = append(res[last].OffsetAndLengths, lm.OffsetAndLengths...)
+		} else {
+			res = append(res, lm)
+		}
+	}
+	return res
 }
 
 func (m MultilineMatch) AsLineMatches() []*LineMatch {
