@@ -249,7 +249,7 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 		t.Fatal(err)
 	}
 	repo := typestest.MakeGithubRepo(service)
-	if err := Repos(db).Create(ctx, repo); err != nil {
+	if err := db.Repos().Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 

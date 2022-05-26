@@ -21,6 +21,15 @@ import { MenuButton, SelectDashboardOption, SelectOption } from './components'
 
 import styles from './DashboardSelect.module.scss'
 
+const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = event => {
+    // ReachUI intercepts the space key to use for selecting menu items
+    // This prevents that from happening if the search input is focused
+    // so that the user can enter a space character in the search input
+    if (document.activeElement === event.currentTarget && event.code === 'Space') {
+        event.stopPropagation()
+    }
+}
+
 export interface DashboardSelectProps {
     value: string | undefined
     dashboards: InsightDashboard[]
@@ -83,6 +92,7 @@ export const DashboardSelect: React.FunctionComponent<React.PropsWithChildren<Da
                             placeholder="Find dashboard..."
                             className="mx-1"
                             onChange={handleFilter}
+                            onKeyDown={handleKeyDown}
                         />
                         {dashboards.filter(isVirtualDashboard).map(dashboard => (
                             <SelectOption

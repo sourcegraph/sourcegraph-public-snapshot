@@ -91,7 +91,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	// parallel) and so that is the true limiting factor here.
 	//
 	// We search within random repositories because many follow a pattern, such as say adding a ton
-	// of `company/lsif-java`, `company/lsif-python`, `company/scip-typescript` etc repos with likely
+	// of `company/scip-java`, `company/lsif-python`, `company/scip-typescript` etc repos with likely
 	// the same collaborators, whereas random sampling may give us dissimilar repositories.
 	const maxReposToScan = 25
 	pickedRepos := pickReposToScanForCollaborators(possibleRepos, maxReposToScan)

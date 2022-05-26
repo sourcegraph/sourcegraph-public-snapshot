@@ -34,6 +34,7 @@ const insightsWithManyLines: Insight[] = [
     {
         id: 'searchInsights.insight.Backend_1',
         executionType: InsightExecutionType.Backend,
+        repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #2',
         series: [{ id: '', query: '', stroke: '', name: '' }],
@@ -46,6 +47,7 @@ const insightsWithManyLines: Insight[] = [
     {
         id: 'searchInsights.insight.Backend_2',
         executionType: InsightExecutionType.Backend,
+        repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #3',
         series: [],
@@ -58,6 +60,7 @@ const insightsWithManyLines: Insight[] = [
     {
         id: 'searchInsights.insight.Backend_3',
         executionType: InsightExecutionType.Backend,
+        repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #1',
         series: [
@@ -77,6 +80,7 @@ const insightsWithManyLines: Insight[] = [
     {
         id: 'searchInsights.insight.Backend_4',
         executionType: InsightExecutionType.Backend,
+        repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #2',
         series: [{ id: '', query: '', stroke: '', name: '' }],
@@ -89,6 +93,7 @@ const insightsWithManyLines: Insight[] = [
     {
         id: 'searchInsights.insight.Backend_5',
         executionType: InsightExecutionType.Backend,
+        repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #2',
         series: [
@@ -122,6 +127,7 @@ const insightsWithManyLines: Insight[] = [
     {
         id: 'searchInsights.insight.Backend_6',
         executionType: InsightExecutionType.Backend,
+        repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #2',
         series: [{ id: '', query: '', stroke: '', name: '' }],
@@ -134,6 +140,7 @@ const insightsWithManyLines: Insight[] = [
     {
         id: 'searchInsights.insight.Backend_7',
         executionType: InsightExecutionType.Backend,
+        repositories: [],
         type: InsightType.SearchBased,
         title: 'Backend insight #2',
         series: [{ id: '', query: '', stroke: '', name: '' }],

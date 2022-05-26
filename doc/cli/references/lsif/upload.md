@@ -65,22 +65,25 @@ Usage of 'src lsif upload':
 
 Examples:
 
-  Upload an LSIF dump with explicit repo, commit, and upload files:
+  Upload a SCIP index with explicit repo, commit, and upload files:
 
-    	$ src lsif upload -repo=FOO -commit=BAR -file=dump.lsif
+    	$ src code-intel upload -repo=FOO -commit=BAR -file=index.scip
 
-  Upload an LSIF dump for a subproject:
+  Upload a SCIP index for a subproject:
 
-    	$ src lsif upload -root=cmd/
+    	$ src code-intel upload -root=cmd/
 
-  Upload an LSIF dump when lsifEnforceAuth is enabled:
+  Upload a SCIP index when lsifEnforceAuth is enabled:
 
-    	$ src lsif upload -github-token=BAZ, or
-    	$ src lsif upload -gitlab-token=BAZ
+    	$ src code-intel upload -github-token=BAZ, or
+    	$ src code-intel upload -gitlab-token=BAZ
 
-  Upload an LSIF dump when the LSIF indexer does not not declare a tool name.
+  Upload an LSIF index when the LSIF indexer does not not declare a tool name.
 
-    	$ src lsif upload -indexer=lsif-elixir
+    	$ src code-intel upload -indexer=lsif-elixir
+
+  For any of these commands, an LSIF index (default name: dump.lsif) can be
+  used instead of a SCIP index (default name: index.scip).
 
 
 ```

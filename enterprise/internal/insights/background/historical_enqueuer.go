@@ -95,7 +95,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 	})
 
 	db := workerBaseStore.Handle().DB()
-	repoStore := database.Repos(db)
+	repoStore := database.NewDB(db).Repos()
 
 	iterator := discovery.NewAllReposIterator(
 		dbcache.NewIndexableReposLister(repoStore),

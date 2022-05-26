@@ -49,7 +49,7 @@ Kind                                  | How                       | Direct | Tra
 [Python](../../integration/python.md) | `Pipfile.lock`            | ✅     | ✅
 [Go](../../integration/go.md)         | lsif-go uploads           | ❌     | ❌
 [Go](../../integration/go.md)         | `go.mod`                  | ✅     | ✅ with Go >= 1.17 go.mod files
-[JVM](../../integration/jvm.md)       | lsif-java uploads         | ❌     | ❌
+[JVM](../../integration/jvm.md)       | scip-java uploads         | ❌     | ❌
 [JVM](../../integration/jvm.md)       | `gradle.lockfile`         | ❌     | ❌
 [JVM](../../integration/jvm.md)       | `pom.xml`                 | ❌     | ❌
 

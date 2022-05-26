@@ -6,7 +6,6 @@ import {
     UpdatePieChartSearchInsightInput,
 } from '../../../../../../../graphql-operations'
 import { parseSeriesDisplayOptions } from '../../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
-import { InsightExecutionType } from '../../../../types'
 import {
     MinimalCaptureGroupInsightData,
     MinimalLangStatsInsightData,
@@ -15,16 +14,13 @@ import {
 import { getStepInterval } from '../../utils/get-step-interval'
 
 export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightData): UpdateLineChartSearchInsightInput {
-    const repositories = insight.executionType !== InsightExecutionType.Backend ? insight.repositories : []
+    const repositories = insight.repositories
     const [unit, value] = getStepInterval(insight.step)
-    const filters: InsightViewFiltersInput =
-        insight.executionType === InsightExecutionType.Backend
-            ? {
-                  includeRepoRegex: insight.filters.includeRepoRegexp,
-                  excludeRepoRegex: insight.filters.excludeRepoRegexp,
-                  searchContexts: insight.filters.context ? [insight.filters.context] : [],
-              }
-            : {}
+    const filters: InsightViewFiltersInput = {
+        includeRepoRegex: insight.filters.includeRepoRegexp,
+        excludeRepoRegex: insight.filters.excludeRepoRegexp,
+        searchContexts: insight.filters.context ? [insight.filters.context] : [],
+    }
     const seriesDisplayOptions: SeriesDisplayOptionsInput = {} // TODO fill this in.
 
     return {

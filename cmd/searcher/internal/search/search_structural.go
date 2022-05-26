@@ -1,7 +1,10 @@
 package search
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,71 +23,60 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// The Sourcegraph frontend and interface only allow LineMatches (matches on a
-// single line) and it isn't possible to specify a line and column range
-// spanning multiple lines for highlighting. This function chops up potentially
-// multiline matches into multiple LineMatches.
-func highlightMultipleLines(r *comby.Match) (matches []protocol.LineMatch) {
-	lineSpan := r.Range.End.Line - r.Range.Start.Line + 1
-	if lineSpan == 1 {
-		return []protocol.LineMatch{
-			{
-				LineNumber: r.Range.Start.Line - 1,
-				OffsetAndLengths: [][2]int{
-					{
-						r.Range.Start.Column - 1,
-						r.Range.End.Column - r.Range.Start.Column,
-					},
-				},
-				Preview: r.Matched,
-			},
-		}
+func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.FileMatch, error) {
+	file, err := zipReader.Open(combyMatch.URI)
+	if err != nil {
+		return protocol.FileMatch{}, err
+	}
+	defer file.Close()
+
+	fileBuf, err := io.ReadAll(file)
+	if err != nil {
+		return protocol.FileMatch{}, err
 	}
 
-	contentLines := strings.Split(r.Matched, "\n")
-	for i, line := range contentLines {
-		var columnStart, columnEnd int
-		if i == 0 {
-			// First line.
-			columnStart = r.Range.Start.Column - 1
-			columnEnd = len(line)
-		} else if i == (lineSpan - 1) {
-			// Last line.
-			columnStart = 0
-			columnEnd = r.Range.End.Column - 1 // don't include trailing newline
-		} else {
-			// In between line.
-			columnStart = 0
-			columnEnd = len(line)
+	multilineMatches := make([]protocol.MultilineMatch, 0, len(combyMatch.Matches))
+	for _, r := range combyMatch.Matches {
+		// trust, but verify
+		if r.Range.Start.Offset > len(fileBuf) || r.Range.End.Offset > len(fileBuf) {
+			return protocol.FileMatch{}, errors.New("comby match range does not fit in file")
 		}
 
-		matches = append(matches, protocol.LineMatch{
-			LineNumber: r.Range.Start.Line + i - 1,
-			OffsetAndLengths: [][2]int{
-				{
-					columnStart,
-					columnEnd,
-				},
+		firstLineStart := 0
+		if off := bytes.LastIndexByte(fileBuf[:r.Range.Start.Offset], '\n'); off >= 0 {
+			firstLineStart = off + 1
+		}
+
+		lastLineEnd := len(fileBuf)
+		if off := bytes.IndexByte(fileBuf[r.Range.End.Offset:], '\n'); off >= 0 {
+			lastLineEnd = r.Range.End.Offset + off
+		}
+
+		multilineMatches = append(multilineMatches, protocol.MultilineMatch{
+			// We don't use Comby's return value because it does not contain the full
+			// line contents. Instead, we use the ranges from comby to pull all the
+			// overlapped lines from the file contents.
+			Preview: string(fileBuf[firstLineStart:lastLineEnd]),
+			Start: protocol.LineColumn{
+				// Comby returns 1-based line numbers and columns
+				Line:   int32(r.Range.Start.Line) - 1,
+				Column: int32(r.Range.Start.Column) - 1,
 			},
-			Preview: line,
+			End: protocol.LineColumn{
+				Line:   int32(r.Range.End.Line) - 1,
+				Column: int32(r.Range.End.Column) - 1,
+			},
 		})
 	}
-	return matches
-}
-
-func toFileMatch(combyMatch *comby.FileMatch) protocol.FileMatch {
-	var lineMatches []protocol.LineMatch
-	for _, r := range combyMatch.Matches {
-		lineMatches = append(lineMatches, highlightMultipleLines(&r)...)
-	}
 	return protocol.FileMatch{
-		Path:        combyMatch.URI,
-		LineMatches: lineMatches,
-		MatchCount:  len(combyMatch.Matches),
-		LimitHit:    false,
-	}
+		Path:             combyMatch.URI,
+		MultilineMatches: multilineMatches,
+		MatchCount:       len(multilineMatches),
+		LimitHit:         false,
+	}, nil
 }
 
 var isValidMatcher = lazyregexp.New(`\.(s|sh|bib|c|cs|css|dart|clj|elm|erl|ex|f|fsx|go|html|hs|java|js|json|jl|kt|tex|lisp|nim|md|ml|org|pas|php|py|re|rb|rs|rst|scala|sql|swift|tex|txt|ts)$`)
@@ -279,11 +271,21 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 		return err
 	}
 
+	zipReader, err := zip.OpenReader(zipPath)
+	if err != nil {
+		return err
+	}
+	defer zipReader.Close()
+
 	for _, combyMatch := range combyMatches {
 		if ctx.Err() != nil {
 			return nil
 		}
-		sender.Send(toFileMatch(combyMatch))
+		fm, err := toFileMatch(&zipReader.Reader, combyMatch)
+		if err != nil {
+			return err
+		}
+		sender.Send(fm)
 	}
 	return nil
 }

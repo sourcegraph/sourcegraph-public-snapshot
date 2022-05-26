@@ -37,7 +37,7 @@ interface BackendInsightProps
 }
 
 /**
- * Renders BE search based insight. Fetches insight data by gql api handler.
+ * Renders search based insight. Fetches insight data by gql api handler.
  */
 export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren<BackendInsightProps>> = props => {
     const { telemetryService, insight, innerRef, resizing, ...otherProps } = props

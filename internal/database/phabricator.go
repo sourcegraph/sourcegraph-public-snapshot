@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -30,12 +29,7 @@ type phabricatorStore struct {
 	*basestore.Store
 }
 
-// Phabricator instantiates and returns a new PhabricatorStore with prepared statements.
-func Phabricator(db dbutil.DB) PhabricatorStore {
-	return &phabricatorStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-// NewPhabricatorStoreWithDB instantiates and returns a new PhabricatorStore using the other store handle.
+// PhabricatorWith instantiates and returns a new PhabricatorStore using the other store handle.
 func PhabricatorWith(other basestore.ShareableStore) PhabricatorStore {
 	return &phabricatorStore{Store: basestore.NewWithHandle(other.Handle())}
 }

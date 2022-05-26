@@ -17,7 +17,7 @@ broke the default behavior. In order to guard against this, all command line arg
 - **CAUTION** Added the ability to customize postgres server configuration by mounting external configuration files. If you have customized the config in any way, you should copy your changes to the added `postgresql.conf` files [sourcegraph/deploy-sourcegraph-docker#806](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/806)
 
 To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/f2acef87ab46d2b707a3935629a5340086205a8b](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/f2acef87ab46d2b707a3935629a5340086205a8b)
+[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2c94a1fb5fa396759d4800a717af6658548943f7](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2c94a1fb5fa396759d4800a717af6658548943f7)
 
 ## 3.39 -> 3.39.1
 
