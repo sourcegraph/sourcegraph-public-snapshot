@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestStatusMessages(t *testing.T) {
@@ -221,6 +222,7 @@ func TestStatusMessages(t *testing.T) {
 		},
 	}
 
+	logger := logtest.Scoped(t)
 	for _, tc := range testCases {
 		tc := tc
 		ctx := context.Background()
@@ -302,8 +304,9 @@ func TestStatusMessages(t *testing.T) {
 
 			clock := timeutil.NewFakeClock(time.Now(), 0)
 			syncer := &Syncer{
-				Store: store,
-				Now:   clock.Now,
+				Logger: logger,
+				Store:  store,
+				Now:    clock.Now,
 			}
 
 			mockDB := database.NewMockDBFrom(database.NewDB(db))
