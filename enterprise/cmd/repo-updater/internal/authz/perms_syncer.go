@@ -289,17 +289,12 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthToken(ctx context.Context, acct *ex
 //
 // It returns a list of internal database repository IDs and is a noop when
 // `envvar.SourcegraphDotComMode()` is true.
-func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, user *types.User, noPerms bool, fetchOpts authz.FetchPermsOptions) (repoIDs []uint32, subRepoPerms map[api.ExternalRepoSpec]*authz.SubRepoPermissions, err error) {
+func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, user *types.User, accts []*extsvc.Account, noPerms bool, fetchOpts authz.FetchPermsOptions) (repoIDs []uint32, subRepoPerms map[api.ExternalRepoSpec]*authz.SubRepoPermissions, err error) {
 	// NOTE: OAuth scope on sourcegraph.com does not grant access to read private
 	//  repositories, therefore it is no point wasting effort and code host API rate
 	//  limit quota on trying.
 	if envvar.SourcegraphDotComMode() {
 		return []uint32{}, nil, nil
-	}
-
-	accts, err := s.permsStore.ListExternalAccounts(ctx, user.ID)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "list external accounts")
 	}
 
 	serviceToAccounts := make(map[string]*extsvc.Account)
@@ -668,6 +663,25 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "get user")
 	}
 
+	// GitLab OAuth token expire every two hours and this code path is the best place
+	// to refresh them. Tokens can exist in user code host connections or via a login
+	// connection, or both and they can be different tokens so we need to update them
+	// in both places.
+
+	// Update tokens stored in external accounts:
+	accts, err := s.permsStore.ListExternalAccounts(ctx, user.ID)
+	if err != nil {
+		return errors.Wrap(err, "list external accounts")
+	}
+	for _, acct := range accts {
+		if err := s.maybeRefreshGitLabOAuthToken(ctx, acct); err != nil {
+			return errors.Wrap(err, "refreshing GitLab OAuth token")
+		}
+	}
+
+	// Update tokens stored in user code host connections:
+	// TODO
+
 	// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
 	//  table, the user has proven that they have read access to the repository.
 	repoIDs, err := s.reposStore.ListExternalServicePrivateRepoIDsByUserID(ctx, user.ID)
@@ -675,7 +689,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "list external service repo IDs by user ID")
 	}
 
-	externalAccountsRepoIDs, subRepoPerms, err := s.fetchUserPermsViaExternalAccounts(ctx, user, noPerms, fetchOpts)
+	externalAccountsRepoIDs, subRepoPerms, err := s.fetchUserPermsViaExternalAccounts(ctx, user, accts, noPerms, fetchOpts)
 	if err != nil {
 		return errors.Wrap(err, "fetch user permissions via external accounts")
 	}
