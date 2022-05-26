@@ -49,6 +49,26 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 				}
 				continue
 
+			case "method_invocation":
+				object := cur.ChildByFieldName("object")
+				if object == nil {
+					continue
+				}
+				if nodeId(prev) == nodeId(object) {
+					continue
+				}
+				name := cur.ChildByFieldName("name")
+				if name != nil {
+					found, err := squirrel.getFieldJava(ctx, swapNode(node, object), name.Content(node.Contents))
+					if err != nil {
+						return nil, err
+					}
+					if found != nil {
+						return found, nil
+					}
+				}
+				continue
+
 			// Check nodes that might have bindings:
 			case "constructor_body":
 				fallthrough
@@ -316,7 +336,10 @@ func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty Type, f
 		}
 		return nil, nil
 	case FnType:
-		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldJava: unexpected object type fn"))
+		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldJava: unexpected object type %s", ty.variant()))
+		return nil, nil
+	case PrimType:
+		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldJava: unexpected object type %s", ty.variant()))
 		return nil, nil
 	default:
 		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldJava: unrecognized type variant %q", ty.variant()))
@@ -382,6 +405,8 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 			squirrel.breadcrumb(ty.node(), fmt.Sprintf("getTypeDefJava: expected method, got %q", ty.variant()))
 			return nil, nil
 		}
+	case "void_type":
+		return PrimType{noad: node, varient: "void"}, nil
 	default:
 		squirrel.breadcrumb(node, fmt.Sprintf("getTypeDefJava: unrecognized node type %q", node.Type()))
 		return nil, nil
@@ -416,6 +441,19 @@ func (t ClassType) variant() string {
 
 func (t ClassType) node() Node {
 	return t.def
+}
+
+type PrimType struct {
+	noad    Node
+	varient string
+}
+
+func (t PrimType) variant() string {
+	return fmt.Sprintf("prim:%s", t.varient)
+}
+
+func (t PrimType) node() Node {
+	return t.noad
 }
 
 func (squirrel *SquirrelService) defToType(ctx context.Context, def Node) (Type, error) {

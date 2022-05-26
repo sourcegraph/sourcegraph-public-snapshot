@@ -88,6 +88,9 @@ func TestNonLocalDefinition(t *testing.T) {
 	squirrel.errorOnParseFailure = true
 	defer squirrel.Close()
 
+	cwd, err := os.Getwd()
+	fatalIfErrorLabel(t, err, "getting cwd")
+
 	symbolToKindToAnnotations := groupBySymbolAndKind(annotations)
 	symbols := []string{}
 	for symbol := range symbolToKindToAnnotations {
@@ -96,40 +99,44 @@ func TestNonLocalDefinition(t *testing.T) {
 	sort.Strings(symbols)
 	for _, symbol := range symbols {
 		m := symbolToKindToAnnotations[symbol]
-		var wantDef *annotation
+		var wantAnn *annotation
 		for _, ann := range m["def"] {
-			if wantDef != nil {
+			if wantAnn != nil {
 				t.Fatalf("multiple definitions for symbol %s", symbol)
 			}
 
 			annCopy := ann
-			wantDef = &annCopy
+			wantAnn = &annCopy
 		}
 
-		if wantDef == nil {
+		if wantAnn == nil {
 			t.Fatalf("no matching \"def\" annotation for \"ref\" %s", symbol)
 		}
 
+		want := wantAnn.repoCommitPathPoint
+
 		for _, ref := range m["ref"] {
 			squirrel.breadcrumbs = Breadcrumbs{}
-			got, err := squirrel.symbolInfo(context.Background(), ref.repoCommitPathPoint)
+			gotSymbolInfo, err := squirrel.symbolInfo(context.Background(), ref.repoCommitPathPoint)
 			fatalIfErrorLabel(t, err, "symbolInfo")
 
-			if got == nil {
+			if gotSymbolInfo == nil {
 				squirrel.breadcrumbs.prettyPrint(squirrel.readFile)
 				t.Fatalf("no symbolInfo for symbol %s", symbol)
 			}
 
-			gotDef := types.RepoCommitPathPoint{
-				RepoCommitPath: got.Definition.RepoCommitPath,
+			got := types.RepoCommitPathPoint{
+				RepoCommitPath: gotSymbolInfo.Definition.RepoCommitPath,
 				Point: types.Point{
-					Row:    got.Definition.Row,
-					Column: got.Definition.Column,
+					Row:    gotSymbolInfo.Definition.Row,
+					Column: gotSymbolInfo.Definition.Column,
 				},
 			}
 
-			if diff := cmp.Diff(wantDef.repoCommitPathPoint, gotDef); diff != "" {
-				t.Fatalf("wrong definition (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wantAnn.repoCommitPathPoint, got); diff != "" {
+				t.Errorf("wrong symbolInfo for %q\n", symbol)
+				t.Errorf("want: %s%s/%s:%d:%d\n", itermSource(filepath.Join(cwd, "test_repos", want.Repo, want.Path), want.Point.Row, "src"), want.Repo, want.Path, want.Point.Row, want.Point.Column)
+				t.Errorf("got : %s%s/%s:%d:%d\n", itermSource(filepath.Join(cwd, "test_repos", got.Repo, got.Path), got.Point.Row, "src"), got.Repo, got.Path, got.Point.Row, got.Point.Column)
 			}
 		}
 	}

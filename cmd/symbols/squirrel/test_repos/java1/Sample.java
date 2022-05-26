@@ -70,8 +70,9 @@ class C1 {
 
         //   vv C3 ref
         //      vv f3 ref
-        //                vv f3 ref
-        p1 = C3.f3 + m2().f3;
+        //              vv C2.m2 ref
+        //                   vv f3 ref
+        p1 = C3.f3 + C2.m2().f3;
     }
 
     // vv m2 def
@@ -83,6 +84,9 @@ class C1 {
     class C2 {
         //         vv f2 def
         static int f2;
+
+        // vv C2.m2 def
+        C3 m2() { }
     }
 }
 
