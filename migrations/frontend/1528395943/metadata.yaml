@@ -1,4 +1,0 @@
-name: squashed migrations (privileged)
-parents: []
-privileged: true
-nonIdempotent: true
