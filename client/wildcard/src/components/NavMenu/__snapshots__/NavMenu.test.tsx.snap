@@ -28,12 +28,12 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
     >
       <div>
         <h6
-          class="dropdown-header"
+          class="dropdownHeader"
         >
            Signed in as @ralph
         </h6>
         <a
-          class="dropdown-item item"
+          class="dropdownItem"
           data-reach-menu-item=""
           data-reach-menu-link=""
           data-valuetext="Settings"
@@ -45,7 +45,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
           Settings
         </a>
         <a
-          class="dropdown-item item"
+          class="dropdownItem"
           data-reach-menu-item=""
           data-reach-menu-link=""
           data-valuetext="Your repositories"
@@ -57,7 +57,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
           Your repositories
         </a>
         <a
-          class="dropdown-item item"
+          class="dropdownItem"
           data-reach-menu-item=""
           data-reach-menu-link=""
           data-valuetext="Saved searches"
@@ -71,15 +71,15 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
       </div>
       <div>
         <div
-          class="dropdown-divider"
+          class="dropdownDivider"
         />
         <h6
-          class="dropdown-header"
+          class="dropdownHeader"
         >
           Your organizations
         </h6>
         <a
-          class="dropdown-item item"
+          class="dropdownItem"
           data-reach-menu-item=""
           data-reach-menu-link=""
           data-valuetext="Sourcegraph"
@@ -91,7 +91,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
           Sourcegraph
         </a>
         <a
-          class="dropdown-item item"
+          class="dropdownItem"
           data-reach-menu-item=""
           data-reach-menu-link=""
           data-valuetext="Gitstart"
@@ -105,10 +105,10 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
       </div>
       <div>
         <div
-          class="dropdown-divider"
+          class="dropdownDivider"
         />
         <div
-          class="dropdown-item item"
+          class="dropdownItem"
           data-reach-menu-item=""
           data-valuetext="Keyboard shortcuts"
           id="option-5--menu-1"
@@ -119,7 +119,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
         </div>
         <div
           aria-disabled="true"
-          class="dropdown-item item"
+          class="dropdownItem"
           data-disabled=""
           data-reach-menu-item=""
           data-valuetext="Help"
@@ -132,10 +132,10 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
       </div>
       <div>
         <div
-          class="dropdown-divider"
+          class="dropdownDivider"
         />
         <a
-          class="dropdown-item item"
+          class="dropdownItem"
           data-reach-menu-item=""
           data-reach-menu-link=""
           data-valuetext="About Sourcegraph"
@@ -147,7 +147,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
           About Sourcegraph
         </a>
         <a
-          class="dropdown-item item"
+          class="dropdownItem"
           data-reach-menu-item=""
           data-reach-menu-link=""
           data-valuetext="Browser Extension"
