@@ -32,7 +32,7 @@ var (
 		name: "scip-typescript",
 		urn:  "github.com/sourcegraph/scip-typescript",
 	}
-	lsifJava = codeIntelIndexerResolver{
+	scipJava = codeIntelIndexerResolver{
 		name: "scip-java",
 		urn:  "github.com/sourcegraph/scip-java",
 	}
@@ -98,7 +98,7 @@ var allIndexers = []gql.CodeIntelIndexerResolver{
 	&lsifNode,
 	&msftNode,
 	&lsifTypescript,
-	&lsifJava,
+	&scipJava,
 	&msftJava,
 	&lsifGo,
 	&lsifClang,
@@ -119,9 +119,9 @@ var allIndexers = []gql.CodeIntelIndexerResolver{
 // from most to least.
 var languageToIndexer = map[string][]gql.CodeIntelIndexerResolver{
 	".go":      {&lsifGo},
-	".java":    {&lsifJava, &msftJava},
-	".kt":      {&lsifJava},
-	".scala":   {&lsifJava},
+	".java":    {&scipJava, &msftJava},
+	".kt":      {&scipJava},
+	".scala":   {&scipJava},
 	".js":      {&lsifTypescript, &lsifNode, &msftNode},
 	".jsx":     {&lsifTypescript, &lsifNode, &msftNode},
 	".ts":      {&lsifTypescript, &lsifNode, &msftNode},
@@ -144,7 +144,7 @@ var languageToIndexer = map[string][]gql.CodeIntelIndexerResolver{
 }
 
 var imageToIndexer = map[string]gql.CodeIntelIndexerResolver{
-	"sourcegraph/scip-java":       &lsifJava,
+	"sourcegraph/scip-java":       &scipJava,
 	"sourcegraph/lsif-go":         &lsifGo,
 	"sourcegraph/scip-typescript": &lsifTypescript,
 	"sourcegraph/lsif-node":       &lsifNode,

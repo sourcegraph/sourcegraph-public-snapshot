@@ -75,7 +75,7 @@ func TestListIndexableRepos(t *testing.T) {
 		}
 
 		t.Run("List ALL repos", func(t *testing.T) {
-			repos, err := NewIndexableReposLister(database.Repos(db)).List(ctx)
+			repos, err := NewIndexableReposLister(db.Repos()).List(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -107,7 +107,7 @@ func TestListIndexableRepos(t *testing.T) {
 		})
 
 		t.Run("List only public indexable repos", func(t *testing.T) {
-			repos, err := NewIndexableReposLister(database.Repos(db)).ListPublic(ctx)
+			repos, err := NewIndexableReposLister(db.Repos()).ListPublic(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -136,7 +136,7 @@ func TestListIndexableRepos(t *testing.T) {
 }
 
 func BenchmarkIndexableRepos_List_Empty(b *testing.B) {
-	db := dbtest.NewDB(b)
+	db := database.NewDB(dbtest.NewDB(b))
 
 	ctx := context.Background()
 	select {
@@ -146,7 +146,7 @@ func BenchmarkIndexableRepos_List_Empty(b *testing.B) {
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, err := NewIndexableReposLister(database.Repos(db)).List(ctx)
+		_, err := NewIndexableReposLister(db.Repos()).List(ctx)
 		if err != nil {
 			b.Fatal(err)
 		}

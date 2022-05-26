@@ -1,2 +1,5 @@
-name: user opt in or out from org invite search
-parents: [1644868458]
+name: squashed migrations (unprivileged)
+parents:
+- 1644868458
+privileged: false
+nonIdempotent: true

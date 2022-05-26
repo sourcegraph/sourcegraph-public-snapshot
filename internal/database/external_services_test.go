@@ -917,7 +917,7 @@ VALUES (%d, 1, ''), (%d, 2, '')
 	}
 
 	// Should only get back the repo with ID=2
-	repos, err := Repos(db).GetByIDs(ctx, 1, 2)
+	repos, err := db.Repos().GetByIDs(ctx, 1, 2)
 	if err != nil {
 		t.Fatal(err)
 	}

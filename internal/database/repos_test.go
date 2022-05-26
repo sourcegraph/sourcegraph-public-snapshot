@@ -142,7 +142,7 @@ func TestRepos_Count(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	if count, err := Repos(db).Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := db.Repos().Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -152,7 +152,7 @@ func TestRepos_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos(db).Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := db.Repos().Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -163,22 +163,22 @@ func TestRepos_Count(t *testing.T) {
 			OrderBy:     []RepoListSort{{Field: RepoListID}},
 			LimitOffset: &LimitOffset{Limit: 1},
 		}
-		if count, err := Repos(db).Count(ctx, opts); err != nil {
+		if count, err := db.Repos().Count(ctx, opts); err != nil {
 			t.Fatal(err)
 		} else if want := 1; count != want {
 			t.Errorf("got %d, want %d", count, want)
 		}
 	})
 
-	repos, err := Repos(db).List(ctx, ReposListOptions{})
+	repos, err := db.Repos().List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := Repos(db).Delete(ctx, repos[0].ID); err != nil {
+	if err := db.Repos().Delete(ctx, repos[0].ID); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos(db).Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := db.Repos().Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -198,21 +198,21 @@ func TestRepos_Delete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos(db).Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := db.Repos().Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	repos, err := Repos(db).List(ctx, ReposListOptions{})
+	repos, err := db.Repos().List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := Repos(db).Delete(ctx, repos[0].ID); err != nil {
+	if err := db.Repos().Delete(ctx, repos[0].ID); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos(db).Count(ctx, ReposListOptions{}); err != nil {
+	if count, err := db.Repos().Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -228,7 +228,7 @@ func TestRepos_Upsert(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	if _, err := Repos(db).GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
+	if _, err := db.Repos().GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
 		if err == nil {
 			t.Fatal("myrepo already present")
 		} else {
@@ -240,7 +240,7 @@ func TestRepos_Upsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rp, err := Repos(db).GetByName(ctx, "myrepo")
+	rp, err := db.Repos().GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -259,7 +259,7 @@ func TestRepos_Upsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rp, err = Repos(db).GetByName(ctx, "myrepo")
+	rp, err = db.Repos().GetByName(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -279,7 +279,7 @@ func TestRepos_Upsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := Repos(db).GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
+	if _, err := db.Repos().GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
 		if err == nil {
 			t.Fatal("myrepo should be renamed, but still present as myrepo")
 		} else {
@@ -287,7 +287,7 @@ func TestRepos_Upsert(t *testing.T) {
 		}
 	}
 
-	rp, err = Repos(db).GetByName(ctx, "myrepo/renamed")
+	rp, err = db.Repos().GetByName(ctx, "myrepo/renamed")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -321,7 +321,7 @@ func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			rp, err := Repos(db).GetByName(ctx, name)
+			rp, err := db.Repos().GetByName(ctx, name)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -360,7 +360,7 @@ func TestRepos_Create(t *testing.T) {
 	repo2 := typestest.MakeGitlabRepo(msvcs[extsvc.KindGitLab])
 
 	t.Run("no repos should not fail", func(t *testing.T) {
-		if err := Repos(db).Create(ctx); err != nil {
+		if err := db.Repos().Create(ctx); err != nil {
 			t.Fatalf("Create error: %s", err)
 		}
 	})
@@ -368,7 +368,7 @@ func TestRepos_Create(t *testing.T) {
 	t.Run("many repos", func(t *testing.T) {
 		want := typestest.GenerateRepos(7, repo1, repo2)
 
-		if err := Repos(db).Create(ctx, want...); err != nil {
+		if err := db.Repos().Create(ctx, want...); err != nil {
 			t.Fatalf("Create error: %s", err)
 		}
 
@@ -378,7 +378,7 @@ func TestRepos_Create(t *testing.T) {
 			t.Fatalf("Create didn't assign an ID to all repos: %v", noID.Names())
 		}
 
-		have, err := Repos(db).List(ctx, ReposListOptions{})
+		have, err := db.Repos().List(ctx, ReposListOptions{})
 		if err != nil {
 			t.Fatalf("List error: %s", err)
 		}
@@ -500,7 +500,7 @@ func TestListIndexableRepos(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			repos, err := Repos(db).ListIndexableRepos(ctx, tc.opts)
+			repos, err := db.Repos().ListIndexableRepos(ctx, tc.opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -552,7 +552,7 @@ func TestRepoStore_Metadata(t *testing.T) {
 		},
 	}
 
-	r := Repos(db)
+	r := db.Repos()
 	require.NoError(t, r.Create(ctx, repos...))
 
 	d1 := time.Unix(1627945150, 0)

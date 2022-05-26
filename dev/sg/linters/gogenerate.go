@@ -47,7 +47,15 @@ func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
 		var sb strings.Builder
 		reportOut := std.NewOutput(&sb, true)
 		reportOut.WriteLine(output.Line(output.EmojiFailure, output.StyleWarning, "Uncommitted changes found after running go generate:"))
-		reportOut.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", out.String()))
+		if reportOut.Buildkite {
+			// WriteMarkdown makes the CI job hanging, see https://github.com/sourcegraph/sourcegraph/issues/35918
+			reportOut.Write(fmt.Sprintf("```diff\n%s\n```", out.String()))
+		} else {
+			renderErr := reportOut.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", out.String()))
+			if renderErr != nil {
+				reportOut.Write(renderErr.Error())
+			}
+		}
 		reportOut.Write("To fix this, run 'sg generate'.")
 		r.Err = err
 		r.Output = sb.String()

@@ -30,6 +30,14 @@
       "enum": ["pat", "oauth"],
       "default": "pat"
     },
+    "token.oauth.refresh": {
+      "description": "The OAuth refresh token",
+      "type": "string"
+    },
+    "token.oauth.expiry": {
+      "description": "The OAuth token expiry (Unix timestamp in seconds)",
+      "type": "integer"
+    },
     "rateLimit": {
       "description": "Rate limit applied when making background API requests to GitLab.",
       "title": "GitLabRateLimit",
