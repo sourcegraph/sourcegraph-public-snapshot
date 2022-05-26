@@ -212,7 +212,6 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 			return err
 		}
 	}
-	log15.Info("writing preempted")
 	err = s.insightsStore.RecordSeriesPoints(ctx, totalPreempted)
 	if err != nil {
 		return err
