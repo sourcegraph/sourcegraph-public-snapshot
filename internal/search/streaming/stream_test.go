@@ -141,20 +141,20 @@ func TestWithSelect(t *testing.T) {
 		return SearchEvent{
 			Results: []result.Match{
 				&result.FileMatch{
-					File:             result.File{Path: "pokeman/charmandar"},
-					MultilineMatches: make([]result.MultilineMatch, 1),
+					File:        result.File{Path: "pokeman/charmandar"},
+					HunkMatches: result.HunkMatches{{Ranges: make(result.Ranges, 1)}},
 				},
 				&result.FileMatch{
-					File:             result.File{Path: "pokeman/charmandar"},
-					MultilineMatches: make([]result.MultilineMatch, 1),
+					File:        result.File{Path: "pokeman/charmandar"},
+					HunkMatches: result.HunkMatches{{Ranges: make(result.Ranges, 1)}},
 				},
 				&result.FileMatch{
-					File:             result.File{Path: "pokeman/bulbosaur"},
-					MultilineMatches: make([]result.MultilineMatch, 1),
+					File:        result.File{Path: "pokeman/bulbosaur"},
+					HunkMatches: result.HunkMatches{{Ranges: make(result.Ranges, 1)}},
 				},
 				&result.FileMatch{
-					File:             result.File{Path: "digiman/ummm"},
-					MultilineMatches: make([]result.MultilineMatch, 1),
+					File:        result.File{Path: "digiman/ummm"},
+					HunkMatches: result.HunkMatches{{Ranges: make(result.Ranges, 1)}},
 				},
 			},
 		}
