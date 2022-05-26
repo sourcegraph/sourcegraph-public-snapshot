@@ -971,8 +971,6 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 		return nil, errors.Wrap(err, "AttachSeriesToView")
 	}
 
-	log15.Info("created series", "series_id", seriesToAdd.SeriesID)
-
 	return &seriesToAdd, nil
 }
 
