@@ -209,7 +209,7 @@ func searchFilesInRepo(
 
 // newToMatches returns a closure that converts []*protocol.FileMatch to []result.Match.
 func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func([]*protocol.FileMatch) []result.Match {
-	runeCountToByteCount := func(buf string, n int) int {
+	runeOffsetToByteOffset := func(buf string, n int) int {
 		idx := 0
 		for i := 0; i < n; i++ {
 			_, count := utf8.DecodeRuneInString(buf)
@@ -230,12 +230,12 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 						Preview: lm.Preview,
 						Range: result.Range{
 							Start: result.Location{
-								Offset: lm.LineOffset + runeCountToByteCount(lm.Preview, offset),
+								Offset: lm.LineOffset + runeOffsetToByteOffset(lm.Preview, offset),
 								Line:   lm.LineNumber,
 								Column: offset,
 							},
 							End: result.Location{
-								Offset: lm.LineOffset + runeCountToByteCount(lm.Preview, offset+length),
+								Offset: lm.LineOffset + runeOffsetToByteOffset(lm.Preview, offset+length),
 								Line:   lm.LineNumber,
 								Column: offset + length,
 							},
