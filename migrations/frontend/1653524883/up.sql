@@ -11,13 +11,10 @@ WITH tenant_queues AS (
     GROUP BY spec.user_id
 )
 SELECT
-	queue.user_id,
+    exec.*,
     queue.queue_length,
     queue.current_concurrency,
-    queue.latest_dequeue,
-    exec.id as job_id,
-    exec.process_after,
-    exec.created_at
+    queue.latest_dequeue
 FROM batch_spec_workspace_execution_jobs exec
 JOIN batch_spec_workspaces workspace ON workspace.id = exec.batch_spec_workspace_id
 JOIN batch_specs spec ON spec.id = workspace.batch_spec_id
