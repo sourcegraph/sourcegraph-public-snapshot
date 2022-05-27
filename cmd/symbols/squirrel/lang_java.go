@@ -203,6 +203,19 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 				}
 				continue
 
+			case "method_reference":
+				if cur.NamedChildCount() == 0 {
+					return nil, nil
+				}
+				object := cur.NamedChild(0)
+				if nodeId(object) == nodeId(prev) {
+					continue
+				}
+				if ident == "new" {
+					return squirrel.getDefJava(ctx, swapNode(node, object))
+				}
+				return squirrel.getFieldJava(ctx, swapNode(node, object), ident)
+
 			// Skip all other nodes
 			default:
 				continue
@@ -257,11 +270,11 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 				}
 				continue
 			case "scoped_type_identifier":
-				object := cur.Child(0)
+				object := cur.NamedChild(0)
 				if object != nil && nodeId(prev) == nodeId(object) {
 					continue
 				}
-				field := cur.Child(int(cur.ChildCount()) - 1)
+				field := cur.NamedChild(int(cur.NamedChildCount()) - 1)
 				if field != nil {
 					found, err := squirrel.getFieldJava(ctx, swapNode(node, object), field.Content(node.Contents))
 					if err != nil {
@@ -416,8 +429,8 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 		squirrel.breadcrumb(node, "getTypeDefJava: expected an identifier")
 		return nil, nil
 	case "scoped_type_identifier":
-		for i := int(node.ChildCount()) - 1; i >= 0; i-- {
-			child := node.Child(i)
+		for i := int(node.NamedChildCount()) - 1; i >= 0; i-- {
+			child := node.NamedChild(i)
 			if child.Type() == "type_identifier" {
 				return squirrel.getTypeDefJava(ctx, swapNode(node, child))
 			}

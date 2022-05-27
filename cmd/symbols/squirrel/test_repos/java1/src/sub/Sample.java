@@ -49,6 +49,9 @@ class C1 {
         //                                      v m1.n ref
         numbers.forEach(n -> System.out.println(n));
 
+        //                  vv m5 ref
+        numbers.forEach(C4::m5);
+
         //          v l2.y def
         //                v l2.y ref
         L2 l2 = (x, y) -> y;
