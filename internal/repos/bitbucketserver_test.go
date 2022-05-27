@@ -1,7 +1,9 @@
 package repos
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -207,4 +209,36 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestListRepos(t *testing.T) {
+	fmt.Println("TestListRepos called...")
+
+	config := map[string]*schema.BitbucketServerConnection{
+		"simple": {
+			Url:   "https://bitbucket.example.com",
+			Token: "secret",
+		},
+	}
+	fmt.Println("Done with config")
+
+	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
+	fmt.Println("Done with svc")
+
+	s, err := newBitbucketServerSource(&svc, config["simple"], nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("simple", func(t *testing.T) {
+		results := make(chan SourceResult)
+		fmt.Println("Done making results channel")
+		s.ListRepos(context.Background(), results)
+		fmt.Println("Done ListRepos, printing results")
+
+		r := <-results
+		fmt.Println(r)
+		fmt.Println("Done printing r")
+	})
+
 }

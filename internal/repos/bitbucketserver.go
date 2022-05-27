@@ -2,6 +2,8 @@ package repos
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -86,6 +88,7 @@ func newBitbucketServerSource(svc *types.ExternalService, c *schema.BitbucketSer
 // ListRepos returns all BitbucketServer repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
 func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan SourceResult) {
+	log.Println("******************* LISTING ALL REPOS *********************")
 	s.listAllRepos(ctx, results)
 }
 
@@ -191,6 +194,7 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 }
 
 func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan SourceResult) {
+	fmt.Println("listAllRepos starting...")
 	// "archived" label is a convention used at some customers for indicating a
 	// repository is archived (like github's archived state). This is not returned in
 	// the normal repository listing endpoints, so we need to fetch it separately.
@@ -199,6 +203,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 		results <- SourceResult{Source: s, Err: errors.Wrap(err, "failed to list repos with archived label")}
 		return
 	}
+	fmt.Println("batch struct")
 
 	type batch struct {
 		repos []*bitbucketserver.Repo
@@ -209,6 +214,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 
 	var wg sync.WaitGroup
 
+	fmt.Println("Starting waitgroup...")
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -238,7 +244,9 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 			}
 		}
 	}()
+	fmt.Println("Done with waitgroup!")
 
+	fmt.Println("Starting queries...")
 	for _, q := range s.config.RepositoryQuery {
 		switch q {
 		case "none":
@@ -264,11 +272,13 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 			}
 		}(q)
 	}
+	fmt.Println("Done with queries")
 
 	go func() {
 		wg.Wait()
 		close(ch)
 	}()
+	fmt.Println("Closing waitgroup")
 
 	seen := make(map[int]bool)
 	for r := range ch {
@@ -285,30 +295,45 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 			}
 		}
 	}
+	fmt.Println("DONE WITH listAllRepos")
 }
 
 func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label string) (map[int]struct{}, error) {
+	fmt.Printf("%+v\n", s.client.URL)
+	fmt.Println("listAllLabeledRepos starting...")
 	ids := map[int]struct{}{}
 	next := &bitbucketserver.PageToken{Limit: 1000}
 	for next.HasMore() {
+		fmt.Println("Starting LabeledRepos")
+		fmt.Println(label)
+		fmt.Printf("%+v\n", next)
 		repos, page, err := s.client.LabeledRepos(ctx, next, label)
+		fmt.Println("Done with LabeledRepos")
 		if err != nil {
 			// If the instance doesn't have the label then no repos are
 			// labeled. Older versions of bitbucket do not support labels, so
 			// they too have no labelled repos.
+			fmt.Println("Error checking...")
 			if bitbucketserver.IsNoSuchLabel(err) || bitbucketserver.IsNotFound(err) {
+				fmt.Println("EMPTY")
 				// treat as empty
 				return ids, nil
 			}
+			fmt.Println("ERROR:", err)
 			return nil, err
 		}
+		fmt.Println("Done with error checking")
 
 		for _, r := range repos {
 			ids[r.ID] = struct{}{}
 		}
+		fmt.Println("Done with struct{}{}")
 
 		next = page
+		fmt.Println("Done with next")
 	}
+
+	fmt.Println("Done with listAllLabeledRepos")
 	return ids, nil
 }
 
