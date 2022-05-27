@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func Worker() *monitoring.Container {
+func Worker() *monitoring.Dashboard {
 	const containerName = "worker"
 
 	workerJobs := []struct {
@@ -80,7 +80,7 @@ func Worker() *monitoring.Container {
 		),
 	}
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:        "worker",
 		Title:       "Worker",
 		Description: "Manages background processes.",

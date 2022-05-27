@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func RepoUpdater() *monitoring.Container {
+func RepoUpdater() *monitoring.Dashboard {
 	const (
 		containerName = "repo-updater"
 
@@ -22,7 +22,7 @@ func RepoUpdater() *monitoring.Container {
 		},
 	}
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:        "repo-updater",
 		Title:       "Repo Updater",
 		Description: "Manages interaction with code hosts, instructs Gitserver to update repositories.",

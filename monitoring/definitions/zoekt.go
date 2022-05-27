@@ -10,14 +10,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func Zoekt() *monitoring.Container {
+func Zoekt() *monitoring.Dashboard {
 	const (
 		indexServerContainerName = "zoekt-indexserver"
 		webserverContainerName   = "zoekt-webserver"
 		bundledContainerName     = "indexed-search"
 	)
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:                     "zoekt",
 		Title:                    "Zoekt",
 		Description:              "Indexes repositories, populates the search index, and responds to indexed search queries.",
