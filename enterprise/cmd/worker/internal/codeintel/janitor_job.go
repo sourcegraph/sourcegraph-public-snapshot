@@ -44,18 +44,12 @@ func (j *janitorJob) Routines(ctx context.Context, logger log.Logger) ([]gorouti
 		return nil, err
 	}
 
-	lsifStore, err := codeintel.InitLSIFStore()
-	if err != nil {
-		return nil, err
-	}
-
 	dependencyIndexingStore, err := codeintel.InitDependencySyncingStore()
 	if err != nil {
 		return nil, err
 	}
 
 	dbStoreShim := &janitor.DBStoreShim{Store: dbStore}
-	lsifStoreShim := &janitor.LSIFStoreShim{Store: lsifStore}
 	uploadWorkerStore := dbstore.WorkerutilUploadStore(dbStoreShim, observationContext)
 	indexWorkerStore := dbstore.WorkerutilIndexStore(dbStoreShim, observationContext)
 	metrics := janitor.NewMetrics(observationContext)
@@ -66,9 +60,6 @@ func (j *janitorJob) Routines(ctx context.Context, logger log.Logger) ([]gorouti
 	}
 
 	routines := []goroutine.BackgroundRoutine{
-		// Reconciliation and denormalization
-		janitor.NewRepositoryPatternMatcher(dbStoreShim, lsifStoreShim, janitorConfigInst.CleanupTaskInterval, janitorConfigInst.ConfigurationPolicyMembershipBatchSize, metrics),
-
 		// Resetters
 		janitor.NewUploadResetter(uploadWorkerStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),
 		janitor.NewIndexResetter(indexWorkerStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),

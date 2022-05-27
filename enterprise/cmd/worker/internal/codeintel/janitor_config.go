@@ -11,8 +11,7 @@ import (
 type janitorConfig struct {
 	env.BaseConfig
 
-	CleanupTaskInterval                    time.Duration
-	ConfigurationPolicyMembershipBatchSize int
+	CleanupTaskInterval time.Duration
 
 	MetricsConfig *executorqueue.Config
 }
@@ -25,7 +24,6 @@ func (c *janitorConfig) Load() {
 	c.MetricsConfig = metricsConfig
 
 	c.CleanupTaskInterval = c.GetInterval("PRECISE_CODE_INTEL_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic codeintel cleanup tasks.")
-	c.ConfigurationPolicyMembershipBatchSize = c.GetInt("PRECISE_CODE_INTEL_CONFIGURATION_POLICY_MEMBERSHIP_BATCH_SIZE", "100", "The maximum number of policy configurations to update repository membership for at a time.")
 }
 
 func (c *janitorConfig) Validate() error {

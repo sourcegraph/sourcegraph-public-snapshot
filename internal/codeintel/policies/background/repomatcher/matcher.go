@@ -6,15 +6,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-type matcher struct{}
+type matcher struct {
+	dbStore DBStore
+	metrics *metrics
+}
 
-var _ goroutine.Handler = &matcher{}
-var _ goroutine.ErrorHandler = &matcher{}
+var (
+	_ goroutine.Handler      = &matcher{}
+	_ goroutine.ErrorHandler = &matcher{}
+)
 
-func (r *matcher) Handle(ctx context.Context) error {
-	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33376
+func (m *matcher) Handle(ctx context.Context) error {
+	if err := m.HandleRepositoryPatternMatcher(ctx); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (r *matcher) HandleError(err error) {
-}
+func (m *matcher) HandleError(err error) {}
