@@ -191,3 +191,62 @@ func TestHunkMatches_Limit(t *testing.T) {
 		})
 	}
 }
+
+func TestHunkMatches_MatchedContent(t *testing.T) {
+	cases := []struct {
+		input  HunkMatch
+		output []string
+	}{{
+		input: HunkMatch{
+			Preview:      "abc",
+			PreviewStart: Location{0, 0, 0},
+			Ranges: Ranges{{
+				Start: Location{1, 0, 1},
+				End:   Location{2, 0, 2},
+			}},
+		},
+		output: []string{"b"},
+	}, {
+		input: HunkMatch{
+			Preview:      "def",
+			PreviewStart: Location{4, 1, 0}, // abc\ndef
+			Ranges: Ranges{{
+				Start: Location{5, 1, 1},
+				End:   Location{6, 1, 2},
+			}},
+		},
+		output: []string{"e"},
+	}, {
+		input: HunkMatch{
+			Preview:      "abc\ndef",
+			PreviewStart: Location{0, 0, 0},
+			Ranges: Ranges{{
+				Start: Location{2, 0, 2},
+				End:   Location{5, 1, 1},
+			}},
+		},
+		output: []string{"c\nd"},
+	}, {
+		input: HunkMatch{
+			Preview:      "abc\ndef",
+			PreviewStart: Location{0, 0, 0},
+			Ranges: Ranges{{
+				Start: Location{0, 0, 0},
+				End:   Location{2, 0, 2},
+			}, {
+				Start: Location{2, 0, 2},
+				End:   Location{5, 1, 1},
+			}, {
+				Start: Location{5, 1, 1},
+				End:   Location{7, 1, 3},
+			}},
+		},
+		output: []string{"ab", "c\nd", "ef"},
+	}}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			require.Equal(t, tc.output, tc.input.MatchedContent())
+		})
+	}
+}
