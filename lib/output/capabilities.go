@@ -24,7 +24,10 @@ func detectCapabilities(opts OutputOpts) (capabilities, error) {
 	println("finding capabilities")
 
 	// Set atty
-	atty := opts.ForceTTY || isatty.IsTerminal(os.Stdout.Fd())
+	atty := opts.ForceTTY
+	if !opts.ForceTTY {
+		atty = isatty.IsTerminal(os.Stdout.Fd())
+	}
 
 	// Set w, h and override if desired
 	w, h := 80, 25
@@ -48,10 +51,16 @@ func detectCapabilities(opts OutputOpts) (capabilities, error) {
 	}
 
 	// detect color mode
-	color := opts.ForceColor || detectColor(atty)
+	color := opts.ForceColor
+	if !opts.ForceColor {
+		color = detectColor(atty)
+	}
 
 	// set detected background color
-	darkBackground := opts.ForceDarkBackground || termenv.HasDarkBackground()
+	darkBackground := opts.ForceDarkBackground
+	if !opts.ForceDarkBackground {
+		darkBackground = termenv.HasDarkBackground()
+	}
 
 	println("capabilities!")
 
