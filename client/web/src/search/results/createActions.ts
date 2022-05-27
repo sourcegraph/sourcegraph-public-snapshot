@@ -1,0 +1,80 @@
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
+
+import { SearchPatternType } from '@sourcegraph/search'
+import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
+import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+
+import { AuthenticatedUser } from '../../auth'
+import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
+import { CodeInsightsIcon } from '../../insights/Icons'
+
+export interface CreateAction {
+    url: string
+    icon: React.ElementType
+    label: string
+    tooltip: string
+}
+
+export function getSearchContextCreateAction(
+    query: string | undefined,
+    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
+): CreateAction | null {
+    if (!query || !authenticatedUser) {
+        return null
+    }
+
+    const contextFilter = findFilter(query, FilterType.context, FilterKind.Global)
+    if (!contextFilter || contextFilter.value?.value !== 'global') {
+        return null
+    }
+
+    const sanitizedQuery = omitFilter(query, contextFilter)
+    const searchParameters = new URLSearchParams()
+    searchParameters.set('q', sanitizedQuery)
+    const url = `/contexts/new?${searchParameters.toString()}`
+
+    return { url, icon: MagnifyIcon, label: 'Create Context', tooltip: 'Create a search context based on this query' }
+}
+
+export function getInsightsCreateAction(
+    query: string | undefined,
+    patternType: SearchPatternType,
+    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null,
+    enableCodeInsights: boolean | undefined
+): CreateAction | null {
+    if (!enableCodeInsights || !query || !authenticatedUser) {
+        return null
+    }
+
+    const searchParameters = new URLSearchParams()
+    searchParameters.set('query', `${query} patterntype:${patternType}`)
+    const url = `/insights/create/search?${searchParameters.toString()}`
+
+    return {
+        url,
+        icon: CodeInsightsIcon,
+        label: 'Create Insight',
+        tooltip: 'Create Insight based on this search query',
+    }
+}
+
+export function getCodeMonitoringCreateAction(
+    query: string | undefined,
+    patternType: SearchPatternType,
+    enableCodeMonitoring: boolean
+): CreateAction | null {
+    if (!enableCodeMonitoring || !query) {
+        return null
+    }
+    const searchParameters = new URLSearchParams(location.search)
+    searchParameters.set('trigger-query', `${query} patterntype:${patternType}`)
+    const url = `/code-monitoring/new?${searchParameters.toString()}`
+
+    return {
+        url,
+        icon: CodeMonitoringLogo,
+        label: 'Monitor',
+        tooltip: 'Create a code monitor based on this query',
+    }
+}

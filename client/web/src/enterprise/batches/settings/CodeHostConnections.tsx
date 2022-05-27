@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Container, Link, Typography } from '@sourcegraph/wildcard'
+import { Container, Link, Typography, Text } from '@sourcegraph/wildcard'
 
 import { UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
 import {
@@ -77,13 +77,13 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
                     </SummaryContainer>
                 )}
             </ConnectionContainer>
-            <p className="mb-0">
+            <Text className="mb-0">
                 Code host not present? Site admins can add a code host in{' '}
                 <Link to="/help/admin/external_service" target="_blank" rel="noopener noreferrer">
                     the manage repositories settings
                 </Link>
                 .
-            </p>
+            </Text>
         </Container>
     )
 }

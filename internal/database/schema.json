@@ -9,6 +9,14 @@
   ],
   "Enums": [
     {
+      "Name": "audit_log_operation",
+      "Labels": [
+        "create",
+        "modify",
+        "delete"
+      ]
+    },
+    {
       "Name": "batch_changes_changeset_ui_publication_state",
       "Labels": [
         "UNPUBLISHED",
@@ -82,7 +90,7 @@
     },
     {
       "Name": "func_configuration_policies_insert",
-      "Definition": "CREATE OR REPLACE FUNCTION public.func_configuration_policies_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        INSERT INTO configuration_policies_audit_logs\n        (policy_id, transition_columns)\n        VALUES (\n            NEW.id,\n            func_configuration_policies_transition_columns_diff(\n                (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),\n                func_row_to_configuration_policies_transition_columns(NEW)\n            )\n        );\n        RETURN NULL;\n    END;\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.func_configuration_policies_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        INSERT INTO configuration_policies_audit_logs\n        (policy_id, operation, transition_columns)\n        VALUES (\n            NEW.id, 'create',\n            func_configuration_policies_transition_columns_diff(\n                (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),\n                func_row_to_configuration_policies_transition_columns(NEW)\n            )\n        );\n        RETURN NULL;\n    END;\n$function$\n"
     },
     {
       "Name": "func_configuration_policies_transition_columns_diff",
@@ -90,7 +98,7 @@
     },
     {
       "Name": "func_configuration_policies_update",
-      "Definition": "CREATE OR REPLACE FUNCTION public.func_configuration_policies_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    DECLARE\n        diff hstore[];\n    BEGIN\n        diff = func_configuration_policies_transition_columns_diff(\n            func_row_to_configuration_policies_transition_columns(OLD),\n            func_row_to_configuration_policies_transition_columns(NEW)\n        );\n\n        IF (array_length(diff, 1) \u003e 0) THEN\n            INSERT INTO configuration_policies_audit_logs\n            (policy_id, transition_columns)\n            VALUES (\n                NEW.id,\n                diff\n            );\n        END IF;\n\n        RETURN NEW;\n    END;\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.func_configuration_policies_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    DECLARE\n        diff hstore[];\n    BEGIN\n        diff = func_configuration_policies_transition_columns_diff(\n            func_row_to_configuration_policies_transition_columns(OLD),\n            func_row_to_configuration_policies_transition_columns(NEW)\n        );\n\n        IF (array_length(diff, 1) \u003e 0) THEN\n            INSERT INTO configuration_policies_audit_logs\n            (policy_id, operation, transition_columns)\n            VALUES (NEW.id, 'modify', diff);\n        END IF;\n\n        RETURN NEW;\n    END;\n$function$\n"
     },
     {
       "Name": "func_insert_gitserver_repo",
@@ -102,7 +110,7 @@
     },
     {
       "Name": "func_lsif_uploads_insert",
-      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        INSERT INTO lsif_uploads_audit_logs\n        (upload_id, commit, root, repository_id, uploaded_at,\n        indexer, indexer_version, upload_size, associated_index_id,\n        transition_columns)\n        VALUES (\n            NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,\n            NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,\n            func_lsif_uploads_transition_columns_diff(\n                (NULL, NULL, NULL, NULL, NULL, NULL),\n                func_row_to_lsif_uploads_transition_columns(NEW)\n            )\n        );\n        RETURN NULL;\n    END;\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        INSERT INTO lsif_uploads_audit_logs\n        (upload_id, commit, root, repository_id, uploaded_at,\n        indexer, indexer_version, upload_size, associated_index_id,\n        operation, transition_columns)\n        VALUES (\n            NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,\n            NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,\n            'create', func_lsif_uploads_transition_columns_diff(\n                (NULL, NULL, NULL, NULL, NULL, NULL),\n                func_row_to_lsif_uploads_transition_columns(NEW)\n            )\n        );\n        RETURN NULL;\n    END;\n$function$\n"
     },
     {
       "Name": "func_lsif_uploads_transition_columns_diff",
@@ -110,7 +118,7 @@
     },
     {
       "Name": "func_lsif_uploads_update",
-      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    DECLARE\n        diff hstore[];\n    BEGIN\n        diff = func_lsif_uploads_transition_columns_diff(\n            func_row_to_lsif_uploads_transition_columns(OLD),\n            func_row_to_lsif_uploads_transition_columns(NEW)\n        );\n\n        IF (array_length(diff, 1) \u003e 0) THEN\n            INSERT INTO lsif_uploads_audit_logs\n            (reason, upload_id, commit, root, repository_id, uploaded_at,\n            indexer, indexer_version, upload_size, associated_index_id,\n            transition_columns)\n            VALUES (\n                COALESCE(current_setting('codeintel.lsif_uploads_audit.reason', true), ''),\n                NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,\n                NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,\n                diff\n            );\n        END IF;\n\n        RETURN NEW;\n    END;\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    DECLARE\n        diff hstore[];\n    BEGIN\n        diff = func_lsif_uploads_transition_columns_diff(\n            func_row_to_lsif_uploads_transition_columns(OLD),\n            func_row_to_lsif_uploads_transition_columns(NEW)\n        );\n\n        IF (array_length(diff, 1) \u003e 0) THEN\n            INSERT INTO lsif_uploads_audit_logs\n            (reason, upload_id, commit, root, repository_id, uploaded_at,\n            indexer, indexer_version, upload_size, associated_index_id,\n            operation, transition_columns)\n            VALUES (\n                COALESCE(current_setting('codeintel.lsif_uploads_audit.reason', true), ''),\n                NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,\n                NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,\n                'modify', diff\n            );\n        END IF;\n\n        RETURN NEW;\n    END;\n$function$\n"
     },
     {
       "Name": "func_row_to_configuration_policies_transition_columns",
@@ -358,6 +366,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "configuration_policies_audit_logs_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "critical_and_site_config_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
@@ -552,6 +569,15 @@
       "StartValue": 1,
       "MinimumValue": 1,
       "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "lsif_uploads_audit_logs_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
       "Increment": 1,
       "CycleOption": "NO"
     },
@@ -5723,6 +5749,19 @@
           "Comment": "Timestamp for this log entry."
         },
         {
+          "Name": "operation",
+          "Index": 6,
+          "TypeName": "audit_log_operation",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "policy_id",
           "Index": 3,
           "TypeName": "integer",
@@ -5747,6 +5786,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "Set once the upload this entry is associated with is deleted. Once NOW() - record_deleted_at is above a certain threshold, this log entry will be deleted."
+        },
+        {
+          "Name": "sequence",
+          "Index": 5,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('configuration_policies_audit_logs_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
         },
         {
           "Name": "transition_columns",
@@ -11383,6 +11435,19 @@
           "Comment": "Timestamp for this log entry."
         },
         {
+          "Name": "operation",
+          "Index": 16,
+          "TypeName": "audit_log_operation",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "reason",
           "Index": 14,
           "TypeName": "text",
@@ -11427,6 +11492,19 @@
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "sequence",
+          "Index": 15,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('lsif_uploads_audit_logs_seq'::regclass)",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",

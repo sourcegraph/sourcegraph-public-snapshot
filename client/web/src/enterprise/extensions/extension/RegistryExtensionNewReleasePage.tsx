@@ -25,6 +25,7 @@ import {
     Link,
     Icon,
     Typography,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -140,13 +141,13 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
             <div className="registry-extension-new-release-page">
                 <PageTitle title="Publish new release" />
                 <Typography.H2>Publish new release</Typography.H2>
-                <p>
+                <Text>
                     Use the{' '}
                     <Link to="https://github.com/sourcegraph/src-cli" target="_blank" rel="noopener noreferrer">
                         <Typography.Code>src</Typography.Code> CLI tool
                     </Link>{' '}
                     to publish a new release:
-                </p>
+                </Text>
                 <pre>
                     <Typography.Code>$ src extensions publish</Typography.Code>
                 </pre>
@@ -154,11 +155,11 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                     <>
                         <hr className="my-4" />
                         <Typography.H2>Extension editor (experimental)</Typography.H2>
-                        <p>
+                        <Text>
                             Edit or paste in an extension JSON manifest and JavaScript bundle. The JavaScript bundle
                             source must be self-contained; dependency bundling and TypeScript transpilation is not yet
                             supported.
-                        </p>
+                        </Text>
                         <Form onSubmit={onSubmit} className="mb-3">
                             <div className="row">
                                 <div className="col-lg-6">

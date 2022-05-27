@@ -2,7 +2,7 @@ import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { Typography } from '@sourcegraph/wildcard'
+import { Typography, Text } from '@sourcegraph/wildcard'
 
 import { AlertType } from '../graphql-operations'
 
@@ -30,9 +30,9 @@ export default config
 export const GlobalAlerts: Story = () => (
     <div>
         <Typography.H1>Global Alert</Typography.H1>
-        <p>
+        <Text>
             These alerts map to the <Typography.Code>AlertType</Typography.Code> returned from the backend API
-        </p>
+        </Text>
         <Typography.H2>Variants</Typography.H2>
         {Object.values(AlertType).map(type => (
             <GlobalAlert key={type} alert={{ message: 'Something happened!', isDismissibleWithKey: null, type }} />

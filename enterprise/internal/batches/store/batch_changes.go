@@ -213,7 +213,7 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 			case btypes.BatchChangeStateClosed:
 				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
 			case btypes.BatchChangeStateDraft:
-				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL"))
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL AND batch_changes.closed_at IS NULL"))
 			}
 		}
 		if len(stateConds) > 0 {
@@ -520,7 +520,7 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 			case btypes.BatchChangeStateClosed:
 				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
 			case btypes.BatchChangeStateDraft:
-				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL"))
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL AND batch_changes.closed_at IS NULL"))
 			}
 		}
 		if len(stateConds) > 0 {
