@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React from 'react'
 
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -19,36 +19,27 @@ export const CheckButton: React.FunctionComponent<React.PropsWithChildren<CheckB
     loading,
     successMessage,
     failedMessage,
-}) => {
-    const buttonReference = useRef<HTMLButtonElement | null>(null)
-    return (
-        <>
-            {!loading && !successMessage && !failedMessage && (
-                <Button
-                    className="text-primary text-nowrap"
-                    onClick={onClick}
-                    variant="link"
-                    aria-label={label}
-                    ref={buttonReference}
-                >
-                    Check
-                </Button>
-            )}
-            {loading && (
-                <div className="text-muted">
-                    <LoadingSpinner /> Checking
-                </div>
-            )}
-            {successMessage && !failedMessage && (
-                <div className="text-success">
-                    <CheckIcon /> {successMessage}
-                </div>
-            )}
-            {failedMessage && (
-                <div className="text-danger">
-                    <CloseIcon /> {failedMessage}
-                </div>
-            )}
-        </>
-    )
-}
+}) => (
+    <>
+        {!loading && !successMessage && !failedMessage && (
+            <Button className="text-primary text-nowrap" onClick={onClick} variant="link" aria-label={label}>
+                Check
+            </Button>
+        )}
+        {loading && (
+            <div className="text-muted">
+                <LoadingSpinner /> Checking
+            </div>
+        )}
+        {successMessage && !failedMessage && (
+            <div className="text-success">
+                <CheckIcon /> {successMessage}
+            </div>
+        )}
+        {failedMessage && (
+            <div className="text-danger">
+                <CloseIcon /> {failedMessage}
+            </div>
+        )}
+    </>
+)
