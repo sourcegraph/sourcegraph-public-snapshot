@@ -767,6 +767,7 @@ func TestListTags(t *testing.T) {
 		"git tag t0",
 		"git tag t1",
 		dateEnv + " git tag --annotate -m foo t2",
+		dateEnv + " git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"git tag t3",
 	}
 
