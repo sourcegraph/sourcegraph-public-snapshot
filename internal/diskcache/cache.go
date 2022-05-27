@@ -315,7 +315,9 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 			if err != nil {
 				return err
 			}
-			entries = append(entries, absFileInfo{absPath: path, info: info})
+			if !info.IsDir() {
+				entries = append(entries, absFileInfo{absPath: path, info: info})
+			}
 			return nil
 		})
 	if err != nil {
@@ -328,9 +330,7 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 	// Sum up the total size of all zips
 	var size int64
 	for _, entry := range entries {
-		if isZip(entry.info) {
-			size += entry.info.Size()
-		}
+		size += entry.info.Size()
 	}
 	stats.CacheSize = size
 
