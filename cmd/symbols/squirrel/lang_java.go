@@ -402,6 +402,12 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 		}
 	case "void_type":
 		return PrimType{noad: node, varient: "void"}, nil
+	case "integral_type":
+		return PrimType{noad: node, varient: "integral"}, nil
+	case "floating_point_type":
+		return PrimType{noad: node, varient: "floating"}, nil
+	case "boolean_type":
+		return PrimType{noad: node, varient: "boolean"}, nil
 	default:
 		squirrel.breadcrumb(node, fmt.Sprintf("getTypeDefJava: unrecognized node type %q", node.Type()))
 		return nil, nil
