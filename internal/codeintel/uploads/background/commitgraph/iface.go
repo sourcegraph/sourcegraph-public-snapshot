@@ -20,6 +20,7 @@ type DBStore interface {
 		dirtyToken int,
 	) error
 	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)
+	MaxStaleAge(ctx context.Context) (_ time.Duration, err error)
 }
 
 type Locker interface {
