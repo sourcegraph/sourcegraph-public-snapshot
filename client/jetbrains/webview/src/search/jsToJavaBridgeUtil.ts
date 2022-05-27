@@ -1,10 +1,10 @@
 import { splitPath } from '@sourcegraph/shared/src/components/RepoLink'
-import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
+import { ContentMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { loadContent } from './lib/blob'
-import { PluginConfig, Theme, Search } from './types'
+import { PluginConfig, Search, Theme } from './types'
 
-interface MatchRequest {
+export interface MatchRequest {
     action: 'preview' | 'open'
     arguments: {
         fileName: string
@@ -23,7 +23,7 @@ interface GetThemeRequest {
     action: 'getTheme'
 }
 
-interface SaveLastSearchRequest {
+export interface SaveLastSearchRequest {
     action: 'saveLastSearch'
     arguments: Search
 }
@@ -82,8 +82,8 @@ export async function indicateFinishedLoading(): Promise<void> {
     }
 }
 
-export async function onPreviewChange(match: ContentMatch, lineMatchIndex: number): Promise<void> {
-    const request = await createRequestForMatch(match, lineMatchIndex, 'preview')
+export async function onPreviewChange(match: SearchMatch, lineMatchIndex?: number): Promise<void> {
+    const request = await createPreviewOrOpenRequest(match, lineMatchIndex, 'preview')
     try {
         await callJava(request)
     } catch (error) {
@@ -99,9 +99,9 @@ export async function onPreviewClear(): Promise<void> {
     }
 }
 
-export async function onOpen(match: ContentMatch, lineMatchIndex: number): Promise<void> {
+export async function onOpen(match: SearchMatch, lineMatchIndex?: number): Promise<void> {
     try {
-        await callJava(await createRequestForMatch(match, lineMatchIndex, 'open'))
+        await callJava(await createPreviewOrOpenRequest(match, lineMatchIndex, 'open'))
     } catch (error) {
         console.error(`Failed to open match: ${(error as Error).message}`)
     }
@@ -130,7 +130,56 @@ async function callJava(request: Request): Promise<object> {
     return window.callJava(request)
 }
 
-export async function createRequestForMatch(
+export async function createPreviewOrOpenRequest(
+    match: SearchMatch,
+    lineMatchIndex: number | undefined,
+    action: MatchRequest['action']
+): Promise<MatchRequest> {
+    if (match.type === 'commit') {
+        return {
+            action,
+            arguments: {
+                fileName: '',
+                path: '',
+                content: match.message,
+                lineNumber: -1,
+                absoluteOffsetAndLengths: [],
+            },
+        }
+    }
+
+    if (match.type === 'content') {
+        return createPreviewOrOpenRequestForContentMatch(match, lineMatchIndex as number, 'preview')
+    }
+
+    if (match.type === 'repo') {
+        return {
+            action,
+            arguments: {
+                fileName: '',
+                path: '',
+                content: '(No preview available)',
+                lineNumber: -1,
+                absoluteOffsetAndLengths: [],
+            },
+        }
+    }
+
+    console.log(`Unknown match type: “${match.type}”`)
+
+    return {
+        action,
+        arguments: {
+            fileName: '',
+            path: '',
+            content: '',
+            lineNumber: -1,
+            absoluteOffsetAndLengths: [],
+        },
+    }
+}
+
+export async function createPreviewOrOpenRequestForContentMatch(
     match: ContentMatch,
     lineMatchIndex: number,
     action: MatchRequest['action']
@@ -148,7 +197,7 @@ export async function createRequestForMatch(
         arguments: {
             fileName,
             path: match.path,
-            content,
+            content: content.replaceAll('\r\n', '\n'),
             lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
             absoluteOffsetAndLengths,
         },

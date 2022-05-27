@@ -14,12 +14,7 @@ import { SearchBox } from '@sourcegraph/search-ui'
 import { AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import {
-    aggregateStreamingSearch,
-    ContentMatch,
-    LATEST_VERSION,
-    SearchMatch,
-} from '@sourcegraph/shared/src/search/stream'
+import { aggregateStreamingSearch, LATEST_VERSION, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -38,9 +33,9 @@ interface Props {
     instanceURL: string
     isGlobbingEnabled: boolean
     accessToken: string | null
-    onPreviewChange: (match: ContentMatch, lineIndex: number) => void
+    onPreviewChange: (match: SearchMatch, lineMatchIndex?: number) => void
     onPreviewClear: () => void
-    onOpen: (match: ContentMatch, lineIndex: number) => void
+    onOpen: (match: SearchMatch, lineMatchIndex?: number) => void
     initialSearch: Search | null
 }
 
@@ -107,7 +102,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         requestGraphQL,
     }
 
-    const [results, setResults] = useState<SearchMatch[]>([])
+    const [matches, setMatches] = useState<SearchMatch[]>([])
     const [lastSearch, setLastSearch] = useState<Search>(
         initialSearch ?? {
             query: '',
@@ -143,7 +138,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             // search results from being reloaded and reapplied in a different order when a user
             // accidentally hits enter thinking that this would open the file
             if (
-                forceNewSearch !== true &&
+                !forceNewSearch &&
                 query === lastSearch.query &&
                 (caseSensitive === undefined || caseSensitive === lastSearch.caseSensitive) &&
                 (patternType === undefined || patternType === lastSearch.patternType) &&
@@ -166,10 +161,10 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                         decorationContextLines: 0,
                     }
                 ).subscribe(searchResults => {
-                    setResults(searchResults.results)
+                    setMatches(searchResults.results)
                 })
             )
-            setResults([])
+            setMatches([])
             setLastSearch(current => ({
                 query,
                 caseSensitive: caseSensitive ?? current.caseSensitive,
@@ -252,7 +247,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                 <div>Auth state: {authState}</div>
                 {/* We reset the search result list whenever a new search is initiated using key={getStableKeyForLastSearch(lastSearch)} */}
                 <SearchResultList
-                    results={results}
+                    matches={matches}
                     key={getStableKeyForLastSearch(lastSearch)}
                     onPreviewChange={onPreviewChange}
                     onPreviewClear={onPreviewClear}
