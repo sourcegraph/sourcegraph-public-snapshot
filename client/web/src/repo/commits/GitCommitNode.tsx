@@ -195,7 +195,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                     className={styles.shaAndParentsCopy}
                                     onClick={() => copyToClipboard(parent.oid)}
                                     data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
-                                    aria-label={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
+                                    aria-label="Copy full SHA"
                                 >
                                     <Icon role="img" as={ContentCopyIcon} aria-hidden={true} />
                                 </Button>

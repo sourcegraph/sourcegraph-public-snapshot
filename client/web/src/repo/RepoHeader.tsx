@@ -251,7 +251,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                     <ul className="navbar-nav">
                         <li className="nav-item">
                             <Menu>
-                                <RepoHeaderActionDropdownToggle aria-label="Nav Item Menu">
+                                <RepoHeaderActionDropdownToggle aria-label="Repository actions">
                                     <Icon role="img" as={DotsVerticalIcon} aria-hidden={true} />
                                 </RepoHeaderActionDropdownToggle>
                                 <MenuList position={Position.bottomEnd}>

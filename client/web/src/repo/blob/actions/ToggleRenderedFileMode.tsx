@@ -39,7 +39,7 @@ export const ToggleRenderedFileMode: React.FunctionComponent<React.PropsWithChil
     if (actionType === 'dropdown') {
         return (
             <RepoHeaderActionButtonLink to={getURLForMode(location, otherMode)} file={true}>
-                <Icon role="img" as={EyeIcon} aria-hidden="true" />
+                <Icon role="img" as={EyeIcon} aria-hidden={true} />
                 <span>{label}</span>
             </RepoHeaderActionButtonLink>
         )

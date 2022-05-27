@@ -145,10 +145,10 @@ export const CodeHostItem: React.FunctionComponent<React.PropsWithChildren<CodeH
                         role="img"
                         className={classNames('mb-0 mr-2', styles.iconDashed)}
                         as={CircleDashedIcon}
-                        aria-label="Circle Dashed"
+                        aria-hidden={true}
                     />
                 )}
-                <Icon role="img" className="mb-0 mr-1" as={ItemIcon} aria-label="Item Icon" />
+                <Icon role="img" className="mb-0 mr-1" as={ItemIcon} aria-hidden={true} />
             </div>
             <div className="flex-1 align-self-center">
                 <Typography.H3 className="m-0">

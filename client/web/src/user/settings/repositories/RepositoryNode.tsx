@@ -62,7 +62,7 @@ const StatusIcon: React.FunctionComponent<React.PropsWithChildren<StatusIconProp
     }
     return (
         <small className="mr-2">
-            <Icon role="img" className={styles.check} as={TickIcon} aria-label="Repo has been cloned" />
+            <Icon role="img" className={styles.check} as={TickIcon} aria-label="Success" />
         </small>
     )
 }
