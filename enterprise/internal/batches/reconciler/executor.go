@@ -329,6 +329,7 @@ func (e *executor) detachChangeset() {
 			e.ch.RemoveBatchChangeID(assoc.BatchChangeID)
 		}
 	}
+	e.ch.DetachedAt = time.Now()
 }
 
 // archiveChangeset sets all associations to archived that are marked as "to-be-archived".
