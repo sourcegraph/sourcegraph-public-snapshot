@@ -1013,6 +1013,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			c.NumResets = 987
 			c.NumFailures = 789
 
+			c.DetachedAt = clock.Now()
+
 			clone := c.Clone()
 			have = append(have, clone)
 
