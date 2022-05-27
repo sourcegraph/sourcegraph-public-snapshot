@@ -101,6 +101,9 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Ru
 	// Spawn a goroutine for each check and increment count to report completion. We use
 	// a single start time for the sake of simplicity.
 	start := time.Now()
+	// 3 minutes is a very long time for a linter to run for, do not allow linters to take
+	// any longer.
+	linterTimeout := 3 * time.Minute
 	var count int64
 	total := len(fns)
 	pending := out.Pending(output.Styledf(output.StylePending, "Running linters (done: 0/%d)", total))
@@ -109,6 +112,9 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Ru
 	wg.Add(total)
 	for _, fn := range fns {
 		go func(fn lint.Runner) {
+			ctx, cancel := context.WithTimeout(ctx, linterTimeout)
+			defer cancel()
+
 			reportsCh <- fn(ctx, repoState)
 			wg.Done()
 		}(fn)
