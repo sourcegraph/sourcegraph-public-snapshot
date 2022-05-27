@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
@@ -679,6 +680,100 @@ func TestPermissionLevels(t *testing.T) {
 						if have, want := res.Node.ID, graphqlID; have != want {
 							t.Fatalf("invalid node returned, wanted ID=%q, have=%q", want, have)
 						}
+					}
+				})
+			}
+		})
+
+		t.Run("CheckBatchChangesCredential", func(t *testing.T) {
+			service.Mocks.ValidateAuthenticator = func(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
+				return nil
+			}
+			t.Cleanup(func() {
+				service.Mocks.Reset()
+			})
+
+			tests := []struct {
+				name        string
+				currentUser int32
+				user        int32
+				wantErr     bool
+			}{
+				{
+					name:        "site-admin viewing other user",
+					currentUser: adminID,
+					user:        userID,
+					wantErr:     false,
+				},
+				{
+					name:        "non-site-admin viewing other's credential",
+					currentUser: userID,
+					user:        adminID,
+					wantErr:     true,
+				},
+				{
+					name:        "non-site-admin viewing own credential",
+					currentUser: userID,
+					user:        userID,
+					wantErr:     false,
+				},
+
+				{
+					name:        "site-admin viewing site-credential",
+					currentUser: adminID,
+					user:        0,
+					wantErr:     false,
+				},
+				{
+					name:        "non-site-admin viewing site-credential",
+					currentUser: userID,
+					user:        0,
+					wantErr:     true,
+				},
+			}
+
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					pruneUserCredentials(t, db, key)
+					pruneSiteCredentials(t, cstore)
+
+					var graphqlID graphql.ID
+					if tc.user != 0 {
+						cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+							Domain:              database.UserCredentialDomainBatches,
+							ExternalServiceID:   "https://github.com/",
+							ExternalServiceType: extsvc.TypeGitHub,
+							UserID:              tc.user,
+						}, &auth.OAuthBearerToken{Token: "SOSECRET"})
+						if err != nil {
+							t.Fatal(err)
+						}
+						graphqlID = marshalBatchChangesCredentialID(cred.ID, false)
+					} else {
+						cred := &btypes.SiteCredential{
+							ExternalServiceID:   "https://github.com/",
+							ExternalServiceType: extsvc.TypeGitHub,
+						}
+						token := &auth.OAuthBearerToken{Token: "SOSECRET"}
+						if err := cstore.CreateSiteCredential(ctx, cred, token); err != nil {
+							t.Fatal(err)
+						}
+						graphqlID = marshalBatchChangesCredentialID(cred.ID, true)
+					}
+
+					var res struct {
+						CheckBatchChangesCredential apitest.EmptyResponse
+					}
+
+					input := map[string]any{"id": graphqlID}
+					query := `query($id: ID!) { checkBatchChangesCredential(batchChangesCredential: $id) { alwaysNil } }`
+
+					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+					errors := apitest.Exec(actorCtx, t, s, input, &res, query)
+					if !tc.wantErr {
+						assert.Len(t, errors, 0)
+					} else if tc.wantErr {
+						assert.Len(t, errors, 1)
 					}
 				})
 			}
