@@ -8,12 +8,14 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, Alert, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Alert, Typography, Text, Input } from '@sourcegraph/wildcard'
 
 import { AddExternalServiceInput } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 
 import { AddExternalServiceOptions } from './externalServices'
+
+import styles from './ExternalServiceForm.module.scss'
 
 interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, ThemeProps, TelemetryProps {
     history: H.History
@@ -73,13 +75,8 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
             )}
             {hideDisplayNameField || (
                 <div className="form-group">
-                    <Typography.Label weight="bold" htmlFor="test-external-service-form-display-name">
-                        Display name:
-                    </Typography.Label>
-                    <input
+                    <Input
                         id="test-external-service-form-display-name"
-                        type="text"
-                        className="form-control"
                         required={true}
                         autoCorrect="off"
                         autoComplete="off"
@@ -88,6 +85,8 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                         value={input.displayName}
                         onChange={onDisplayNameChange}
                         disabled={loading}
+                        label={<strong className={styles.inputLabel}>Display name:</strong>}
+                        className="mb-0"
                     />
                 </div>
             )}

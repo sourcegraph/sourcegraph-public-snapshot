@@ -21,6 +21,10 @@ export enum InputStatus {
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** text label of input. */
     label?: ReactNode
+    /** text description, display as tooltip when label is hovered. */
+    labelTitle?: string
+    /** Determines if label should be displayed inline. */
+    inlineLabel?: boolean
     /** Description block shown below the input. */
     message?: ReactNode
     /** Custom class name for root label element. */
@@ -36,6 +40,8 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     disabled?: boolean
     /** Determines the size of the input */
     variant?: 'regular' | 'small'
+    /** Determines if the class "form-control" is added on input */
+    formControl?: boolean
 }
 
 /**
@@ -46,7 +52,10 @@ export const Input = forwardRef((props, reference) => {
         as: Component = 'input',
         type = 'text',
         variant = 'regular',
+        formControl = true,
         label,
+        labelTitle,
+        inlineLabel,
         message,
         className,
         inputClassName,
@@ -70,11 +79,17 @@ export const Input = forwardRef((props, reference) => {
                 <Component
                     disabled={disabled}
                     type={type}
-                    className={classNames(styles.input, inputClassName, 'form-control', 'with-invalid-icon', {
-                        'is-valid': status === InputStatus.valid,
-                        'is-invalid': error || status === InputStatus.error,
-                        'form-control-sm': variant === 'small',
-                    })}
+                    className={classNames(
+                        inputClassName,
+                        status === InputStatus.loading && styles.inputLoading,
+                        formControl && 'form-control',
+                        'with-invalid-icon',
+                        {
+                            'is-valid': status === InputStatus.valid,
+                            'is-invalid': error || status === InputStatus.error,
+                            'form-control-sm': variant === 'small',
+                        }
+                    )}
                     {...otherProps}
                     ref={mergedReference}
                     autoFocus={autoFocus}

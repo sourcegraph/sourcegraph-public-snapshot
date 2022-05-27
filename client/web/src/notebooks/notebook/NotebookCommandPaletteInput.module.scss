@@ -9,15 +9,19 @@
 }
 
 .input {
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 1rem 0.4375rem;
     width: 100%;
-    background-color: transparent;
+    background-color: transparent !important;
     border: none;
     border-radius: var(--border-radius);
 
     &:focus-visible {
         box-shadow: none;
     }
+}
+
+.input::placeholder {
+    color: #757575;
 }
 
 .command-palette {

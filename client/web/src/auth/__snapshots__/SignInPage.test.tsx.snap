@@ -62,15 +62,19 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
               >
                 Username or email
               </label>
-              <input
-                autocapitalize="off"
-                autocomplete="username"
-                class="form-control"
-                id="username-or-email"
-                required=""
-                type="text"
-                value=""
-              />
+              <div
+                class="container d-flex"
+              >
+                <input
+                  autocapitalize="off"
+                  autocomplete="username"
+                  class="form-control with-invalid-icon"
+                  id="username-or-email"
+                  required=""
+                  type="text"
+                  value=""
+                />
+              </div>
             </div>
             <div
               class="form-group d-flex flex-column align-content-start position-relative"
@@ -81,16 +85,20 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
               >
                 Password
               </label>
-              <input
-                autocomplete="current-password"
-                class="form-control"
-                id="password"
-                name="password"
-                placeholder=" "
-                required=""
-                type="password"
-                value=""
-              />
+              <div
+                class="container d-flex"
+              >
+                <input
+                  autocomplete="current-password"
+                  class="form-control with-invalid-icon"
+                  id="password"
+                  name="password"
+                  placeholder=" "
+                  required=""
+                  type="password"
+                  value=""
+                />
+              </div>
               <small
                 class="form-text text-muted align-self-end position-absolute"
               >
@@ -222,15 +230,19 @@ exports[`SignInPage renders sign in page (server) 1`] = `
               >
                 Username or email
               </label>
-              <input
-                autocapitalize="off"
-                autocomplete="username"
-                class="form-control"
-                id="username-or-email"
-                required=""
-                type="text"
-                value=""
-              />
+              <div
+                class="container d-flex"
+              >
+                <input
+                  autocapitalize="off"
+                  autocomplete="username"
+                  class="form-control with-invalid-icon"
+                  id="username-or-email"
+                  required=""
+                  type="text"
+                  value=""
+                />
+              </div>
             </div>
             <div
               class="form-group d-flex flex-column align-content-start position-relative"
@@ -241,16 +253,20 @@ exports[`SignInPage renders sign in page (server) 1`] = `
               >
                 Password
               </label>
-              <input
-                autocomplete="current-password"
-                class="form-control"
-                id="password"
-                name="password"
-                placeholder=" "
-                required=""
-                type="password"
-                value=""
-              />
+              <div
+                class="container d-flex"
+              >
+                <input
+                  autocomplete="current-password"
+                  class="form-control with-invalid-icon"
+                  id="password"
+                  name="password"
+                  placeholder=" "
+                  required=""
+                  type="password"
+                  value=""
+                />
+              </div>
               <small
                 class="form-text text-muted align-self-end position-absolute"
               >

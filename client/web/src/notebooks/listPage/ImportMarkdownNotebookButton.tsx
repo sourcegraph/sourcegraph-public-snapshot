@@ -5,12 +5,14 @@ import * as uuid from 'uuid'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Input } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CreateNotebookVariables } from '../../graphql-operations'
 import { blockToGQLInput } from '../serialize'
 import { convertMarkdownToBlocks } from '../serialize/convertMarkdownToBlocks'
+
+import styles from './ImportMarkdownNotebookButton.module.scss'
 
 const LOADING = 'loading' as const
 
@@ -77,9 +79,9 @@ export const ImportMarkdownNotebookButton: React.FunctionComponent<
 
     return (
         <>
-            <input
+            <Input
                 type="file"
-                className="d-none"
+                className={styles.input}
                 ref={fileInputReference}
                 accept=".md"
                 onChange={onFileInputChange}
