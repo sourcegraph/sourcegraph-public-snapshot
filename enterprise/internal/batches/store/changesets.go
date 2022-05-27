@@ -1466,3 +1466,13 @@ func uiPublicationStateColumn(c *btypes.Changeset) *string {
 	}
 	return uiPublicationState
 }
+
+// CleanDetachedChangesets deletes changesets that have been detached after the number of specified days.
+func (s *Store) CleanDetachedChangesets(ctx context.Context, retentionInDays int) error {
+	return s.Exec(ctx, sqlf.Sprintf(cleanDetachedChangesetsFmtstr, retentionInDays))
+}
+
+const cleanDetachedChangesetsFmtstr = `
+-- source: enterprise/internal/batches/store/changesets.go:CleanDetachedChangesets
+DELETE FROM changesets WHERE detached_at < (NOW() - (%s * '1 day'::interval));
+`
