@@ -299,7 +299,7 @@ func TestLoadChangesetSource(t *testing.T) {
 		},
 	}
 
-	newMockStore := func() (*MockSyncStore, *database.MockExternalServiceStore) {
+	newMockStore := func() *MockSyncStore {
 		syncStore := newTestStore()
 
 		ess := database.NewMockExternalServiceStore()
@@ -308,13 +308,13 @@ func TestLoadChangesetSource(t *testing.T) {
 		})
 		syncStore.ExternalServicesFunc.SetDefaultReturn(ess)
 
-		return syncStore, ess
+		return syncStore
 	}
 
 	t.Run("imported changesets", func(t *testing.T) {
 		// Store mocks.
 		hasCredential := false
-		syncStore, _ := newMockStore()
+		syncStore := newMockStore()
 		syncStore.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
 			if hasCredential {
 				cred := &btypes.SiteCredential{}
@@ -365,7 +365,7 @@ func TestLoadChangesetSource(t *testing.T) {
 				return cred, nil
 			})
 
-			syncStore, _ := newMockStore()
+			syncStore := newMockStore()
 			syncStore.UserCredentialsFunc.SetDefaultReturn(credStore)
 			syncStore.GetBatchChangeFunc.SetDefaultHook(func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
 				assert.EqualValues(t, bc.ID, opts.ID)
@@ -387,7 +387,7 @@ func TestLoadChangesetSource(t *testing.T) {
 			credStore := database.NewMockUserCredentialsStore()
 			credStore.GetByScopeFunc.SetDefaultReturn(nil, database.UserCredentialNotFoundErr{})
 
-			syncStore, _ := newMockStore()
+			syncStore := newMockStore()
 			syncStore.UserCredentialsFunc.SetDefaultReturn(credStore)
 			syncStore.GetBatchChangeFunc.SetDefaultHook(func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
 				assert.EqualValues(t, bc.ID, opts.ID)
@@ -416,7 +416,7 @@ func TestLoadChangesetSource(t *testing.T) {
 			credStore := database.NewMockUserCredentialsStore()
 			credStore.GetByScopeFunc.SetDefaultReturn(nil, database.UserCredentialNotFoundErr{})
 
-			syncStore, _ := newMockStore()
+			syncStore := newMockStore()
 			syncStore.UserCredentialsFunc.SetDefaultReturn(credStore)
 			syncStore.GetBatchChangeFunc.SetDefaultHook(func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
 				assert.EqualValues(t, bc.ID, opts.ID)
