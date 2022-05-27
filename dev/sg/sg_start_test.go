@@ -93,11 +93,12 @@ func useOutputBuffer(t *testing.T) *outputtest.Buffer {
 
 	buf := &outputtest.Buffer{}
 	bufferOut := output.NewOutput(buf, output.OutputOpts{
-		ForceTTY:    true,
-		ForceColor:  true,
-		ForceHeight: 25,
-		ForceWidth:  80,
-		Verbose:     true,
+		ForceTTY:            true,
+		ForceColor:          true,
+		ForceHeight:         25,
+		ForceWidth:          80,
+		Verbose:             true,
+		ForceDarkBackground: true,
 	})
 
 	oldStdout := std.Out

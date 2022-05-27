@@ -92,11 +92,7 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Ru
 	}
 
 	// We need the Verbose flag to print above the pending indicator.
-	out := output.NewOutput(dst, output.OutputOpts{
-		ForceColor: true,
-		ForceTTY:   true,
-		Verbose:    true,
-	})
+	out := std.NewOutput(dst, true)
 
 	// Spawn a goroutine for each check and increment count to report completion.
 	var count int64
