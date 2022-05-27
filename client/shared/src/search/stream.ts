@@ -1,4 +1,4 @@
-import React from 'react' // import react
+// import React from 'react' // import react
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 /* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
@@ -9,10 +9,6 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 
 import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../schema'
-import { createLoopUpdate } from '@react-spring/core/dist/declarations/src/SpringValue'
-import { createLiteral } from './query/token'
-import { string } from 'prop-types'
-
 
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
 // The version is set based on the release tag of the instance. Anything before 3.9.0 will not pass a version parameter,
@@ -551,40 +547,16 @@ export function isSearchMatchOfType<T extends SearchMatch['type']>(
     return (match): match is SearchMatchOfType<T> => match.type === type
 }
 
-// Write a TypeScript function to call the compute endpoint using fetchEventSource. The function should take the compute query and return any results into the console.
-
-const URL = '/.api/compute/stream'
-
-//create an instance of commit
-
-type commit = {
-    type: 'commit',
-}
-// create an instance of a query
-
-type query = {
-    repo: string,
-    content: string,
-    type: 'commit',
-    after: string,
-    count: string,
-}
-
-let queryInstace: query = {
-    repo: 'github.com/sourcegraph/sourcegraph',
-    content: 'output((.|\n)* -> $author)',
-    type: 'commit',
-    after: '1 month ago',
-    count: 'all',
-}
-
-async function computeEndPoint(exampleQuery: query): Promise<void> {
-    await fetchEventSource(URL, {
-        method: 'POST',
-        onmessage(event) {
-            console.log(event.data)
-        }
+// Call the compute endpoing with the given query
+const computeStreamUrl = '/.api/compute/stream'
+export function streamComputeQuery(query: string): Observable<string> {
+    return new Observable<string>(observer => {
+        fetchEventSource(`${computeStreamUrl}?q=${encodeURIComponent(query)}`, {
+            method: 'POST',
+            onmessage(event) {
+                observer.next(event.data)
+            }
+        }).then(() => observer.complete(), error => observer.error(error))
     })
 }
 
-computeEndPoint(queryInstace)
