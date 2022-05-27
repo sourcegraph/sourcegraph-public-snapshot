@@ -114,7 +114,10 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                         }`}
                                         className={styles.item}
                                         // eslint-disable-next-line react/forbid-dom-props
-                                        style={{ color: style.color }}
+                                        style={{
+                                            color: style.color,
+                                            backgroundColor: style.backgroundColor,
+                                        }}
                                         data-tooltip={attachment.hoverMessage}
                                         to={attachment.linkURL}
                                         // Use target to open external URLs
@@ -133,11 +136,6 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                         <span
                                             className={styles.contents}
                                             data-line-decoration-attachment-content={true}
-                                            // eslint-disable-next-line react/forbid-dom-props
-                                            style={{
-                                                color: style.color,
-                                                backgroundColor: style.backgroundColor,
-                                            }}
                                             data-contents={attachment.contentText || ''}
                                         />
                                     </LinkOrSpan>
