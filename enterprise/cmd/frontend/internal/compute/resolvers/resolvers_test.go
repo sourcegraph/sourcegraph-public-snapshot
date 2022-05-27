@@ -36,13 +36,13 @@ func TestToResultResolverList(t *testing.T) {
 	nonNilMatches := []result.Match{
 		&result.FileMatch{
 			HunkMatches: result.HunkMatches{{
-				Preview: "a",
+				Content: "a",
 				Ranges: result.Ranges{{
 					Start: result.Location{Line: 1, Column: 0},
 					End:   result.Location{Line: 1, Column: 1},
 				}},
 			}, {
-				Preview: "b",
+				Content: "b",
 				Ranges: result.Ranges{{
 					Start: result.Location{Line: 2, Column: 0},
 					End:   result.Location{Line: 2, Column: 1},

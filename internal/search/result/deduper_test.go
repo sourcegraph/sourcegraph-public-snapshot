@@ -56,7 +56,7 @@ func TestDeduper(t *testing.T) {
 
 	hm := func(s string) HunkMatch {
 		return HunkMatch{
-			Preview: s,
+			Content: s,
 		}
 	}
 
