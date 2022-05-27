@@ -60,7 +60,11 @@ export const Directory: React.FunctionComponent<React.PropsWithChildren<TreeChil
                             onClick={props.noopRowClick}
                             tabIndex={-1}
                         >
-                            <Icon as={props.isExpanded ? ChevronDownIcon : ChevronRightIcon} />
+                            <Icon
+                                role="img"
+                                as={props.isExpanded ? ChevronDownIcon : ChevronRightIcon}
+                                aria-hidden={true}
+                            />
                         </TreeRowIconLink>
                         <TreeRowLabelLink
                             to={props.entryInfo.url}

@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -51,11 +49,6 @@ type OrgStore interface {
 
 type orgStore struct {
 	*basestore.Store
-}
-
-// Orgs instantiates and returns a new OrgStore with prepared statements.
-func Orgs(db dbutil.DB) OrgStore {
-	return &orgStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // OrgsWith instantiates and returns a new OrgStore using the other store handle.

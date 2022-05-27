@@ -49,7 +49,7 @@ func servePhabricatorRepoCreate(db database.DB) func(w http.ResponseWriter, r *h
 		if err != nil {
 			return err
 		}
-		phabRepo, err := database.Phabricator(db).CreateOrUpdate(r.Context(), repo.Callsign, repo.RepoName, repo.URL)
+		phabRepo, err := db.Phabricator().CreateOrUpdate(r.Context(), repo.Callsign, repo.RepoName, repo.URL)
 		if err != nil {
 			return err
 		}
@@ -203,7 +203,7 @@ func serveOrgsGetByName(db database.DB) func(w http.ResponseWriter, r *http.Requ
 		if err != nil {
 			return errors.Wrap(err, "Decode")
 		}
-		org, err := database.Orgs(db).GetByName(r.Context(), orgName)
+		org, err := db.Orgs().GetByName(r.Context(), orgName)
 		if err != nil {
 			return errors.Wrap(err, "Orgs.GetByName")
 		}
@@ -341,7 +341,7 @@ func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error
 		}
 
 		ctx := r.Context()
-		repo, err := database.Repos(db).Get(ctx, api.RepoID(repoID))
+		repo, err := db.Repos().Get(ctx, api.RepoID(repoID))
 		if err != nil {
 			return err
 		}

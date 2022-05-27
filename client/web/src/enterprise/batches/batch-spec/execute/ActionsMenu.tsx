@@ -9,7 +9,18 @@ import SyncIcon from 'mdi-react/SyncIcon'
 import { useHistory, useLocation } from 'react-router'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { Button, Icon, Link, Menu, MenuButton, MenuItem, MenuList, Position, useMeasure } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Icon,
+    Link,
+    Menu,
+    MenuButton,
+    MenuItem,
+    MenuList,
+    Position,
+    Text,
+    useMeasure,
+} from '@sourcegraph/wildcard'
 
 import {
     BatchSpecExecutionFields,
@@ -133,11 +144,11 @@ const MemoizedActionsMenu: React.FunctionComponent<
                 onConfirm={cancelModalType === 'cancel' ? cancelBatchSpecExecution : cancelAndEdit}
                 modalHeader={cancelModalType === 'cancel' ? 'Cancel execution' : 'The execution is still running'}
                 modalBody={
-                    <p>
+                    <Text>
                         {cancelModalType === 'cancel'
                             ? 'Are you sure you want to cancel the current execution?'
                             : 'You are unable to edit the spec when an execution is running.'}
-                    </p>
+                    </Text>
                 }
                 isLoading={isCancelLoading}
             />

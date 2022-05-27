@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -26,7 +25,7 @@ func main() {
 		batchCompletionMode = true
 	}
 	if err := sg.RunContext(context.Background(), os.Args); err != nil {
-		fmt.Printf("error: %s\n", err)
+		std.Out.WriteFailuref(err.Error())
 		os.Exit(1)
 	}
 }
@@ -208,8 +207,7 @@ var sg = &cli.App{
 
 		// Show help text only
 		if errors.Is(err, flag.ErrHelp) {
-			cli.ShowAppHelp(cmd)
-			os.Exit(1)
+			cli.ShowSubcommandHelpAndExit(cmd, 1)
 		}
 
 		// Render error

@@ -20,6 +20,7 @@ import {
     Alert,
     Icon,
     Typography,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -231,7 +232,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                                 </Alert>
                             ) : (
                                 <Alert className={classNames('mb-0', styles.alert)} variant="danger">
-                                    <p>The remote repository is unreachable. Logs follow.</p>
+                                    <Text>The remote repository is unreachable. Logs follow.</Text>
                                     <div>
                                         <pre className={styles.log}>
                                             <Typography.Code>{this.state.result.error}</Typography.Code>
@@ -315,7 +316,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                         <Typography.Label>
                             Remote repository URL{' '}
                             <small className="text-info">
-                                <Icon as={LockIcon} /> Only visible to site admins
+                                <Icon role="img" as={LockIcon} aria-hidden={true} /> Only visible to site admins
                             </small>
                         </Typography.Label>
                         <input

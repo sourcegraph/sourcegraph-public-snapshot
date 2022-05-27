@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
-	"database/sql"
 	"encoding/binary"
 	"encoding/gob"
 	"encoding/json"
@@ -17,7 +16,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/cespare/xxhash/v2"
@@ -35,7 +33,6 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/go-rendezvous"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -321,25 +318,6 @@ var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Number of times gitserver.AddrForRepo was invoked",
 }, []string{"user_agent"})
 
-// AddrForRepoCounter is used to track the number of times AddrForRepo is called
-// and is used to determine if we can read the gitserver location from the database.
-// See AddrForRepo for more details.
-var AddrForRepoCounter uint64
-
-// addrForRepoAddrMismatch is used to count the number of times the state of
-// the gitserver_repos table and the hashing algorithm disagree.
-var addrForRepoAddrMismatch = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_gitserver_addr_for_repo_addr_mismatch",
-	Help: "Number of times the gitserver_repos state and the result of gitserver.AddrForRepo are mismatched",
-}, []string{"user_agent"})
-
-// addrForRepoAddrFromDB is used to count the number of times we called the
-// database to get the gitserver address for a repo.
-var addrForRepoAddrFromDB = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_gitserver_addr_for_repo_addr_from_db",
-	Help: "Number of times the gitserver address for a repo is retrieved from the database",
-}, []string{"user_agent"})
-
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with a nil addresses pointer.
 func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api.RepoName, addresses GitServerAddresses) (string, error) {
@@ -351,65 +329,15 @@ func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api
 		return addr, nil
 	}
 
-	var shardID string
 	useRendezvous, err := shouldUseRendezvousHashing(ctx, db, rs)
 	if err != nil {
 		return "", err
 	}
 	if useRendezvous {
-		shardID, err = RendezvousAddrForRepo(repo, addresses.Addresses), nil
-	} else {
-		shardID, err = addrForKey(rs, addresses.Addresses), nil
-	}
-	if err != nil {
-		return "", err
+		return RendezvousAddrForRepo(repo, addresses.Addresses), nil
 	}
 
-	// This is an experiment to determine the impact on using the database to determine the location of a repo.
-	// It is meant to be used exclusively on Cloud and the rate will be increased progressively.
-	// Once we determine the impact of this experiment, we can remove it.
-	cfg := conf.Get()
-	if envvar.SourcegraphDotComMode() && cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.EnableGitserverClientLookupTable {
-		// get the rate from the configuration. The rate is a percentage, and defaults to 0.
-		var rate uint64 = uint64(conf.Get().ExperimentalFeatures.GitserverClientLookupTableRate)
-		if rate > 100 {
-			rate = 0
-		}
-
-		// We are using a modulo operation to spread the calls to the database across the rate.
-		var mod uint64
-		if rate > 0 {
-			mod = 100 / rate
-		}
-
-		if rate != 0 && atomic.AddUint64(&AddrForRepoCounter, 1)%mod == 0 {
-			span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.AddrForRepoFromDB")
-			span.SetTag("Repo", repo)
-			defer func() {
-				if err != nil {
-					ext.Error.Set(span, true)
-					span.LogFields(otlog.Error(err))
-				}
-				span.Finish()
-			}()
-
-			addrForRepoAddrFromDB.WithLabelValues(userAgent).Inc()
-
-			gr, err := db.GitserverRepos().GetByName(ctx, repo)
-			switch {
-			case err == nil:
-				// if there is a difference between the database state and the hashing result
-				// we should observe it.
-				if gr.ShardID != shardID {
-					addrForRepoAddrMismatch.WithLabelValues(userAgent).Inc()
-				}
-			case !errors.Is(err, sql.ErrNoRows):
-				log15.Warn("gitserver.AddrForRepo: failed to get gitserver repo from the database", "repo", repo, "err", err)
-			}
-		}
-	}
-
-	return shardID, nil
+	return addrForKey(rs, addresses.Addresses), nil
 }
 
 type GitServerAddresses struct {

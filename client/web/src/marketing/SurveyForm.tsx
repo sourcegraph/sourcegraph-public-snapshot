@@ -4,7 +4,7 @@ import { useHistory } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation, gql } from '@sourcegraph/http-client'
-import { Button, LoadingSpinner, TextArea, Typography } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, TextArea, Typography, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SubmitSurveyResult, SubmitSurveyVariables } from '../graphql-operations'
@@ -90,7 +90,7 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
 
     return (
         <Form className={styles.surveyForm} onSubmit={handleSubmit}>
-            {error && <p className={styles.error}>{error.message}</p>}
+            {error && <Text className={styles.error}>{error.message}</Text>}
             {/* Label is associated with control through aria-labelledby */}
             {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
             <Typography.Label id="survey-form-scores" className={styles.label}>

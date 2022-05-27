@@ -180,11 +180,13 @@
       "editor/context": [
         {
           "command": "sourcegraph.openInBrowser",
-          "group": "sourcegraph"
+          "group": "sourcegraph",
+          "label": "sourcegraph"
         },
         {
           "command": "sourcegraph.copyFileLink",
-          "group": "sourcegraph"
+          "group": "sourcegraph",
+          "label": "sourcegraph"
         },
         {
           "command": "sourcegraph.selectionSearchWeb",

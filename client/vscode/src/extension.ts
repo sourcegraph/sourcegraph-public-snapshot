@@ -27,37 +27,9 @@ import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './setting
 import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
 import { focusSearchPanel, registerWebviews } from './webview/commands'
-
-// Sourcegraph VS Code extension architecture
-// -----
-//
-//                                   ┌──────────────────────────┐
-//                                   │  env: Node OR Web Worker │
-//                       ┌───────────┤ VS Code extension "Core" ├───────────────┐
-//                       │           │          (HERE)          │               │
-//                       │           └──────────────────────────┘               │
-//                       │                                                      │
-//         ┌─────────────▼────────────┐                          ┌──────────────▼───────────┐
-//         │         env: Web         │                          │          env: Web        │
-//     ┌───┤ "search sidebar" webview │                          │  "search panel" webview  │
-//     │   │                          │                          │                          │
-//     │   └──────────────────────────┘                          └──────────────────────────┘
-//     │
-//    ┌▼───────────────────────────┐
-//    │       env: Web Worker      │
-//    │ Sourcegraph Extension host │
-//    │                            │
-//    └────────────────────────────┘
-//
-// - See './state.ts' for documentation on state management.
-//   - One state machine that lives in Core
-// - See './contract.ts' to see the APIs for the three main components:
-//   - Core, search sidebar, and search panel.
-//   - The extension host API is exposed through the search sidebar.
-// - See './webview/comlink' for documentation on _how_ communication between contexts works.
-//    It is _not_ important to understand this layer to add features to the
-//    VS Code extension (that's why it exists, after all).
-
+/**
+ * See CONTRIBUTING docs for the Architecture Diagram
+ */
 export function activate(context: vscode.ExtensionContext): void {
     const localStorageService = new LocalStorageService(context.globalState)
     const stateMachine = createVSCEStateMachine({ localStorageService })
@@ -92,10 +64,9 @@ export function activate(context: vscode.ExtensionContext): void {
     // For search panel webview to signal that it is ready for messages.
     // Replay subject with large buffer size just in case panels are opened in quick succession.
     const initializedPanelIDs = new ReplaySubject<string>(7)
-
     // Used to observe search box query state from sidebar
     const sidebarQueryStates = new ReplaySubject<VSCEQueryState>(1)
-
+    // Use for file tree panel
     const { fs } = initializeSourcegraphFileSystem({ context, initialInstanceURL })
     // Use api endpoint for stream search
     const streamSearch = createStreamSearch({ context, stateMachine, sourcegraphURL: `${initialInstanceURL}/.api` })
@@ -115,8 +86,9 @@ export function activate(context: vscode.ExtensionContext): void {
         openLink: (uri: string) => vscode.env.openExternal(vscode.Uri.parse(uri)),
         copyLink: (uri: string) =>
             env.clipboard.writeText(uri).then(() => vscode.window.showInformationMessage('Link Copied!')),
+        getAccessToken: accessTokenSetting(),
         setAccessToken: accessToken => updateAccessTokenSetting(accessToken),
-        setEndpointUri: uri => updateEndpointSetting(uri),
+        setEndpointUri: (uri, accessToken) => updateEndpointSetting(uri, accessToken),
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),
         focusSearchPanel,
         streamSearch,
@@ -144,5 +116,6 @@ export function activate(context: vscode.ExtensionContext): void {
         instanceURL: initialInstanceURL,
     })
     initializeCodeSharingCommands(context, eventSourceType, localStorageService)
+    // Watch for uninstall to log uninstall event
     watchUninstall(eventSourceType, localStorageService)
 }

@@ -324,6 +324,71 @@ func TestDependents(t *testing.T) {
 	}
 }
 
+func TestResolveDependencies(t *testing.T) {
+	// Ensure lockfile indexing is enabled
+	oldLockfileIndexingEnabled := lockfileIndexingEnabled
+	lockfileIndexingEnabled = func() bool { return true }
+	defer func() { lockfileIndexingEnabled = oldLockfileIndexingEnabled }()
+
+	ctx := context.Background()
+	mockStore := NewMockStore()
+	gitService := NewMockLocalGitService()
+	lockfilesService := NewMockLockfilesService()
+	syncer := NewMockSyncer()
+	service := testService(mockStore, gitService, lockfilesService, syncer)
+
+	// GetCommits returns the same values as input; no errors
+	gitService.GetCommitsFunc.SetDefaultHook(func(ctx context.Context, repoCommits []api.RepoCommit, _ bool) (commits []*gitdomain.Commit, _ error) {
+		for _, repoCommit := range repoCommits {
+			commits = append(commits, &gitdomain.Commit{ID: repoCommit.CommitID})
+		}
+		return commits, nil
+	})
+
+	// Return archive dependencies for repos `foo` and `bar`
+	lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]reposource.PackageDependency, error) {
+		if repoName != "github.com/example/foo" && repoName != "github.com/example/bar" {
+			return nil, nil
+		}
+
+		return []reposource.PackageDependency{
+			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g1", ArtifactID: "a1"}, Version: fmt.Sprintf("1-%s-%s", repoName, rev)},
+			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g2", ArtifactID: "a2"}, Version: fmt.Sprintf("2-%s-%s", repoName, rev)},
+			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g3", ArtifactID: "a3"}, Version: fmt.Sprintf("3-%s-%s", repoName, rev)},
+		}, nil
+	})
+
+	repoRevs := map[api.RepoName]types.RevSpecSet{
+		api.RepoName("github.com/example/foo"): {
+			api.RevSpec("deadbeef1"): struct{}{},
+			api.RevSpec("deadbeef2"): struct{}{},
+		},
+		api.RepoName("github.com/example/bar"): {
+			api.RevSpec("deadbeef3"): struct{}{},
+			api.RevSpec("deadbeef4"): struct{}{},
+		},
+		api.RepoName("github.com/example/baz"): {
+			api.RevSpec("deadbeef5"): struct{}{},
+			api.RevSpec("deadbeef6"): struct{}{},
+		},
+	}
+
+	err := service.ResolveDependencies(ctx, repoRevs)
+	if err != nil {
+		t.Fatalf("unexpected error querying dependencies: %s", err)
+	}
+
+	// Assert `store.UpsertLockfileDependencies` was called
+	mockassert.CalledN(t, mockStore.UpsertLockfileDependenciesFunc, 6)
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef1", mockassert.Skip))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef2", mockassert.Skip))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef3", mockassert.Skip))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef4", mockassert.Skip))
+	// We make sure that "0 dependencies" is also recorded as a result
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/baz", "deadbeef5", []shared.PackageDependency{}))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/baz", "deadbeef6", []shared.PackageDependency{}))
+}
+
 func testService(store store.Store, gitService localGitService, lockfilesService LockfilesService, syncer Syncer) *Service {
 	return newService(
 		store,

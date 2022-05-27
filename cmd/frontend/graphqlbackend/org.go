@@ -334,7 +334,7 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	updatedOrg, err := database.Orgs(r.db).Update(ctx, orgID, args.DisplayName)
+	updatedOrg, err := r.db.Orgs().Update(ctx, orgID, args.DisplayName)
 	if err != nil {
 		return nil, err
 	}

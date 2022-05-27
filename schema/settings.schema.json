@@ -467,6 +467,7 @@
         "title": "Notice",
         "type": "object",
         "required": ["message", "location"],
+        "additionalProperties": false,
         "properties": {
           "message": {
             "description": "The message to display. Markdown formatting is supported.",

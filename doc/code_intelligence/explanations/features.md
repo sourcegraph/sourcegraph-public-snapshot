@@ -45,7 +45,7 @@ If precise code intelligence is enabled for your repositories, you can click on 
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/find-impl.gif" width="450"/>
 
-> NOTE: Currently available for Go repositories only. We plan to expand language support for this feature in the future.
+> NOTE: See [this table](../references/indexers.md#quick-reference) for an overview of which languages support this feature.
 
 ## Symbol search
 

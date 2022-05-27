@@ -116,6 +116,7 @@ export interface CommitMatch {
     repoLastFetched?: string
 
     content: MarkdownText
+    // Array of [line, character, length] triplets
     ranges: number[][]
 }
 

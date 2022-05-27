@@ -115,7 +115,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                 {
                     type: 'link',
                     label: 'Open in new tab',
-                    icon: <Icon as={OpenInNewIcon} />,
+                    icon: <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />,
                     url: symbolURL,
                     isDisabled: symbolURL.length === 0,
                 },
@@ -129,7 +129,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                 {
                     type: 'button',
                     label: showInputs ? 'Save' : 'Edit',
-                    icon: <Icon as={showInputs ? CheckIcon : PencilIcon} />,
+                    icon: <Icon role="img" aria-hidden={true} as={showInputs ? CheckIcon : PencilIcon} />,
                     onClick: () => setShowInputs(!showInputs),
                     keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
                 },
@@ -260,6 +260,8 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<React.PropsWithChildren
                 </Typography.Code>
                 {symbolFoundAtLatestRevision === false && (
                     <Icon
+                        role="img"
+                        aria-label={`Symbol not found at the latest revision, showing symbol at revision ${effectiveRevision}.`}
                         as={InformationOutlineIcon}
                         className="ml-1"
                         data-tooltip={`Symbol not found at the latest revision, showing symbol at revision ${effectiveRevision}.`}

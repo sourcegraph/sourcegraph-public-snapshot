@@ -871,11 +871,11 @@ DELETE FROM lsif_uploads WHERE id IN (SELECT id FROM locked_uploads)
 // If allowGlobalPolicies is false, then configuration policies that define neither a repository id
 // nor a non-empty set of repository patterns wl be ignored. When true, such policies apply over all
 // repositories known to the instance.
-func (s *Store) SelectRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) (_ []int, err error) {
-	return s.selectRepositoriesForIndexScan(ctx, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, timeutil.Now())
+func (s *Store) SelectRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) (_ []int, err error) {
+	return s.selectRepositoriesForIndexScan(ctx, table, column, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, timeutil.Now())
 }
 
-func (s *Store) selectRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error) {
+func (s *Store) selectRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error) {
 	ctx, _, endObservation := s.operations.selectRepositoriesForIndexScan.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Bool("allowGlobalPolicies", allowGlobalPolicies),
 		log.Int("limit", limit),
@@ -887,17 +887,22 @@ func (s *Store) selectRepositoriesForIndexScan(ctx context.Context, processDelay
 		limitExpression = sqlf.Sprintf("LIMIT %s", *repositoryMatchLimit)
 	}
 
+	replacer := strings.NewReplacer("{column_name}", column)
 	return basestore.ScanInts(s.Query(ctx, sqlf.Sprintf(
-		selectRepositoriesForIndexScanQuery,
+		replacer.Replace(selectRepositoriesForIndexScanQuery),
 		allowGlobalPolicies,
 		limitExpression,
+		quote(table),
 		now,
 		int(processDelay/time.Second),
 		limit,
+		quote(table),
 		now,
 		now,
 	)))
 }
+
+func quote(s string) *sqlf.Query { return sqlf.Sprintf(s) }
 
 const selectRepositoriesForIndexScanQuery = `
 -- source: internal/codeintel/stores/dbstore/uploads.go:selectRepositoriesForIndexScan
@@ -943,20 +948,20 @@ candidate_repositories AS (
 repositories AS (
 	SELECT cr.id
 	FROM candidate_repositories cr
-	LEFT JOIN lsif_last_index_scan lrs ON lrs.repository_id = cr.id
+	LEFT JOIN %s lrs ON lrs.repository_id = cr.id
 
 	-- Ignore records that have been checked recently. Note this condition is
-	-- true for a null last_index_scan_at (which has never been checked).
-	WHERE (%s - lrs.last_index_scan_at > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE
+	-- true for a null {column_name} (which has never been checked).
+	WHERE (%s - lrs.{column_name} > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE
 	ORDER BY
-		lrs.last_index_scan_at NULLS FIRST,
+		lrs.{column_name} NULLS FIRST,
 		cr.id -- tie breaker
 	LIMIT %s
 )
-INSERT INTO lsif_last_index_scan (repository_id, last_index_scan_at)
+INSERT INTO %s (repository_id, {column_name})
 SELECT r.id, %s::timestamp FROM repositories r
 ON CONFLICT (repository_id) DO UPDATE
-SET last_index_scan_at = %s
+SET {column_name} = %s
 RETURNING repository_id
 `
 

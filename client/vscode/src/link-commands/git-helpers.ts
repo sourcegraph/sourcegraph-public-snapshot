@@ -3,7 +3,10 @@ import * as path from 'path'
 import execa from 'execa'
 import vscode, { TextEditor } from 'vscode'
 
+import { gql } from '@sourcegraph/http-client'
+
 import { version } from '../../package.json'
+import { requestGraphQLFromVSCode } from '../backend/requestGraphQl'
 import { log } from '../log'
 
 interface RepositoryInfo extends Branch, RemoteName {
@@ -41,17 +44,13 @@ export async function repoInfo(filePath: string): Promise<RepositoryInfo | undef
         // Determine repository root directory.
         const fileDirectory = path.dirname(filePath)
         const repoRoot = await gitHelpers.rootDirectory(fileDirectory)
-
         // Determine file path relative to repository root, then replace slashes
         // as \\ does not work in Sourcegraphl links
         const fileRelative = filePath.slice(repoRoot.length + 1).replace(/\\/g, '/')
-
         let { branch, remoteName } = await gitRemoteNameAndBranch(repoRoot, gitHelpers, log)
-
-        branch = getDefaultBranch() || branch
-
         const remoteURL = await gitRemoteUrlWithReplacements(repoRoot, remoteName, gitHelpers, log)
-
+        // check if branch exist remotely
+        branch = getDefaultBranch() || (await isOnSourcegraph(remoteURL, branch)) ? branch : ''
         return { remoteURL, branch, fileRelative, remoteName }
     } catch {
         return undefined
@@ -187,18 +186,21 @@ export function getSourcegraphFileUrl(
     fileRelative: string,
     editor: TextEditor
 ): string {
-    return (
-        `${SourcegraphUrl}/-/editor` +
-        `?remote_url=${encodeURIComponent(remoteURL)}` +
-        `&branch=${encodeURIComponent(branch)}` +
-        `&file=${encodeURIComponent(fileRelative)}` +
-        `&editor=${encodeURIComponent('VSCode')}` +
-        `&version=${encodeURIComponent(version)}` +
-        `&start_row=${encodeURIComponent(String(editor.selection.start.line))}` +
-        `&start_col=${encodeURIComponent(String(editor.selection.start.character))}` +
-        `&end_row=${encodeURIComponent(String(editor.selection.end.line))}` +
-        `&end_col=${encodeURIComponent(String(editor.selection.end.character))}`
-    )
+    const parameters = {
+        remote_url: encodeURIComponent(remoteURL),
+        branch: encodeURIComponent(branch),
+        file: encodeURIComponent(fileRelative),
+        editor: encodeURIComponent('VSCode'),
+        version: encodeURIComponent(version),
+        start_row: encodeURIComponent(String(editor.selection.start.line)),
+        start_col: encodeURIComponent(String(editor.selection.start.character)),
+        end_row: encodeURIComponent(String(editor.selection.end.line)),
+        end_col: encodeURIComponent(String(editor.selection.end.character)),
+    }
+    const uri = new URL('/-/editor', SourcegraphUrl)
+    const parametersString = new URLSearchParams({ ...parameters }).toString()
+    uri.search = parametersString
+    return uri.href
 }
 
 function getRemoteUrlReplacements(): Record<string, string> {
@@ -213,7 +215,48 @@ function getRemoteUrlReplacements(): Record<string, string> {
 export function getDefaultBranch(): string {
     // has default value
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const branch = vscode.workspace.getConfiguration('sourcegraph').get<string>('defaultBranch')!
+    return vscode.workspace.getConfiguration('sourcegraph').get<string>('defaultBranch')!
+}
 
-    return branch
+/**
+ * Check if branch exists on Sourcegraph instance
+ * Return 'HEAD' if it does not exists remotely
+ */
+export async function isOnSourcegraph(remoteURL: string, currentBranch: string): Promise<boolean> {
+    const repoNameRegex = /(\w+(:\/\/|@))(.+@)*([\w.]+)(:?)(\d+){0,1}\/*(.*)(\.git)(\/)?/
+    const repoNameRegexMatches = remoteURL.match(repoNameRegex)
+    const repoName =
+        repoNameRegexMatches?.[4] && repoNameRegexMatches?.[7]
+            ? repoNameRegexMatches?.[4] + '/' + repoNameRegexMatches?.[7]
+            : remoteURL.replace('git@', '').replace('https://', '').replace('.git', '').replace(':', '/')
+    const isOnSourcegraph = await requestGraphQLFromVSCode<CheckBranchResult>(checkBranchQuery, {
+        repoName,
+        branchName: currentBranch,
+    })
+        .then(response => response.data?.repository.branches.nodes)
+        .then(nodes => nodes?.filter(branch => branch.name.replace('refs/heads/', '') === currentBranch))
+        .then(filtered => filtered?.length === 1)
+        .catch(error => console.error(error))
+    console.log(isOnSourcegraph)
+    return isOnSourcegraph || false
+}
+
+const checkBranchQuery = gql`
+    query CheckBranch($repoName: String!, $branchName: String) {
+        repository(name: $repoName) {
+            branches(query: $branchName) {
+                nodes {
+                    name
+                }
+            }
+        }
+    }
+`
+
+interface CheckBranchResult {
+    repository: {
+        branches: {
+            nodes: { name: string }[]
+        }
+    }
 }

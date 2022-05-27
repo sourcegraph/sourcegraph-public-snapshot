@@ -235,7 +235,7 @@ func TestResolvingSearchContextRepoNames(t *testing.T) {
 	internalCtx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(dbtest.NewDB(t))
 	u := database.Users(db)
-	r := database.Repos(db)
+	r := db.Repos()
 
 	user, err := u.Create(internalCtx, database.NewUser{Username: "u", Password: "p"})
 	if err != nil {
@@ -275,7 +275,7 @@ func TestSearchContextWriteAccessValidation(t *testing.T) {
 	db := database.NewDB(dbtest.NewDB(t))
 	u := database.Users(db)
 
-	org, err := database.Orgs(db).Create(internalCtx, "myorg", nil)
+	org, err := db.Orgs().Create(internalCtx, "myorg", nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
@@ -399,7 +399,7 @@ func TestCreatingSearchContexts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
-	repos, err := createRepos(internalCtx, database.Repos(db))
+	repos, err := createRepos(internalCtx, db.Repos())
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
@@ -499,7 +499,7 @@ func TestUpdatingSearchContexts(t *testing.T) {
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
 	require.NoError(t, err)
 
-	repos, err := createRepos(internalCtx, database.Repos(db))
+	repos, err := createRepos(internalCtx, db.Repos())
 	require.NoError(t, err)
 
 	var scs []*types.SearchContext

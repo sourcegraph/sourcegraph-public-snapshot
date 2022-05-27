@@ -18,6 +18,7 @@ import {
     LoadingSpinner,
     Alert,
     Typography,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
@@ -62,7 +63,7 @@ const REQUESTERS: Record<string, TokenRequester> = {
         redirectURL: 'vscode://sourcegraph.sourcegraph?code=$TOKEN',
         description: 'Auth from VS Code Extension for Sourcegraph',
         message:
-            'Click the import button below if the popup did not take you back to VS Code. You must have VS Code running for the token to be auto-imported. You can also import the token manually.',
+            'If you do not see an open dialog in your browser, please make sure you have VS Code running on your machine, and then click the import button below. You can also import the token manually.',
         callbackType: 'new-tab',
         showRedirectButton: true,
     },
@@ -164,7 +165,9 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
                 <Form>
                     <Container className="mb-3">
                         <div className="form-group">
-                            <label htmlFor="user-settings-create-access-token-page__note">Token description</label>
+                            <Typography.Label htmlFor="user-settings-create-access-token-page__note">
+                                Token description
+                            </Typography.Label>
                             <input
                                 type="text"
                                 className="form-control test-create-access-token-description"
@@ -174,14 +177,17 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
                             />
                         </div>
                         <div className="form-group mb-0">
-                            <label htmlFor="user-settings-create-access-token-page__scope-user:all" className="mb-0">
+                            <Typography.Label
+                                htmlFor="user-settings-create-access-token-page__scope-user:all"
+                                className="mb-0"
+                            >
                                 Token scope
-                            </label>
-                            <p>
+                            </Typography.Label>
+                            <Text>
                                 <small className="form-help text-muted">
                                     Tokens with limited user scopes are not yet supported.
                                 </small>
-                            </p>
+                            </Text>
                             <Checkbox
                                 id="user-settings-create-access-token-page__scope-user:all"
                                 checked={true}
@@ -199,7 +205,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
                             />
                         </div>
                         <Alert className="access-token-created-alert mt-3" variant="success">
-                            <p>Copy the new access token now. You won't be able to see it again.</p>
+                            <Text>Copy the new access token now. You won't be able to see it again.</Text>
                             <CopyableText className="test-access-token" text={newToken} size={48} />
                             <Typography.H5 className="mt-4 mb-2">
                                 <strong>{requester?.message}</strong>

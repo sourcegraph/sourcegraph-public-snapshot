@@ -6,15 +6,16 @@ import LockIcon from 'mdi-react/LockIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
-// eslint-disable-next-line no-restricted-imports
-import styles from '@sourcegraph/search-ui/src/components/SearchResult.module.scss'
-import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
-import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
-import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
+import {
+    formatRepositoryStarCount,
+    SearchResultStyles as styles,
+    CodeHostIcon,
+    LastSyncedIcon,
+    ResultContainer,
+    SearchResultStar,
+} from '@sourcegraph/search-ui'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { getRepoMatchLabel, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
@@ -42,7 +43,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
             <div className={styles.title}>
-                <RepoIcon repoName={repoName} className="text-muted flex-shrink-0" />
+                <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0" />
                 <span className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate">
                     <button type="button" className="btn btn-text-link" onClick={() => openRepo(result)}>
                         {displayRepoName(getRepoMatchLabel(result))}

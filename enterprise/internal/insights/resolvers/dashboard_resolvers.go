@@ -240,7 +240,7 @@ func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbac
 		return nil, errors.New("dashboard must be created with at least one grant")
 	}
 
-	userIds, orgIds, err := getUserPermissions(ctx, database.Orgs(r.workerBaseStore.Handle().DB()))
+	userIds, orgIds, err := getUserPermissions(ctx, database.NewDB(r.workerBaseStore.Handle().DB()).Orgs())
 	if err != nil {
 		return nil, errors.Wrap(err, "getUserPermissions")
 	}

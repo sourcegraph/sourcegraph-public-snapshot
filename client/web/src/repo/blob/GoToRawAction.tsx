@@ -35,7 +35,7 @@ export class GoToRawAction extends React.PureComponent<Props> {
                     onClick={this.onClick.bind(this)}
                     download={true}
                 >
-                    <Icon as={FileDownloadOutlineIcon} />
+                    <Icon role="img" as={FileDownloadOutlineIcon} aria-hidden={true} />
                     <span>{descriptiveText}</span>
                 </RepoHeaderActionAnchor>
             )
@@ -51,7 +51,7 @@ export class GoToRawAction extends React.PureComponent<Props> {
                 aria-label={descriptiveText}
                 download={true}
             >
-                <Icon as={FileDownloadOutlineIcon} />
+                <Icon role="img" as={FileDownloadOutlineIcon} aria-hidden={true} />
             </RepoHeaderActionAnchor>
         )
     }

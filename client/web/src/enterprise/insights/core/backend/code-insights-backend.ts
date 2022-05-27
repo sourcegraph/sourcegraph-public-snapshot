@@ -5,7 +5,6 @@ import { BackendInsight, Insight, InsightDashboard, InsightsDashboardOwner } fro
 import {
     AssignInsightsToDashboardInput,
     BackendInsightData,
-    CaptureInsightSettings,
     DashboardCreateInput,
     DashboardCreateResult,
     DashboardDeleteInput,
@@ -24,6 +23,7 @@ import {
     SeriesChartContent,
     UiFeaturesConfig,
     InsightContent,
+    InsightPreviewSettings,
 } from './code-insights-backend-types'
 
 /**
@@ -109,7 +109,7 @@ export interface CodeInsightsBackend {
      */
     getLangStatsInsightContent: (input: GetLangStatsInsightContentInput) => Promise<CategoricalChartContent<unknown>>
 
-    getCaptureInsightContent: (input: CaptureInsightSettings) => Promise<SeriesChartContent<unknown>>
+    getInsightPreviewContent: (input: InsightPreviewSettings) => Promise<SeriesChartContent<unknown>>
 
     /**
      * Returns a list of suggestions for the repositories' field in the insight creation UI.

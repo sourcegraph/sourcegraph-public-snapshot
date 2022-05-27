@@ -44,8 +44,8 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public getLangStatsInsightContent = (): Promise<CategoricalChartContent<unknown>> =>
         errorMockMethod('getLangStatsInsightContent')().toPromise()
 
-    public getCaptureInsightContent = (): Promise<SeriesChartContent<unknown>> =>
-        errorMockMethod('getCaptureInsightContent')().toPromise()
+    public getInsightPreviewContent = (): Promise<SeriesChartContent<unknown>> =>
+        errorMockMethod('getInsightPreviewContent')().toPromise()
 
     // Repositories API
     public getRepositorySuggestions = (): Promise<RepositorySuggestionData[]> =>
