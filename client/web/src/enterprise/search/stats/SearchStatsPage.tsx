@@ -56,7 +56,7 @@ export const SearchStatsPage: React.FunctionComponent<React.PropsWithChildren<Pr
         <div className="search-stats-page container mt-4">
             <header className="d-flex align-items-center justify-content-between mb-3">
                 <Typography.H2 className="d-flex align-items-center mb-0">
-                    <Icon className="mr-2" as={ChartLineIcon} /> Code statistics{' '}
+                    <Icon role="img" aria-hidden={true} className="mr-2" as={ChartLineIcon} /> Code statistics{' '}
                     <Badge variant="secondary" className="text-uppercase ml-2" as="small">
                         Experimental
                     </Badge>

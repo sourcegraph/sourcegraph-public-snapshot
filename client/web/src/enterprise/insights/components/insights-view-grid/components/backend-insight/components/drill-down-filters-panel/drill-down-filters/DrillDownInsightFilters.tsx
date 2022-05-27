@@ -256,7 +256,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         disabled={!hasFiltersChanged || !formAPI.valid}
                         onClick={onCreateInsightRequest}
                     >
-                        <Icon className="mr-1" as={PlusIcon} />
+                        <Icon role="img" aria-hidden={true} className="mr-1" as={PlusIcon} />
                         Save as new view
                     </Button>
                 </div>

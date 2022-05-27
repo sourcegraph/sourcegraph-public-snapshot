@@ -105,10 +105,18 @@ const ExecutionOption: React.FunctionComponent<React.PropsWithChildren<Execution
     const [infoReference, infoOpen, setInfoOpen, infoStyle] = useAccordion<HTMLParagraphElement>()
 
     const info = props.disabled ? (
-        <Icon className="ml-2" data-tooltip={props.disabledTooltip} tabIndex={0} as={InfoCircleOutlineIcon} />
+        <Icon
+            role="img"
+            className="ml-2"
+            data-tooltip={props.disabledTooltip}
+            aria-label={props.disabledTooltip}
+            tabIndex={0}
+            as={InfoCircleOutlineIcon}
+        />
     ) : props.moreInfo ? (
         <Button className="m-0 ml-2 p-0 border-0" onClick={() => setInfoOpen(!infoOpen)}>
-            <Icon aria-hidden={true} as={InfoCircleOutlineIcon} />
+            <Icon role="img" aria-hidden={true} as={InfoCircleOutlineIcon} />
+
             <VisuallyHidden>More info</VisuallyHidden>
         </Button>
     ) : null

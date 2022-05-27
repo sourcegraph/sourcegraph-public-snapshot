@@ -93,11 +93,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                {isExpanded ? (
-                    <Icon aria-label="Close section" as={ChevronDownIcon} />
-                ) : (
-                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
-                )}
+                <Icon role="img" aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
             </Button>
             {selectable ? (
                 <div className="p-2">
@@ -166,7 +162,6 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
             </div>
             {/* The button for expanding the information used on xs devices. */}
             <Button
-                aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
                 className={classNames(
                     styles.externalChangesetNodeShowDetails,
@@ -175,11 +170,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                 outline={true}
                 variant="secondary"
             >
-                {isExpanded ? (
-                    <Icon aria-label="Close section" as={ChevronDownIcon} />
-                ) : (
-                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
-                )}{' '}
+                <Icon role="img" aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (
@@ -282,6 +273,8 @@ const RetryChangesetButton: React.FunctionComponent<
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} prefix="Error re-enqueueing changeset" />}
             <Button className="mb-1" onClick={onRetry} disabled={isLoading === true} variant="link">
                 <Icon
+                    role="img"
+                    aria-hidden={true}
                     className={classNames(isLoading === true && styles.externalChangesetNodeRetrySpinning)}
                     as={SyncIcon}
                 />{' '}

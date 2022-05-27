@@ -194,7 +194,7 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
                             View extensions
                         </Button>
                         <Button to="/extensions/registry/new" variant="primary" as={Link}>
-                            <Icon as={AddIcon} /> Publish new extension
+                            <Icon role="img" aria-hidden={true} as={AddIcon} /> Publish new extension
                         </Button>
                     </div>
                 </div>

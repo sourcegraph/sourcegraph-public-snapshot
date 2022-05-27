@@ -77,11 +77,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                {isExpanded ? (
-                    <Icon aria-label="Close section" as={ChevronDownIcon} />
-                ) : (
-                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
-                )}
+                <Icon role="img" aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
             </Button>
             {selectable ? (
                 <SelectBox node={node} selectable={selectable} />
@@ -130,7 +126,12 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                             'd-flex justify-content-center align-items-center flex-column mx-1'
                         )}
                     >
-                        <Icon data-tooltip="The commit message changed" as={CardTextOutlineIcon} />
+                        <Icon
+                            role="img"
+                            data-tooltip="The commit message changed"
+                            aria-label="The commit message changed"
+                            as={CardTextOutlineIcon}
+                        />
                         <span className="text-nowrap">Message</span>
                     </div>
                 )}
@@ -141,7 +142,12 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                             'd-flex justify-content-center align-items-center flex-column mx-1'
                         )}
                     >
-                        <Icon data-tooltip="The diff changed" as={FileDocumentEditOutlineIcon} />
+                        <Icon
+                            role="img"
+                            data-tooltip="The diff changed"
+                            aria-label="The diff changed"
+                            as={FileDocumentEditOutlineIcon}
+                        />
                         <span className="text-nowrap">Diff</span>
                     </div>
                 )}
@@ -152,7 +158,12 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                             'd-flex justify-content-center align-items-center flex-column mx-1'
                         )}
                     >
-                        <Icon data-tooltip="The commit author details changed" as={AccountEditIcon} />
+                        <Icon
+                            role="img"
+                            data-tooltip="The commit author details changed"
+                            aria-label="The commit author details changed"
+                            as={AccountEditIcon}
+                        />
                         <span className="text-nowrap">Author</span>
                     </div>
                 )}
@@ -167,7 +178,6 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
             </div>
             {/* The button for expanding the information used on xs devices. */}
             <Button
-                aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
                 className={classNames(
                     styles.visibleChangesetApplyPreviewNodeShowDetails,
@@ -176,11 +186,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 outline={true}
                 variant="secondary"
             >
-                {isExpanded ? (
-                    <Icon aria-label="Close section" as={ChevronDownIcon} />
-                ) : (
-                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
-                )}{' '}
+                <Icon role="img" aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (
@@ -295,6 +301,8 @@ const ExpandedSection: React.FunctionComponent<
                     {node.delta.diffChanged && (
                         <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                             <Icon
+                                role="img"
+                                aria-hidden={true}
                                 className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
                                 as={CheckboxBlankCircleIcon}
                             />
@@ -309,6 +317,8 @@ const ExpandedSection: React.FunctionComponent<
                     {(node.delta.titleChanged || node.delta.bodyChanged) && (
                         <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                             <Icon
+                                role="img"
+                                aria-hidden={true}
                                 className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
                                 as={CheckboxBlankCircleIcon}
                             />
@@ -325,6 +335,8 @@ const ExpandedSection: React.FunctionComponent<
                         node.delta.commitMessageChanged) && (
                         <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                             <Icon
+                                role="img"
+                                aria-hidden={true}
                                 className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
                                 as={CheckboxBlankCircleIcon}
                             />

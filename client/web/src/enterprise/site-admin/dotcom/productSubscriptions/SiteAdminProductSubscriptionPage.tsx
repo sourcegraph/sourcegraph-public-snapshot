@@ -145,7 +145,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
             <PageTitle title="Product subscription" />
             <div className="mb-2">
                 <Button to="/site-admin/dotcom/product/subscriptions" variant="link" size="sm" as={Link}>
-                    <Icon as={ArrowLeftIcon} /> All subscriptions
+                    <Icon role="img" aria-hidden={true} as={ArrowLeftIcon} /> All subscriptions
                 </Button>
             </div>
             {productSubscription === LOADING ? (
@@ -218,7 +218,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                                 </Button>
                             ) : (
                                 <Button onClick={toggleShowGenerate} variant="primary" size="sm">
-                                    <Icon as={AddIcon} /> Generate new license manually
+                                    <Icon role="img" aria-hidden={true} as={AddIcon} /> Generate new license manually
                                 </Button>
                             )}
                         </CardHeader>

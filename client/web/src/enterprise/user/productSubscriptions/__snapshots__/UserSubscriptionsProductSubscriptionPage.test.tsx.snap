@@ -13,9 +13,11 @@ exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
         href="/u/subscriptions"
       >
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >

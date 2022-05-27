@@ -49,8 +49,14 @@ export const ReposMatchingPattern: FunctionComponent<React.PropsWithChildren<Rep
             </div>
 
             <span className={classNames(styles.button, 'd-none d-md-inline')}>
-                <Button onClick={() => onDelete()} className="p-0 m-0 pt-2" disabled={disabled}>
-                    <Icon className="text-danger" data-tooltip="Delete the repository pattern" as={TrashIcon} />
+                <Button
+                    aria-label="Delete the repository pattern"
+                    data-tooltip="Delete the repository pattern"
+                    onClick={() => onDelete()}
+                    className="p-0 m-0 pt-2"
+                    disabled={disabled}
+                >
+                    <Icon role="img" className="text-danger" aria-hidden={true} as={TrashIcon} />
                 </Button>
             </span>
         </>

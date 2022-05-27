@@ -102,7 +102,7 @@ export const CodeIntelligenceBadgeMenu: React.FunctionComponent<
                     className={classNames('text-decoration-none', styles.braindot, dotStyle)}
                     onClick={() => setBadgeUsed(true)}
                 >
-                    <Icon as={BrainIcon} />
+                    <Icon role="img" aria-hidden={true} as={BrainIcon} />
                 </MenuButton>
 
                 <MenuList position={Position.bottomEnd} className={styles.dropdownMenu} isOpen={isStorybook}>

@@ -12,9 +12,11 @@ exports[`SearchStatsPage limitHit 1`] = `
         class="h2 d-flex align-items-center mb-0"
       >
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline mr-2"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -81,9 +83,11 @@ exports[`SearchStatsPage renders 1`] = `
         class="h2 d-flex align-items-center mb-0"
       >
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline mr-2"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >

@@ -104,8 +104,9 @@ export const PreviewActionPublish: React.FunctionComponent<
         <Icon
             className="mr-1"
             data-tooltip="This changeset will be published to its code host"
+            aria-label="This changeset will be published to its code host"
             as={UploadIcon}
-            role="presentation"
+            role="img"
         />
         <span>{label}</span>
     </div>
@@ -118,8 +119,9 @@ export const PreviewActionPublishDraft: React.FunctionComponent<
         <Icon
             className="text-muted mr-1"
             data-tooltip="This changeset will be published as a draft to its code host"
+            aria-label="This changeset will be published as a draft to its code host"
             as={UploadIcon}
-            role="presentation"
+            role="img"
         />
         <span>{label}</span>
     </div>
@@ -132,8 +134,9 @@ export const PreviewActionImport: React.FunctionComponent<
         <Icon
             className="mr-1"
             data-tooltip="This changeset will be imported and tracked in this batch change"
+            aria-label="This changeset will be imported and tracked in this batch change"
             as={ImportIcon}
-            role="presentation"
+            role="img"
         />
         <span>{label}</span>
     </div>
@@ -146,8 +149,9 @@ export const PreviewActionClose: React.FunctionComponent<
         <Icon
             className="text-danger mr-1"
             data-tooltip="This changeset will be closed on the code host"
+            aria-label="This changeset will be closed on the code host"
             as={CloseCircleOutlineIcon}
-            role="presentation"
+            role="img"
         />
         <span>{label}</span>
     </div>
@@ -160,8 +164,9 @@ export const PreviewActionDetach: React.FunctionComponent<
         <Icon
             className="text-danger mr-1"
             data-tooltip="This changeset will be removed from the batch change"
+            aria-label="This changeset will be removed from the batch change"
             as={TrashIcon}
-            role="presentation"
+            role="img"
         />
         <span>{label}</span>
     </div>
@@ -174,8 +179,9 @@ export const PreviewActionReopen: React.FunctionComponent<
         <Icon
             className="text-success mr-1"
             data-tooltip="This changeset will be reopened on the code host"
+            aria-label="This changeset will be reopened on the code host"
             as={SourceBranchRefreshIcon}
-            role="presentation"
+            role="img"
         />
         <span>{label}</span>
     </div>
@@ -188,8 +194,9 @@ export const PreviewActionUndraft: React.FunctionComponent<
         <Icon
             className="text-success mr-1"
             data-tooltip="This changeset will be marked as ready for review on the code host"
+            aria-label="This changeset will be marked as ready for review on the code host"
             as={SourceBranchCheckIcon}
-            role="presentation"
+            role="img"
         />
         <span>{label}</span>
     </div>
@@ -202,8 +209,9 @@ export const PreviewActionUpdate: React.FunctionComponent<
         <Icon
             className="mr-1"
             data-tooltip="This changeset will be updated on the code host"
+            aria-label="This changeset will be updated on the code host"
             as={SourceBranchSyncIcon}
-            role="presentation"
+            role="img"
         />
         <span>{label}</span>
     </div>
@@ -216,8 +224,9 @@ export const PreviewActionPush: React.FunctionComponent<
         <Icon
             className="mr-1"
             data-tooltip="A new commit will be pushed to the code host"
+            aria-label="A new commit will be pushed to the code host"
             as={UploadNetworkIcon}
-            role="presentation"
+            role="img"
         />
         <span>{label}</span>
     </div>
@@ -230,8 +239,9 @@ export const PreviewActionUnknown: React.FunctionComponent<
         <Icon
             className="mr-1"
             data-tooltip={`The operation ${operations} can't yet be displayed.`}
+            aria-label={`The operation ${operations} can't yet be displayed.`}
             as={BeakerQuestionIcon}
-            role="presentation"
+            role="img"
         />
         <span>Unknown</span>
     </div>
@@ -244,8 +254,9 @@ export const PreviewActionArchive: React.FunctionComponent<
         <Icon
             className="text-muted mr-1"
             data-tooltip="This changeset will be kept and marked as archived in this batch change"
+            aria-label="This changeset will be kept and marked as archived in this batch change"
             as={ArchiveIcon}
-            role="presentation"
+            role="img"
         />
         <span>{label}</span>
     </div>
@@ -263,7 +274,7 @@ export const PreviewActionNoAction: React.FunctionComponent<
     React.PropsWithChildren<{ className?: string; reason?: string }>
 > = ({ className, reason }) => (
     <div className={classNames(className, iconClassNames, 'text-muted')}>
-        <Icon className="mr-1" data-tooltip={reason} as={BlankCircleIcon} role="presentation" />
+        <Icon className="mr-1" data-tooltip={reason} as={BlankCircleIcon} role="img" aria-label={reason} />
         <span>No action</span>
     </div>
 )

@@ -81,23 +81,23 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                     <Typography.H3 className="text-nowrap mb-0" aria-label={headingAriaLabel}>
                         {isEnabled && (
                             <Icon
+                                role="img"
                                 className="text-success test-code-host-connection-node-enabled"
                                 data-tooltip="This code host has credentials connected."
                                 aria-label="This code host has credentials connected."
                                 as={CheckCircleOutlineIcon}
-                                role="img"
                             />
                         )}
                         {!isEnabled && (
                             <Icon
+                                role="img"
                                 className="text-danger test-code-host-connection-node-disabled"
                                 data-tooltip="This code host does not have credentials configured."
                                 aria-label="This code host does not have credentials configured."
                                 as={CheckboxBlankCircleOutlineIcon}
-                                role="img"
                             />
                         )}
-                        <Icon className="mx-2" role="img" aria-hidden={true} as={ExternalServiceIcon} />{' '}
+                        <Icon role="img" className="mx-2" aria-hidden={true} as={ExternalServiceIcon} />{' '}
                         {node.externalServiceURL}{' '}
                         {!isEnabled && node.credential?.isSiteCredential && (
                             <Badge

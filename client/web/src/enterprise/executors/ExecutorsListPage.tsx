@@ -131,10 +131,17 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
                     <div>
                         <Typography.H4 className="mb-0">
                             {node.active ? (
-                                <Icon className="text-success mr-2" as={CheckboxBlankCircleIcon} />
+                                <Icon
+                                    role="img"
+                                    aria-hidden={true}
+                                    className="text-success mr-2"
+                                    as={CheckboxBlankCircleIcon}
+                                />
                             ) : (
                                 <Icon
+                                    role="img"
                                     className="text-warning mr-2"
+                                    aria-label="This executor missed at least three heartbeats."
                                     data-tooltip="This executor missed at least three heartbeats."
                                     as={CheckboxBlankCircleIcon}
                                 />

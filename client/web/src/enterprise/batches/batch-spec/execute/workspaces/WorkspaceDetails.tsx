@@ -120,19 +120,19 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                     : 'Workspace in hidden repository'}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
                     <Link to={workspace.repository.url} target="_blank" rel="noopener noreferrer">
-                        <Icon as={ExternalLinkIcon} />
+                        <Icon role="img" aria-hidden={true} as={ExternalLinkIcon} />
                     </Link>
                 )}
             </Typography.H3>
             <Button className="p-0 ml-2" onClick={deselectWorkspace} variant="icon">
                 <VisuallyHidden>Deselect Workspace</VisuallyHidden>
-                <Icon as={CloseIcon} />
+                <Icon role="img" aria-hidden={true} as={CloseIcon} />
             </Button>
         </div>
         <div className="d-flex align-items-center">
             {typeof workspace.placeInQueue === 'number' && (
                 <span className={classNames(styles.workspaceDetail, 'd-flex align-items-center')}>
-                    <Icon as={TimelineClockOutlineIcon} />
+                    <Icon role="img" aria-hidden={true} as={TimelineClockOutlineIcon} />
                     <strong className="ml-1 mr-1">
                         <NumberInQueue number={workspace.placeInQueue} />
                     </strong>
@@ -144,7 +144,7 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
             )}
             {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
                 <span className={styles.workspaceDetail}>
-                    <Icon as={SourceBranchIcon} /> {workspace.branch.displayName}
+                    <Icon role="img" aria-hidden={true} as={SourceBranchIcon} /> {workspace.branch.displayName}
                 </span>
             )}
             {workspace.startedAt && (
@@ -176,7 +176,7 @@ const HiddenWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<Hi
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
         <Typography.H1 className="text-center text-muted mt-5">
-            <Icon as={EyeOffOutlineIcon} />
+            <Icon role="img" aria-hidden={true} as={EyeOffOutlineIcon} />
             <VisuallyHidden>Hidden Workspace</VisuallyHidden>
         </Typography.H1>
         <p className="text-center">This workspace is hidden due to permissions.</p>
@@ -234,7 +234,7 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
                             outline={true}
                             variant="danger"
                         >
-                            <Icon as={SyncIcon} /> Retry
+                            <Icon role="img" aria-hidden={true} as={SyncIcon} /> Retry
                         </Button>
                     </div>
                     {retryError && <ErrorAlert error={retryError} />}
@@ -286,7 +286,7 @@ const IgnoredWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<I
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
         <Typography.H1 className="text-center text-muted mt-5">
-            <Icon as={LinkVariantRemoveIcon} />
+            <Icon role="img" aria-hidden={true} as={LinkVariantRemoveIcon} />
             <VisuallyHidden>Ignored Workspace</VisuallyHidden>
         </Typography.H1>
         <p className="text-center">
@@ -307,7 +307,7 @@ const UnsupportedWorkspaceDetails: React.FunctionComponent<
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
         <Typography.H1 className="text-center text-muted mt-5">
-            <Icon as={LinkVariantRemoveIcon} />
+            <Icon role="img" aria-hidden={true} as={LinkVariantRemoveIcon} />
             <VisuallyHidden>Unsupported Workspace</VisuallyHidden>
         </Typography.H1>
         <p className="text-center">This workspace has been skipped because it is from an unsupported codehost.</p>
@@ -381,7 +381,7 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                             )}{' '}
                         </Typography.H4>
                         <span className="text-muted">
-                            <Icon as={SourceBranchIcon} /> {node.description.headRef}
+                            <Icon role="img" aria-hidden={true} as={SourceBranchIcon} /> {node.description.headRef}
                         </span>
                     </div>
                     <DiffStat {...node.description.diffStat} expandedCounts={true} />
@@ -584,27 +584,63 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
     if (step.cachedResultFound) {
         return (
             <Icon
+                role="img"
                 className="text-success"
+                aria-label="A cached result for this step has been found"
                 data-tooltip="A cached result for this step has been found"
                 as={ContentSaveIcon}
             />
         )
     }
     if (step.skipped) {
-        return <Icon className="text-muted" data-tooltip="The step has been skipped" as={LinkVariantRemoveIcon} />
+        return (
+            <Icon
+                role="img"
+                className="text-muted"
+                aria-label="The step has been skipped"
+                data-tooltip="The step has been skipped"
+                as={LinkVariantRemoveIcon}
+            />
+        )
     }
     if (!step.startedAt) {
-        return <Icon className="text-muted" data-tooltip="This step is waiting to be processed" as={TimerSandIcon} />
+        return (
+            <Icon
+                role="img"
+                className="text-muted"
+                aria-label="This step is waiting to be processed"
+                data-tooltip="This step is waiting to be processed"
+                as={TimerSandIcon}
+            />
+        )
     }
     if (!step.finishedAt) {
-        return <Icon className="text-muted" data-tooltip="This step is currently running" as={LoadingSpinner} />
+        return (
+            <Icon
+                role="img"
+                className="text-muted"
+                aria-label="This step is currently running"
+                data-tooltip="This step is currently running"
+                as={LoadingSpinner}
+            />
+        )
     }
     if (step.exitCode === 0) {
-        return <Icon className="text-success" data-tooltip="This step ran successfully" as={CheckBoldIcon} />
+        return (
+            <Icon
+                role="img"
+                className="text-success"
+                aria-label="This step ran successfully"
+                data-tooltip="This step ran successfully"
+                as={CheckBoldIcon}
+            />
+        )
     }
     return (
         <Icon
+            role="img"
             className="text-danger"
+            aria-label={`This step failed with exit code ${String(step.exitCode)}`}
             data-tooltip={`This step failed with exit code ${String(step.exitCode)}`}
             as={AlertCircleIcon}
         />

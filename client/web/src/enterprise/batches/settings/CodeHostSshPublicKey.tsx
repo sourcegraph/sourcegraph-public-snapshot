@@ -54,7 +54,7 @@ export const CodeHostSshPublicKey: React.FunctionComponent<React.PropsWithChildr
                 <Typography.Label htmlFor={LABEL_ID}>{label}</Typography.Label>
                 {showCopyButton && (
                     <Button onClick={onCopy} variant="secondary">
-                        <Icon as={ContentCopyIcon} />
+                        <Icon role="img" aria-hidden={true} as={ContentCopyIcon} />
                         {copied ? 'Copied!' : 'Copy'}
                     </Button>
                 )}
