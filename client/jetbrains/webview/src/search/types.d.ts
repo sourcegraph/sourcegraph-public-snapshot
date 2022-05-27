@@ -1,3 +1,5 @@
+import type { SearchPatternType } from '@sourcegraph/search'
+
 import type { Request } from './jsToJavaBridgeUtil'
 
 /* Add global functions to global window object */
