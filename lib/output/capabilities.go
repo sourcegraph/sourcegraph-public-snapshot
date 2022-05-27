@@ -6,6 +6,7 @@ import (
 
 	"github.com/mattn/go-isatty"
 	"github.com/moby/term"
+	"github.com/muesli/termenv"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -15,10 +16,15 @@ type capabilities struct {
 	Isatty bool
 	Height int
 	Width  int
+
+	DarkBackground bool
 }
 
-func detectCapabilities() (capabilities, error) {
-	atty := isatty.IsTerminal(os.Stdout.Fd())
+func detectCapabilities(opts OutputOpts) (capabilities, error) {
+	// Set atty
+	atty := opts.ForceTTY || isatty.IsTerminal(os.Stdout.Fd())
+
+	// Set w, h and override if desired
 	w, h := 80, 25
 	var err error
 	if atty {
@@ -32,12 +38,25 @@ func detectCapabilities() (capabilities, error) {
 			}
 		}
 	}
+	if opts.ForceHeight != 0 {
+		h = opts.ForceHeight
+	}
+	if opts.ForceWidth != 0 {
+		w = opts.ForceWidth
+	}
+
+	// detect color mode
+	color := opts.ForceColor || detectColor(atty)
+
+	// set detected background color
+	darkBackground := opts.ForceDarkBackground || termenv.HasDarkBackground()
 
 	return capabilities{
-		Color:  detectColor(atty),
-		Isatty: atty,
-		Height: h,
-		Width:  w,
+		Color:          color,
+		Isatty:         atty,
+		Height:         h,
+		Width:          w,
+		DarkBackground: darkBackground,
 	}, err
 }
 

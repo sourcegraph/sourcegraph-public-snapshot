@@ -9,7 +9,6 @@ import (
 	"github.com/charmbracelet/glamour"
 	glamouransi "github.com/charmbracelet/glamour/ansi"
 	"github.com/mattn/go-runewidth"
-	"github.com/muesli/termenv"
 )
 
 // Writer defines a common set of methods that can be used to output status
@@ -63,6 +62,10 @@ type OutputOpts struct {
 	// ForceWidth ignores all terminal detection and sets the width to this value.
 	ForceWidth int
 
+	// ForceDarkBackground ignores all terminal detection and sets whether the terminal
+	// background is dark to this value.
+	ForceDarkBackground bool
+
 	Verbose bool
 }
 
@@ -73,11 +76,15 @@ var newOutputPlatformQuirks func(o *Output) error
 // newCapabilityWatcher returns a channel that receives a message when
 // capabilities are updated. By default, no watching functionality is
 // available.
-var newCapabilityWatcher = func() chan capabilities { return nil }
+var newCapabilityWatcher = func(opts OutputOpts) chan capabilities { return nil }
 
 func NewOutput(w io.Writer, opts OutputOpts) *Output {
-	caps, err := detectCapabilities()
-	o := &Output{caps: overrideCapabilitiesFromOptions(caps, opts), opts: opts, w: w}
+	caps, err := detectCapabilities(opts)
+	if err != nil {
+		w.Write([]byte("detectCapabilities: " + err.Error()))
+	}
+
+	o := &Output{caps: caps, opts: opts, w: w}
 	if newOutputPlatformQuirks != nil {
 		if err := newOutputPlatformQuirks(o); err != nil {
 			o.Verbosef("Error handling platform quirks: %v", err)
@@ -98,32 +105,15 @@ func NewOutput(w io.Writer, opts OutputOpts) *Output {
 
 	// Set up a watcher so we can adjust the size of the output if the terminal
 	// is resized.
-	if c := newCapabilityWatcher(); c != nil {
+	if c := newCapabilityWatcher(opts); c != nil {
 		go func() {
 			for caps := range c {
-				o.caps = overrideCapabilitiesFromOptions(caps, o.opts)
+				o.caps = caps
 			}
 		}()
 	}
 
 	return o
-}
-
-func overrideCapabilitiesFromOptions(caps capabilities, opts OutputOpts) capabilities {
-	if opts.ForceColor {
-		caps.Color = true
-	}
-	if opts.ForceTTY {
-		caps.Isatty = true
-	}
-	if opts.ForceHeight != 0 {
-		caps.Height = opts.ForceHeight
-	}
-	if opts.ForceWidth != 0 {
-		caps.Width = opts.ForceWidth
-	}
-
-	return caps
 }
 
 func (o *Output) Lock() {
@@ -232,7 +222,7 @@ func (o *Output) writeMarkdown(str string, noMargin bool) error {
 	}
 
 	var style glamouransi.StyleConfig
-	if termenv.HasDarkBackground() {
+	if o.caps.DarkBackground {
 		style = glamour.DarkStyleConfig
 	} else {
 		style = glamour.LightStyleConfig

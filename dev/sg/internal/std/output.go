@@ -21,13 +21,16 @@ var Out *Output
 
 // NewOutput instantiates a new output instance for local use, such as to get
 func NewOutput(dst io.Writer, verbose bool) *Output {
+	buildkite := os.Getenv("BUILDKITE") == "true"
 	return &Output{
 		Output: output.NewOutput(dst, output.OutputOpts{
 			ForceColor: true,
 			ForceTTY:   true,
 			Verbose:    verbose,
+			// Buildkite output is always against a dark background
+			ForceDarkBackground: buildkite,
 		}),
-		buildkite: os.Getenv("BUILDKITE") == "true",
+		buildkite: buildkite,
 	}
 }
 
