@@ -180,3 +180,23 @@ func TestFooBar(t *testing.T) {
   logs := exportLogs()
 }
 ```
+## Conventions
+* The name of the scope should follow CamelCase
+* The logger parameter should either be after `ctx context.Context` or be the first parameter
+* Messages of log lines should be in lowercase ex. `log.Info("this is my lowercase log line")`
+* Capatalize each word when the log line message is not a sentence and referring to a func/component ex. `logger.Error("component.update"` prefer to capatalize each word
+* In a particular scope some fields might be repeatedly emitted. Consider creating a sub Logger in the scope by using `logger.With(...fields)`.
+```go
+func (s *Service) MyService(ctx context.Context, logger log.Logger) {
+    subLogger := logger.With(log.Int("id", s.ID), log.String("service", s.Name"))
+
+    subLogger.Info("starting up")
+
+    if err := s.Start(); err != nil {
+        subLogger.Error(err)
+    }
+
+    subLogger.Info("done")
+}
+```
+* In tests, `logtest.Scope` should be used in the tightest scope possible. This ensures that if a test fails, that the logging is closely tied to the test that failed. Especially if you testcase has sub tests with `t.Run`, prefer to created the test logger inside `t.Run`
