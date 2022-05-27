@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/loki"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -74,13 +74,12 @@ var ciCommand = &cli.Command{
 
 Note that Sourcegraph's CI pipelines are under our enterprise license: https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise`,
 	Category: CategoryDev,
-	Action:   suggestSubcommandsAction,
 	Subcommands: []*cli.Command{{
 		Name:    "preview",
 		Aliases: []string{"plan"},
 		Usage:   "Preview the pipeline that would be run against the currently checked out branch",
 		Action: execAdapter(func(ctx context.Context, args []string) error {
-			stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion,
+			std.Out.WriteLine(output.Styled(output.StyleSuggestion,
 				"If the current branch were to be pushed, the following pipeline would be run:"))
 
 			branch, err := run.TrimResult(run.GitCmd("branch", "--show-current"))
@@ -99,7 +98,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 			if err != nil {
 				return err
 			}
-			return writePrettyMarkdown(out)
+			return std.Out.WriteMarkdown(out)
 		}),
 	}, {
 		Name:    "status",
@@ -119,7 +118,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 		},
 		Action: func(cmd *cli.Context) error {
 			ctx := cmd.Context
-			client, err := bk.NewClient(ctx, stdout.Out)
+			client, err := bk.NewClient(ctx, std.Out.Output)
 			if err != nil {
 				return err
 			}
@@ -143,12 +142,12 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 
 			if cmd.Bool("view") {
 				if err := open.URL(*build.WebURL); err != nil {
-					writeWarningLinef("failed to open build in browser: %s", err)
+					std.Out.WriteWarningf("failed to open build in browser: %s", err)
 				}
 			}
 
 			if cmd.Bool("wait") && build.FinishedAt == nil {
-				pending := stdout.Out.Pending(output.Linef("", output.StylePending, "Waiting for %d jobs...", len(build.Jobs)))
+				pending := std.Out.Pending(output.Styledf(output.StylePending, "Waiting for %d jobs...", len(build.Jobs)))
 				err := statusTicker(ctx, func() (bool, error) {
 					// get the next update
 					build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
@@ -198,14 +197,14 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				}
 				commit = strings.TrimSpace(commit)
 				if commit != *build.Commit {
-					stdout.Out.WriteLine(output.Linef("⚠️", output.StyleSuggestion,
+					std.Out.WriteLine(output.Linef("⚠️", output.StyleSuggestion,
 						"The currently checked out commit %q does not match the commit of the build found, %q.\nHave you pushed your most recent changes yet?",
 						commit, *build.Commit))
 				}
 			}
 
 			if failed {
-				stdout.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleSuggestion,
+				std.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleSuggestion,
 					"Some jobs have failed - try using 'sg ci logs' to see what went wrong, or go to the build page: %s", *build.WebURL))
 			}
 
@@ -241,7 +240,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 		},
 		Action: func(cmd *cli.Context) error {
 			ctx := cmd.Context
-			client, err := bk.NewClient(ctx, stdout.Out)
+			client, err := bk.NewClient(ctx, std.Out.Output)
 			if err != nil {
 				return err
 			}
@@ -263,7 +262,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 			// is aware that potentially unknown code is going to get run on our infra.
 			remoteBranches, err := run.TrimResult(run.GitCmd("branch", "-r", "--contains", commit))
 			if err != nil || len(remoteBranches) == 0 || !allLinesPrefixed(strings.Split(remoteBranches, "\n"), "origin/") {
-				stdout.Out.WriteLine(output.Linef(output.EmojiWarning, output.StyleReset,
+				std.Out.WriteLine(output.Linef(output.EmojiWarning, output.StyleReset,
 					"Commit %q not found in in local 'origin/' branches - you might be triggering a build for a fork. Make sure all code has been reviewed before continuing.",
 					commit))
 				response, err := open.Prompt("Continue? (yes/no)")
@@ -282,9 +281,9 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 				rt = runtype.Compute("", fmt.Sprintf("%s/%s", cmd.Args().First(), branch), nil)
 				// If a special runtype is not detected then the argument was invalid
 				if rt == runtype.PullRequest {
-					writeFailureLinef("Unsupported runtype %q", cmd.Args().First())
-					stdout.Out.Writef("Supported runtypes:\n\n\t%s\n\nSee 'sg ci docs' to learn more.", strings.Join(getAllowedBuildTypeArgs(), ", "))
-					os.Exit(1)
+					std.Out.WriteFailuref("Unsupported runtype %q", cmd.Args().First())
+					std.Out.Writef("Supported runtypes:\n\n\t%s\n\nSee 'sg ci docs' to learn more.", strings.Join(getAllowedBuildTypeArgs(), ", "))
+					return NewEmptyExitErr(1)
 				}
 			}
 			if rt != runtype.PullRequest {
@@ -294,7 +293,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 					if cmd.NArg() >= 2 {
 						branchArg = cmd.Args().Get(1)
 					} else {
-						stdout.Out.Write("This run type requires a branch path argument.")
+						std.Out.Write("This run type requires a branch path argument.")
 						branchArg, err = open.Prompt("Enter your argument input:")
 						if err != nil {
 							return err
@@ -304,7 +303,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 				}
 
 				branch = fmt.Sprintf("%s%s", rt.Matcher().Branch, branch)
-				block := stdout.Out.Block(output.Line("", output.StylePending, fmt.Sprintf("Pushing %s to %s...", commit, branch)))
+				block := std.Out.Block(output.Line("", output.StylePending, fmt.Sprintf("Pushing %s to %s...", commit, branch)))
 				gitOutput, err := run.GitCmd("push", "origin", fmt.Sprintf("%s:refs/heads/%s", commit, branch), "--force")
 				if err != nil {
 					return err
@@ -317,7 +316,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 			var build *buildkite.Build
 			if rt != runtype.PullRequest {
 				pollTicker := time.NewTicker(5 * time.Second)
-				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Polling for build for branch %s at %s...", branch, commit))
+				std.Out.WriteLine(output.Styledf(output.StylePending, "Polling for build for branch %s at %s...", branch, commit))
 				for i := 0; i < 30; i++ {
 					// attempt to fetch the new build - it might take some time for the hooks so we will
 					// retry up to 30 times (roughly 30 seconds)
@@ -331,14 +330,14 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 					}
 				}
 			} else {
-				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Requesting build for branch %q at %q...", branch, commit))
+				std.Out.WriteLine(output.Styledf(output.StylePending, "Requesting build for branch %q at %q...", branch, commit))
 				build, err = client.TriggerBuild(ctx, pipeline, branch, commit)
 				if err != nil {
 					return errors.Newf("failed to trigger build for branch %q at %q: %w", branch, commit, err)
 				}
 			}
 
-			stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Created build: %s", *build.WebURL))
+			std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Created build: %s", *build.WebURL))
 			return nil
 		},
 	}, {
@@ -378,7 +377,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 		},
 		Action: func(cmd *cli.Context) error {
 			ctx := cmd.Context
-			client, err := bk.NewClient(ctx, stdout.Out)
+			client, err := bk.NewClient(ctx, std.Out.Output)
 			if err != nil {
 				return err
 			}
@@ -397,7 +396,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 			if err != nil {
 				return errors.Newf("failed to get most recent build for branch %q: %w", branch, err)
 			}
-			stdout.Out.WriteLine(output.Linef("", output.StylePending, "Fetching logs for %s ...",
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Fetching logs for %s ...",
 				*build.WebURL))
 
 			options := bk.ExportLogsOpts{
@@ -409,7 +408,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 				return err
 			}
 			if len(logs) == 0 {
-				stdout.Out.WriteLine(output.Line("", output.StyleSuggestion,
+				std.Out.WriteLine(output.Line("", output.StyleSuggestion,
 					fmt.Sprintf("No logs found matching the given parameters (job: %q, state: %q).", options.JobQuery, options.State)))
 				return nil
 			}
@@ -420,7 +419,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 				// Buildkite's timestamp thingo causes log lines to not render in terminal
 				bkTimestamp := regexp.MustCompile(`\x1b_bk;t=\d{13}\x07`) // \x1b is ESC, \x07 is BEL
 				for _, log := range logs {
-					block := stdout.Out.Block(output.Linef(output.EmojiInfo, output.StyleUnderline, "%s",
+					block := std.Out.Block(output.Linef(output.EmojiInfo, output.StyleUnderline, "%s",
 						*log.JobMeta.Name))
 					content := bkTimestamp.ReplaceAllString(*log.Content, "")
 					if logsOut == ciLogsOutSimple {
@@ -429,7 +428,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 					block.Write(content)
 					block.Close()
 				}
-				stdout.Out.WriteLine(output.Linef("", output.StyleSuccess, "Found and output logs for %d jobs.", len(logs)))
+				std.Out.WriteLine(output.Styledf(output.StyleSuccess, "Found and output logs for %d jobs.", len(logs)))
 
 			case ciLogsOutJSON:
 				for _, log := range logs {
@@ -445,7 +444,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 					if err != nil {
 						return errors.Newf("build %d job %s: Marshal: %s", log.JobMeta.Build, log.JobMeta.Job, err)
 					}
-					stdout.Out.Write(string(b))
+					std.Out.Write(string(b))
 				}
 
 			default:
@@ -454,13 +453,13 @@ From there, you can start exploring logs with the Grafana explore panel.
 					return errors.Newf("invalid Loki target: %w", err)
 				}
 				lokiClient := loki.NewLokiClient(lokiURL)
-				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Pushing to Loki instance at %q", lokiURL.Host))
+				std.Out.WriteLine(output.Styledf(output.StylePending, "Pushing to Loki instance at %q", lokiURL.Host))
 
 				var (
 					pushedEntries int
 					pushedStreams int
 					pushErrs      []string
-					pending       = stdout.Out.Pending(output.Linef("", output.StylePending, "Processing logs..."))
+					pending       = std.Out.Pending(output.Styled(output.StylePending, "Processing logs..."))
 				)
 				for i, log := range logs {
 					job := log.JobMeta.Job
@@ -510,7 +509,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 
 				if pushErrs != nil {
 					failedStreams := len(logs) - pushedStreams
-					stdout.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning,
+					std.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning,
 						"Failed to push %d streams: \n - %s", failedStreams, strings.Join(pushErrs, "\n - ")))
 					if failedStreams == len(logs) {
 						return errors.New("failed to push all logs")
@@ -530,7 +529,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 			if err != nil {
 				return err
 			}
-			return writePrettyMarkdown(out)
+			return std.Out.WriteMarkdown(out)
 		}),
 	}, {
 		Name:        "open",
@@ -539,7 +538,8 @@ From there, you can start exploring logs with the Grafana explore panel.
 		Description: "Open Sourcegraph's Buildkite page in browser. Optionally specify the pipeline you want to open.",
 		Action: execAdapter(func(ctx context.Context, args []string) error {
 			buildkiteURL := fmt.Sprintf("https://buildkite.com/%s", bk.BuildkiteOrg)
-			if pipeline := args[0]; pipeline != "" {
+			if len(args) > 0 && args[0] != "" {
+				pipeline := args[0]
 				buildkiteURL += fmt.Sprintf("/%s", pipeline)
 			}
 			return open.URL(buildkiteURL)
@@ -567,18 +567,18 @@ func allLinesPrefixed(lines []string, match string) bool {
 }
 
 func printBuildOverview(build *buildkite.Build) {
-	stdout.Out.WriteLine(output.Linef("", output.StyleBold, "Most recent build: %s", *build.WebURL))
-	stdout.Out.Writef("Commit:\t\t%s\nMessage:\t%s\nAuthor:\t\t%s <%s>",
+	std.Out.WriteLine(output.Styledf(output.StyleBold, "Most recent build: %s", *build.WebURL))
+	std.Out.Writef("Commit:\t\t%s\nMessage:\t%s\nAuthor:\t\t%s <%s>",
 		*build.Commit, *build.Message, build.Author.Name, build.Author.Email)
 	if build.PullRequest != nil {
-		stdout.Out.Writef("PR:\t\thttps://github.com/sourcegraph/sourcegraph/pull/%s", *build.PullRequest.ID)
+		std.Out.Writef("PR:\t\thttps://github.com/sourcegraph/sourcegraph/pull/%s", *build.PullRequest.ID)
 	}
 }
 
 func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
-	stdout.Out.Writef("Started:\t%s", build.StartedAt)
+	std.Out.Writef("Started:\t%s", build.StartedAt)
 	if build.FinishedAt != nil {
-		stdout.Out.Writef("Finished:\t%s (elapsed: %s)", build.FinishedAt, build.FinishedAt.Sub(build.StartedAt.Time))
+		std.Out.Writef("Finished:\t%s (elapsed: %s)", build.FinishedAt, build.FinishedAt.Sub(build.StartedAt.Time))
 	}
 
 	// Check build state
@@ -604,7 +604,7 @@ func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
 	default:
 		style = output.StyleWarning
 	}
-	block := stdout.Out.Block(output.Linef("", style, "Status:\t\t%s %s", emoji, *build.State))
+	block := std.Out.Block(output.Styledf(style, "Status:\t\t%s %s", emoji, *build.State))
 
 	// Inspect jobs individually.
 	failedSummary := []string{"Failed jobs:"}
@@ -646,9 +646,9 @@ func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
 			style = output.StyleWarning
 		}
 		if elapsed > 0 {
-			block.WriteLine(output.Linef("", style, "- [%s] %s (%s)", *job.State, *job.Name, elapsed))
+			block.WriteLine(output.Styledf(style, "- [%s] %s (%s)", *job.State, *job.Name, elapsed))
 		} else {
-			block.WriteLine(output.Linef("", style, "- [%s] %s", *job.State, *job.Name))
+			block.WriteLine(output.Styledf(style, "- [%s] %s", *job.State, *job.Name))
 		}
 	}
 

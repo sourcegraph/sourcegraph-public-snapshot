@@ -122,7 +122,7 @@ func (p *progressWithStatusBarsTTY) SetValue(i int, v float64) {
 	p.drawInSitu()
 }
 
-func (p *progressWithStatusBarsTTY) StatusBarResetf(i int, label, format string, args ...interface{}) {
+func (p *progressWithStatusBarsTTY) StatusBarResetf(i int, label, format string, args ...any) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
@@ -134,7 +134,7 @@ func (p *progressWithStatusBarsTTY) StatusBarResetf(i int, label, format string,
 	p.drawInSitu()
 }
 
-func (p *progressWithStatusBarsTTY) StatusBarUpdatef(i int, format string, args ...interface{}) {
+func (p *progressWithStatusBarsTTY) StatusBarUpdatef(i int, format string, args ...any) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
@@ -145,7 +145,7 @@ func (p *progressWithStatusBarsTTY) StatusBarUpdatef(i int, format string, args 
 	p.drawInSitu()
 }
 
-func (p *progressWithStatusBarsTTY) StatusBarCompletef(i int, format string, args ...interface{}) {
+func (p *progressWithStatusBarsTTY) StatusBarCompletef(i int, format string, args ...any) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
@@ -156,7 +156,7 @@ func (p *progressWithStatusBarsTTY) StatusBarCompletef(i int, format string, arg
 	p.drawInSitu()
 }
 
-func (p *progressWithStatusBarsTTY) StatusBarFailf(i int, format string, args ...interface{}) {
+func (p *progressWithStatusBarsTTY) StatusBarFailf(i int, format string, args ...any) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
@@ -259,7 +259,7 @@ func (p *progressWithStatusBarsTTY) Verbose(s string) {
 	}
 }
 
-func (p *progressWithStatusBarsTTY) Verbosef(format string, args ...interface{}) {
+func (p *progressWithStatusBarsTTY) Verbosef(format string, args ...any) {
 	if p.o.opts.Verbose {
 		p.Writef(format, args...)
 	}
@@ -281,7 +281,7 @@ func (p *progressWithStatusBarsTTY) Write(s string) {
 	p.draw()
 }
 
-func (p *progressWithStatusBarsTTY) Writef(format string, args ...interface{}) {
+func (p *progressWithStatusBarsTTY) Writef(format string, args ...any) {
 	p.o.Lock()
 	defer p.o.Unlock()
 

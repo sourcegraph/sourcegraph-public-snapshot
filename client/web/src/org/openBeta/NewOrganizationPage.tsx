@@ -8,7 +8,17 @@ import { RouteComponentProps } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Alert, AlertLink, Button, Checkbox, Input, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import {
+    Alert,
+    AlertLink,
+    Button,
+    Checkbox,
+    Input,
+    Link,
+    LoadingSpinner,
+    PageHeader,
+    Typography,
+} from '@sourcegraph/wildcard'
 
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
 import { Page } from '../../components/Page'
@@ -200,7 +210,7 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<React.PropsWithChildren
             <Form className="mb-3" onSubmit={onSubmit}>
                 {error && <ErrorAlert className="mb-3" error={getError(error)} />}
                 <div className={classNames('form-group', styles.formItem)}>
-                    <label htmlFor="new-org-page__form-name">Organization name</label>
+                    <Typography.Label htmlFor="new-org-page__form-name">Organization name</Typography.Label>
                     <input
                         id="new-org-page__form-name"
                         type="text"
@@ -247,7 +257,7 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<React.PropsWithChildren
                     {displayBox && hasValidId && (
                         <Alert variant="secondary" className="mb-2 d-flex align-items-center">
                             <div className="flex-grow-1">
-                                <h4>We’ve suggested an alternative organization ID</h4>
+                                <Typography.H4>We’ve suggested an alternative organization ID</Typography.H4>
                                 <div>{`${normalizeOrgId(
                                     displayName
                                 )} is already in use. Use our suggestion or choose a new ID for your organization.`}</div>

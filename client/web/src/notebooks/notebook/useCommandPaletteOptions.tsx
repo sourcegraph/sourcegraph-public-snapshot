@@ -43,25 +43,25 @@ export const useCommandPaletteOptions = ({ input, addBlock }: UseCommandPaletteO
                 {
                     id: 'add-md-block',
                     label: 'Add Markdown text',
-                    icon: <Icon as={LanguageMarkdownOutlineIcon} size="md" />,
+                    icon: <Icon role="img" aria-hidden={true} as={LanguageMarkdownOutlineIcon} size="md" />,
                     onSelect: () => addBlock({ type: 'md', input: { text: '', initialFocusInput: true } }),
                 },
                 {
                     id: 'add-query-block',
                     label: 'Add a Sourcegraph query',
-                    icon: <Icon as={MagnifyIcon} size="md" />,
+                    icon: <Icon role="img" aria-hidden={true} as={MagnifyIcon} size="md" />,
                     onSelect: () => addBlock({ type: 'query', input: { query: '', initialFocusInput: true } }),
                 },
                 {
                     id: 'add-file-block',
                     label: 'Add code from a file',
-                    icon: <Icon as={CodeTagsIcon} size="md" />,
+                    icon: <Icon role="img" aria-hidden={true} as={CodeTagsIcon} size="md" />,
                     onSelect: () => addBlock({ type: 'file', input: EMPTY_FILE_BLOCK_INPUT }),
                 },
                 {
                     id: 'add-symbol-block',
                     label: 'Add a symbol',
-                    icon: <Icon as={FunctionIcon} size="md" />,
+                    icon: <Icon role="img" aria-hidden={true} as={FunctionIcon} size="md" />,
                     onSelect: () => addBlock({ type: 'symbol', input: EMPTY_SYMBOL_BLOCK_INPUT }),
                 },
             ].filter(option => option.label.toLowerCase().includes(inputQuery))
@@ -73,7 +73,7 @@ export const useCommandPaletteOptions = ({ input, addBlock }: UseCommandPaletteO
                 {
                     id: 'add-file-from-url',
                     label: `Add code from ${parsedFileBlockInput.filePath}`,
-                    icon: <Icon as={CodeTagsIcon} size="md" />,
+                    icon: <Icon role="img" aria-hidden={true} as={CodeTagsIcon} size="md" />,
                     onSelect: () => addBlock({ type: 'file', input: parsedFileBlockInput }),
                 },
             ]
@@ -84,26 +84,26 @@ export const useCommandPaletteOptions = ({ input, addBlock }: UseCommandPaletteO
             {
                 id: 'add-md-block-with-input',
                 label: `Add Markdown text "${inputSummary}"`,
-                icon: <Icon as={LanguageMarkdownOutlineIcon} size="md" />,
+                icon: <Icon role="img" aria-hidden={true} as={LanguageMarkdownOutlineIcon} size="md" />,
                 onSelect: () => addBlock({ type: 'md', input: { text: trimmedInput, initialFocusInput: true } }),
             },
             {
                 id: 'add-query-block-with-input',
                 label: `Add a Sourcegraph query "${inputSummary}"`,
-                icon: <Icon as={MagnifyIcon} size="md" />,
+                icon: <Icon role="img" aria-hidden={true} as={MagnifyIcon} size="md" />,
                 onSelect: () => addBlock({ type: 'query', input: { query: trimmedInput, initialFocusInput: true } }),
             },
             {
                 id: 'find-files-with-input',
                 label: `Find files matching "${inputSummary}"`,
-                icon: <Icon as={CodeTagsIcon} size="md" />,
+                icon: <Icon role="img" aria-hidden={true} as={CodeTagsIcon} size="md" />,
                 onSelect: () =>
                     addBlock({ type: 'file', input: { ...EMPTY_FILE_BLOCK_INPUT, initialQueryInput: trimmedInput } }),
             },
             {
                 id: 'find-symbols-with-input',
                 label: `Find symbols matching "${inputSummary}"`,
-                icon: <Icon as={FunctionIcon} size="md" />,
+                icon: <Icon role="img" aria-hidden={true} as={FunctionIcon} size="md" />,
                 onSelect: () =>
                     addBlock({
                         type: 'symbol',

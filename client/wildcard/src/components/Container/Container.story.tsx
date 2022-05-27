@@ -3,6 +3,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Typography, Text } from '..'
 import { Alert } from '../Alert'
 import { Button } from '../Button'
 
@@ -23,12 +24,12 @@ export default config
 export const Overview: Story = () => (
     <>
         <Alert variant="info">
-            <p>
+            <Text>
                 A container is meant to group content semantically together. Every page using it should have a header,
                 optionally a description for the page and the container itself. Depending on the scope of a button, it
                 should live inside or outside of the container.
-            </p>
-            <p>If the button</p>
+            </Text>
+            <Text>If the button</Text>
             <ul className="mb-0">
                 <li>
                     affects everything inside the container (ie. saves all form fields within the container), it should
@@ -41,17 +42,17 @@ export const Overview: Story = () => (
             </ul>
         </Alert>
         <hr />
-        <h1>Example 1</h1>
-        <h2>Some page explanation</h2>
-        <p className="text-muted">Optional: Add some descriptive text about what this page does.</p>
+        <Typography.H1>Example 1</Typography.H1>
+        <Typography.H2>Some page explanation</Typography.H2>
+        <Text className="text-muted">Optional: Add some descriptive text about what this page does.</Text>
         <Container className="mb-3">
-            <h3>Section I</h3>
-            <p>Here you change the username.</p>
+            <Typography.H3>Section I</Typography.H3>
+            <Text>Here you change the username.</Text>
             <div className="form-group">
                 <input type="text" className="form-control" />
             </div>
-            <h3>Section II</h3>
-            <p>Here you change your email.</p>
+            <Typography.H3>Section II</Typography.H3>
+            <Text>Here you change your email.</Text>
             <div className="form-group mb-0">
                 <input type="text" className="form-control" />
             </div>
@@ -63,12 +64,12 @@ export const Overview: Story = () => (
             <Button variant="secondary">Cancel</Button>
         </div>
         <hr />
-        <h1>Example 2</h1>
-        <h2>Some page explanation</h2>
-        <p className="text-muted">Optional: Add some descriptive text about what this page does.</p>
+        <Typography.H1>Example 2</Typography.H1>
+        <Typography.H2>Some page explanation</Typography.H2>
+        <Text className="text-muted">Optional: Add some descriptive text about what this page does.</Text>
         <Container className="mb-3">
-            <h3>Section I</h3>
-            <p>Here you change the username.</p>
+            <Typography.H3>Section I</Typography.H3>
+            <Text>Here you change the username.</Text>
             <div className="form-group">
                 <input type="text" className="form-control" />
             </div>
@@ -76,8 +77,8 @@ export const Overview: Story = () => (
                 Save
             </Button>
             <hr className="mb-2" />
-            <h3>Section II</h3>
-            <p>Here you change your email.</p>
+            <Typography.H3>Section II</Typography.H3>
+            <Text>Here you change your email.</Text>
             <div className="form-group">
                 <input type="text" className="form-control" />
             </div>

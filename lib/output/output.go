@@ -6,7 +6,10 @@ import (
 	"io"
 	"sync"
 
+	"github.com/charmbracelet/glamour"
+	glamouransi "github.com/charmbracelet/glamour/ansi"
 	"github.com/mattn/go-runewidth"
+	"github.com/muesli/termenv"
 )
 
 // Writer defines a common set of methods that can be used to output status
@@ -18,12 +21,12 @@ import (
 type Writer interface {
 	// These methods only write the given message if verbose mode is enabled.
 	Verbose(s string)
-	Verbosef(format string, args ...interface{})
+	Verbosef(format string, args ...any)
 	VerboseLine(line FancyLine)
 
 	// These methods write their messages unconditionally.
 	Write(s string)
-	Writef(format string, args ...interface{})
+	Writef(format string, args ...any)
 	WriteLine(line FancyLine)
 }
 
@@ -153,7 +156,7 @@ func (o *Output) Verbose(s string) {
 	}
 }
 
-func (o *Output) Verbosef(format string, args ...interface{}) {
+func (o *Output) Verbosef(format string, args ...any) {
 	if o.opts.Verbose {
 		o.Writef(format, args...)
 	}
@@ -171,7 +174,7 @@ func (o *Output) Write(s string) {
 	fmt.Fprintln(o.w, s)
 }
 
-func (o *Output) Writef(format string, args ...interface{}) {
+func (o *Output) Writef(format string, args ...any) {
 	o.Lock()
 	defer o.Unlock()
 	fmt.Fprintf(o.w, format, o.caps.formatArgs(args)...)
@@ -217,6 +220,56 @@ func (o *Output) ProgressWithStatusBars(bars []ProgressBar, statusBars []*Status
 	return newProgressWithStatusBars(bars, statusBars, o, opts)
 }
 
+// WriteMarkdown renders Markdown nicely, unless color is disabled.
+func (o *Output) WriteMarkdown(str string) error {
+	return o.writeMarkdown(str, false)
+}
+
+func (o *Output) writeMarkdown(str string, noMargin bool) error {
+	if !o.caps.Color {
+		o.Write(str)
+		return nil
+	}
+
+	var style glamouransi.StyleConfig
+	if termenv.HasDarkBackground() {
+		style = glamour.DarkStyleConfig
+	} else {
+		style = glamour.LightStyleConfig
+	}
+
+	if noMargin {
+		z := uint(0)
+		style.CodeBlock.Margin = &z
+		style.Document.Margin = &z
+		style.Document.BlockPrefix = ""
+		style.Document.BlockSuffix = ""
+	}
+
+	r, err := glamour.NewTermRenderer(
+		// detect background color and pick either the default dark or light theme
+		glamour.WithStyles(style),
+		// wrap output at slightly less than terminal width
+		glamour.WithWordWrap(o.caps.Width*4/5),
+		glamour.WithEmoji(),
+	)
+	if err != nil {
+		return err
+	}
+
+	rendered, err := r.Render(str)
+	if err != nil {
+		return err
+	}
+	o.Write(rendered)
+	return nil
+}
+
+// WriteCode renders the given code snippet as Markdown, unless color is disabled.
+func (o *Output) WriteCode(languageName, str string) error {
+	return o.writeMarkdown(fmt.Sprintf("```%s\n%s\n```", languageName, str), true)
+}
+
 // The utility functions below do not make checks for whether the terminal is a
 // TTY, and should only be invoked from behind appropriate guards.
 
@@ -245,7 +298,7 @@ func (o *Output) MoveUpLines(lines int) {
 // writeStyle is a helper to write a style while respecting the terminal
 // capabilities.
 func (o *Output) writeStyle(style Style) {
-	fmt.Fprintf(o.w, "%s", o.caps.formatArgs([]interface{}{style})...)
+	fmt.Fprintf(o.w, "%s", o.caps.formatArgs([]any{style})...)
 }
 
 func (o *Output) ClearScreen() {

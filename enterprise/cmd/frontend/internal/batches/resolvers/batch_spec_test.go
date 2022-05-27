@@ -93,7 +93,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 	orgAPIID := string(graphqlbackend.MarshalOrgID(orgID))
 
-	var unmarshaled interface{}
+	var unmarshaled any
 	err = json.Unmarshal([]byte(spec.RawSpec), &unmarshaled)
 	if err != nil {
 		t.Fatal(err)
@@ -153,7 +153,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		State: "COMPLETED",
 	}
 
-	input := map[string]interface{}{"batchSpec": apiID}
+	input := map[string]any{"batchSpec": apiID}
 	{
 		var response struct{ Node apitest.BatchSpec }
 		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryBatchSpecNode)
@@ -292,7 +292,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var unmarshaled interface{}
+	var unmarshaled any
 	err = yaml.UnmarshalValidate(schema.BatchSpecJSON, []byte(spec.RawSpec), &unmarshaled)
 	if err != nil {
 		t.Fatal(err)
@@ -499,7 +499,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 func queryAndAssertBatchSpec(t *testing.T, ctx context.Context, s *graphql.Schema, id string, want apitest.BatchSpec) {
 	t.Helper()
 
-	input := map[string]interface{}{"batchSpec": id}
+	input := map[string]any{"batchSpec": id}
 
 	var response struct{ Node apitest.BatchSpec }
 

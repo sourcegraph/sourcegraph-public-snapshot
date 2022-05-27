@@ -90,6 +90,12 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		return nil, err
 	}
 
+	if errcode.IsNotFound(err) && !envvar.SourcegraphDotComMode() {
+		// The repo doesn't exist and we're not on sourcegraph.com, we should not lazy
+		// clone it.
+		return nil, err
+	}
+
 	newName, err := s.Add(ctx, name)
 	if err == nil {
 		return s.store.GetByName(ctx, newName)
@@ -201,7 +207,7 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetInventory", map[string]interface{}{"repo": repo.Name, "commitID": commitID}, &err)
+	ctx, done := trace(ctx, "Repos", "GetInventory", map[string]any{"repo": repo.Name, "commitID": commitID}, &err)
 	defer done()
 
 	// Cap GetInventory operation to some reasonable time.

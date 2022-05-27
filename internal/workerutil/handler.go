@@ -26,7 +26,7 @@ type WithPreDequeue interface {
 	// If this method returns false, then the current worker iteration is skipped and the next iteration
 	// will begin after waiting for the configured polling interval. Any value returned by this method
 	// will be used as additional parameters to the store's Dequeue method.
-	PreDequeue(ctx context.Context, logger log.Logger) (dequeueable bool, extraDequeueArguments interface{}, err error)
+	PreDequeue(ctx context.Context, logger log.Logger) (dequeueable bool, extraDequeueArguments any, err error)
 }
 
 // WithHooks is an extension of the Handler interface.

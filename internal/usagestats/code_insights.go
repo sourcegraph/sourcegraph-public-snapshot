@@ -196,7 +196,7 @@ func GetWeeklyTabClicks(ctx context.Context, db database.DB, sql string) ([]type
 }
 
 func GetTotalInsightCounts(ctx context.Context, db database.DB) (types.InsightTotalCounts, error) {
-	store := database.EventLogs(db)
+	store := db.EventLogs()
 	name := InsightsTotalCountPingName
 	all, err := store.ListAll(ctx, database.EventLogsListOptions{
 		LimitOffset: &database.LimitOffset{
@@ -221,7 +221,7 @@ func GetTotalInsightCounts(ctx context.Context, db database.DB) (types.InsightTo
 }
 
 func GetTimeStepCounts(ctx context.Context, db database.DB) ([]types.InsightTimeIntervalPing, error) {
-	store := database.EventLogs(db)
+	store := db.EventLogs()
 	name := InsightsIntervalCountsPingName
 	all, err := store.ListAll(ctx, database.EventLogsListOptions{
 		LimitOffset: &database.LimitOffset{
@@ -246,7 +246,7 @@ func GetTimeStepCounts(ctx context.Context, db database.DB) ([]types.InsightTime
 }
 
 func GetOrgInsightCounts(ctx context.Context, db database.DB) ([]types.OrgVisibleInsightPing, error) {
-	store := database.EventLogs(db)
+	store := db.EventLogs()
 	name := InsightsOrgVisibleInsightsPingName
 	all, err := store.ListAll(ctx, database.EventLogsListOptions{
 		LimitOffset: &database.LimitOffset{
@@ -271,7 +271,7 @@ func GetOrgInsightCounts(ctx context.Context, db database.DB) ([]types.OrgVisibl
 }
 
 func GetIntCount(ctx context.Context, db database.DB, pingName string) (int32, error) {
-	store := database.EventLogs(db)
+	store := db.EventLogs()
 	all, err := store.ListAll(ctx, database.EventLogsListOptions{
 		LimitOffset: &database.LimitOffset{
 			Limit:  1,
@@ -304,7 +304,7 @@ func GetCreationViewUsage(ctx context.Context, db database.DB, timeSupplier func
 }
 
 func GetInsightsPerDashboard(ctx context.Context, db database.DB) (types.InsightsPerDashboardPing, error) {
-	store := database.EventLogs(db)
+	store := db.EventLogs()
 	name := InsightsPerDashboardPingName
 	all, err := store.ListAll(ctx, database.EventLogsListOptions{
 		LimitOffset: &database.LimitOffset{

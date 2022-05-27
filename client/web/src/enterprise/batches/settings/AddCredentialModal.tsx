@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Button, Modal, Link } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, Typography, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
@@ -33,24 +33,27 @@ const HELP_TEXT_LINK_URL = 'https://docs.sourcegraph.com/batch_changes/quickstar
 const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.GITHUB]: (
         <span>
-            with the <code>repo</code>, <code>read:org</code>, <code>user:email</code>, <code>read:discussion</code>,
-            and <code>workflow</code> scopes.
+            with the <Typography.Code>repo</Typography.Code>, <Typography.Code>read:org</Typography.Code>,{' '}
+            <Typography.Code>user:email</Typography.Code>, <Typography.Code>read:discussion</Typography.Code>, and{' '}
+            <Typography.Code>workflow</Typography.Code> scopes.
         </span>
     ),
     [ExternalServiceKind.GITLAB]: (
         <span>
-            with <code>api</code>, <code>read_repository</code>, and <code>write_repository</code> scopes.
+            with <Typography.Code>api</Typography.Code>, <Typography.Code>read_repository</Typography.Code>, and{' '}
+            <Typography.Code>write_repository</Typography.Code> scopes.
         </span>
     ),
     [ExternalServiceKind.BITBUCKETSERVER]: (
         <span>
-            with <code>write</code> permissions on the project and repository level.
+            with <Typography.Code>write</Typography.Code> permissions on the project and repository level.
         </span>
     ),
     [ExternalServiceKind.BITBUCKETCLOUD]: (
         <span>
-            with <code>account:read</code>, <code>repo:write</code>, <code>pr:write</code>, and{' '}
-            <code>pipeline:read</code> permissions.
+            with <Typography.Code>account:read</Typography.Code>, <Typography.Code>repo:write</Typography.Code>,{' '}
+            <Typography.Code>pr:write</Typography.Code>, and <Typography.Code>pipeline:read</Typography.Code>{' '}
+            permissions.
         </span>
     ),
 
@@ -134,6 +137,9 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
         ]
     )
 
+    const patLabel =
+        externalServiceKind === ExternalServiceKind.BITBUCKETCLOUD ? 'App password' : 'Personal access token'
+
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
             <div className="test-add-credential-modal">
@@ -145,9 +151,9 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                 {requiresSSH && (
                     <div className="d-flex w-100 justify-content-between mb-4">
                         <div className="flex-grow-1 mr-2">
-                            <p className={classNames('mb-0 py-2', step === 'get-ssh-key' && 'text-muted')}>
+                            <Text className={classNames('mb-0 py-2', step === 'get-ssh-key' && 'text-muted')}>
                                 1. Add token
-                            </p>
+                            </Text>
                             <div
                                 className={classNames(
                                     styles.addCredentialModalModalStepRuler,
@@ -156,9 +162,9 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                             />
                         </div>
                         <div className="flex-grow-1 ml-2">
-                            <p className={classNames('mb-0 py-2', step === 'add-token' && 'text-muted')}>
+                            <Text className={classNames('mb-0 py-2', step === 'add-token' && 'text-muted')}>
                                 2. Get SSH Key
-                            </p>
+                            </Text>
                             <div
                                 className={classNames(
                                     styles.addCredentialModalModalStepRuler,
@@ -176,7 +182,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                             <div className="form-group">
                                 {requiresUsername && (
                                     <>
-                                        <label htmlFor="username">Username</label>
+                                        <Typography.Label htmlFor="username">Username</Typography.Label>
                                         <input
                                             id="username"
                                             name="username"
@@ -191,7 +197,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                                         />
                                     </>
                                 )}
-                                <label htmlFor="token">Personal access token</label>
+                                <Typography.Label htmlFor="token">{patLabel}</Typography.Label>
                                 <input
                                     id="token"
                                     name="token"
@@ -204,17 +210,17 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                                     value={credential}
                                     onChange={onChangeCredential}
                                 />
-                                <p className="form-text">
+                                <Text className="form-text">
                                     <Link
                                         to={HELP_TEXT_LINK_URL}
                                         rel="noreferrer noopener"
                                         target="_blank"
-                                        aria-label="Follow our docs to learn how to create a new access token on this code host"
+                                        aria-label={`Follow our docs to learn how to create a new ${patLabel.toLocaleLowerCase()} on this code host`}
                                     >
-                                        Create a new access token
+                                        Create a new {patLabel.toLocaleLowerCase()}
                                     </Link>{' '}
                                     {scopeRequirements[externalServiceKind]}
-                                </p>
+                                </Text>
                             </div>
                             <div className="d-flex justify-content-end">
                                 <Button
@@ -241,23 +247,18 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                 )}
                 {step === 'get-ssh-key' && (
                     <>
-                        <p>
+                        <Text>
                             An SSH key has been generated for your batch changes code host connection. Copy the public
                             key below and enter it on your code host.
-                        </p>
+                        </Text>
                         <CodeHostSshPublicKey externalServiceKind={externalServiceKind} sshPublicKey={sshPublicKey!} />
-                        <div className="d-flex justify-content-end">
-                            <Button className="mr-2" onClick={afterCreate} outline={true} variant="secondary">
-                                Close
-                            </Button>
-                            <Button
-                                className="test-add-credential-modal-submit"
-                                onClick={afterCreate}
-                                variant="primary"
-                            >
-                                Add credential
-                            </Button>
-                        </div>
+                        <Button
+                            className="test-add-credential-modal-submit float-right"
+                            onClick={afterCreate}
+                            variant="primary"
+                        >
+                            Finish
+                        </Button>
                     </>
                 )}
             </div>

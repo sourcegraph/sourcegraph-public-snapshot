@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -27,7 +27,15 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { useObservable, Button, Link, FeedbackPrompt, ButtonLink, PopoverTrigger } from '@sourcegraph/wildcard'
+import {
+    useObservable,
+    Button,
+    Link,
+    FeedbackPrompt,
+    ButtonLink,
+    PopoverTrigger,
+    useWindowSize,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -93,6 +101,33 @@ interface Props
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
     branding?: typeof window.context.branding
+}
+
+/**
+ * Calculates NavLink variant based whether current content fits into container or not.
+ *
+ * @param containerReference a reference to navbar container
+ */
+function useCalculatedNavLinkVariant(
+    containerReference: React.MutableRefObject<HTMLDivElement | null>
+): 'compact' | undefined {
+    const [navLinkVariant, setNavLinkVariant] = useState<'compact'>()
+    const { width } = useWindowSize()
+    const [savedWindowWidth, setSavedWindowWidth] = useState<number>()
+    useEffect(() => {
+        const container = containerReference.current
+        if (!container) {
+            return
+        }
+        if (container.offsetWidth < container.scrollWidth) {
+            setNavLinkVariant('compact')
+            setSavedWindowWidth(width)
+        } else if (savedWindowWidth && width > savedWindowWidth) {
+            setNavLinkVariant(undefined)
+        }
+    }, [containerReference, savedWindowWidth, width])
+
+    return navLinkVariant
 }
 
 export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -180,6 +215,9 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
         showSearchContext,
     ])
 
+    const navbarReference = useRef<HTMLDivElement | null>(null)
+    const navLinkVariant = useCalculatedNavLinkVariant(navbarReference)
+
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
     const codeInsights = codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
@@ -207,6 +245,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
     return (
         <>
             <NavBar
+                ref={navbarReference}
                 logo={
                     <BrandLogo
                         branding={branding}
@@ -223,6 +262,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             altPath: PageRoutes.RepoContainer,
                             icon: MagnifyIcon,
                             content: 'Code Search',
+                            variant: navLinkVariant,
                         }}
                         routeMatch={routeMatch}
                         mobileHomeItem={{ content: 'Search home' }}
@@ -230,25 +270,35 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                     />
                     {showSearchNotebook && (
                         <NavItem icon={BookOutlineIcon}>
-                            <NavLink to={PageRoutes.Notebooks}>Notebooks</NavLink>
+                            <NavLink variant={navLinkVariant} to={PageRoutes.Notebooks}>
+                                Notebooks
+                            </NavLink>
                         </NavItem>
                     )}
                     {enableCodeMonitoring && (
                         <NavItem icon={CodeMonitoringLogo}>
-                            <NavLink to="/code-monitoring">Monitoring</NavLink>
+                            <NavLink variant={navLinkVariant} to="/code-monitoring">
+                                Monitoring
+                            </NavLink>
                         </NavItem>
                     )}
                     {/* This is the only circumstance where we show something
                          batch-changes-related even if the instance does not have batch
                          changes enabled, for marketing purposes on sourcegraph.com */}
-                    {(props.batchChangesEnabled || isSourcegraphDotCom) && <BatchChangesNavItem />}
+                    {(props.batchChangesEnabled || isSourcegraphDotCom) && (
+                        <BatchChangesNavItem variant={navLinkVariant} />
+                    )}
                     {codeInsights && (
                         <NavItem icon={BarChartIcon}>
-                            <NavLink to="/insights">Insights</NavLink>
+                            <NavLink variant={navLinkVariant} to="/insights">
+                                Insights
+                            </NavLink>
                         </NavItem>
                     )}
                     <NavItem icon={PuzzleOutlineIcon}>
-                        <NavLink to="/extensions">Extensions</NavLink>
+                        <NavLink variant={navLinkVariant} to="/extensions">
+                            Extensions
+                        </NavLink>
                     </NavItem>
                     {props.activation && (
                         <NavItem>

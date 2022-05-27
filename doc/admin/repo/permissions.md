@@ -399,6 +399,33 @@ mutation {
 
 <br />
 
+### Pending permissions
+
+> NOTE: This section describes some very technical details behind background permissions sync. In most cases, you will not need to consult this section.
+
+Pending permissions are created and stored when the repo permissions fetched from the code host contain users which are not yet having accounts on Sourcegraph. This information is stored for the purpose of immediate repo access for such users after joining Sourcegraph. During the process of user creation, `user_pending_permissions` is queried and if there are any permissions for the user being created, then these permissions are moved to `user_permissions` table and this user is ready to go in no time. Without pending permissions, new users will have to wait for their permissions sync to complete.
+
+As soon as a new user is created on Sourcegraph, pending permissions (`repo_pending_permissions` and `user_pending_permissions`) are used to populate "ordinary" permissions (`repo_permissions` and `user_permissions` tables), after which the `user_pending_permissions` is cleared (however, `repo_pending_permissions` [is not](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@8e128dd3434b9e548176f8f1148ead3981458db9/-/blob/enterprise/internal/database/perms_store.go?L979-981) for performance concerns and user IDs are monotonically increasing and would never repeat).
+
+#### External code host user to Sourcegraph user mapping
+
+The [`user_pending_permissions` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/schema.md#table-public-user-pending-permissions) has a `bind_id` column which is an ID of the user of the external code host, for example a username for Bitbucket Server, a GraphID for GitHub or a user ID for GitLab.
+
+User pending permission is a composite entity comprising:
+- `service_type` (e.g. `github`, `gitlab`, `bitbucketServer`)
+- `service_id` (ID of the code host, e.g. `https://github.com/`, `https://gitlab.com/`)
+- `permission` (access level, e.g. "read")
+- `object_type` (type of what is enumerated in `object_ids_ints` column; for now it is `repos`)
+- `bind_id`
+ 
+All of which are included as a unique constraint. This entity is addressed in `user_ids_ints` column of [`repo_pending_permissions` table](#repo-pending-permissions) by `id`. Please see [this godoc](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@8e128dd3434b9e548176f8f1148ead3981458db9/-/blob/internal/authz/perms.go?L190-218=) for more information.
+
+Overall, one entry of `user_pending_permissions` table means that _"There is a user with `bind_id` ID of this exact (`service_id`) external code host of this (`service_type`) type with such permissions for this (`object_ids_ints`) set of repos"_.
+
+#### Repo pending permissions
+
+[`repo_pending_permissions` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/schema.md#table-public-repo-pending-permissions) maps `user_pending_permissions` entities to repo ID along with the permission type (currently only `read` is supported). Each row of the table maps a repo ID to an array of `user_pending_permissions` entries. It is designed as an inverted `user_pending_permissions` for more performant CRUD operations (see the DB migration description in [this commit](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/compare/0705aa790d31fcd51713f4432496cc6bbb49cce8...bc30ae1186cf7a491ef21a5c00cb2f565288dfbb#diff-660eca66a5fad95783448fa468b2ce2fR50)).
+
 ## Explicit permissions API
 
 Sourcegraph exposes a GraphQL API to explicitly set repository permissions as an alternative to the code-host-specific repository permissions sync mechanisms.
@@ -422,6 +449,18 @@ If the permissions API is enabled, all other repository permissions mechanisms a
 After you enable the permissions API, you must [set permissions](#settings-repository-permissions-for-users) to allow users to view repositories (site admins bypass all permissions checks and can always view all repositories).
 
 > NOTE: If you were previously using [background permissions syncing](#background-permissions-syncing), e.g. using [GitHub permissions](#github), then those permissions are used as the initial state after enabling explicit permissions. Otherwise, the initial state is for all repositories to have an empty set of authorized users, so users will not be able to view any repositories.
+
+### Setting a repository as unrestricted
+
+Sometimes it can be useful to mark a repository as `unrestricted`, meaning that it is available to all Sourcegraph users. This can be done with the `setRepositoryPermissionsUnrestricted` mutation. Marking a repository as unrestricted will disregard any previously set explicit or synced permissions. Setting `unrestricted` back to `false` will restore the previous behaviour.
+
+For example:
+
+```graphql
+mutation {
+  setRepositoryPermissionsUnrestricted(repositories: ["A","B","C"], unrestricted: true)
+}
+```
 
 ### Setting repository permissions for users
 

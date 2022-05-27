@@ -46,7 +46,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - The number of queries with three or more patterns
 - Aggregate daily, weekly, and monthly user counts of search queries with the above properties
 - Code intelligence usage data
-  - Total number of repositories with and without an uploaded LSIF index
+  - Total number of repositories with and without an uploaded precise code intel index
   - Total number of code intelligence queries (e.g., hover tooltips) per week grouped by language
   - Number of users performing code intelligence queries (e.g., hover tooltips) per week grouped by language
 <!-- depends-on-source: ~/internal/usagestats/batches.go -->
@@ -65,9 +65,20 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total count of changesets manually added to a batch change
   - Total count of changesets manually added to a batch change that have been merged
   - Aggregate counts of unique monthly users, by:
-    - Whether they are contributed to batch changes
-    - Whether they only viewed batch changes
+      - Whether they have contributed to batch changes
+      - Whether they only viewed batch changes
+      - Whether they have performed a bulk operation
   - Weekly batch change (open, closed) and changesets counts (imported, published, unpublished, open, draft, merged, closed) for batch change cohorts created in the last 12 months
+  - Weekly bulk operations count (grouped by operation)
+  - Total count of executors connected
+  - Cumulative executor runtime monthly
+  - Total count of `publish` bulk operation
+  - Total count of bulk operations (grouped by operation type)
+  - Changeset distribution for batch change (grouped by batch change source: `local` or `executor`)
+  - Total count of users that ran a job on an executor monthly
+  - Total count of published changesets and batch changes created via:
+      - executor
+      - local (using `src-cli`)
 - Aggregated counts of users created, deleted, retained, resurrected and churned within the month
 - Saved searches usage data
   - Count of saved searches
@@ -116,6 +127,17 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total number of views of the create code monitor page without a pre-populated trigger query
   - Total number of views of the manage code monitor page
   - Total number of clicks on the code monitor email search link
+- Notebooks usage data
+  - Total number of views of the notebook page
+  - Total number of views of the notebooks list page
+  - Total number of views of the embedded notebook page
+  - Total number of created notebooks
+  - Total number of added notebook stars
+  - Total number of added notebook markdown blocks
+  - Total number of added notebook query blocks
+  - Total number of added notebook file blocks
+  - Total number of added notebook symbol blocks
+  - Total number of added notebook compute blocks
 - Code Host integration usage data (Browser extension / Native Integration)
   - Aggregate counts of current daily, weekly, and monthly unique users and total events
   - Aggregate counts of current daily, weekly, and monthly unique users and total events who visited Sourcegraph instance from browser extension

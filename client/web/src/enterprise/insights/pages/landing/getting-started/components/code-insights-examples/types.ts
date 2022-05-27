@@ -1,7 +1,6 @@
-import { LineChartContent as LineChartContentType, LineChartSeries } from 'sourcegraph'
+import { Series, SeriesLikeChart } from '../../../../../../../charts'
 
-interface SeriesWithQuery extends LineChartSeries<any> {
-    name: string
+interface SeriesWithQuery<T> extends Series<T> {
     query: string
 }
 
@@ -10,14 +9,14 @@ export interface InsightExampleCommonContent {
     repositories: string
 }
 
-export interface SearchInsightExampleContent
-    extends Omit<LineChartContentType<any, string>, 'chart' | 'series'>,
-        InsightExampleCommonContent {
-    series: SeriesWithQuery[]
+export interface SearchInsightExampleContent<T> extends SeriesLikeChart<T> {
+    series: SeriesWithQuery<T>[]
+    title: string
+    repositories: string
 }
 
-export interface CaptureGroupExampleContent
-    extends Omit<LineChartContentType<any, string>, 'chart'>,
-        InsightExampleCommonContent {
+export interface CaptureGroupExampleContent<T> extends SeriesLikeChart<T> {
     groupSearch: string
+    title: string
+    repositories: string
 }

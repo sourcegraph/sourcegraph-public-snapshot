@@ -7,15 +7,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func Postgres() *monitoring.Container {
+func Postgres() *monitoring.Dashboard {
 	const (
 		// In docker-compose, codeintel-db container is called pgsql. In Kubernetes,
 		// codeintel-db container is called codeintel-db Because of this, we track
 		// all database cAdvisor metrics in a single panel using this container
 		// name regex to ensure we have observability on all platforms.
-		containerName = "(pgsql|codeintel-db|codeinsights-db)"
+		containerName = "(pgsql|codeintel-db|codeinsights)"
 	)
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:                     "postgres",
 		Title:                    "Postgres",
 		Description:              "Postgres metrics, exported from postgres_exporter (not available on server).",

@@ -10,14 +10,16 @@ import { Badged } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike, isDefined, property } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
+import { FileSearchResult } from '@sourcegraph/search-ui'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { FileSearchResult } from '@sourcegraph/shared/src/components/FileSearchResult'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, Alert, Icon } from '@sourcegraph/wildcard'
+
+import { ReferencePanelCta } from './ReferencePanelCta'
 
 import styles from './FileLocations.module.scss'
 
@@ -31,13 +33,13 @@ export const FileLocationsError: React.FunctionComponent<React.PropsWithChildren
 
 export const FileLocationsNotFound: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className={classNames('m-2', styles.notFound)}>
-        <Icon as={MapSearchIcon} /> No locations found
+        <Icon role="img" as={MapSearchIcon} aria-hidden={true} /> No locations found
     </div>
 )
 
 export const FileLocationsNoGroupSelected: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className="m-2">
-        <Icon as={MapSearchIcon} /> No locations found in the current repository
+        <Icon role="img" as={MapSearchIcon} aria-hidden={true} /> No locations found in the current repository
     </div>
 )
 
@@ -152,6 +154,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
 
         return (
             <div className={classNames(styles.fileLocations, this.props.className)}>
+                <ReferencePanelCta />
                 <VirtualList<OrderedURI, { locationsByURI: Map<string, Location[]> }>
                     itemsToShow={this.state.itemsToShow}
                     onShowMoreItems={this.onShowMoreItems}

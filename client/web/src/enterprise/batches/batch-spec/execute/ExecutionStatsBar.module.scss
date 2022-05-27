@@ -1,0 +1,11 @@
+.stat {
+    color: var(--text-muted);
+    margin: 0 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    svg {
+        height: 1.25rem;
+    }
+}

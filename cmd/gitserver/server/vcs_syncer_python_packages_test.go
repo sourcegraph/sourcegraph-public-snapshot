@@ -184,7 +184,7 @@ func TestUnpackPythonPackage_UnsupportedFormat(t *testing.T) {
 func TestUnpackPythonPackage_Wheel(t *testing.T) {
 	ctx := context.Background()
 
-	cl := newTestClient(t, "requests", true)
+	cl := newTestClient(t, "requests", update(t.Name()))
 	f, err := cl.Project(ctx, "requests")
 	if err != nil {
 		t.Fatal(err)

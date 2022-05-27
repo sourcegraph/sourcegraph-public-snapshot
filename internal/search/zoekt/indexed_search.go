@@ -366,9 +366,9 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 			continue
 		}
 
-		var lines []*result.LineMatch
+		var lines []result.MultilineMatch
 		if typ != search.SymbolRequest {
-			lines = zoektFileMatchToLineMatches(&file)
+			lines = zoektFileMatchToMultilineMatches(&file)
 		}
 
 		for _, inputRev := range inputRevs {
@@ -379,8 +379,8 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 				symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
 			}
 			fm := result.FileMatch{
-				LineMatches: lines,
-				Symbols:     symbols,
+				MultilineMatches: lines,
+				Symbols:          symbols,
 				File: result.File{
 					InputRev: &inputRev,
 					CommitID: api.CommitID(file.Version),
@@ -400,25 +400,35 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 	})
 }
 
-func zoektFileMatchToLineMatches(file *zoekt.FileMatch) []*result.LineMatch {
-	lines := make([]*result.LineMatch, 0, len(file.LineMatches))
+func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) []result.MultilineMatch {
+	lines := make([]result.MultilineMatch, 0, len(file.LineMatches))
 
 	for _, l := range file.LineMatches {
 		if l.FileName {
 			continue
 		}
 
-		offsets := make([][2]int32, len(l.LineFragments))
-		for k, m := range l.LineFragments {
+		for _, m := range l.LineFragments {
 			offset := utf8.RuneCount(l.Line[:m.LineOffset])
 			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
-			offsets[k] = [2]int32{int32(offset), int32(length)}
+
+			lines = append(lines, result.MultilineMatch{
+				Preview: string(l.Line),
+				Range: result.Range{
+					Start: result.Location{
+						// zoekt line numbers are 1-based rather than 0-based so subtract 1
+						Offset: int(m.Offset),
+						Line:   l.LineNumber - 1,
+						Column: offset,
+					},
+					End: result.Location{
+						Offset: int(m.Offset),
+						Line:   l.LineNumber - 1,
+						Column: offset + length,
+					},
+				},
+			})
 		}
-		lines = append(lines, &result.LineMatch{
-			Preview:          string(l.Line),
-			LineNumber:       int32(l.LineNumber - 1),
-			OffsetAndLengths: offsets,
-		})
 	}
 
 	return lines
@@ -549,17 +559,32 @@ func (*ZoektRepoSubsetSearchJob) Name() string {
 	return "ZoektRepoSubsetSearchJob"
 }
 
+func (z *ZoektRepoSubsetSearchJob) Tags() []log.Field {
+	tags := []log.Field{
+		trace.Stringer("query", z.Query),
+		log.String("type", string(z.Typ)),
+		log.Int32("fileMatchLimit", z.FileMatchLimit),
+		trace.Stringer("select", z.Select),
+	}
+	// z.Repos is nil for un-indexed search
+	if z.Repos != nil {
+		tags = append(tags, log.Int("numRepoRevs", len(z.Repos.RepoRevs)))
+		tags = append(tags, log.Int("numBranchRepos", len(z.Repos.branchRepos)))
+	}
+	return tags
+}
+
 type ZoektGlobalSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
-	RepoOptions      search.RepoOptions
+	RepoOpts         search.RepoOptions
 }
 
 func (t *ZoektGlobalSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, t)
 	defer func() { finish(alert, err) }()
 
-	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.DB, t.RepoOptions)
+	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.DB, t.RepoOpts)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 
@@ -568,4 +593,16 @@ func (t *ZoektGlobalSearchJob) Run(ctx context.Context, clients job.RuntimeClien
 
 func (*ZoektGlobalSearchJob) Name() string {
 	return "ZoektGlobalSearchJob"
+}
+
+func (t *ZoektGlobalSearchJob) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("query", t.GlobalZoektQuery.query),
+		trace.Printf("repoScope", "%q", t.GlobalZoektQuery.repoScope),
+		log.Bool("includePrivate", t.GlobalZoektQuery.includePrivate),
+		log.String("type", string(t.ZoektArgs.Typ)),
+		log.Int32("fileMatchLimit", t.ZoektArgs.FileMatchLimit),
+		trace.Stringer("select", t.ZoektArgs.Select),
+		trace.Stringer("repoOpts", &t.RepoOpts),
+	}
 }

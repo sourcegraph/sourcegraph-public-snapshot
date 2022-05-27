@@ -6,10 +6,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
 	batchesmigrations "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/migrations"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
+	freshcodeintel "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/fresh"
 	codeintelmigrations "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/migrations"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
@@ -51,6 +52,12 @@ func main() {
 		"batches-workspace-resolver": batches.NewWorkspaceResolverJob(),
 		"executors-janitor":          executors.NewJanitorJob(),
 		"codemonitors-job":           codemonitors.NewCodeMonitorJob(),
+
+		// fresh
+		"codeintel-upload-janitor":         freshcodeintel.NewUploadJanitorJob(),
+		"codeintel-upload-expirer":         freshcodeintel.NewUploadExpirerJob(),
+		"codeintel-commitgraph-updater":    freshcodeintel.NewCommitGraphUpdaterJob(),
+		"codeintel-autoindexing-scheduler": freshcodeintel.NewAutoindexingSchedulerJob(),
 	}
 
 	if err := shared.Start(logger, additionalJobs, registerEnterpriseMigrations); err != nil {
@@ -68,15 +75,16 @@ func init() {
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
 func setAuthzProviders() {
-	db, err := workerdb.Init()
+	sqlDB, err := workerdb.Init()
 	if err != nil {
 		return
 	}
 
 	ctx := context.Background()
+	db := database.NewDB(sqlDB)
 
 	for range time.NewTicker(eiauthz.RefreshInterval()).C {
-		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(db), database.NewDB(db))
+		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}
 }

@@ -3,7 +3,7 @@ import React, { FunctionComponent } from 'react'
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Typography } from '@sourcegraph/wildcard'
 
 import { LsifUploadFields } from '../../../../graphql-operations'
 import { CodeIntelState } from '../../shared/components/CodeIntelState'
@@ -30,9 +30,9 @@ export const CodeIntelUploadNode: FunctionComponent<React.PropsWithChildren<Code
 
         <div className={classNames(styles.information, 'd-flex flex-column')}>
             <div className="m-0">
-                <h3 className="m-0 d-block d-md-inline">
+                <Typography.H3 className="m-0 d-block d-md-inline">
                     <CodeIntelUploadOrIndexRepository node={node} />
-                </h3>
+                </Typography.H3>
             </div>
 
             <div>

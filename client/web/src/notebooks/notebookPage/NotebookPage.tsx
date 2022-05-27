@@ -24,6 +24,8 @@ import {
     ProductStatusBadge,
     Button,
     Icon,
+    Typography,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { Block } from '..'
@@ -349,13 +351,13 @@ const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProp
         <MarketingBlock wrapperClassName={styles.notepadCta}>
             <aside className={styles.notepadCtaContent}>
                 <Button
-                    arial-label="Hide"
+                    aria-label="Hide"
                     variant="icon"
                     onClick={onClose}
                     size="sm"
                     className={styles.notepadCtaCloseButton}
                 >
-                    <Icon as={CloseIcon} />
+                    <Icon role="img" aria-hidden={true} as={CloseIcon} />
                 </Button>
                 <img
                     className="flex-shrink-0 mr-3"
@@ -363,19 +365,19 @@ const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProp
                     alt=""
                 />
                 <div>
-                    <h3 className="d-inline-block">
+                    <Typography.H3 className="d-inline-block">
                         <NotepadIcon /> Enable notepad
-                    </h3>{' '}
+                    </Typography.H3>{' '}
                     <ProductStatusBadge status="beta" />
-                    <p>
+                    <Text>
                         The notepad adds a toolbar to the bottom right of search results and file pages to help you
                         create notebooks from your code navigation activities.
-                    </p>
-                    <p>
+                    </Text>
+                    <Text>
                         <Button variant="primary" onClick={onEnable} size="sm">
                             Enable notepad
                         </Button>
-                    </p>
+                    </Text>
                 </div>
             </aside>
         </MarketingBlock>

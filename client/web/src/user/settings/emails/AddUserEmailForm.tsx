@@ -7,7 +7,7 @@ import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
-import { screenReaderAnnounce } from '@sourcegraph/wildcard'
+import { screenReaderAnnounce, Typography } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -73,14 +73,14 @@ export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>>
 
     return (
         <div className={classNames('add-user-email-form', className)}>
-            <label
+            <Typography.Label
                 htmlFor="AddUserEmailForm-email"
                 className={classNames('align-self-start', {
                     'text-danger font-weight-bold': emailState.kind === 'INVALID',
                 })}
             >
                 Add email address
-            </label>
+            </Typography.Label>
             {/* eslint-disable-next-line react/forbid-elements */}
             <form className="form-inline" onSubmit={onSubmit} noValidate={true}>
                 <LoaderInput

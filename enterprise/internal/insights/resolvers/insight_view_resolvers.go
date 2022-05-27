@@ -154,14 +154,14 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 
 func (i *insightViewResolver) Dashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) graphqlbackend.InsightsDashboardConnectionResolver {
 	return &dashboardConnectionResolver{baseInsightResolver: i.baseInsightResolver,
-		orgStore:         database.Orgs(i.postgresDB),
+		orgStore:         i.postgresDB.Orgs(),
 		args:             args,
 		withViewUniqueID: &i.view.UniqueID,
 	}
 }
 
 func filterRepositories(ctx context.Context, filters types.InsightViewFilters, repositories []string, scLoader SearchContextLoader) ([]string, error) {
-	matches := make(map[string]interface{})
+	matches := make(map[string]any)
 
 	// we need to "unwrap" the search contexts and extract the regexps that compose
 	// the Sourcegraph query filters. Then we will union these sets of included /
@@ -424,7 +424,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 
 	if len(dashboardIds) > 0 {
 		if args.Input.Dashboards != nil {
-			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, database.Orgs(r.postgresDB))
+			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, r.postgresDB.Orgs())
 			if err != nil {
 				return nil, err
 			}
@@ -599,7 +599,7 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 
 	if len(dashboardIds) > 0 {
 		if args.Input.Dashboards != nil {
-			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, database.Orgs(r.postgresDB))
+			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, r.postgresDB.Orgs())
 			if err != nil {
 				return nil, err
 			}
@@ -715,7 +715,7 @@ func emptyIfNil(in *string) string {
 
 // A dummy type to represent the GraphQL union InsightTimeScope
 type insightTimeScopeUnionResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 // ToInsightIntervalTimeScope is used by the GraphQL library to resolve type fragments for unions
@@ -726,7 +726,7 @@ func (r *insightTimeScopeUnionResolver) ToInsightIntervalTimeScope() (graphqlbac
 
 // A dummy type to represent the GraphQL union InsightPresentation
 type insightPresentationUnionResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 // ToLineChartInsightViewPresentation is used by the GraphQL library to resolve type fragments for unions
@@ -743,7 +743,7 @@ func (r *insightPresentationUnionResolver) ToPieChartInsightViewPresentation() (
 
 // A dummy type to represent the GraphQL union InsightDataSeriesDefinition
 type insightDataSeriesDefinitionUnionResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 // ToSearchInsightDataSeriesDefinition is used by the GraphQL library to resolve type fragments for unions
@@ -810,7 +810,7 @@ func (d *InsightViewQueryConnectionResolver) PageInfo(ctx context.Context) (*gra
 
 func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) ([]types.Insight, string, error) {
 	r.once.Do(func() {
-		orgStore := database.Orgs(r.postgresDB)
+		orgStore := r.postgresDB.Orgs()
 
 		args := store.InsightQueryArgs{}
 		if r.args.After != nil {

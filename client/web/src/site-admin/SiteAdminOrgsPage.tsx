@@ -11,7 +11,7 @@ import { Subject } from 'rxjs'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -125,22 +125,24 @@ export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<
         <div className="site-admin-orgs-page">
             <PageTitle title="Organizations - Admin" />
             <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2 className="mb-0">Organizations</h2>
+                <Typography.H2 className="mb-0">Organizations</Typography.H2>
                 <Button to="/organizations/new" className="test-create-org-button" variant="primary" as={Link}>
                     <Icon as={AddIcon} /> Create organization
                 </Button>
             </div>
-            <p>
+            <Text>
                 An organization is a set of users with associated configuration. See{' '}
                 <Link to="/help/admin/organizations">Sourcegraph documentation</Link> for information about configuring
                 organizations.
-            </p>
+            </Text>
             {window.context.sourcegraphDotComMode ? (
                 <>
                     <Alert variant="info">Only organization members can view & modify organization settings.</Alert>
-                    <h3>Enable early access</h3>
+                    <Typography.H3>Enable early access</Typography.H3>
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                        <p>Enable early access for organization code host connections and repositories on Cloud.</p>
+                        <Text>
+                            Enable early access for organization code host connections and repositories on Cloud.
+                        </Text>
                         <Button to="./organizations/early-access-orgs-code" variant="primary" outline={true} as={Link}>
                             Enable early access
                         </Button>

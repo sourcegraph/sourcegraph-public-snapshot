@@ -41,6 +41,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -114,9 +115,9 @@ func main() {
 	}
 	db := database.NewDB(sqlDB)
 
-	repoStore := database.Repos(db)
+	repoStore := db.Repos()
 	depsSvc := livedependencies.GetService(db, nil)
-	externalServiceStore := database.ExternalServices(db)
+	externalServiceStore := db.ExternalServices()
 
 	err = keyring.Init(ctx)
 	if err != nil {
@@ -377,7 +378,7 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", errors.Wrap(err, "new authenticator with GitHub App")
 	}
 
-	client := github.NewV3Client(svc.URN(), apiURL, auther, cli)
+	client := github.NewV3Client(log.Scoped("github.v3", "github v3 client"), svc.URN(), apiURL, auther, cli)
 
 	token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, externalServiceStore, svc, client, installationID)
 	if err != nil {
@@ -409,7 +410,7 @@ func getVCSSyncer(
 		return nil, errors.Wrap(err, "get repository")
 	}
 
-	extractOptions := func(connection interface{}) (string, error) {
+	extractOptions := func(connection any) (string, error) {
 		for _, info := range r.Sources {
 			extSvc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
 			if err != nil {
@@ -450,7 +451,8 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		return server.NewNpmPackagesSyncer(c, depsSvc, nil, urn), nil
+		cli := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.ExternalDoer)
+		return server.NewNpmPackagesSyncer(c, depsSvc, cli), nil
 	case extsvc.TypeGoModules:
 		var c schema.GoModulesConnection
 		urn, err := extractOptions(&c)

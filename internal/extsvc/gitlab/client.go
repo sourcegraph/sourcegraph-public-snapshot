@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -51,7 +50,7 @@ func init() {
 	}()
 }
 
-func trace(msg string, ctx ...interface{}) {
+func trace(msg string, ctx ...any) {
 	if atomic.LoadInt32(&traceEnabled) == 1 {
 		log15.Info(fmt.Sprintf("TRACE %s", msg), ctx...)
 	}
@@ -175,7 +174,7 @@ type Client struct {
 	projCache        *rcache.Cache
 	Auth             auth.Authenticator
 	rateLimitMonitor *ratelimit.Monitor
-	rateLimiter      *rate.Limiter // Our internal rate limiter
+	rateLimiter      *ratelimit.InstrumentedLimiter // Our internal rate limiter
 }
 
 // newClient creates a new GitLab API client with an optional personal access token to authenticate requests.
@@ -221,13 +220,13 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 
 // do is the default method for making API requests and will prepare the correct
 // base path.
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (responseHeader http.Header, responseCode int, err error) {
+func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
 	return c.doWithBaseURL(ctx, req, result)
 }
 
 // doWithBaseURL will not amend the request URL.
-func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result interface{}) (responseHeader http.Header, responseCode int, err error) {
+func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	if c.Auth != nil {
 		if err := c.Auth.Authenticate(req); err != nil {

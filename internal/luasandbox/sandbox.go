@@ -104,7 +104,7 @@ func makeScopedLoadfile(state *lua.LState, fs FS) *lua.LFunction {
 }
 
 // Call invokes the given function bound to this sandbox within the sandbox.
-func (s *Sandbox) Call(ctx context.Context, opts RunOptions, luaFunction *lua.LFunction, args ...interface{}) (retValue lua.LValue, err error) {
+func (s *Sandbox) Call(ctx context.Context, opts RunOptions, luaFunction *lua.LFunction, args ...any) (retValue lua.LValue, err error) {
 	ctx, _, endObservation := s.operations.call.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -129,7 +129,7 @@ func (s *Sandbox) Call(ctx context.Context, opts RunOptions, luaFunction *lua.LF
 // Each yield from the coroutine will be collected in the output slide and returned to
 // the caller. This method does not pass values back into the coroutine when resuming
 // execution.
-func (s *Sandbox) CallGenerator(ctx context.Context, opts RunOptions, luaFunction *lua.LFunction, args ...interface{}) (retValues []lua.LValue, err error) {
+func (s *Sandbox) CallGenerator(ctx context.Context, opts RunOptions, luaFunction *lua.LFunction, args ...any) (retValues []lua.LValue, err error) {
 	ctx, _, endObservation := s.operations.callGenerator.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

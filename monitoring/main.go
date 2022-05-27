@@ -46,6 +46,10 @@ func main() {
 		definitions.Zoekt(),
 		definitions.Prometheus(),
 		definitions.Executor(),
+		definitions.Containers(),
+		definitions.CodeIntelAutoIndexing(),
+		definitions.CodeIntelUploads(),
+		definitions.CodeIntelPolicies(),
 	); err != nil {
 		// Rely on the Generate function doing logging, so just exit with an appropriate
 		// error code here.

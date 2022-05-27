@@ -58,7 +58,7 @@ type FakeChangesetSource struct {
 
 	// The metadata the FakeChangesetSource should set on the created/updated
 	// Changeset with changeset.SetMetadata.
-	FakeMetadata interface{}
+	FakeMetadata any
 
 	// Whether or not the changeset already ChangesetExists on the code host at the time
 	// when CreateChangeset is called.

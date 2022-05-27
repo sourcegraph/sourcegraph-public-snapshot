@@ -40,7 +40,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -249,15 +248,15 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 	}()
 
 	// Blame the first line match.
-	if len(fm.LineMatches) == 0 {
+	if len(fm.MultilineMatches) == 0 {
 		// No line match
 		return time.Time{}, nil
 	}
-	lm := fm.LineMatches[0]
-	hunks, err := git.BlameFile(ctx, sr.db, fm.Repo.Name, fm.Path, &git.BlameOptions{
+	mm := fm.MultilineMatches[0]
+	hunks, err := gitserver.NewClient(sr.db).BlameFile(ctx, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
 		NewestCommit: fm.CommitID,
-		StartLine:    int(lm.LineNumber),
-		EndLine:      int(lm.LineNumber),
+		StartLine:    mm.Range.Start.Line,
+		EndLine:      mm.Range.Start.Line,
 	}, authz.DefaultSubRepoPermsChecker)
 	if err != nil {
 		return time.Time{}, err
@@ -375,7 +374,7 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 			switch {
 			case si.PatternType == query.SearchTypeStructural:
 				types = append(types, "structural")
-			case si.PatternType == query.SearchTypeLiteral:
+			case si.PatternType == query.SearchTypeLiteralDefault:
 				types = append(types, "literal")
 			case si.PatternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
@@ -599,7 +598,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err != nil {
 			return nil, err
 		}
-		j, err := jobutil.ToSearchJob(r.SearchInputs, b)
+		j, err := jobutil.NewBasicJob(r.SearchInputs, b)
 		if err != nil {
 			return nil, err
 		}

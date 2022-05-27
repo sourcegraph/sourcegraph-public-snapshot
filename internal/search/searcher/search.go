@@ -2,11 +2,11 @@ package searcher
 
 import (
 	"context"
-	"fmt"
 	"time"
+	"unicode/utf8"
 
 	"github.com/inconshreveable/log15"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -21,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // A global limiter on number of concurrent searcher searches.
@@ -47,12 +47,9 @@ type SearcherJob struct {
 }
 
 // Run calls the searcher service on a set of repositories.
-func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "searcher.Run", fmt.Sprintf("query: %s", s.PatternInfo.Pattern))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
+	defer func() { finish(alert, err) }()
 
 	var fetchTimeout time.Duration
 	if len(s.Repos) == 1 || s.UseFullDeadline {
@@ -71,8 +68,8 @@ func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, strea
 	}
 
 	tr.LogFields(
-		otlog.Int64("fetch_timeout_ms", fetchTimeout.Milliseconds()),
-		otlog.Int64("repos_count", int64(len(s.Repos))),
+		log.Int64("fetch_timeout_ms", fetchTimeout.Milliseconds()),
+		log.Int64("repos_count", int64(len(s.Repos))),
 	)
 
 	if len(s.Repos) == 0 {
@@ -114,7 +111,7 @@ func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, strea
 
 					repoLimitHit, err := searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
-						tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
+						tr.LogFields(log.String("repo", string(repoRev.Repo.Name)), log.Error(err), log.Bool("timeout", errcode.IsTimeout(err)), log.Bool("temporary", errcode.IsTemporary(err)))
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
@@ -138,6 +135,15 @@ func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, strea
 
 func (s *SearcherJob) Name() string {
 	return "SearcherJob"
+}
+
+func (s *SearcherJob) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("patternInfo", s.PatternInfo),
+		log.Int("numRepos", len(s.Repos)),
+		log.Bool("indexed", s.Indexed),
+		log.Bool("useFullDeadline", s.UseFullDeadline),
+	}
 }
 
 var MockSearchFilesInRepo func(
@@ -170,7 +176,7 @@ func searchFilesInRepo(
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commit, err := git.ResolveRevision(ctx, db, gitserverRepo, rev, git.ResolveRevisionOptions{NoEnsureRevision: true})
+	commit, err := gitserver.NewClient(db).ResolveRevision(ctx, gitserverRepo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		return false, err
 	}
@@ -203,19 +209,55 @@ func searchFilesInRepo(
 
 // newToMatches returns a closure that converts []*protocol.FileMatch to []result.Match.
 func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func([]*protocol.FileMatch) []result.Match {
+	runeOffsetToByteOffset := func(buf string, n int) int {
+		idx := 0
+		for i := 0; i < n; i++ {
+			_, count := utf8.DecodeRuneInString(buf)
+			buf = buf[count:]
+			idx += count
+		}
+		return idx
+	}
+
 	return func(searcherMatches []*protocol.FileMatch) []result.Match {
 		matches := make([]result.Match, 0, len(searcherMatches))
 		for _, fm := range searcherMatches {
-			lineMatches := make([]*result.LineMatch, 0, len(fm.LineMatches))
+			multilineMatches := make([]result.MultilineMatch, 0, len(fm.LineMatches))
 			for _, lm := range fm.LineMatches {
-				ranges := make([][2]int32, 0, len(lm.OffsetAndLengths))
 				for _, ol := range lm.OffsetAndLengths {
-					ranges = append(ranges, [2]int32{int32(ol[0]), int32(ol[1])})
+					offset, length := ol[0], ol[1]
+					multilineMatches = append(multilineMatches, result.MultilineMatch{
+						Preview: lm.Preview,
+						Range: result.Range{
+							Start: result.Location{
+								Offset: lm.LineOffset + runeOffsetToByteOffset(lm.Preview, offset),
+								Line:   lm.LineNumber,
+								Column: offset,
+							},
+							End: result.Location{
+								Offset: lm.LineOffset + runeOffsetToByteOffset(lm.Preview, offset+length),
+								Line:   lm.LineNumber,
+								Column: offset + length,
+							},
+						},
+					})
 				}
-				lineMatches = append(lineMatches, &result.LineMatch{
-					Preview:          lm.Preview,
-					OffsetAndLengths: ranges,
-					LineNumber:       int32(lm.LineNumber),
+			}
+			for _, mm := range fm.MultilineMatches {
+				multilineMatches = append(multilineMatches, result.MultilineMatch{
+					Preview: mm.Preview,
+					Range: result.Range{
+						Start: result.Location{
+							Offset: int(mm.Start.Offset),
+							Line:   int(mm.Start.Line),
+							Column: int(mm.Start.Column),
+						},
+						End: result.Location{
+							Offset: int(mm.End.Offset),
+							Line:   int(mm.End.Line),
+							Column: int(mm.End.Column),
+						},
+					},
 				})
 			}
 
@@ -226,8 +268,8 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 					CommitID: commit,
 					InputRev: rev,
 				},
-				LineMatches: lineMatches,
-				LimitHit:    fm.LimitHit,
+				MultilineMatches: multilineMatches,
+				LimitHit:         fm.LimitHit,
 			})
 		}
 		return matches

@@ -16,6 +16,7 @@ import (
 	"golang.org/x/oauth2"
 
 	sgslack "github.com/sourcegraph/sourcegraph/dev/sg/internal/slack"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
@@ -30,7 +31,6 @@ var auditCommand = &cli.Command{
 	ArgsUsage: "[target]",
 	Hidden:    true,
 	Category:  CategoryCompany,
-	Action:    suggestSubcommandsAction,
 	Subcommands: []*cli.Command{{
 		Name:  "pr",
 		Usage: "Display audit trail for pull requests",
@@ -77,7 +77,7 @@ var auditCommand = &cli.Command{
 				if err != nil {
 					return err
 				}
-				writePrettyMarkdown(sb.String())
+				std.Out.WriteMarkdown(sb.String())
 			case "markdown":
 				err = formatMarkdown(prAuditIssues, os.Stdout)
 				if err != nil {

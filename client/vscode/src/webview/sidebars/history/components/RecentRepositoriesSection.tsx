@@ -9,7 +9,7 @@ import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
-import { Icon, useObservable } from '@sourcegraph/wildcard'
+import { Icon, Typography, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'
@@ -65,13 +65,15 @@ export const RecentRepositoriesSection: React.FunctionComponent<React.PropsWithC
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
                 onClick={() => setCollapsed(!collapsed)}
+                aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent files`}
             >
-                <h5 className="flex-grow-1">Recent Repositories</h5>
-                {collapsed ? (
-                    <Icon className="mr-1" as={ChevronLeftIcon} />
-                ) : (
-                    <Icon className="mr-1" as={ChevronDownIcon} />
-                )}
+                <Typography.H5 className="flex-grow-1">Recent Repositories</Typography.H5>
+                <Icon
+                    role="img"
+                    aria-hidden={true}
+                    className="mr-1"
+                    as={collapsed ? ChevronLeftIcon : ChevronDownIcon}
+                />
             </button>
 
             {!collapsed && (

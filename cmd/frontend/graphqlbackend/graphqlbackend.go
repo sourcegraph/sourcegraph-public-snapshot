@@ -49,7 +49,7 @@ type prometheusTracer struct {
 	tracer trace.OpenTracingTracer
 }
 
-func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
+func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
 	start := time.Now()
 	var finish trace.TraceQueryFinishFunc
 	if ot.ShouldTrace(ctx) {
@@ -120,7 +120,7 @@ VARIABLES
 	}
 }
 
-func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]interface{}) (context.Context, trace.TraceFieldFinishFunc) {
+func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]any) (context.Context, trace.TraceFieldFinishFunc) {
 	// We don't call into t.OpenTracingTracer.TraceField since it generates too many spans which is really hard to read.
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
@@ -667,7 +667,7 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 		args.URI = args.Name
 	}
 
-	repo, err := database.Phabricator(r.db).GetByName(ctx, api.RepoName(*args.URI))
+	repo, err := r.db.Phabricator().GetByName(ctx, api.RepoName(*args.URI))
 	if err != nil {
 		return nil, err
 	}
@@ -738,5 +738,5 @@ func (r *schemaResolver) CodeHostSyncDue(ctx context.Context, args *struct {
 		}
 		ids[i] = id
 	}
-	return database.ExternalServices(r.db).SyncDue(ctx, ids, time.Duration(args.Seconds)*time.Second)
+	return r.db.ExternalServices().SyncDue(ctx, ids, time.Duration(args.Seconds)*time.Second)
 }

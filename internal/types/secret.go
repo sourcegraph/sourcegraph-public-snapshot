@@ -39,6 +39,7 @@ func (e *ExternalService) RedactedConfig() (string, error) {
 		es.redactString(c.Token, "token")
 	case *schema.GitLabConnection:
 		es.redactString(c.Token, "token")
+		es.redactString(c.TokenOauthRefresh, "token.oauth.refresh")
 	case *schema.GerritConnection:
 		es.redactString(c.Password, "password")
 	case *schema.BitbucketServerConnection:
@@ -125,6 +126,7 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 	case *schema.GitLabConnection:
 		o := oldCfg.(*schema.GitLabConnection)
 		es.unredactString(c.Token, o.Token, "token")
+		es.unredactString(c.TokenOauthRefresh, o.TokenOauthRefresh, "token.oauth.refresh")
 	case *schema.BitbucketServerConnection:
 		o := oldCfg.(*schema.BitbucketServerConnection)
 		es.unredactString(c.Password, o.Password, "password")
@@ -197,23 +199,23 @@ func (es edits) apply(input string) (output string, err error) {
 	return
 }
 
-func (es *edits) edit(v interface{}, path ...interface{}) {
+func (es *edits) edit(v any, path ...any) {
 	*es = append(*es, edit{jsonx.MakePath(path...), v})
 }
 
-func (es *edits) redactString(s string, path ...interface{}) {
+func (es *edits) redactString(s string, path ...any) {
 	if s != "" {
 		es.edit(redactedString(s), path...)
 	}
 }
 
-func (es *edits) unredactString(new, old string, path ...interface{}) {
+func (es *edits) unredactString(new, old string, path ...any) {
 	if new != "" && old != "" {
 		es.edit(unredactedString(new, old), path...)
 	}
 }
 
-func (es *edits) redactURL(s string, path ...interface{}) error {
+func (es *edits) redactURL(s string, path ...any) error {
 	if s == "" {
 		return nil
 	}
@@ -258,7 +260,7 @@ func (es *edits) unredactURLs(new, old []string) (err error) {
 	return nil
 }
 
-func (es *edits) unredactURL(new, old string, path ...interface{}) error {
+func (es *edits) unredactURL(new, old string, path ...any) error {
 	if new == "" || old == "" {
 		return nil
 	}
@@ -274,7 +276,7 @@ func (es *edits) unredactURL(new, old string, path ...interface{}) error {
 
 type edit struct {
 	path  jsonx.Path
-	value interface{}
+	value any
 }
 
 func (p edit) apply(input string) (string, error) {

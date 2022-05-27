@@ -43,7 +43,7 @@ func clearIndexesOnce(_ context.Context, client *gqltestutil.Client) (requery bo
 		// TODO - display repo@commit instead
 		fmt.Printf("[%5s] %s Deleting index %s\n", internal.TimeSince(start), internal.EmojiLightbulb, index.ID)
 
-		if err := client.GraphQL(internal.SourcegraphAccessToken, deleteIndexQuery, map[string]interface{}{"id": index.ID}, nil); err != nil {
+		if err := client.GraphQL(internal.SourcegraphAccessToken, deleteIndexQuery, map[string]any{"id": index.ID}, nil); err != nil {
 			return false, err
 		}
 
@@ -119,7 +119,7 @@ func clearUploadsOnce(_ context.Context, client *gqltestutil.Client) (requery bo
 			// TODO - display repo@commit instead
 			fmt.Printf("[%5s] %s Deleting upload %s\n", internal.TimeSince(start), internal.EmojiLightbulb, upload.ID)
 
-			if err := client.GraphQL(internal.SourcegraphAccessToken, deleteUploadQuery, map[string]interface{}{"id": upload.ID}, nil); err != nil {
+			if err := client.GraphQL(internal.SourcegraphAccessToken, deleteUploadQuery, map[string]any{"id": upload.ID}, nil); err != nil {
 				return false, err
 			}
 		}

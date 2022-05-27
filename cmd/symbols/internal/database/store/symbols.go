@@ -85,7 +85,7 @@ func chunksOf1000(strings []string) [][]string {
 }
 
 func (s *store) WriteSymbols(ctx context.Context, symbolOrErrors <-chan parser.SymbolOrError) (err error) {
-	rows := make(chan []interface{})
+	rows := make(chan []any)
 	group, ctx := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
@@ -133,8 +133,8 @@ func (s *store) WriteSymbols(ctx context.Context, symbolOrErrors <-chan parser.S
 	return group.Wait()
 }
 
-func symbolToRow(symbol result.Symbol) []interface{} {
-	return []interface{}{
+func symbolToRow(symbol result.Symbol) []any {
+	return []any{
 		symbol.Name,
 		strings.ToLower(symbol.Name),
 		symbol.Path,

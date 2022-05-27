@@ -12,8 +12,6 @@ import (
 	"time"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -21,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // V3Client is a caching GitHub API client for GitHub's REST API v3.
@@ -30,6 +29,8 @@ import (
 // same Redis cache entries (provided they were computed with the same API URL and access
 // token). The cache keys are agnostic of the http.RoundTripper transport.
 type V3Client struct {
+	log log.Logger
+
 	// The URN of the external service that the client is derived from.
 	urn string
 
@@ -55,7 +56,7 @@ type V3Client struct {
 	rateLimitMonitor *ratelimit.Monitor
 
 	// rateLimit is our self imposed rate limiter
-	rateLimit *rate.Limiter
+	rateLimit *ratelimit.InstrumentedLimiter
 
 	// resource specifies which API this client is intended for.
 	// One of 'rest' or 'search'.
@@ -67,8 +68,8 @@ type V3Client struct {
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V3Client.apiURL.
-func NewV3Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
-	return newV3Client(urn, apiURL, a, "rest", cli)
+func NewV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
+	return newV3Client(logger, urn, apiURL, a, "rest", cli)
 }
 
 // NewV3SearchClient creates a new GitHub API client intended for use with the
@@ -76,11 +77,11 @@ func NewV3Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V3Client.apiURL.
-func NewV3SearchClient(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
-	return newV3Client(urn, apiURL, a, "search", cli)
+func NewV3SearchClient(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
+	return newV3Client(logger, urn, apiURL, a, "search", cli)
 }
 
-func newV3Client(urn string, apiURL *url.URL, a auth.Authenticator, resource string, cli httpcli.Doer) *V3Client {
+func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenticator, resource string, cli httpcli.Doer) *V3Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
@@ -109,6 +110,10 @@ func newV3Client(urn string, apiURL *url.URL, a auth.Authenticator, resource str
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, resource, &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V3Client{
+		log: logger.With(
+			log.String("urn", urn),
+			log.String("resource", resource),
+		),
 		urn:              urn,
 		apiURL:           apiURL,
 		githubDotCom:     urlIsGitHubDotCom(apiURL),
@@ -124,7 +129,7 @@ func newV3Client(urn string, apiURL *url.URL, a auth.Authenticator, resource str
 // the current V3Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
 func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
-	return newV3Client(c.urn, c.apiURL, a, c.resource, c.httpClient)
+	return newV3Client(c.log, c.urn, c.apiURL, a, c.resource, c.httpClient)
 }
 
 // RateLimitMonitor exposes the rate limit monitor.
@@ -132,7 +137,7 @@ func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
 	return c.rateLimitMonitor
 }
 
-func (c *V3Client) get(ctx context.Context, requestURI string, result interface{}) (*httpResponseState, error) {
+func (c *V3Client) get(ctx context.Context, requestURI string, result any) (*httpResponseState, error) {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
 		return nil, err
@@ -142,7 +147,7 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result interface{
 }
 
 //nolint:unparam // Return *httpResponseState for consistency with other methods
-func (c *V3Client) post(ctx context.Context, requestURI string, payload, result interface{}) (*httpResponseState, error) {
+func (c *V3Client) post(ctx context.Context, requestURI string, payload, result any) (*httpResponseState, error) {
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling payload")
@@ -158,7 +163,7 @@ func (c *V3Client) post(ctx context.Context, requestURI string, payload, result 
 	return c.request(ctx, req, result)
 }
 
-func (c *V3Client) request(ctx context.Context, req *http.Request, result interface{}) (*httpResponseState, error) {
+func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (*httpResponseState, error) {
 	// Include node_id (GraphQL ID) in response. See
 	// https://developer.github.com/changes/2017-12-19-graphql-node-id/.
 	//
@@ -184,11 +189,11 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result interf
 			return nil, ctx.Err()
 		}
 
-		log15.Warn("internal rate limiter error", "error", err, "urn", c.urn)
+		c.log.Warn("internal rate limiter error", log.Error(err))
 		return nil, errInternalRateLimitExceeded
 	}
 
-	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+	return doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
 }
 
 // newRepoCache creates a new cache for GitHub repository metadata. The backing
@@ -232,6 +237,10 @@ func (e *APIError) AccountSuspended() bool {
 	return e.Code == http.StatusForbidden && strings.Contains(e.Message, "account was suspended")
 }
 
+func (e *APIError) UnavailableForLegalReasons() bool {
+	return e.Code == http.StatusUnavailableForLegalReasons
+}
+
 func (e *APIError) Temporary() bool { return IsRateLimitExceeded(e) }
 
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
@@ -250,7 +259,7 @@ func (c *V3Client) GetVersion(ctx context.Context) (string, error) {
 		return "unknown", nil
 	}
 
-	var empty interface{}
+	var empty any
 
 	respState, err := c.get(ctx, "/", &empty)
 	if err != nil {
@@ -366,6 +375,8 @@ func (t *restTeam) convert() *Team {
 	}
 }
 
+var MockGetAuthenticatedUserTeams func(ctx context.Context, page int) ([]*Team, bool, int, error)
+
 // GetAuthenticatedUserTeams lists GitHub teams affiliated with the client token.
 //
 // The page is the page of results to return, and is 1-indexed (so the first call should
@@ -376,15 +387,21 @@ func (c *V3Client) GetAuthenticatedUserTeams(ctx context.Context, page int) (
 	rateLimitCost int,
 	err error,
 ) {
+	if MockGetAuthenticatedUserTeams != nil {
+		return MockGetAuthenticatedUserTeams(ctx, 1)
+	}
+
 	var restTeams []*restTeam
 	_, err = c.get(ctx, fmt.Sprintf("/user/teams?per_page=100&page=%d", page), &restTeams)
 	if err != nil {
 		return
 	}
+
 	teams = make([]*Team, len(restTeams))
 	for i, t := range restTeams {
 		teams[i] = t.convert()
 	}
+
 	return teams, len(teams) > 0, 1, err
 }
 

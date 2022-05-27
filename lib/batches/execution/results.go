@@ -56,7 +56,7 @@ type AfterStepResult struct {
 	// Diff is the cumulative `git diff` after executing the Step.
 	Diff string `json:"diff"`
 	// Outputs is a copy of the Outputs after executing the Step.
-	Outputs map[string]interface{} `json:"outputs"`
+	Outputs map[string]any `json:"outputs"`
 	// PreviousStepResult is the StepResult of the step before Step, if
 	// StepIndex != 0.
 	PreviousStepResult StepResult `json:"previousStepResult"`
@@ -71,7 +71,7 @@ type Result struct {
 	ChangedFiles *git.Changes `json:"changedFiles"`
 
 	// Outputs are the outputs produced by all steps.
-	Outputs map[string]interface{} `json:"outputs"`
+	Outputs map[string]any `json:"outputs"`
 
 	// Path relative to the repository's root directory in which the steps
 	// have been executed.

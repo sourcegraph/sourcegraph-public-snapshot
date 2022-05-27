@@ -5,7 +5,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Button, Grid } from '..'
+import { Button, Grid, Typography, Text } from '..'
 
 import { Tooltip } from './Tooltip'
 import { TooltipController } from './TooltipController'
@@ -41,9 +41,9 @@ export default config
 
 export const Basic: Story = () => (
     <>
-        <p>
+        <Text>
             You can <strong data-tooltip="Tooltip 1">hover me</strong> or <strong data-tooltip="Tooltip 2">me</strong>.
-        </p>
+        </Text>
     </>
 )
 
@@ -55,8 +55,8 @@ Basic.parameters = {
 
 export const Positions: Story = () => (
     <>
-        <h1>Tooltip</h1>
-        <h2>Positions</h2>
+        <Typography.H1>Tooltip</Typography.H1>
+        <Typography.H2>Positions</Typography.H2>
 
         <Grid columnCount={4}>
             <div>
@@ -81,7 +81,7 @@ export const Positions: Story = () => (
             </div>
         </Grid>
 
-        <h2>Max width</h2>
+        <Typography.H2>Max width</Typography.H2>
         <Grid columnCount={1}>
             <div>
                 <Button
@@ -121,12 +121,12 @@ export const Pinned: Story = () => {
             <span data-tooltip="My tooltip" ref={clickElement}>
                 Example
             </span>
-            <p>
+            <Text>
                 <small>
                     (A pinned tooltip is shown when the target element is rendered, without any user interaction
                     needed.)
                 </small>
-            </p>
+            </Text>
         </>
     )
 }
@@ -159,14 +159,14 @@ const ForceUpdateTooltip = () => {
 
     return (
         <>
-            <h2>
-                Force update tooltip with <code>TooltipController.forceUpdate()</code>
-            </h2>
-            <p>
+            <Typography.H2>
+                Force update tooltip with <Typography.Code>TooltipController.forceUpdate()</Typography.Code>
+            </Typography.H2>
+            <Text>
                 <Button variant="primary" onClick={onClick} data-tooltip={copied ? 'Copied!' : 'Click to copy'}>
                     Button
                 </Button>
-            </p>
+            </Text>
         </>
     )
 }

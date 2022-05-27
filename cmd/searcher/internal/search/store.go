@@ -9,14 +9,12 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"log"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/bmatcuk/doublestar"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
@@ -29,8 +27,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // maxFileSize is the limit on file size in bytes. Only files smaller
@@ -79,6 +79,12 @@ type Store struct {
 	// MaxCacheSizeBytes.
 	MaxCacheSizeBytes int64
 
+	// Log is the Logger to use.
+	Log log.Logger
+
+	// ObservationContext is used to configure observability in diskcache.
+	ObservationContext *observation.Context
+
 	// once protects Start
 	once sync.Once
 
@@ -109,6 +115,7 @@ func (s *Store) Start() {
 		s.cache = diskcache.NewStore(s.Path, "store",
 			diskcache.WithBackgroundTimeout(10*time.Minute),
 			diskcache.WithBeforeEvict(s.zipCache.delete),
+			diskcache.WithObservationContext(s.ObservationContext),
 		)
 		_ = os.MkdirAll(s.Path, 0700)
 		metrics.MustRegisterDiskMonitor(s.Path)
@@ -180,7 +187,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 			}
 		}
 		if err != nil {
-			log15.Error("failed to fetch archive", "repo", repo, "commit", commit, "duration", time.Since(start), "error", err)
+			s.Log.Error("failed to fetch archive", log.String("repo", string(repo)), log.String("commit", string(commit)), log.Duration("duration", time.Since(start)), log.Error(err))
 		}
 		resC <- result{path, err, cacheHit}
 	}()
@@ -392,7 +399,7 @@ func (s *Store) watchAndEvict() {
 
 		stats, err := s.cache.Evict(s.MaxCacheSizeBytes)
 		if err != nil {
-			log.Printf("failed to Evict: %s", err)
+			s.Log.Error("failed to Evict", log.Error(err))
 			continue
 		}
 		cacheSizeBytes.Set(float64(stats.CacheSize))
@@ -419,7 +426,7 @@ func (s *Store) watchConfig() {
 func ignoreSizeMax(name string, patterns []string) bool {
 	for _, pattern := range patterns {
 		pattern = strings.TrimSpace(pattern)
-		if m, _ := filepath.Match(pattern, name); m {
+		if m, _ := doublestar.Match(pattern, name); m {
 			return true
 		}
 	}

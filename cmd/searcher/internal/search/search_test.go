@@ -14,13 +14,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 type fileType int
@@ -239,7 +242,10 @@ abc.txt
 			return hdr.Name == "ignore.me"
 		}, nil
 	}
-	ts := httptest.NewServer(&search.Service{Store: s})
+	ts := httptest.NewServer(&search.Service{
+		Store: s,
+		Log:   s.Log,
+	})
 	defer ts.Close()
 
 	for i, test := range cases {
@@ -269,11 +275,7 @@ abc.txt
 			if len(test.want) > 0 {
 				test.want = test.want[1:]
 			}
-			if got != test.want {
-				d, err := testutil.Diff(test.want, got)
-				if err != nil {
-					t.Fatal(err)
-				}
+			if d := cmp.Diff(test.want, got); d != "" {
 				t.Fatalf("%s unexpected response:\n%s", test.arg.String(), d)
 			}
 		})
@@ -394,7 +396,10 @@ func TestSearch_badrequest(t *testing.T) {
 	}
 
 	store := newStore(t, nil)
-	ts := httptest.NewServer(&search.Service{Store: store})
+	ts := httptest.NewServer(&search.Service{
+		Store: store,
+		Log:   store.Log,
+	})
 	defer ts.Close()
 
 	for _, p := range cases {
@@ -517,6 +522,12 @@ func newStore(t *testing.T, files map[string]struct {
 			return r, nil
 		},
 		Path: t.TempDir(),
+		Log:  logtest.Scoped(t),
+
+		ObservationContext: &observation.Context{
+			Registerer: metrics.TestRegisterer,
+			Logger:     logtest.Scoped(t),
+		},
 	}
 }
 
@@ -532,7 +543,7 @@ func fetchTimeoutForCI(t *testing.T) string {
 func toString(m []protocol.FileMatch) string {
 	buf := new(bytes.Buffer)
 	for _, f := range m {
-		if len(f.LineMatches) == 0 {
+		if len(f.LineMatches) == 0 && len(f.MultilineMatches) == 0 {
 			buf.WriteString(f.Path)
 			buf.WriteByte('\n')
 		}
@@ -540,6 +551,14 @@ func toString(m []protocol.FileMatch) string {
 			buf.WriteString(f.Path)
 			buf.WriteByte(':')
 			buf.WriteString(strconv.Itoa(l.LineNumber + 1))
+			buf.WriteByte(':')
+			buf.WriteString(l.Preview)
+			buf.WriteByte('\n')
+		}
+		for _, l := range f.MultilineMatches {
+			buf.WriteString(f.Path)
+			buf.WriteByte(':')
+			buf.WriteString(strconv.Itoa(int(l.Start.Line) + 1))
 			buf.WriteByte(':')
 			buf.WriteString(l.Preview)
 			buf.WriteByte('\n')

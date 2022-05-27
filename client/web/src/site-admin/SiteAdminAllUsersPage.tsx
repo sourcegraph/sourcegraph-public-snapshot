@@ -13,7 +13,7 @@ import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { CopyableText } from '../components/CopyableText'
@@ -226,10 +226,10 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                 {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
                 {this.state.resetPasswordURL && (
                     <Alert className="mt-2" variant="success">
-                        <p>
+                        <Text>
                             Password was reset. You must manually send <strong>{this.props.node.username}</strong> this
                             reset link:
-                        </p>
+                        </Text>
                         <CopyableText text={this.state.resetPasswordURL} size={40} />
                     </Alert>
                 )}
@@ -415,7 +415,7 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
             <div className="site-admin-all-users-page">
                 <PageTitle title="Users - Admin" />
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h2 className="mb-0">Users</h2>
+                    <Typography.H2 className="mb-0">Users</Typography.H2>
                     <div>
                         <Button to="/site-admin/users/new" variant="primary" as={Link}>
                             <Icon as={AddIcon} /> Create user account

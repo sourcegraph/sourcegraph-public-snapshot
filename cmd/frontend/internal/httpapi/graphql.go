@@ -127,9 +127,9 @@ func serveGraphQL(schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInt
 }
 
 type graphQLQueryParams struct {
-	Query         string                 `json:"query"`
-	OperationName string                 `json:"operationName"`
-	Variables     map[string]interface{} `json:"variables"`
+	Query         string         `json:"query"`
+	OperationName string         `json:"operationName"`
+	Variables     map[string]any `json:"variables"`
 }
 
 type traceData struct {

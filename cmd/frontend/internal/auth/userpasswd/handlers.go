@@ -190,7 +190,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 		return
 	}
 
-	if err = database.Authz(db).GrantPendingPermissions(r.Context(), &database.GrantPendingPermissionsArgs{
+	if err = db.Authz().GrantPendingPermissions(r.Context(), &database.GrantPendingPermissionsArgs{
 		UserID: usr.ID,
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,
@@ -408,7 +408,7 @@ func HandleCheckUsernameTaken(db database.DB) func(w http.ResponseWriter, r *htt
 			return
 		}
 
-		_, err = database.Namespaces(db).GetByName(r.Context(), username)
+		_, err = db.Namespaces().GetByName(r.Context(), username)
 		if err == database.ErrNamespaceNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -422,7 +422,7 @@ func HandleCheckUsernameTaken(db database.DB) func(w http.ResponseWriter, r *htt
 	}
 }
 
-func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...interface{}) {
+func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...any) {
 	log15.Error(msg, errArgs...)
 	http.Error(w, msg, code)
 }

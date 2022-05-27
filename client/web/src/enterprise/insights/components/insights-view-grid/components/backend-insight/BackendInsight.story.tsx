@@ -5,10 +5,11 @@ import { Observable, of, throwError } from 'rxjs'
 import { delay } from 'rxjs/operators'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
-import { BackendInsightData, SearchBackendBasedInsight, SeriesChartContent } from '../../../../core'
+import { BackendInsightData, SearchBasedInsight, SeriesChartContent } from '../../../../core'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
 import {
     BackendInsight as BackendInsightType,
@@ -26,9 +27,10 @@ const defaultStory: Meta = {
 
 export default defaultStory
 
-const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
+const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
     id: 'searchInsights.insight.mock_backend_insight_id',
     title: 'Backend Insight Mock',
+    repositories: [],
     series: [],
     type: InsightType.SearchBased,
     executionType: InsightExecutionType.Backend,
@@ -138,37 +140,37 @@ const TestBackendInsight: React.FunctionComponent<React.PropsWithChildren<unknow
 export const BackendInsight: Story = () => (
     <section>
         <article>
-            <h2>Card</h2>
+            <Typography.H2>Card</Typography.H2>
             <CodeInsightsBackendStoryMock mocks={mockInsightAPI()}>
                 <TestBackendInsight />
             </CodeInsightsBackendStoryMock>
         </article>
         <article className="mt-3">
-            <h2>Card with delay API</h2>
+            <Typography.H2>Card with delay API</Typography.H2>
             <CodeInsightsBackendStoryMock mocks={mockInsightAPI({ delayAmount: 2000 })}>
                 <TestBackendInsight />
             </CodeInsightsBackendStoryMock>
         </article>
         <article className="mt-3">
-            <h2>Card backfilling data</h2>
+            <Typography.H2>Card backfilling data</Typography.H2>
             <CodeInsightsBackendStoryMock mocks={mockInsightAPI({ isFetchingHistoricalData: true })}>
                 <TestBackendInsight />
             </CodeInsightsBackendStoryMock>
         </article>
         <article className="mt-3">
-            <h2>Card no data</h2>
+            <Typography.H2>Card no data</Typography.H2>
             <CodeInsightsBackendStoryMock mocks={mockInsightAPI({ hasData: false })}>
                 <TestBackendInsight />
             </CodeInsightsBackendStoryMock>
         </article>
         <article className="mt-3">
-            <h2>Card insight syncing</h2>
+            <Typography.H2>Card insight syncing</Typography.H2>
             <CodeInsightsBackendStoryMock mocks={mockInsightAPI({ throwProcessingError: true })}>
                 <TestBackendInsight />
             </CodeInsightsBackendStoryMock>
         </article>
         <article className="mt-3">
-            <h2>Locked Card insight</h2>
+            <Typography.H2>Locked Card insight</Typography.H2>
             <CodeInsightsBackendStoryMock mocks={mockInsightAPI()}>
                 <BackendInsightView
                     style={{ width: 400, height: 400 }}

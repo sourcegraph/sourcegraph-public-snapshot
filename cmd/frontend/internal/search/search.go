@@ -83,7 +83,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Always send a final done event so clients know the stream is shutting
 	// down.
-	defer eventWriter.Event("done", map[string]interface{}{})
+	defer eventWriter.Event("done", map[string]any{})
 
 	// Log events to trace
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
@@ -427,7 +427,7 @@ func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo)
 func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) streamhttp.EventMatch {
 	if len(fm.Symbols) > 0 {
 		return fromSymbolMatch(fm, repoCache)
-	} else if len(fm.LineMatches) > 0 {
+	} else if len(fm.MultilineMatches) > 0 {
 		return fromContentMatch(fm, repoCache)
 	}
 	return fromPathMatch(fm, repoCache)
@@ -455,9 +455,10 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 }
 
 func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventContentMatch {
-	lineMatches := make([]streamhttp.EventLineMatch, 0, len(fm.LineMatches))
-	for _, lm := range fm.LineMatches {
-		lineMatches = append(lineMatches, streamhttp.EventLineMatch{
+	lineMatches := result.MultilineSliceAsLineMatchSlice(fm.MultilineMatches)
+	eventLineMatches := make([]streamhttp.EventLineMatch, 0, len(lineMatches))
+	for _, lm := range lineMatches {
+		eventLineMatches = append(eventLineMatches, streamhttp.EventLineMatch{
 			Line:             lm.Preview,
 			LineNumber:       lm.LineNumber,
 			OffsetAndLengths: lm.OffsetAndLengths,
@@ -470,7 +471,7 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 		RepositoryID: int32(fm.Repo.ID),
 		Repository:   string(fm.Repo.Name),
 		Commit:       string(fm.CommitID),
-		LineMatches:  lineMatches,
+		LineMatches:  eventLineMatches,
 	}
 
 	if fm.InputRev != nil {

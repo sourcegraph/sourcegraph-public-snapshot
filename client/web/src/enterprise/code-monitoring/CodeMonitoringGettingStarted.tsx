@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button, CardBody, Card, Icon } from '@sourcegraph/wildcard'
+import { Link, Button, CardBody, Card, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
@@ -75,13 +75,15 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                     className={classNames('mr-lg-5', styles.heroImage)}
                 />
                 <div className="align-self-center">
-                    <h2 className={classNames('mb-3', styles.heading)}>Proactively monitor changes to your codebase</h2>
-                    <p className={classNames('mb-4')}>
+                    <Typography.H2 className={classNames('mb-3', styles.heading)}>
+                        Proactively monitor changes to your codebase
+                    </Typography.H2>
+                    <Text className={classNames('mb-4')}>
                         With code monitoring, you can automatically track changes made across multiple code hosts and
                         repositories.
-                    </p>
+                    </Text>
 
-                    <h3>Common use cases</h3>
+                    <Typography.H3>Common use cases</Typography.H3>
                     <ul>
                         <li>Identify when bad patterns are committed </li>
                         <li>Identify use of deprecated libraries</li>
@@ -101,15 +103,15 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                 </div>
             </Card>
             <div>
-                <h3 className="mb-3">Example code monitors</h3>
+                <Typography.H3 className="mb-3">Example code monitors</Typography.H3>
 
                 <div className={classNames('mb-3', styles.startingPointsContainer)}>
                     {exampleCodeMonitors.map(monitor => (
                         <div className={styles.startingPoint} key={monitor.title}>
                             <Card className="h-100">
                                 <CardBody className="d-flex flex-column">
-                                    <h3>{monitor.title}</h3>
-                                    <p className="text-muted flex-grow-1">{monitor.description}</p>
+                                    <Typography.H3>{monitor.title}</Typography.H3>
+                                    <Text className="text-muted flex-grow-1">{monitor.description}</Text>
                                     <Link to={createCodeMonitorUrl(monitor)}>Create copy of monitor</Link>
                                 </CardBody>
                             </Card>
@@ -121,11 +123,11 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                 <div className="row">
                     <div className="col-4">
                         <div>
-                            <h4>Get started</h4>
-                            <p className="text-muted">
+                            <Typography.H4>Get started</Typography.H4>
+                            <Text className="text-muted">
                                 Craft searches that will monitor your code and trigger actions such as email
                                 notifications.
-                            </p>
+                            </Text>
                             <Link to="/help/code_monitoring" className="link">
                                 Code monitoring documentation
                             </Link>
@@ -133,11 +135,11 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                     </div>
                     <div className="col-4">
                         <div>
-                            <h4>Starting points and ideas</h4>
-                            <p className="text-muted">
+                            <Typography.H4>Starting points and ideas</Typography.H4>
+                            <Text className="text-muted">
                                 Find specific examples of useful code monitors to keep on top of security and
                                 consistency concerns.
-                            </p>
+                            </Text>
                             <Link to="/help/code_monitoring/how-tos/starting_points" className="link">
                                 Explore starting points
                             </Link>
@@ -146,10 +148,10 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                     {isSignedIn ? (
                         <div className="col-4">
                             <div>
-                                <h4>Questions and feedback</h4>
-                                <p className="text-muted">
+                                <Typography.H4>Questions and feedback</Typography.H4>
+                                <Text className="text-muted">
                                     Have a question or idea about code monitoring? We want to hear your feedback!
-                                </p>
+                                </Text>
                                 <Link to="mailto:feedback@sourcegraph.com" className="link">
                                     Share your thoughts
                                 </Link>
@@ -158,8 +160,8 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                     ) : (
                         <div className="col-4">
                             <Card className={styles.signUpCard}>
-                                <h4>Free for registered users</h4>
-                                <p className="text-muted">Sign up and build your first code monitor today.</p>
+                                <Typography.H4>Free for registered users</Typography.H4>
+                                <Text className="text-muted">Sign up and build your first code monitor today.</Text>
                                 <CodeMonitorSignUpLink
                                     className={styles.createButton}
                                     eventName="SignUpPLGMonitor_GettingStarted"

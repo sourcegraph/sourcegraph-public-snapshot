@@ -17,7 +17,16 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, useLocalStorage, useEventObservable, Link, Icon } from '@sourcegraph/wildcard'
+import {
+    Button,
+    LoadingSpinner,
+    useLocalStorage,
+    useEventObservable,
+    Link,
+    Icon,
+    Typography,
+    Text,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -131,33 +140,33 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
         ) : (
             <div className="registry-extension-new-release-page">
                 <PageTitle title="Publish new release" />
-                <h2>Publish new release</h2>
-                <p>
+                <Typography.H2>Publish new release</Typography.H2>
+                <Text>
                     Use the{' '}
                     <Link to="https://github.com/sourcegraph/src-cli" target="_blank" rel="noopener noreferrer">
-                        <code>src</code> CLI tool
+                        <Typography.Code>src</Typography.Code> CLI tool
                     </Link>{' '}
                     to publish a new release:
-                </p>
+                </Text>
                 <pre>
-                    <code>$ src extensions publish</code>
+                    <Typography.Code>$ src extensions publish</Typography.Code>
                 </pre>
                 {showEditor ? (
                     <>
                         <hr className="my-4" />
-                        <h2>Extension editor (experimental)</h2>
-                        <p>
+                        <Typography.H2>Extension editor (experimental)</Typography.H2>
+                        <Text>
                             Edit or paste in an extension JSON manifest and JavaScript bundle. The JavaScript bundle
                             source must be self-contained; dependency bundling and TypeScript transpilation is not yet
                             supported.
-                        </p>
+                        </Text>
                         <Form onSubmit={onSubmit} className="mb-3">
                             <div className="row">
                                 <div className="col-lg-6">
                                     <div className="form-group">
-                                        <label htmlFor="registry-extension-new-release-page__manifest">
-                                            <h3>Manifest</h3>
-                                        </label>
+                                        <Typography.Label htmlFor="registry-extension-new-release-page__manifest">
+                                            <Typography.H3>Manifest</Typography.H3>
+                                        </Typography.Label>
                                         <DynamicallyImportedMonacoSettingsEditor
                                             id="registry-extension-new-release-page__manifest"
                                             className="d-block"
@@ -173,9 +182,9 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                 </div>
                                 <div className="col-lg-6">
                                     <div className="form-group">
-                                        <label htmlFor="registry-extension-new-release-page__bundle">
-                                            <h3>Source</h3>
-                                        </label>
+                                        <Typography.Label htmlFor="registry-extension-new-release-page__bundle">
+                                            <Typography.H3>Source</Typography.H3>
+                                        </Typography.Label>
                                         {bundleOrError === undefined ? (
                                             <div>
                                                 <LoadingSpinner />

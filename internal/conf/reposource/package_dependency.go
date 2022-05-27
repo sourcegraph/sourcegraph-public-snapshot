@@ -36,6 +36,11 @@ type PackageDependency interface {
 	// RepoName provides a name that is "globally unique" for a Sourcegraph instance.
 	// The returned value is used for repo:... in queries.
 	RepoName() api.RepoName
+
+	// Description provides a human readable description of the package's purpose.
+	// May be empty.
+	Description() string
+
 	// Returns the git tag associated with the given dependency version, used
 	// rev: or repo:foo@rev
 	GitTagFromVersion() string
@@ -48,4 +53,5 @@ var (
 	_ PackageDependency = (*MavenDependency)(nil)
 	_ PackageDependency = (*NpmDependency)(nil)
 	_ PackageDependency = (*GoDependency)(nil)
+	_ PackageDependency = (*PythonDependency)(nil)
 )

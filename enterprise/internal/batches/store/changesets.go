@@ -152,7 +152,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 
 	uiPublicationState := uiPublicationStateColumn(c)
 
-	vars := []interface{}{
+	vars := []any{
 		sqlf.Join(changesetInsertColumns, ", "),
 		c.RepoID,
 		c.CreatedAt,
@@ -524,6 +524,7 @@ type ListChangesetsOpts struct {
 	TextSearch           []search.TextSearchTerm
 	EnforceAuthz         bool
 	RepoID               api.RepoID
+	BitbucketCloudCommit string
 }
 
 // ListChangesets lists Changesets with the given filters.
@@ -612,6 +613,19 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 	}
 	if opts.RepoID != 0 {
 		preds = append(preds, sqlf.Sprintf("repo.id = %s", opts.RepoID))
+	}
+	if len(opts.BitbucketCloudCommit) >= 12 {
+		// Bitbucket Cloud commit hashes in PR objects are generally truncated
+		// to 12 characters, but this isn't actually documented in the API
+		// documentation: they may be anything from 7 up. In practice, we've
+		// only observed 12. Given that, we'll look for 7, 12, and the full hash
+		// — since this hits an index, this should be relatively cheap.
+		preds = append(preds, sqlf.Sprintf(
+			"changesets.metadata->'source'->'commit'->>'hash' IN (%s, %s, %s)",
+			opts.BitbucketCloudCommit[0:7],
+			opts.BitbucketCloudCommit[0:12],
+			opts.BitbucketCloudCommit,
+		))
 	}
 
 	join := sqlf.Sprintf("")
@@ -754,10 +768,10 @@ func (s *Store) UpdateChangesetUiPublicationState(ctx context.Context, cs *btype
 
 // updateChangesetColumn updates the column with the given name, setting it to
 // the given value, and updating the updated_at column.
-func (s *Store) updateChangesetColumn(ctx context.Context, cs *btypes.Changeset, name string, val interface{}) error {
+func (s *Store) updateChangesetColumn(ctx context.Context, cs *btypes.Changeset, name string, val any) error {
 	cs.UpdatedAt = s.now()
 
-	vars := []interface{}{
+	vars := []any{
 		sqlf.Sprintf(name),
 		cs.UpdatedAt,
 		val,
@@ -816,7 +830,7 @@ func updateChangesetCodeHostStateQuery(c *btypes.Changeset) (*sqlf.Query, error)
 	// Not being able to find a title is fine, we just have a NULL in the database then.
 	title, _ := c.Title()
 
-	vars := []interface{}{
+	vars := []any{
 		sqlf.Join(changesetCodeHostStateInsertColumns, ", "),
 		c.UpdatedAt,
 		metadata,
@@ -1072,7 +1086,7 @@ type jsonBatchChangeChangesetSet struct {
 }
 
 // Scan implements the Scanner interface.
-func (n *jsonBatchChangeChangesetSet) Scan(value interface{}) error {
+func (n *jsonBatchChangeChangesetSet) Scan(value any) error {
 	m := make(map[int64]btypes.BatchChangeAssoc)
 
 	switch value := value.(type) {

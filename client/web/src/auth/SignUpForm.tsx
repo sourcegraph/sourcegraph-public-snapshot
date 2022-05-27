@@ -17,10 +17,9 @@ import {
     ValidationOptions,
     deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon, Checkbox } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Checkbox, Typography, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY, LAST_SOURCE_URL_KEY } from '../tracking/eventLogger'
 import { enterpriseTrial } from '../util/features'
@@ -41,7 +40,7 @@ export interface SignUpArguments {
     lastSourceUrl?: string
 }
 
-interface SignUpFormProps extends FeatureFlagProps {
+interface SignUpFormProps {
     className?: string
 
     /** Called to perform the signup on the server. */
@@ -204,14 +203,14 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                     emailInputReference={emailInputReference}
                 />
                 <div className="form-group d-flex flex-column align-content-start">
-                    <label
+                    <Typography.Label
                         htmlFor="username"
                         className={classNames('align-self-start', {
                             'text-danger font-weight-bold': usernameState.kind === 'INVALID',
                         })}
                     >
                         Username
-                    </label>
+                    </Typography.Label>
                     <LoaderInput
                         className={classNames(deriveInputClassName(usernameState))}
                         loading={usernameState.kind === 'LOADING'}
@@ -233,14 +232,14 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                     )}
                 </div>
                 <div className="form-group d-flex flex-column align-content-start">
-                    <label
+                    <Typography.Label
                         htmlFor="password"
                         className={classNames('align-self-start', {
                             'text-danger font-weight-bold': passwordState.kind === 'INVALID',
                         })}
                     >
                         Password
-                    </label>
+                    </Typography.Label>
                     <LoaderInput
                         className={classNames(deriveInputClassName(passwordState))}
                         loading={passwordState.kind === 'LOADING'}
@@ -328,7 +327,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                 )}
 
                 {!experimental && (
-                    <p className="mt-3 mb-0">
+                    <Text className="mt-3 mb-0">
                         <small className="form-text text-muted">
                             By signing up, you agree to our{' '}
                             <Link to="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
@@ -340,7 +339,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             </Link>
                             .
                         </small>
-                    </p>
+                    </Text>
                 )}
             </form>
         </>

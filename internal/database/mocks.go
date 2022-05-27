@@ -6767,6 +6767,9 @@ type MockEventLogStore struct {
 	// object controlling the behavior of the method
 	// CountUniqueUsersPerPeriod.
 	CountUniqueUsersPerPeriodFunc *EventLogStoreCountUniqueUsersPerPeriodFunc
+	// CountUsersWithSettingFunc is an instance of a mock function object
+	// controlling the behavior of the method CountUsersWithSetting.
+	CountUsersWithSettingFunc *EventLogStoreCountUsersWithSettingFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *EventLogStoreDoneFunc
@@ -6920,6 +6923,11 @@ func NewMockEventLogStore() *MockEventLogStore {
 		},
 		CountUniqueUsersPerPeriodFunc: &EventLogStoreCountUniqueUsersPerPeriodFunc{
 			defaultHook: func(context.Context, PeriodType, time.Time, int, *CountUniqueUsersOptions) (r0 []UsageValue, r1 error) {
+				return
+			},
+		},
+		CountUsersWithSettingFunc: &EventLogStoreCountUsersWithSettingFunc{
+			defaultHook: func(context.Context, string, interface{}) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -7105,6 +7113,11 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 				panic("unexpected invocation of MockEventLogStore.CountUniqueUsersPerPeriod")
 			},
 		},
+		CountUsersWithSettingFunc: &EventLogStoreCountUsersWithSettingFunc{
+			defaultHook: func(context.Context, string, interface{}) (int, error) {
+				panic("unexpected invocation of MockEventLogStore.CountUsersWithSetting")
+			},
+		},
 		DoneFunc: &EventLogStoreDoneFunc{
 			defaultHook: func(error) error {
 				panic("unexpected invocation of MockEventLogStore.Done")
@@ -7243,6 +7256,9 @@ func NewMockEventLogStoreFrom(i EventLogStore) *MockEventLogStore {
 		},
 		CountUniqueUsersPerPeriodFunc: &EventLogStoreCountUniqueUsersPerPeriodFunc{
 			defaultHook: i.CountUniqueUsersPerPeriod,
+		},
+		CountUsersWithSettingFunc: &EventLogStoreCountUsersWithSettingFunc{
+			defaultHook: i.CountUsersWithSetting,
 		},
 		DoneFunc: &EventLogStoreDoneFunc{
 			defaultHook: i.Done,
@@ -9750,6 +9766,120 @@ func (c EventLogStoreCountUniqueUsersPerPeriodFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EventLogStoreCountUniqueUsersPerPeriodFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EventLogStoreCountUsersWithSettingFunc describes the behavior when the
+// CountUsersWithSetting method of the parent MockEventLogStore instance is
+// invoked.
+type EventLogStoreCountUsersWithSettingFunc struct {
+	defaultHook func(context.Context, string, interface{}) (int, error)
+	hooks       []func(context.Context, string, interface{}) (int, error)
+	history     []EventLogStoreCountUsersWithSettingFuncCall
+	mutex       sync.Mutex
+}
+
+// CountUsersWithSetting delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockEventLogStore) CountUsersWithSetting(v0 context.Context, v1 string, v2 interface{}) (int, error) {
+	r0, r1 := m.CountUsersWithSettingFunc.nextHook()(v0, v1, v2)
+	m.CountUsersWithSettingFunc.appendCall(EventLogStoreCountUsersWithSettingFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CountUsersWithSetting method of the parent MockEventLogStore instance is
+// invoked and the hook queue is empty.
+func (f *EventLogStoreCountUsersWithSettingFunc) SetDefaultHook(hook func(context.Context, string, interface{}) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountUsersWithSetting method of the parent MockEventLogStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EventLogStoreCountUsersWithSettingFunc) PushHook(hook func(context.Context, string, interface{}) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EventLogStoreCountUsersWithSettingFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, interface{}) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EventLogStoreCountUsersWithSettingFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, string, interface{}) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *EventLogStoreCountUsersWithSettingFunc) nextHook() func(context.Context, string, interface{}) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EventLogStoreCountUsersWithSettingFunc) appendCall(r0 EventLogStoreCountUsersWithSettingFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EventLogStoreCountUsersWithSettingFuncCall
+// objects describing the invocations of this function.
+func (f *EventLogStoreCountUsersWithSettingFunc) History() []EventLogStoreCountUsersWithSettingFuncCall {
+	f.mutex.Lock()
+	history := make([]EventLogStoreCountUsersWithSettingFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EventLogStoreCountUsersWithSettingFuncCall is an object that describes an
+// invocation of method CountUsersWithSetting on an instance of
+// MockEventLogStore.
+type EventLogStoreCountUsersWithSettingFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EventLogStoreCountUsersWithSettingFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EventLogStoreCountUsersWithSettingFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -16486,6 +16616,9 @@ type MockGitserverRepoStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *GitserverRepoStoreHandleFunc
+	// IteratePurgeableReposFunc is an instance of a mock function object
+	// controlling the behavior of the method IteratePurgeableRepos.
+	IteratePurgeableReposFunc *GitserverRepoStoreIteratePurgeableReposFunc
 	// IterateRepoGitserverStatusFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// IterateRepoGitserverStatus.
@@ -16546,6 +16679,11 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 		},
 		HandleFunc: &GitserverRepoStoreHandleFunc{
 			defaultHook: func() (r0 *basestore.TransactableHandle) {
+				return
+			},
+		},
+		IteratePurgeableReposFunc: &GitserverRepoStoreIteratePurgeableReposFunc{
+			defaultHook: func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) (r0 error) {
 				return
 			},
 		},
@@ -16632,6 +16770,11 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 				panic("unexpected invocation of MockGitserverRepoStore.Handle")
 			},
 		},
+		IteratePurgeableReposFunc: &GitserverRepoStoreIteratePurgeableReposFunc{
+			defaultHook: func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) error {
+				panic("unexpected invocation of MockGitserverRepoStore.IteratePurgeableRepos")
+			},
+		},
 		IterateRepoGitserverStatusFunc: &GitserverRepoStoreIterateRepoGitserverStatusFunc{
 			defaultHook: func(context.Context, IterateRepoGitserverStatusOptions, func(repo types.RepoGitserverStatus) error) error {
 				panic("unexpected invocation of MockGitserverRepoStore.IterateRepoGitserverStatus")
@@ -16706,6 +16849,9 @@ func NewMockGitserverRepoStoreFrom(i GitserverRepoStore) *MockGitserverRepoStore
 		},
 		HandleFunc: &GitserverRepoStoreHandleFunc{
 			defaultHook: i.Handle,
+		},
+		IteratePurgeableReposFunc: &GitserverRepoStoreIteratePurgeableReposFunc{
+			defaultHook: i.IteratePurgeableRepos,
 		},
 		IterateRepoGitserverStatusFunc: &GitserverRepoStoreIterateRepoGitserverStatusFunc{
 			defaultHook: i.IterateRepoGitserverStatus,
@@ -17171,6 +17317,118 @@ func (c GitserverRepoStoreHandleFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverRepoStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverRepoStoreIteratePurgeableReposFunc describes the behavior when
+// the IteratePurgeableRepos method of the parent MockGitserverRepoStore
+// instance is invoked.
+type GitserverRepoStoreIteratePurgeableReposFunc struct {
+	defaultHook func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) error
+	hooks       []func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) error
+	history     []GitserverRepoStoreIteratePurgeableReposFuncCall
+	mutex       sync.Mutex
+}
+
+// IteratePurgeableRepos delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) IteratePurgeableRepos(v0 context.Context, v1 IteratePurgableReposOptions, v2 func(repo api.RepoName) error) error {
+	r0 := m.IteratePurgeableReposFunc.nextHook()(v0, v1, v2)
+	m.IteratePurgeableReposFunc.appendCall(GitserverRepoStoreIteratePurgeableReposFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// IteratePurgeableRepos method of the parent MockGitserverRepoStore
+// instance is invoked and the hook queue is empty.
+func (f *GitserverRepoStoreIteratePurgeableReposFunc) SetDefaultHook(hook func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IteratePurgeableRepos method of the parent MockGitserverRepoStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverRepoStoreIteratePurgeableReposFunc) PushHook(hook func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverRepoStoreIteratePurgeableReposFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverRepoStoreIteratePurgeableReposFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) error {
+		return r0
+	})
+}
+
+func (f *GitserverRepoStoreIteratePurgeableReposFunc) nextHook() func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverRepoStoreIteratePurgeableReposFunc) appendCall(r0 GitserverRepoStoreIteratePurgeableReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverRepoStoreIteratePurgeableReposFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverRepoStoreIteratePurgeableReposFunc) History() []GitserverRepoStoreIteratePurgeableReposFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverRepoStoreIteratePurgeableReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverRepoStoreIteratePurgeableReposFuncCall is an object that
+// describes an invocation of method IteratePurgeableRepos on an instance of
+// MockGitserverRepoStore.
+type GitserverRepoStoreIteratePurgeableReposFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 IteratePurgableReposOptions
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 func(repo api.RepoName) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverRepoStoreIteratePurgeableReposFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverRepoStoreIteratePurgeableReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -25512,10 +25770,10 @@ type MockRepoStore struct {
 	// GetByNameFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByName.
 	GetByNameFunc *RepoStoreGetByNameFunc
-	// GetFirstRepoNamesByCloneURLFunc is an instance of a mock function
+	// GetFirstRepoNameByCloneURLFunc is an instance of a mock function
 	// object controlling the behavior of the method
-	// GetFirstRepoNamesByCloneURL.
-	GetFirstRepoNamesByCloneURLFunc *RepoStoreGetFirstRepoNamesByCloneURLFunc
+	// GetFirstRepoNameByCloneURL.
+	GetFirstRepoNameByCloneURLFunc *RepoStoreGetFirstRepoNameByCloneURLFunc
 	// GetReposSetByIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetReposSetByIDs.
 	GetReposSetByIDsFunc *RepoStoreGetReposSetByIDsFunc
@@ -25525,9 +25783,6 @@ type MockRepoStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *RepoStoreListFunc
-	// ListEnabledNamesFunc is an instance of a mock function object
-	// controlling the behavior of the method ListEnabledNames.
-	ListEnabledNamesFunc *RepoStoreListEnabledNamesFunc
 	// ListIndexableReposFunc is an instance of a mock function object
 	// controlling the behavior of the method ListIndexableRepos.
 	ListIndexableReposFunc *RepoStoreListIndexableReposFunc
@@ -25595,7 +25850,7 @@ func NewMockRepoStore() *MockRepoStore {
 				return
 			},
 		},
-		GetFirstRepoNamesByCloneURLFunc: &RepoStoreGetFirstRepoNamesByCloneURLFunc{
+		GetFirstRepoNameByCloneURLFunc: &RepoStoreGetFirstRepoNameByCloneURLFunc{
 			defaultHook: func(context.Context, string) (r0 api.RepoName, r1 error) {
 				return
 			},
@@ -25612,11 +25867,6 @@ func NewMockRepoStore() *MockRepoStore {
 		},
 		ListFunc: &RepoStoreListFunc{
 			defaultHook: func(context.Context, ReposListOptions) (r0 []*types.Repo, r1 error) {
-				return
-			},
-		},
-		ListEnabledNamesFunc: &RepoStoreListEnabledNamesFunc{
-			defaultHook: func(context.Context) (r0 []api.RepoName, r1 error) {
 				return
 			},
 		},
@@ -25702,9 +25952,9 @@ func NewStrictMockRepoStore() *MockRepoStore {
 				panic("unexpected invocation of MockRepoStore.GetByName")
 			},
 		},
-		GetFirstRepoNamesByCloneURLFunc: &RepoStoreGetFirstRepoNamesByCloneURLFunc{
+		GetFirstRepoNameByCloneURLFunc: &RepoStoreGetFirstRepoNameByCloneURLFunc{
 			defaultHook: func(context.Context, string) (api.RepoName, error) {
-				panic("unexpected invocation of MockRepoStore.GetFirstRepoNamesByCloneURL")
+				panic("unexpected invocation of MockRepoStore.GetFirstRepoNameByCloneURL")
 			},
 		},
 		GetReposSetByIDsFunc: &RepoStoreGetReposSetByIDsFunc{
@@ -25720,11 +25970,6 @@ func NewStrictMockRepoStore() *MockRepoStore {
 		ListFunc: &RepoStoreListFunc{
 			defaultHook: func(context.Context, ReposListOptions) ([]*types.Repo, error) {
 				panic("unexpected invocation of MockRepoStore.List")
-			},
-		},
-		ListEnabledNamesFunc: &RepoStoreListEnabledNamesFunc{
-			defaultHook: func(context.Context) ([]api.RepoName, error) {
-				panic("unexpected invocation of MockRepoStore.ListEnabledNames")
 			},
 		},
 		ListIndexableReposFunc: &RepoStoreListIndexableReposFunc{
@@ -25793,8 +26038,8 @@ func NewMockRepoStoreFrom(i RepoStore) *MockRepoStore {
 		GetByNameFunc: &RepoStoreGetByNameFunc{
 			defaultHook: i.GetByName,
 		},
-		GetFirstRepoNamesByCloneURLFunc: &RepoStoreGetFirstRepoNamesByCloneURLFunc{
-			defaultHook: i.GetFirstRepoNamesByCloneURL,
+		GetFirstRepoNameByCloneURLFunc: &RepoStoreGetFirstRepoNameByCloneURLFunc{
+			defaultHook: i.GetFirstRepoNameByCloneURL,
 		},
 		GetReposSetByIDsFunc: &RepoStoreGetReposSetByIDsFunc{
 			defaultHook: i.GetReposSetByIDs,
@@ -25804,9 +26049,6 @@ func NewMockRepoStoreFrom(i RepoStore) *MockRepoStore {
 		},
 		ListFunc: &RepoStoreListFunc{
 			defaultHook: i.List,
-		},
-		ListEnabledNamesFunc: &RepoStoreListEnabledNamesFunc{
-			defaultHook: i.ListEnabledNames,
 		},
 		ListIndexableReposFunc: &RepoStoreListIndexableReposFunc{
 			defaultHook: i.ListIndexableRepos,
@@ -26698,37 +26940,37 @@ func (c RepoStoreGetByNameFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// RepoStoreGetFirstRepoNamesByCloneURLFunc describes the behavior when the
-// GetFirstRepoNamesByCloneURL method of the parent MockRepoStore instance
-// is invoked.
-type RepoStoreGetFirstRepoNamesByCloneURLFunc struct {
+// RepoStoreGetFirstRepoNameByCloneURLFunc describes the behavior when the
+// GetFirstRepoNameByCloneURL method of the parent MockRepoStore instance is
+// invoked.
+type RepoStoreGetFirstRepoNameByCloneURLFunc struct {
 	defaultHook func(context.Context, string) (api.RepoName, error)
 	hooks       []func(context.Context, string) (api.RepoName, error)
-	history     []RepoStoreGetFirstRepoNamesByCloneURLFuncCall
+	history     []RepoStoreGetFirstRepoNameByCloneURLFuncCall
 	mutex       sync.Mutex
 }
 
-// GetFirstRepoNamesByCloneURL delegates to the next hook function in the
+// GetFirstRepoNameByCloneURL delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockRepoStore) GetFirstRepoNamesByCloneURL(v0 context.Context, v1 string) (api.RepoName, error) {
-	r0, r1 := m.GetFirstRepoNamesByCloneURLFunc.nextHook()(v0, v1)
-	m.GetFirstRepoNamesByCloneURLFunc.appendCall(RepoStoreGetFirstRepoNamesByCloneURLFuncCall{v0, v1, r0, r1})
+func (m *MockRepoStore) GetFirstRepoNameByCloneURL(v0 context.Context, v1 string) (api.RepoName, error) {
+	r0, r1 := m.GetFirstRepoNameByCloneURLFunc.nextHook()(v0, v1)
+	m.GetFirstRepoNameByCloneURLFunc.appendCall(RepoStoreGetFirstRepoNameByCloneURLFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// GetFirstRepoNamesByCloneURL method of the parent MockRepoStore instance
-// is invoked and the hook queue is empty.
-func (f *RepoStoreGetFirstRepoNamesByCloneURLFunc) SetDefaultHook(hook func(context.Context, string) (api.RepoName, error)) {
+// GetFirstRepoNameByCloneURL method of the parent MockRepoStore instance is
+// invoked and the hook queue is empty.
+func (f *RepoStoreGetFirstRepoNameByCloneURLFunc) SetDefaultHook(hook func(context.Context, string) (api.RepoName, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetFirstRepoNamesByCloneURL method of the parent MockRepoStore instance
+// GetFirstRepoNameByCloneURL method of the parent MockRepoStore instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *RepoStoreGetFirstRepoNamesByCloneURLFunc) PushHook(hook func(context.Context, string) (api.RepoName, error)) {
+func (f *RepoStoreGetFirstRepoNameByCloneURLFunc) PushHook(hook func(context.Context, string) (api.RepoName, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -26736,20 +26978,20 @@ func (f *RepoStoreGetFirstRepoNamesByCloneURLFunc) PushHook(hook func(context.Co
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *RepoStoreGetFirstRepoNamesByCloneURLFunc) SetDefaultReturn(r0 api.RepoName, r1 error) {
+func (f *RepoStoreGetFirstRepoNameByCloneURLFunc) SetDefaultReturn(r0 api.RepoName, r1 error) {
 	f.SetDefaultHook(func(context.Context, string) (api.RepoName, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *RepoStoreGetFirstRepoNamesByCloneURLFunc) PushReturn(r0 api.RepoName, r1 error) {
+func (f *RepoStoreGetFirstRepoNameByCloneURLFunc) PushReturn(r0 api.RepoName, r1 error) {
 	f.PushHook(func(context.Context, string) (api.RepoName, error) {
 		return r0, r1
 	})
 }
 
-func (f *RepoStoreGetFirstRepoNamesByCloneURLFunc) nextHook() func(context.Context, string) (api.RepoName, error) {
+func (f *RepoStoreGetFirstRepoNameByCloneURLFunc) nextHook() func(context.Context, string) (api.RepoName, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -26762,28 +27004,27 @@ func (f *RepoStoreGetFirstRepoNamesByCloneURLFunc) nextHook() func(context.Conte
 	return hook
 }
 
-func (f *RepoStoreGetFirstRepoNamesByCloneURLFunc) appendCall(r0 RepoStoreGetFirstRepoNamesByCloneURLFuncCall) {
+func (f *RepoStoreGetFirstRepoNameByCloneURLFunc) appendCall(r0 RepoStoreGetFirstRepoNameByCloneURLFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// RepoStoreGetFirstRepoNamesByCloneURLFuncCall objects describing the
-// invocations of this function.
-func (f *RepoStoreGetFirstRepoNamesByCloneURLFunc) History() []RepoStoreGetFirstRepoNamesByCloneURLFuncCall {
+// History returns a sequence of RepoStoreGetFirstRepoNameByCloneURLFuncCall
+// objects describing the invocations of this function.
+func (f *RepoStoreGetFirstRepoNameByCloneURLFunc) History() []RepoStoreGetFirstRepoNameByCloneURLFuncCall {
 	f.mutex.Lock()
-	history := make([]RepoStoreGetFirstRepoNamesByCloneURLFuncCall, len(f.history))
+	history := make([]RepoStoreGetFirstRepoNameByCloneURLFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// RepoStoreGetFirstRepoNamesByCloneURLFuncCall is an object that describes
-// an invocation of method GetFirstRepoNamesByCloneURL on an instance of
+// RepoStoreGetFirstRepoNameByCloneURLFuncCall is an object that describes
+// an invocation of method GetFirstRepoNameByCloneURL on an instance of
 // MockRepoStore.
-type RepoStoreGetFirstRepoNamesByCloneURLFuncCall struct {
+type RepoStoreGetFirstRepoNameByCloneURLFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -26800,13 +27041,13 @@ type RepoStoreGetFirstRepoNamesByCloneURLFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c RepoStoreGetFirstRepoNamesByCloneURLFuncCall) Args() []interface{} {
+func (c RepoStoreGetFirstRepoNameByCloneURLFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c RepoStoreGetFirstRepoNamesByCloneURLFuncCall) Results() []interface{} {
+func (c RepoStoreGetFirstRepoNameByCloneURLFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -27127,111 +27368,6 @@ func (c RepoStoreListFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RepoStoreListFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// RepoStoreListEnabledNamesFunc describes the behavior when the
-// ListEnabledNames method of the parent MockRepoStore instance is invoked.
-type RepoStoreListEnabledNamesFunc struct {
-	defaultHook func(context.Context) ([]api.RepoName, error)
-	hooks       []func(context.Context) ([]api.RepoName, error)
-	history     []RepoStoreListEnabledNamesFuncCall
-	mutex       sync.Mutex
-}
-
-// ListEnabledNames delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockRepoStore) ListEnabledNames(v0 context.Context) ([]api.RepoName, error) {
-	r0, r1 := m.ListEnabledNamesFunc.nextHook()(v0)
-	m.ListEnabledNamesFunc.appendCall(RepoStoreListEnabledNamesFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ListEnabledNames
-// method of the parent MockRepoStore instance is invoked and the hook queue
-// is empty.
-func (f *RepoStoreListEnabledNamesFunc) SetDefaultHook(hook func(context.Context) ([]api.RepoName, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ListEnabledNames method of the parent MockRepoStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *RepoStoreListEnabledNamesFunc) PushHook(hook func(context.Context) ([]api.RepoName, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *RepoStoreListEnabledNamesFunc) SetDefaultReturn(r0 []api.RepoName, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]api.RepoName, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *RepoStoreListEnabledNamesFunc) PushReturn(r0 []api.RepoName, r1 error) {
-	f.PushHook(func(context.Context) ([]api.RepoName, error) {
-		return r0, r1
-	})
-}
-
-func (f *RepoStoreListEnabledNamesFunc) nextHook() func(context.Context) ([]api.RepoName, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *RepoStoreListEnabledNamesFunc) appendCall(r0 RepoStoreListEnabledNamesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of RepoStoreListEnabledNamesFuncCall objects
-// describing the invocations of this function.
-func (f *RepoStoreListEnabledNamesFunc) History() []RepoStoreListEnabledNamesFuncCall {
-	f.mutex.Lock()
-	history := make([]RepoStoreListEnabledNamesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// RepoStoreListEnabledNamesFuncCall is an object that describes an
-// invocation of method ListEnabledNames on an instance of MockRepoStore.
-type RepoStoreListEnabledNamesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []api.RepoName
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c RepoStoreListEnabledNamesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c RepoStoreListEnabledNamesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

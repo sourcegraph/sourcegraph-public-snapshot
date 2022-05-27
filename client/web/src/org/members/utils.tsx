@@ -60,7 +60,7 @@ export const OrgMemberNotification: React.FunctionComponent<React.PropsWithChild
     <Alert variant="success" className={classNames(styles.invitedNotification, className)}>
         <div className={styles.message}>{message}</div>
         <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
-            <Icon as={CloseIcon} />
+            <Icon role="img" as={CloseIcon} aria-hidden={true} />
         </Button>
     </Alert>
 )

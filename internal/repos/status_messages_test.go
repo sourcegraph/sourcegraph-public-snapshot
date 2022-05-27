@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestStatusMessages(t *testing.T) {
@@ -27,7 +28,7 @@ func TestStatusMessages(t *testing.T) {
 		t.Skip()
 	}
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := NewStore(database.NewDB(db), sql.TxOptions{})
 
 	admin, err := database.Users(db).Create(ctx, database.NewUser{
@@ -52,7 +53,7 @@ func TestStatusMessages(t *testing.T) {
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - site",
 	}
-	err = database.ExternalServices(db).Upsert(ctx, siteLevelService)
+	err = db.ExternalServices().Upsert(ctx, siteLevelService)
 	require.NoError(t, err)
 
 	userService := &types.ExternalService{
@@ -62,7 +63,7 @@ func TestStatusMessages(t *testing.T) {
 		DisplayName:     "github.com - user",
 		NamespaceUserID: nonAdmin.ID,
 	}
-	err = database.ExternalServices(db).Upsert(ctx, userService)
+	err = db.ExternalServices().Upsert(ctx, userService)
 	require.NoError(t, err)
 
 	testCases := []struct {
@@ -221,6 +222,7 @@ func TestStatusMessages(t *testing.T) {
 		},
 	}
 
+	logger := logtest.Scoped(t)
 	for _, tc := range testCases {
 		tc := tc
 		ctx := context.Background()
@@ -235,7 +237,7 @@ func TestStatusMessages(t *testing.T) {
 				}
 			}
 
-			err := database.Repos(db).Create(ctx, stored...)
+			err := db.Repos().Create(ctx, stored...)
 			require.NoError(t, err)
 
 			t.Cleanup(func() {
@@ -243,7 +245,7 @@ func TestStatusMessages(t *testing.T) {
 				for _, r := range stored {
 					ids = append(ids, r.ID)
 				}
-				err := database.Repos(db).Delete(ctx, ids...)
+				err := db.Repos().Delete(ctx, ids...)
 				require.NoError(t, err)
 			})
 
@@ -264,7 +266,7 @@ func TestStatusMessages(t *testing.T) {
 				if tc.gitserverFailure != nil && tc.gitserverFailure[toClone] {
 					lastError = "Oops"
 				}
-				err := database.GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
+				err := db.GitserverRepos().Upsert(ctx, &types.GitserverRepo{
 					RepoID:      id,
 					ShardID:     "test",
 					CloneStatus: types.CloneStatusCloned,
@@ -302,8 +304,9 @@ func TestStatusMessages(t *testing.T) {
 
 			clock := timeutil.NewFakeClock(time.Now(), 0)
 			syncer := &Syncer{
-				Store: store,
-				Now:   clock.Now,
+				Logger: logger,
+				Store:  store,
+				Now:    clock.Now,
 			}
 
 			mockDB := database.NewMockDBFrom(database.NewDB(db))

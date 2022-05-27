@@ -126,7 +126,7 @@ func TestBulkOperationResolver(t *testing.T) {
 		FinishedAt: "",
 	}
 
-	input := map[string]interface{}{"bulkOperation": bulkOperationAPIID}
+	input := map[string]any{"bulkOperation": bulkOperationAPIID}
 	var response struct{ Node apitest.BulkOperation }
 	apitest.MustExec(actor.WithActor(ctx, actor.FromUser(userID)), t, s, input, &response, queryBulkOperation)
 

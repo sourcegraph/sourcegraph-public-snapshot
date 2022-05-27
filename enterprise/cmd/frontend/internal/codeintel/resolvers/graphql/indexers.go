@@ -29,12 +29,12 @@ var (
 		urn:  "github.com/Microsoft/lsif-node",
 	}
 	lsifTypescript = codeIntelIndexerResolver{
-		name: "lsif-typescript",
-		urn:  "github.com/sourcegraph/lsif-typescript",
+		name: "scip-typescript",
+		urn:  "github.com/sourcegraph/scip-typescript",
 	}
-	lsifJava = codeIntelIndexerResolver{
-		name: "lsif-java",
-		urn:  "github.com/sourcegraph/lsif-java",
+	scipJava = codeIntelIndexerResolver{
+		name: "scip-java",
+		urn:  "github.com/sourcegraph/scip-java",
 	}
 	msftJava = codeIntelIndexerResolver{
 		name: "msft/lsif-java",
@@ -72,9 +72,9 @@ var (
 		name: "lsif-ocaml",
 		urn:  "github.com/rvantonder/lsif-ocaml",
 	}
-	lsifPy = codeIntelIndexerResolver{
-		name: "lsif-py",
-		urn:  "github.com/sourcegraph/lsif-py",
+	scipPython = codeIntelIndexerResolver{
+		name: "scip-python",
+		urn:  "github.com/sourcegraph/scip-python",
 	}
 	rustAnalyzer = codeIntelIndexerResolver{
 		name: "rust-analyzer",
@@ -98,7 +98,7 @@ var allIndexers = []gql.CodeIntelIndexerResolver{
 	&lsifNode,
 	&msftNode,
 	&lsifTypescript,
-	&lsifJava,
+	&scipJava,
 	&msftJava,
 	&lsifGo,
 	&lsifClang,
@@ -108,7 +108,7 @@ var allIndexers = []gql.CodeIntelIndexerResolver{
 	&hieLSIF,
 	&lsifJsonnet,
 	&lsifOcaml,
-	&lsifPy,
+	&scipPython,
 	&rustAnalyzer,
 	&lsifPHP,
 	&lsifTerraform,
@@ -119,9 +119,9 @@ var allIndexers = []gql.CodeIntelIndexerResolver{
 // from most to least.
 var languageToIndexer = map[string][]gql.CodeIntelIndexerResolver{
 	".go":      {&lsifGo},
-	".java":    {&lsifJava, &msftJava},
-	".kt":      {&lsifJava},
-	".scala":   {&lsifJava},
+	".java":    {&scipJava, &msftJava},
+	".kt":      {&scipJava},
+	".scala":   {&scipJava},
 	".js":      {&lsifTypescript, &lsifNode, &msftNode},
 	".jsx":     {&lsifTypescript, &lsifNode, &msftNode},
 	".ts":      {&lsifTypescript, &lsifNode, &msftNode},
@@ -135,7 +135,7 @@ var languageToIndexer = map[string][]gql.CodeIntelIndexerResolver{
 	".hpp":     {&lsifClang, &lsifCPP},
 	".hs":      {&hieLSIF},
 	".jsonnet": {&lsifJsonnet},
-	".py":      {&lsifPy},
+	".py":      {&scipPython},
 	".ml":      {&lsifOcaml},
 	".rs":      {&rustAnalyzer},
 	".php":     {&lsifPHP},
@@ -144,9 +144,9 @@ var languageToIndexer = map[string][]gql.CodeIntelIndexerResolver{
 }
 
 var imageToIndexer = map[string]gql.CodeIntelIndexerResolver{
-	"sourcegraph/lsif-java":       &lsifJava,
+	"sourcegraph/scip-java":       &scipJava,
 	"sourcegraph/lsif-go":         &lsifGo,
-	"sourcegraph/lsif-typescript": &lsifTypescript,
+	"sourcegraph/scip-typescript": &lsifTypescript,
 	"sourcegraph/lsif-node":       &lsifNode,
 	"sourcegraph/lsif-clang":      &lsifClang,
 	"davidrjenni/lsif-php":        &lsifPHP,

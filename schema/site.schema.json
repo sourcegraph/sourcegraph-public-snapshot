@@ -30,13 +30,13 @@
       "group": "Search"
     },
     "search.largeFiles": {
-      "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.",
+      "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://github.com/bmatcuk/doublestar#patterns.",
       "type": "array",
       "items": {
         "type": "string"
       },
       "group": "Search",
-      "examples": [["go.sum", "package-lock.json", "*.thrift"]]
+      "examples": [["go.sum", "package-lock.json", "**/*.thrift"]]
     },
     "debug.search.symbolsParallelism": {
       "description": "(debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.",
@@ -45,7 +45,7 @@
       "examples": [["20"]]
     },
     "apidocs.search.index-size-limit-factor": {
-      "description": "Limit factor for API docs search index size. A multiple of 250 million symbols. 1.0 indicates 250 million symbols (approx 12.5k repos) can be indexed. 2.0 indicates double that, and so on. See https://docs.sourcegraph.com/code_intelligence/apidocs",
+      "description": "Deprecated.",
       "type": "number",
       "default": 1.0,
       "additionalProperties": false
@@ -122,7 +122,7 @@
           }
         },
         "apidocs.search.indexing": {
-          "description": "Index API docs for search, see https://docs.sourcegraph.com/code_intelligence/apidocs",
+          "description": "Deprecated.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
@@ -426,18 +426,6 @@
           "type": "boolean",
           "default": true
         },
-        "enableGitserverClientLookupTable": {
-          "description": "Enable getting repository location from the database. Works only on Cloud.",
-          "type": "boolean",
-          "default": false
-        },
-        "gitserverClientLookupTable.Rate": {
-          "description": "Percentage of calls to AddrFromRepo that read from the database. Only used if enableGitserverClientLookupTable is true.",
-          "type": "integer",
-          "default": 0,
-          "minimum": 0,
-          "maximum": 100
-        },
         "gitServerPinnedRepos": {
           "description": "List of repositories pinned to specific gitserver instances. The specified repositories will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the repository, then it must be re-cloned to the specified server.",
           "type": "object",
@@ -575,6 +563,13 @@
     },
     "codeIntelAutoIndexing.allowGlobalPolicies": {
       "description": "Whether auto-indexing policies may apply to all repositories on the Sourcegraph instance. Default is false. The policyRepositoryMatchLimit setting still applies to such auto-indexing policies.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": false
+    },
+    "codeIntelLockfileIndexing.enabled": {
+      "description": "Enables/disables the code intel lockfile-indexing feature. Currently experimental.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Code intelligence",
@@ -888,6 +883,16 @@
       "type": "integer",
       "default": 10
     },
+    "permissions.syncUsersBackoffSeconds": {
+      "description": "Don't sync a user's permissions if they have synced within the last n seconds",
+      "type": "integer",
+      "default": 60
+    },
+    "permissions.syncReposBackoffSeconds": {
+      "description": "Don't sync a repo's permissions if it has synced within the last n seconds",
+      "type": "integer",
+      "default": 60
+    },
     "branding": {
       "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
       "type": "object",
@@ -1014,6 +1019,11 @@
           "items": {
             "type": "string"
           }
+        },
+        "allowOnlySourcegraphAuthoredExtensions": {
+          "description": "Allow only Sourcegraph authored extensions from the default remote registry. If not set, all remote extensions may be used from the remote registry. If certain extensions are marked as allowed in `allowRemoteExtensions` field or `remoteRegistry` points to other than default registry, `allowOnlySourcegraphAuthoredExtensions` setting value will be ignored. To completely disable the remote registry, set `remoteRegistry` to `false`.",
+          "type": "boolean",
+          "default": false
         }
       },
       "default": {
@@ -1246,6 +1256,13 @@
     },
     "insights.compute.graphql": {
       "description": "Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "CodeInsights",
+      "default": false
+    },
+    "insights.search.graphql": {
+      "description": "Force GraphQL mode for insights searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "CodeInsights",
@@ -1780,6 +1797,23 @@
             "type": "string",
             "minLength": 1
           }
+        },
+        "allowOrgsMap": {
+          "description": "Restricts new logins to members of GitHub teams. Each list of teams should have their Github org name as a key. Subteams inheritance is not supported, therefore only members of the listed teams will be granted access. Existing sessions won't be invalidated. Leave empty or unset for no team restrictions.",
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "examples": [
+            {
+              "orgName": ["team1"],
+              "anotherOrgName": ["team2", "team3"]
+            }
+          ]
         },
         "allowGroupsPermissionsSync": {
           "description": "Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/repo/permissions#permissions-caching).",

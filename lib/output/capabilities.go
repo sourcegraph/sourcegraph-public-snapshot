@@ -58,8 +58,8 @@ func detectColor(atty bool) bool {
 	return true
 }
 
-func (c *capabilities) formatArgs(args []interface{}) []interface{} {
-	out := make([]interface{}, len(args))
+func (c *capabilities) formatArgs(args []any) []any {
+	out := make([]any, len(args))
 	for i, arg := range args {
 		if _, ok := arg.(Style); ok && !c.Color {
 			out[i] = ""
