@@ -42,6 +42,7 @@ var ErrNoSSHCredential = errors.New("authenticator doesn't support SSH")
 
 type SourcerStore interface {
 	DatabaseDB() database.DB
+	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error)
 	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error)
 	GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
 	Repos() database.RepoStore
@@ -189,6 +190,50 @@ func ToDraftChangesetSource(css ChangesetSource) (DraftChangesetSource, error) {
 	return draftCss, nil
 }
 
+// WithAuthenticatorForChangeset authenticates the given ChangesetSource with a
+// credential appropriate to sync or reconcile the given changeset. If the
+// changeset was created by a batch change, then authentication will be based on
+// the first available option of:
+//
+// 1. The last applying user's credentials.
+// 2. Any available site credential.
+//
+// If the changeset was not created by a batch change, then a site credential
+// will be used.
+func WithAuthenticatorForChangeset(
+	ctx context.Context, tx SourcerStore, css ChangesetSource,
+	ch *btypes.Changeset, repo *types.Repo,
+) (ChangesetSource, error) {
+	if ch.OwnedByBatchChangeID != 0 {
+		batchChange, err := loadBatchChange(ctx, tx, ch.OwnedByBatchChangeID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load owning batch change")
+		}
+		return WithAuthenticatorForUser(ctx, tx, css, batchChange.LastApplierID, repo)
+	}
+
+	return withSiteAuthenticator(ctx, tx, css, repo)
+}
+
+type getBatchChanger interface {
+	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error)
+}
+
+func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*btypes.BatchChange, error) {
+	if id == 0 {
+		return nil, errors.New("changeset has no owning batch change")
+	}
+
+	batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: id})
+	if err != nil && err != store.ErrNoResults {
+		return nil, errors.Wrapf(err, "retrieving owning batch change: %d", id)
+	} else if batchChange == nil {
+		return nil, errors.Errorf("batch change not found: %d", id)
+	}
+
+	return batchChange, nil
+}
+
 // WithAuthenticatorForUser authenticates the given ChangesetSource with a credential
 // usable by the given user with userID. User credentials are preferred, with a
 // fallback to site credentials. If none of these exist, ErrMissingCredentials
@@ -214,10 +259,10 @@ func WithAuthenticatorForUser(ctx context.Context, tx SourcerStore, css Changese
 	return nil, ErrMissingCredentials
 }
 
-// WithSiteAuthenticator uses the site credential of the code host of the passed-in repo.
+// withSiteAuthenticator uses the site credential of the code host of the passed-in repo.
 // If no credential is found, the original source is returned and uses the external service
 // config.
-func WithSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, repo *types.Repo) (ChangesetSource, error) {
+func withSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, repo *types.Repo) (ChangesetSource, error) {
 	cred, err := loadSiteCredential(ctx, tx, repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading site credential")
