@@ -115,7 +115,7 @@ $group-divider-height: 0.25rem;
     code {
         font-family: 'SF Mono', monospace;
         overflow: hidden;
-        color: var(--gray-08);
+        color: var(--body-color);
         font-weight: 400;
         font-size: 0.75rem;
     }
@@ -136,7 +136,7 @@ $group-divider-height: 0.25rem;
         &--line-number {
             font-family: 'SF Mono', monospace;
             font-weight: 400;
-            color: var(--gray-06);
+            color: var(--line-number-color);
             min-width: 2.5rem;
             text-align: right;
             display: inline-block;
