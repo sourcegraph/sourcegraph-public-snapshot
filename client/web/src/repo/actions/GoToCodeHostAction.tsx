@@ -234,7 +234,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
                 onClick={onClick}
                 onAuxClick={onClick}
             >
-                <Icon as={exportIcon} />
+                <Icon role="img" as={exportIcon} aria-hidden={true} />
                 <span>{descriptiveText}</span>
             </RepoHeaderActionAnchor>
         )
@@ -256,7 +256,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
         return (
             <Popover isOpen={isPopoverOpen} onOpenChange={onToggle}>
                 <PopoverTrigger as={RepoHeaderActionAnchor} {...commonProps}>
-                    <Icon as={exportIcon} />
+                    <Icon role="img" as={exportIcon} aria-hidden={true} />
                 </PopoverTrigger>
                 <InstallBrowserExtensionPopover
                     url={url}
@@ -271,7 +271,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
 
     return (
         <RepoHeaderActionAnchor {...commonProps}>
-            <Icon as={exportIcon} />
+            <Icon role="img" as={exportIcon} aria-hidden={true} />
         </RepoHeaderActionAnchor>
     )
 }

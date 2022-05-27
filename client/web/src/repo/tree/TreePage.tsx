@@ -276,7 +276,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             as={Link}
                             className="ml-1"
                         >
-                            <Icon as={CodeJsonIcon} /> Search dependencies{' '}
+                            <Icon role="img" as={CodeJsonIcon} aria-hidden={true} /> Search dependencies{' '}
                             <Badge variant="info" className={classNames('text-uppercase')}>
                                 NEW
                             </Badge>
@@ -290,7 +290,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 as={Link}
                                 className="ml-1"
                             >
-                                <Icon as={BatchChangesIcon} /> Create batch change
+                                <Icon role="img" as={BatchChangesIcon} aria-hidden={true} /> Create batch change
                             </Button>
                         )}
 

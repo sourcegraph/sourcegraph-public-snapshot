@@ -84,8 +84,10 @@ const TextSearchIndexedReference: React.FunctionComponent<
     return (
         <li className={styles.ref}>
             <Icon
+                role="img"
                 className={classNames(styles.refIcon, isCurrent && styles.refIconCurrent)}
                 as={isCurrent ? CheckCircleIcon : LoadingSpinner}
+                aria-hidden={true}
             />
             <LinkOrSpan to={indexedRef.ref.url}>
                 <Typography.Code weight="bold">{indexedRef.ref.displayName}</Typography.Code>

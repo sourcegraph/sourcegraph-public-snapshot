@@ -175,7 +175,12 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         className="test-create-access-token-submit"
                         variant="primary"
                     >
-                        {creationOrError === 'loading' ? <LoadingSpinner /> : <Icon as={AddIcon} />} Generate token
+                        {creationOrError === 'loading' ? (
+                            <LoadingSpinner />
+                        ) : (
+                            <Icon role="img" as={AddIcon} aria-hidden={true} />
+                        )}{' '}
+                        Generate token
                     </Button>
                     <Button
                         className="ml-2 test-create-access-token-cancel"
