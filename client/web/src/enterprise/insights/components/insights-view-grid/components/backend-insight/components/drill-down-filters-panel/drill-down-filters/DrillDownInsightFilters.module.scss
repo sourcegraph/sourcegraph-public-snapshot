@@ -43,8 +43,8 @@
 }
 
 .panels {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-auto-flow: row;
 
     &--horizontal-mode {
         flex-wrap: wrap;

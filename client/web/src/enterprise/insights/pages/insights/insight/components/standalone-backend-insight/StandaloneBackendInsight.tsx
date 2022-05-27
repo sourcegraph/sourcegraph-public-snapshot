@@ -21,7 +21,14 @@ import {
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
 import { useSeriesToggle } from '../../../../../components/insights-view-grid/components/backend-insight/components/backend-insight-chart/use-series-toggle'
 import { useInsightData } from '../../../../../components/insights-view-grid/hooks/use-insight-data'
-import { ALL_INSIGHTS_DASHBOARD, BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../../../../../core'
+import {
+    ALL_INSIGHTS_DASHBOARD,
+    BackendInsight,
+    CodeInsightsBackendContext,
+    DEFAULT_SERIES_DISPLAY_OPTIONS,
+    InsightFilters,
+    InsightType,
+} from '../../../../../core'
 import { LazyQueryStatus } from '../../../../../hooks/use-parallel-requests/use-parallel-request'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../../pings'
 import { StandaloneInsightContextMenu } from '../context-menu/StandaloneInsightContextMenu'
@@ -54,9 +61,12 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const [filterVisualMode, setFilterVisialMode] = useState<FilterSectionVisualMode>(FilterSectionVisualMode.Preview)
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
+    const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(insight.seriesDisplayOptions)
+
     const { state, isVisible } = useInsightData(
-        useCallback(() => getBackendInsightData({ ...insight, filters: debouncedFilters }), [
+        useCallback(() => getBackendInsightData({ ...insight, seriesDisplayOptions, filters: debouncedFilters }), [
             insight,
+            seriesDisplayOptions,
             debouncedFilters,
             getBackendInsightData,
         ]),
@@ -118,9 +128,12 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         originalValues={originalInsightFilters}
                         visualMode={filterVisualMode}
                         onVisualModeChange={setFilterVisialMode}
+                        showSeriesDisplayOptions={insight.type === InsightType.CaptureGroup}
                         onFiltersChange={handleFilterChange}
                         onFilterSave={handleFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
+                        originalSeriesDisplayOptions={DEFAULT_SERIES_DISPLAY_OPTIONS}
+                        onSeriesDisplayOptionsChange={setSeriesDisplayOptions}
                     />
                 )}
 
