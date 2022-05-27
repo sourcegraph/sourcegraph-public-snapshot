@@ -33,7 +33,7 @@ import { initializeSourcegraphSettings } from '../sourcegraphSettings'
 
 import { saveLastSearch } from './jsToJavaBridgeUtil'
 import { SearchResultList } from './results/SearchResultList'
-import { Title } from './Title'
+import { StatusBar } from './StatusBar'
 import { Search } from './types'
 
 import styles from './App.module.scss'
@@ -114,7 +114,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
 
     const [results, setResults] = useState<SearchMatch[]>([])
     const [progress, setProgress] = useState<Progress>({ durationMs: 0, matchCount: 0, skipped: [] })
-    const [state, setState] = useState<StreamingResultsState | null>(null)
+    const [progressState, setProgressState] = useState<StreamingResultsState | null>(null)
     const [lastSearch, setLastSearch] = useState<Search>(
         initialSearch ?? {
             query: '',
@@ -175,12 +175,12 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                 ).subscribe(searchResults => {
                     setResults(searchResults.results)
                     setProgress(searchResults.progress)
-                    setState(searchResults.state)
+                    setProgressState(searchResults.state)
                 })
             )
             setResults([])
             setProgress({ durationMs: 0, matchCount: 0, skipped: [] })
-            setState('loading')
+            setProgressState('loading')
             setLastSearch(current => ({
                 query,
                 caseSensitive: caseSensitive ?? current.caseSensitive,
@@ -215,11 +215,10 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
             <Tooltip />
             <div className={styles.root}>
-                <Title progress={progress} state={state} />
                 <div className={styles.searchBoxContainer}>
                     {/* eslint-disable-next-line react/forbid-elements */}
                     <form
-                        className="d-flex mb-2 mt-0"
+                        className="d-flex m-0"
                         onSubmit={event => {
                             event.preventDefault()
                             onSubmit()
@@ -261,7 +260,9 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                         />
                     </form>
                 </div>
-                <div>Auth state: {authState}</div>
+
+                <StatusBar progress={progress} progressState={progressState} authState={authState} />
+
                 {/* We reset the search result list whenever a new search is initiated using key={getStableKeyForLastSearch(lastSearch)} */}
                 <SearchResultList
                     results={results}

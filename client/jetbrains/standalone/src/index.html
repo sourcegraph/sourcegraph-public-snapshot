@@ -23,6 +23,22 @@
             border: 1px solid #616161;
             height: 400px;
             margin: 0;
+            border-top: 0;
+        }
+
+        #title {
+            text-align: center;
+            background-color: #4a4e52;
+            border: 1px solid #616161;
+            width: 960px;
+            padding: 2px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #title > img {
+            margin-right: 5px;
         }
 
         #code-details {
@@ -48,6 +64,7 @@
 </head>
 <body>
 <div id="modal">
+    <div id="title"><img src="/icons/icon.png" /> Sourcegraph</div>
     <iframe height="100%" id="webview" src="/html/index.html" width="100%"></iframe>
     <div id="code-details"></div>
 
