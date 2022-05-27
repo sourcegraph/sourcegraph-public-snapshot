@@ -8,6 +8,9 @@ import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ISettingsCascade } from '@sourcegraph/shared/src/schema'
 import { EMPTY_SETTINGS_CASCADE, gqlToCascade, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
+// Throttle refreshes for one hour.
+const ONE_HOUR_MS = 60 * 60 * 1000
+
 export function initializeSourcegraphSettings(
     requestGraphQL: PlatformContext['requestGraphQL']
 ): {
@@ -18,9 +21,6 @@ export function initializeSourcegraphSettings(
     const settings = new ReplaySubject<SettingsCascadeOrError>(1)
 
     const refreshes = new Subject<void>()
-
-    // Throttle refreshes for one hour.
-    const ONE_HOUR_MS = 60 * 60 * 1000
 
     const subscription = refreshes
         .pipe(

@@ -372,8 +372,8 @@ func TestRule(t *testing.T) {
 		LimitHit: false,
 		MultilineMatches: []protocol.MultilineMatch{{
 			Preview: "func foo(success) {} func bar(fail) {}",
-			Start:   protocol.LineColumn{Line: 0, Column: 0},
-			End:     protocol.LineColumn{Line: 0, Column: 17},
+			Start:   protocol.Location{Offset: 0, Line: 0, Column: 0},
+			End:     protocol.Location{Offset: 17, Line: 0, Column: 17},
 		}},
 		MatchCount: 1,
 	}}
@@ -525,12 +525,12 @@ func bar() {
 			MatchCount: 2,
 			MultilineMatches: []protocol.MultilineMatch{{
 				Preview: "func foo() {\n    fmt.Println(\"foo\")\n}",
-				Start:   protocol.LineColumn{Line: 1, Column: 11},
-				End:     protocol.LineColumn{Line: 3, Column: 1},
+				Start:   protocol.Location{Offset: 12, Line: 1, Column: 11},
+				End:     protocol.Location{Offset: 38, Line: 3, Column: 1},
 			}, {
 				Preview: "func bar() {\n    fmt.Println(\"bar\")\n}",
-				Start:   protocol.LineColumn{Line: 5, Column: 11},
-				End:     protocol.LineColumn{Line: 7, Column: 1},
+				Start:   protocol.Location{Offset: 51, Line: 5, Column: 11},
+				End:     protocol.Location{Offset: 77, Line: 7, Column: 1},
 			}},
 		}}
 		require.Equal(t, expected, matches)

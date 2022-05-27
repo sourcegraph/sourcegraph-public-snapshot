@@ -60,12 +60,14 @@ func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.F
 			// line contents. Instead, we use the ranges from comby to pull all the
 			// overlapped lines from the file contents.
 			Preview: string(fileBuf[firstLineStart:lastLineEnd]),
-			Start: protocol.LineColumn{
+			Start: protocol.Location{
+				Offset: int32(r.Range.Start.Offset),
 				// Comby returns 1-based line numbers and columns
 				Line:   int32(r.Range.Start.Line) - 1,
 				Column: int32(r.Range.Start.Column) - 1,
 			},
-			End: protocol.LineColumn{
+			End: protocol.Location{
+				Offset: int32(r.Range.End.Offset),
 				Line:   int32(r.Range.End.Line) - 1,
 				Column: int32(r.Range.End.Column) - 1,
 			},

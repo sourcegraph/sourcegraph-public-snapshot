@@ -3,6 +3,7 @@ package result
 import (
 	"net/url"
 	"path"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
@@ -165,25 +166,12 @@ func (fm *FileMatch) Key() Key {
 	return k
 }
 
-// LineColumn is a subset of the fields on Location because we don't
-// have the rune offset necessary to build a full Location yet.
-// Eventually, the two structs should be merged.
-type LineColumn struct {
-	// Line is the count of newlines before the offset in the matched text.
-	// Line is 0-based.
-	Line int32
-
-	// Column is the count of unicode code points after the last newline in the matched text
-	Column int32
-}
-
 type MultilineMatch struct {
 	// Preview is a possibly-multiline string that contains all the
 	// lines that the match overlaps.
 	// The number of lines in Preview should be End.Line - Start.Line + 1
 	Preview string
-	Start   LineColumn
-	End     LineColumn
+	Range   Range
 }
 
 func MultilineSliceAsLineMatchSlice(matches []MultilineMatch) []*LineMatch {
@@ -191,7 +179,23 @@ func MultilineSliceAsLineMatchSlice(matches []MultilineMatch) []*LineMatch {
 	for _, m := range matches {
 		lineMatches = append(lineMatches, m.AsLineMatches()...)
 	}
-	return lineMatches
+	sort.Slice(lineMatches, func(i, j int) bool {
+		return lineMatches[i].LineNumber < lineMatches[j].LineNumber
+	})
+	res := lineMatches[:0]
+	for i, lm := range lineMatches {
+		if i == 0 {
+			res = append(res, lm)
+			continue
+		}
+		last := len(res) - 1
+		if lm.LineNumber == res[last].LineNumber {
+			res[last].OffsetAndLengths = append(res[last].OffsetAndLengths, lm.OffsetAndLengths...)
+		} else {
+			res = append(res, lm)
+		}
+	}
+	return res
 }
 
 func (m MultilineMatch) AsLineMatches() []*LineMatch {
@@ -200,15 +204,15 @@ func (m MultilineMatch) AsLineMatches() []*LineMatch {
 	for i, line := range lines {
 		offset := int32(0)
 		if i == 0 {
-			offset = m.Start.Column
+			offset = int32(m.Range.Start.Column)
 		}
 		length := int32(utf8.RuneCountInString(line)) - offset
 		if i == len(lines)-1 {
-			length = m.End.Column - offset
+			length = int32(m.Range.End.Column) - offset
 		}
 		lineMatches = append(lineMatches, &LineMatch{
 			Preview:          line,
-			LineNumber:       m.Start.Line + int32(i),
+			LineNumber:       int32(m.Range.Start.Line) + int32(i),
 			OffsetAndLengths: [][2]int32{{offset, length}},
 		})
 	}
@@ -220,17 +224,4 @@ type LineMatch struct {
 	Preview          string
 	OffsetAndLengths [][2]int32
 	LineNumber       int32
-}
-
-func (m LineMatch) AsMultilineMatches() []MultilineMatch {
-	multilineMatches := make([]MultilineMatch, 0, len(m.OffsetAndLengths))
-	for _, offsetAndLength := range m.OffsetAndLengths {
-		offset, length := offsetAndLength[0], offsetAndLength[1]
-		multilineMatches = append(multilineMatches, MultilineMatch{
-			Preview: m.Preview,
-			Start:   LineColumn{Line: m.LineNumber, Column: offset},
-			End:     LineColumn{Line: m.LineNumber, Column: offset + length},
-		})
-	}
-	return multilineMatches
 }

@@ -5,7 +5,7 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { ButtonLink, Typography } from '..'
+import { ButtonLink, Typography, Text } from '..'
 import { BUTTON_VARIANTS } from '../Button/constants'
 import { Grid } from '../Grid'
 import { Icon } from '../Icon'
@@ -67,7 +67,7 @@ export const Overview: Story = () => (
             Outline
         </ButtonLink>
         <Typography.H2>Icons</Typography.H2>
-        <p>We can use icons with our buttons.</p>{' '}
+        <Text>We can use icons with our buttons.</Text>{' '}
         <ButtonLink
             variant="secondary"
             to="https://sourcegraph.com"
@@ -79,7 +79,7 @@ export const Overview: Story = () => (
             Search
         </ButtonLink>
         <Typography.H2>Smaller</Typography.H2>
-        <p>We can make our buttons smaller.</p>
+        <Text>We can make our buttons smaller.</Text>
         <ButtonLink
             variant="secondary"
             to="https://sourcegraph.com"

@@ -19,6 +19,7 @@ import {
     Link,
     Icon,
     Typography,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -306,7 +307,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
     const getSearchContextBanner = (orgName: string): JSX.Element => (
         <Alert className="my-3" role="alert" key="add-repos" variant="success">
             <Typography.H4 className="align-middle mb-1">Added repositories</Typography.H4>
-            <p className="align-middle mb-0">
+            <Text className="align-middle mb-0">
                 Search across all repositories added by {orgName} with{' '}
                 <Typography.Code className="user-code-hosts-page__code--inline">
                     <Link className="font-weight-normal" to={`/search?q=context:%40${orgName.toLowerCase()}`}>
@@ -315,7 +316,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                     @{orgName}
                 </Typography.Code>
                 .
-            </p>
+            </Text>
         </Alert>
     )
 

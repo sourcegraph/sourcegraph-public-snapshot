@@ -34,19 +34,23 @@ exports[`SearchStatsPage limitHit 1`] = `
       class="form"
     >
       <div
-        class="form-group d-flex align-items-stretch"
+        class="form-group d-flex"
       >
-        <input
-          autocapitalize="off"
-          autocomplete="off"
-          autocorrect="off"
-          class="form-control flex-1 test-stats-query"
-          id="stats-page__query"
-          placeholder="Enter a Sourcegraph search query"
-          spellcheck="false"
-          type="search"
-          value="abc"
-        />
+        <div
+          class="container d-flex mb-0 w-100"
+        >
+          <input
+            autocapitalize="off"
+            autocomplete="off"
+            autocorrect="off"
+            class="form-control with-invalid-icon"
+            id="stats-page__query"
+            placeholder="Enter a Sourcegraph search query"
+            spellcheck="false"
+            type="search"
+            value="abc"
+          />
+        </div>
       </div>
     </form>
     <hr
@@ -103,19 +107,23 @@ exports[`SearchStatsPage renders 1`] = `
       class="form"
     >
       <div
-        class="form-group d-flex align-items-stretch"
+        class="form-group d-flex"
       >
-        <input
-          autocapitalize="off"
-          autocomplete="off"
-          autocorrect="off"
-          class="form-control flex-1 test-stats-query"
-          id="stats-page__query"
-          placeholder="Enter a Sourcegraph search query"
-          spellcheck="false"
-          type="search"
-          value="abc"
-        />
+        <div
+          class="container d-flex mb-0 w-100"
+        >
+          <input
+            autocapitalize="off"
+            autocomplete="off"
+            autocorrect="off"
+            class="form-control with-invalid-icon"
+            id="stats-page__query"
+            placeholder="Enter a Sourcegraph search query"
+            spellcheck="false"
+            type="search"
+            value="abc"
+          />
+        </div>
       </div>
     </form>
     <hr

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 import { SelfHostedCta } from '../../../components/SelfHostedCta'
@@ -30,12 +30,12 @@ export const AboutOrganizationPage: React.FunctionComponent<React.PropsWithChild
                 page="organizations"
                 telemetryService={telemetryService}
             >
-                <p className="mb-2">
+                <Text className="mb-2">
                     <strong>Need more enterprise features? Run Sourcegraph self-hosted</strong>
-                </p>
-                <p className="mb-2">
+                </Text>
+                <Text className="mb-2">
                     For additional code hosts and enterprise only features, install Sourcegraph self-hosted.
-                </p>
+                </Text>
             </SelfHostedCta>
         </>
     )

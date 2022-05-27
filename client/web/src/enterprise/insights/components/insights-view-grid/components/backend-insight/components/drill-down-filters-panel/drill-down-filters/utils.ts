@@ -29,6 +29,11 @@ export function getSerializedRepositoriesFilter(filter: InsightRepositoriesFilte
 
 type InsightContextsFilter = string
 
-export function getSerializedSearchContextFilter(filter: InsightContextsFilter): string {
-    return filter !== '' ? filter : 'global (default)'
+export function getSerializedSearchContextFilter(
+    filter: InsightContextsFilter,
+    withContextPrefix: boolean = true
+): string {
+    const filterValue = filter !== '' ? filter : 'global (default)'
+
+    return withContextPrefix ? `context:${filterValue}` : filterValue
 }

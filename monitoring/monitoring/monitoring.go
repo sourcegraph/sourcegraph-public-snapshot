@@ -14,10 +14,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
 )
 
-// Container describes a Docker container to be observed.
+// Dashboard usually describes a Service,
+// and a service may contain one or more containers to be observed.
+//
+// It may also be used to describe a collection of services that are highly correlated, and
+// it is useful to present them in a single dashboard.
+//
+// It may also (rarely) be used to describe aggregated infrastructure-wide metrics
+// to provide operator an unified view of the system health for easier troubleshooting.
 //
 // These correspond to dashboards in Grafana.
-type Container struct {
+type Dashboard struct {
 	// Name of the Docker container, e.g. "syntect-server".
 	Name string
 
@@ -43,7 +50,7 @@ type Container struct {
 	NoSourcegraphDebugServer bool
 }
 
-func (c *Container) validate() error {
+func (c *Dashboard) validate() error {
 	if !isValidGrafanaUID(c.Name) {
 		return errors.Errorf("Name must be lowercase alphanumeric + dashes; found \"%s\"", c.Name)
 	}
@@ -67,7 +74,7 @@ func (c *Container) validate() error {
 }
 
 // noAlertsDefined indicates if a dashboard no alerts defined.
-func (c *Container) noAlertsDefined() bool {
+func (c *Dashboard) noAlertsDefined() bool {
 	for _, g := range c.Groups {
 		for _, r := range g.Rows {
 			for _, o := range r {
@@ -81,7 +88,7 @@ func (c *Container) noAlertsDefined() bool {
 }
 
 // renderDashboard generates the Grafana renderDashboard for this container.
-func (c *Container) renderDashboard() *sdk.Board {
+func (c *Dashboard) renderDashboard() *sdk.Board {
 	board := sdk.NewBoard(c.Title)
 	board.Version = uint(rand.Uint32())
 	board.UID = c.Name
@@ -271,7 +278,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 }
 
 // alertDescription generates an alert description for the specified coontainer's alert.
-func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinition) (string, error) {
+func (c *Dashboard) alertDescription(o Observable, alert *ObservableAlertDefinition) (string, error) {
 	if alert.isEmpty() {
 		return "", errors.New("cannot generate description for empty alert")
 	}
@@ -303,7 +310,7 @@ func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinit
 //
 // https://docs.sourcegraph.com/admin/observability/metrics#high-level-alerting-metrics
 //
-func (c *Container) renderRules() (*promRulesFile, error) {
+func (c *Dashboard) renderRules() (*promRulesFile, error) {
 	group := promGroup{Name: c.Name}
 	for groupIndex, g := range c.Groups {
 		for rowIndex, r := range g.Rows {

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
+import { Text } from '@sourcegraph/wildcard'
+
 import { version } from '../../../../package.json'
 import {
     VSCE_LINK_FEEDBACK,
@@ -103,7 +105,7 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
                             authenticatedUser={authenticatedUser}
                         />
                     ) : (
-                        <p className="ml-2">Connected to {new URL(instanceURL).hostname}</p>
+                        <Text className="ml-2">Connected to {new URL(instanceURL).hostname}</Text>
                     )}
                 </div>
             )}
