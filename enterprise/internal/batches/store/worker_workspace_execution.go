@@ -55,7 +55,7 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 
 	// This view ranks different jobs in a workspace in round-robin fashion
 	// so as to ensure fairness when dequeuing from a workspace.
-	ViewName: "batch_spec_workspace_execution_queue",
+	ViewName: "batch_spec_workspace_execution_queue batch_spec_workspace_execution_jobs",
 }
 
 type BatchSpecWorkspaceExecutionWorkerStore interface {
