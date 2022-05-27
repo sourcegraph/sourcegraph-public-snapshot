@@ -609,8 +609,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         [decorationsOrError]
     )
 
-    console.log(groupedDecorations)
-
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
         useObservable(hoverifier.hoverStateUpdates) || {}
