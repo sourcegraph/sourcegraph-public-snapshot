@@ -113,6 +113,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 					}
 				}
 				continue
+
 			case "method_declaration":
 				query := `[
 					(method_declaration name: (identifier) @ident)
@@ -143,6 +144,16 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 				}
 				if found != nil {
 					return found, nil
+				}
+				super := getSuperclassJava(swapNode(node, cur))
+				if super != nil {
+					found, err := squirrel.getFieldJava(ctx, *super, ident)
+					if err != nil {
+						return nil, err
+					}
+					if found != nil {
+						return found, nil
+					}
 				}
 				continue
 
@@ -307,6 +318,23 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 		}
 		return nil, nil
 
+	case "super":
+		cur := node.Node
+		for cur != nil {
+			switch cur.Type() {
+			case "class_declaration":
+				fallthrough
+			case "interface_declaration":
+				super := getSuperclassJava(swapNode(node, cur))
+				if super == nil {
+					return nil, nil
+				}
+				return squirrel.getDefJava(ctx, *super)
+			}
+			cur = cur.Parent()
+		}
+		return nil, nil
+
 	// No other nodes have a definition
 	default:
 		return nil, nil
@@ -364,6 +392,16 @@ func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty Type, f
 						return swapNodePtr(ty2.def, capture.Node), nil
 					}
 				}
+			}
+		}
+		super := getSuperclassJava(ty2.def)
+		if super != nil {
+			found, err := squirrel.getFieldJava(ctx, *super, field)
+			if err != nil {
+				return nil, err
+			}
+			if found != nil {
+				return found, nil
 			}
 		}
 		return nil, nil
@@ -579,6 +617,18 @@ func (squirrel *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context
 	}
 
 	return nil, nil
+}
+
+func getSuperclassJava(declaration Node) *Node {
+	super := declaration.ChildByFieldName("superclass")
+	if super == nil {
+		return nil
+	}
+	class := super.NamedChild(0)
+	if class == nil {
+		return nil
+	}
+	return swapNodePtr(declaration, class)
 }
 
 type Type interface {
