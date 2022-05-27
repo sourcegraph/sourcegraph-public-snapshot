@@ -15,7 +15,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, Alert, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { InputTooltip } from '../../../../components/InputTooltip'
@@ -231,9 +231,9 @@ const SyncerError: React.FunctionComponent<React.PropsWithChildren<{ syncerError
         </Typography.H4>
         <ErrorMessage error={syncerError} />
         <hr className="my-2" />
-        <p className="mb-0">
+        <Text className="mb-0">
             <small>This might be an ephemeral error that resolves itself at the next sync.</small>
-        </p>
+        </Text>
     </Alert>
 )
 

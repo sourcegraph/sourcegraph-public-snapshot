@@ -9,7 +9,7 @@ import { tap } from 'rxjs/operators'
 import { isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Button, Icon, Typography } from '@sourcegraph/wildcard'
+import { Link, Button, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { ListExternalServiceFields, Scalars, ExternalServicesResult } from '../../graphql-operations'
@@ -100,7 +100,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                     </Button>
                 )}
             </div>
-            <p className="mt-2">Manage code host connections to sync repositories.</p>
+            <Text className="mt-2">Manage code host connections to sync repositories.</Text>
             <FilteredConnection<
                 ListExternalServiceFields,
                 Omit<ExternalServiceNodeProps, 'node'>,

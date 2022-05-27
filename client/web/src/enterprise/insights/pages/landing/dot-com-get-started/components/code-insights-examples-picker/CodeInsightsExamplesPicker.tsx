@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { throttle } from 'lodash'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, Typography } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, Typography, Text } from '@sourcegraph/wildcard'
 
 import { CodeInsightExample } from '../../../getting-started/components/code-insights-examples/CodeInsightsExamples'
 
@@ -42,10 +42,10 @@ export const CodeInsightsExamplesPicker: React.FunctionComponent<
             <div className={styles.section}>
                 <Typography.H2>How engineering teams and leaders use Code Insights</Typography.H2>
 
-                <p className="text-muted">
+                <Text className="text-muted">
                     We've created a few common simple insights to show you what the tool can do.{' '}
                     <Link to="/help/code_insights">Explore more use cases.</Link>
-                </p>
+                </Text>
 
                 {!isMobileLayout && (
                     <ul className={styles.list}>

@@ -6,7 +6,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { Badge, Container, Link, PageHeader, Icon, Typography } from '@sourcegraph/wildcard'
+import { Badge, Container, Link, PageHeader, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
 import {
@@ -79,7 +79,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
 
             <Container className="mb-3">
                 <Typography.H3>Setting up executors</Typography.H3>
-                <p className="mb-0">
+                <Text className="mb-0">
                     Executors enable{' '}
                     <Link to="/help/code_intelligence/explanations/auto_indexing" rel="noopener">
                         auto-indexing for Code Intelligence
@@ -93,7 +93,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
                         set them up
                     </Link>
                     .
-                </p>
+                </Text>
             </Container>
             <Container>
                 <FilteredConnection<ExecutorFields, {}>
@@ -205,11 +205,11 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
 )
 
 export const NoExecutors: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <p className="text-muted text-center w-100 mb-0 mt-1">
+    <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
         <MapSearchIcon className="mb-2" />
         <br />
         No executors found.
-    </p>
+    </Text>
 )
 
 const TelemetryData: React.FunctionComponent<React.PropsWithChildren<{ data: string }>> = ({ data }) => {

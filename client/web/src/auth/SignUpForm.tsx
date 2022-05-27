@@ -17,7 +17,7 @@ import {
     ValidationOptions,
     deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon, Checkbox, Typography } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Checkbox, Typography, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
@@ -327,7 +327,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                 )}
 
                 {!experimental && (
-                    <p className="mt-3 mb-0">
+                    <Text className="mt-3 mb-0">
                         <small className="form-text text-muted">
                             By signing up, you agree to our{' '}
                             <Link to="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
@@ -339,7 +339,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             </Link>
                             .
                         </small>
-                    </p>
+                    </Text>
                 )}
             </form>
         </>

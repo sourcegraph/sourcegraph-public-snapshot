@@ -9,7 +9,7 @@ import { Observable } from 'rxjs'
 
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Badge, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Badge, Link, Icon, Text } from '@sourcegraph/wildcard'
 
 import { FileDiffFields } from '../../graphql-operations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
@@ -152,7 +152,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                         <div className="text-muted m-2">Binary files can't be rendered.</div>
                     ) : !node.newPath && !renderDeleted ? (
                         <div className="text-muted m-2">
-                            <p className="mb-0">Deleted files aren't rendered by default.</p>
+                            <Text className="mb-0">Deleted files aren't rendered by default.</Text>
                             <Button className="m-0 p-0" onClick={onClickToViewDeleted} variant="link">
                                 Click here to view.
                             </Button>

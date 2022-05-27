@@ -47,6 +47,7 @@ import {
     CollapseHeader,
     CollapsePanel,
     Typography,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
@@ -188,7 +189,7 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
     if (!tokenResult?.searchToken) {
         return (
             <div>
-                <p className="text-danger">Could not find hovered token.</p>
+                <Text className="text-danger">Could not find hovered token.</Text>
             </div>
         )
     }
@@ -552,7 +553,7 @@ const CollapsibleLocationList: React.FunctionComponent<
                             isOpen={id => props.isOpen(props.name + id)}
                         />
                     ) : (
-                        <p className="text-muted pl-2">
+                        <Text className="text-muted pl-2">
                             {props.filter ? (
                                 <i>
                                     No {props.name} matching <strong>{props.filter}</strong> found
@@ -560,7 +561,7 @@ const CollapsibleLocationList: React.FunctionComponent<
                             ) : (
                                 <i>No {props.name} found</i>
                             )}
-                        </p>
+                        </Text>
                     )}
 
                     {props.hasMore &&
@@ -614,11 +615,11 @@ const SideBlob: React.FunctionComponent<
         return (
             <>
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
-                <p className="text-muted text-center">
+                <Text alignment="center" className="text-muted">
                     <i>
                         Loading <Typography.Code>{props.activeLocation.file}</Typography.Code>...
                     </i>
-                </p>
+                </Text>
             </>
         )
     }
@@ -627,9 +628,9 @@ const SideBlob: React.FunctionComponent<
     if (error && !data) {
         return (
             <div>
-                <p className="text-danger">
+                <Text className="text-danger">
                     Loading <Typography.Code>{props.activeLocation.file}</Typography.Code> failed:
-                </p>
+                </Text>
                 <pre>{error.message}</pre>
             </div>
         )
@@ -643,11 +644,11 @@ const SideBlob: React.FunctionComponent<
     const { html, aborted } = data?.repository?.commit?.blob?.highlight
     if (aborted) {
         return (
-            <p className="text-warning text-center">
+            <Text alignment="center" className="text-warning">
                 <i>
                     Highlighting <Typography.Code>{props.activeLocation.file}</Typography.Code> failed
                 </i>
-            </p>
+            </Text>
         )
     }
 
@@ -942,16 +943,16 @@ const getPrePostLineContent = (location: Location): LocationLine => {
 const LoadingCodeIntel: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <>
         <LoadingSpinner inline={false} className="mx-auto my-4" />
-        <p className="text-muted text-center">
+        <Text alignment="center" className="text-muted">
             <i>Loading code intel ...</i>
-        </p>
+        </Text>
     </>
 )
 
 const LoadingCodeIntelFailed: React.FunctionComponent<React.PropsWithChildren<{ error: ErrorLike }>> = props => (
     <>
         <div>
-            <p className="text-danger">Loading code intel failed:</p>
+            <Text className="text-danger">Loading code intel failed:</Text>
             <pre>{props.error.message}</pre>
         </div>
     </>
