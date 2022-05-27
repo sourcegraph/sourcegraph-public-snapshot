@@ -535,7 +535,10 @@ export function createHoverifier<C extends object, D, A>({
      * disabled, this does not emit at all because the tooltip doesn't get
      * pinned at the jump target.
      */
-    const jumpTargets = allPositionJumps.pipe(
+    const jumpTargets = positionJumps.pipe(
+        withLatestFrom(container.updates),
+        filter(([, { pinned }]) => pinned),
+        map(([position]) => position),
         // Only use line and character for comparison
         map(({ position: { line, character, part }, ...rest }) => ({
             position: { line, character, part },
