@@ -50,13 +50,9 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
     const onClickAdd = useCallback(() => {
         setOpenModal('add')
     }, [])
-    const onClickCheck = useCallback<React.MouseEventHandler>(
-        async event => {
-            event.preventDefault()
-            await checkCred({ variables: { id: node?.credential?.id ?? '' } })
-        },
-        [node, checkCred]
-    )
+    const onClickCheck = useCallback<React.MouseEventHandler>(async () => {
+        await checkCred({ variables: { id: node?.credential?.id ?? '' } })
+    }, [node, checkCred])
     const onClickRemove = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()
         setOpenModal('delete')
