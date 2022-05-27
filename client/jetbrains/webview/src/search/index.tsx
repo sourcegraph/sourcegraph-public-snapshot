@@ -12,8 +12,8 @@ import {
     onOpen,
     onPreviewChange,
     onPreviewClear,
-} from './jsToJavaBridgeUtil'
-import type { Theme, PluginConfig, Search } from './types'
+} from './js-to-java-bridge'
+import type { PluginConfig, Search, Theme } from './types'
 
 setLinkComponent(AnchorLink)
 

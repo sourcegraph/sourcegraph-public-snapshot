@@ -22,7 +22,7 @@ import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
 
-import { saveLastSearch } from './jsToJavaBridgeUtil'
+import { saveLastSearch } from './js-to-java-bridge'
 import { SearchResultList } from './results/SearchResultList'
 import { Search } from './types'
 

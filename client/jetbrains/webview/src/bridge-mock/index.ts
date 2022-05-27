@@ -1,6 +1,6 @@
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
-import type { MatchRequest, Request, SaveLastSearchRequest } from '../search/jsToJavaBridgeUtil'
+import type { MatchRequest, Request, SaveLastSearchRequest } from '../search/js-to-java-bridge'
 import type { Search } from '../search/types'
 
 let savedSearch: Search = {
