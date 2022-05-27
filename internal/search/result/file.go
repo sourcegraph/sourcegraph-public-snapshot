@@ -166,16 +166,16 @@ func (fm *FileMatch) Key() Key {
 }
 
 type HunkMatch struct {
-	Preview         string
-	LineNumberStart int
-	Ranges          Ranges
+	Preview      string
+	PreviewStart Location
+	Ranges       Ranges
 }
 
 func (h HunkMatch) AsLineMatches() []*LineMatch {
 	lines := strings.Split(h.Preview, "\n")
 	lineMatches := make([]*LineMatch, len(lines))
 	for i, line := range lines {
-		lineNumber := h.LineNumberStart + i
+		lineNumber := h.PreviewStart.Line + i
 		var offsetAndLengths [][2]int32
 		for _, rr := range h.Ranges {
 			for rangeLine := rr.Start.Line; rangeLine <= rr.End.Line; rangeLine++ {

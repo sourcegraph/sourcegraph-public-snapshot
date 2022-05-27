@@ -415,7 +415,11 @@ func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.HunkMatches 
 			hms = append(hms, result.HunkMatch{
 				Preview: string(l.Line),
 				// zoekt line numbers are 1-based rather than 0-based so subtract 1
-				LineNumberStart: l.LineNumber - 1,
+				PreviewStart: result.Location{
+					Offset: l.LineStart,
+					Line:   l.LineNumber - 1,
+					Column: 0,
+				},
 				Ranges: result.Ranges{{
 					Start: result.Location{
 						Offset: int(m.Offset),

@@ -13,8 +13,8 @@ func TestConvertMatches(t *testing.T) {
 			output []*LineMatch
 		}{{
 			input: HunkMatch{
-				Preview:         "line1\nline2\nline3",
-				LineNumberStart: 1,
+				Preview:      "line1\nline2\nline3",
+				PreviewStart: Location{Line: 1},
 				Ranges: Ranges{{
 					Start: Location{1, 1, 1},
 					End:   Location{13, 3, 1},
@@ -35,8 +35,8 @@ func TestConvertMatches(t *testing.T) {
 			}},
 		}, {
 			input: HunkMatch{
-				Preview:         "line1",
-				LineNumberStart: 1,
+				Preview:      "line1",
+				PreviewStart: Location{Line: 1},
 				Ranges: Ranges{{
 					Start: Location{1, 1, 1},
 					End:   Location{1, 1, 3},
@@ -64,8 +64,8 @@ func TestConvertMatches(t *testing.T) {
 			output []*LineMatch
 		}{{
 			input: HunkMatches{{
-				Preview:         "line1\nline2\nline3\nline4",
-				LineNumberStart: 1,
+				Preview:      "line1\nline2\nline3\nline4",
+				PreviewStart: Location{Line: 1},
 				Ranges: Ranges{{
 					Start: Location{1, 1, 1},
 					End:   Location{13, 3, 1},
@@ -93,15 +93,15 @@ func TestConvertMatches(t *testing.T) {
 			}},
 		}, {
 			input: HunkMatches{{
-				Preview:         "line1\nline2\nline3",
-				LineNumberStart: 1,
+				Preview:      "line1\nline2\nline3",
+				PreviewStart: Location{Line: 1},
 				Ranges: Ranges{{
 					Start: Location{1, 1, 1},
 					End:   Location{13, 3, 1},
 				}},
 			}, {
-				Preview:         "line4\nline5\nline6",
-				LineNumberStart: 4,
+				Preview:      "line4\nline5\nline6",
+				PreviewStart: Location{Line: 4},
 				Ranges: Ranges{{
 					Start: Location{19, 4, 1},
 					End:   Location{31, 6, 1},
@@ -139,7 +139,7 @@ func TestConvertMatches(t *testing.T) {
 
 		for _, tc := range cases {
 			t.Run("", func(t *testing.T) {
-				require.Equal(t, tc.input.AsLineMatches(), tc.output)
+				require.Equal(t, tc.output, tc.input.AsLineMatches())
 			})
 		}
 	})
