@@ -20,8 +20,10 @@ trap finish EXIT
 ./tmp-sg migration squash-all -skip-teardown -db codeinsights -f migrations/codeinsights/squashed.sql
 
 # Primarily for nix users, where postgres is listening on a unix socket
+set +e -x
 test -d "$PGHOST"
 IS_UNIX_POSTGRES=$?
+set -ex
 
 if [ $IS_UNIX_POSTGRES ]; then
   if [ -z "$PGDATASOURCE" ]; then
