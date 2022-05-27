@@ -8,14 +8,13 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type UploadConnectionResolver struct {
 	db               database.DB
-	gitserver        policies.GitserverClient
+	gitserver        GitserverClient
 	resolver         resolvers.Resolver
 	uploadsResolver  *resolvers.UploadsResolver
 	prefetcher       *Prefetcher
@@ -23,7 +22,7 @@ type UploadConnectionResolver struct {
 	errTracer        *observation.ErrCollector
 }
 
-func NewUploadConnectionResolver(db database.DB, gitserver policies.GitserverClient, resolver resolvers.Resolver, uploadsResolver *resolvers.UploadsResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.LSIFUploadConnectionResolver {
+func NewUploadConnectionResolver(db database.DB, gitserver GitserverClient, resolver resolvers.Resolver, uploadsResolver *resolvers.UploadsResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.LSIFUploadConnectionResolver {
 	return &UploadConnectionResolver{
 		resolver:         resolver,
 		db:               db,
