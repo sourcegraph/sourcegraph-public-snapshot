@@ -155,10 +155,11 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                     <BackendInsightChart
                         {...state.data}
                         locked={insight.isFrozen}
-                        onDatumClick={trackDatumClicks}
-                        toggle={toggle}
+                        zeroYAxisMin={zeroYAxisMin}
                         isSeriesSelected={isSeriesSelected}
                         isSeriesHovered={isSeriesHovered}
+                        onDatumClick={trackDatumClicks}
+                        onLegendItemClick={toggle}
                         setHoveredId={setHoveredId}
                     />
                 )}
