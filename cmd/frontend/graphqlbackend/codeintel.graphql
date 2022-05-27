@@ -936,6 +936,11 @@ type LSIFUpload implements Node {
     inputCommit: String!
 
     """
+    The tags, if any, associated with this commit.
+    """
+    tags: [String!]!
+
+    """
     The original root supplied at upload time.
     """
     inputRoot: String!

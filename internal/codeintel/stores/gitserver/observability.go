@@ -23,6 +23,7 @@ type operations struct {
 	refDescriptions       *observation.Operation
 	repoInfo              *observation.Operation
 	resolveRevision       *observation.Operation
+	listTags              *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -61,5 +62,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		refDescriptions:       op("RefDescriptions"),
 		repoInfo:              op("RepoInfo"),
 		resolveRevision:       op("ResolveRevision"),
+		listTags:              op("ListTags"),
 	}
 }
