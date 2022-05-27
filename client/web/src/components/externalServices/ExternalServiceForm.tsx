@@ -8,7 +8,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, Alert, Typography } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Alert, Typography, Text } from '@sourcegraph/wildcard'
 
 import { AddExternalServiceInput } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -109,9 +109,9 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                     className="test-external-service-editor"
                     telemetryService={telemetryService}
                 />
-                <p className="form-text text-muted">
+                <Text className="form-text text-muted">
                     <small>Use Ctrl+Space for completion, and hover over JSON properties for documentation.</small>
-                </p>
+                </Text>
             </div>
             <Button
                 type="submit"

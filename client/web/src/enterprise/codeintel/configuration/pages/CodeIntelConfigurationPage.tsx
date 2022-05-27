@@ -9,7 +9,7 @@ import { Subject } from 'rxjs'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container, PageHeader, Link, Typography } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link, Typography, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import {
@@ -186,16 +186,16 @@ export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNod
 
                 <div>
                     {indexingEnabled && !policy.retentionEnabled && !policy.indexingEnabled ? (
-                        <p className="text-muted mt-2">Data retention and auto-indexing disabled.</p>
+                        <Text className="text-muted mt-2">Data retention and auto-indexing disabled.</Text>
                     ) : (
                         <>
-                            <p className="mt-2">
+                            <Text className="mt-2">
                                 <RetentionPolicyDescription policy={policy} />
-                            </p>
+                            </Text>
                             {indexingEnabled && (
-                                <p className="mt-2">
+                                <Text className="mt-2">
                                     <IndexingPolicyDescription policy={policy} />
-                                </p>
+                                </Text>
                             )}
                         </>
                     )}

@@ -7,7 +7,16 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, CardBody, Card, Link, Container, Typography, screenReaderAnnounce } from '@sourcegraph/wildcard'
+import {
+    PageHeader,
+    CardBody,
+    Card,
+    Link,
+    Container,
+    Typography,
+    Text,
+    screenReaderAnnounce,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -245,9 +254,9 @@ const BatchChangeListEmptyElement: React.FunctionComponent<
     React.PropsWithChildren<BatchChangeListEmptyElementProps>
 > = ({ canCreate, location }) => (
     <div className="w-100 py-5 text-center">
-        <p>
+        <Text>
             <strong>No batch changes have been created.</strong>
-        </p>
+        </Text>
         {canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
     </div>
 )
@@ -310,7 +319,7 @@ const GettingStartedFooter: React.FunctionComponent<React.PropsWithChildren<{}>>
         <div className="col-12 col-sm-8 offset-sm-2 col-md-6 offset-md-3">
             <Card>
                 <CardBody className="text-center">
-                    <p>Create your first batch change</p>
+                    <Text>Create your first batch change</Text>
                     <Typography.H2 className="mb-0">
                         <Link to="/help/batch_changes/quickstart" target="_blank" rel="noopener">
                             Batch Changes quickstart

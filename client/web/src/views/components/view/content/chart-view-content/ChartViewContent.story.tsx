@@ -4,7 +4,7 @@ import { createMemoryHistory } from 'history'
 import { ChartContent } from 'sourcegraph'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Typography } from '@sourcegraph/wildcard'
+import { Typography, Text } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../components/WebStory'
 import { LINE_CHART_CONTENT_MOCK, LINE_CHART_WITH_MANY_LINES } from '../../../../mocks/charts-content'
@@ -278,27 +278,27 @@ add('Line chart with horizontal layout', () => (
     <>
         <article>
             <Typography.H3>Middle width chart 2 lines</Typography.H3>
-            <p>Legend block should be below the chart</p>
+            <Text>Legend block should be below the chart</Text>
             <ChartViewContent {...commonProps} content={LINE_CHART_CONTENT_MOCK} />
         </article>
 
         <article>
             <Typography.H3>Big width chart 2 lines</Typography.H3>
-            <p>
+            <Text>
                 Legend block should be below the chart even if we have enough space, but we have small number of series
-            </p>
+            </Text>
             <ChartViewContent {...commonProps} className={styles.chartLg} content={LINE_CHART_CONTENT_MOCK} />
         </article>
 
         <article>
             <Typography.H3>Middle width chart with many lines</Typography.H3>
-            <p>Legend is placed below cause we don't have enough X space to put it aside</p>
+            <Text>Legend is placed below cause we don't have enough X space to put it aside</Text>
             <ChartViewContent {...commonProps} content={LINE_CHART_WITH_MANY_LINES} />
         </article>
 
         <article>
             <Typography.H3>Big width chart with many lines</Typography.H3>
-            <p>Legend is placed aside because we have enought X space</p>
+            <Text>Legend is placed aside because we have enought X space</Text>
             <ChartViewContent {...commonProps} className={styles.chartLg} content={LINE_CHART_WITH_MANY_LINES} />
         </article>
 

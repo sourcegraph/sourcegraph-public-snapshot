@@ -3,7 +3,7 @@ import React, { useEffect } from 'react'
 import { gql } from '@sourcegraph/http-client'
 import { percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
-import { Container, PageHeader, Link, Typography } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link, Typography, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
@@ -59,7 +59,7 @@ export const UserSettingsProfilePage: React.FunctionComponent<React.PropsWithChi
             {props.activation?.completed && percentageDone(props.activation.completed) < 100 && (
                 <Container className="mb-3">
                     <Typography.H3>Almost there!</Typography.H3>
-                    <p>Complete the steps below to finish onboarding to Sourcegraph.</p>
+                    <Text>Complete the steps below to finish onboarding to Sourcegraph.</Text>
                     <ActivationChecklist steps={props.activation.steps} completed={props.activation.completed} />
                 </Container>
             )}
@@ -69,10 +69,10 @@ export const UserSettingsProfilePage: React.FunctionComponent<React.PropsWithChi
                     initialValue={user}
                     after={
                         window.context.sourcegraphDotComMode && (
-                            <p className="mt-4">
+                            <Text className="mt-4">
                                 <Link to="https://about.sourcegraph.com/contact">Contact support</Link> to delete your
                                 account.
-                            </p>
+                            </Text>
                         )
                     }
                 />

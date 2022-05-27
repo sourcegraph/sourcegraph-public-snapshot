@@ -7,7 +7,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert, Typography, Link } from '@sourcegraph/wildcard'
+import { Alert, Typography, Text, Link } from '@sourcegraph/wildcard'
 
 import {
     VSCE_LINK_DOTCOM,
@@ -141,15 +141,15 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
     if (!hasAccount && !accessToken) {
         return renderCommon(
             <>
-                <p className={classNames(styles.ctaParagraph)}>
+                <Text className={classNames(styles.ctaParagraph)}>
                     Create an account to search across your private repositories and access advanced features: search
                     multiple repositories & commit history, monitor code changes, save searches, and more.
-                </p>
-                <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
+                </Text>
+                <Text className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
                     <VSCodeLink onClick={onSignUpClick} href={signUpURL}>
                         Create an account
                     </VSCodeLink>
-                </p>
+                </Text>
                 <VSCodeLink onClick={() => setHasAccount(true)}>Have an account?</VSCodeLink>
             </>
         )
@@ -157,10 +157,10 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
 
     return renderCommon(
         <>
-            <p className={classNames(styles.ctaParagraph)}>
+            <Text className={classNames(styles.ctaParagraph)}>
                 Sign in by entering an access token created through your user settings on {hostname}.
-            </p>
-            <p className={classNames(styles.ctaParagraph)}>
+            </Text>
+            <Text className={classNames(styles.ctaParagraph)}>
                 See our {/* eslint-disable-next-line react/forbid-elements */}{' '}
                 <a
                     href={VSCE_LINK_USER_DOCS}
@@ -169,9 +169,9 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     user docs
                 </a>{' '}
                 for a video guide on how to create an access token.
-            </p>
+            </Text>
             {isSourcegraphDotCom && (
-                <p className={classNames(styles.ctaParagraph)}>
+                <Text className={classNames(styles.ctaParagraph)}>
                     <Link to={isSourcegraphDotCom}>
                         <VSCodeButton
                             type="button"
@@ -185,9 +185,9 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                             Continue in browser
                         </VSCodeButton>
                     </Link>
-                </p>
+                </Text>
             )}
-            <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
+            <Text className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
                 <LoaderInput loading={state === 'validating'}>
                     <Typography.Label htmlFor="access-token-input">Access Token</Typography.Label>
                     <input
@@ -204,9 +204,9 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                         placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
                     />
                 </LoaderInput>
-            </p>
+            </Text>
             {usePrivateInstance && (
-                <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
+                <Text className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
                     <LoaderInput loading={state === 'validating'}>
                         <Typography.Label htmlFor="instance-url-input">Sourcegraph Instance URL</Typography.Label>
                         <input
@@ -223,7 +223,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                             placeholder="ex https://sourcegraph.example.com"
                         />
                     </LoaderInput>
-                </p>
+                </Text>
             )}
             <VSCodeButton
                 type="submit"
@@ -238,16 +238,16 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     restart VS Code if the instance URL has been updated.
                 </Alert>
             )}
-            <p className="my-0">
+            <Text className="my-0">
                 <VSCodeLink onClick={() => setUsePrivateInstance(!usePrivateInstance)}>
                     {!usePrivateInstance ? 'Need to connect to a private instance?' : 'Not a private instance user?'}
                 </VSCodeLink>
-            </p>
-            <p className="my-0">
+            </Text>
+            <Text className="my-0">
                 <VSCodeLink href={signUpURL} onClick={onSignUpClick}>
                     Create an account
                 </VSCodeLink>
-            </p>
+            </Text>
         </>
     )
 }
@@ -263,16 +263,16 @@ export const AuthSidebarCta: React.FunctionComponent<React.PropsWithChildren<Aut
             <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
                 <Typography.H5 className="flex-grow-1">Welcome</Typography.H5>
             </button>
-            <p className={classNames(styles.ctaParagraph)}>
+            <Text className={classNames(styles.ctaParagraph)}>
                 The Sourcegraph extension allows you to search millions of open source repositories without cloning them
                 to your local machine.
-            </p>
-            <p className={classNames(styles.ctaParagraph)}>
+            </Text>
+            <Text className={classNames(styles.ctaParagraph)}>
                 Developers use Sourcegraph every day to onboard to new code bases, find code to reuse, resolve
                 incidents, fix security vulnerabilities, and more.
-            </p>
+            </Text>
             <div className={classNames(styles.ctaParagraph)}>
-                <p className="mb-0">Learn more:</p>
+                <Text className="mb-0">Learn more:</Text>
                 <VSCodeLink href={VSCE_LINK_DOTCOM + VSCE_SIDEBAR_PARAMS} onClick={() => onLinkClick('Sourcegraph')}>
                     Sourcegraph.com
                 </VSCodeLink>

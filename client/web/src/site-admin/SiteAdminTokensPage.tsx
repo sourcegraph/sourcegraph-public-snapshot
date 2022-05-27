@@ -9,7 +9,7 @@ import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { requestGraphQL } from '../backend/graphql'
@@ -56,7 +56,9 @@ export const SiteAdminTokensPage: React.FunctionComponent<React.PropsWithChildre
                     <Icon as={AddIcon} /> Generate access token
                 </Button>
             </div>
-            <p>Tokens may be used to access the Sourcegraph API with the full privileges of the token's creator.</p>
+            <Text>
+                Tokens may be used to access the Sourcegraph API with the full privileges of the token's creator.
+            </Text>
             <FilteredConnection<AccessTokenFields, Omit<AccessTokenNodeProps, 'node'>>
                 className="list-group list-group-flush mt-3"
                 noun="access token"

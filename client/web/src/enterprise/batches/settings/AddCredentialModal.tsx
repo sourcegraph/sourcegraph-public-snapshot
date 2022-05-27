@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Button, Modal, Link, Typography } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, Typography, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
@@ -151,9 +151,9 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                 {requiresSSH && (
                     <div className="d-flex w-100 justify-content-between mb-4">
                         <div className="flex-grow-1 mr-2">
-                            <p className={classNames('mb-0 py-2', step === 'get-ssh-key' && 'text-muted')}>
+                            <Text className={classNames('mb-0 py-2', step === 'get-ssh-key' && 'text-muted')}>
                                 1. Add token
-                            </p>
+                            </Text>
                             <div
                                 className={classNames(
                                     styles.addCredentialModalModalStepRuler,
@@ -162,9 +162,9 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                             />
                         </div>
                         <div className="flex-grow-1 ml-2">
-                            <p className={classNames('mb-0 py-2', step === 'add-token' && 'text-muted')}>
+                            <Text className={classNames('mb-0 py-2', step === 'add-token' && 'text-muted')}>
                                 2. Get SSH Key
-                            </p>
+                            </Text>
                             <div
                                 className={classNames(
                                     styles.addCredentialModalModalStepRuler,
@@ -210,7 +210,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                                     value={credential}
                                     onChange={onChangeCredential}
                                 />
-                                <p className="form-text">
+                                <Text className="form-text">
                                     <Link
                                         to={HELP_TEXT_LINK_URL}
                                         rel="noreferrer noopener"
@@ -220,7 +220,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                                         Create a new {patLabel.toLocaleLowerCase()}
                                     </Link>{' '}
                                     {scopeRequirements[externalServiceKind]}
-                                </p>
+                                </Text>
                             </div>
                             <div className="d-flex justify-content-end">
                                 <Button
@@ -247,10 +247,10 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                 )}
                 {step === 'get-ssh-key' && (
                     <>
-                        <p>
+                        <Text>
                             An SSH key has been generated for your batch changes code host connection. Copy the public
                             key below and enter it on your code host.
-                        </p>
+                        </Text>
                         <CodeHostSshPublicKey externalServiceKind={externalServiceKind} sshPublicKey={sshPublicKey!} />
                         <Button
                             className="test-add-credential-modal-submit float-right"

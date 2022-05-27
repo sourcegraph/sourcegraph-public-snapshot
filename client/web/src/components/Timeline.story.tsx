@@ -3,6 +3,8 @@ import { parseISO } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 
+import { Text } from '@sourcegraph/wildcard'
+
 import { Timeline } from './Timeline'
 import { WebStory } from './WebStory'
 
@@ -69,7 +71,7 @@ add('Details', () => (
                         className: 'bg-danger',
                         text: 'Second event description',
                         date: '2020-06-15T12:20:00+00:00',
-                        details: <p>HELLO THERE</p>,
+                        details: <Text>HELLO THERE</Text>,
                         expanded: true,
                     },
                     {
@@ -77,7 +79,7 @@ add('Details', () => (
                         className: 'bg-success',
                         text: 'Third event description',
                         date: '2020-06-15T13:25:00+00:00',
-                        details: <p>HELLO THERE</p>,
+                        details: <Text>HELLO THERE</Text>,
                         expanded: false,
                     },
                 ]}

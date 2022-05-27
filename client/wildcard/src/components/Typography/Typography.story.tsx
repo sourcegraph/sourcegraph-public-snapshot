@@ -6,6 +6,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { TYPOGRAPHY_ALIGNMENTS, TYPOGRAPHY_MODES } from './constants'
 import * as Typography from './Typography'
+import { Text } from './Typography'
 
 const decorator: DecoratorFn = story => <BrandedStory styles={webStyles}>{() => <div>{story()}</div>}</BrandedStory>
 
@@ -263,54 +264,54 @@ export const Simple: Story = () => (
                         </Typography.Code>
                     </td>
                     <td>
-                        <Typography.Text
+                        <Text
                             mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                             alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                             size="base"
                             weight="regular"
                         >
                             This is Body / Base / Regular
-                        </Typography.Text>
-                        <Typography.Text
+                        </Text>
+                        <Text
                             mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                             alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                             size="base"
                             weight="medium"
                         >
                             This is Body / Base / Medium
-                        </Typography.Text>
-                        <Typography.Text
+                        </Text>
+                        <Text
                             mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                             alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                             size="base"
                             weight="bold"
                         >
                             This is Body / Base / Bold
-                        </Typography.Text>
-                        <Typography.Text
+                        </Text>
+                        <Text
                             mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                             alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                             size="small"
                             weight="regular"
                         >
                             This is Body / Small / Regular
-                        </Typography.Text>
-                        <Typography.Text
+                        </Text>
+                        <Text
                             mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                             alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                             size="small"
                             weight="medium"
                         >
                             This is Body / Small / Medium
-                        </Typography.Text>
-                        <Typography.Text
+                        </Text>
+                        <Text
                             mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                             alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                             size="small"
                             weight="bold"
                         >
                             This is Body / Small / Bold
-                        </Typography.Text>
+                        </Text>
                     </td>
                 </tr>
             </tbody>

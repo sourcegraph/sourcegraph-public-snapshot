@@ -4,7 +4,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, isDefined, keyExistsIn } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Typography } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Typography, Text } from '@sourcegraph/wildcard'
 
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
@@ -299,7 +299,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
         services.length > 0 ? (
             <Alert className="my-3" role="alert" key="add-repos" variant="success">
                 <Typography.H4 className="align-middle mb-1">Connected with {services.join(', ')}</Typography.H4>
-                <p className="align-middle mb-0">
+                <Text className="align-middle mb-0">
                     Next,{' '}
                     <Link
                         className="font-weight-normal"
@@ -309,7 +309,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
                         add repositories
                     </Link>{' '}
                     to search with Sourcegraph.
-                </p>
+                </Text>
             </Alert>
         ) : null
 
@@ -404,7 +404,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
     const getServiceWarningFragment = (service: serviceProblem): JSX.Element => (
         <Alert className="my-3" key={service.id} variant="warning">
             <Typography.H4 className="align-middle mb-1">Can’t connect with {service.displayName}</Typography.H4>
-            <p className="align-middle mb-0">
+            <Text className="align-middle mb-0">
                 <span className="align-middle">Please try</span>{' '}
                 {owner.type === 'org' ? (
                     <Button
@@ -418,7 +418,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
                     <span className="align-middle">reconnecting the code host connection</span>
                 )}{' '}
                 <span className="align-middle">with {service.displayName} to restore access.</span>
-            </p>
+            </Text>
         </Alert>
     )
 
@@ -429,7 +429,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
                     <Typography.H4 className="align-middle mb-1">
                         We’re having trouble connecting to {svc}{' '}
                     </Typography.H4>
-                    <p className="align-middle mb-0">
+                    <Text className="align-middle mb-0">
                         <span className="align-middle">Verify that</span> {svc}
                         <span className="align-middle">
                             {' '}
@@ -444,7 +444,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
                                 </Link>
                             )}
                         </span>{' '}
-                    </p>
+                    </Text>
                 </div>
             ))}
         </Alert>
@@ -579,10 +579,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
             )}
 
             <SelfHostedCta className="mt-5" page="settings/code-hosts" telemetryService={telemetryService}>
-                <p className="mb-2">
+                <Text className="mb-2">
                     <strong>Require support for Bitbucket, or nearly any other code host?</strong>
-                </p>
-                <p className="mb-2">You may need our self-hosted installation.</p>
+                </Text>
+                <Text className="mb-2">You may need our self-hosted installation.</Text>
             </SelfHostedCta>
         </div>
     )
