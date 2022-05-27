@@ -68,18 +68,6 @@
         }
     }
 
-    td:global(.decoration) {
-        max-width: 220px;
-        padding-right: 0.75rem;
-        padding-left: 0.75rem;
-        overflow: hidden;
-        text-overflow: ellipsis;
-
-        span::before {
-            content: attr(data-contents);
-        }
-    }
-
     &--wrapped {
         td:global(.code) {
             white-space: pre-wrap;

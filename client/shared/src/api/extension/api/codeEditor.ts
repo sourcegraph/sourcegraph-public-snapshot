@@ -74,7 +74,7 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
                     const notEmtyDecorations = decorations.filter(decoration => !isDecorationEmpty(decoration))
 
                     return notEmtyDecorations.length > 0 ? [...accumulator, [key, notEmtyDecorations]] : accumulator
-                }, [] as any)
+                }, [] as [sourcegraph.TextDocumentDecorationType, clientType.TextDocumentDecoration[]][])
             )
         )
     }

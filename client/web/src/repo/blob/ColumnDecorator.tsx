@@ -66,8 +66,15 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                         const row = table.rows[index]
                         const className = extensionID.replace(/\//g, '-')
 
-                        const cell = row.querySelector<HTMLTableCellElement>(`td.${className}`) || row.insertCell(1)
-                        cell.classList.add('decoration', className)
+                        let cell = row.querySelector<HTMLTableCellElement>(`td.${className}`)
+                        if (!cell) {
+                            cell = row.insertCell(1)
+                            cell.classList.add(styles.decoration, className)
+
+                            const wrapper = document.createElement('div')
+                            wrapper.classList.add(styles.wrapper)
+                            cell.prepend(wrapper)
+                        }
 
                         const currentLineDecorations = decorations.get(index + 1)
 
@@ -124,6 +131,7 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                         key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${
                                             portalRoot.dataset.line ?? ''
                                         }`}
+                                        className={styles.item}
                                         data-tooltip={attachment.hoverMessage}
                                         to={attachment.linkURL}
                                         // Use target to open external URLs
@@ -152,7 +160,7 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                     </LinkOrSpan>
                                 )
                             }),
-                            portalRoot
+                            portalRoot.firstChild as HTMLDivElement
                         )
                     )
                     .toArray()}
