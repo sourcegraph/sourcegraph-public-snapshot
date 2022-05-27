@@ -2448,7 +2448,8 @@ func TestCleanDetachedChangesets(t *testing.T) {
 				ExternalID:          fmt.Sprintf("foobar-%d", 42),
 				ExternalServiceType: extsvc.TypeGitHub,
 				ExternalBranch:      "refs/heads/batch-changes/test",
-				DetachedAt:          time.Now().Add(time.Duration(-48) * time.Hour),
+				// Set beyond the retention period
+				DetachedAt: time.Now().Add(time.Duration(-48) * time.Hour),
 			},
 			wantDeleted: true,
 		},
@@ -2459,7 +2460,8 @@ func TestCleanDetachedChangesets(t *testing.T) {
 				ExternalID:          fmt.Sprintf("foobar-%d", 42),
 				ExternalServiceType: extsvc.TypeGitHub,
 				ExternalBranch:      "refs/heads/batch-changes/test",
-				DetachedAt:          time.Now(),
+				// Set to now, within the retention period
+				DetachedAt: time.Now(),
 			},
 			wantDeleted: false,
 		},
