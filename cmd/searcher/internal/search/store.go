@@ -390,6 +390,8 @@ func (s *Store) String() string {
 // watchAndEvict is a loop which periodically checks the size of the cache and
 // evicts/deletes items if the store gets too large.
 func (s *Store) watchAndEvict() {
+	metricMaxCacheSizeBytes.Set(float64(s.MaxCacheSizeBytes))
+
 	if s.MaxCacheSizeBytes == 0 {
 		return
 	}
@@ -434,6 +436,10 @@ func ignoreSizeMax(name string, patterns []string) bool {
 }
 
 var (
+	metricMaxCacheSizeBytes = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "searcher_store_max_cache_size_bytes",
+		Help: "The configured maximum size of items in the on disk cache before eviction.",
+	})
 	metricCacheSizeBytes = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "searcher_store_cache_size_bytes",
 		Help: "The total size of items in the on disk cache.",
