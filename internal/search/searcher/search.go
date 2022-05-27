@@ -222,31 +222,37 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 	return func(searcherMatches []*protocol.FileMatch) []result.Match {
 		matches := make([]result.Match, 0, len(searcherMatches))
 		for _, fm := range searcherMatches {
-			multilineMatches := make([]result.MultilineMatch, 0, len(fm.LineMatches))
+			hunkMatches := make(result.HunkMatches, 0, len(fm.LineMatches))
+
 			for _, lm := range fm.LineMatches {
+				ranges := make(result.Ranges, 0, len(lm.OffsetAndLengths))
 				for _, ol := range lm.OffsetAndLengths {
 					offset, length := ol[0], ol[1]
-					multilineMatches = append(multilineMatches, result.MultilineMatch{
-						Preview: lm.Preview,
-						Range: result.Range{
-							Start: result.Location{
-								Offset: lm.LineOffset + runeOffsetToByteOffset(lm.Preview, offset),
-								Line:   lm.LineNumber,
-								Column: offset,
-							},
-							End: result.Location{
-								Offset: lm.LineOffset + runeOffsetToByteOffset(lm.Preview, offset+length),
-								Line:   lm.LineNumber,
-								Column: offset + length,
-							},
+					ranges = append(ranges, result.Range{
+						Start: result.Location{
+							Offset: lm.LineOffset + runeOffsetToByteOffset(lm.Preview, offset),
+							Line:   lm.LineNumber,
+							Column: offset,
+						},
+						End: result.Location{
+							Offset: lm.LineOffset + runeOffsetToByteOffset(lm.Preview, offset+length),
+							Line:   lm.LineNumber,
+							Column: offset + length,
 						},
 					})
 				}
+				hunkMatches = append(hunkMatches, result.HunkMatch{
+					Preview:         lm.Preview,
+					LineNumberStart: lm.LineNumber,
+					Ranges:          ranges,
+				})
 			}
+
 			for _, mm := range fm.MultilineMatches {
-				multilineMatches = append(multilineMatches, result.MultilineMatch{
-					Preview: mm.Preview,
-					Range: result.Range{
+				hunkMatches = append(hunkMatches, result.HunkMatch{
+					Preview:         mm.Preview,
+					LineNumberStart: int(mm.Start.Line),
+					Ranges: result.Ranges{{
 						Start: result.Location{
 							Offset: int(mm.Start.Offset),
 							Line:   int(mm.Start.Line),
@@ -257,7 +263,7 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 							Line:   int(mm.End.Line),
 							Column: int(mm.End.Column),
 						},
-					},
+					}},
 				})
 			}
 
@@ -268,8 +274,8 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 					CommitID: commit,
 					InputRev: rev,
 				},
-				MultilineMatches: multilineMatches,
-				LimitHit:         fm.LimitHit,
+				HunkMatches: hunkMatches,
+				LimitHit:    fm.LimitHit,
 			})
 		}
 		return matches

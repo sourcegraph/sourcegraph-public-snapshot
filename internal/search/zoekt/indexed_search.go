@@ -366,9 +366,9 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 			continue
 		}
 
-		var lines []result.MultilineMatch
+		var hms result.HunkMatches
 		if typ != search.SymbolRequest {
-			lines = zoektFileMatchToMultilineMatches(&file)
+			hms = zoektFileMatchToMultilineMatches(&file)
 		}
 
 		for _, inputRev := range inputRevs {
@@ -379,8 +379,8 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 				symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
 			}
 			fm := result.FileMatch{
-				MultilineMatches: lines,
-				Symbols:          symbols,
+				HunkMatches: hms,
+				Symbols:     symbols,
 				File: result.File{
 					InputRev: &inputRev,
 					CommitID: api.CommitID(file.Version),
@@ -400,8 +400,8 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 	})
 }
 
-func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) []result.MultilineMatch {
-	lines := make([]result.MultilineMatch, 0, len(file.LineMatches))
+func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.HunkMatches {
+	hms := make(result.HunkMatches, 0, len(file.LineMatches))
 
 	for _, l := range file.LineMatches {
 		if l.FileName {
@@ -412,26 +412,27 @@ func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) []result.MultilineM
 			offset := utf8.RuneCount(l.Line[:m.LineOffset])
 			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 
-			lines = append(lines, result.MultilineMatch{
+			hms = append(hms, result.HunkMatch{
 				Preview: string(l.Line),
-				Range: result.Range{
+				// zoekt line numbers are 1-based rather than 0-based so subtract 1
+				LineNumberStart: l.LineNumber - 1,
+				Ranges: result.Ranges{{
 					Start: result.Location{
-						// zoekt line numbers are 1-based rather than 0-based so subtract 1
 						Offset: int(m.Offset),
 						Line:   l.LineNumber - 1,
 						Column: offset,
 					},
 					End: result.Location{
-						Offset: int(m.Offset),
+						Offset: int(m.Offset) + m.MatchLength,
 						Line:   l.LineNumber - 1,
 						Column: offset + length,
 					},
-				},
+				}},
 			})
 		}
 	}
 
-	return lines
+	return hms
 }
 
 func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
