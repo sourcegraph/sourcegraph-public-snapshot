@@ -20,57 +20,53 @@ type capabilities struct {
 	DarkBackground bool
 }
 
-func detectCapabilities(opts OutputOpts) (capabilities, error) {
+func detectCapabilities(opts OutputOpts) (caps capabilities, err error) {
 	println("finding capabilities")
 
 	// Set atty
-	atty := opts.ForceTTY
+	caps.Isatty = opts.ForceTTY
 	if !opts.ForceTTY {
-		atty = isatty.IsTerminal(os.Stdout.Fd())
+		caps.Isatty = isatty.IsTerminal(os.Stdout.Fd())
 	}
 
-	// Set w, h and override if desired
-	w, h := 80, 25
-	var err error
-	if atty {
+	// Default width and height
+	caps.Width, caps.Height = 80, 25
+	// If all dimensions are foced, detection is not needed
+	forceAllDimensions := opts.ForceHeight != 0 && opts.ForceWidth != 0
+	if caps.Isatty && !forceAllDimensions {
 		var size *term.Winsize
 		size, err = term.GetWinsize(os.Stdout.Fd())
 		if err == nil {
 			if size != nil {
-				w, h = int(size.Width), int(size.Height)
+				caps.Width, caps.Height = int(size.Width), int(size.Height)
 			} else {
 				err = errors.New("unexpected nil size from GetWinsize")
 			}
 		}
 	}
-	if opts.ForceHeight != 0 {
-		h = opts.ForceHeight
-	}
+	// Set overrides
 	if opts.ForceWidth != 0 {
-		w = opts.ForceWidth
+		caps.Width = opts.ForceWidth
+	}
+	if opts.ForceHeight != 0 {
+		caps.Height = opts.ForceHeight
 	}
 
 	// detect color mode
-	color := opts.ForceColor
+	caps.Color = opts.ForceColor
 	if !opts.ForceColor {
-		color = detectColor(atty)
+		caps.Color = detectColor(caps.Isatty)
 	}
 
 	// set detected background color
-	darkBackground := opts.ForceDarkBackground
+	caps.DarkBackground = opts.ForceDarkBackground
 	if !opts.ForceDarkBackground {
-		darkBackground = termenv.HasDarkBackground()
+		caps.DarkBackground = termenv.HasDarkBackground()
 	}
 
 	println("capabilities!")
 
-	return capabilities{
-		Color:          color,
-		Isatty:         atty,
-		Height:         h,
-		Width:          w,
-		DarkBackground: darkBackground,
-	}, err
+	return
 }
 
 func detectColor(atty bool) bool {
