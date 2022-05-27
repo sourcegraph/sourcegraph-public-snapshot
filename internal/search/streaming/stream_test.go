@@ -205,8 +205,8 @@ func TestWithSelect(t *testing.T) {
     "Path": "pokeman/charmandar",
     "HunkMatches": [
       {
-        "Preview": "",
-        "PreviewStart": [
+        "Content": "",
+        "ContentStart": [
           0,
           0,
           0
@@ -227,8 +227,8 @@ func TestWithSelect(t *testing.T) {
         ]
       },
       {
-        "Preview": "",
-        "PreviewStart": [
+        "Content": "",
+        "ContentStart": [
           0,
           0,
           0
@@ -255,8 +255,8 @@ func TestWithSelect(t *testing.T) {
     "Path": "pokeman/charmandar",
     "HunkMatches": [
       {
-        "Preview": "",
-        "PreviewStart": [
+        "Content": "",
+        "ContentStart": [
           0,
           0,
           0
@@ -283,8 +283,8 @@ func TestWithSelect(t *testing.T) {
     "Path": "pokeman/bulbosaur",
     "HunkMatches": [
       {
-        "Preview": "",
-        "PreviewStart": [
+        "Content": "",
+        "ContentStart": [
           0,
           0,
           0
@@ -311,8 +311,8 @@ func TestWithSelect(t *testing.T) {
     "Path": "digiman/ummm",
     "HunkMatches": [
       {
-        "Preview": "",
-        "PreviewStart": [
+        "Content": "",
+        "ContentStart": [
           0,
           0,
           0

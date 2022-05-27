@@ -413,9 +413,9 @@ func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.HunkMatches 
 			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 
 			hms = append(hms, result.HunkMatch{
-				Preview: string(l.Line),
+				Content: string(l.Line),
 				// zoekt line numbers are 1-based rather than 0-based so subtract 1
-				PreviewStart: result.Location{
+				ContentStart: result.Location{
 					Offset: l.LineStart,
 					Line:   l.LineNumber - 1,
 					Column: 0,

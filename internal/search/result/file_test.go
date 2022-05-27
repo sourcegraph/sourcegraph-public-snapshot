@@ -13,8 +13,8 @@ func TestConvertMatches(t *testing.T) {
 			output []*LineMatch
 		}{{
 			input: HunkMatch{
-				Preview:      "line1\nline2\nline3",
-				PreviewStart: Location{Line: 1},
+				Content:      "line1\nline2\nline3",
+				ContentStart: Location{Line: 1},
 				Ranges: Ranges{{
 					Start: Location{1, 1, 1},
 					End:   Location{13, 3, 1},
@@ -35,8 +35,8 @@ func TestConvertMatches(t *testing.T) {
 			}},
 		}, {
 			input: HunkMatch{
-				Preview:      "line1",
-				PreviewStart: Location{Line: 1},
+				Content:      "line1",
+				ContentStart: Location{Line: 1},
 				Ranges: Ranges{{
 					Start: Location{1, 1, 1},
 					End:   Location{1, 1, 3},
@@ -64,8 +64,8 @@ func TestConvertMatches(t *testing.T) {
 			output []*LineMatch
 		}{{
 			input: HunkMatches{{
-				Preview:      "line1\nline2\nline3\nline4",
-				PreviewStart: Location{Line: 1},
+				Content:      "line1\nline2\nline3\nline4",
+				ContentStart: Location{Line: 1},
 				Ranges: Ranges{{
 					Start: Location{1, 1, 1},
 					End:   Location{13, 3, 1},
@@ -93,15 +93,15 @@ func TestConvertMatches(t *testing.T) {
 			}},
 		}, {
 			input: HunkMatches{{
-				Preview:      "line1\nline2\nline3",
-				PreviewStart: Location{Line: 1},
+				Content:      "line1\nline2\nline3",
+				ContentStart: Location{Line: 1},
 				Ranges: Ranges{{
 					Start: Location{1, 1, 1},
 					End:   Location{13, 3, 1},
 				}},
 			}, {
-				Preview:      "line4\nline5\nline6",
-				PreviewStart: Location{Line: 4},
+				Content:      "line4\nline5\nline6",
+				ContentStart: Location{Line: 4},
 				Ranges: Ranges{{
 					Start: Location{19, 4, 1},
 					End:   Location{31, 6, 1},
@@ -188,6 +188,65 @@ func TestHunkMatches_Limit(t *testing.T) {
 				gotLens = append(gotLens, len(h.Ranges))
 			}
 			require.Equal(t, tc.expectedRangeLens, gotLens)
+		})
+	}
+}
+
+func TestHunkMatches_MatchedContent(t *testing.T) {
+	cases := []struct {
+		input  HunkMatch
+		output []string
+	}{{
+		input: HunkMatch{
+			Content:      "abc",
+			ContentStart: Location{0, 0, 0},
+			Ranges: Ranges{{
+				Start: Location{1, 0, 1},
+				End:   Location{2, 0, 2},
+			}},
+		},
+		output: []string{"b"},
+	}, {
+		input: HunkMatch{
+			Content:      "def",
+			ContentStart: Location{4, 1, 0}, // abc\ndef
+			Ranges: Ranges{{
+				Start: Location{5, 1, 1},
+				End:   Location{6, 1, 2},
+			}},
+		},
+		output: []string{"e"},
+	}, {
+		input: HunkMatch{
+			Content:      "abc\ndef",
+			ContentStart: Location{0, 0, 0},
+			Ranges: Ranges{{
+				Start: Location{2, 0, 2},
+				End:   Location{5, 1, 1},
+			}},
+		},
+		output: []string{"c\nd"},
+	}, {
+		input: HunkMatch{
+			Content:      "abc\ndef",
+			ContentStart: Location{0, 0, 0},
+			Ranges: Ranges{{
+				Start: Location{0, 0, 0},
+				End:   Location{2, 0, 2},
+			}, {
+				Start: Location{2, 0, 2},
+				End:   Location{5, 1, 1},
+			}, {
+				Start: Location{5, 1, 1},
+				End:   Location{7, 1, 3},
+			}},
+		},
+		output: []string{"ab", "c\nd", "ef"},
+	}}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			require.Equal(t, tc.output, tc.input.MatchedContent())
 		})
 	}
 }

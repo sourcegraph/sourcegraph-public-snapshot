@@ -165,17 +165,54 @@ func (fm *FileMatch) Key() Key {
 	return k
 }
 
+// HunkMatch stores the smallest (and contiguous) line range of file content
+// corresponding to the set of ranges. We represent it this way so we always
+// have the complete line available to clients for display purposes and we
+// aways have the complete content of the matched range available for further
+// computation.
 type HunkMatch struct {
-	Preview      string
-	PreviewStart Location
-	Ranges       Ranges
+	// Content contains the lines overlapped by Ranges. Content will always
+	// contain full lines. This means the slice of file content contained
+	// in Content will always be:
+	// 1) preceded by the beginning of the file or a newline, and
+	// 2) succeeded by the end of the file or a newline.
+	Content string
+
+	// ContentStart is the location of the first character in Content. Since
+	// Content always starts at the beginning of a line, Column should always
+	// be set to zero.
+	ContentStart Location
+
+	// Ranges is the set of matches for this hunk. Each represents a range of
+	// the matched file that is fully contained by the range represented by
+	// Content. Ranges are relative to the beginning of the file, not the
+	// beginning of Content. This type provides no guarantees about the
+	// ordering of ranges, and also does not guarantee that the ranges are
+	// non-overlapping.
+	Ranges Ranges
 }
 
+// MatchedContent returns the content matched by the ranges in this HunkMatch.
+func (h HunkMatch) MatchedContent() []string {
+	// Create a new set of ranges whose offsets are
+	// relative to the start of the content.
+	relRanges := h.Ranges.Sub(h.ContentStart)
+	res := make([]string, 0, len(relRanges))
+	for _, rr := range relRanges {
+		res = append(res, h.Content[rr.Start.Offset:rr.End.Offset])
+	}
+	return res
+}
+
+// AsLineMatches facilitates converting from HunkMatch to a set of LineMatches.
+// This loses information like byte offsets and the logical relationship
+// between lines in a multiline match, but it allows us to keep providing the
+// LineMatch representation for clients without breaking backwards compatibility.
 func (h HunkMatch) AsLineMatches() []*LineMatch {
-	lines := strings.Split(h.Preview, "\n")
+	lines := strings.Split(h.Content, "\n")
 	lineMatches := make([]*LineMatch, len(lines))
 	for i, line := range lines {
-		lineNumber := h.PreviewStart.Line + i
+		lineNumber := h.ContentStart.Line + i
 		var offsetAndLengths [][2]int32
 		for _, rr := range h.Ranges {
 			for rangeLine := rr.Start.Line; rangeLine <= rr.End.Line; rangeLine++ {
