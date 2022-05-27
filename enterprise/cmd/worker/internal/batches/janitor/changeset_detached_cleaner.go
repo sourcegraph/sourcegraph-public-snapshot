@@ -10,6 +10,8 @@ import (
 
 const changesetCleanInterval = 24 * time.Hour
 
+// NewChangesetDetachedCleaner creates a new goroutine.PeriodicGoroutine that deletes Changesets that have been
+// detached for a period of time.
 func NewChangesetDetachedCleaner(ctx context.Context, s *store.Store) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
