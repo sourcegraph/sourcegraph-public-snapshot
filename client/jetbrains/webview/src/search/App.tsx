@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Observable, of, Subscription } from 'rxjs'
 
@@ -114,7 +114,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     const [userQueryState, setUserQueryState] = useState<QueryState>({
         query: lastSearch.query ?? '',
     })
-    const [subscription, setSubscription] = useState<Subscription>()
+    const subscription = useRef<Subscription>()
 
     const isSourcegraphDotCom = useMemo(() => {
         const hostname = new URL(instanceURL).hostname
@@ -148,22 +148,20 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             }
 
             // If we don't unsubscribe, the previous search will be continued after the new search and search results will be mixed
-            subscription?.unsubscribe()
-            setSubscription(
-                aggregateStreamingSearch(
-                    of(`context:${contextSpec ?? lastSearch.selectedSearchContextSpec} ${query}`),
-                    {
-                        version: LATEST_VERSION,
-                        caseSensitive: caseSensitive ?? lastSearch.caseSensitive,
-                        patternType: patternType ?? lastSearch.patternType,
-                        trace: undefined,
-                        sourcegraphURL: 'https://sourcegraph.com/.api',
-                        decorationContextLines: 0,
-                    }
-                ).subscribe(searchResults => {
-                    setMatches(searchResults.results)
-                })
-            )
+            subscription.current?.unsubscribe()
+            subscription.current = aggregateStreamingSearch(
+                of(`context:${contextSpec ?? lastSearch.selectedSearchContextSpec} ${query}`),
+                {
+                    version: LATEST_VERSION,
+                    caseSensitive: caseSensitive ?? lastSearch.caseSensitive,
+                    patternType: patternType ?? lastSearch.patternType,
+                    trace: undefined,
+                    sourcegraphURL: 'https://sourcegraph.com/.api',
+                    decorationContextLines: 0,
+                }
+            ).subscribe(searchResults => {
+                setMatches(searchResults.results)
+            })
             setMatches([])
             setLastSearch(current => ({
                 query,
@@ -172,7 +170,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                 selectedSearchContextSpec: options?.contextSpec ?? current.selectedSearchContextSpec,
             }))
         },
-        [lastSearch, subscription, userQueryState.query]
+        [lastSearch, userQueryState.query]
     )
 
     const [didInitialSubmit, setDidInitialSubmit] = useState(false)
