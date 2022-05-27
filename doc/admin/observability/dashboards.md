@@ -19791,3 +19791,32 @@ Query: `sum(increase(src_codeintel_background_upload_records_expired_total_total
 
 <br />
 
+## Code Intelligence > Policies
+
+<p class="subtitle">The service at `internal/codeintel/policies`.</p>
+
+To see this dashboard, visit `/-/debug/grafana/d/codeintel-policies/codeintel-policies` on your Sourcegraph instance.
+
+### Code Intelligence > Policies: Codeintel: Policies > Repository Pattern Matcher task
+
+#### codeintel-policies: codeintel_background_policies_updated_total_total
+
+<p class="subtitle">Lsif repository pattern matcher repositories pattern matcher every 5m</p>
+
+Number of configuration policies whose repository membership list was updated
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-policies?viewPanel=100000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_policies_updated_total_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+

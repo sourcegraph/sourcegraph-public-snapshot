@@ -9,7 +9,6 @@ import (
 type metrics struct {
 	// Data retention metrics
 	numDocumentSearchRecordsRemoved prometheus.Counter
-	numPoliciesUpdated              prometheus.Counter
 	numErrors                       prometheus.Counter
 
 	// Resetter metrics
@@ -40,10 +39,6 @@ func newMetrics(observationContext *observation.Context) *metrics {
 	numDocumentSearchRecordsRemoved := counter(
 		"src_codeintel_background_documentation_search_records_removed_total",
 		"The number of documentation search records removed.",
-	)
-	numPoliciesUpdated := counter(
-		"src_codeintel_background_policies_updated_total",
-		"The number of configuration policies whose repository membership list was updated.",
 	)
 
 	numErrors := counter(
@@ -92,7 +87,6 @@ func newMetrics(observationContext *observation.Context) *metrics {
 
 	return &metrics{
 		numDocumentSearchRecordsRemoved: numDocumentSearchRecordsRemoved,
-		numPoliciesUpdated:              numPoliciesUpdated,
 		numErrors:                       numErrors,
 		numUploadResets:                 numUploadResets,
 		numUploadResetFailures:          numUploadResetFailures,
