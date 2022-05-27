@@ -76,6 +76,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("updated_at"),
 	sqlf.Sprintf("metadata"),
 	sqlf.Sprintf("batch_change_ids"),
+	sqlf.Sprintf("detached_at"),
 	sqlf.Sprintf("external_id"),
 	sqlf.Sprintf("external_service_type"),
 	sqlf.Sprintf("external_branch"),
@@ -159,6 +160,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		c.UpdatedAt,
 		metadata,
 		batchChanges,
+		nullTimeColumn(c.DetachedAt),
 		nullStringColumn(c.ExternalID),
 		c.ExternalServiceType,
 		nullStringColumn(c.ExternalBranch),
@@ -230,7 +232,7 @@ func (s *Store) CreateChangeset(ctx context.Context, c *btypes.Changeset) (err e
 var createChangesetQueryFmtstr = `
 -- source: enterprise/internal/batches/store.go:CreateChangeset
 INSERT INTO changesets (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
@@ -732,7 +734,7 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *btypes.Changeset) (err 
 var updateChangesetQueryFmtstr = `
 -- source: enterprise/internal/batches/store_changesets.go:UpdateChangeset
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
