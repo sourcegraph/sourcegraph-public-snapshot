@@ -91,11 +91,6 @@ type repoStore struct {
 	*basestore.Store
 }
 
-// Repos instantiates and returns a new RepoStore with prepared statements.
-func Repos(db dbutil.DB) RepoStore {
-	return &repoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
 // ReposWith instantiates and returns a new RepoStore using the other
 // store handle.
 func ReposWith(other basestore.ShareableStore) RepoStore {
@@ -910,8 +905,11 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	if opt.OnlyArchived {
 		where = append(where, sqlf.Sprintf("archived"))
 	}
+	// Since https://github.com/sourcegraph/sourcegraph/pull/35633 there is no need to do an anti-join
+	// with gitserver_repos table (checking for such repos that are present in repo but absent in gitserver_repos
+	// table) because repo table is strictly consistent with gitserver_repos table.
 	if opt.NoCloned {
-		where = append(where, sqlf.Sprintf("(gr.clone_status = 'not_cloned' OR gr.clone_status IS NULL)"))
+		where = append(where, sqlf.Sprintf("(gr.clone_status IN ('not_cloned', 'cloning'))"))
 	}
 	if opt.OnlyCloned {
 		where = append(where, sqlf.Sprintf("gr.clone_status = 'cloned'"))
@@ -996,7 +994,7 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	}
 
 	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || !opt.MinLastChanged.IsZero() || opt.joinGitserverRepos {
-		joins = append(joins, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
+		joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 
 	baseConds := sqlf.Sprintf("TRUE")

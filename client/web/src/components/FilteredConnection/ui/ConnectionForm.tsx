@@ -26,6 +26,9 @@ export interface ConnectionFormProps {
     /** Value of the <input> element */
     inputValue?: string
 
+    /** aria-label for the <input> element */
+    inputAriaLabel?: string
+
     /** Called when the <input> element value changes */
     onInputChange?: React.ChangeEventHandler<HTMLInputElement>
 
@@ -60,6 +63,7 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
             formClassName,
             inputClassName,
             inputPlaceholder,
+            inputAriaLabel,
             inputValue,
             onInputChange,
             autoFocus,
@@ -108,6 +112,7 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
                         autoCapitalize="off"
                         ref={mergedReference}
                         spellCheck={false}
+                        aria-label={inputAriaLabel}
                     />
                 )}
             </Form>

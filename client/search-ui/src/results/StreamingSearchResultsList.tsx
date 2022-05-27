@@ -4,7 +4,6 @@ import classNames from 'classnames'
 import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import FileIcon from 'mdi-react/FileIcon'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import { useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -134,9 +133,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 case 'commit':
                     return (
                         <CommitSearchResult
-                            icon={SourceCommitIcon}
                             result={result}
-                            repoName={result.repository}
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'commit')}
                             openInNewTab={openMatchesInNewTab}
@@ -147,7 +144,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                     return (
                         <RepoSearchResult
                             result={result}
-                            repoName={result.repository}
                             onSelect={() => logSearchResultClicked(index, 'repo')}
                             containerClassName={resultClassName}
                         />

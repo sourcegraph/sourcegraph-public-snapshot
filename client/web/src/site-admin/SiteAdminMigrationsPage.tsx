@@ -13,7 +13,7 @@ import { parse as _parseVersion, SemVer } from 'semver'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Alert, Icon, Typography } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
@@ -132,11 +132,11 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
                     <PageTitle title="Out of band migrations - Admin" />
                     <Typography.H2>Out-of-band migrations</Typography.H2>
 
-                    <p>
+                    <Text>
                         Out-of-band migrations run in the background of the Sourcegraph instance convert data from an
                         old format into a new format. Consult this page prior to upgrading your Sourcegraph instance to
                         ensure that all expected migrations have completed.
-                    </p>
+                    </Text>
 
                     <MigrationBanners migrations={migrationsOrError} fetchSiteUpdateCheck={fetchSiteUpdateCheck} />
 
@@ -208,13 +208,13 @@ const MigrationInvalidBanner: React.FunctionComponent<React.PropsWithChildren<Mi
     migrations,
 }) => (
     <Alert variant="danger">
-        <p>
+        <Text>
             <Icon className="mr-2" as={AlertCircleIcon} />
             <strong>Contact support.</strong> The following migrations are not in the expected state. You have partially
             migrated or un-migrated data in a format that is incompatible with the currently deployed version of
             Sourcegraph.{' '}
             <strong>Continuing to run your instance in this state will result in errors and possible data loss.</strong>
-        </p>
+        </Text>
 
         <ul className="mb-0">
             {migrations.map(migration => (
@@ -232,11 +232,11 @@ const MigrationUpgradeWarningBanner: React.FunctionComponent<
     React.PropsWithChildren<MigrationUpgradeWarningBannerProps>
 > = ({ migrations }) => (
     <Alert variant="warning">
-        <p>
+        <Text>
             The next version of Sourcegraph removes support for reading an old data format. Your Sourcegraph instance
             must complete the following migrations to ensure your data remains readable.{' '}
             <strong>If you upgrade your Sourcegraph instance now, you may corrupt or lose data.</strong>
-        </p>
+        </Text>
         <ul>
             {migrations.map(migration => (
                 <li key={migration.id}>{migration.description}</li>
@@ -254,7 +254,7 @@ const MigrationDowngradeWarningBanner: React.FunctionComponent<
     React.PropsWithChildren<MigrationDowngradeWarningBannerProps>
 > = ({ migrations }) => (
     <Alert variant="warning">
-        <p>
+        <Text>
             <Icon className="mr-2" as={WarningIcon} />
             <span>
                 The previous version of Sourcegraph does not support reading data that has been migrated into a new
@@ -262,7 +262,7 @@ const MigrationDowngradeWarningBanner: React.FunctionComponent<
                 the previous version.{' '}
                 <strong>If you downgrade your Sourcegraph instance now, you may corrupt or lose data.</strong>
             </span>
-        </p>
+        </Text>
 
         <ul>
             {migrations.map(migration => (
@@ -287,13 +287,13 @@ const MigrationNode: React.FunctionComponent<React.PropsWithChildren<MigrationNo
             <div>
                 <Typography.H3>{node.description}</Typography.H3>
 
-                <p className="m-0">
+                <Text className="m-0">
                     <span className="text-muted">Team</span> <strong>{node.team}</strong>{' '}
                     <span className="text-muted">is migrating data in</span> <strong>{node.component}</strong>
                     <span className="text-muted">.</span>
-                </p>
+                </Text>
 
-                <p className="m-0">
+                <Text className="m-0">
                     <span className="text-muted">Began running in v</span>
                     {node.introduced}
                     {node.deprecated && (
@@ -304,7 +304,7 @@ const MigrationNode: React.FunctionComponent<React.PropsWithChildren<MigrationNo
                         </>
                     )}
                     .
-                </p>
+                </Text>
             </div>
         </div>
 

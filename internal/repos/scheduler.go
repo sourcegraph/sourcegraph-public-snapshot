@@ -9,7 +9,8 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -28,7 +29,7 @@ type schedulerConfig struct {
 }
 
 // RunScheduler runs the worker that schedules git fetches of synced repositories in git-server.
-func RunScheduler(ctx context.Context, scheduler *UpdateScheduler) {
+func RunScheduler(ctx context.Context, logger log.Logger, scheduler *UpdateScheduler) {
 	var (
 		have schedulerConfig
 		stop context.CancelFunc
@@ -48,7 +49,7 @@ func RunScheduler(ctx context.Context, scheduler *UpdateScheduler) {
 
 		if stop != nil {
 			stop()
-			log15.Info("stopped previous scheduler")
+			logger.Info("stopped previous scheduler")
 		}
 
 		// We setup a separate sub-context so that we can reuse the original
@@ -63,10 +64,10 @@ func RunScheduler(ctx context.Context, scheduler *UpdateScheduler) {
 			go scheduler.runScheduleLoop(ctx2)
 		}
 
-		log15.Debug(
+		logger.Debug(
 			"started configured scheduler",
-			"version", "new",
-			"auto-git-updates", want.autoGitUpdatesEnabled,
+			log.String("version", "new"),
+			log.Bool("auto-git-updates", want.autoGitUpdatesEnabled),
 		)
 
 		// We converged to the desired configuration.
@@ -107,6 +108,7 @@ type UpdateScheduler struct {
 	db          database.DB
 	updateQueue *updateQueue
 	schedule    *schedule
+	logger      log.Logger
 }
 
 // A configuredRepo represents the configuration data for a given repo from
@@ -123,7 +125,9 @@ type configuredRepo struct {
 const notifyChanBuffer = 1
 
 // NewUpdateScheduler returns a new scheduler.
-func NewUpdateScheduler(db database.DB) *UpdateScheduler {
+func NewUpdateScheduler(logger log.Logger, db database.DB) *UpdateScheduler {
+	updateSchedLogger := logger.Scoped("UpdateScheduler", "repo update scheduler")
+
 	return &UpdateScheduler{
 		db: db,
 		updateQueue: &updateQueue{
@@ -134,7 +138,9 @@ func NewUpdateScheduler(db database.DB) *UpdateScheduler {
 			index:         make(map[api.RepoID]*scheduledRepoUpdate),
 			wakeup:        make(chan struct{}, notifyChanBuffer),
 			randGenerator: rand.New(rand.NewSource(time.Now().UnixNano())),
+			logger:        updateSchedLogger.Scoped("schedule", ""),
 		},
+		logger: updateSchedLogger,
 	}
 }
 
@@ -196,6 +202,8 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 				break
 			}
 
+			subLogger := s.logger.Scoped("runUpdateLoop", "")
+
 			go func(ctx context.Context, repo configuredRepo, cancel context.CancelFunc) {
 				defer cancel()
 				defer s.updateQueue.remove(repo, true)
@@ -207,13 +215,13 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 				resp, err := requestRepoUpdate(ctx, s.db, repo, 1*time.Second)
 				if err != nil {
 					schedError.WithLabelValues("requestRepoUpdate").Inc()
-					log15.Error("runUpdateLoop: error requesting repo update", "uri", repo.Name, "err", err)
+					subLogger.Error("error requesting repo update", log.Error(err), log.String("uri", string(repo.Name)))
 				} else if resp != nil && resp.Error != "" {
 					schedError.WithLabelValues("repoUpdateResponse").Inc()
-					log15.Error("runUpdateLoop: error updating repo", "uri", repo.Name, "err", resp.Error)
+					subLogger.Error("error updating repo", log.String("err", resp.Error), log.String("uri", string(repo.Name)))
 				}
 
-				if interval := getCustomInterval(conf.Get(), string(repo.Name)); interval > 0 {
+				if interval := getCustomInterval(subLogger, conf.Get(), string(repo.Name)); interval > 0 {
 					s.schedule.updateInterval(repo, interval)
 					return
 				}
@@ -235,14 +243,14 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 	}
 }
 
-func getCustomInterval(c *conf.Unified, repoName string) time.Duration {
+func getCustomInterval(logger log.Logger, c *conf.Unified, repoName string) time.Duration {
 	if c == nil {
 		return 0
 	}
 	for _, rule := range c.GitUpdateInterval {
 		re, err := regexp.Compile(rule.Pattern)
 		if err != nil {
-			log15.Warn("error compiling GitUpdateInterval pattern", "error", err)
+			logger.Warn("error compiling GitUpdateInterval pattern", log.Error(err))
 			continue
 		}
 		if re.MatchString(repoName) {
@@ -343,26 +351,28 @@ func (s *UpdateScheduler) ListRepoIDs() []api.RepoID {
 // fetch/clone soon.
 func (s *UpdateScheduler) upsert(r *types.Repo, enqueue bool) {
 	repo := configuredRepoFromRepo(r)
+	logger := s.logger.With(log.String("repo", string(r.Name)))
 
 	updated := s.schedule.upsert(repo)
-	log15.Debug("scheduler.schedule.upserted", "repo", r.Name, "updated", updated)
+	logger.Debug("scheduler.schedule.upserted", log.Bool("updated", updated))
 
 	if !enqueue {
 		return
 	}
 	updated = s.updateQueue.enqueue(repo, priorityLow)
-	log15.Debug("scheduler.updateQueue.enqueued", "repo", r.Name, "updated", updated)
+	logger.Debug("scheduler.updateQueue.enqueued", log.Bool("updated", updated))
 }
 
 func (s *UpdateScheduler) remove(r *types.Repo) {
 	repo := configuredRepoFromRepo(r)
+	logger := s.logger.With(log.String("repo", string(r.Name)))
 
 	if s.schedule.remove(repo) {
-		log15.Debug("scheduler.schedule.removed", "repo", r.Name)
+		logger.Debug("scheduler.schedule.removed")
 	}
 
 	if s.updateQueue.remove(repo, false) {
-		log15.Debug("scheduler.updateQueue.removed", "repo", r.Name)
+		logger.Debug("scheduler.updateQueue.removed")
 	}
 }
 
@@ -438,7 +448,7 @@ func (s *UpdateScheduler) DebugDump(ctx context.Context, db database.DB) any {
 	var err error
 	data.SyncJobs, err = db.ExternalServices().GetSyncJobs(ctx)
 	if err != nil {
-		log15.Warn("Getting external service sync jobs foe debug page", "error", err)
+		s.logger.Warn("Getting external service sync jobs for debug page", log.Error(err))
 	}
 
 	return &data
@@ -667,6 +677,7 @@ type schedule struct {
 	// timer sends a value on the wakeup channel when it is time
 	timer  *time.Timer
 	wakeup chan struct{}
+	logger log.Logger
 
 	// random source used to add jitter to repo update intervals.
 	randGenerator interface {
@@ -802,7 +813,7 @@ func (s *schedule) updateInterval(repo configuredRepo, interval time.Duration) {
 		update.Interval = update.Interval + time.Duration(s.randGenerator.Int63n(2*delta)-delta)
 
 		update.Due = timeNow().Add(update.Interval)
-		log15.Debug("updated repo", "repo", repo.Name, "due", update.Due.Sub(timeNow()))
+		s.logger.Debug("updated repo", log.String("repo", string(repo.Name)), log.Duration("due", update.Due.Sub(timeNow())))
 		heap.Fix(s, update.Index)
 		s.rescheduleTimer()
 	}
@@ -872,7 +883,7 @@ func (s *schedule) reset() {
 		s.timer = nil
 	}
 
-	log15.Debug("schedKnownRepos reset")
+	s.logger.Debug("schedKnownRepos reset")
 	schedKnownRepos.Set(0)
 }
 

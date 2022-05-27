@@ -214,7 +214,8 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
             <Tooltip />
-            <div className={styles.root}>
+            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+            <div className={styles.root} onMouseDown={preventAll}>
                 <div className={styles.searchBoxContainer}>
                     {/* eslint-disable-next-line react/forbid-elements */}
                     <form
@@ -280,4 +281,9 @@ function getStableKeyForLastSearch(lastSearch: Search): string {
     return `${lastSearch.query ?? ''}-${lastSearch.caseSensitive}-${String(lastSearch.patternType)}-${
         lastSearch.selectedSearchContextSpec
     }`
+}
+
+function preventAll(event: React.MouseEvent): void {
+    event.stopPropagation()
+    event.preventDefault()
 }

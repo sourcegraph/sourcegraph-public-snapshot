@@ -216,21 +216,25 @@ type LineMatch struct {
 	// 1-based line numbers, but internally vscode uses 0-based.
 	LineNumber int
 
+	// LineOffset is the number of bytes from the beginning of the
+	// file to the beginning of the line.
+	LineOffset int
+
 	// OffsetAndLengths is a slice of 2-tuples (Offset, Length)
 	// representing each match on a line.
 	// Offsets and lengths are measured in characters, not bytes.
 	OffsetAndLengths [][2]int
 }
 
-// LineColumn is a subset of the fields on Location because we don't
-// have the rune offset necessary to build a full Location yet.
-// Eventually, the two structs should be merged.
-type LineColumn struct {
-	// Line is the count of newlines before the offset in the matched text.
+type Location struct {
+	// The byte offset from the beginning of the file.
+	Offset int32
+
+	// Line is the count of newlines before the offset in the file.
 	// Line is 0-based.
 	Line int32
 
-	// Column is the count of unicode code points after the last newline in the matched text
+	// Column is the rune offset from the beginning of the last line.
 	Column int32
 }
 
@@ -239,6 +243,18 @@ type MultilineMatch struct {
 	// lines that the match overlaps.
 	// The number of lines in Preview should be End.Line - Start.Line + 1
 	Preview string
-	Start   LineColumn
-	End     LineColumn
+	Start   Location
+	End     Location
+}
+
+func (m MultilineMatch) MatchedContent() string {
+	runePreview := []rune(m.Preview)
+	lastLineStart := 0
+	for i := len(runePreview) - 1; i >= 0; i-- {
+		if runePreview[i] == rune('\n') {
+			lastLineStart = i + 1
+			break
+		}
+	}
+	return string(runePreview[m.Start.Column : lastLineStart+int(m.End.Column)])
 }

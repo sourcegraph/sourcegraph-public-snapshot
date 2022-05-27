@@ -206,24 +206,32 @@ func TestWithSelect(t *testing.T) {
     "MultilineMatches": [
       {
         "Preview": "",
-        "Start": {
-          "Line": 0,
-          "Column": 0
-        },
-        "End": {
-          "Line": 0,
-          "Column": 0
+        "Range": {
+          "start": [
+            0,
+            0,
+            0
+          ],
+          "end": [
+            0,
+            0,
+            0
+          ]
         }
       },
       {
         "Preview": "",
-        "Start": {
-          "Line": 0,
-          "Column": 0
-        },
-        "End": {
-          "Line": 0,
-          "Column": 0
+        "Range": {
+          "start": [
+            0,
+            0,
+            0
+          ],
+          "end": [
+            0,
+            0,
+            0
+          ]
         }
       }
     ],
@@ -234,13 +242,17 @@ func TestWithSelect(t *testing.T) {
     "MultilineMatches": [
       {
         "Preview": "",
-        "Start": {
-          "Line": 0,
-          "Column": 0
-        },
-        "End": {
-          "Line": 0,
-          "Column": 0
+        "Range": {
+          "start": [
+            0,
+            0,
+            0
+          ],
+          "end": [
+            0,
+            0,
+            0
+          ]
         }
       }
     ],
@@ -251,13 +263,17 @@ func TestWithSelect(t *testing.T) {
     "MultilineMatches": [
       {
         "Preview": "",
-        "Start": {
-          "Line": 0,
-          "Column": 0
-        },
-        "End": {
-          "Line": 0,
-          "Column": 0
+        "Range": {
+          "start": [
+            0,
+            0,
+            0
+          ],
+          "end": [
+            0,
+            0,
+            0
+          ]
         }
       }
     ],
@@ -268,13 +284,17 @@ func TestWithSelect(t *testing.T) {
     "MultilineMatches": [
       {
         "Preview": "",
-        "Start": {
-          "Line": 0,
-          "Column": 0
-        },
-        "End": {
-          "Line": 0,
-          "Column": 0
+        "Range": {
+          "start": [
+            0,
+            0,
+            0
+          ],
+          "end": [
+            0,
+            0,
+            0
+          ]
         }
       }
     ],

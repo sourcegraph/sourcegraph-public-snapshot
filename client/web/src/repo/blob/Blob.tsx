@@ -26,7 +26,6 @@ import {
     map,
     mapTo,
     pairwise,
-    share,
     switchMap,
     tap,
     throttleTime,
@@ -205,15 +204,14 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         [hoverOverlayElements]
     )
 
-    const codeViewElementsSubject = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-    const codeViewElements = useMemo(() => codeViewElementsSubject.pipe(share()), [codeViewElementsSubject])
+    const codeViewElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
     const codeViewReference = useRef<HTMLElement | null>()
     const nextCodeViewElement = useCallback(
         (codeView: HTMLElement | null) => {
             codeViewReference.current = codeView
-            codeViewElementsSubject.next(codeView)
+            codeViewElements.next(codeView)
         },
-        [codeViewElementsSubject]
+        [codeViewElements]
     )
 
     // Emits on changes from URL search params
@@ -406,7 +404,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
     // Trigger line highlighting after React has finished putting new lines into the DOM via
     // `dangerouslySetInnerHTML`.
-    useEffect(() => codeViewElementsSubject.next(codeViewReference.current))
+    useEffect(() => codeViewElements.next(codeViewReference.current))
 
     // Line highlighting when position in hash changes
     useObservable(
@@ -499,11 +497,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                                 filter(isDefined),
                                 findPositionsFromEvents({ domFunctions })
                             ),
-                            positionJumps: combineLatest([
-                                locationPositions,
-                                codeViewElements.pipe(filter(isDefined)),
-                                blobElements.pipe(filter(isDefined)),
-                            ]).pipe(
+                            positionJumps: locationPositions.pipe(
+                                withLatestFrom(
+                                    codeViewElements.pipe(filter(isDefined)),
+                                    blobElements.pipe(filter(isDefined))
+                                ),
                                 map(([position, codeView, scrollElement]) => ({
                                     position,
                                     // locationPositions is derived from componentUpdates,
@@ -731,7 +729,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                                     getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
                                     line={line}
                                     decorations={decorations}
-                                    codeViewElements={codeViewElementsSubject}
+                                    codeViewElements={codeViewElements}
                                 />
                             )
                         })

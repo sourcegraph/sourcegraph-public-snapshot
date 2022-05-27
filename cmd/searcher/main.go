@@ -17,6 +17,8 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -98,6 +100,12 @@ func run(logger log.Logger) error {
 		cacheSizeBytes = i * 1000 * 1000
 	}
 
+	observationContext := &observation.Context{
+		Logger:     logger,
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
 	db, err := frontendDB()
 	if err != nil {
 		return errors.Wrap(err, "failed to connect to frontend database")
@@ -123,11 +131,12 @@ func run(logger log.Logger) error {
 					Pathspecs: pathspecs,
 				})
 			},
-			FilterTar:         search.NewFilter,
-			Path:              filepath.Join(cacheDir, "searcher-archives"),
-			MaxCacheSizeBytes: cacheSizeBytes,
-			Log:               logger,
-			DB:                db,
+			FilterTar:          search.NewFilter,
+			Path:               filepath.Join(cacheDir, "searcher-archives"),
+			MaxCacheSizeBytes:  cacheSizeBytes,
+			Log:                logger,
+			ObservationContext: observationContext,
+			DB:                 db,
 		},
 		Log: logger,
 	}

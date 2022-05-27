@@ -116,7 +116,7 @@ func main() {
 	// Notifcations
 	slc := slack.New(flags.SlackToken)
 	teammates := team.NewTeammateResolver(ghc, slc)
-	if !flags.DryRun {
+	if flags.DryRun {
 		fmt.Println("Github\n---")
 		for _, pr := range report.PullRequests {
 			fmt.Println("-", pr.GetNumber())

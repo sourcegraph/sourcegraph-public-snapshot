@@ -47,6 +47,7 @@ import {
     CollapseHeader,
     CollapsePanel,
     Typography,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
@@ -188,7 +189,7 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
     if (!tokenResult?.searchToken) {
         return (
             <div>
-                <p className="text-danger">Could not find hovered token.</p>
+                <Text className="text-danger">Could not find hovered token.</Text>
             </div>
         )
     }
@@ -343,14 +344,24 @@ export const ReferencesList: React.FunctionComponent<
 
     // Manual management of the open/closed state of collapsible lists so they
     // stay open/closed across re-renders and re-mounts.
+    const location = useLocation()
+    const initialCollapseState = useMemo((): Record<string, boolean> => {
+        const { viewState } = parseQueryAndHash(location.search, location.hash)
+        return {
+            references: viewState === 'references',
+            definitions: viewState === 'definitions',
+            implementations: viewState?.startsWith('implementations_') ?? false,
+        }
+    }, [location])
     const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
     const handleOpenChange = (id: string, isOpen: boolean): void =>
         setCollapsed(previous => ({ ...previous, [id]: isOpen }))
+
     const isOpen = (id: string): boolean | undefined => collapsed[id]
     // But when the input changes, we reset the collapse state
     useEffect(() => {
-        setCollapsed({})
-    }, [props.token])
+        setCollapsed(initialCollapseState)
+    }, [props.token, initialCollapseState])
 
     if (loading && !data) {
         return <LoadingCodeIntel />
@@ -369,30 +380,12 @@ export const ReferencesList: React.FunctionComponent<
     return (
         <div className={classNames('align-items-stretch', styles.panel)}>
             <div className={classNames('px-0', styles.leftSubPanel)}>
-                <CardHeader className={classNames('d-flex align-items-center', styles.cardHeader)}>
-                    <Typography.Code size="base" weight="bold">
-                        {props.searchToken}
-                    </Typography.Code>
-                    {canShowSpinner && (
-                        <small className="ml-3 text-muted d-flex align-items-center">
-                            <Icon
-                                role="img"
-                                aria-hidden={true}
-                                as={LoadingSpinner}
-                                size="sm"
-                                inline={true}
-                                className="mr-1"
-                            />
-                            <i>Loading...</i>
-                        </small>
-                    )}
-                </CardHeader>
-                <div className={classNames('d-flex justify-content-start', styles.filter)}>
+                <div className={classNames('d-flex justify-content-start mt-2', styles.filter)}>
                     <small>
                         <Icon
                             role="img"
                             aria-hidden={true}
-                            as={FilterOutlineIcon}
+                            as={canShowSpinner ? LoadingSpinner : FilterOutlineIcon}
                             size="sm"
                             className={styles.filterIcon}
                         />
@@ -452,7 +445,7 @@ export const ReferencesList: React.FunctionComponent<
                 </div>
             </div>
             {activeLocation !== undefined && (
-                <div className={classNames('px-0 border-left', styles.rightSubPanel)}>
+                <div data-testid="right-pane" className={classNames('px-0 border-left', styles.rightSubPanel)}>
                     <CardHeader className={classNames('d-flex', styles.cardHeader)}>
                         <small>
                             <Button
@@ -560,7 +553,7 @@ const CollapsibleLocationList: React.FunctionComponent<
                             isOpen={id => props.isOpen(props.name + id)}
                         />
                     ) : (
-                        <p className="text-muted pl-2">
+                        <Text className="text-muted pl-2">
                             {props.filter ? (
                                 <i>
                                     No {props.name} matching <strong>{props.filter}</strong> found
@@ -568,7 +561,7 @@ const CollapsibleLocationList: React.FunctionComponent<
                             ) : (
                                 <i>No {props.name} found</i>
                             )}
-                        </p>
+                        </Text>
                     )}
 
                     {props.hasMore &&
@@ -622,11 +615,11 @@ const SideBlob: React.FunctionComponent<
         return (
             <>
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
-                <p className="text-muted text-center">
+                <Text alignment="center" className="text-muted">
                     <i>
                         Loading <Typography.Code>{props.activeLocation.file}</Typography.Code>...
                     </i>
-                </p>
+                </Text>
             </>
         )
     }
@@ -635,9 +628,9 @@ const SideBlob: React.FunctionComponent<
     if (error && !data) {
         return (
             <div>
-                <p className="text-danger">
+                <Text className="text-danger">
                     Loading <Typography.Code>{props.activeLocation.file}</Typography.Code> failed:
-                </p>
+                </Text>
                 <pre>{error.message}</pre>
             </div>
         )
@@ -651,11 +644,11 @@ const SideBlob: React.FunctionComponent<
     const { html, aborted } = data?.repository?.commit?.blob?.highlight
     if (aborted) {
         return (
-            <p className="text-warning text-center">
+            <Text alignment="center" className="text-warning">
                 <i>
                     Highlighting <Typography.Code>{props.activeLocation.file}</Typography.Code> failed
                 </i>
-            </p>
+            </Text>
         )
     }
 
@@ -784,6 +777,7 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                             filter={filter}
                             handleOpenChange={(id, isOpen) => handleOpenChange(repoLocationGroup.repoName + id, isOpen)}
                             isOpen={id => isOpen(repoLocationGroup.repoName + id)}
+                            navigateToUrl={navigateToUrl}
                         />
                     ))}
                 </CollapsePanel>
@@ -799,14 +793,16 @@ const CollapsibleLocationGroup: React.FunctionComponent<
             SearchTokenProps & {
                 group: LocationGroup
                 filter: string | undefined
+                navigateToUrl: (url: string) => void
             }
     >
-> = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange, searchToken }) => {
+> = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange, searchToken, navigateToUrl }) => {
     let highlighted = [group.path]
     if (filter !== undefined) {
         highlighted = group.path.split(filter)
     }
 
+    const fileUrl = group.locations[group.locations.length - 1].url.split('?')[0]
     const open = isOpen(group.path) ?? true
 
     return (
@@ -827,17 +823,29 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                         <Icon role="img" aria-label="Expand" as={ChevronRightIcon} />
                     )}
                     <small className={styles.locationGroupHeaderFilename}>
-                        {highlighted.length === 2 ? (
-                            <span>
-                                {highlighted[0]}
-                                <mark>{filter}</mark>
-                                {highlighted[1]}
+                        <span>
+                            <Link
+                                to={fileUrl}
+                                onClick={event => {
+                                    event.preventDefault()
+                                    navigateToUrl(fileUrl)
+                                }}
+                                className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}
+                            >
+                                {highlighted.length === 2 ? (
+                                    <span>
+                                        {highlighted[0]}
+                                        <mark>{filter}</mark>
+                                        {highlighted[1]}
+                                    </span>
+                                ) : (
+                                    group.path
+                                )}{' '}
+                            </Link>
+                            <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
+                                ({group.locations.length}{' '}
+                                {pluralize('occurrence', group.locations.length, 'occurences')})
                             </span>
-                        ) : (
-                            group.path
-                        )}{' '}
-                        <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
-                            ({group.locations.length} {pluralize('occurrence', group.locations.length, 'occurences')})
                         </span>
                         <Badge small={true} variant="secondary" className="ml-4">
                             {locationGroupQuality(group)}
@@ -846,57 +854,59 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                 </CollapseHeader>
 
                 <CollapsePanel id={group.repoName + group.path} className="ml-0">
-                    <ul className="list-unstyled mb-0">
-                        {group.locations.map(reference => {
-                            const className = isActiveLocation(reference) ? styles.locationActive : ''
+                    <div className={styles.locationContainer}>
+                        <ul className="list-unstyled mb-0">
+                            {group.locations.map(reference => {
+                                const className = isActiveLocation(reference) ? styles.locationActive : ''
 
-                            const locationLine = getPrePostLineContent(reference)
-                            const lineWithHighlightedToken = locationLine.prePostToken ? (
-                                <>
-                                    {locationLine.prePostToken.pre === '' ? (
-                                        <></>
-                                    ) : (
-                                        <Typography.Code>{locationLine.prePostToken.pre}</Typography.Code>
-                                    )}
-                                    <mark className="p-0 selection-highlight sourcegraph-document-highlight">
-                                        <Typography.Code>{searchToken}</Typography.Code>
-                                    </mark>
-                                    {locationLine.prePostToken.post === '' ? (
-                                        <></>
-                                    ) : (
-                                        <Typography.Code>{locationLine.prePostToken.post}</Typography.Code>
-                                    )}
-                                </>
-                            ) : locationLine.line ? (
-                                <Typography.Code>{locationLine.line}</Typography.Code>
-                            ) : (
-                                ''
-                            )
+                                const locationLine = getPrePostLineContent(reference)
+                                const lineWithHighlightedToken = locationLine.prePostToken ? (
+                                    <>
+                                        {locationLine.prePostToken.pre === '' ? (
+                                            <></>
+                                        ) : (
+                                            <Typography.Code>{locationLine.prePostToken.pre}</Typography.Code>
+                                        )}
+                                        <mark className="p-0 selection-highlight sourcegraph-document-highlight">
+                                            <Typography.Code>{searchToken}</Typography.Code>
+                                        </mark>
+                                        {locationLine.prePostToken.post === '' ? (
+                                            <></>
+                                        ) : (
+                                            <Typography.Code>{locationLine.prePostToken.post}</Typography.Code>
+                                        )}
+                                    </>
+                                ) : locationLine.line ? (
+                                    <Typography.Code>{locationLine.line}</Typography.Code>
+                                ) : (
+                                    ''
+                                )
 
-                            return (
-                                <li
-                                    key={reference.url}
-                                    className={classNames('border-0 rounded-0 mb-0', styles.location, className)}
-                                >
-                                    <Link
-                                        as={Button}
-                                        onClick={event => {
-                                            event.preventDefault()
-                                            setActiveLocation(reference)
-                                        }}
-                                        to={reference.url}
-                                        className={styles.locationLink}
+                                return (
+                                    <li
+                                        key={reference.url}
+                                        className={classNames('border-0 rounded-0 mb-0', styles.location, className)}
                                     >
-                                        <span className={styles.locationLinkLineNumber}>
-                                            {(reference.range?.start?.line ?? 0) + 1}
-                                            {': '}
-                                        </span>
-                                        {lineWithHighlightedToken}
-                                    </Link>
-                                </li>
-                            )
-                        })}
-                    </ul>
+                                        <Link
+                                            as={Button}
+                                            onClick={event => {
+                                                event.preventDefault()
+                                                setActiveLocation(reference)
+                                            }}
+                                            to={reference.url}
+                                            className={styles.locationLink}
+                                        >
+                                            <span className={styles.locationLinkLineNumber}>
+                                                {(reference.range?.start?.line ?? 0) + 1}
+                                                {': '}
+                                            </span>
+                                            {lineWithHighlightedToken}
+                                        </Link>
+                                    </li>
+                                )
+                            })}
+                        </ul>
+                    </div>
                 </CollapsePanel>
             </div>
         </Collapse>
@@ -933,16 +943,16 @@ const getPrePostLineContent = (location: Location): LocationLine => {
 const LoadingCodeIntel: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <>
         <LoadingSpinner inline={false} className="mx-auto my-4" />
-        <p className="text-muted text-center">
+        <Text alignment="center" className="text-muted">
             <i>Loading code intel ...</i>
-        </p>
+        </Text>
     </>
 )
 
 const LoadingCodeIntelFailed: React.FunctionComponent<React.PropsWithChildren<{ error: ErrorLike }>> = props => (
     <>
         <div>
-            <p className="text-danger">Loading code intel failed:</p>
+            <Text className="text-danger">Loading code intel failed:</Text>
             <pre>{props.error.message}</pre>
         </div>
     </>

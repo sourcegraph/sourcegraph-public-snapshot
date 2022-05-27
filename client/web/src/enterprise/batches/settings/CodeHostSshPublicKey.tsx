@@ -4,7 +4,7 @@ import copy from 'copy-to-clipboard'
 import { noop } from 'lodash'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 
-import { Button, TextArea, Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, TextArea, Link, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -68,11 +68,11 @@ export const CodeHostSshPublicKey: React.FunctionComponent<React.PropsWithChildr
                 onChange={noop}
             />
             {showInstructionsLink && (
-                <p>
+                <Text>
                     <Link to={configInstructionLinks[externalServiceKind]} target="_blank" rel="noopener">
                         Configuration instructions
                     </Link>
-                </p>
+                </Text>
             )}
         </>
     )

@@ -15,7 +15,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
@@ -155,7 +155,7 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
             <div className="repository-compare-page">
                 <PageTitle title="Compare" />
                 {this.state.rangeOrError === null ? (
-                    <p>Your results will appear here</p>
+                    <Text>Your results will appear here</Text>
                 ) : this.state.rangeOrError === undefined ? (
                     <LoadingSpinner />
                 ) : isErrorLike(this.state.rangeOrError) ? (

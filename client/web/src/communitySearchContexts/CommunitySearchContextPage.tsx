@@ -19,7 +19,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, useObservable, Link, Card, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, useObservable, Link, Card, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
@@ -132,15 +132,15 @@ export const CommunitySearchContextPage: React.FunctionComponent<
             {!props.communitySearchContextMetadata.lowProfile && (
                 <div className="row">
                     <div className={classNames('col-xs-12 col-lg-7', styles.column)}>
-                        <p className={classNames('h5 font-weight-normal mb-4', styles.contentDescription)}>
+                        <Text weight="regular" className={classNames('h5 mb-4', styles.contentDescription)}>
                             {props.communitySearchContextMetadata.description}
-                        </p>
+                        </Text>
 
                         <Typography.H2>Search examples</Typography.H2>
                         {props.communitySearchContextMetadata.examples.map(example => (
                             <div className="mt-3" key={example.title}>
                                 <Typography.H3 className="mb-3">{example.title}</Typography.H3>
-                                <p>{example.description}</p>
+                                <Text>{example.description}</Text>
                                 <div className="d-flex mb-4">
                                     <small className={classNames('form-control text-monospace ', styles.exampleBar)}>
                                         <SyntaxHighlightedSearchQuery query={`${contextQuery} ${example.query}`} />
@@ -175,7 +175,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                                     />
                                     Repositories
                                 </Typography.H2>
-                                <p>
+                                <Text>
                                     Using the syntax{' '}
                                     <Typography.Code>
                                         {/*
@@ -187,7 +187,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                                         {props.communitySearchContextMetadata.spec}
                                     </Typography.Code>{' '}
                                     in a query will search these repositories:
-                                </p>
+                                </Text>
                                 {searchContextOrError &&
                                     !isErrorLike(searchContextOrError) &&
                                     searchContextOrError !== LOADING && (

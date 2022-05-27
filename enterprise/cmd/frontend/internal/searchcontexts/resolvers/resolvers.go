@@ -151,7 +151,7 @@ func (r *Resolver) repositoryRevisionsFromInputArgs(ctx context.Context, args []
 		}
 		repoIDs = append(repoIDs, repoID)
 	}
-	idToRepo, err := database.Repos(r.db).GetReposSetByIDs(ctx, repoIDs...)
+	idToRepo, err := r.db.Repos().GetReposSetByIDs(ctx, repoIDs...)
 	if err != nil {
 		return nil, err
 	}

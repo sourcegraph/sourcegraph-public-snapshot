@@ -170,7 +170,8 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           class="divider"
         />
         <li
-          class="mr-2 navItem"
+          class="mr-2 button navItem"
+          data-placement="bottom"
         >
           <a
             class="anchorLink btn btnOutlineSecondary btnSm text-decoration-none a11y-ignore create-code-monitor-button"
@@ -195,6 +196,34 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             </svg>
             Monitor
           </a>
+        </li>
+        <li
+          class="mr-2 menu navItem"
+        >
+          <button
+            aria-controls=""
+            aria-haspopup="true"
+            aria-label="Open create actions menu"
+            class="btn btnOutlineSecondary btnSm d-flex align-items-center text-decoration-none"
+            data-reach-menu-button=""
+            id="menu-button-4"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline mr-1"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
+              />
+            </svg>
+            Create …
+          </button>
         </li>
         <li
           class="mr-2 navItem"
@@ -312,7 +341,8 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           class="divider"
         />
         <li
-          class="mr-2 navItem"
+          class="mr-2 button navItem"
+          data-placement="bottom"
         >
           <button
             class="btn btnOutlineSecondary btnSm a11y-ignore create-code-monitor-button"
@@ -335,6 +365,34 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
               />
             </svg>
             Monitor
+          </button>
+        </li>
+        <li
+          class="mr-2 menu navItem"
+        >
+          <button
+            aria-controls=""
+            aria-haspopup="true"
+            aria-label="Open create actions menu"
+            class="btn btnOutlineSecondary btnSm d-flex align-items-center text-decoration-none"
+            data-reach-menu-button=""
+            id="menu-button-6"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline mr-1"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
+              />
+            </svg>
+            Create …
           </button>
         </li>
         <li
@@ -451,7 +509,8 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
           class="divider"
         />
         <li
-          class="mr-2 navItem"
+          class="mr-2 button navItem"
+          data-placement="bottom"
           data-tooltip="Code monitors only support type:diff or type:commit searches."
         >
           <a
@@ -479,6 +538,34 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
             </svg>
             Monitor
           </a>
+        </li>
+        <li
+          class="mr-2 menu navItem"
+        >
+          <button
+            aria-controls=""
+            aria-haspopup="true"
+            aria-label="Open create actions menu"
+            class="btn btnOutlineSecondary btnSm d-flex align-items-center text-decoration-none"
+            data-reach-menu-button=""
+            id="menu-button-2"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline mr-1"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
+              />
+            </svg>
+            Create …
+          </button>
         </li>
         <li
           class="mr-2 navItem"
@@ -596,7 +683,8 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
           class="divider"
         />
         <li
-          class="mr-2 navItem"
+          class="mr-2 button navItem"
+          data-placement="bottom"
         >
           <button
             class="btn btnOutlineSecondary btnSm a11y-ignore create-code-monitor-button"
@@ -619,6 +707,34 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
               />
             </svg>
             Monitor
+          </button>
+        </li>
+        <li
+          class="mr-2 menu navItem"
+        >
+          <button
+            aria-controls=""
+            aria-haspopup="true"
+            aria-label="Open create actions menu"
+            class="btn btnOutlineSecondary btnSm d-flex align-items-center text-decoration-none"
+            data-reach-menu-button=""
+            id="menu-button-8"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline mr-1"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
+              />
+            </svg>
+            Create …
           </button>
         </li>
         <li
