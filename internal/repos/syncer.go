@@ -100,7 +100,7 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 		if !conf.Get().DisableAutoCodeHostSyncs {
 			err := store.EnqueueSyncJobs(ctx, opts.IsCloud)
 			if err != nil && s.Logger != nil {
-				s.Logger.Error("Enqueuing sync jobs", log.Error(err))
+				s.Logger.Error("enqueuing sync jobs", log.Error(err))
 			}
 		}
 		sleep(ctx, opts.EnqueueInterval())
@@ -259,6 +259,7 @@ func (d Diff) Len() int {
 // The "background" boolean flag indicates that we should run this
 // sync in the background vs block and call s.syncRepo synchronously.
 func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background bool) (repo *types.Repo, err error) {
+	logger := s.Logger.With(log.String("name", string(name)), log.Bool("background", background))
 	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", string(name))
 	defer tr.Finish()
 
@@ -297,12 +298,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 				return s.syncRepo(ctx, codehost, name, repo)
 			})
 			if err != nil {
-				s.Logger.Error("SyncRepo",
-					log.String("name", string(name)),
-					log.Error(err),
-					log.Bool("background", background),
-					log.Bool("shared", shared),
-				)
+				logger.Error("SyncRepo", log.Error(err), log.Bool("shared", shared))
 			}
 		}()
 		return repo, nil
@@ -312,12 +308,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 		return s.syncRepo(ctx, codehost, name, repo)
 	})
 	if err != nil {
-		s.Logger.Error("SyncRepo",
-			log.String("name", string(name)),
-			log.Error(err),
-			log.Bool("background", background),
-			log.Bool("shared", shared),
-		)
+		logger.Error("SyncRepo", log.Error(err), log.Bool("shared", shared))
 		return nil, err
 	}
 	return updatedRepo.(*types.Repo), nil
@@ -378,7 +369,7 @@ func (s *Syncer) syncRepo(
 				if err2 != nil {
 					s.Logger.Error(
 						"SyncRepo failed to delete",
-						log.String("svc", svc.DisplayName),
+						log.Object("svc", log.String("name", svc.DisplayName), log.Int64("id", svc.ID)),
 						log.String("repo", string(name)),
 						log.NamedError("cause", err),
 						log.Error(err2),
@@ -488,7 +479,8 @@ func (s *Syncer) SyncExternalService(
 	externalServiceID int64,
 	minSyncInterval time.Duration,
 ) (err error) {
-	s.Logger.Info("Syncing external service", log.Int64("serviceID", externalServiceID))
+	logger := s.Logger.With(log.Int64("externalServiceID", externalServiceID))
+	logger.Info("syncing external service")
 
 	// Ensure the job field is recorded when monitoring external API calls
 	ctx = metrics.ContextWithTask(ctx, "SyncExternalService")
@@ -519,13 +511,10 @@ func (s *Syncer) SyncExternalService(
 
 		// We only want to log this error, not return it
 		if err := s.Store.ExternalServiceStore().Upsert(ctx, svc); err != nil {
-			s.Logger.Error("upserting external service", log.Error(err))
+			logger.Error("upserting external service", log.Error(err))
 		}
 
-		s.Logger.Debug("Synced external service",
-			log.Int64("serviceID", externalServiceID),
-			log.Duration("backoff duration", interval),
-		)
+		logger.Debug("synced external service", log.Duration("backoff duration", interval))
 	}()
 
 	// We have fail-safes in place to prevent enqueuing sync jobs for cloud default
@@ -570,16 +559,12 @@ func (s *Syncer) SyncExternalService(
 			errcode.IsAccountSuspended(err)
 	}
 
+	logger = s.Logger.With(log.Object("svc", log.String("name", svc.DisplayName), log.Int64("id", svc.ID)))
 	// Insert or update repos as they are sourced. Keep track of what was seen
 	// so we can remove anything else at the end.
 	for res := range results {
 		if err := res.Err; err != nil {
-			s.Logger.Error("error from codehost",
-				log.String("svc", svc.DisplayName),
-				log.Int64("id", svc.ID),
-				log.Int("seen", len(seen)),
-				log.Error(err),
-			)
+			logger.Error("error from codehost", log.Int("seen", len(seen)), log.Error(err))
 
 			errs = errors.Append(errs, errors.Wrapf(err, "fetching from code host %s", svc.DisplayName))
 
@@ -599,7 +584,7 @@ func (s *Syncer) SyncExternalService(
 
 		var diff Diff
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
-			s.Logger.Error("failed to sync, skipping", log.String("repo", string(sourced.Name)), log.Error(err))
+			logger.Error("failed to sync, skipping", log.String("repo", string(sourced.Name)), log.Error(err))
 			errs = errors.Append(errs, err)
 
 			// Stop syncing this external service as soon as we know repository limits for user or
@@ -639,9 +624,7 @@ func (s *Syncer) SyncExternalService(
 		var deletedErr error
 		deleted, deletedErr = s.delete(ctx, svc, seen)
 		if deletedErr != nil {
-			s.Logger.Warn("failed to delete some repos",
-				log.String("svc", svc.DisplayName),
-				log.Int64("id", svc.ID),
+			logger.Warn("failed to delete some repos",
 				log.Int("seen", len(seen)),
 				log.Int("deteled", deleted),
 				log.Error(deletedErr),
@@ -651,9 +634,7 @@ func (s *Syncer) SyncExternalService(
 		}
 
 		if deleted > 0 {
-			s.Logger.Warn("deleted not seen repos",
-				log.String("svc", svc.DisplayName),
-				log.Int64("id", svc.ID),
+			logger.Warn("deleted not seen repos",
 				log.Int("seen", len(seen)),
 				log.Int("deleted", deleted),
 				log.Error(err),

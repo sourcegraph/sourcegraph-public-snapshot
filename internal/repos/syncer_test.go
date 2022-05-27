@@ -532,7 +532,6 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			)
 		}
 
-		logger := logtest.Scoped(t)
 		for _, tc := range testCases {
 			if tc.name == "" {
 				t.Error("Test case name is blank")
@@ -570,7 +569,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				syncer := &repos.Syncer{
-					Logger:  logger,
+					Logger:  logtest.Scoped(t),
 					Sourcer: tc.sourcer,
 					Store:   st,
 					Now:     now,
@@ -705,8 +704,6 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 			after:    types.Repos{repo},
 		}}
 
-		logger := logtest.Scoped(t)
-
 		for _, tc := range testCases {
 			tc := tc
 			ctx := context.Background()
@@ -725,7 +722,7 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 				}
 
 				syncer := &repos.Syncer{
-					Logger: logger,
+					Logger: logtest.Scoped(t),
 					Now:    time.Now,
 					Store:  s,
 					Synced: make(chan repos.Diff, 1),
@@ -1167,10 +1164,9 @@ func testCloudDefaultExternalServicesDontSync(store repos.Store) func(*testing.T
 			},
 		}
 
-		logger := logtest.Scoped(t)
 		syncer := &repos.Syncer{
-			Logger: logger,
-			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
+			Logger: logtest.Scoped(t),
+			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
 				return s, nil
 			},
@@ -1924,12 +1920,16 @@ func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) 
 			},
 		}
 
-		logger := logtest.Scoped(t)
 		for _, svc := range svcs {
 			// Sync first service
 			syncer := &repos.Syncer{
+<<<<<<< HEAD
 				Logger: logger,
 				Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
+=======
+				Logger: logtest.Scoped(t),
+				Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+>>>>>>> 3f12a37a80 (use lib/log better in Syncer)
 					s := repos.NewFakeSource(svc, nil, githubRepo, githubRepo2)
 					return s, nil
 				},
@@ -2223,7 +2223,6 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 		t.Fatal(err)
 	}
 
-	logger := logtest.Scoped(t)
 	for _, repoName := range repoNames {
 		dbRepo := (&types.Repo{
 			Name:        repoName,
@@ -2256,7 +2255,7 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 	}
 
 	syncer := &repos.Syncer{
-		Logger: logger,
+		Logger: logtest.Scoped(t),
 		Now:    time.Now,
 		Store:  s,
 		Synced: make(chan repos.Diff, 1),
