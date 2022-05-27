@@ -4,6 +4,7 @@ import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { CommitSearchResult } from './CommitSearchResult'
 import { FileSearchResult } from './FileSearchResult'
+import { PathSearchResult } from './PathSearchResult'
 import { RepoSearchResult } from './RepoSearchResult'
 import {
     getFirstResultId,
@@ -35,7 +36,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
     const matchIdToMatchMap = useMemo((): Map<string, SearchMatch> => {
         const map = new Map<string, SearchMatch>()
         for (const match of matches) {
-            if (['content', 'commit', 'repo'].includes(match.type)) {
+            if (['commit', 'content', 'path', 'repo'].includes(match.type)) {
                 map.set(getMatchId(match), match)
             }
         }
@@ -53,6 +54,8 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                         match,
                         match.type === 'content' ? getLineMatchIndexForContentMatch(resultId) : undefined
                     )
+                } else {
+                    console.log(`No match found for result id: ${resultId}`)
                 }
             } else {
                 onPreviewClear()
@@ -165,6 +168,15 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                         return (
                             <RepoSearchResult
                                 key={`${match.repository}`}
+                                match={match}
+                                selectedResult={selectedResultId}
+                                selectResult={selectResult}
+                            />
+                        )
+                    case 'path':
+                        return (
+                            <PathSearchResult
+                                key={`${match.repository}-${match.path}`}
                                 match={match}
                                 selectedResult={selectedResultId}
                                 selectResult={selectResult}

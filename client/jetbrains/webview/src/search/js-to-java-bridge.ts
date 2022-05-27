@@ -1,5 +1,5 @@
 import { splitPath } from '@sourcegraph/shared/src/components/RepoLink'
-import { ContentMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { ContentMatch, PathMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { loadContent } from './lib/blob'
 import { PluginConfig, Search, Theme } from './types'
@@ -100,10 +100,13 @@ export async function onPreviewClear(): Promise<void> {
 }
 
 export async function onOpen(match: SearchMatch, lineMatchIndex?: number): Promise<void> {
-    try {
-        await callJava(await createPreviewOrOpenRequest(match, lineMatchIndex, 'open'))
-    } catch (error) {
-        console.error(`Failed to open match: ${(error as Error).message}`)
+    const request = await createPreviewOrOpenRequest(match, lineMatchIndex, 'open')
+    if (request.arguments.fileName) {
+        try {
+            await callJava(request)
+        } catch (error) {
+            console.error(`Failed to open match: ${(error as Error).message}`)
+        }
     }
 }
 
@@ -149,7 +152,11 @@ export async function createPreviewOrOpenRequest(
     }
 
     if (match.type === 'content') {
-        return createPreviewOrOpenRequestForContentMatch(match, lineMatchIndex as number, 'preview')
+        return createPreviewOrOpenRequestForContentMatch(match, lineMatchIndex as number, action)
+    }
+
+    if (match.type === 'path') {
+        return createPreviewOrOpenRequestForPathMatch(match, action)
     }
 
     if (match.type === 'repo') {
@@ -200,6 +207,25 @@ export async function createPreviewOrOpenRequestForContentMatch(
             content: content.replaceAll('\r\n', '\n'),
             lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
             absoluteOffsetAndLengths,
+        },
+    }
+}
+
+export async function createPreviewOrOpenRequestForPathMatch(
+    match: PathMatch,
+    action: MatchRequest['action']
+): Promise<MatchRequest> {
+    const fileName = splitPath(match.path)[1]
+    const content = await loadContent(match)
+
+    return {
+        action,
+        arguments: {
+            fileName,
+            path: match.path,
+            content: content.replaceAll('\r\n', '\n'),
+            lineNumber: -1,
+            absoluteOffsetAndLengths: [],
         },
     }
 }
