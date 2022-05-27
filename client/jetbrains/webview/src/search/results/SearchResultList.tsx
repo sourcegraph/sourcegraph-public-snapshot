@@ -17,7 +17,7 @@ import {
 import styles from './SearchResultList.module.scss'
 
 interface Props {
-    onPreviewChange: (result: SearchMatch, lineMatchIndex?: number) => void
+    onPreviewChange: (match: SearchMatch, lineMatchIndex?: number) => void
     onPreviewClear: () => void
     onOpen: (result: SearchMatch, lineMatchIndex?: number) => void
     matches: SearchMatch[]
