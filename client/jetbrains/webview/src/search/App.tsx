@@ -11,8 +11,7 @@ import {
     SearchPatternType,
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
-import { AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
-import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { aggregateStreamingSearch, LATEST_VERSION, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
@@ -20,6 +19,7 @@ import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/sha
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
+import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
 
 import { saveLastSearch } from './js-to-java-bridge'
@@ -37,6 +37,7 @@ interface Props {
     onPreviewClear: () => void
     onOpen: (match: SearchMatch, lineMatchIndex?: number) => void
     initialSearch: Search | null
+    initialAuthenticatedUser: AuthenticatedUser | null
 }
 
 function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
@@ -52,9 +53,10 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     onPreviewClear,
     onOpen,
     initialSearch,
+    initialAuthenticatedUser,
 }: Props) => {
     const [authState, setAuthState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
-    const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
+    const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(initialAuthenticatedUser)
 
     const requestGraphQL = useCallback<PlatformContext['requestGraphQL']>(
         args =>
@@ -77,26 +79,19 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
 
     useEffect(() => {
         setAuthState('validating')
-        requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>({
-            request: currentAuthStateQuery,
-            variables: {},
-            mightContainPrivateInfo: true,
-        })
-            .toPromise()
-            .then(({ data }) => {
-                if (data?.currentUser) {
-                    setAuthState('success')
-                    setAuthenticatedUser(data.currentUser)
-                } else {
-                    setAuthState('failure')
+        getAuthenticatedUser(instanceURL, accessToken)
+            .then(authenticatedUser => {
+                setAuthState(authenticatedUser ? 'success' : 'failure')
+                if (accessToken) {
                     console.warn(`No authenticated user with access token “${accessToken || ''}”`)
                 }
+                setAuthenticatedUser(authenticatedUser)
             })
             .catch(() => {
                 setAuthState('failure')
                 console.warn(`Failed to validate authentication with access token “${accessToken || ''}”`)
             })
-    }, [accessToken, requestGraphQL])
+    }, [instanceURL, accessToken])
 
     const platformContext = {
         requestGraphQL,
