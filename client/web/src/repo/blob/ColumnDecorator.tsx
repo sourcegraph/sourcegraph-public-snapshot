@@ -10,7 +10,6 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import {
     decorationAttachmentStyleForTheme,
     DecorationMapByLine,
-    decorationStyleForTheme,
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -78,24 +77,6 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
 
                         const currentLineDecorations = decorations.get(index + 1)
 
-                        // TODO: do we need this for cells with decorations or all cells?
-                        for (const decoration of currentLineDecorations || []) {
-                            const style = decorationStyleForTheme(decoration, isLightTheme)
-
-                            if (style.backgroundColor) {
-                                cell.style.backgroundColor = style.backgroundColor
-                            }
-                            if (style.border) {
-                                cell.style.border = style.border
-                            }
-                            if (style.borderColor) {
-                                cell.style.borderColor = style.borderColor
-                            }
-                            if (style.borderWidth) {
-                                cell.style.borderWidth = style.borderWidth
-                            }
-                        }
-
                         // store created cells
                         addedCells.set(cell, currentLineDecorations)
                     }
@@ -111,7 +92,7 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                 subscription.unsubscribe()
                 removeAddedCells()
             }
-        }, [codeViewElements, decorations, isLightTheme, extensionID])
+        }, [codeViewElements, decorations, extensionID])
 
         if (!portalNodes?.size) {
             return null
@@ -132,6 +113,8 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                             portalRoot.dataset.line ?? ''
                                         }`}
                                         className={styles.item}
+                                        // eslint-disable-next-line react/forbid-dom-props
+                                        style={{ color: style.color }}
                                         data-tooltip={attachment.hoverMessage}
                                         to={attachment.linkURL}
                                         // Use target to open external URLs
