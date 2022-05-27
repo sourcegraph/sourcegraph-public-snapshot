@@ -43,7 +43,7 @@ export const CreateActionsMenu: React.FunctionComponent<CreateActionsMenuProps> 
                 <MenuList position={Position.bottomStart} aria-label="Create Actions. Open menu">
                     {createActions.map(createAction => (
                         <MenuLink key={createAction.label} as={Link} to={createAction.url}>
-                            <Icon className="mr-1" as={createAction.icon} />
+                            <Icon role="img" aria-hidden="true" className="mr-1" as={createAction.icon} />
                             {createAction.label}
                         </MenuLink>
                     ))}
