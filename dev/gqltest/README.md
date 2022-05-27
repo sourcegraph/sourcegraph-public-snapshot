@@ -66,9 +66,11 @@ It is not required to boot up a single Docker container to run these tests, whic
 go test -long -base-url "https://sourcegraph.test:3443" -email "joe@sourcegraph.com" -username "joe" -password "<REDACTED>"
 ```
 
-If you provide credentials they will need to match an existing site admin's credentials.
+If you run this against an existing dev instance you will need to provide an existing site admin's credentials.
 
-You will need to run your local instance in `enterprise-codeinsights` mode in order for all tests to pass. Also note you should not use an external service config file. To ensure your local environment is set up correctly, follow these steps:
+You will need to run your local instance in `enterprise-codeinsights` mode in order for all tests to pass. Also note you should not use an external service config file. 
+
+To ensure your local environment is set up correctly, follow these steps:
 
 1. Clear your database: `sg db reset-pg -db all`
 2. Add the following to your `sg.config.overwrite.yaml`
