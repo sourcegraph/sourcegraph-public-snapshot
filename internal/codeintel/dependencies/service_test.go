@@ -417,7 +417,7 @@ func TestResolveDependencies(t *testing.T) {
 	expectedNames := []string{
 		"maven/g1/a1",
 		"maven/g2/a2",
-		"maven/g3/a4",
+		"maven/g3/a3",
 	}
 	if diff := cmp.Diff(expectedNames, syncedRepoNames); diff != "" {
 		t.Errorf("unexpected names (-want +got):\n%s", diff)
