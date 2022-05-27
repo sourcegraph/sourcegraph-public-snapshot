@@ -3,7 +3,6 @@ package linters
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/run"
@@ -47,7 +46,7 @@ func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
 		var sb strings.Builder
 		reportOut := std.NewOutput(&sb, true)
 		reportOut.WriteLine(output.Line(output.EmojiFailure, output.StyleWarning, "Uncommitted changes found after running go generate:"))
-		reportOut.WriteMarkdown(fmt.Sprintf("```diff\n%s\n```", out.String()))
+		reportOut.WriteCode("diff", out.String())
 		reportOut.Write("To fix this, run 'sg generate'.")
 		r.Err = err
 		r.Output = sb.String()
