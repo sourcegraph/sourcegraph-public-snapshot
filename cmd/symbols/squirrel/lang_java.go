@@ -700,16 +700,22 @@ func (squirrel *SquirrelService) defToType(ctx context.Context, def Node) (Type,
 			noad: swapNode(def, parent),
 		}), nil
 	case "formal_parameter":
-		tyNode := parent.ChildByFieldName("type")
-		if tyNode == nil {
-			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find parameter type")
-			return nil, nil
-		}
-		return squirrel.getTypeDefJava(ctx, swapNode(def, tyNode))
+		fallthrough
 	case "enhanced_for_statement":
 		tyNode := parent.ChildByFieldName("type")
 		if tyNode == nil {
-			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find parameter type")
+			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find type")
+			return nil, nil
+		}
+		return squirrel.getTypeDefJava(ctx, swapNode(def, tyNode))
+	case "variable_declarator":
+		grandparent := parent.Parent()
+		if grandparent == nil {
+			return nil, nil
+		}
+		tyNode := grandparent.ChildByFieldName("type")
+		if tyNode == nil {
+			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find type")
 			return nil, nil
 		}
 		return squirrel.getTypeDefJava(ctx, swapNode(def, tyNode))

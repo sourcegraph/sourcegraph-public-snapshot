@@ -73,7 +73,8 @@ class C1 {
         // vv C2 ref
         C1.C2 c12; // < "C1" C1 ref
 
-        int f1;
+        //          vv f2 ref
+        int f1 = c2.f2;
 
         //   vv C3 ref
         //      vv f3 ref
