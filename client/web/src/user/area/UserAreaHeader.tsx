@@ -60,7 +60,15 @@ export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Pro
     return (
         <div className={className}>
             <div className="container">
-                <PageHeader path={path} className="mb-3" />
+                <PageHeader className="mb-3">
+                    <PageHeader.Heading as="h2" styleAs="h1">
+                        {path.map(({ text, icon }, index) => (
+                            <PageHeader.Breadcrumb key={index} icon={icon}>
+                                {text}
+                            </PageHeader.Breadcrumb>
+                        ))}
+                    </PageHeader.Heading>
+                </PageHeader>
                 <div className="d-flex align-items-end justify-content-between">
                     <ul className="nav nav-tabs w-100">
                         {navItems.map(
