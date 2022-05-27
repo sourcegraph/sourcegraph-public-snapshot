@@ -431,7 +431,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 	}
 
 	flags := featureflag.FromContext(ctx)
-	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", false)
+	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", true)
 	if len(scoped) > 0 && deprecateJustInTime {
 		insightPermStore := store.NewInsightPermissionStore(r.postgresDB)
 		insightsStore := store.New(r.insightsDB, insightPermStore)
@@ -931,7 +931,7 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 	}
 
 	flags := featureflag.FromContext(ctx)
-	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", false)
+	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", true)
 
 	if !foundSeries {
 		repos := series.RepositoryScope.Repositories
