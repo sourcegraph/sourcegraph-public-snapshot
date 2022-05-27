@@ -352,17 +352,18 @@ func TestLoadChangesetSource(t *testing.T) {
 
 	t.Run("owned changesets", func(t *testing.T) {
 		t.Run("has user credential", func(t *testing.T) {
-			enc, err := database.EncryptAuthenticator(ctx, nil, &auth.OAuthBearerToken{Token: "456"})
-			assert.Nil(t, err)
-
-			cred := &database.UserCredential{
-				EncryptedCredential: enc,
-			}
 			bc := &btypes.BatchChange{ID: 1, LastApplierID: 42}
 			ch := &btypes.Changeset{OwnedByBatchChangeID: bc.ID}
 
 			credStore := database.NewMockUserCredentialsStore()
-			credStore.GetByScopeFunc.SetDefaultReturn(cred, nil)
+			credStore.GetByScopeFunc.SetDefaultHook(func(ctx context.Context, opts database.UserCredentialScope) (*database.UserCredential, error) {
+				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
+				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
+				assert.EqualValues(t, bc.LastApplierID, opts.UserID)
+				cred := &database.UserCredential{}
+				cred.SetAuthenticator(ctx, &auth.OAuthBearerToken{Token: "789"})
+				return cred, nil
+			})
 
 			syncStore, _ := newMockStore()
 			syncStore.UserCredentialsFunc.SetDefaultReturn(credStore)
@@ -376,10 +377,39 @@ func TestLoadChangesetSource(t *testing.T) {
 
 			err = src.ValidateAuthenticator(ctx)
 			assert.NotNil(t, err)
+			assert.Equal(t, "Bearer 789", err.Error())
+		})
+
+		t.Run("site credential only", func(t *testing.T) {
+			bc := &btypes.BatchChange{ID: 1, LastApplierID: 42}
+			ch := &btypes.Changeset{OwnedByBatchChangeID: bc.ID}
+
+			credStore := database.NewMockUserCredentialsStore()
+			credStore.GetByScopeFunc.SetDefaultReturn(nil, database.UserCredentialNotFoundErr{})
+
+			syncStore, _ := newMockStore()
+			syncStore.UserCredentialsFunc.SetDefaultReturn(credStore)
+			syncStore.GetBatchChangeFunc.SetDefaultHook(func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
+				assert.EqualValues(t, bc.ID, opts.ID)
+				return bc, nil
+			})
+			syncStore.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
+				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
+				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
+				cred := &btypes.SiteCredential{}
+				cred.SetAuthenticator(ctx, &auth.OAuthBearerToken{Token: "456"})
+				return cred, nil
+			})
+
+			src, err := loadChangesetSource(ctx, cf, syncStore, ch, repo)
+			assert.Nil(t, err)
+
+			err = src.ValidateAuthenticator(ctx)
+			assert.NotNil(t, err)
 			assert.Equal(t, "Bearer 456", err.Error())
 		})
 
-		t.Run("no user credential", func(t *testing.T) {
+		t.Run("no user or site credential", func(t *testing.T) {
 			bc := &btypes.BatchChange{ID: 1, LastApplierID: 42}
 			ch := &btypes.Changeset{OwnedByBatchChangeID: bc.ID}
 

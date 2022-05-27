@@ -209,7 +209,15 @@ func WithAuthenticatorForChangeset(
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load owning batch change")
 		}
-		return WithAuthenticatorForUser(ctx, tx, css, batchChange.LastApplierID, repo)
+
+		a, err := WithAuthenticatorForUser(ctx, tx, css, batchChange.LastApplierID, repo)
+		// FIXME: If there's no credential, then we fall back through to
+		// withSiteAuthenticator below, which will ultimately use the external
+		// service configuration credential if no site credential is available.
+		// We want to remove that.
+		if err != ErrMissingCredentials {
+			return a, err
+		}
 	}
 
 	return withSiteAuthenticator(ctx, tx, css, repo)
