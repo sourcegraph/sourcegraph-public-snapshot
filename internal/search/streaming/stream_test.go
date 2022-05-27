@@ -206,7 +206,11 @@ func TestWithSelect(t *testing.T) {
     "HunkMatches": [
       {
         "Preview": "",
-        "LineNumberStart": 0,
+        "PreviewStart": [
+          0,
+          0,
+          0
+        ],
         "Ranges": [
           {
             "start": [
@@ -224,7 +228,11 @@ func TestWithSelect(t *testing.T) {
       },
       {
         "Preview": "",
-        "LineNumberStart": 0,
+        "PreviewStart": [
+          0,
+          0,
+          0
+        ],
         "Ranges": [
           {
             "start": [
@@ -248,7 +256,11 @@ func TestWithSelect(t *testing.T) {
     "HunkMatches": [
       {
         "Preview": "",
-        "LineNumberStart": 0,
+        "PreviewStart": [
+          0,
+          0,
+          0
+        ],
         "Ranges": [
           {
             "start": [
@@ -272,7 +284,11 @@ func TestWithSelect(t *testing.T) {
     "HunkMatches": [
       {
         "Preview": "",
-        "LineNumberStart": 0,
+        "PreviewStart": [
+          0,
+          0,
+          0
+        ],
         "Ranges": [
           {
             "start": [
@@ -296,7 +312,11 @@ func TestWithSelect(t *testing.T) {
     "HunkMatches": [
       {
         "Preview": "",
-        "LineNumberStart": 0,
+        "PreviewStart": [
+          0,
+          0,
+          0
+        ],
         "Ranges": [
           {
             "start": [
