@@ -1,6 +1,7 @@
 package output
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 
@@ -21,7 +22,7 @@ type capabilities struct {
 }
 
 func detectCapabilities(opts OutputOpts) (caps capabilities, err error) {
-	println("finding capabilities")
+	fmt.Printf("finding capabilities %+v", opts)
 
 	// Set atty
 	caps.Isatty = opts.ForceTTY
