@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import classNames from 'classnames'
 
-import { Button, ButtonGroup } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, Input } from '@sourcegraph/wildcard'
 
 import styles from './SortFilterSeriesPanel.module.scss'
 
@@ -82,13 +82,7 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
             </section>
             <footer className={styles.footer}>
                 <span>Number of data series</span>
-                <input
-                    type="number"
-                    step="1"
-                    value={seriesCount}
-                    className="form-control form-control-sm"
-                    onChange={handleChange}
-                />
+                <Input type="number" step="1" value={seriesCount} onChange={handleChange} variant="small" />
             </footer>
         </section>
     )

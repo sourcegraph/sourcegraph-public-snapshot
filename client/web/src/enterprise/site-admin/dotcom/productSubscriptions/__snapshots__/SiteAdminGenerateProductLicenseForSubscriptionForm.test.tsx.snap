@@ -17,13 +17,17 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
         >
           Tags
         </label>
-        <input
-          class="form-control"
-          id="site-admin-create-product-subscription-page__tags"
-          list="knownPlans"
-          type="text"
-          value=""
-        />
+        <div
+          class="container d-flex form-control"
+        >
+          <input
+            class="form-control with-invalid-icon"
+            id="site-admin-create-product-subscription-page__tags"
+            list="knownPlans"
+            type="text"
+            value=""
+          />
+        </div>
         <datalist
           id="knownPlans"
         >
@@ -76,13 +80,17 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
         >
           Users
         </label>
-        <input
-          class="form-control"
-          id="site-admin-create-product-subscription-page__userCount"
-          min="1"
-          type="number"
-          value="1"
-        />
+        <div
+          class="container d-flex"
+        >
+          <input
+            class="form-control with-invalid-icon"
+            id="site-admin-create-product-subscription-page__userCount"
+            min="1"
+            type="number"
+            value="1"
+          />
+        </div>
       </div>
       <div
         class="form-group"
@@ -93,14 +101,18 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
         >
           Valid for (days)
         </label>
-        <input
-          class="form-control"
-          id="site-admin-create-product-subscription-page__validDays"
-          max="2000"
-          min="1"
-          type="number"
-          value="1"
-        />
+        <div
+          class="container d-flex"
+        >
+          <input
+            class="form-control with-invalid-icon"
+            id="site-admin-create-product-subscription-page__validDays"
+            max="2000"
+            min="1"
+            type="number"
+            value="1"
+          />
+        </div>
         <small
           class="form-text text-muted"
         >
