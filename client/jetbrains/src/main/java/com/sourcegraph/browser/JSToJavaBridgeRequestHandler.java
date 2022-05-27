@@ -19,12 +19,6 @@ public class JSToJavaBridgeRequestHandler {
     private final PreviewPanel previewPanel;
     private final BrowserAndLoadingPanel topPanel;
 
-    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull PreviewPanel previewPanel, @NotNull BrowserAndLoadingPanel topPanel) {
-        this.project = project;
-        this.previewPanel = previewPanel;
-        this.topPanel = topPanel;
-    }
-
     public JBCefJSQuery.Response handle(@NotNull JsonObject request) {
         String action = request.get("action").getAsString();
         JsonObject arguments;
@@ -79,15 +73,37 @@ public class JSToJavaBridgeRequestHandler {
                     topPanel.setBrowserVisible(true);
                     return createSuccessResponse(null);
                 default:
-                    return createErrorResponse(2, "Unknown action: " + action);
+                    return createErrorResponse(Errors.UNKNOWN_ACTION.code, "Unknown action: " + action);
             }
         } catch (Exception e) {
-            return createErrorResponse(3, action + ": " + e.getClass().getName() + ": " + e.getMessage());
+            return createErrorResponse(Errors.EXCEPTION_IN_ACTION.code, action + ": " + e.getClass().getName() + ": " + e.getMessage());
         }
     }
 
+    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull PreviewPanel previewPanel, @NotNull BrowserAndLoadingPanel topPanel) {
+        this.project = project;
+        this.previewPanel = previewPanel;
+        this.topPanel = topPanel;
+    }
+
     public JBCefJSQuery.Response handleInvalidRequest(Exception e) {
-        return createErrorResponse(1, "Invalid JSON passed to bridge. The error is: " + e.getClass() + ": " + e.getMessage());
+        return createErrorResponse(Errors.INVALID_JSON.code, "Invalid JSON passed to bridge. The error is: " + e.getClass() + ": " + e.getMessage());
+    }
+
+    public enum Errors {
+        INVALID_JSON(1),
+        UNKNOWN_ACTION(2),
+        EXCEPTION_IN_ACTION(3);
+
+        private final int code;
+
+        Errors(int code) {
+            this.code = code;
+        }
+
+        public int getCode() {
+            return code;
+        }
     }
 
     @NotNull
