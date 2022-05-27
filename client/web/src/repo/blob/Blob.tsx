@@ -391,10 +391,14 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         parameters.delete('popover')
                         nextPopoverClose()
 
-                        props.history.push({
-                            ...location,
-                            search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
-                        })
+                        if (position && !('character' in position)) {
+                            // Only change the URL when clicking on blank space on the line (not on
+                            // characters). Otherwise, this would interfere with go to definition.
+                            props.history.push({
+                                ...location,
+                                search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
+                            })
+                        }
                     }),
                     mapTo(undefined)
                 ),
@@ -498,6 +502,9 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                                 findPositionsFromEvents({ domFunctions })
                             ),
                             positionJumps: locationPositions.pipe(
+                                tap(position => {
+                                    console.log('🟠', position)
+                                }),
                                 withLatestFrom(
                                     codeViewElements.pipe(filter(isDefined)),
                                     blobElements.pipe(filter(isDefined))
