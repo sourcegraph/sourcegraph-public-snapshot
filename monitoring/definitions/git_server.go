@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func GitServer() *monitoring.Container {
+func GitServer() *monitoring.Dashboard {
 	const containerName = "gitserver"
 
 	gitserverHighMemoryNoAlertTransformer := func(observable shared.Observable) shared.Observable {
@@ -19,7 +19,7 @@ func GitServer() *monitoring.Container {
 		ShortTermMemoryUsage: gitserverHighMemoryNoAlertTransformer,
 	}
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:        "gitserver",
 		Title:       "Git Server",
 		Description: "Stores, manages, and operates Git repositories.",

@@ -346,7 +346,7 @@ SELECT * FROM candidates
 // UpdateResolvedRevisions updates the lockfile packages that were resolved to
 // repositories/revisions pairs on the Sourcegraph instance.
 func (s *store) UpdateResolvedRevisions(ctx context.Context, repoRevsToResolvedRevs map[string]map[string]string) (err error) {
-	ctx, _, endObservation := s.operations.selectRepoRevisionsToResolve.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.updateResolvedRevisions.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	for repoName, resolvedRevs := range repoRevsToResolvedRevs {

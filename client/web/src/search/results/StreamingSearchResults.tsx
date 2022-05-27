@@ -116,7 +116,7 @@ function useCtaAlert(
         if (!areResultsFound) {
             return
         }
-        if (tourQueryParameters?.isTour) {
+        if (tourQueryParameters.isTour) {
             return
         }
 

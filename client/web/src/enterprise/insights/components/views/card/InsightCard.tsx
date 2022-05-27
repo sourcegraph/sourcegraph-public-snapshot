@@ -24,7 +24,7 @@ const InsightCard = forwardRef((props, reference) => {
 
 export interface InsightCardTitleProps {
     title: string
-    subtitle?: string
+    subtitle?: ReactNode
 
     /**
      * It's primarily conceived as a slot for card actions (like filter buttons) that render

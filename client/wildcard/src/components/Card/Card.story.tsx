@@ -4,7 +4,7 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Typography } from '..'
+import { Typography, Text } from '..'
 import { Button } from '../Button'
 import { Grid } from '../Grid'
 
@@ -46,10 +46,10 @@ export default config
 export const Simple: Story = () => (
     <>
         <Typography.H1>Cards</Typography.H1>
-        <p>
+        <Text>
             A card is a flexible and extensible content container. It includes options for headers and footers, a wide
             variety of content, contextual background colors, and powerful display options.{' '}
-        </p>
+        </Text>
 
         <Typography.H2>Examples</Typography.H2>
 

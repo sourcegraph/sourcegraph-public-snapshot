@@ -4,7 +4,7 @@ import { useHistory } from 'react-router'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Alert, Button, Typography } from '@sourcegraph/wildcard'
+import { Alert, Button, Typography, Text } from '@sourcegraph/wildcard'
 
 import {
     BatchSpecExecutionFields,
@@ -102,7 +102,7 @@ const MemoizedReadOnlyBatchSpecForm: React.FunctionComponent<
                 isOpen={showCancelModal}
                 onCancel={() => setShowCancelModal(false)}
                 onConfirm={cancelBatchSpecExecution}
-                modalBody={<p>Are you sure you want to cancel the current execution?</p>}
+                modalBody={<Text>Are you sure you want to cancel the current execution?</Text>}
                 isLoading={isCancelLoading}
             />
         </div>

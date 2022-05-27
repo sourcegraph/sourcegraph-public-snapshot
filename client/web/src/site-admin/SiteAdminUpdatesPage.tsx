@@ -7,7 +7,7 @@ import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Link, Alert, Icon, Typography } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 
@@ -73,7 +73,7 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<React.PropsWithChildr
                 </Alert>
             )}
 
-            <p className="site-admin-updates_page__info">
+            <Text className="site-admin-updates_page__info">
                 <small>
                     <strong>Current product version:</strong> {state.productVersion} ({state.buildVersion})
                 </small>
@@ -94,12 +94,12 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<React.PropsWithChildr
                     <Typography.Code>update.channel</Typography.Code> to{' '}
                     {autoUpdateCheckingEnabled ? 'disable' : 'enable'}.
                 </small>
-            </p>
-            <p>
+            </Text>
+            <Text>
                 <Link to="https://about.sourcegraph.com/changelog" target="_blank" rel="noopener">
                     Sourcegraph changelog
                 </Link>
-            </p>
+            </Text>
         </div>
     )
 }

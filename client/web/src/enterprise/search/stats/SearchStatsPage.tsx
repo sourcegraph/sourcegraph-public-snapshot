@@ -7,7 +7,7 @@ import { catchError } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { Badge, Button, LoadingSpinner, useObservable, Alert, Icon, Typography } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner, useObservable, Alert, Icon, Typography, Input, Button } from '@sourcegraph/wildcard'
 
 import { querySearchResultsStats } from './backend'
 import { SearchStatsLanguages } from './SearchStatsLanguages'
@@ -63,10 +63,10 @@ export const SearchStatsPage: React.FunctionComponent<React.PropsWithChildren<Pr
                 </Typography.H2>
             </header>
             <Form onSubmit={onSubmit} className="form">
-                <div className="form-group d-flex align-items-stretch">
-                    <input
+                <div className="form-group d-flex">
+                    <Input
                         id="stats-page__query"
-                        className="form-control flex-1 test-stats-query"
+                        className="mb-0 w-100"
                         type="search"
                         placeholder="Enter a Sourcegraph search query"
                         value={uncommittedQuery}
@@ -77,7 +77,7 @@ export const SearchStatsPage: React.FunctionComponent<React.PropsWithChildren<Pr
                         autoComplete="off"
                     />
                     {uncommittedQuery !== query && (
-                        <Button type="submit" className="ml-2 test-stats-query-update" variant="primary">
+                        <Button type="submit" className="ml-2" variant="primary">
                             Update
                         </Button>
                     )}

@@ -414,14 +414,18 @@ func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) []result.MultilineM
 
 			lines = append(lines, result.MultilineMatch{
 				Preview: string(l.Line),
-				Start: result.LineColumn{
-					// zoekt line numbers are 1-based rather than 0-based so subtract 1
-					Line:   int32(l.LineNumber - 1),
-					Column: int32(offset),
-				},
-				End: result.LineColumn{
-					Line:   int32(l.LineNumber - 1),
-					Column: int32(offset + length),
+				Range: result.Range{
+					Start: result.Location{
+						// zoekt line numbers are 1-based rather than 0-based so subtract 1
+						Offset: int(m.Offset),
+						Line:   l.LineNumber - 1,
+						Column: offset,
+					},
+					End: result.Location{
+						Offset: int(m.Offset),
+						Line:   l.LineNumber - 1,
+						Column: offset + length,
+					},
 				},
 			})
 		}

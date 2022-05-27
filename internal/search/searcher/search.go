@@ -3,6 +3,7 @@ package searcher
 import (
 	"context"
 	"time"
+	"unicode/utf8"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
@@ -208,24 +209,56 @@ func searchFilesInRepo(
 
 // newToMatches returns a closure that converts []*protocol.FileMatch to []result.Match.
 func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func([]*protocol.FileMatch) []result.Match {
+	runeOffsetToByteOffset := func(buf string, n int) int {
+		idx := 0
+		for i := 0; i < n; i++ {
+			_, count := utf8.DecodeRuneInString(buf)
+			buf = buf[count:]
+			idx += count
+		}
+		return idx
+	}
+
 	return func(searcherMatches []*protocol.FileMatch) []result.Match {
 		matches := make([]result.Match, 0, len(searcherMatches))
 		for _, fm := range searcherMatches {
-			lineMatches := make([]result.MultilineMatch, 0, len(fm.LineMatches))
+			multilineMatches := make([]result.MultilineMatch, 0, len(fm.LineMatches))
 			for _, lm := range fm.LineMatches {
 				for _, ol := range lm.OffsetAndLengths {
-					lineMatches = append(lineMatches, result.MultilineMatch{
-						Start: result.LineColumn{
-							Line:   int32(lm.LineNumber),
-							Column: int32(ol[0]),
-						},
-						End: result.LineColumn{
-							Line:   int32(lm.LineNumber),
-							Column: int32(ol[0] + ol[1]),
-						},
+					offset, length := ol[0], ol[1]
+					multilineMatches = append(multilineMatches, result.MultilineMatch{
 						Preview: lm.Preview,
+						Range: result.Range{
+							Start: result.Location{
+								Offset: lm.LineOffset + runeOffsetToByteOffset(lm.Preview, offset),
+								Line:   lm.LineNumber,
+								Column: offset,
+							},
+							End: result.Location{
+								Offset: lm.LineOffset + runeOffsetToByteOffset(lm.Preview, offset+length),
+								Line:   lm.LineNumber,
+								Column: offset + length,
+							},
+						},
 					})
 				}
+			}
+			for _, mm := range fm.MultilineMatches {
+				multilineMatches = append(multilineMatches, result.MultilineMatch{
+					Preview: mm.Preview,
+					Range: result.Range{
+						Start: result.Location{
+							Offset: int(mm.Start.Offset),
+							Line:   int(mm.Start.Line),
+							Column: int(mm.Start.Column),
+						},
+						End: result.Location{
+							Offset: int(mm.End.Offset),
+							Line:   int(mm.End.Line),
+							Column: int(mm.End.Column),
+						},
+					},
+				})
 			}
 
 			matches = append(matches, &result.FileMatch{
@@ -235,7 +268,7 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 					CommitID: commit,
 					InputRev: rev,
 				},
-				MultilineMatches: lineMatches,
+				MultilineMatches: multilineMatches,
 				LimitHit:         fm.LimitHit,
 			})
 		}

@@ -1,19 +1,19 @@
 import React from 'react'
 
-import { Link, Typography } from '@sourcegraph/wildcard'
+import { Link, Typography, Text } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
 import styles from './modalHints.module.scss'
 
 const MachineUserRecommendation = (
-    <p>
+    <Text>
         We recommend setting up a machine user to provide restricted access to repositories.{' '}
         <Link to="https://docs.sourcegraph.com/cloud/access_tokens_on_cloud" target="_blank" rel="noopener noreferrer">
             Learn more
         </Link>
         .
-    </p>
+    </Text>
 )
 
 export const scopes: Partial<Record<ExternalServiceKind, React.ReactFragment>> = {

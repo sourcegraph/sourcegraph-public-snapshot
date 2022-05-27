@@ -59,8 +59,7 @@ func rangeToHighlights(s string, r Range) []HighlightedRange {
 }
 
 type Location struct {
-	// Offset is the number of unicode code points (not bytes) from the
-	// beginning of the matched text
+	// Offset is the number of bytes from the beginning of the matched text
 	Offset int
 
 	// Line is the count of newlines before the offset in the matched text

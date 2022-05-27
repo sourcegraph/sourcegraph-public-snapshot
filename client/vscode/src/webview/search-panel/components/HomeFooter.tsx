@@ -62,7 +62,7 @@ const SearchExamples: React.FunctionComponent<React.PropsWithChildren<SearchExam
                                 </div>
                             </div>
                         </button>
-                        <p className={styles.searchExampleLabel}>{example.label}</p>
+                        <Text className={styles.searchExampleLabel}>{example.label}</Text>
                     </div>
                 ))}
             </div>
