@@ -12,8 +12,8 @@ import (
 type Output struct {
 	*output.Output
 
-	// Buildkite indicates we are in a Buildkite environment.
-	Buildkite bool
+	// buildkite indicates we are in a buildkite environment.
+	buildkite bool
 }
 
 // Out is the standard output which is instantiated when sg gets run.
@@ -27,7 +27,7 @@ func NewOutput(dst io.Writer, verbose bool) *Output {
 			ForceTTY:   true,
 			Verbose:    verbose,
 		}),
-		Buildkite: os.Getenv("BUILDKITE") == "true",
+		buildkite: os.Getenv("BUILDKITE") == "true",
 	}
 }
 
@@ -36,7 +36,7 @@ func NewOutput(dst io.Writer, verbose bool) *Output {
 //
 // Learn more: https://buildkite.com/docs/pipelines/managing-log-output
 func (o *Output) writeExpanded(line output.FancyLine) {
-	if o.Buildkite {
+	if o.buildkite {
 		line.Prefix = "+++"
 	}
 	o.WriteLine(line)
@@ -47,7 +47,7 @@ func (o *Output) writeExpanded(line output.FancyLine) {
 //
 // Learn more: https://buildkite.com/docs/pipelines/managing-log-output
 func (o *Output) writeCollapsed(line output.FancyLine) {
-	if o.Buildkite {
+	if o.buildkite {
 		line.Prefix = "---"
 	}
 	o.WriteLine(line)
@@ -58,7 +58,7 @@ func (o *Output) writeCollapsed(line output.FancyLine) {
 //
 // Learn more: https://buildkite.com/docs/pipelines/managing-log-output
 func (o *Output) writeExpandPrevious(line output.FancyLine) {
-	if o.Buildkite {
+	if o.buildkite {
 		line.Prefix = "^^^ +++" // ensure previous group is expanded
 	}
 	o.WriteLine(line)
