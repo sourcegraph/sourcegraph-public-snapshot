@@ -6,7 +6,7 @@ import { useMergeRefs } from 'use-callback-ref'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, ForwardReferenceComponent, Typography } from '@sourcegraph/wildcard'
 
-import { CodeInsightExample } from '../../../../getting-started/components/code-insights-examples/CodeInsightsExamples'
+import { CodeInsightExampleCard } from '../../../../getting-started/components/code-insights-examples/code-insight-example-card/CodeInsightExampleCard'
 import { EXAMPLES } from '../examples'
 
 import styles from './CodeInsightsExamplesSlider.module.scss'
@@ -79,7 +79,7 @@ export const CodeInsightsExamplesSlider: React.FunctionComponent<
                         className={styles.sliderItem}
                         onFullIntersection={() => setActiveExampleIndex(index)}
                     >
-                        <CodeInsightExample
+                        <CodeInsightExampleCard
                             {...example}
                             className={styles.sliderChart}
                             telemetryService={telemetryService}
