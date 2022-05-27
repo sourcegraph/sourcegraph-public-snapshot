@@ -30,10 +30,9 @@ var registerer = prometheus.DefaultRegisterer
 // RequestMeter wraps a Prometheus request meter (counter + duration histogram) updated by requests made by derived
 // http.RoundTrippers.
 type RequestMeter struct {
-	log       log.Logger
-	counter   *prometheus.CounterVec
-	duration  *prometheus.HistogramVec
-	subsystem string
+	log      log.Logger
+	counter  *prometheus.CounterVec
+	duration *prometheus.HistogramVec
 }
 
 const (
@@ -83,10 +82,9 @@ func NewRequestMeter(subsystem, help string) *RequestMeter {
 	registerer.MustRegister(requestDuration)
 
 	return &RequestMeter{
-		log:       log.Scoped(fmt.Sprintf("%s.RequestMeter", subsystem), help),
-		counter:   requestCounter,
-		duration:  requestDuration,
-		subsystem: subsystem,
+		log:      log.Scoped(fmt.Sprintf("%s.RequestMeter", subsystem), help),
+		counter:  requestCounter,
+		duration: requestDuration,
 	}
 }
 
