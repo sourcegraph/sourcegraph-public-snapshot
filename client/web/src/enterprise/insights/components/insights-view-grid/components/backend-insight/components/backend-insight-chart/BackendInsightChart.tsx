@@ -40,11 +40,12 @@ export const MINIMAL_SERIES_FOR_ASIDE_LEGEND = 3
 
 interface BackendInsightChartProps<Datum> extends BackendInsightData {
     locked: boolean
-    className?: string
-    onDatumClick: () => void
-    toggle: (id: string) => void
+    zeroYAxisMin: boolean
     isSeriesSelected: (id: string) => boolean
     isSeriesHovered: (id: string) => boolean
+    className?: string
+    onLegendItemClick: (id: string) => void
+    onDatumClick: () => void
     setHoveredId: Dispatch<SetStateAction<string | undefined>>
 }
 
@@ -53,11 +54,12 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
         locked,
         isFetchingHistoricalData,
         content,
-        className,
-        onDatumClick,
-        toggle,
+        zeroYAxisMin,
         isSeriesSelected,
         isSeriesHovered,
+        className,
+        onDatumClick,
+        onLegendItemClick,
         setHoveredId,
     } = props
     const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
@@ -93,6 +95,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     onDatumClick={onDatumClick}
                                     isSeriesSelected={isSeriesSelected}
                                     isSeriesHovered={isSeriesHovered}
+                                    zeroYAxisMin={zeroYAxisMin}
                                     {...content}
                                 />
                             </>
@@ -109,7 +112,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     selected={isSeriesSelected(`${series.id}`)}
                                     hovered={isSeriesHovered(`${series.id}`)}
                                     className={styles.legendListItem}
-                                    onClick={() => toggle(`${series.id}`)}
+                                    onClick={() => onLegendItemClick(`${series.id}`)}
                                     onMouseEnter={() => setHoveredId(`${series.id}`)}
                                     // prevent accidental dragging events
                                     onMouseDown={event => event.stopPropagation()}

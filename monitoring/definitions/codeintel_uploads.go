@@ -17,6 +17,7 @@ func CodeIntelUploads() *monitoring.Dashboard {
 			shared.CodeIntelligence.NewUploadsGraphQLTransportGroup(""),
 			shared.CodeIntelligence.NewUploadsHTTPTransportGroup(""),
 			shared.CodeIntelligence.NewUploadsCleanupTaskGroup(""),
+			shared.CodeIntelligence.NewCommitGraphQueueGroup(""),
 			shared.CodeIntelligence.NewUploadsExpirationTaskGroup(""),
 		},
 	}
