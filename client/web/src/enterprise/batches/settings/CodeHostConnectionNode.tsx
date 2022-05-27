@@ -80,6 +80,11 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
             : ''
     }`
 
+    // At the moment, log the error since it is not being displayed on the page.
+    if (checkCredError) {
+        console.log(checkCredError.message)
+    }
+
     return (
         <>
             <li
