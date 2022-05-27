@@ -8,7 +8,7 @@ import { isErrorLike } from '@sourcegraph/common'
 import { isExtensionEnabled, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { PageHeader, AlertLink, useTimeoutManager, Alert, Icon } from '@sourcegraph/wildcard'
+import { PageHeader, AlertLink, useTimeoutManager, Alert, Icon, Text } from '@sourcegraph/wildcard'
 
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { ExtensionToggle } from '../ExtensionToggle'
@@ -103,7 +103,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                             description={
                                 manifest &&
                                 (manifest.description || isWorkInProgress) && (
-                                    <p className="mt-1 mb-0">{manifest.description}</p>
+                                    <Text className="mt-1 mb-0">{manifest.description}</Text>
                                 )
                             }
                             actions={

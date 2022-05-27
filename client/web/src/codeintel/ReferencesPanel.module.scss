@@ -13,7 +13,7 @@ $filter-input-height: 2.5rem;
         padding-top: 0;
         padding-bottom: 0;
         border: none;
-        border: 1px solid var(--gray-04);
+        border: 1px solid var(--border-color-2);
     }
 
     input::placeholder {
@@ -154,10 +154,10 @@ $group-divider-height: 0.25rem;
     padding-right: 1rem;
 
     ul {
-        border: 1px solid var(--gray-03);
+        border: 1px solid var(--border-color-2);
         padding: 0.5rem 0;
         border-radius: 3px;
-        background-color: var(--white);
+        background-color: var(--color-bg-1);
         overflow: scroll;
         -ms-overflow-style: none;
     }
@@ -211,7 +211,7 @@ $card-header-height: 1.5rem;
     flex: 1;
     overflow: auto;
     height: 100%;
-    background-color: var(--gray-01);
+    background-color: var(--body-bg);
 }
 
 // Right side of the panel

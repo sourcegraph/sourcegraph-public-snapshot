@@ -4,7 +4,7 @@ import { Observable, throwError } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, useEventObservable, Modal, Alert, Typography } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useEventObservable, Modal, Alert, Typography, Text } from '@sourcegraph/wildcard'
 
 import { CodeMonitorFormProps } from './CodeMonitorForm'
 
@@ -59,10 +59,10 @@ export const DeleteMonitorModal: React.FunctionComponent<React.PropsWithChildren
                 Delete code monitor?
             </Typography.H3>
 
-            <p>
+            <Text>
                 <strong>This action cannot be undone.</strong> Code monitoring will no longer watch for trigger event
                 and all actions will immediately be removed.
-            </p>
+            </Text>
             {(!deleteCompletedOrError || isErrorLike(deleteCompletedOrError)) && (
                 <div className="text-right">
                     <Button className="mr-2" onClick={toggleDeleteModal} outline={true} variant="secondary">

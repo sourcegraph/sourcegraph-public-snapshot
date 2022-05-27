@@ -72,9 +72,9 @@ var (
 		name: "lsif-ocaml",
 		urn:  "github.com/rvantonder/lsif-ocaml",
 	}
-	lsifPy = codeIntelIndexerResolver{
-		name: "lsif-py",
-		urn:  "github.com/sourcegraph/lsif-py",
+	scipPython = codeIntelIndexerResolver{
+		name: "scip-python",
+		urn:  "github.com/sourcegraph/scip-python",
 	}
 	rustAnalyzer = codeIntelIndexerResolver{
 		name: "rust-analyzer",
@@ -108,7 +108,7 @@ var allIndexers = []gql.CodeIntelIndexerResolver{
 	&hieLSIF,
 	&lsifJsonnet,
 	&lsifOcaml,
-	&lsifPy,
+	&scipPython,
 	&rustAnalyzer,
 	&lsifPHP,
 	&lsifTerraform,
@@ -135,7 +135,7 @@ var languageToIndexer = map[string][]gql.CodeIntelIndexerResolver{
 	".hpp":     {&lsifClang, &lsifCPP},
 	".hs":      {&hieLSIF},
 	".jsonnet": {&lsifJsonnet},
-	".py":      {&lsifPy},
+	".py":      {&scipPython},
 	".ml":      {&lsifOcaml},
 	".rs":      {&rustAnalyzer},
 	".php":     {&lsifPHP},

@@ -8,7 +8,7 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, LoadingSpinner, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, LoadingSpinner, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { InvitableCollaborator } from '../../auth/welcome/InviteCollaborators/InviteCollaborators'
@@ -231,21 +231,21 @@ const CollaboratorsPanelInfo: React.FunctionComponent<React.PropsWithChildren<{ 
                         </div>
                         {isSiteAdmin ? (
                             <>
-                                <p className={styles.infoBox}>
+                                <Text className={styles.infoBox}>
                                     This feature enables Sourcegraph users to invite collaborators we discover through
                                     your Git repository commit history. The invitee will receive a link to Sourcegraph,
                                     but no special permissions are granted.
-                                </p>
-                                <p className={classNames(styles.infoBox, 'mb-0')}>
+                                </Text>
+                                <Text className={classNames(styles.infoBox, 'mb-0')}>
                                     If you wish to disable this feature, see{' '}
                                     <Link to="/help/admin/config/user_invitations">this documentation</Link>.
-                                </p>
+                                </Text>
                             </>
                         ) : (
-                            <p className={classNames(styles.infoBox, 'mb-0')}>
+                            <Text className={classNames(styles.infoBox, 'mb-0')}>
                                 These collaborators were found via your repositories Git commit history. The invitee
                                 will receive a link to Sourcegraph, but no special permissions are granted.
-                            </p>
+                            </Text>
                         )}
                     </CardBody>
                 </Card>

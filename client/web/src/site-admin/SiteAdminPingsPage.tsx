@@ -8,7 +8,7 @@ import { fromFetch } from 'rxjs/fetch'
 import { checkOk } from '@sourcegraph/http-client'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, Typography, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Typography, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
@@ -57,18 +57,18 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
         <div className="site-admin-pings-page">
             <PageTitle title="Pings - Admin" />
             <Typography.H2>Pings</Typography.H2>
-            <p>
+            <Text>
                 Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It
                 sends only the high-level data below. It never sends code, repository names, usernames, or any other
                 specific data.
-            </p>
+            </Text>
             <Typography.H3>Most recent ping</Typography.H3>
             {latestPing === undefined ? (
-                <p>
+                <Text>
                     <LoadingSpinner />
-                </p>
+                </Text>
             ) : isEmpty(latestPing) ? (
-                <p>No recent ping data to display.</p>
+                <Text>No recent ping data to display.</Text>
             ) : (
                 <MonacoEditor
                     {...props}
@@ -81,10 +81,10 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 />
             )}
             <Typography.H3>Critical telemetry</Typography.H3>
-            <p>
+            <Text>
                 Critical telemetry includes only the high-level data below required for billing, support, updates, and
                 security notices. This cannot be disabled.
-            </p>
+            </Text>
             <ul>
                 <li>Randomly generated site identifier</li>
                 <li>
@@ -103,10 +103,10 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 <li>Code Insights: total count of insights</li>
             </ul>
             <Typography.H3>Other telemetry</Typography.H3>
-            <p>
+            <Text>
                 By default, Sourcegraph also aggregates usage and performance metrics for some product features. No
                 personal or specific information is ever included.
-            </p>
+            </Text>
             <ul>
                 <li>Whether the instance is deployed on localhost (true/false)</li>
                 <li>
@@ -389,9 +389,9 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 </li>
             </ul>
             {updatesDisabled ? (
-                <p>All telemetry is disabled.</p>
+                <Text>All telemetry is disabled.</Text>
             ) : (
-                nonCriticalTelemetryDisabled && <p>Non-critical telemetry is disabled.</p>
+                nonCriticalTelemetryDisabled && <Text>Non-critical telemetry is disabled.</Text>
             )}
         </div>
     )

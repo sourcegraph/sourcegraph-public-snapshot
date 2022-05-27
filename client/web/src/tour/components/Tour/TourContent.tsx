@@ -5,7 +5,7 @@ import { chunk, upperFirst } from 'lodash'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
 
@@ -24,7 +24,7 @@ interface TourContentProps {
 
 const Header: React.FunctionComponent<React.PropsWithChildren<{ onClose: () => void }>> = ({ children, onClose }) => (
     <div className="d-flex justify-content-between align-items-start">
-        <p className={styles.title}>Quick start</p>
+        <Text className={styles.title}>Quick start</Text>
         <Button variant="icon" data-testid="tour-close-btn" onClick={onClose} aria-label="Close quick start">
             <Icon role="img" as={CloseIcon} aria-hidden={true} /> {children}
         </Button>
@@ -35,7 +35,7 @@ const Footer: React.FunctionComponent<React.PropsWithChildren<{ completedCount: 
     completedCount,
     totalCount,
 }) => (
-    <p className="text-right mt-2 mb-0">
+    <Text alignment="right" className="mt-2 mb-0">
         <Icon
             role="img"
             as={CheckCircleIcon}
@@ -43,7 +43,7 @@ const Footer: React.FunctionComponent<React.PropsWithChildren<{ completedCount: 
             aria-hidden={true}
         />
         {completedCount} of {totalCount} completed
-    </p>
+    </Text>
 )
 
 const CompletedItem: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => (
@@ -96,7 +96,7 @@ export const TourContent: React.FunctionComponent<React.PropsWithChildren<TourCo
                 >
                     {isHorizontal && completedTaskChunks.length > 0 && (
                         <div className={classNames('pl-2 flex-grow-1', styles.completedItems)}>
-                            <p className={styles.title}>Completed</p>
+                            <Text className={styles.title}>Completed</Text>
                             <div className={styles.completedItemsInner}>
                                 {completedTaskChunks.map((completedTaskChunk, index) => (
                                     <ul key={index} className="p-0 m-0 list-unstyled text-nowrap">

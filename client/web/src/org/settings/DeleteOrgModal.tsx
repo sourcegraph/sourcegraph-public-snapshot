@@ -5,7 +5,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import { useHistory } from 'react-router'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { Button, Input, LoadingSpinner, Modal, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, Input, LoadingSpinner, Modal, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
@@ -75,12 +75,12 @@ export const DeleteOrgModal: React.FunctionComponent<React.PropsWithChildren<Del
                     as={CloseIcon}
                     aria-label="Close"
                 />
-                <p className="pt-3">
+                <Text className="pt-3">
                     <strong>You are going to delete {org.name} from Sourcegraph.</strong>
                     This cannot be undone. Deleting an organization will remove all of its synced repositories from
                     Sourcegraph, along with the organization’s code insights, batch changes, code monitors and other
                     resources.
-                </p>
+                </Text>
                 <Input
                     label="Please type the organization’s name to continue"
                     autoFocus={true}

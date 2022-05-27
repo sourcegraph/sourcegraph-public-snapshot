@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Container, PageHeader, Link } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -104,7 +104,9 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                     history={props.history}
                     location={props.location}
                     emptyElement={
-                        <p className="w-100 mb-0 text-muted text-center">You have not purchased a subscription yet.</p>
+                        <Text alignment="center" className="w-100 mb-0 text-muted">
+                            You have not purchased a subscription yet.
+                        </Text>
                     }
                 />
             </Container>

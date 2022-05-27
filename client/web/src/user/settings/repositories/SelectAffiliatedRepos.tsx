@@ -6,7 +6,7 @@ import { isEqual } from 'lodash'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageSelector, RadioButton, Select, Link, Checkbox } from '@sourcegraph/wildcard'
+import { Container, PageSelector, RadioButton, Select, Link, Checkbox, Text } from '@sourcegraph/wildcard'
 
 import { RepoSelectionMode } from '../../../auth/PostSignUpPage'
 import { useSteps } from '../../../auth/Steps'
@@ -330,10 +330,10 @@ export const SelectAffiliatedRepos: FunctionComponent<React.PropsWithChildren<Pr
                     onChange={handleRadioSelect}
                     label={
                         <div className="d-flex flex-column ml-2">
-                            <p className="mb-0">Sync all repositories</p>
-                            <p className="font-weight-normal text-muted">
+                            <Text className="mb-0">Sync all repositories</Text>
+                            <Text weight="regular" className="text-muted">
                                 Will sync all current and future public and private repositories
-                            </p>
+                            </Text>
                         </div>
                     }
                 />
@@ -347,7 +347,7 @@ export const SelectAffiliatedRepos: FunctionComponent<React.PropsWithChildren<Pr
                     onChange={handleRadioSelect}
                     label={
                         <div className="d-flex flex-column ml-2">
-                            <p className="mb-0">Sync selected repositories</p>
+                            <Text className="mb-0">Sync selected repositories</Text>
                         </div>
                     }
                 />
@@ -358,7 +358,7 @@ export const SelectAffiliatedRepos: FunctionComponent<React.PropsWithChildren<Pr
     const filterControls: JSX.Element = (
         <div className="w-100 d-inline-flex justify-content-between flex-row mt-3">
             <div className="d-inline-flex flex-row mr-3 align-items-baseline">
-                <p className="text-xl-center text-nowrap mr-2">Code Host:</p>
+                <Text className="text-xl-center text-nowrap mr-2">Code Host:</Text>
                 <Select
                     name="code-host"
                     aria-label="select code host type"
@@ -553,7 +553,7 @@ export const SelectAffiliatedRepos: FunctionComponent<React.PropsWithChildren<Pr
                     <ListItemContainer key="from-code-hosts">
                         {externalServices && !hasCodeHosts ? (
                             <div className={styles.noCodeHosts}>
-                                <p>
+                                <Text>
                                     <Link
                                         to="/welcome"
                                         onClick={event => {
@@ -565,7 +565,7 @@ export const SelectAffiliatedRepos: FunctionComponent<React.PropsWithChildren<Pr
                                         Add a code host
                                     </Link>{' '}
                                     to add repositories.
-                                </p>
+                                </Text>
                             </div>
                         ) : (
                             <div>

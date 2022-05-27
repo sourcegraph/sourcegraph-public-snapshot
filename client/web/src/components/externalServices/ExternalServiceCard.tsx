@@ -5,7 +5,7 @@ import * as H from 'history'
 import AccountIcon from 'mdi-react/AccountIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
-import { Icon, Link, Typography } from '@sourcegraph/wildcard'
+import { Icon, Link, Typography, Text } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
 
@@ -57,7 +57,7 @@ export const ExternalServiceCard: React.FunctionComponent<React.PropsWithChildre
                         </small>
                     )}
                 </Typography.H3>
-                {shortDescription && <p className="mb-0 text-muted">{shortDescription}</p>}
+                {shortDescription && <Text className="mb-0 text-muted">{shortDescription}</Text>}
             </div>
             {to && <ChevronRightIcon className="align-self-center" />}
         </div>

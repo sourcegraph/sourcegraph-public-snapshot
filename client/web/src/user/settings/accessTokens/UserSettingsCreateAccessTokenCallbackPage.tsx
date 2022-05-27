@@ -18,6 +18,7 @@ import {
     LoadingSpinner,
     Alert,
     Typography,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
@@ -182,11 +183,11 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
                             >
                                 Token scope
                             </Typography.Label>
-                            <p>
+                            <Text>
                                 <small className="form-help text-muted">
                                     Tokens with limited user scopes are not yet supported.
                                 </small>
-                            </p>
+                            </Text>
                             <Checkbox
                                 id="user-settings-create-access-token-page__scope-user:all"
                                 checked={true}
@@ -204,7 +205,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
                             />
                         </div>
                         <Alert className="access-token-created-alert mt-3" variant="success">
-                            <p>Copy the new access token now. You won't be able to see it again.</p>
+                            <Text>Copy the new access token now. You won't be able to see it again.</Text>
                             <CopyableText className="test-access-token" text={newToken} size={48} />
                             <Typography.H5 className="mt-4 mb-2">
                                 <strong>{requester?.message}</strong>
