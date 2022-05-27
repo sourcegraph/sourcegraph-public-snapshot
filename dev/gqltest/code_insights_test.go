@@ -245,7 +245,7 @@ func TestInsightViews(t *testing.T) {
 			t.Fatal(err)
 		}
 		if len(ids) != length {
-			t.Fatalf("Mismatch, wanted 1 got %v", len(ids))
+			t.Fatalf("Mismatch, wanted %v got %v", length, len(ids))
 		}
 	})
 }
