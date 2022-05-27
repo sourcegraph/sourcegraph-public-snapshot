@@ -15,8 +15,8 @@ func NewChangesetDetachedCleaner(ctx context.Context, s *store.Store) goroutine.
 		ctx,
 		changesetCleanInterval,
 		goroutine.NewHandlerWithErrorMessage("cleaning detached changeset entries", func(ctx context.Context) error {
-			//return s.CleanBatchSpecExecutionCacheEntries(ctx, maxSizeByte)
-			return nil
+			// delete detached changesets that are 2 weeks old
+			return s.CleanDetachedChangesets(ctx, 14)
 		}),
 	)
 }
