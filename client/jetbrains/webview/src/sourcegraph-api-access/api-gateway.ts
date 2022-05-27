@@ -2,7 +2,10 @@ import { requestGraphQLCommon } from '@sourcegraph/http-client'
 import { AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
 
-export async function getAuthenticatedUser(instanceURL: string, accessToken: string | null): Promise<AuthenticatedUser|null> {
+export async function getAuthenticatedUser(
+    instanceURL: string,
+    accessToken: string | null
+): Promise<AuthenticatedUser | null> {
     if (!accessToken || !instanceURL) {
         return null
     }
@@ -17,7 +20,7 @@ export async function getAuthenticatedUser(instanceURL: string, accessToken: str
             'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
             ...(accessToken && { Authorization: `token ${accessToken}` }),
         },
-    }).toPromise();
+    }).toPromise()
 
-    return result.data?.currentUser ?? null;
+    return result.data?.currentUser ?? null
 }
