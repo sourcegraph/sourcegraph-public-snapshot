@@ -151,7 +151,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) (resp *protocol.RepoUpdateResponse, httpStatus int, err error) {
 	tr, ctx := trace.New(ctx, "enqueueRepoUpdate", req.String())
 	defer func() {
-		s.Logger.Debug("enqueueRepoUpdate", log.Int("httpStatus", httpStatus), log.String("resp", fmt.Sprint(resp)), log.Error(err))
+		s.Logger.Debug("enqueueRepoUpdate", log.Object("http", log.Int("status", httpStatus), log.String("resp", fmt.Sprint(resp)), log.Error(err)))
 		if resp != nil {
 			tr.LogFields(
 				otlog.Int32("resp.id", int32(resp.ID)),
@@ -191,6 +191,9 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	logger := s.Logger.With(log.Object("ExternalService",
+		log.Int64("id", req.ExternalService.ID), log.String("kind", req.ExternalService.Kind)),
+	)
 
 	var sourcer repos.Sourcer
 	if sourcer = s.Sourcer; sourcer == nil {
@@ -206,14 +209,15 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		NamespaceUserID: req.ExternalService.NamespaceUserID,
 		NamespaceOrgID:  req.ExternalService.NamespaceOrgID,
 	})
+
 	if err != nil {
-		s.Logger.Error("server.external-service-sync", log.String("kind", req.ExternalService.Kind), log.Error(err))
+		logger.Error("server.external-service-sync", log.Error(err))
 		return
 	}
 
 	err = externalServiceValidate(ctx, req, src)
 	if err == github.ErrIncompleteResults {
-		s.Logger.Info("server.external-service-sync", log.String("kind", req.ExternalService.Kind), log.Error(err))
+		logger.Info("server.external-service-sync", log.Error(err))
 		syncResult := &protocol.ExternalServiceSyncResult{
 			ExternalService: req.ExternalService,
 			Error:           err.Error(),
@@ -224,7 +228,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		// client is gone
 		return
 	} else if err != nil {
-		s.Logger.Error("server.external-service-sync", log.String("kind", req.ExternalService.Kind), log.Error(err))
+		logger.Error("server.external-service-sync", log.Error(err))
 		if errcode.IsUnauthorized(err) {
 			s.respond(w, http.StatusUnauthorized, err)
 			return
@@ -240,15 +244,15 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	if s.RateLimitSyncer != nil {
 		err = s.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalService.ID)
 		if err != nil {
-			s.Logger.Warn("Handling rate limiter sync", log.Error(err), log.Int64("id", req.ExternalService.ID))
+			logger.Warn("Handling rate limiter sync", log.Error(err))
 		}
 	}
 
 	if err := s.Syncer.TriggerExternalServiceSync(ctx, req.ExternalService.ID); err != nil {
-		s.Logger.Warn("Enqueueing external service sync job", log.Error(err), log.Int64("id", req.ExternalService.ID))
+		logger.Warn("Enqueueing external service sync job", log.Error(err))
 	}
 
-	s.Logger.Info("server.external-service-sync", log.String("synced", req.ExternalService.Kind))
+	logger.Info("server.external-service-sync", log.Bool("synced", true))
 	s.respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
 		ExternalService: req.ExternalService,
 	})
