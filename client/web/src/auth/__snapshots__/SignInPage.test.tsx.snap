@@ -53,15 +53,18 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
           <form
             class=""
           >
-            <div
-              class="form-group d-flex flex-column align-content-start"
+            <label
+              class="label w-100 form-group"
             >
-              <label
-                class="label align-self-start"
-                for="username-or-email"
+              <div
+                class="mb-2"
               >
-                Username or email
-              </label>
+                <p
+                  class="alignLeft"
+                >
+                  Username or email
+                </p>
+              </div>
               <div
                 class="container d-flex"
               >
@@ -75,16 +78,27 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
                   value=""
                 />
               </div>
-            </div>
-            <div
-              class="form-group d-flex flex-column align-content-start position-relative"
+            </label>
+            <label
+              class="label w-100 form-group"
             >
-              <label
-                class="label align-self-start"
-                for="password"
+              <div
+                class="mb-2"
               >
-                Password
-              </label>
+                <div
+                  class="d-flex justify-content-between"
+                >
+                  <span>
+                    Password
+                  </span>
+                  <a
+                    class="anchorLink"
+                    href="/password-reset"
+                  >
+                    Forgot password?
+                  </a>
+                </div>
+              </div>
               <div
                 class="container d-flex"
               >
@@ -99,17 +113,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
                   value=""
                 />
               </div>
-              <small
-                class="form-text text-muted align-self-end position-absolute"
-              >
-                <a
-                  class="anchorLink"
-                  href="/password-reset"
-                >
-                  Forgot password?
-                </a>
-              </small>
-            </div>
+            </label>
             <div
               class="form-group"
             >
@@ -221,15 +225,18 @@ exports[`SignInPage renders sign in page (server) 1`] = `
           <form
             class=""
           >
-            <div
-              class="form-group d-flex flex-column align-content-start"
+            <label
+              class="label w-100 form-group"
             >
-              <label
-                class="label align-self-start"
-                for="username-or-email"
+              <div
+                class="mb-2"
               >
-                Username or email
-              </label>
+                <p
+                  class="alignLeft"
+                >
+                  Username or email
+                </p>
+              </div>
               <div
                 class="container d-flex"
               >
@@ -243,16 +250,27 @@ exports[`SignInPage renders sign in page (server) 1`] = `
                   value=""
                 />
               </div>
-            </div>
-            <div
-              class="form-group d-flex flex-column align-content-start position-relative"
+            </label>
+            <label
+              class="label w-100 form-group"
             >
-              <label
-                class="label align-self-start"
-                for="password"
+              <div
+                class="mb-2"
               >
-                Password
-              </label>
+                <div
+                  class="d-flex justify-content-between"
+                >
+                  <span>
+                    Password
+                  </span>
+                  <a
+                    class="anchorLink"
+                    href="/password-reset"
+                  >
+                    Forgot password?
+                  </a>
+                </div>
+              </div>
               <div
                 class="container d-flex"
               >
@@ -267,17 +285,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
                   value=""
                 />
               </div>
-              <small
-                class="form-text text-muted align-self-end position-absolute"
-              >
-                <a
-                  class="anchorLink"
-                  href="/password-reset"
-                >
-                  Forgot password?
-                </a>
-              </small>
-            </div>
+            </label>
             <div
               class="form-group"
             >

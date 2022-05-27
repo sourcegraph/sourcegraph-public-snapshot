@@ -15,8 +15,6 @@ import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/Dynamica
 
 import { AddExternalServiceOptions } from './externalServices'
 
-import styles from './ExternalServiceForm.module.scss'
-
 interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, ThemeProps, TelemetryProps {
     history: H.History
     input: AddExternalServiceInput
@@ -85,7 +83,7 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                         value={input.displayName}
                         onChange={onDisplayNameChange}
                         disabled={loading}
-                        label={<strong className={styles.inputLabel}>Display name:</strong>}
+                        label="Display name:"
                         className="mb-0"
                     />
                 </div>

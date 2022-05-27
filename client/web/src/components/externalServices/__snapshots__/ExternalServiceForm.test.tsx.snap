@@ -14,11 +14,7 @@ exports[`ExternalServiceForm create GitHub 1`] = `
         <div
           class="mb-2"
         >
-          <strong
-            class="inputLabel"
-          >
-            Display name:
-          </strong>
+          Display name:
         </div>
         <div
           class="container d-flex"
@@ -72,11 +68,7 @@ exports[`ExternalServiceForm edit GitHub 1`] = `
         <div
           class="mb-2"
         >
-          <strong
-            class="inputLabel"
-          >
-            Display name:
-          </strong>
+          Display name:
         </div>
         <div
           class="container d-flex"
@@ -130,11 +122,7 @@ exports[`ExternalServiceForm edit GitHub, loading 1`] = `
         <div
           class="mb-2"
         >
-          <strong
-            class="inputLabel"
-          >
-            Display name:
-          </strong>
+          Display name:
         </div>
         <div
           class="container d-flex"

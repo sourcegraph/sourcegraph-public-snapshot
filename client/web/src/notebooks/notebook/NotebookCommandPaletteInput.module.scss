@@ -1,3 +1,7 @@
+:root {
+    --input-placeholder-color: #757575;
+}
+
 .root {
     width: 100%;
     margin-top: 1rem;
@@ -9,9 +13,9 @@
 }
 
 .input {
-    padding: 0.5rem 1rem 0.4375rem;
+    padding: 0.5rem 1rem;
     width: 100%;
-    background-color: transparent !important;
+    background-color: transparent;
     border: none;
     border-radius: var(--border-radius);
 
@@ -21,7 +25,7 @@
 }
 
 .input::placeholder {
-    color: #757575;
+    color: var(--input-placeholder-color);
 }
 
 .command-palette {
