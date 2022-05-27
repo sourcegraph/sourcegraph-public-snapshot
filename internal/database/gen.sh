@@ -25,7 +25,7 @@ test -d "$PGHOST"
 IS_UNIX_POSTGRES=$?
 set -ex
 
-if [ $IS_UNIX_POSTGRES ]; then
+if [ $IS_UNIX_POSTGRES -eq 0 ]; then
   if [ -z "$PGDATASOURCE" ]; then
     echo "\$PGDATASOURCE expected to be set when \$PGHOST points to the filesystem."
     exit 1
