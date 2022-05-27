@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
@@ -81,6 +82,9 @@ type Store struct {
 	// Log is the Logger to use.
 	Log log.Logger
 
+	// ObservationContext is used to configure observability in diskcache.
+	ObservationContext *observation.Context
+
 	// once protects Start
 	once sync.Once
 
@@ -111,6 +115,7 @@ func (s *Store) Start() {
 		s.cache = diskcache.NewStore(s.Path, "store",
 			diskcache.WithBackgroundTimeout(10*time.Minute),
 			diskcache.WithBeforeEvict(s.zipCache.delete),
+			diskcache.WithObservationContext(s.ObservationContext),
 		)
 		_ = os.MkdirAll(s.Path, 0700)
 		metrics.MustRegisterDiskMonitor(s.Path)

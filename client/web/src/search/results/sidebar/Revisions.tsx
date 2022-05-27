@@ -9,7 +9,7 @@ import styles from '@sourcegraph/search-ui/src/results/sidebar/SearchSidebarSect
 import { GitRefType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { Button, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from '@sourcegraph/wildcard'
 
 import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
 import {
@@ -95,19 +95,19 @@ const RevisionList: React.FunctionComponent<React.PropsWithChildren<RevisionList
 
     if (error || !connection || connection.error) {
         return (
-            <p className={classNames('text-muted', styles.sidebarSectionNoResults)}>
+            <Text className={classNames('text-muted', styles.sidebarSectionNoResults)}>
                 <span className="text-muted">Unable to fetch repository revisions.</span>
-            </p>
+            </Text>
         )
     }
 
     if (connection.nodes.length === 0) {
         return (
-            <p className={classNames('text-muted', styles.sidebarSectionNoResults)}>
+            <Text className={classNames('text-muted', styles.sidebarSectionNoResults)}>
                 {query
                     ? `None of the ${pluralNoun} in this repository match this filter.`
                     : `This repository doesn't have any ${pluralNoun}.`}
-            </p>
+            </Text>
         )
     }
 
@@ -125,7 +125,7 @@ const RevisionList: React.FunctionComponent<React.PropsWithChildren<RevisionList
                 ))}
             </ul>
             {(connection.totalCount ?? 0) > DEFAULT_FIRST ? (
-                <p className={classNames('text-muted d-flex', styles.sidebarSectionFooter)}>
+                <Text className={classNames('text-muted d-flex', styles.sidebarSectionFooter)}>
                     <small className="flex-1" data-testid="summary">
                         {connection?.nodes.length} of {connection?.totalCount} {pluralNoun}
                     </small>
@@ -134,7 +134,7 @@ const RevisionList: React.FunctionComponent<React.PropsWithChildren<RevisionList
                             Show more
                         </Button>
                     ) : null}
-                </p>
+                </Text>
             ) : null}
         </>
     )

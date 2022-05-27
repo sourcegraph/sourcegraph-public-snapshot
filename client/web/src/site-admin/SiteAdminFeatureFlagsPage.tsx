@@ -9,7 +9,7 @@ import { catchError, map, mergeMap } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { aggregateStreamingSearch, ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, Container, Button, Typography } from '@sourcegraph/wildcard'
+import { Link, PageHeader, Container, Button, Typography, Text } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -193,7 +193,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
                 ]}
                 description={
                     <>
-                        <p>
+                        <Text>
                             Feature flags, as opposed to experimental features, are intended to be strictly short-lived.
                             They are designed to be useful for A/B testing, and the values of all active feature flags
                             are added to every event log for the purpose of analytics. To learn more, refer to{' '}
@@ -201,7 +201,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
                                 How to use feature flags
                             </Link>
                             .
-                        </p>
+                        </Text>
                     </>
                 }
                 className="mb-3"
@@ -243,7 +243,7 @@ const FeatureFlagNode: React.FunctionComponent<React.PropsWithChildren<FeatureFl
                     <Typography.H3 className={classNames(!hasOverridesOrReferences && 'm-0')}>{name}</Typography.H3>
 
                     {hasOverridesOrReferences && (
-                        <p className="m-0">
+                        <Text className="m-0">
                             <span className="text-muted">
                                 {overrides.length > 0 &&
                                     `${overrides.length} ${overrides.length !== 1 ? 'overrides' : 'override'}`}
@@ -251,7 +251,7 @@ const FeatureFlagNode: React.FunctionComponent<React.PropsWithChildren<FeatureFl
                                 {references.length > 0 &&
                                     `${references.length} ${pluralize('reference', references.length)}`}
                             </span>
-                        </p>
+                        </Text>
                     )}
                 </div>
             </div>

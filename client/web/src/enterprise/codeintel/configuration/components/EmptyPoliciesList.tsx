@@ -2,10 +2,10 @@ import React from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Text } from '@sourcegraph/wildcard'
 
 export const EmptyPoliciesList: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <p className="text-muted text-center w-100 mb-0 mt-1" data-testid="summary">
+    <Text alignment="center" className="text-muted w-100 mb-0 mt-1" data-testid="summary">
         <MapSearchIcon className="mb-2" />
         <br />
         {'No policies have been defined.  Enable precise code intelligence by '}
@@ -13,5 +13,5 @@ export const EmptyPoliciesList: React.FunctionComponent<React.PropsWithChildren<
             configuring data retention policies
         </Link>
         .
-    </p>
+    </Text>
 )

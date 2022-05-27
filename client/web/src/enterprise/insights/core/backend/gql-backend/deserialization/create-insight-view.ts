@@ -2,6 +2,7 @@ import { Duration } from 'date-fns'
 import { uniq } from 'lodash'
 
 import { InsightViewNode, TimeIntervalStepInput, TimeIntervalStepUnit } from '../../../../../../graphql-operations'
+import { parseSeriesDisplayOptions } from '../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
 import { Insight, InsightExecutionType, InsightType } from '../../../types'
 import { BaseInsight } from '../../../types/insight/common'
 
@@ -16,6 +17,9 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
         id: insight.id,
         isFrozen: insight.isFrozen,
         dashboardReferenceCount: insight.dashboardReferenceCount,
+        seriesDisplayOptions: parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
+        appliedSeriesDisplayOptions: insight.appliedSeriesDisplayOptions,
+        defaultSeriesDisplayOptions: insight.defaultSeriesDisplayOptions,
     }
 
     switch (insight.presentation.__typename) {
@@ -47,6 +51,8 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                         excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
                         context: appliedFilters.searchContexts?.[0] ?? '',
                     },
+                    appliedSeriesDisplayOptions: parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
+                    defaultSeriesDisplayOptions: parseSeriesDisplayOptions(insight.defaultSeriesDisplayOptions),
                 }
             }
 

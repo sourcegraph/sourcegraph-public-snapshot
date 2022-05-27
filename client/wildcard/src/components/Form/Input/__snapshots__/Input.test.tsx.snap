@@ -5,7 +5,7 @@ exports[`Input Renders status 'error' correctly 1`] = `
   class="container d-flex"
 >
   <input
-    class="input form-control with-invalid-icon is-invalid"
+    class="form-control with-invalid-icon is-invalid"
     type="text"
     value=""
   />
@@ -17,7 +17,7 @@ exports[`Input Renders status 'loading' correctly 1`] = `
   class="container d-flex"
 >
   <input
-    class="input form-control with-invalid-icon"
+    class="inputLoading form-control with-invalid-icon"
     type="text"
     value=""
   />
@@ -32,7 +32,7 @@ exports[`Input Renders status 'valid' correctly 1`] = `
   class="container d-flex"
 >
   <input
-    class="input form-control with-invalid-icon is-valid"
+    class="form-control with-invalid-icon is-valid"
     type="text"
     value=""
   />

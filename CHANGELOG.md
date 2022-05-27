@@ -1316,7 +1316,7 @@ API docs is a new experimental feature of Sourcegraph ([learn more](https://docs
 ### Added
 
 - To search across multiple revisions of the same repository, list multiple branch names (or other revspecs) separated by `:` in your query, as in `repo:myrepo@branch1:branch2:branch2`. To search all branches, use `repo:myrepo@*refs/heads/`. Previously this was only supported for diff and commit searches and only available via the experimental site setting `searchMultipleRevisionsPerRepository`.
-- The "Add repositories" page (/site-admin/external-services/new) now displays a dismissable notification explaining how and why we access code host data. [#11789](https://github.com/sourcegraph/sourcegraph/pull/11789).
+- The "Add repositories" page (/site-admin/external-services/new) now displays a dismissible notification explaining how and why we access code host data. [#11789](https://github.com/sourcegraph/sourcegraph/pull/11789).
 - New `observability.alerts` features:
   - Notifications now provide more details about relevant alerts.
   - Support for email and OpsGenie notifications has been added. Note that to receive email alerts, `email.address` and `email.smtp` must be configured.
@@ -2392,7 +2392,7 @@ This is `3.12.8` release with internal infrastructure fixes to publish the docke
 - "Quick configure" buttons for common actions have been added to the management console.
 - Site-admins now receive an alert every day for the seven days before their license key expires.
 - The user menu (in global nav) now lists the user's organizations.
-- All users on an instance now see a non-dismissable alert when when there's no license key in use and the limit of free user accounts is exceeded.
+- All users on an instance now see a non-dismissible alert when when there's no license key in use and the limit of free user accounts is exceeded.
 - All users will see a dismissible warning about limited search performance and accuracy on when using the sourcegraph/server Docker image with more than 100 repositories enabled.
 
 ### Changed

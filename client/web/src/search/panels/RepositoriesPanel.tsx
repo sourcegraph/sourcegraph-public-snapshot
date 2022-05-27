@@ -7,7 +7,7 @@ import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Text } from '@sourcegraph/wildcard'
 
 import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -70,17 +70,17 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     const emptyDisplay = (
         <EmptyPanelContainer className="text-muted">
             <small className="mb-2">
-                <p className="mb-1">Recently searched repositories will be displayed here.</p>
-                <p className="mb-1">
+                <Text className="mb-1">Recently searched repositories will be displayed here.</Text>
+                <Text className="mb-1">
                     Search in repositories with the <strong>repo:</strong> filter:
-                </p>
-                <p className="mb-1">
+                </Text>
+                <Text className="mb-1">
                     <SyntaxHighlightedSearchQuery query="repo:sourcegraph/sourcegraph" />
-                </p>
-                <p className="mb-1">Add the code host to scope to a single repository:</p>
-                <p className="mb-1">
+                </Text>
+                <Text className="mb-1">Add the code host to scope to a single repository:</Text>
+                <Text className="mb-1">
                     <SyntaxHighlightedSearchQuery query="repo:^git\.local/my/repo$" />
-                </p>
+                </Text>
             </small>
         </EmptyPanelContainer>
     )

@@ -24,6 +24,7 @@ import {
     Button,
     Link,
     Alert,
+    Input,
     Typography,
 } from '@sourcegraph/wildcard'
 
@@ -106,9 +107,8 @@ const SearchContextRepositories: React.FunctionComponent<
                     </Typography.H3>
                 )}
                 {repositories.length > 0 && (
-                    <input
-                        type="text"
-                        className="form-control form-control-md w-50"
+                    <Input
+                        className="w-50"
                         placeholder="Search repositories and revisions"
                         onChange={event => debouncedSetFilterQuery(event.target.value)}
                     />

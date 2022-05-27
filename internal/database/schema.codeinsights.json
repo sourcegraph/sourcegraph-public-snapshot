@@ -12,6 +12,21 @@
       ]
     },
     {
+      "Name": "series_sort_direction_enum",
+      "Labels": [
+        "ASC",
+        "DESC"
+      ]
+    },
+    {
+      "Name": "series_sort_mode_enum",
+      "Labels": [
+        "RESULT_COUNT",
+        "LEXICOGRAPHICAL",
+        "DATE_ADDED"
+      ]
+    },
+    {
       "Name": "time_unit",
       "Labels": [
         "HOUR",
@@ -1125,6 +1140,45 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The basic presentation type for the insight view. (e.g Line, Pie, etc.)"
+        },
+        {
+          "Name": "series_limit",
+          "Index": 13,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "series_sort_direction",
+          "Index": 12,
+          "TypeName": "series_sort_direction_enum",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "series_sort_mode",
+          "Index": 11,
+          "TypeName": "series_sort_mode_enum",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
         },
         {
           "Name": "title",

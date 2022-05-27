@@ -1,4 +1,12 @@
-import { InsightViewNode, TimeIntervalStepUnit } from '../../../graphql-operations'
+import { InsightViewNode, SeriesSortDirection, SeriesSortMode, TimeIntervalStepUnit } from '../../../graphql-operations'
+
+const DEFAULT_SERIES_DISPLAY_OPTIONS = {
+    limit: 20,
+    sortOptions: {
+        direction: SeriesSortDirection.DESC,
+        mode: SeriesSortMode.RESULT_COUNT,
+    },
+}
 
 interface InsightOptions {
     type: 'calculated' | 'just-in-time'
@@ -7,6 +15,8 @@ interface InsightOptions {
 export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOptions): InsightViewNode => ({
     __typename: 'InsightView',
     id: '001',
+    appliedSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
+    defaultSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     dashboardReferenceCount: 0,
     isFrozen: false,
     appliedFilters: {
@@ -72,6 +82,8 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
 export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
     __typename: 'InsightView',
     id: '002',
+    appliedSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
+    defaultSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     dashboardReferenceCount: 0,
     isFrozen: false,
     appliedFilters: {
@@ -115,6 +127,8 @@ export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
 export const SOURCEGRAPH_LANG_STATS_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
     __typename: 'InsightView',
     id: '003',
+    appliedSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
+    defaultSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     dashboardReferenceCount: 0,
     isFrozen: false,
     appliedFilters: {

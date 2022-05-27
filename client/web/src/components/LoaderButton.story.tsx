@@ -1,5 +1,7 @@
 import { storiesOf } from '@storybook/react'
 
+import { Text } from '@sourcegraph/wildcard'
+
 import { LoaderButton } from './LoaderButton'
 import { WebStory } from './WebStory'
 
@@ -12,9 +14,9 @@ const { add } = storiesOf('web/LoaderButton', module).addDecorator(story => (
 add('Inline', () => (
     <WebStory>
         {() => (
-            <p>
+            <Text>
                 <LoaderButton loading={true} label="loader button" variant="primary" />
-            </p>
+            </Text>
         )}
     </WebStory>
 ))

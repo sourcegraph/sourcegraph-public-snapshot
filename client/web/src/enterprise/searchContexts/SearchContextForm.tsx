@@ -28,6 +28,7 @@ import {
     Alert,
     ProductStatusBadge,
     Link,
+    Input,
     Typography,
 } from '@sourcegraph/wildcard'
 
@@ -336,24 +337,20 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                             authenticatedUser={authenticatedUser}
                         />
                     </div>
-                    <div className="flex-1">
-                        <div id="context-name-label" className="mb-2">
-                            Context name
-                        </div>
-                        <input
-                            className={classNames('w-100', 'form-control', styles.searchContextFormNameInput)}
-                            aria-labelledby="context-name-label"
-                            data-testid="search-context-name-input"
-                            value={name}
-                            type="text"
-                            pattern="^[a-zA-Z0-9_\-\/\.]+$"
-                            required={true}
-                            maxLength={MAX_NAME_LENGTH}
-                            onChange={event => {
-                                setName(event.target.value)
-                            }}
-                        />
-                    </div>
+                    <Input
+                        className="flex-1 mb-0"
+                        inputClassName={styles.searchContextFormNameInput}
+                        aria-labelledby="context-name-label"
+                        label={<span className="font-weight-normal">Context name</span>}
+                        data-testid="search-context-name-input"
+                        value={name}
+                        pattern="^[a-zA-Z0-9_\-\/\.]+$"
+                        required={true}
+                        maxLength={MAX_NAME_LENGTH}
+                        onChange={event => {
+                            setName(event.target.value)
+                        }}
+                    />
                 </div>
                 <div className="text-muted my-2">
                     <small>

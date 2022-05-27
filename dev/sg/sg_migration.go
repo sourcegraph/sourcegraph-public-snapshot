@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -214,12 +213,10 @@ func resolveSchema(name string) (*schemas.Schema, error) {
 
 func addExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "No migration name specified"))
-		return flag.ErrHelp
+		return cli.NewExitError("no migration name specified", 1)
 	}
 	if len(args) != 1 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
-		return flag.ErrHelp
+		return cli.NewExitError("too many arguments", 1)
 	}
 
 	var (
@@ -227,21 +224,17 @@ func addExec(ctx context.Context, args []string) error {
 		database, ok = db.DatabaseByName(databaseName)
 	)
 	if !ok {
-		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: database %q not found :(", databaseName))
-		return flag.ErrHelp
+		return cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
 	}
 
 	return migration.Add(database, args[0])
 }
-
 func revertExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "No commit specified"))
-		return flag.ErrHelp
+		return cli.NewExitError("no commit specified", 1)
 	}
 	if len(args) != 1 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
-		return flag.ErrHelp
+		return cli.NewExitError("too many arguments", 1)
 	}
 
 	return migration.Revert(db.Databases(), args[0])
@@ -249,12 +242,10 @@ func revertExec(ctx context.Context, args []string) error {
 
 func squashExec(ctx context.Context, args []string) (err error) {
 	if len(args) == 0 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "No current-version specified"))
-		return flag.ErrHelp
+		cli.NewExitError("no current-version specified", 1)
 	}
 	if len(args) != 1 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
-		return flag.ErrHelp
+		cli.NewExitError("too many arguments", 1)
 	}
 
 	var (
@@ -262,8 +253,7 @@ func squashExec(ctx context.Context, args []string) (err error) {
 		database, ok = db.DatabaseByName(databaseName)
 	)
 	if !ok {
-		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: database %q not found :(", databaseName))
-		return flag.ErrHelp
+		cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
 	}
 
 	// Get the last migration that existed in the version _before_ `minimumMigrationSquashDistance` releases ago
@@ -278,17 +268,16 @@ func squashExec(ctx context.Context, args []string) (err error) {
 
 func squashAllExec(ctx context.Context, args []string) (err error) {
 	if len(args) != 0 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
-		return flag.ErrHelp
+		cli.NewExitError("too many arguments", 1)
 	}
 
 	var (
 		databaseName = migrateTargetDatabase
 		database, ok = db.DatabaseByName(databaseName)
 	)
+
 	if !ok {
-		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: database %q not found :(", databaseName))
-		return flag.ErrHelp
+		cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
 	}
 
 	return migration.SquashAll(database, squashInContainer, skipTeardown, outputFilepath)
@@ -296,12 +285,10 @@ func squashAllExec(ctx context.Context, args []string) (err error) {
 
 func leavesExec(ctx context.Context, args []string) (err error) {
 	if len(args) == 0 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "No commit specified"))
-		return flag.ErrHelp
+		cli.NewExitError("no commit specified", 1)
 	}
 	if len(args) != 1 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
-		return flag.ErrHelp
+		cli.NewExitError("too many arguments", 1)
 	}
 
 	return migration.LeavesForCommit(db.Databases(), args[0])

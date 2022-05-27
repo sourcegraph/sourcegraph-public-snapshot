@@ -30,8 +30,6 @@ type DBStore interface {
 	StaleSourcedCommits(ctx context.Context, threshold time.Duration, limit int, now time.Time) ([]dbstore.SourcedCommits, error)
 	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, int, error)
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (int, int, int, error)
-	SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []dbstore.ConfigurationPolicy, err error)
-	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error)
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (int, error)
 }
 
