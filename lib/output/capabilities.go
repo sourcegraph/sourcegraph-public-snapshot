@@ -21,6 +21,8 @@ type capabilities struct {
 }
 
 func detectCapabilities(opts OutputOpts) (capabilities, error) {
+	println("finding capabilities")
+
 	// Set atty
 	atty := opts.ForceTTY || isatty.IsTerminal(os.Stdout.Fd())
 
@@ -50,6 +52,8 @@ func detectCapabilities(opts OutputOpts) (capabilities, error) {
 
 	// set detected background color
 	darkBackground := opts.ForceDarkBackground || termenv.HasDarkBackground()
+
+	println("capabilities!")
 
 	return capabilities{
 		Color:          color,

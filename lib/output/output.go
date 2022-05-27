@@ -9,6 +9,8 @@ import (
 	"github.com/charmbracelet/glamour"
 	glamouransi "github.com/charmbracelet/glamour/ansi"
 	"github.com/mattn/go-runewidth"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Writer defines a common set of methods that can be used to output status
@@ -215,6 +217,11 @@ func (o *Output) WriteMarkdown(str string) error {
 	return o.writeMarkdown(str, false)
 }
 
+// WriteCode renders the given code snippet as Markdown, unless color is disabled.
+func (o *Output) WriteCode(languageName, str string) error {
+	return o.writeMarkdown(fmt.Sprintf("```%s\n%s\n```", languageName, str), true)
+}
+
 func (o *Output) writeMarkdown(str string, noMargin bool) error {
 	if !o.caps.Color {
 		o.Write(str)
@@ -244,20 +251,16 @@ func (o *Output) writeMarkdown(str string, noMargin bool) error {
 		glamour.WithEmoji(),
 	)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "renderer")
 	}
 
 	rendered, err := r.Render(str)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "render")
 	}
+
 	o.Write(rendered)
 	return nil
-}
-
-// WriteCode renders the given code snippet as Markdown, unless color is disabled.
-func (o *Output) WriteCode(languageName, str string) error {
-	return o.writeMarkdown(fmt.Sprintf("```%s\n%s\n```", languageName, str), true)
 }
 
 // The utility functions below do not make checks for whether the terminal is a
