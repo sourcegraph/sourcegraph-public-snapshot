@@ -1,7 +1,6 @@
 package output
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 
@@ -22,8 +21,6 @@ type capabilities struct {
 }
 
 func detectCapabilities(opts OutputOpts) (caps capabilities, err error) {
-	fmt.Printf("finding capabilities %+v", opts)
-
 	// Set atty
 	caps.Isatty = opts.ForceTTY
 	if !opts.ForceTTY {
@@ -64,8 +61,6 @@ func detectCapabilities(opts OutputOpts) (caps capabilities, err error) {
 	if !opts.ForceDarkBackground {
 		caps.DarkBackground = termenv.HasDarkBackground()
 	}
-
-	println("capabilities!")
 
 	return
 }
