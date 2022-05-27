@@ -112,17 +112,17 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Ru
 	// 3 minutes is a very long time for a linter to run for, do not allow linters to take
 	// any longer.
 	linterTimeout := 3 * time.Minute
-	ctx, cancel := context.WithTimeout(ctx, linterTimeout)
+	runnerCtx, cancelRunners := context.WithTimeout(ctx, linterTimeout)
 	for _, fn := range fns {
 		go func(fn lint.Runner) {
-			reportsCh <- fn(ctx, repoState)
+			reportsCh <- fn(runnerCtx, repoState)
 			wg.Done()
 		}(fn)
 	}
 	go func() {
 		wg.Wait()
-		cancel()
 		close(reportsCh)
+		cancelRunners()
 	}()
 
 	// consume check reports
