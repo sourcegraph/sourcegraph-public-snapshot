@@ -1,6 +1,8 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 
 import { Observable, Observer, Subject } from 'rxjs'
+
+import { LoadStatus } from '../types'
 
 /**
  * React hook to get the latest value of an Observable.
@@ -26,6 +28,36 @@ export function useObservable<T>(observable: Observable<T>): T | undefined {
     }
 
     return currentValue
+}
+
+/**
+ * React hook to get the latest value of an Observable.
+ *
+ * @description This is a slightly modified version of `useObservable` that returns a `LoadStatus` instead of `undefined` when the Observable hasn't emitted yet.
+ * @param observable The Observable to subscribe to.
+ * @returns [T | undefined, LoadStatus, Error | undefined]
+ */
+export function useEnhancedObservable<T>(observable: Observable<T>): [T | undefined, LoadStatus, any] {
+    const [error, setError] = useState<any>()
+    const [currentValue, setCurrentValue] = useState<T>()
+    const [status, setStatus] = useState<LoadStatus>('initial')
+
+    const handleNext = useCallback(value => {
+        setCurrentValue(value)
+        setStatus('finished')
+    }, [])
+
+    useEffect(() => {
+        setStatus('loading')
+        setCurrentValue(undefined)
+        const subscription = observable.subscribe({ next: handleNext, error: setError })
+        return () => {
+            setStatus('initial')
+            subscription.unsubscribe()
+        }
+    }, [handleNext, observable])
+
+    return [currentValue, status, error]
 }
 
 /**

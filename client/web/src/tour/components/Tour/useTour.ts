@@ -23,7 +23,7 @@ export type UseTourReturnType = TourState & {
 }
 
 export function useTour(tourKey: string): UseTourReturnType {
-    const [allToursSate, setAllToursState] = useTemporarySetting('onboarding.quickStartTour')
+    const [allToursSate, setAllToursState, loadStatus] = useTemporarySetting('onboarding.quickStartTour')
 
     const setLanguage = useCallback(
         (language: TourLanguage): void => {
@@ -63,6 +63,8 @@ export function useTour(tourKey: string): UseTourReturnType {
 
     return {
         ...allToursSate?.[tourKey],
+        // To avoid rendering Tour.tsx when state is still loading
+        ...(loadStatus !== 'finished' ? { status: 'closed' } : {}),
         setLanguage,
         setStepCompleted,
         setStatus,
