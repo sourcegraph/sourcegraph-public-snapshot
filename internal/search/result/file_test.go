@@ -144,3 +144,50 @@ func TestConvertMatches(t *testing.T) {
 		}
 	})
 }
+
+func TestHunkMatches_Limit(t *testing.T) {
+	cases := []struct {
+		rangeLens         []int
+		limit             int
+		expectedRangeLens []int
+	}{{
+		rangeLens:         []int{1, 1, 1},
+		limit:             1,
+		expectedRangeLens: []int{1},
+	}, {
+		rangeLens:         []int{1, 1, 1},
+		limit:             3,
+		expectedRangeLens: []int{1, 1, 1},
+	}, {
+		rangeLens:         []int{1, 1, 1},
+		limit:             4,
+		expectedRangeLens: []int{1, 1, 1},
+	}, {
+		rangeLens:         []int{2, 2, 2},
+		limit:             4,
+		expectedRangeLens: []int{2, 2},
+	}, {
+		rangeLens:         []int{2, 2, 2},
+		limit:             3,
+		expectedRangeLens: []int{2, 1},
+	}, {
+		rangeLens:         []int{2, 2, 2},
+		limit:             1,
+		expectedRangeLens: []int{1},
+	}}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			var hs HunkMatches
+			for _, i := range tc.rangeLens {
+				hs = append(hs, HunkMatch{Ranges: make(Ranges, i)})
+			}
+			hs.Limit(tc.limit)
+			var gotLens []int
+			for _, h := range hs {
+				gotLens = append(gotLens, len(h.Ranges))
+			}
+			require.Equal(t, tc.expectedRangeLens, gotLens)
+		})
+	}
+}
