@@ -79,6 +79,7 @@ class C1 {
         //      vv f3 ref
         //              vv C2.m2 ref
         //                   vv f3 ref
+        //                        vvvv C1 ref
         //                             vv f1 ref
         p1 = C3.f3 + C2.m2().f3 + this.f1;
     }

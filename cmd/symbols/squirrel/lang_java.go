@@ -290,6 +290,23 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 			}
 		}
 
+	case "this":
+		cur := node.Node
+		for cur != nil {
+			switch cur.Type() {
+			case "class_declaration":
+				fallthrough
+			case "interface_declaration":
+				name := cur.ChildByFieldName("name")
+				if name == nil {
+					return nil, nil
+				}
+				return swapNodePtr(node, name), nil
+			}
+			cur = cur.Parent()
+		}
+		return nil, nil
+
 	// No other nodes have a definition
 	default:
 		return nil, nil
@@ -368,6 +385,10 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 	switch node.Type() {
 	case "type_identifier":
 		fallthrough
+	case "this":
+		fallthrough
+	case "super":
+		fallthrough
 	case "identifier":
 		found, err := squirrel.getDefJava(ctx, node)
 		if err != nil {
@@ -444,18 +465,6 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 		return PrimType{noad: node, varient: "floating"}, nil
 	case "boolean_type":
 		return PrimType{noad: node, varient: "boolean"}, nil
-	case "this":
-		cur := node.Node
-		for cur != nil {
-			switch cur.Type() {
-			case "class_declaration":
-				fallthrough
-			case "interface_declaration":
-				return ClassType{def: swapNode(node, cur)}, nil
-			}
-			cur = cur.Parent()
-		}
-		return nil, nil
 	default:
 		squirrel.breadcrumb(node, fmt.Sprintf("getTypeDefJava: unrecognized node type %q", node.Type()))
 		return nil, nil
