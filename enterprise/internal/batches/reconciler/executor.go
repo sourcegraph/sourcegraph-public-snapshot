@@ -423,7 +423,7 @@ func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.So
 		return nil, err
 	}
 
-	css, err = sources.WithAuthenticatorForChangeset(ctx, s, css, ch, repo)
+	css, err = sources.WithAuthenticatorForChangeset(ctx, s, css, ch, repo, false)
 	if err != nil {
 		switch err {
 		case sources.ErrMissingCredentials:

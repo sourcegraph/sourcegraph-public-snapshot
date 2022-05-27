@@ -202,7 +202,7 @@ func ToDraftChangesetSource(css ChangesetSource) (DraftChangesetSource, error) {
 // will be used.
 func WithAuthenticatorForChangeset(
 	ctx context.Context, tx SourcerStore, css ChangesetSource,
-	ch *btypes.Changeset, repo *types.Repo,
+	ch *btypes.Changeset, repo *types.Repo, allowExternalServiceFallback bool,
 ) (ChangesetSource, error) {
 	if ch.OwnedByBatchChangeID != 0 {
 		batchChange, err := loadBatchChange(ctx, tx, ch.OwnedByBatchChangeID)
@@ -215,12 +215,15 @@ func WithAuthenticatorForChangeset(
 		// withSiteAuthenticator below, which will ultimately use the external
 		// service configuration credential if no site credential is available.
 		// We want to remove that.
-		if err != ErrMissingCredentials {
-			return a, err
+		if err == ErrMissingCredentials && allowExternalServiceFallback {
+			return css, nil
 		}
+		return a, err
 	}
 
-	return withSiteAuthenticator(ctx, tx, css, repo)
+	// Imported changesets are always allowed to fall back to the global token
+	// at present.
+	return withSiteAuthenticator(ctx, tx, css, repo, true)
 }
 
 type getBatchChanger interface {
@@ -270,7 +273,10 @@ func WithAuthenticatorForUser(ctx context.Context, tx SourcerStore, css Changese
 // withSiteAuthenticator uses the site credential of the code host of the passed-in repo.
 // If no credential is found, the original source is returned and uses the external service
 // config.
-func withSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, repo *types.Repo) (ChangesetSource, error) {
+func withSiteAuthenticator(
+	ctx context.Context, tx SourcerStore, css ChangesetSource,
+	repo *types.Repo, allowExternalServiceFallback bool,
+) (ChangesetSource, error) {
 	cred, err := loadSiteCredential(ctx, tx, repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading site credential")
@@ -278,8 +284,11 @@ func withSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSo
 	if cred != nil {
 		return css.WithAuthenticator(cred)
 	}
-	// TODO: This should return ErrMissingCredentials.
-	return css, nil
+	if allowExternalServiceFallback {
+		// FIXME: this branch shouldn't exist.
+		return css, nil
+	}
+	return nil, ErrMissingCredentials
 }
 
 // loadExternalService looks up all external services that are connected to the given repo.

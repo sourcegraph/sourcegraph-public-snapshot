@@ -596,7 +596,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 				return want, nil
 			})
 
-			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo)
+			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo, true)
 			assert.Nil(t, err)
 			assert.Same(t, want, have)
 		})
@@ -631,7 +631,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 				return want, nil
 			})
 
-			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo)
+			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo, true)
 			assert.Nil(t, err)
 			assert.Same(t, want, have)
 		})
@@ -663,7 +663,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			want := errors.New("validator was called")
 			css.ValidateAuthenticatorFunc.SetDefaultReturn(want)
 
-			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo)
+			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo, true)
 			assert.Nil(t, err)
 			assert.Same(t, css, have)
 			assert.Same(t, want, css.ValidateAuthenticator(ctx))
@@ -690,7 +690,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 				return want, nil
 			})
 
-			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo)
+			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo, true)
 			assert.Nil(t, err)
 			assert.Same(t, want, have)
 		})
@@ -709,7 +709,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			want := errors.New("validator was called")
 			css.ValidateAuthenticatorFunc.SetDefaultReturn(want)
 
-			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo)
+			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo, true)
 			assert.Nil(t, err)
 			assert.Same(t, css, have)
 			assert.Same(t, want, css.ValidateAuthenticator(ctx))

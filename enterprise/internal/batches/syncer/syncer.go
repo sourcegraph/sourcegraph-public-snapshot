@@ -506,5 +506,5 @@ func loadChangesetSource(
 		return nil, err
 	}
 
-	return sources.WithAuthenticatorForChangeset(ctx, syncStore, source, ch, repo)
+	return sources.WithAuthenticatorForChangeset(ctx, syncStore, source, ch, repo, true)
 }
