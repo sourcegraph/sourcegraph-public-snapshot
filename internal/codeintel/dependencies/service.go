@@ -362,8 +362,8 @@ func (s *Service) upsertAndSyncDependencies(ctx context.Context, deps []shared.P
 		return strings.Join([]string{dep.Scheme, dep.Name, dep.Version}, ":")
 	}
 
-	dependencies := []Repo{}
-	repoNamesByDependency := map[string]api.RepoName{}
+	dependencies := make([]Repo, 0, len(deps))
+	repoNamesByDependency := make(map[string]api.RepoName, len(deps))
 
 	for _, dep := range deps {
 		repo := dep.RepoName()
