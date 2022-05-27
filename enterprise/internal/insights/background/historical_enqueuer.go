@@ -186,11 +186,10 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 	}
 
 	analyzer := baseAnalyzer(frontend, stats)
-	var multi error
 	var totalJobs []*queryrunner.Job
 	var totalPreempted []store.RecordSeriesPointArgs
 	err = iterator.ForEach(ctx, func(repoName string, id api.RepoID) error {
-		jobs, preempted, err := analyzer.buildForRepo(ctx, index[repoName], repoName, id, multi)
+		jobs, preempted, err, multi := analyzer.buildForRepo(ctx, index[repoName], repoName, id)
 		if err != nil {
 			return err
 		} else if multi != nil {
@@ -414,9 +413,12 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 	var multi error
 
 	hardErr := h.repoIterator(ctx, func(repoName string, id api.RepoID) error {
-		jobs, preempted, err := h.analyzer.buildForRepo(ctx, definitions, repoName, id, multi)
+		jobs, preempted, err, softErr := h.analyzer.buildForRepo(ctx, definitions, repoName, id)
 		if err != nil {
 			return err
+		}
+		if softErr != nil {
+			multi = errors.Append(multi, softErr)
 		}
 		if err := h.insightsStore.RecordSeriesPoints(ctx, preempted); err != nil {
 			return errors.Wrap(err, "RecordSeriesPoints Zero Value")
@@ -440,7 +442,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 	return hardErr
 }
 
-func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itypes.InsightSeries, repoName string, id api.RepoID, softErr error) (jobs []*queryrunner.Job, preempted []store.RecordSeriesPointArgs, err error) {
+func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itypes.InsightSeries, repoName string, id api.RepoID) (jobs []*queryrunner.Job, preempted []store.RecordSeriesPointArgs, err error, softErr error) {
 	span, ctx := ot.StartSpanFromContext(ot.WithShouldTrace(ctx, true), "historical_enqueuer.buildForRepo")
 	span.SetTag("repo_id", id)
 	defer func() {
@@ -465,16 +467,16 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 			log15.Warn("insights backfill repository skipped - missing rev/repo", "repo_id", id, "repo_name", repoName)
-			return nil, nil, nil // no error - repo may not be cloned yet (or not even pushed to code host yet)
+			return nil, nil, nil, softErr // no error - repo may not be cloned yet (or not even pushed to code host yet)
 		}
 		if strings.Contains(err.Error(), `failed (output: "usage: git rev-list [OPTION] <commit-id>...`) {
 			log15.Warn("insights backfill repository skipped - empty repo", "repo_id", id, "repo_name", repoName)
-			return nil, nil, nil // repository is empty
+			return nil, nil, nil, softErr // repository is empty
 		}
 		// soft error, repo may be in a bad state but others might be OK.
 		softErr = errors.Append(softErr, errors.Wrap(err, "FirstEverCommit "+repoName))
 		log15.Error("insights backfill repository skipped", "repo_id", id, "repo_name", repoName, "error", err)
-		return nil, nil, nil
+		return nil, nil, nil, softErr
 	}
 
 	// For every series that we want to potentially gather historical data for, try.
@@ -497,7 +499,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 
 			err := a.limiter.Wait(ctx)
 			if err != nil {
-				return nil, nil, errors.Wrap(err, "limiter.Wait")
+				return nil, nil, errors.Wrap(err, "limiter.Wait"), nil
 			}
 
 			// Build historical data for this unique timeframe+repo+series.
@@ -514,17 +516,16 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 				a.statistics[series.SeriesID].Errored += 1
 				continue
 			} else if hardErr != nil {
-				return nil, nil, hardErr
+				return nil, nil, hardErr, nil
 			}
 			preempted = append(preempted, pre...)
 			if job != nil {
 				jobs = append(jobs, job)
 			}
-
 		}
 	}
 	log15.Info("[historical_enqueuer_backfill] buildForRepo end", "repo_id", id, "repo_name", repoName)
-	return
+	return jobs, preempted, nil, softErr
 }
 
 func (h historicalEnqueuer) writePreempted() {
