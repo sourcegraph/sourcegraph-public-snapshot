@@ -81,10 +81,7 @@ var newOutputPlatformQuirks func(o *Output) error
 var newCapabilityWatcher = func(opts OutputOpts) chan capabilities { return nil }
 
 func NewOutput(w io.Writer, opts OutputOpts) *Output {
-	caps, err := detectCapabilities(opts)
-	if err != nil {
-		w.Write([]byte("detectCapabilities: " + err.Error()))
-	}
+	caps, detectionErr := detectCapabilities(opts)
 
 	o := &Output{caps: caps, opts: opts, w: w}
 	if newOutputPlatformQuirks != nil {
@@ -94,10 +91,10 @@ func NewOutput(w io.Writer, opts OutputOpts) *Output {
 	}
 
 	// If we got an error earlier, now is where we'll report it to the user.
-	if err != nil {
+	if detectionErr != nil {
 		block := o.Block(Linef(EmojiWarning, StyleWarning, "An error was returned when detecting the terminal size and capabilities:"))
 		block.Write("")
-		block.Write(err.Error())
+		block.Write(detectionErr.Error())
 		block.Write("")
 		block.Write("Execution will continue, but please report this, along with your operating")
 		block.Write("system, terminal, and any other details, to:")
