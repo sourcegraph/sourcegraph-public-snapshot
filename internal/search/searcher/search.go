@@ -242,16 +242,24 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 					})
 				}
 				hunkMatches = append(hunkMatches, result.HunkMatch{
-					Preview:         lm.Preview,
-					LineNumberStart: lm.LineNumber,
-					Ranges:          ranges,
+					Preview: lm.Preview,
+					PreviewStart: result.Location{
+						Offset: lm.LineOffset,
+						Line:   lm.LineNumber,
+						Column: 0,
+					},
+					Ranges: ranges,
 				})
 			}
 
 			for _, mm := range fm.MultilineMatches {
 				hunkMatches = append(hunkMatches, result.HunkMatch{
-					Preview:         mm.Preview,
-					LineNumberStart: int(mm.Start.Line),
+					Preview: mm.Preview,
+					PreviewStart: result.Location{
+						Offset: int(mm.Start.Offset) - runeOffsetToByteOffset(mm.Preview, int(mm.Start.Column)),
+						Line:   int(mm.Start.Line),
+						Column: 0,
+					},
 					Ranges: result.Ranges{{
 						Start: result.Location{
 							Offset: int(mm.Start.Offset),

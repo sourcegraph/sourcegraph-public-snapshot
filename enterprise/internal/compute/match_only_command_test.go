@@ -35,8 +35,8 @@ func Test_matchOnly(t *testing.T) {
 			Name: "codehost.com/myorg/myrepo",
 		}},
 		HunkMatches: result.HunkMatches{{
-			Preview:         "abcdefgh",
-			LineNumberStart: 1,
+			Preview:      "abcdefgh",
+			PreviewStart: result.Location{Line: 1},
 			Ranges: result.Ranges{{
 				Start: result.Location{Line: 1},
 				End:   result.Location{Line: 1},
