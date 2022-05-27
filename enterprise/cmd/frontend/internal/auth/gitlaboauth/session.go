@@ -45,9 +45,14 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	glClient := provider.GetOAuthClient(token.AccessToken)
 
 	// 🚨 SECURITY: Ensure that the user is part of one of the allowed groups or subgroups when the allowGroups option is set.
-	userBelongsToAllowedGroups := s.verifyUserGroups(ctx, glClient)
+	userBelongsToAllowedGroups, err := s.verifyUserGroups(ctx, glClient)
+	if err != nil {
+		message := "Error verifying user groups."
+		return nil, message, err
+	}
+
 	if !userBelongsToAllowedGroups {
-		message := "user does not belong to allowed GitLab groups or subgroups."
+		message := "User does not belong to allowed GitLab groups or subgroups."
 		return nil, message, errors.New(message)
 	}
 
@@ -195,14 +200,10 @@ func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData
 	}
 }
 
-// verifyUserGroups checks whether the authenticated user belongs to one of the GitLab groups when the allowGroups option is set
-func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gitlab.Client) bool {
-	var err error
-	var gitlabGroups []*gitlab.Group
-	hasNextPage := true
-
+// verifyUserGroups checks whether the authenticated user belongs to one of the GitLab groups when the allowGroups option is set.
+func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gitlab.Client) (bool, error) {
 	if len(s.allowGroups) == 0 {
-		return true
+		return true, nil
 	}
 
 	allowed := make(map[string]bool, len(s.allowGroups))
@@ -210,19 +211,23 @@ func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gi
 		allowed[group] = true
 	}
 
+	var err error
+	var gitlabGroups []*gitlab.Group
+	hasNextPage := true
+
 	for page := 1; hasNextPage; page++ {
 		gitlabGroups, hasNextPage, err = glClient.ListGroups(ctx, page)
 		if err != nil {
-			return false
+			return false, err
 		}
 
 		// Check the full path instead of name so we can better handle subgroups.
 		for _, glGroup := range gitlabGroups {
 			if allowed[glGroup.FullPath] {
-				return true
+				return true, nil
 			}
 		}
 	}
 
-	return false
+	return false, nil
 }

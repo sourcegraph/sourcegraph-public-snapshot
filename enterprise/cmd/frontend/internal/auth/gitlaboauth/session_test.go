@@ -62,8 +62,17 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 			}},
 			expActor: &actor.Actor{UID: 1},
 			expAuthUserOp: &auth.GetAndSaveUserOp{
-				UserProps:        u("alice", "alice@example.com", true),
-				ExternalAccount:  acct(extsvc.TypeGitLab, "https://gitlab.com/", clientID, "101"),
+				UserProps: database.NewUser{
+					Username:        "alice",
+					Email:           "alice@example.com",
+					EmailIsVerified: true,
+				},
+				ExternalAccount: extsvc.AccountSpec{
+					ServiceType: extsvc.TypeGitLab,
+					ServiceID:   "https://gitlab.com/",
+					ClientID:    clientID,
+					AccountID:   "101",
+				},
 				CreateIfNotExist: true,
 			},
 		},
@@ -75,6 +84,9 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					ID:       int32(101),
 					Username: string("alice"),
 					Email:    string("alice@example.com"),
+				},
+				glUserGroups: []*gitlab.Group{
+					{FullPath: "group1"},
 				},
 			}},
 			expErr: true,
@@ -112,8 +124,61 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 			}},
 			expActor: &actor.Actor{UID: 1},
 			expAuthUserOp: &auth.GetAndSaveUserOp{
-				UserProps:        u("alice", "alice@example.com", true),
-				ExternalAccount:  acct(extsvc.TypeGitLab, "https://gitlab.com/", clientID, "101"),
+				UserProps: database.NewUser{
+					Username:        "alice",
+					Email:           "alice@example.com",
+					EmailIsVerified: true,
+				},
+				ExternalAccount: extsvc.AccountSpec{
+					ServiceType: extsvc.TypeGitLab,
+					ServiceID:   "https://gitlab.com/",
+					ClientID:    clientID,
+					AccountID:   "101",
+				},
+				CreateIfNotExist: true,
+			},
+		},
+		{
+			inputs: []input{{
+				description: "glUser, not in allowed subgroup -> session not created",
+				allowGroups: []string{"group1/subgroup1"},
+				glUser: &gitlab.User{
+					ID:       int32(101),
+					Username: string("alice"),
+					Email:    string("alice@example.com"),
+				},
+				glUserGroups: []*gitlab.Group{
+					{FullPath: "group1/subgroup2"},
+				},
+			}},
+			expErr: true,
+		},
+		{
+			inputs: []input{{
+				description: "glUser, in allowed subgroup  -> session created",
+				allowGroups: []string{"group1/subgroup2"},
+				glUser: &gitlab.User{
+					ID:       int32(101),
+					Username: string("alice"),
+					Email:    string("alice@example.com"),
+				},
+				glUserGroups: []*gitlab.Group{
+					{FullPath: "group1/subgroup2"},
+				},
+			}},
+			expActor: &actor.Actor{UID: 1},
+			expAuthUserOp: &auth.GetAndSaveUserOp{
+				UserProps: database.NewUser{
+					Username:        "alice",
+					Email:           "alice@example.com",
+					EmailIsVerified: true,
+				},
+				ExternalAccount: extsvc.AccountSpec{
+					ServiceType: extsvc.TypeGitLab,
+					ServiceID:   "https://gitlab.com/",
+					ClientID:    clientID,
+					AccountID:   "101",
+				},
 				CreateIfNotExist: true,
 			},
 		},
@@ -147,6 +212,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 
 				defer func() {
 					auth.MockGetAndSaveUser = nil
+					gitlab.MockListGroups = nil
 				}()
 
 				ctx := WithUser(context.Background(), ci.glUser)
@@ -176,23 +242,6 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 		}
 	}
 
-}
-
-func u(username, email string, emailIsVerified bool) database.NewUser {
-	return database.NewUser{
-		Username:        username,
-		Email:           email,
-		EmailIsVerified: emailIsVerified,
-	}
-}
-
-func acct(serviceType, serviceID, clientID, accountID string) extsvc.AccountSpec {
-	return extsvc.AccountSpec{
-		ServiceType: serviceType,
-		ServiceID:   serviceID,
-		ClientID:    clientID,
-		AccountID:   accountID,
-	}
 }
 
 func TestSessionIssuerHelper_CreateCodeHostConnectionHandlesExistingService(t *testing.T) {

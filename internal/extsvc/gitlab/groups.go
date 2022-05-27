@@ -16,7 +16,7 @@ var MockListGroups func(ctx context.Context, page int) ([]*Group, bool, error)
 // ListGroups returns a list of groups for the authenticated user.
 func (c *Client) ListGroups(ctx context.Context, page int) (groups []*Group, hasNextPage bool, err error) {
 	if MockListGroups != nil {
-		return MockListGroups(ctx, 1)
+		return MockListGroups(ctx, page)
 	}
 
 	url := fmt.Sprintf("groups?per_page=100&page=%d", page)

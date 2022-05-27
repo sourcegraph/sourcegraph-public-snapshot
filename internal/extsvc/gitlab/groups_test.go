@@ -44,7 +44,7 @@ func TestListGroups(t *testing.T) {
 
 		groupsResponse, _, err := client.ListGroups(ctx, 1)
 		if groupsResponse != nil {
-			t.Error("unexpected non nil response")
+			t.Error("unexpected non-nil response")
 		}
 
 		if err == nil {
