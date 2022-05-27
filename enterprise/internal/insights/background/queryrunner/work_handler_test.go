@@ -14,7 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -1171,6 +1173,111 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 			t.Errorf("Expected alerts to return, got %v", err)
 		}
 	})
+}
+
+func TestFilterRecordsingsByRepo(t *testing.T) {
+	date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+	repo1 := &dbtypes.Repo{ID: 1, Name: "repo1"}
+	repo2 := &dbtypes.Repo{ID: 2, Name: "repo2"}
+	repo3 := &dbtypes.Repo{ID: 3, Name: "repo3"}
+	repo4 := &dbtypes.Repo{ID: 4, Name: "repo4"}
+	allRepos := []*dbtypes.Repo{repo1, repo2, repo3, repo4}
+	oddRepos := []*dbtypes.Repo{repo1, repo3}
+
+	r1p1 := store.RecordSeriesPointArgs{RepoID: &repo1.ID, RepoName: (*string)(&repo1.Name)}
+	r1p2 := store.RecordSeriesPointArgs{RepoID: &repo1.ID, RepoName: (*string)(&repo1.Name)}
+	r2p1 := store.RecordSeriesPointArgs{RepoID: &repo2.ID, RepoName: (*string)(&repo2.Name)}
+	r2p2 := store.RecordSeriesPointArgs{RepoID: &repo2.ID, RepoName: (*string)(&repo2.Name)}
+	r3p1 := store.RecordSeriesPointArgs{RepoID: &repo3.ID, RepoName: (*string)(&repo3.Name)}
+	r3p2 := store.RecordSeriesPointArgs{RepoID: &repo3.ID, RepoName: (*string)(&repo3.Name)}
+	r4p1 := store.RecordSeriesPointArgs{RepoID: &repo4.ID, RepoName: (*string)(&repo4.Name)}
+	r4p2 := store.RecordSeriesPointArgs{RepoID: &repo4.ID, RepoName: (*string)(&repo4.Name)}
+	nonRepoPoint := store.RecordSeriesPointArgs{Point: store.SeriesPoint{SeriesID: "testseries1", Value: 10}}
+
+	recordings := []store.RecordSeriesPointArgs{r1p1, r1p2, r2p1, r2p2, r3p1, r3p2, r4p1, r4p2, nonRepoPoint}
+
+	testJob := Job{
+		SeriesID:        "testseries1",
+		SearchQuery:     "searchit",
+		RecordTime:      &date,
+		PersistMode:     "record",
+		DependentFrames: nil,
+		ID:              1,
+		State:           "queued",
+	}
+	testCases := []struct {
+		job        Job
+		series     types.InsightSeries
+		repoList   []*dbtypes.Repo
+		recordings []store.RecordSeriesPointArgs
+		want       autogold.Value
+	}{
+		{
+			job:        testJob,
+			series:     types.InsightSeries{Repositories: []string{}},
+			repoList:   allRepos,
+			recordings: recordings,
+			want: autogold.Want("AllReposEmptySlice", []string{
+				" 0 0001-01-01 00:00:00 +0000 UTC  10.000000",
+				"repo1 1 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo1 1 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo2 2 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo2 2 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo3 3 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo3 3 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo4 4 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo4 4 0001-01-01 00:00:00 +0000 UTC  0.000000",
+			}),
+		},
+		{
+			job:        testJob,
+			series:     types.InsightSeries{Repositories: nil},
+			repoList:   allRepos,
+			recordings: recordings,
+			want: autogold.Want("AllReposNil", []string{
+				" 0 0001-01-01 00:00:00 +0000 UTC  10.000000",
+				"repo1 1 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo1 1 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo2 2 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo2 2 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo3 3 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo3 3 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo4 4 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo4 4 0001-01-01 00:00:00 +0000 UTC  0.000000",
+			}),
+		},
+		{
+			job:        testJob,
+			series:     types.InsightSeries{Repositories: []string{string(repo1.Name), string(repo3.Name)}},
+			repoList:   oddRepos,
+			recordings: recordings,
+			want: autogold.Want("OddRepos", []string{
+				"repo1 1 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo1 1 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo3 3 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo3 3 0001-01-01 00:00:00 +0000 UTC  0.000000",
+			}),
+		},
+		{
+			job:        testJob,
+			series:     types.InsightSeries{Repositories: []string{string(repo2.Name), string(repo4.Name)}},
+			repoList:   []*dbtypes.Repo{repo2},
+			recordings: recordings,
+			want: autogold.Want("Repo4NotFound", []string{
+				"repo2 2 0001-01-01 00:00:00 +0000 UTC  0.000000",
+				"repo2 2 0001-01-01 00:00:00 +0000 UTC  0.000000",
+			}),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			mockRepoStore := database.NewMockRepoStore()
+			mockRepoStore.ListFunc.SetDefaultReturn(tc.repoList, nil)
+
+			got, _ := filterRecordingsBySeriesRepos(context.Background(), mockRepoStore, &tc.series, recordings)
+			tc.want.Equal(t, stringify(got))
+		})
+	}
 }
 
 // stringify will turn the results of the recording worker into a slice of strings to easily compare golden test files against using autogold
