@@ -4,6 +4,7 @@
     height: 2rem;
     background-color: var(--subtle-bg);
     align-items: center;
+    flex-shrink: 0;
 }
 
 .progress-count {
