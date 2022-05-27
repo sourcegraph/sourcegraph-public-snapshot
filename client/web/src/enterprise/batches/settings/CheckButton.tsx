@@ -19,27 +19,34 @@ export const CheckButton: React.FunctionComponent<React.PropsWithChildren<CheckB
     loading,
     successMessage,
     failedMessage,
-}) => (
-    <>
-        {!loading && !successMessage && !failedMessage && (
+}) => {
+    if (!loading && !successMessage && !failedMessage) {
+        return (
             <Button className="text-primary text-nowrap" onClick={onClick} variant="link" aria-label={label}>
                 Check
             </Button>
-        )}
-        {loading && (
+        )
+    }
+    if (loading) {
+        return (
             <div className="text-muted">
                 <LoadingSpinner /> Checking
             </div>
-        )}
-        {successMessage && !failedMessage && (
+        )
+    }
+    if (successMessage && !failedMessage) {
+        return (
             <div className="text-success">
                 <CheckIcon /> {successMessage}
             </div>
-        )}
-        {failedMessage && (
+        )
+    }
+    if (failedMessage) {
+        return (
             <div className="text-danger">
                 <CloseIcon /> {failedMessage}
             </div>
-        )}
-    </>
-)
+        )
+    }
+    throw new Error('unreachable check button state')
+}
