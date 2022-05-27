@@ -22,7 +22,7 @@ import { GET_ORG_FEATURE_FLAG_VALUE, GITHUB_APP_FEATURE_FLAG_NAME } from '../../
 import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
-import { githubRepoScopeRequired, gitlabAPIScopeRequired, Owner } from '../cloud-ga'
+import { githubRepoScopeRequired, gitlabAPIScopeRequired, gitlabTokenExpired, Owner } from '../cloud-ga'
 
 import { CodeHostItem, ParentWindow } from './CodeHostItem'
 import { CodeHostListItem } from './CodeHostListItem'
@@ -151,16 +151,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
     const isGitHubAppLoading = flagsOverridesResult.loading
 
     // If we have a GitHub or GitLab services, check whether we need to prompt the user to
-    // update their scope
-    const isGitHubTokenUpdateRequired = scopes.github
-        ? !isGitHubAppEnabled && githubRepoScopeRequired(owner.tags, scopes.github)
-        : false
-    const isGitLabTokenUpdateRequired = scopes.gitlab ? gitlabAPIScopeRequired(owner.tags, scopes.gitlab) : false
-
-    const isTokenUpdateRequired: Partial<Record<ExternalServiceKind, boolean | undefined>> = {
-        [ExternalServiceKind.GITHUB]: githubRepoScopeRequired(owner.tags, scopes.github),
-        [ExternalServiceKind.GITLAB]: gitlabAPIScopeRequired(owner.tags, scopes.gitlab),
-    }
+    // update their token
+    const [isTokenUpdateRequired, setTokenUpdateRequired] = useState<Partial<Record<ExternalServiceKind, boolean>>>({})
 
     useEffect(() => {
         eventLogger.logPageView('UserSettingsCodeHostConnections')
@@ -206,13 +198,20 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
             return accumulator
         }, {})
 
+        setTokenUpdateRequired({
+            [ExternalServiceKind.GITHUB]: githubRepoScopeRequired(owner.tags, scopes.github),
+            [ExternalServiceKind.GITLAB]:
+                gitlabAPIScopeRequired(owner.tags, scopes.gitlab) ||
+                gitlabTokenExpired(services[ExternalServiceKind.GITLAB]?.config),
+        })
+
         setStatusOrError(services)
 
         await checkAndSetOutageAlert(services)
 
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
         onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
-    }, [owner.id, onUserExternalServicesOrRepositoriesUpdate])
+    }, [owner.id, owner.tags, scopes.github, scopes.gitlab, onUserExternalServicesOrRepositoriesUpdate])
 
     const handleServiceUpsert = useCallback(
         (service: ListExternalServiceFields): void => {
@@ -382,8 +381,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
             getRequestSuccessBanner(
                 isServicesByKind(statusOrError) ? statusOrError[ExternalServiceKind.GITHUB] : undefined
             ),
-            getGitHubUpdateAuthBanner(isGitHubTokenUpdateRequired),
-            getGitLabUpdateAuthBanner(isGitLabTokenUpdateRequired),
+            getGitHubUpdateAuthBanner(isTokenUpdateRequired?.[ExternalServiceKind.GITHUB] || false),
+            getGitLabUpdateAuthBanner(isTokenUpdateRequired?.[ExternalServiceKind.GITLAB] || false),
         ]
     }
 
