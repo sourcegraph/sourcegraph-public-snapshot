@@ -165,6 +165,8 @@ export async function createPreviewOrOpenRequest(
         }
     }
 
+    console.log(`Unknown match type: “${match.type}”`)
+
     return {
         action,
         arguments: {
