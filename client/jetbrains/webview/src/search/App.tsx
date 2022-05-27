@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Observable, of, Subscription } from 'rxjs'
 
@@ -11,8 +11,7 @@ import {
     SearchPatternType,
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
-import { AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
-import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { aggregateStreamingSearch, LATEST_VERSION, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
@@ -20,9 +19,10 @@ import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/sha
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
+import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
 
-import { saveLastSearch } from './jsToJavaBridgeUtil'
+import { saveLastSearch } from './js-to-java-bridge'
 import { SearchResultList } from './results/SearchResultList'
 import { Search } from './types'
 
@@ -37,6 +37,7 @@ interface Props {
     onPreviewClear: () => void
     onOpen: (match: SearchMatch, lineMatchIndex?: number) => void
     initialSearch: Search | null
+    initialAuthenticatedUser: AuthenticatedUser | null
 }
 
 function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
@@ -52,9 +53,10 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     onPreviewClear,
     onOpen,
     initialSearch,
+    initialAuthenticatedUser,
 }: Props) => {
     const [authState, setAuthState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
-    const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
+    const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(initialAuthenticatedUser)
 
     const requestGraphQL = useCallback<PlatformContext['requestGraphQL']>(
         args =>
@@ -77,26 +79,19 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
 
     useEffect(() => {
         setAuthState('validating')
-        requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>({
-            request: currentAuthStateQuery,
-            variables: {},
-            mightContainPrivateInfo: true,
-        })
-            .toPromise()
-            .then(({ data }) => {
-                if (data?.currentUser) {
-                    setAuthState('success')
-                    setAuthenticatedUser(data.currentUser)
-                } else {
-                    setAuthState('failure')
+        getAuthenticatedUser(instanceURL, accessToken)
+            .then(authenticatedUser => {
+                setAuthState(authenticatedUser ? 'success' : 'failure')
+                if (accessToken) {
                     console.warn(`No authenticated user with access token “${accessToken || ''}”`)
                 }
+                setAuthenticatedUser(authenticatedUser)
             })
             .catch(() => {
                 setAuthState('failure')
                 console.warn(`Failed to validate authentication with access token “${accessToken || ''}”`)
             })
-    }, [accessToken, requestGraphQL])
+    }, [instanceURL, accessToken])
 
     const platformContext = {
         requestGraphQL,
@@ -114,7 +109,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     const [userQueryState, setUserQueryState] = useState<QueryState>({
         query: lastSearch.query ?? '',
     })
-    const [subscription, setSubscription] = useState<Subscription>()
+    const subscription = useRef<Subscription>()
 
     const isSourcegraphDotCom = useMemo(() => {
         const hostname = new URL(instanceURL).hostname
@@ -148,22 +143,20 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             }
 
             // If we don't unsubscribe, the previous search will be continued after the new search and search results will be mixed
-            subscription?.unsubscribe()
-            setSubscription(
-                aggregateStreamingSearch(
-                    of(`context:${contextSpec ?? lastSearch.selectedSearchContextSpec} ${query}`),
-                    {
-                        version: LATEST_VERSION,
-                        caseSensitive: caseSensitive ?? lastSearch.caseSensitive,
-                        patternType: patternType ?? lastSearch.patternType,
-                        trace: undefined,
-                        sourcegraphURL: 'https://sourcegraph.com/.api',
-                        decorationContextLines: 0,
-                    }
-                ).subscribe(searchResults => {
-                    setMatches(searchResults.results)
-                })
-            )
+            subscription.current?.unsubscribe()
+            subscription.current = aggregateStreamingSearch(
+                of(`context:${contextSpec ?? lastSearch.selectedSearchContextSpec} ${query}`),
+                {
+                    version: LATEST_VERSION,
+                    caseSensitive: caseSensitive ?? lastSearch.caseSensitive,
+                    patternType: patternType ?? lastSearch.patternType,
+                    trace: undefined,
+                    sourcegraphURL: 'https://sourcegraph.com/.api',
+                    decorationContextLines: 0,
+                }
+            ).subscribe(searchResults => {
+                setMatches(searchResults.results)
+            })
             setMatches([])
             setLastSearch(current => ({
                 query,
@@ -172,7 +165,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                 selectedSearchContextSpec: options?.contextSpec ?? current.selectedSearchContextSpec,
             }))
         },
-        [lastSearch, subscription, userQueryState.query]
+        [lastSearch, userQueryState.query]
     )
 
     const [didInitialSubmit, setDidInitialSubmit] = useState(false)
