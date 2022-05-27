@@ -131,6 +131,12 @@ export const DrillDownFiltersHorizontalMode: Story = () => {
                 onFiltersChange={console.log}
                 onFilterSave={console.log}
                 onCreateInsightRequest={console.log}
+                showSeriesDisplayOptions={false}
+                onSeriesDisplayOptionsChange={console.log}
+                originalSeriesDisplayOptions={{
+                    limit: 20,
+                    sortOptions: { direction: SeriesSortDirection.DESC, mode: SeriesSortMode.RESULT_COUNT },
+                }}
             />
         </MockedTestProvider>
     )
