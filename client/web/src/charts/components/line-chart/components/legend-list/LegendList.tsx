@@ -21,20 +21,25 @@ export const LegendList: React.FunctionComponent<React.PropsWithChildren<LegendL
 interface LegendItemProps extends LiHTMLAttributes<HTMLLIElement> {
     color: string
     name: string
+    selected?: boolean
+    hovered?: boolean
 }
 
 export const LegendItem: React.FunctionComponent<React.PropsWithChildren<LegendItemProps>> = ({
     color,
     name,
+    selected = true,
+    hovered,
     className,
+    children,
     ...attributes
 }) => (
-    <li {...attributes} className={classNames(styles.legendItem, className)}>
-        <div
+    <li {...attributes} className={classNames({ 'text-muted': !selected && !hovered }, styles.legendItem, className)}>
+        <span
             /* eslint-disable-next-line react/forbid-dom-props */
-            style={{ backgroundColor: color }}
-            className={styles.legendMark}
+            style={{ backgroundColor: selected || hovered ? color : undefined }}
+            className={classNames([styles.legendMark, { [styles.unselected]: !selected }])}
         />
-        {name}
+        {children || name}
     </li>
 )

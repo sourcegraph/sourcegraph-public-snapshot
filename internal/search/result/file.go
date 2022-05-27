@@ -3,7 +3,9 @@ package result
 import (
 	"net/url"
 	"path"
+	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -42,8 +44,8 @@ func (f *File) URL() *url.URL {
 type FileMatch struct {
 	File
 
-	LineMatches []*LineMatch
-	Symbols     []*SymbolMatch `json:"-"`
+	MultilineMatches []MultilineMatch
+	Symbols          []*SymbolMatch `json:"-"`
 
 	LimitHit bool
 }
@@ -55,10 +57,7 @@ func (fm *FileMatch) RepoName() types.MinimalRepo {
 func (fm *FileMatch) searchResultMarker() {}
 
 func (fm *FileMatch) ResultCount() int {
-	rc := len(fm.Symbols)
-	for _, m := range fm.LineMatches {
-		rc += len(m.OffsetAndLengths)
-	}
+	rc := len(fm.Symbols) + len(fm.MultilineMatches)
 	if rc == 0 {
 		return 1 // 1 to count "empty" results like type:path results
 	}
@@ -69,7 +68,7 @@ func (fm *FileMatch) ResultCount() int {
 // the absence of a true `PathMatch` type, we use this function as a proxy
 // signal to drive `select:file` logic that deduplicates path results.
 func (fm *FileMatch) IsPathMatch() bool {
-	return fm.LineMatches == nil && fm.Symbols == nil
+	return len(fm.MultilineMatches) == 0 && len(fm.Symbols) == 0
 }
 
 func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
@@ -80,7 +79,7 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 			ID:   fm.Repo.ID,
 		}
 	case filter.File:
-		fm.LineMatches = nil
+		fm.MultilineMatches = nil
 		fm.Symbols = nil
 		if len(selectPath) > 1 && selectPath[1] == "directory" {
 			fm.Path = path.Clean(path.Dir(fm.Path)) + "/" // Add trailing slash for clarity.
@@ -88,7 +87,7 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 		return fm
 	case filter.Symbol:
 		if len(fm.Symbols) > 0 {
-			fm.LineMatches = nil // Only return symbol match if symbols exist
+			fm.MultilineMatches = nil // Only return symbol match if symbols exist
 			if len(selectPath) > 1 {
 				filteredSymbols := SelectSymbolKind(fm.Symbols, selectPath[1])
 				if len(filteredSymbols) == 0 {
@@ -101,7 +100,7 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 		return nil
 	case filter.Content:
 		// Only return file match if line matches exist
-		if len(fm.LineMatches) > 0 {
+		if len(fm.MultilineMatches) > 0 {
 			fm.Symbols = nil
 			return fm
 		}
@@ -115,7 +114,7 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 // AppendMatches appends the line matches from src as well as updating match
 // counts and limit.
 func (fm *FileMatch) AppendMatches(src *FileMatch) {
-	fm.LineMatches = append(fm.LineMatches, src.LineMatches...)
+	fm.MultilineMatches = append(fm.MultilineMatches, src.MultilineMatches...)
 	fm.Symbols = append(fm.Symbols, src.Symbols...)
 	fm.LimitHit = fm.LimitHit || src.LimitHit
 }
@@ -126,25 +125,30 @@ func (fm *FileMatch) AppendMatches(src *FileMatch) {
 //   if limit >= ResultCount then nothing is done and we return limit - ResultCount.
 //   if limit < ResultCount then ResultCount becomes limit and we return 0.
 func (fm *FileMatch) Limit(limit int) int {
-	// Check if we need to limit.
-	if after := limit - fm.ResultCount(); after >= 0 {
-		return after
+	matchCount := len(fm.MultilineMatches)
+	symbolCount := len(fm.Symbols)
+
+	// An empty FileMatch should still count against the limit -- see *FileMatch.ResultCount()
+	if matchCount == 0 && symbolCount == 0 {
+		return limit - 1
 	}
 
-	// Invariant: limit > 0
-	for i, m := range fm.LineMatches {
-		after := limit - len(m.OffsetAndLengths)
-		if after <= 0 {
-			fm.Symbols = nil
-			fm.LineMatches = fm.LineMatches[:i+1]
-			m.OffsetAndLengths = m.OffsetAndLengths[:limit]
-			return 0
-		}
-		limit = after
+	if limit < matchCount {
+		fm.MultilineMatches = fm.MultilineMatches[:limit]
+		limit = 0
+		fm.LimitHit = true
+	} else {
+		limit -= matchCount
 	}
 
-	fm.Symbols = fm.Symbols[:limit]
-	return 0
+	if limit < symbolCount {
+		fm.Symbols = fm.Symbols[:limit]
+		limit = 0
+		fm.LimitHit = true
+	} else {
+		limit -= symbolCount
+	}
+	return limit
 }
 
 func (fm *FileMatch) Key() Key {
@@ -162,8 +166,61 @@ func (fm *FileMatch) Key() Key {
 	return k
 }
 
-// LineMatch is the struct used by vscode to receive search results for a line
+type MultilineMatch struct {
+	// Preview is a possibly-multiline string that contains all the
+	// lines that the match overlaps.
+	// The number of lines in Preview should be End.Line - Start.Line + 1
+	Preview string
+	Range   Range
+}
+
+func MultilineSliceAsLineMatchSlice(matches []MultilineMatch) []*LineMatch {
+	lineMatches := make([]*LineMatch, 0, len(matches))
+	for _, m := range matches {
+		lineMatches = append(lineMatches, m.AsLineMatches()...)
+	}
+	sort.Slice(lineMatches, func(i, j int) bool {
+		return lineMatches[i].LineNumber < lineMatches[j].LineNumber
+	})
+	res := lineMatches[:0]
+	for i, lm := range lineMatches {
+		if i == 0 {
+			res = append(res, lm)
+			continue
+		}
+		last := len(res) - 1
+		if lm.LineNumber == res[last].LineNumber {
+			res[last].OffsetAndLengths = append(res[last].OffsetAndLengths, lm.OffsetAndLengths...)
+		} else {
+			res = append(res, lm)
+		}
+	}
+	return res
+}
+
+func (m MultilineMatch) AsLineMatches() []*LineMatch {
+	lines := strings.Split(m.Preview, "\n")
+	lineMatches := make([]*LineMatch, 0, len(lines))
+	for i, line := range lines {
+		offset := int32(0)
+		if i == 0 {
+			offset = int32(m.Range.Start.Column)
+		}
+		length := int32(utf8.RuneCountInString(line)) - offset
+		if i == len(lines)-1 {
+			length = int32(m.Range.End.Column) - offset
+		}
+		lineMatches = append(lineMatches, &LineMatch{
+			Preview:          line,
+			LineNumber:       int32(m.Range.Start.Line) + int32(i),
+			OffsetAndLengths: [][2]int32{{offset, length}},
+		})
+	}
+	return lineMatches
+}
+
 type LineMatch struct {
+	// Preview is the full single line these offsets belong to
 	Preview          string
 	OffsetAndLengths [][2]int32
 	LineNumber       int32

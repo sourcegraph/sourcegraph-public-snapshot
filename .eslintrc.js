@@ -143,6 +143,11 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
             message: 'Use the <Typography.H6 /> component from @sourcegraph/wildcard instead.',
           },
           {
+            element: 'p',
+            message:
+              'Use the <Text /> component from @sourcegraph/wildcard instead. Check out the RFC for more context: https://bit.ly/3PFw0HM',
+          },
+          {
             element: 'code',
             message: 'Use the <Typography.Code /> component from @sourcegraph/wildcard instead.',
           },

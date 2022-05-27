@@ -26,7 +26,7 @@ export const Toast: React.FunctionComponent<React.PropsWithChildren<ToastProps>>
                     className={classNames('test-close-toast', styles.closeButton)}
                     aria-label="Close"
                 >
-                    <Icon as={CloseIcon} />
+                    <Icon role="img" as={CloseIcon} aria-hidden={true} />
                 </Button>
             </CardTitle>
             {props.subtitle}

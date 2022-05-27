@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { Button, Modal, Typography } from '@sourcegraph/wildcard'
+import { Button, Modal, Typography, Text } from '@sourcegraph/wildcard'
 
 import { addExternalService } from '../../../components/externalServices/backend'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
@@ -108,7 +108,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<
                                         <EncryptedDataIcon />
                                     </small>
                                 </div>
-                                <p className="mt-1">{hintFragment}</p>
+                                <Text className="mt-1">{hintFragment}</Text>
                             </>
                         ) : (
                             machineUserFragment

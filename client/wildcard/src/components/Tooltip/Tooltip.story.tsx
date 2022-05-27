@@ -1,13 +1,11 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Button } from '../Button'
-import { Grid } from '../Grid'
-import { Typography } from '../Typography'
+import { Button, Grid, Typography, Text } from '..'
 
 import { Tooltip } from '.'
 
@@ -40,19 +38,17 @@ const config: Meta = {
 export default config
 
 export const Basic: Story = () => (
-    <>
-        <p>
-            You can{' '}
-            <Tooltip content="Tooltip 1">
-                <strong>hover me</strong>
-            </Tooltip>{' '}
-            or{' '}
-            <Tooltip content="Tooltip 2">
-                <strong>me</strong>
-            </Tooltip>
-            .
-        </p>
-    </>
+    <Text>
+        You can{' '}
+        <Tooltip content="Tooltip 1">
+            <strong>hover me</strong>
+        </Tooltip>{' '}
+        or{' '}
+        <Tooltip content="Tooltip 2">
+            <strong>me</strong>
+        </Tooltip>
+        .
+    </Text>
 )
 
 export const Conditional: Story = () => {
@@ -73,11 +69,11 @@ export const Conditional: Story = () => {
                 </Tooltip>
             </div>
 
-            <p>
+            <Text>
                 A Tooltip can be conditionally shown by alternating between passing{' '}
                 <Typography.Code>null</Typography.Code> and a <Typography.Code>string</Typography.Code> in as{' '}
                 <Typography.Code>content</Typography.Code>.
-            </p>
+            </Text>
         </Grid>
     )
 }
@@ -92,14 +88,14 @@ export const DisabledTrigger: Story = () => (
             </Tooltip>
         </div>
 
-        <p>
+        <Text>
             {/**
              * This is necessary to support our current implementation using Radix.
              * Reference: https://www.radix-ui.com/docs/primitives/components/tooltip#displaying-a-tooltip-from-a-disabled-button
              * */}
             When rendering a Tooltip for a disabled <Typography.Code>{'<Button>'}</Typography.Code>, the button element
             also needs to have the CSS property <Typography.Code>pointer-events: none</Typography.Code>.
-        </p>
+        </Text>
     </Grid>
 )
 
@@ -111,10 +107,10 @@ export const LongContent: Story = () => (
             </Tooltip>
         </div>
 
-        <p>
+        <Text>
             Tooltips with long text will not exceed the width specified by{' '}
             <Typography.Code>--tooltip-max-width</Typography.Code>.
-        </p>
+        </Text>
     </Grid>
 )
 
@@ -126,10 +122,10 @@ export const DefaultOpen: Story = () => (
             </Tooltip>
         </div>
 
-        <p>
+        <Text>
             A pinned tooltip is shown on initial render (no user input required) by setting{' '}
             <Typography.Code>defaultOpen={'{true}'}</Typography.Code>.
-        </p>
+        </Text>
     </Grid>
 )
 
@@ -175,10 +171,10 @@ export const PlacementOptions: Story = () => (
             </div>
         </Grid>
 
-        <p>
+        <Text>
             The Tooltip will use the specified <Typography.Code>placement</Typography.Code> unless a viewport collision
             is detected, in which case it will be mirrored.
-        </p>
+        </Text>
     </>
 )
 
@@ -200,10 +196,10 @@ export const UpdateContent: Story = () => {
                 </Tooltip>
             </div>
 
-            <p>
+            <Text>
                 The string passed in as <Typography.Code>content</Typography.Code> can be modified without any
                 controlled or forced updates required.
-            </p>
+            </Text>
         </Grid>
     )
 }

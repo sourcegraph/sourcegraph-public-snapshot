@@ -34,10 +34,13 @@ func Test_matchOnly(t *testing.T) {
 			ID:   5,
 			Name: "codehost.com/myorg/myrepo",
 		}},
-		LineMatches: []*result.LineMatch{
+		MultilineMatches: []result.MultilineMatch{
 			{
-				Preview:    "abcdefgh",
-				LineNumber: 1,
+				Preview: "abcdefgh",
+				Range: result.Range{
+					Start: result.Location{Line: 1},
+					End:   result.Location{Line: 1},
+				},
 			},
 		},
 	}

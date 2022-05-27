@@ -8,7 +8,7 @@ import { Observable } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, Button, Link, Alert, Icon, Typography } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -152,13 +152,13 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 </Alert>
             )}
             <Typography.H2>Repositories</Typography.H2>
-            <p>
+            <Text>
                 Repositories are synced from connected{' '}
                 <Link to="/site-admin/external-services" data-testid="test-repositories-code-host-connections-link">
                     code host connections
                 </Link>
                 .
-            </p>
+            </Text>
             <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
                 className="list-group list-group-flush mt-3"
                 noun="repository"

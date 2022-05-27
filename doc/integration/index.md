@@ -14,6 +14,8 @@ Sourcegraph integrates with your other tools to help you search, navigate, and r
   - [Gitolite](gitolite.md)
   - [JVM dependencies](jvm.md)
   - [npm dependencies](npm.md)
+  - [Python dependencies](python.md)
+  - [Go dependencies](go.md)
   - [Other Git repository hosts](../admin/external_service/other.md)
 - Other services
   - [Codecov](https://sourcegraph.com/extensions/sourcegraph/codecov)

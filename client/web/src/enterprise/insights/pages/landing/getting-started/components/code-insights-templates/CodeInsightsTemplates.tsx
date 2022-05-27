@@ -21,6 +21,7 @@ import {
     Link,
     ProductStatusBadge,
     Typography,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../../../stores'
@@ -64,13 +65,13 @@ export const CodeInsightsTemplates: React.FunctionComponent<React.PropsWithChild
     return (
         <section {...otherProps}>
             <Typography.H2 id="code-insights-templates">Templates</Typography.H2>
-            <p className="text-muted">
+            <Text className="text-muted">
                 Some of the most popular{' '}
                 <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
                     use cases
                 </Link>
                 .
-            </p>
+            </Text>
 
             <Tabs size="medium" className="mt-3" onChange={handleTabChange}>
                 <TabList wrapperClassName={styles.tabList}>

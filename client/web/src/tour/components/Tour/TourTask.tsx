@@ -7,7 +7,7 @@ import { useHistory } from 'react-router-dom'
 
 import { isExternalLink } from '@sourcegraph/common'
 import { ModalVideo } from '@sourcegraph/search-ui'
-import { Button, Icon, Link } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { ItemPicker } from '../ItemPicker'
 
@@ -96,8 +96,16 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
             <div className={classNames('flex-grow-1', variant !== 'small' && 'h-100 d-flex flex-column')}>
                 <div className="d-flex justify-content-between position-relative">
                     {icon && variant === 'small' && <span className={classNames(styles.taskIcon)}>{icon}</span>}
-                    <p className={styles.title}>{title}</p>
-                    {completed === 100 && <Icon as={CheckCircleIcon} size="sm" className="text-success" />}
+                    <Text className={styles.title}>{title}</Text>
+                    {completed === 100 && (
+                        <Icon
+                            role="img"
+                            as={CheckCircleIcon}
+                            size="sm"
+                            className="text-success"
+                            aria-label="Completed"
+                        />
+                    )}
                     {typeof completed === 'number' && completed < 100 && (
                         <CircularProgressbar className={styles.progressBar} strokeWidth={10} value={completed || 0} />
                     )}
@@ -134,7 +142,7 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                             )}
                             {step.action.type === 'restart' && (
                                 <div className="flex-grow">
-                                    <p className="m-0">{step.label}</p>
+                                    <Text className="m-0">{step.label}</Text>
                                     <div className="d-flex flex-column">
                                         <Button
                                             variant="link"
@@ -158,7 +166,13 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                                 />
                             )}
                             {isMultiStep && step.isCompleted && (
-                                <Icon as={CheckCircleIcon} size="md" className="text-success" />
+                                <Icon
+                                    role="img"
+                                    as={CheckCircleIcon}
+                                    size="md"
+                                    className="text-success"
+                                    aria-label="Completed step"
+                                />
                             )}
                         </li>
                     ))}

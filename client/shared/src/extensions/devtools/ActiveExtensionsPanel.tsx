@@ -13,6 +13,7 @@ import {
     CardBody,
     Alert,
     Typography,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../../api/client/api/common'
@@ -77,10 +78,10 @@ export const ActiveExtensionsPanel: React.FunctionComponent<
                 <Typography.H4>Sideload extension</Typography.H4>
                 {sideloadedExtensionURL ? (
                     <div>
-                        <p>
+                        <Text>
                             <span>Load from: </span>
                             <Link to={sideloadedExtensionURL}>{sideloadedExtensionURL}</Link>
-                        </p>
+                        </Text>
                         <div>
                             <Button className="mr-1" onClick={setSideloadedExtensionURL} variant="primary" size="sm">
                                 Change
@@ -92,9 +93,9 @@ export const ActiveExtensionsPanel: React.FunctionComponent<
                     </div>
                 ) : (
                     <div>
-                        <p>
+                        <Text>
                             <span>No sideloaded extension</span>
-                        </p>
+                        </Text>
                         <div>
                             <Button onClick={setSideloadedExtensionURL} variant="primary" size="sm">
                                 Load extension

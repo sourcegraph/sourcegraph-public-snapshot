@@ -7,7 +7,7 @@ import { RouteComponentProps } from 'react-router-dom'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Button, Link, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+import { Button, Link, LoadingSpinner, Alert, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -53,7 +53,9 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                         className={classNames('border rounded p-4 mb-3', signInSignUpCommonStyles.signinSignupForm)}
                         data-testid="reset-password-page-form"
                     >
-                        <p className="text-left mb-0">Check your email for a link to reset your password.</p>
+                        <Text alignment="left" className="mb-0">
+                            Check your email for a link to reset your password.
+                        </Text>
                     </div>
                     <span className="form-text text-muted">
                         <Link to="/sign-in">Return to sign in</Link>
@@ -76,9 +78,9 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                     data-testid="reset-password-page-form"
                     onSubmit={this.handleSubmitResetPasswordInit}
                 >
-                    <p className="text-left">
+                    <Text alignment="left">
                         Enter your account email address and we will send you a password reset link
-                    </p>
+                    </Text>
                     <div className="form-group">
                         <input
                             className="form-control"
@@ -192,7 +194,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                     data-testid="reset-password-page-form"
                     onSubmit={this.handleSubmitResetPassword}
                 >
-                    <p className="text-left">Enter a new password for your account.</p>
+                    <Text alignment="left">Enter a new password for your account.</Text>
                     <div className="form-group">
                         <PasswordInput
                             name="password"

@@ -80,7 +80,7 @@ export const SelfHostedCta: React.FunctionComponent<React.PropsWithChildren<Self
                         {...linkProps}
                     >
                         Speak to an engineer
-                        <Icon className="ml-2" as={ArrowRightIcon} />
+                        <Icon role="img" className="ml-2" as={ArrowRightIcon} aria-hidden={true} />
                     </Link>
                 </div>
             </MarketingBlock>

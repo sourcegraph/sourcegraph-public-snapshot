@@ -724,12 +724,14 @@ Associates a repository-commit pair with the set of repository-level dependencie
 
 # Table "public.configuration_policies_audit_logs"
 ```
-       Column       |           Type           | Collation | Nullable |      Default      
---------------------+--------------------------+-----------+----------+-------------------
+       Column       |           Type           | Collation | Nullable |                          Default                           
+--------------------+--------------------------+-----------+----------+------------------------------------------------------------
  log_timestamp      | timestamp with time zone |           |          | clock_timestamp()
  record_deleted_at  | timestamp with time zone |           |          | 
  policy_id          | integer                  |           | not null | 
  transition_columns | USER-DEFINED[]           |           |          | 
+ sequence           | bigint                   |           | not null | nextval('configuration_policies_audit_logs_seq'::regclass)
+ operation          | audit_log_operation      |           | not null | 
 Indexes:
     "configuration_policies_audit_logs_policy_id" btree (policy_id)
     "configuration_policies_audit_logs_timestamp" brin (log_timestamp)
@@ -1707,8 +1709,8 @@ Stores metadata about an LSIF index uploaded by a user.
 
 # Table "public.lsif_uploads_audit_logs"
 ```
-       Column        |           Type           | Collation | Nullable | Default  
----------------------+--------------------------+-----------+----------+----------
+       Column        |           Type           | Collation | Nullable |                     Default                      
+---------------------+--------------------------+-----------+----------+--------------------------------------------------
  log_timestamp       | timestamp with time zone |           |          | now()
  record_deleted_at   | timestamp with time zone |           |          | 
  upload_id           | integer                  |           | not null | 
@@ -1722,6 +1724,8 @@ Stores metadata about an LSIF index uploaded by a user.
  associated_index_id | integer                  |           |          | 
  transition_columns  | USER-DEFINED[]           |           |          | 
  reason              | text                     |           |          | ''::text
+ sequence            | bigint                   |           | not null | nextval('lsif_uploads_audit_logs_seq'::regclass)
+ operation           | audit_log_operation      |           | not null | 
 Indexes:
     "lsif_uploads_audit_logs_timestamp" brin (log_timestamp)
     "lsif_uploads_audit_logs_upload_id" btree (upload_id)
@@ -1971,7 +1975,7 @@ Indexes:
  component                | text                     |           | not null | 
  description              | text                     |           | not null | 
  progress                 | double precision         |           | not null | 0
- created                  | timestamp with time zone |           | not null | now()
+ created                  | timestamp with time zone |           | not null | 
  last_updated             | timestamp with time zone |           |          | 
  non_destructive          | boolean                  |           | not null | 
  apply_reverse            | boolean                  |           | not null | false
@@ -2223,6 +2227,7 @@ Referenced by:
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()
+    trigger_gitserver_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_gitserver_repo()
 
 ```
 
@@ -2973,6 +2978,12 @@ Foreign-key constraints:
      JOIN repo ON ((changeset_specs.repo_id = repo.id)))
   WHERE ((changeset_specs.external_id IS NOT NULL) AND (repo.deleted_at IS NULL));
 ```
+
+# Type audit_log_operation
+
+- create
+- modify
+- delete
 
 # Type batch_changes_changeset_ui_publication_state
 

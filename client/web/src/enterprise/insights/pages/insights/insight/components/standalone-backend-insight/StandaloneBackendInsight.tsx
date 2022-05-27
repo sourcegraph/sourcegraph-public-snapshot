@@ -19,6 +19,7 @@ import {
     DrillDownFiltersFormValues,
     DrillDownInsightCreationFormValues,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
+import { useSeriesToggle } from '../../../../../components/insights-view-grid/components/backend-insight/components/backend-insight-chart/use-series-toggle'
 import { useInsightData } from '../../../../../components/insights-view-grid/hooks/use-insight-data'
 import { ALL_INSIGHTS_DASHBOARD, BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../../../../../core'
 import { LazyQueryStatus } from '../../../../../hooks/use-parallel-requests/use-parallel-request'
@@ -36,6 +37,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const { telemetryService, insight, className } = props
     const history = useHistory()
     const { getBackendInsightData, createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
+    const { toggle, isSeriesSelected, isSeriesHovered, setHoveredId } = useSeriesToggle()
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
@@ -148,7 +150,15 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                 ) : state.status === LazyQueryStatus.Error ? (
                     <BackendInsightErrorAlert error={state.error} />
                 ) : (
-                    <BackendInsightChart {...state.data} locked={insight.isFrozen} onDatumClick={trackDatumClicks} />
+                    <BackendInsightChart
+                        {...state.data}
+                        locked={insight.isFrozen}
+                        onDatumClick={trackDatumClicks}
+                        toggle={toggle}
+                        isSeriesSelected={isSeriesSelected}
+                        isSeriesHovered={isSeriesHovered}
+                        setHoveredId={setHoveredId}
+                    />
                 )}
             </InsightCard>
         </div>

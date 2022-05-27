@@ -68,6 +68,7 @@ type BatchSpecStats struct {
 
 	Workspaces        int
 	SkippedWorkspaces int
+	CachedWorkspaces  int
 	Executions        int
 
 	Queued     int

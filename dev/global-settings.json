@@ -6,7 +6,7 @@
     "codeMonitoring": true,
     "codeInsights": true,
     "codeIntelRepositoryBadge": { "enabled": true },
-    "coolCodeIntel": false
+    "coolCodeIntel": true
   },
   "insights": [
     {
