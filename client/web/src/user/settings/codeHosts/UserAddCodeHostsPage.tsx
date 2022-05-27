@@ -211,7 +211,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildr
 
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
         onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
-    }, [owner.id, onUserExternalServicesOrRepositoriesUpdate])
+    }, [owner.id, owner.tags, scopes.github, scopes.gitlab, onUserExternalServicesOrRepositoriesUpdate])
 
     const handleServiceUpsert = useCallback(
         (service: ListExternalServiceFields): void => {
