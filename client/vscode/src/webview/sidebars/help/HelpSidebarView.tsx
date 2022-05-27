@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
@@ -46,7 +47,6 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
                 })
         }
     }, [extensionCoreAPI.getEditorTheme, isLightTheme])
-    console.log(isLightTheme)
 
     const onHelpItemClick = async (url: string, item: string): Promise<void> => {
         platformContext.telemetryService.log(`VSCEHelpSidebar${item}Click`)
