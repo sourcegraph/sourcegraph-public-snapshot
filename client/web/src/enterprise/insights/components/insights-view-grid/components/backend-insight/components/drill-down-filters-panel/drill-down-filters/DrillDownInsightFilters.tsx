@@ -127,7 +127,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
             <header className={classNames(className, styles.header)}>
                 <Typography.H4 className={styles.heading}>Filter repositories</Typography.H4>
 
-                <FilterPreviewPill text={getSerializedSearchContextFilter(contexts.input.value)} />
+                <FilterPreviewPill text={getSerializedSearchContextFilter(contexts.input.value, true)} />
                 <FilterPreviewPill text={getSerializedRepositoriesFilter(currentRepositoriesFilters)} />
 
                 <Button
