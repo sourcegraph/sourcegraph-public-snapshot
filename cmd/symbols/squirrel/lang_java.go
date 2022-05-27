@@ -400,6 +400,14 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 			squirrel.breadcrumb(ty.node(), fmt.Sprintf("getTypeDefJava: expected method, got %q", ty.variant()))
 			return nil, nil
 		}
+	case "generic_type":
+		for _, child := range children(node.Node) {
+			if child.Type() == "type_identifier" || child.Type() == "scoped_type_identifier" {
+				return squirrel.getTypeDefJava(ctx, swapNode(node, child))
+			}
+		}
+		squirrel.breadcrumb(node, "getTypeDefJava: expected an identifier")
+		return nil, nil
 	case "void_type":
 		return PrimType{noad: node, varient: "void"}, nil
 	case "integral_type":
