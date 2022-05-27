@@ -398,7 +398,7 @@ func TestLoadChangesetSource(t *testing.T) {
 
 			err = src.ValidateAuthenticator(ctx)
 			assert.NotNil(t, err)
-			assert.Equal(t, "Bearer 456", err.Error())
+			assert.Equal(t, "Bearer 123", err.Error())
 		})
 	})
 }
