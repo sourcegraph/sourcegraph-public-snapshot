@@ -13,5 +13,9 @@
     "graphql-operations": "gulp graphQlOperations",
     "watch-schema": "gulp watchSchema"
   },
-  "sideEffects": true
+  "sideEffects": true,
+  "dependencies": {
+    "@microsoft/fetch-event-source": "^2.0.1",
+    "tsc": "^2.0.4"
+  }
 }
