@@ -13,6 +13,8 @@ import com.sourcegraph.find.Search;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 public class JSToJavaBridgeRequestHandler {
     private final Project project;
@@ -73,10 +75,10 @@ public class JSToJavaBridgeRequestHandler {
                     topPanel.setBrowserVisible(true);
                     return createSuccessResponse(null);
                 default:
-                    return createErrorResponse(Errors.UNKNOWN_ACTION.code, "Unknown action: " + action);
+                    return createErrorResponse("Unknown action: “" + action + "”.", "No stack trace");
             }
         } catch (Exception e) {
-            return createErrorResponse(Errors.EXCEPTION_IN_ACTION.code, action + ": " + e.getClass().getName() + ": " + e.getMessage());
+            return createErrorResponse(action + ": " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
         }
     }
 
@@ -87,23 +89,7 @@ public class JSToJavaBridgeRequestHandler {
     }
 
     public JBCefJSQuery.Response handleInvalidRequest(Exception e) {
-        return createErrorResponse(Errors.INVALID_JSON.code, "Invalid JSON passed to bridge. The error is: " + e.getClass() + ": " + e.getMessage());
-    }
-
-    public enum Errors {
-        INVALID_JSON(1),
-        UNKNOWN_ACTION(2),
-        EXCEPTION_IN_ACTION(3);
-
-        private final int code;
-
-        Errors(int code) {
-            this.code = code;
-        }
-
-        public int getCode() {
-            return code;
-        }
+        return createErrorResponse("Invalid JSON passed to bridge. The error is: " + e.getClass() + ": " + e.getMessage(), convertStackTraceToString(e));
     }
 
     @NotNull
@@ -112,8 +98,15 @@ public class JSToJavaBridgeRequestHandler {
     }
 
     @NotNull
-    private JBCefJSQuery.Response createErrorResponse(int errorCode, @Nullable String errorMessage) {
-        return new JBCefJSQuery.Response(null, errorCode, errorMessage);
+    private JBCefJSQuery.Response createErrorResponse(@NotNull String errorMessage, @NotNull String stackTrace) {
+        return new JBCefJSQuery.Response(null, 0, errorMessage + "\n" + stackTrace);
+    }
+
+    @NotNull
+    private String convertStackTraceToString(@NotNull Exception e) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+        return sw.toString();
     }
 }
-
