@@ -57,6 +57,13 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 				if nodeId(prev) == nodeId(object) {
 					continue
 				}
+				args := cur.ChildByFieldName("arguments")
+				if args == nil {
+					continue
+				}
+				if nodeId(prev) == nodeId(args) {
+					continue
+				}
 				name := cur.ChildByFieldName("name")
 				if name != nil {
 					found, err := squirrel.getFieldJava(ctx, swapNode(node, object), name.Content(node.Contents))
@@ -408,6 +415,14 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 		}
 		squirrel.breadcrumb(node, "getTypeDefJava: expected an identifier")
 		return nil, nil
+	case "scoped_type_identifier":
+		for i := int(node.ChildCount()) - 1; i >= 0; i-- {
+			child := node.Child(i)
+			if child.Type() == "type_identifier" {
+				return squirrel.getTypeDefJava(ctx, swapNode(node, child))
+			}
+		}
+		return nil, nil
 	case "void_type":
 		return PrimType{noad: node, varient: "void"}, nil
 	case "integral_type":
@@ -416,6 +431,18 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 		return PrimType{noad: node, varient: "floating"}, nil
 	case "boolean_type":
 		return PrimType{noad: node, varient: "boolean"}, nil
+	case "this":
+		cur := node.Node
+		for cur != nil {
+			switch cur.Type() {
+			case "class_declaration":
+				fallthrough
+			case "interface_declaration":
+				return ClassType{def: swapNode(node, cur)}, nil
+			}
+			cur = cur.Parent()
+		}
+		return nil, nil
 	default:
 		squirrel.breadcrumb(node, fmt.Sprintf("getTypeDefJava: unrecognized node type %q", node.Type()))
 		return nil, nil
@@ -423,7 +450,7 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 }
 
 func (squirrel *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context.Context, program Node, ident string) (ret *Node, err error) {
-	defer squirrel.onCall(program, String(program.Type()), lazyNodeStringer(&ret))()
+	defer squirrel.onCall(program, &Tuple{String(program.Type()), String(ident)}, lazyNodeStringer(&ret))()
 
 	getPath := func(node Node) ([]string, error) {
 		query := `(identifier) @ident`
@@ -601,6 +628,13 @@ func (squirrel *SquirrelService) defToType(ctx context.Context, def Node) (Type,
 			noad: swapNode(def, parent),
 		}), nil
 	case "formal_parameter":
+		tyNode := parent.ChildByFieldName("type")
+		if tyNode == nil {
+			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find parameter type")
+			return nil, nil
+		}
+		return squirrel.getTypeDefJava(ctx, swapNode(def, tyNode))
+	case "enhanced_for_statement":
 		tyNode := parent.ChildByFieldName("type")
 		if tyNode == nil {
 			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find parameter type")

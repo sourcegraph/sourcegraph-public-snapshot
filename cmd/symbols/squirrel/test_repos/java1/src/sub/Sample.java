@@ -70,11 +70,14 @@ class C1 {
         // vv C2 ref
         C1.C2 c12; // < "C1" C1 ref
 
+        int f1;
+
         //   vv C3 ref
         //      vv f3 ref
         //              vv C2.m2 ref
         //                   vv f3 ref
-        p1 = C3.f3 + C2.m2().f3;
+        //                             vv f1 ref
+        p1 = C3.f3 + C2.m2().f3 + this.f1;
     }
 
     // vv m2 def
