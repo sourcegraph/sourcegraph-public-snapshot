@@ -35,7 +35,7 @@ export const CheckButton: React.FunctionComponent<React.PropsWithChildren<CheckB
                 </Button>
             )}
             {loading && (
-                <div className="text-white-50">
+                <div className="text-muted">
                     <LoadingSpinner /> Checking
                 </div>
             )}
