@@ -35,6 +35,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 
 	authSaveableUsers := map[string]int32{
 		"alice": 1,
+		"cindy": 3,
 	}
 
 	type input struct {
@@ -42,6 +43,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 		glUser          *gitlab.User
 		glUserGroups    []*gitlab.Group
 		glUserGroupsErr error
+		allowSignup     bool
 		allowGroups     []string
 	}
 
@@ -51,6 +53,55 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 		expErr        bool
 		expAuthUserOp *auth.GetAndSaveUserOp
 	}{
+		{
+			inputs: []input{{
+				description: "glUser, allowSignup not set, defaults to false -> no new user nor session created",
+				glUser: &gitlab.User{
+					ID:       int32(102),
+					Username: string("bob"),
+					Email:    string("bob@example.com"),
+				},
+			}},
+			expErr: true,
+		},
+		{
+			inputs: []input{{
+				description: "glUser, allowSignup is false -> no new user nor session created",
+				allowSignup: false,
+				glUser: &gitlab.User{
+					ID:       int32(102),
+					Username: string("bob"),
+					Email:    string("bob@example.com"),
+				},
+			}},
+			expErr: true,
+		},
+		{
+			inputs: []input{{
+				description: "glUser, allowSignup is true -> new user and session created",
+				allowSignup: true,
+				glUser: &gitlab.User{
+					ID:       int32(103),
+					Username: string("cindy"),
+					Email:    string("cindy@example.com"),
+				},
+			}},
+			expActor: &actor.Actor{UID: 3},
+			expAuthUserOp: &auth.GetAndSaveUserOp{
+				UserProps: database.NewUser{
+					Username:        "cindy",
+					Email:           "cindy@example.com",
+					EmailIsVerified: true,
+				},
+				ExternalAccount: extsvc.AccountSpec{
+					ServiceType: extsvc.TypeGitLab,
+					ServiceID:   "https://gitlab.com/",
+					ClientID:    clientID,
+					AccountID:   "101",
+				},
+				CreateIfNotExist: true,
+			},
+		},
 		{
 			inputs: []input{{
 				description: "glUser, allowedGroups not set -> session created",
@@ -195,6 +246,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				}
 
 				var gotAuthUserOp *auth.GetAndSaveUserOp
+				getAndSaveUserError := errors.New("auth.GetAndSaveUser error")
+
 				auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
 					if gotAuthUserOp != nil {
 						t.Fatal("GetAndSaveUser called more than once")
@@ -207,7 +260,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 						return uid, "", nil
 					}
 
-					return 0, "safeErr", errors.New("error mocking get and save user")
+					return 0, "safeErr", getAndSaveUserError
 				}
 
 				defer func() {
@@ -219,6 +272,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				s := &sessionIssuerHelper{
 					CodeHost:    codeHost,
 					clientID:    clientID,
+					allowSignup: ci.allowSignup,
 					allowGroups: ci.allowGroups,
 				}
 
@@ -235,8 +289,10 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					t.Errorf("expected no error, but was %v", err)
 				}
 
-				if got, exp := gotAuthUserOp, c.expAuthUserOp; !reflect.DeepEqual(got, exp) {
-					t.Error(cmp.Diff(got, exp))
+				if c.expErr && err != getAndSaveUserError {
+					if got, exp := gotAuthUserOp, c.expAuthUserOp; !reflect.DeepEqual(got, exp) {
+						t.Error(cmp.Diff(got, exp))
+					}
 				}
 			})
 		}
