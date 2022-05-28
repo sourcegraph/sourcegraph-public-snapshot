@@ -214,7 +214,7 @@ function inviteUserToOrganization(
     )
         .pipe(
             map(({ data, errors }) => {
-                if (!data || !data.inviteUserToOrganization) {
+                if (!data || !data.inviteUserToOrganization || (errors && errors.length > 0)) {
                     eventLogger.log('InviteOrgMemberFailed')
                     throw createAggregateError(errors)
                 }
@@ -241,7 +241,7 @@ function addUserToOrganization(username: string, organization: Scalars['ID']): P
     )
         .pipe(
             map(({ data, errors }) => {
-                if (!data || !data.addUserToOrganization) {
+                if (!data || !data.addUserToOrganization || (errors && errors.length > 0)) {
                     eventLogger.log('AddOrgMemberFailed')
                     throw createAggregateError(errors)
                 }

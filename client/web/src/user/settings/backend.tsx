@@ -82,7 +82,7 @@ export function setUserEmailVerified(user: Scalars['ID'], email: string, verifie
         { user, email, verified }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data) {
+            if (!data || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
         })
