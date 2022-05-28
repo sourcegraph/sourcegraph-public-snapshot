@@ -11,7 +11,6 @@ import {
     SearchQueryState,
     SearchQueryStateStoreProvider,
 } from '@sourcegraph/search'
-// eslint-disable-next-line import/extensions
 import { QuickLink, SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'

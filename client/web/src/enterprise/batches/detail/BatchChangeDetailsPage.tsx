@@ -6,7 +6,6 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-// eslint-disable-next-line import/extensions
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { PageHeader, LoadingSpinner, Alert } from '@sourcegraph/wildcard'

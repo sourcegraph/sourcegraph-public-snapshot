@@ -15,7 +15,6 @@ import {
     OpenIDConnectAuthProvider,
     SAMLAuthProvider,
     SiteConfiguration,
-    // eslint-disable-next-line import/extensions
 } from '@sourcegraph/shared/src/schema/site.schema'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { Config } from '@sourcegraph/shared/src/testing/config'

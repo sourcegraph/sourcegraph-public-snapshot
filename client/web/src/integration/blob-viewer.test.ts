@@ -5,7 +5,6 @@ import type * as sourcegraph from 'sourcegraph'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-// eslint-disable-next-line import/extensions
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'

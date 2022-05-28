@@ -7,7 +7,6 @@ import { Subscription } from 'rxjs'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-// eslint-disable-next-line import/extensions
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Link } from '@sourcegraph/wildcard'

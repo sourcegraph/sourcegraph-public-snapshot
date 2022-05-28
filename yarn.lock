@@ -1375,10 +1375,17 @@
   dependencies:
     regenerator-runtime "^0.13.4"
 
-"@babel/runtime@^7.0.0", "@babel/runtime@^7.1.2", "@babel/runtime@^7.1.5", "@babel/runtime@^7.10.2", "@babel/runtime@^7.11.2", "@babel/runtime@^7.12.0", "@babel/runtime@^7.12.1", "@babel/runtime@^7.12.13", "@babel/runtime@^7.12.5", "@babel/runtime@^7.13.10", "@babel/runtime@^7.14.0", "@babel/runtime@^7.3.1", "@babel/runtime@^7.4.4", "@babel/runtime@^7.4.5", "@babel/runtime@^7.5.0", "@babel/runtime@^7.5.5", "@babel/runtime@^7.6.2", "@babel/runtime@^7.7.2", "@babel/runtime@^7.7.6", "@babel/runtime@^7.8.4", "@babel/runtime@^7.8.7", "@babel/runtime@^7.9.2", "@babel/runtime@^7.9.6":
+"@babel/runtime@^7.0.0", "@babel/runtime@^7.1.2", "@babel/runtime@^7.1.5", "@babel/runtime@^7.10.2", "@babel/runtime@^7.12.0", "@babel/runtime@^7.12.1", "@babel/runtime@^7.12.13", "@babel/runtime@^7.12.5", "@babel/runtime@^7.13.10", "@babel/runtime@^7.14.0", "@babel/runtime@^7.3.1", "@babel/runtime@^7.4.4", "@babel/runtime@^7.4.5", "@babel/runtime@^7.5.0", "@babel/runtime@^7.5.5", "@babel/runtime@^7.6.2", "@babel/runtime@^7.7.2", "@babel/runtime@^7.7.6", "@babel/runtime@^7.8.4", "@babel/runtime@^7.8.7", "@babel/runtime@^7.9.2", "@babel/runtime@^7.9.6":
   version "7.17.9"
   resolved "https://registry.npmjs.org/@babel/runtime/-/runtime-7.17.9.tgz#d19fbf802d01a8cb6cf053a64e472d42c434ba72"
   integrity sha512-lSiBBvodq29uShpWGNbgFdKYNiFDo5/HIYsaCEY9ff4sb10x9jizo2+pRrSyF4jKZCXqgzuqBOQKbUm90gQwJg==
+  dependencies:
+    regenerator-runtime "^0.13.4"
+
+"@babel/runtime@^7.16.3":
+  version "7.18.3"
+  resolved "https://registry.npmjs.org/@babel/runtime/-/runtime-7.18.3.tgz#c7b654b57f6f63cf7f8b418ac9ca04408c4579f4"
+  integrity sha512-38Y8f7YUhce/K7RMwTp7m0uCumpv9hZkitCbBClqQIow1qSbCvGkcegKOXpEWCQLfWmevgRiWokZ1GkpfhbZug==
   dependencies:
     regenerator-runtime "^0.13.4"
 
@@ -3975,9 +3982,10 @@
     "@sourcegraph/codemod-toolkit-packages" "1.0.1"
     "@sourcegraph/codemod-toolkit-ts" "1.0.1"
 
-"@sourcegraph/eslint-config@git+https://github.com/sourcegraph/eslint-config.git#contractors/SG-33303-2":
-  version "0.0.0-DEVELOPMENT"
-  resolved "git+https://github.com/sourcegraph/eslint-config.git#dbacb28f4e01b0427d2af1d14870580b02aefefd"
+"@sourcegraph/eslint-config@0.30.0":
+  version "0.30.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.30.0.tgz#43d3d120a50c489d25834d903476098b3ed3c87e"
+  integrity sha512-LqHeGNOrHKcHHgZ6bqsax7UMcqfW5zgIzUrOPgnebg9l+r1amB2aiUo5ia4njY46Of6mnVxAgOkohxjoqDM4Ig==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.3"
     "@typescript-eslint/eslint-plugin" "^5.20.0"
@@ -3988,9 +3996,9 @@
     eslint-plugin-import "^2.26.0"
     eslint-plugin-jest-dom "^3.6.5"
     eslint-plugin-jsdoc "^30.7.8"
-    eslint-plugin-jsx-a11y "^6.4.1"
+    eslint-plugin-jsx-a11y "^6.5.1"
     eslint-plugin-react "^7.21.4"
-    eslint-plugin-react-hooks "^4.6.0-next-9f80a48ad-20220427"
+    eslint-plugin-react-hooks "^4.5.0"
     eslint-plugin-rxjs "^5.0.2"
     eslint-plugin-unicorn "^42.0.0"
     eslint-plugin-unused-imports "^1.1.5"
@@ -7872,10 +7880,15 @@ axe-core@4.2.1:
   resolved "https://registry.npmjs.org/axe-core/-/axe-core-4.2.1.tgz#2e50bcf10ee5b819014f6e342e41e45096239e34"
   integrity sha512-evY7DN8qSIbsW2H/TWQ1bX3sXN1d4MNb5Vb4n7BzPuCwRHdkZ1H2eNLuSh73EoQqkGKUtju2G2HCcjCfhvZIAA==
 
-axe-core@^4.0.2, axe-core@^4.2.0, axe-core@^4.4.1:
+axe-core@^4.2.0, axe-core@^4.4.1:
   version "4.4.1"
   resolved "https://registry.npmjs.org/axe-core/-/axe-core-4.4.1.tgz#7dbdc25989298f9ad006645cd396782443757413"
   integrity sha512-gd1kmb21kwNuWr6BQz8fv6GNECPBnUasepcoLbekws23NVBLODdsClRZ+bQ8+9Uomf3Sm3+Vwn0oYG9NvwnJCw==
+
+axe-core@^4.3.5:
+  version "4.4.2"
+  resolved "https://registry.npmjs.org/axe-core/-/axe-core-4.4.2.tgz#dcf7fb6dea866166c3eab33d68208afe4d5f670c"
+  integrity sha512-LVAaGp/wkkgYJcjmHsoKx4juT1aQvJyPcW09MLCjVTh3V2cc6PnyempiLMNH5iMdfIX/zdbjUx2KDjMLCTdPeA==
 
 axios@0.19.0, axios@^0.19.0:
   version "0.19.0"
@@ -10936,10 +10949,10 @@ dagre@^0.8.5:
     graphlib "^2.1.8"
     lodash "^4.17.15"
 
-damerau-levenshtein@^1.0.6:
-  version "1.0.6"
-  resolved "https://registry.npmjs.org/damerau-levenshtein/-/damerau-levenshtein-1.0.6.tgz#143c1641cb3d85c60c32329e26899adea8701791"
-  integrity sha512-JVrozIeElnj3QzfUIt8tB8YMluBJom4Vw9qTPpjGYQ9fYlB3D/rb6OordUxf3xeFB35LKWs0xqcO5U6ySvBtug==
+damerau-levenshtein@^1.0.7:
+  version "1.0.8"
+  resolved "https://registry.npmjs.org/damerau-levenshtein/-/damerau-levenshtein-1.0.8.tgz#b43d286ccbd36bc5b2f7ed41caf2d0aba1f8a6e7"
+  integrity sha512-sdQSFB7+llfUcQHUQO3+B8ERRj0Oa4w9POWMI/puGtuf7gFywGmkaLCElnudfTiKZV+NvHqL0ifzdrI8Ro7ESA==
 
 dashdash@^1.12.0:
   version "1.14.1"
@@ -11783,7 +11796,7 @@ emoji-regex@^8.0.0:
   resolved "https://registry.npmjs.org/emoji-regex/-/emoji-regex-8.0.0.tgz#e818fd69ce5ccfcb404594f842963bf53164cc37"
   integrity sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==
 
-emoji-regex@^9.0.0:
+emoji-regex@^9.2.2:
   version "9.2.2"
   resolved "https://registry.npmjs.org/emoji-regex/-/emoji-regex-9.2.2.tgz#840c8803b0d8047f4ff0cf963176b32d4ef3ed72"
   integrity sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==
@@ -12315,22 +12328,23 @@ eslint-plugin-jsdoc@^30.7.8:
     semver "^7.3.2"
     spdx-expression-parse "^3.0.1"
 
-eslint-plugin-jsx-a11y@^6.4.1:
-  version "6.4.1"
-  resolved "https://registry.npmjs.org/eslint-plugin-jsx-a11y/-/eslint-plugin-jsx-a11y-6.4.1.tgz#a2d84caa49756942f42f1ffab9002436391718fd"
-  integrity sha512-0rGPJBbwHoGNPU73/QCLP/vveMlM1b1Z9PponxO87jfr6tuH5ligXbDT6nHSSzBC8ovX2Z+BQu7Bk5D/Xgq9zg==
+eslint-plugin-jsx-a11y@^6.5.1:
+  version "6.5.1"
+  resolved "https://registry.npmjs.org/eslint-plugin-jsx-a11y/-/eslint-plugin-jsx-a11y-6.5.1.tgz#cdbf2df901040ca140b6ec14715c988889c2a6d8"
+  integrity sha512-sVCFKX9fllURnXT2JwLN5Qgo24Ug5NF6dxhkmxsMEUZhXRcGg+X3e1JbJ84YePQKBl5E0ZjAH5Q4rkdcGY99+g==
   dependencies:
-    "@babel/runtime" "^7.11.2"
+    "@babel/runtime" "^7.16.3"
     aria-query "^4.2.2"
-    array-includes "^3.1.1"
+    array-includes "^3.1.4"
     ast-types-flow "^0.0.7"
-    axe-core "^4.0.2"
+    axe-core "^4.3.5"
     axobject-query "^2.2.0"
-    damerau-levenshtein "^1.0.6"
-    emoji-regex "^9.0.0"
+    damerau-levenshtein "^1.0.7"
+    emoji-regex "^9.2.2"
     has "^1.0.3"
-    jsx-ast-utils "^3.1.0"
+    jsx-ast-utils "^3.2.1"
     language-tags "^1.0.5"
+    minimatch "^3.0.4"
 
 eslint-plugin-monorepo@^0.3.2:
   version "0.3.2"
@@ -12350,10 +12364,10 @@ eslint-plugin-no-unsanitized@3.1.4:
   resolved "https://registry.npmjs.org/eslint-plugin-no-unsanitized/-/eslint-plugin-no-unsanitized-3.1.4.tgz#21d9f3cb5cbed91ac45cb30eec9195c387b918c7"
   integrity sha512-WF1+eZo2Sh+bQNjZuVNwT0dA61zuJORsLh+1Sww7+O6GOPw+WPWIIRfTWNqrmaXaDMhM4SXAqYPcNlhRMiH13g==
 
-eslint-plugin-react-hooks@^4.6.0-next-9f80a48ad-20220427:
-  version "4.6.0-next-e531a4a62-20220505"
-  resolved "https://registry.npmjs.org/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-4.6.0-next-e531a4a62-20220505.tgz#9fec248cfbefa77611026e868a511a080fcca7c9"
-  integrity sha512-V7Mbrh+MAwf3BsTQXMT6w9gY6oZjvK+tosz5uwmyo76DPMe0+4qmuRz49FPOyV6lDpjah6sbyxVhrU+AIcRfbw==
+eslint-plugin-react-hooks@^4.5.0:
+  version "4.5.0"
+  resolved "https://registry.npmjs.org/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-4.5.0.tgz#5f762dfedf8b2cf431c689f533c9d3fa5dcf25ad"
+  integrity sha512-8k1gRt7D7h03kd+SAAlzXkQwWK22BnK6GKZG+FJA6BAGy22CFvl8kCIXKpVux0cCxMWDQUPqSok0LKaZ0aOcCw==
 
 eslint-plugin-react@^7.21.4:
   version "7.21.4"
@@ -17039,12 +17053,20 @@ jsprim@^1.2.2:
     json-schema "0.2.3"
     verror "1.10.0"
 
-"jsx-ast-utils@^2.4.1 || ^3.0.0", jsx-ast-utils@^3.1.0:
+"jsx-ast-utils@^2.4.1 || ^3.0.0":
   version "3.2.0"
   resolved "https://registry.npmjs.org/jsx-ast-utils/-/jsx-ast-utils-3.2.0.tgz#41108d2cec408c3453c1bbe8a4aae9e1e2bd8f82"
   integrity sha512-EIsmt3O3ljsU6sot/J4E1zDRxfBNrhjyf/OKjlydwgEimQuznlM4Wv7U+ueONJMyEn1WRE0K8dhi3dVAXYT24Q==
   dependencies:
     array-includes "^3.1.2"
+    object.assign "^4.1.2"
+
+jsx-ast-utils@^3.2.1:
+  version "3.3.0"
+  resolved "https://registry.npmjs.org/jsx-ast-utils/-/jsx-ast-utils-3.3.0.tgz#e624f259143b9062c92b6413ff92a164c80d3ccb"
+  integrity sha512-XzO9luP6L0xkxwhIJMTJQpZo/eeN60K08jHdexfD569AGxeNug6UketeHXEhROoM8aR7EcUoOQmIhcJQjcuq8Q==
+  dependencies:
+    array-includes "^3.1.4"
     object.assign "^4.1.2"
 
 jszip@^2.4.0:

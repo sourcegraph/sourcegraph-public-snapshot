@@ -20,7 +20,6 @@ import {
     KEYBOARD_SHORTCUT_SWITCH_THEME,
 } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-// eslint-disable-next-line import/extensions
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'

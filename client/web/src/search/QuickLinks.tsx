@@ -3,7 +3,6 @@ import React from 'react'
 import classNames from 'classnames'
 import LinkIcon from 'mdi-react/LinkIcon'
 
-// eslint-disable-next-line import/extensions
 import { QuickLink } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Link, Icon } from '@sourcegraph/wildcard'
 

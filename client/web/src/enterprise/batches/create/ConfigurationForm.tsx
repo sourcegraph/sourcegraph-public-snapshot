@@ -9,7 +9,6 @@ import { useHistory } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation } from '@sourcegraph/http-client'
-// eslint-disable-next-line import/extensions
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     SettingsCascadeProps,

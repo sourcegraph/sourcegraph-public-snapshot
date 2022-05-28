@@ -4,7 +4,6 @@ import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
 import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
-// eslint-disable-next-line import/extensions
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
