@@ -33,6 +33,7 @@ import {
     Card,
     Icon,
     Typography,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../../components/Collapsible'
@@ -120,19 +121,19 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                     : 'Workspace in hidden repository'}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
                     <Link to={workspace.repository.url} target="_blank" rel="noopener noreferrer">
-                        <Icon as={ExternalLinkIcon} />
+                        <Icon role="img" aria-hidden={true} as={ExternalLinkIcon} />
                     </Link>
                 )}
             </Typography.H3>
             <Button className="p-0 ml-2" onClick={deselectWorkspace} variant="icon">
                 <VisuallyHidden>Deselect Workspace</VisuallyHidden>
-                <Icon as={CloseIcon} />
+                <Icon role="img" aria-hidden={true} as={CloseIcon} />
             </Button>
         </div>
         <div className="d-flex align-items-center">
             {typeof workspace.placeInQueue === 'number' && (
                 <span className={classNames(styles.workspaceDetail, 'd-flex align-items-center')}>
-                    <Icon as={TimelineClockOutlineIcon} />
+                    <Icon role="img" aria-hidden={true} as={TimelineClockOutlineIcon} />
                     <strong className="ml-1 mr-1">
                         <NumberInQueue number={workspace.placeInQueue} />
                     </strong>
@@ -144,7 +145,7 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
             )}
             {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
                 <span className={styles.workspaceDetail}>
-                    <Icon as={SourceBranchIcon} /> {workspace.branch.displayName}
+                    <Icon role="img" aria-hidden={true} as={SourceBranchIcon} /> {workspace.branch.displayName}
                 </span>
             )}
             {workspace.startedAt && (
@@ -176,11 +177,11 @@ const HiddenWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<Hi
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
         <Typography.H1 className="text-center text-muted mt-5">
-            <Icon as={EyeOffOutlineIcon} />
+            <Icon role="img" aria-hidden={true} as={EyeOffOutlineIcon} />
             <VisuallyHidden>Hidden Workspace</VisuallyHidden>
         </Typography.H1>
-        <p className="text-center">This workspace is hidden due to permissions.</p>
-        <p className="text-center">Contact the owner of this batch change for more information.</p>
+        <Text alignment="center">This workspace is hidden due to permissions.</Text>
+        <Text alignment="center">Contact the owner of this batch change for more information.</Text>
     </>
 )
 
@@ -234,7 +235,7 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
                             outline={true}
                             variant="danger"
                         >
-                            <Icon as={SyncIcon} /> Retry
+                            <Icon role="img" aria-hidden={true} as={SyncIcon} /> Retry
                         </Button>
                     </div>
                     {retryError && <ErrorAlert error={retryError} />}
@@ -244,7 +245,7 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
             {workspace.changesetSpecs && workspace.state === BatchSpecWorkspaceState.COMPLETED && (
                 <div className="mb-3">
                     {workspace.changesetSpecs.length === 0 && (
-                        <p className="mb-0 text-muted">This workspace generated no changeset specs.</p>
+                        <Text className="mb-0 text-muted">This workspace generated no changeset specs.</Text>
                     )}
                     {workspace.changesetSpecs.map((changesetSpec, index) => (
                         <React.Fragment key={changesetSpec.id}>
@@ -286,14 +287,14 @@ const IgnoredWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<I
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
         <Typography.H1 className="text-center text-muted mt-5">
-            <Icon as={LinkVariantRemoveIcon} />
+            <Icon role="img" aria-hidden={true} as={LinkVariantRemoveIcon} />
             <VisuallyHidden>Ignored Workspace</VisuallyHidden>
         </Typography.H1>
-        <p className="text-center">
+        <Text alignment="center">
             This workspace has been skipped because a <Typography.Code>.batchignore</Typography.Code> file is present in
             the workspace repository.
-        </p>
-        <p className="text-center">Enable the execution option to "allow ignored" to override.</p>
+        </Text>
+        <Text alignment="center">Enable the execution option to "allow ignored" to override.</Text>
     </>
 )
 
@@ -307,11 +308,11 @@ const UnsupportedWorkspaceDetails: React.FunctionComponent<
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
         <Typography.H1 className="text-center text-muted mt-5">
-            <Icon as={LinkVariantRemoveIcon} />
+            <Icon role="img" aria-hidden={true} as={LinkVariantRemoveIcon} />
             <VisuallyHidden>Unsupported Workspace</VisuallyHidden>
         </Typography.H1>
-        <p className="text-center">This workspace has been skipped because it is from an unsupported codehost.</p>
-        <p className="text-center">Enable the execution option to "allow unsupported" to override.</p>
+        <Text alignment="center">This workspace has been skipped because it is from an unsupported codehost.</Text>
+        <Text alignment="center">Enable the execution option to "allow unsupported" to override.</Text>
     </>
 )
 
@@ -381,7 +382,7 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                             )}{' '}
                         </Typography.H4>
                         <span className="text-muted">
-                            <Icon as={SourceBranchIcon} /> {node.description.headRef}
+                            <Icon role="img" aria-hidden={true} as={SourceBranchIcon} /> {node.description.headRef}
                         </span>
                     </div>
                     <DiffStat {...node.description.diffStat} expandedCounts={true} />
@@ -395,10 +396,10 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                 <CardBody>
                     <Typography.H3>Changeset template</Typography.H3>
                     <Typography.H4>{node.description.title}</Typography.H4>
-                    <p className="mb-0">{node.description.body}</p>
-                    <p>
+                    <Text className="mb-0">{node.description.body}</Text>
+                    <Text>
                         <strong>Published:</strong> <PublishedValue published={node.description.published} />
-                    </p>
+                    </Text>
                     <Collapsible
                         title={<Typography.H3 className="mb-0">Changes</Typography.H3>}
                         titleClassName="flex-grow-1"
@@ -509,13 +510,13 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                             </TabList>
                             <TabPanels>
                                 <TabPanel className="pt-2" key="logs">
-                                    {!step.startedAt && <p className="text-muted mb-0">Step not started yet</p>}
+                                    {!step.startedAt && <Text className="text-muted mb-0">Step not started yet</Text>}
                                     {step.startedAt && outputLines && <LogOutput text={outputLines.join('\n')} />}
                                 </TabPanel>
                                 <TabPanel className="pt-2" key="output-variables">
-                                    {!step.startedAt && <p className="text-muted mb-0">Step not started yet</p>}
+                                    {!step.startedAt && <Text className="text-muted mb-0">Step not started yet</Text>}
                                     {step.outputVariables?.length === 0 && (
-                                        <p className="text-muted mb-0">No output variables specified</p>
+                                        <Text className="text-muted mb-0">No output variables specified</Text>
                                     )}
                                     <ul className="mb-0">
                                         {step.outputVariables?.map(variable => (
@@ -526,7 +527,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                     </ul>
                                 </TabPanel>
                                 <TabPanel className="pt-2" key="diff">
-                                    {!step.startedAt && <p className="text-muted mb-0">Step not started yet</p>}
+                                    {!step.startedAt && <Text className="text-muted mb-0">Step not started yet</Text>}
                                     {step.startedAt && (
                                         <WorkspaceStepFileDiffConnection
                                             isLightTheme={isLightTheme}
@@ -538,7 +539,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                 </TabPanel>
                                 <TabPanel className="pt-2" key="files-env">
                                     {step.environment.length === 0 && (
-                                        <p className="text-muted mb-0">No environment variables specified</p>
+                                        <Text className="text-muted mb-0">No environment variables specified</Text>
                                     )}
                                     <ul className="mb-0">
                                         {step.environment.map(variable => (
@@ -558,18 +559,18 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                     <Typography.H4>Command</Typography.H4>
                                     <LogOutput text={step.run} className="mb-2" />
                                     <Typography.H4>Container</Typography.H4>
-                                    <p className="text-monospace mb-0">{step.container}</p>
+                                    <Text className="text-monospace mb-0">{step.container}</Text>
                                 </TabPanel>
                             </TabPanels>
                         </Tabs>
                     )}
                     {step.skipped && (
-                        <p className="mb-0">
+                        <Text className="mb-0">
                             <strong>
                                 Step has been skipped
                                 {cachedResultFound && <> because a cached result was found for this workspace</>}.
                             </strong>
-                        </p>
+                        </Text>
                     )}
                 </CardBody>
             </Card>
@@ -584,27 +585,63 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
     if (step.cachedResultFound) {
         return (
             <Icon
+                role="img"
                 className="text-success"
+                aria-label="A cached result for this step has been found"
                 data-tooltip="A cached result for this step has been found"
                 as={ContentSaveIcon}
             />
         )
     }
     if (step.skipped) {
-        return <Icon className="text-muted" data-tooltip="The step has been skipped" as={LinkVariantRemoveIcon} />
+        return (
+            <Icon
+                role="img"
+                className="text-muted"
+                aria-label="The step has been skipped"
+                data-tooltip="The step has been skipped"
+                as={LinkVariantRemoveIcon}
+            />
+        )
     }
     if (!step.startedAt) {
-        return <Icon className="text-muted" data-tooltip="This step is waiting to be processed" as={TimerSandIcon} />
+        return (
+            <Icon
+                role="img"
+                className="text-muted"
+                aria-label="This step is waiting to be processed"
+                data-tooltip="This step is waiting to be processed"
+                as={TimerSandIcon}
+            />
+        )
     }
     if (!step.finishedAt) {
-        return <Icon className="text-muted" data-tooltip="This step is currently running" as={LoadingSpinner} />
+        return (
+            <Icon
+                role="img"
+                className="text-muted"
+                aria-label="This step is currently running"
+                data-tooltip="This step is currently running"
+                as={LoadingSpinner}
+            />
+        )
     }
     if (step.exitCode === 0) {
-        return <Icon className="text-success" data-tooltip="This step ran successfully" as={CheckBoldIcon} />
+        return (
+            <Icon
+                role="img"
+                className="text-success"
+                aria-label="This step ran successfully"
+                data-tooltip="This step ran successfully"
+                as={CheckBoldIcon}
+            />
+        )
     }
     return (
         <Icon
+            role="img"
             className="text-danger"
+            aria-label={`This step failed with exit code ${String(step.exitCode)}`}
             data-tooltip={`This step failed with exit code ${String(step.exitCode)}`}
             as={AlertCircleIcon}
         />

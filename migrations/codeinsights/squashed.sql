@@ -11,6 +11,17 @@ CREATE TYPE presentation_type_enum AS ENUM (
     'PIE'
 );
 
+CREATE TYPE series_sort_direction_enum AS ENUM (
+    'ASC',
+    'DESC'
+);
+
+CREATE TYPE series_sort_mode_enum AS ENUM (
+    'RESULT_COUNT',
+    'LEXICOGRAPHICAL',
+    'DATE_ADDED'
+);
+
 CREATE TYPE time_unit AS ENUM (
     'HOUR',
     'DAY',
@@ -201,7 +212,10 @@ CREATE TABLE insight_view (
     other_threshold double precision,
     presentation_type presentation_type_enum DEFAULT 'LINE'::presentation_type_enum NOT NULL,
     is_frozen boolean DEFAULT false NOT NULL,
-    default_filter_search_contexts text[]
+    default_filter_search_contexts text[],
+    series_sort_mode series_sort_mode_enum,
+    series_sort_direction series_sort_direction_enum,
+    series_limit integer
 );
 
 COMMENT ON TABLE insight_view IS 'Views for insight data series. An insight view is an abstraction on top of an insight data series that allows for lightweight modifications to filters or metadata without regenerating the underlying series.';

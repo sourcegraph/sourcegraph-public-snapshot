@@ -61,7 +61,7 @@ export const EditBatchSpecPage: React.FunctionComponent<React.PropsWithChildren<
     if (loading && !data) {
         return (
             <div className="w-100 text-center">
-                <Icon className="m-2" as={LoadingSpinner} />
+                <Icon role="img" aria-label="Loading" className="m-2" as={LoadingSpinner} />
             </div>
         )
     }

@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { Button, Modal, Link, Alert, Typography } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, Alert, Typography, Text } from '@sourcegraph/wildcard'
 
 import { updateExternalService } from '../../../components/externalServices/backend'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -111,7 +111,7 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<
                                     />
                                     <EncryptedDataIcon />
                                 </div>
-                                <p className="mt-1">{hintFragment}</p>
+                                <Text className="mt-1">{hintFragment}</Text>
                             </>
                         ) : (
                             machineUserFragment

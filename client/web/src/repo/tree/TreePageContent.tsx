@@ -18,7 +18,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Typography, useObservable } from '@sourcegraph/wildcard'
+import { Button, Typography, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -139,7 +139,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         <>No commits in this tree.</>
     ) : (
         <div className="test-tree-page-no-recent-commits">
-            <p className="mb-2">No commits in this tree in the past year.</p>
+            <Text className="mb-2">No commits in this tree in the past year.</Text>
             <Button
                 className="test-tree-page-show-all-commits"
                 onClick={onShowOlderCommitsClicked}
@@ -161,9 +161,9 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                 </>
             ) : (
                 <>
-                    <p className="mb-2">
+                    <Text className="mb-2">
                         {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
-                    </p>
+                    </Text>
                     <Button onClick={onShowOlderCommitsClicked} variant="secondary" size="sm">
                         Show all commits
                     </Button>

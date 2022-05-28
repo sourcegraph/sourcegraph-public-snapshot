@@ -17,7 +17,7 @@ export const CodeHost: React.FunctionComponent<React.PropsWithChildren<Props>> =
     const ExternalServiceIcon = defaultExternalServices[externalServiceKind].icon
     return (
         <li>
-            <Icon className="mr-2" as={ExternalServiceIcon} />
+            <Icon role="img" aria-hidden={true} className="mr-2" as={ExternalServiceIcon} />
             {externalServiceURL}
         </li>
     )

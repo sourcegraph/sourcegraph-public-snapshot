@@ -5,7 +5,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Button, Grid, Typography } from '..'
+import { Button, Grid, Typography, Text } from '..'
 
 import { Tooltip } from './Tooltip'
 import { TooltipController } from './TooltipController'
@@ -41,9 +41,9 @@ export default config
 
 export const Basic: Story = () => (
     <>
-        <p>
+        <Text>
             You can <strong data-tooltip="Tooltip 1">hover me</strong> or <strong data-tooltip="Tooltip 2">me</strong>.
-        </p>
+        </Text>
     </>
 )
 
@@ -121,12 +121,12 @@ export const Pinned: Story = () => {
             <span data-tooltip="My tooltip" ref={clickElement}>
                 Example
             </span>
-            <p>
+            <Text>
                 <small>
                     (A pinned tooltip is shown when the target element is rendered, without any user interaction
                     needed.)
                 </small>
-            </p>
+            </Text>
         </>
     )
 }
@@ -162,11 +162,11 @@ const ForceUpdateTooltip = () => {
             <Typography.H2>
                 Force update tooltip with <Typography.Code>TooltipController.forceUpdate()</Typography.Code>
             </Typography.H2>
-            <p>
+            <Text>
                 <Button variant="primary" onClick={onClick} data-tooltip={copied ? 'Copied!' : 'Click to copy'}>
                     Button
                 </Button>
-            </p>
+            </Text>
         </>
     )
 }

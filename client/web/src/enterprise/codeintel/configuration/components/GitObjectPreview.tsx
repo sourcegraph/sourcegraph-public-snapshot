@@ -4,7 +4,7 @@ import { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Badge, LoadingSpinner, Typography } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner, Typography, Text } from '@sourcegraph/wildcard'
 
 import { GitObjectType } from '../../../../graphql-operations'
 import { GitObjectPreviewResult, usePreviewGitObjectFilter } from '../hooks/usePreviewGitObjectFilter'
@@ -113,14 +113,14 @@ const GitObjectPreview: FunctionComponent<React.PropsWithChildren<GitObjectPrevi
                 {preview.preview.length === 0 ? (
                     <div className="mt-2 pt-2">
                         <div className={styles.empty}>
-                            <p className="text-monospace">N/A</p>
+                            <Text className="text-monospace">N/A</Text>
                         </div>
                     </div>
                 ) : (
                     <div className="mt-2 pt-2">
                         <div className={classNames('bg-dark text-light p-2', styles.container)}>
                             {preview.preview.map(tag => (
-                                <p key={`${tag.repoName}@${tag.name}`} className="text-monospace p-0 m-0">
+                                <Text key={`${tag.repoName}@${tag.name}`} className="text-monospace p-0 m-0">
                                     <span className="search-filter-keyword">repo:</span>
                                     <span>{tag.repoName}</span>
                                     <span className="search-filter-keyword">@</span>
@@ -128,7 +128,7 @@ const GitObjectPreview: FunctionComponent<React.PropsWithChildren<GitObjectPrevi
                                     <Badge variant="info" className="ml-4">
                                         {tag.rev.slice(0, 7)}
                                     </Badge>
-                                </p>
+                                </Text>
                             ))}
                         </div>
                     </div>
