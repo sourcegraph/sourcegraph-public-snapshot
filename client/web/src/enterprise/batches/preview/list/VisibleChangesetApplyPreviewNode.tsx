@@ -302,7 +302,7 @@ const ExpandedSection: React.FunctionComponent<
                         <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                             <Icon
                                 role="img"
-                                aria-hidden={true}
+                                aria-label="Changes in this tab"
                                 className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
                                 as={CheckboxBlankCircleIcon}
                             />
@@ -318,7 +318,7 @@ const ExpandedSection: React.FunctionComponent<
                         <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                             <Icon
                                 role="img"
-                                aria-hidden={true}
+                                aria-label="Changes in this tab"
                                 className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
                                 as={CheckboxBlankCircleIcon}
                             />
@@ -336,7 +336,7 @@ const ExpandedSection: React.FunctionComponent<
                         <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                             <Icon
                                 role="img"
-                                aria-hidden={true}
+                                aria-label="Changes in this tab"
                                 className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
                                 as={CheckboxBlankCircleIcon}
                             />

@@ -60,11 +60,7 @@ export const TriggerEvent: React.FunctionComponent<
 
     return (
         <>
-            <Button
-                onClick={toggleExpanded}
-                aria-label="alert"
-                className={classNames('btn-icon d-block', styles.expandButton)}
-            >
+            <Button onClick={toggleExpanded} className={classNames('btn-icon d-block', styles.expandButton)}>
                 <Icon
                     role="img"
                     aria-hidden={true}
