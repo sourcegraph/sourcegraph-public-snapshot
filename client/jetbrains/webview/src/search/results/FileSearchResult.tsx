@@ -66,8 +66,8 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({ match, select
             </div>
             {formattedRepositoryStarCount && (
                 <>
-                    <SearchResultStar />
-                    {formattedRepositoryStarCount}
+                    <SearchResultStar aria-label={`${formattedRepositoryStarCount} stars`} />
+                    <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
                 </>
             )}
         </div>

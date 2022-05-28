@@ -72,6 +72,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         submitSearch,
         showCopyQueryButton = true,
         structuralSearchDisabled,
+        ...otherProps
     } = props
 
     const submitOnToggle = useCallback(
@@ -118,12 +119,13 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
     const fullQuery = getFullQuery(navbarSearchQuery, selectedSearchContextSpec || '', caseSensitive, patternType)
 
     return (
-        <div className={classNames(className, styles.toggleContainer)}>
+        <div className={classNames(className, styles.toggleContainer)} {...otherProps}>
             <QueryInputToggle
                 title="Case sensitivity"
                 isActive={caseSensitive}
                 onToggle={toggleCaseSensitivity}
                 icon={FormatLetterCaseIcon}
+                interactive={props.interactive}
                 className="test-case-sensitivity-toggle"
                 activeClassName="test-case-sensitivity-toggle--active"
                 disableOn={[
@@ -147,6 +149,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                 isActive={patternType === SearchPatternType.regexp}
                 onToggle={toggleRegexp}
                 icon={RegexIcon}
+                interactive={props.interactive}
                 className="test-regexp-toggle"
                 activeClassName="test-regexp-toggle--active"
                 disableOn={[
@@ -164,6 +167,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                     isActive={patternType === SearchPatternType.structural}
                     onToggle={toggleStructuralSearch}
                     icon={CodeBracketsIcon}
+                    interactive={props.interactive}
                     disableOn={[
                         {
                             condition:

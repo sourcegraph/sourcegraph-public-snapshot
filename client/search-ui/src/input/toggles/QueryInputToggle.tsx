@@ -74,7 +74,7 @@ export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<T
 
     const interactiveProps = interactive
         ? { tabIndex: 0, 'data-tooltip': tooltipValue, onClick: onCheckboxToggled }
-        : {}
+        : { tabIndex: -1, 'aria-hidden': true, 'data-tooltip': tooltipValue }
 
     return (
         // Click events here are defined in useEffect
@@ -93,7 +93,7 @@ export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<T
             variant="icon"
             aria-disabled={!!disabledRule}
             aria-checked={isActive}
-            aria-label={`${props.title} toggle`}
+            aria-label={interactive ? `${props.title} toggle` : undefined}
             {...interactiveProps}
         >
             <Icon role="img" aria-hidden={true} as={props.icon} />
