@@ -60,7 +60,9 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<
                                 .map(hash => hash.slice(0, 7))
                                 .join(', ')}
                             <Icon
+                                role="img"
                                 className="ml-1"
+                                aria-label="This upload is retained to service code-intel queries for commit(s) with applicable retention policies."
                                 data-tooltip="This upload is retained to service code-intel queries for commit(s) with applicable retention policies."
                                 as={InformationOutlineIcon}
                             />
@@ -68,7 +70,9 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<
                     )}
                     {!match.configurationPolicy && (
                         <Icon
+                            role="img"
                             className="ml-1"
+                            aria-label="Uploads at the tip of the default branch are always retained indefinitely."
                             data-tooltip="Uploads at the tip of the default branch are always retained indefinitely."
                             as={InformationOutlineIcon}
                         />
@@ -99,7 +103,9 @@ const UploadReferenceRetentionMatchNode: FunctionComponent<
                         ))
                         .reduce((previous, current) => [previous, ', ', current])}
                     <Icon
+                        role="img"
                         className="ml-1"
+                        aria-label="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries."
                         data-tooltip="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries."
                         as={InformationOutlineIcon}
                     />

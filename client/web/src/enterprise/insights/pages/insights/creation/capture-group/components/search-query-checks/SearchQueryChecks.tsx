@@ -26,7 +26,7 @@ const CheckListItem: React.FunctionComponent<React.PropsWithChildren<{ valid: tr
     if (valid === true) {
         return (
             <>
-                <Icon className={classNames(styles.icon, 'text-success')} as={Check} />
+                <Icon role="img" aria-hidden={true} className={classNames(styles.icon, 'text-success')} as={Check} />
                 <span className={classNames(styles.valid, 'text-muted')}>{children}</span>
             </>
         )
@@ -35,7 +35,7 @@ const CheckListItem: React.FunctionComponent<React.PropsWithChildren<{ valid: tr
     if (valid === false) {
         return (
             <>
-                <Icon className={classNames(styles.icon, 'text-danger')} as={CloseIcon} />
+                <Icon role="img" aria-hidden={true} className={classNames(styles.icon, 'text-danger')} as={CloseIcon} />
                 <span className="text-muted">{children}</span>
             </>
         )
@@ -43,7 +43,12 @@ const CheckListItem: React.FunctionComponent<React.PropsWithChildren<{ valid: tr
 
     return (
         <>
-            <Icon className={classNames(styles.icon, styles.smaller)} as={RadioboxBlankIcon} />{' '}
+            <Icon
+                role="img"
+                aria-hidden={true}
+                className={classNames(styles.icon, styles.smaller)}
+                as={RadioboxBlankIcon}
+            />{' '}
             <span className="text-muted">{children}</span>
         </>
     )

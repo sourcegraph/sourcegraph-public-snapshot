@@ -72,7 +72,7 @@ export const SearchContextsListPage: React.FunctionComponent<
                 <PageHeader
                     actions={
                         <Button to="/contexts/new" variant="primary" as={Link}>
-                            <Icon as={PlusIcon} />
+                            <Icon role="img" aria-hidden={true} as={PlusIcon} />
                             Create search context
                         </Button>
                     }

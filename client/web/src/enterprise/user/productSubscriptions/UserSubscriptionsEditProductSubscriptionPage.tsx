@@ -113,7 +113,7 @@ export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionCompone
             ) : (
                 <>
                     <Button to={productSubscription.url} className="mb-3" variant="link" size="sm" as={Link}>
-                        <Icon as={ArrowLeftIcon} /> Subscription
+                        <Icon role="img" aria-hidden={true} as={ArrowLeftIcon} /> Subscription
                     </Button>
                     <Typography.H2>Upgrade or change subscription {productSubscription.name}</Typography.H2>
                     <ProductSubscriptionForm

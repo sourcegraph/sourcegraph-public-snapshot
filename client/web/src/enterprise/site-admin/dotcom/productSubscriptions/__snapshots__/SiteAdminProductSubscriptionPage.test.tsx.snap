@@ -13,7 +13,9 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
         href="/site-admin/dotcom/product/subscriptions"
       >
         <arrowlefticon
+          aria-hidden="true"
           class="iconInline"
+          role="img"
         />
          All subscriptions
       </a>
@@ -163,7 +165,9 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
           type="button"
         >
           <addicon
+            aria-hidden="true"
             class="iconInline"
+            role="img"
           />
            Generate new license manually
         </button>
