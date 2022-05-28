@@ -55,13 +55,17 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
+			fmt.Println("Name:", name)
+			// fmt.Printf("Config: %+v\n", config)
 			s, err := newBitbucketServerSource(&svc, config, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			var got []*types.Repo
+			fmt.Println("Repos:")
 			for _, r := range repos {
+				fmt.Println("R:", r)
 				got = append(got, s.makeRepo(r, false))
 			}
 
@@ -216,7 +220,7 @@ func TestListRepos(t *testing.T) {
 
 	config := map[string]*schema.BitbucketServerConnection{
 		"simple": {
-			Url:   "https://bitbucket.example.com",
+			Url:   "https:/example.com/",
 			Token: "secret",
 		},
 	}

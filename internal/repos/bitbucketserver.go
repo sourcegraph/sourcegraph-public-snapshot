@@ -113,7 +113,7 @@ func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (Source, 
 
 // ExternalServices returns a singleton slice containing the external service.
 func (s BitbucketServerSource) ExternalServices() types.ExternalServices {
-    fmt.Println("Hi")
+	fmt.Println("Hi")
 	return types.ExternalServices{s.svc}
 }
 
@@ -306,7 +306,7 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 	next := &bitbucketserver.PageToken{Limit: 1000}
 	for next.HasMore() {
 		fmt.Println("Starting LabeledRepos")
-		fmt.Println(label)
+		fmt.Println("Label:", label)
 		fmt.Printf("%+v\n", next)
 		repos, page, err := s.client.LabeledRepos(ctx, next, label)
 		fmt.Println("Done with LabeledRepos")

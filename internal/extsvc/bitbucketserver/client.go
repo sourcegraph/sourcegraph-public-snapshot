@@ -813,12 +813,15 @@ func (c *Client) Repos(ctx context.Context, pageToken *PageToken, searchQueries 
 }
 
 func (c *Client) LabeledRepos(ctx context.Context, pageToken *PageToken, label string) ([]*Repo, *PageToken, error) {
+	fmt.Println("IN LABELED REPOS")
 	u := fmt.Sprintf("rest/api/1.0/labels/%s/labeled", label)
 	qry := url.Values{
 		"REPOSITORY": []string{""},
 	}
 
 	var repos []*Repo
+	fmt.Println("URL:", u)
+	fmt.Printf("PageToken: %+v\n", pageToken)
 	next, err := c.page(ctx, u, qry, pageToken, &repos)
 	return repos, next, err
 }
@@ -869,11 +872,13 @@ func (c *Client) Fork(ctx context.Context, projectKey, repoSlug string, input Cr
 }
 
 func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results any) (*PageToken, error) {
+	fmt.Println("Query:", qry)
 	if qry == nil {
 		qry = make(url.Values)
 	}
 
 	for k, vs := range token.Values() {
+		fmt.Println("k:", k)
 		qry[k] = append(qry[k], vs...)
 	}
 
@@ -928,13 +933,14 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	}
 
 	fmt.Println("HTTP C.DO")
-	fmt.Printf("%+v\n", req)
 
 	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx),
 		req.WithContext(ctx),
 		nethttp.OperationName("Bitbucket Server"),
 		nethttp.ClientTrace(false))
+	fmt.Println("ht:", ht)
 	defer ht.Finish()
+	fmt.Println("Passed finish")
 
 	if err := c.Auth.Authenticate(req); err != nil {
 		return nil, err
@@ -944,18 +950,27 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 		return nil, err
 	}
 
+	fmt.Printf("REQ:%+v\n", req)
 	resp, err := c.httpClient.Do(req)
+	fmt.Println("ERROR:", err)
 	if err != nil {
 		return nil, err
 	}
 
 	defer resp.Body.Close()
 
+	fmt.Println("READING FROM RESP BODY")
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
+	fmt.Println("FOR LOOP")
+	for data := range bs {
+		fmt.Println("Data:", data)
+	}
+
+	fmt.Println("StatusCode:", resp.StatusCode)
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		return nil, errors.WithStack(&httpError{
 			URL:        req.URL,
