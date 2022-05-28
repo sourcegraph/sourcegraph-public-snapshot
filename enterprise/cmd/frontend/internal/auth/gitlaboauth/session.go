@@ -57,8 +57,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, message, errors.New(message)
 	}
 
-	// If allowSignup is true, we will create an account using the email address from GitHub.
-	// If not set or false, a new account is not created.
+	// If allowSignup is true, we will create an account using the email address from GitLab.
+	// If not set or false, a new account will not be created.
 	signupAllowed := false
 	if s.allowSignup {
 		signupAllowed = true
