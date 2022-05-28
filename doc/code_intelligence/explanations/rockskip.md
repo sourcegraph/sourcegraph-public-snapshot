@@ -16,7 +16,7 @@ You can always try Rockskip for a while and if it doesn't help then you can disa
 
 ## How do I enable Rockskip?
 
-To enable it, set these environment variables on the `symbols` container:
+**Step 1:** Set these environment variables on the `symbols` container:
 
 For Kubernetes:
 
@@ -50,9 +50,17 @@ services:
 
 For other deployments, make sure the `symbols` service has access to the codeintel DB then set the environment variables.
 
-## How do I use Rockskip?
+**Step 2:** Kick off indexing
 
-Simply visit your repository in Sourcegraph and open the symbols sidebar to kick off indexing.
+1. Visit your repository in the Sourcegraph UI
+1. Click on the branch selector, click **Commits**, and select the second most recent commit (this avoids routing the request to Zoekt)
+1. Open the symbols sidebar to kick off indexing (it's ok to see a loading spinner, that probably means indexing is in progress)
+
+**Step 3:** See the section below to [check on the indexing status](#how-do-i-check-the-indexing-status).
+
+**Step 4:** Open the symbols sidebar again and the symbols should appear quickly. Hover popovers and jump-to-definition via search-based code intelligence should also respond quickly.
+
+That's it! New commits will be indexed automatically when users visit them.
 
 ## How long does indexing take?
 
