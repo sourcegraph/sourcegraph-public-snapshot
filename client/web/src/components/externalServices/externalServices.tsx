@@ -13,7 +13,7 @@ import LanguagePythonIcon from 'mdi-react/LanguagePythonIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { Link, Typography } from '@sourcegraph/wildcard'
+import { Link, Typography, Text } from '@sourcegraph/wildcard'
 
 import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../../schema/bitbucket_cloud.schema.json'
@@ -168,7 +168,7 @@ const githubInstructions = (isEnterprise: boolean): JSX.Element => (
                 </ul>
             </li>
         </ol>
-        <p>
+        <Text>
             See{' '}
             <Link
                 rel="noopener noreferrer"
@@ -178,7 +178,7 @@ const githubInstructions = (isEnterprise: boolean): JSX.Element => (
                 the docs for more options
             </Link>
             , or try one of the buttons below.
-        </p>
+        </Text>
     </div>
 )
 
@@ -236,7 +236,7 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
                 </ul>
             </li>
         </ol>
-        <p>
+        <Text>
             See{' '}
             <Link
                 rel="noopener noreferrer"
@@ -246,7 +246,7 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
                 the docs for more options
             </Link>
             , or try one of the buttons below.
-        </p>
+        </Text>
     </div>
 )
 
@@ -594,7 +594,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
                     You can optionally exclude repositories using the <Field>exclude</Field> field.
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -604,7 +604,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
                     the docs for more options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -732,7 +732,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
                     index.
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -742,7 +742,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
                     the docs for more options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
 }
@@ -821,7 +821,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
                     </ul>
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -831,7 +831,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
                     the docs for more options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -954,16 +954,16 @@ const SRC_SERVE_GIT: AddExternalServiceOptions = {
 }`,
     instructions: (
         <div>
-            <p>
+            <Text>
                 In the configuration below, set <Field>url</Field> to be the URL of src serve-git.
-            </p>
-            <p>
+            </Text>
+            <Text>
                 Install the{' '}
                 <Link rel="noopener noreferrer" target="_blank" to="https://github.com/sourcegraph/src-cli">
                     Sourcegraph CLI (src)
                 </Link>
                 . src serve-git allows you to serve any git repositories that you have on disk.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -1000,7 +1000,7 @@ const GITOLITE: AddExternalServiceOptions = {
                     Sourcegraph. This is typically the hostname of the Gitolite server.
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -1010,7 +1010,7 @@ const GITOLITE: AddExternalServiceOptions = {
                     the docs for more advanced options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -1105,7 +1105,7 @@ const GENERIC_GIT: AddExternalServiceOptions = {
                     appended to the host URL to obtain the repository clone URLs.
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -1115,7 +1115,7 @@ const GENERIC_GIT: AddExternalServiceOptions = {
                     the docs for more options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -1164,7 +1164,7 @@ const PERFORCE: AddExternalServiceOptions = {
                     Set the <Field>p4.passwd</Field> field to be the ticket value of the authenticated user.
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -1174,7 +1174,7 @@ const PERFORCE: AddExternalServiceOptions = {
                     the docs for more advanced options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -1225,8 +1225,8 @@ const JVM_PACKAGES: AddExternalServiceOptions = {
                     <Typography.Code>"org.hamcrest:hamcrest-core:1.3:default"</Typography.Code>.
                 </li>
             </ol>
-            <p>⚠️ JVM dependency repositories are visible by all users of the Sourcegraph instance.</p>
-            <p>⚠️ It is only possible to register one JVM dependency code host per Sourcegraph instance.</p>
+            <Text>⚠️ JVM dependency repositories are visible by all users of the Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one JVM dependency code host per Sourcegraph instance.</Text>
         </div>
     ),
     editorActions: [],
@@ -1303,8 +1303,8 @@ const NPM_PACKAGES: AddExternalServiceOptions = {
                     <Typography.Code>"@types/lodash@4.14.177"</Typography.Code>. Version ranges are not supported.
                 </li>
             </ol>
-            <p>⚠️ npm package repositories are visible by all users of the Sourcegraph instance.</p>
-            <p>⚠️ It is only possible to register one npm package code host per Sourcegraph instance.</p>
+            <Text>⚠️ npm package repositories are visible by all users of the Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one npm package code host per Sourcegraph instance.</Text>
         </div>
     ),
     editorActions: [],
@@ -1335,8 +1335,8 @@ const GO_MODULES = {
                     manually add. For example, <Typography.Code>"cloud.google.com/go/kms@v1.1.0"</Typography.Code>.
                 </li>
             </ol>
-            <p>⚠️ go module repositories are visible by all users of the Sourcegraph instance.</p>
-            <p>⚠️ It is only possible to register one go modules code host per Sourcegraph instance.</p>
+            <Text>⚠️ go module repositories are visible by all users of the Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one go modules code host per Sourcegraph instance.</Text>
         </div>
     ),
     editorActions: [],
@@ -1367,8 +1367,8 @@ const PYTHON_PACKAGES = {
                     manually add. For example, <Typography.Code>"numpy==1.22.3"</Typography.Code>.
                 </li>
             </ol>
-            <p>⚠️ Python package repositories are visible by all users of the Sourcegraph instance.</p>
-            <p>⚠️ It is only possible to register one Python packages code host per Sourcegraph instance.</p>
+            <Text>⚠️ Python package repositories are visible by all users of the Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one Python packages code host per Sourcegraph instance.</Text>
         </div>
     ),
     editorActions: [],

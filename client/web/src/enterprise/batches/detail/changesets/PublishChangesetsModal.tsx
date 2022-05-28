@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, Checkbox, Modal, Typography } from '@sourcegraph/wildcard'
+import { Button, Checkbox, Modal, Typography, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
 import { Scalars } from '../../../../graphql-operations'
@@ -46,7 +46,9 @@ export const PublishChangesetsModal: React.FunctionComponent<React.PropsWithChil
     return (
         <Modal onDismiss={onCancel} aria-labelledby={MODAL_LABEL_ID}>
             <Typography.H3 id={MODAL_LABEL_ID}>Publish changesets</Typography.H3>
-            <p className="mb-4">Are you sure you want to publish all the selected changesets to the code hosts?</p>
+            <Text className="mb-4">
+                Are you sure you want to publish all the selected changesets to the code hosts?
+            </Text>
             <Form>
                 <div className="form-group">
                     <Checkbox

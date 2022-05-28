@@ -1,4 +1,4 @@
-import { PropsWithChildren, ReactElement } from 'react'
+import { FunctionComponent, PropsWithChildren, ReactElement } from 'react'
 
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
@@ -42,11 +42,7 @@ export function FilterCollapseSection(props: PropsWithChildren<FilterCollapseSec
 
                     <span className={styles.buttonText}>{title}</span>
 
-                    {!open && preview && (
-                        <TruncatedText className={styles.filterBadge}>
-                            <SyntaxHighlightedSearchQuery query={preview} />
-                        </TruncatedText>
-                    )}
+                    {!open && preview && <FilterPreviewPill text={preview} className={styles.panelPreview} />}
                     {hasActiveFilter && <div className={styles.changedFilterMarker} />}
                 </CollapseHeader>
 
@@ -55,5 +51,20 @@ export function FilterCollapseSection(props: PropsWithChildren<FilterCollapseSec
                 {withSeparators && <hr />}
             </Collapse>
         </div>
+    )
+}
+
+export interface FilterPreviewPillProps {
+    text: string
+    className?: string
+}
+
+export const FilterPreviewPill: FunctionComponent<FilterPreviewPillProps> = props => {
+    const { text, className } = props
+
+    return (
+        <TruncatedText className={classNames(className, styles.filterBadge)}>
+            <SyntaxHighlightedSearchQuery query={text} />
+        </TruncatedText>
     )
 }

@@ -21,7 +21,9 @@ exports[`SiteInitPage normal 1`] = `
         >
           Welcome
         </h2>
-        <p>
+        <p
+          class=""
+        >
           Create an admin account to start using Sourcegraph.
         </p>
         <form
@@ -173,7 +175,9 @@ exports[`SiteInitPage unexpected authed user 1`] = `
           class="w-100 mb-3"
           src="/img/sourcegraph-logo-light.svg"
         />
-        <p>
+        <p
+          class=""
+        >
           You're signed in as 
           <strong>
             alice

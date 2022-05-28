@@ -35,7 +35,7 @@ func (j *uploadExpirerJob) Config() []env.Config {
 
 func (j *uploadExpirerJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
-		Logger:     logger.Scoped("routines", "janitor job routines"),
+		Logger:     logger.Scoped("routines", "codeintel job routines"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

@@ -150,7 +150,9 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
             </a>
           </div>
         </div>
-        <p>
+        <p
+          class=""
+        >
           New to Sourcegraph? 
           <a
             class="anchorLink"
@@ -308,7 +310,9 @@ exports[`SignInPage renders sign in page (server) 1`] = `
             </a>
           </div>
         </div>
-        <p>
+        <p
+          class=""
+        >
           New to Sourcegraph? 
           <a
             class="anchorLink"

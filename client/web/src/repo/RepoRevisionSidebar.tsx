@@ -81,8 +81,9 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                 className={classNames('position-absolute border-top border-bottom border-right mt-4', styles.toggle)}
                 onClick={() => handleSidebarToggle(true)}
                 data-tooltip="Show sidebar"
+                aria-label="Show sidebar"
             >
-                <Icon as={ChevronDoubleRightIcon} />
+                <Icon role="img" as={ChevronDoubleRightIcon} aria-hidden={true} />
             </Button>
         )
     }
@@ -110,8 +111,14 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                                 title="Hide sidebar"
                                 data-tooltip="Hide sidebar"
                                 data-placement="right"
+                                aria-label="Hide sidebar"
                             >
-                                <Icon className={styles.closeIcon} as={ChevronDoubleLeftIcon} />
+                                <Icon
+                                    role="img"
+                                    className={styles.closeIcon}
+                                    as={ChevronDoubleLeftIcon}
+                                    aria-hidden={true}
+                                />
                             </Button>
                         }
                     >

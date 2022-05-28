@@ -6,7 +6,7 @@ import { RouteComponentProps } from 'react-router'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, useObservable, Alert, Link, Typography } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Alert, Link, Typography, Text } from '@sourcegraph/wildcard'
 
 import awsCodeCommitJSON from '../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../schema/bitbucket_cloud.schema.json'
@@ -118,7 +118,7 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
         <div>
             <PageTitle title="Report a bug - Admin" />
             <Typography.H2>Report a bug</Typography.H2>
-            <p>
+            <Text>
                 <Link
                     target="_blank"
                     rel="noopener noreferrer"
@@ -132,7 +132,7 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
                     support@sourcegraph.com
                 </Link>{' '}
                 instead.
-            </p>
+            </Text>
             <Alert variant="warning">
                 <div>
                     Please redact any secrets before sharing, whether on the public issue tracker or with

@@ -4,7 +4,7 @@ import { kebabCase } from 'lodash'
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button, Icon } from '@sourcegraph/wildcard'
+import { Link, Button, Icon, Text } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchChangeFields } from '../../graphql-operations'
@@ -113,9 +113,9 @@ export const BatchSpecMeta: React.FunctionComponent<React.PropsWithChildren<Batc
     lastApplier,
     lastAppliedAt,
 }) => (
-    <p className="mb-2">
+    <Text className="mb-2">
         {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'}{' '}
         {createdAt === lastAppliedAt ? 'created' : 'updated'} this batch change{' '}
         <Timestamp date={lastAppliedAt ?? createdAt} /> by applying the following batch spec:
-    </p>
+    </Text>
 )

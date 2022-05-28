@@ -5,7 +5,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import { noop } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, Link, useObservable, useDebounce, Icon, Input, Typography } from '@sourcegraph/wildcard'
+import { Button, Card, Link, useObservable, useDebounce, Icon, Input, Typography, Text } from '@sourcegraph/wildcard'
 
 import { getDefaultInputProps } from '../../../../../components/form/getDefaultInputProps'
 import { useField } from '../../../../../components/form/hooks/useField'
@@ -135,11 +135,11 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
                     Draw insights from your codebase about how different initiatives track over time
                 </Typography.H2>
 
-                <p>
+                <Text>
                     Create visual dashboards with meaningful, customizable codebase signals your team can use to answer
                     questions about how your code is changing and what’s in your code {'\u2014'} questions that were
                     difficult or impossible to answer before.
-                </p>
+                </Text>
 
                 <Typography.H3 className={classNames(styles.bulletTitle)}>Use Code Insights to...</Typography.H3>
 
@@ -184,7 +184,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
 }
 
 const CalloutArrow: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = props => (
-    <p className={classNames(styles.calloutBlock, props.className)}>
+    <Text className={classNames(styles.calloutBlock, props.className)}>
         <svg
             width="59"
             height="41"
@@ -199,5 +199,5 @@ const CalloutArrow: React.FunctionComponent<React.PropsWithChildren<{ className?
             />
         </svg>
         <span className="text-muted">This insight is interactive! Type any search query or change the repo.</span>
-    </p>
+    </Text>
 )
