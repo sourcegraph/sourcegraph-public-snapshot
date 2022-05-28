@@ -6,7 +6,7 @@ import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CopyableText } from '../../../components/CopyableText'
@@ -110,11 +110,11 @@ export const InvitePane: React.FunctionComponent<React.PropsWithChildren<Props>>
         <div className={classNames(className, 'mx-2')}>
             <div className={styles.titleDescription}>
                 <Typography.H3>Introduce friends and colleagues to Sourcegraph</Typography.H3>
-                <p className="text-muted mb-4">
+                <Text className="text-muted mb-4">
                     We’ll look for a few collaborators you might want to invite to Sourcegraph. These users won’t be
                     able to see your code unless they have access to it on the code host and also add that code to
                     Sourcegraph.
-                </p>
+                </Text>
             </div>
             {isErrorLike(inviteError) && <ErrorAlert error={inviteError} />}
             <div className="border overflow-hidden rounded">

@@ -24,6 +24,7 @@ import {
     Modal,
     Input,
     Typography,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
@@ -200,7 +201,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                         </>
                     ) : (
                         <>
-                            <Icon as={DeleteIcon} /> Delete
+                            <Icon role="img" as={DeleteIcon} aria-hidden={true} /> Delete
                         </>
                     )}
                 </Button>
@@ -564,10 +565,10 @@ const ManageFeatureFlag: FunctionComponent<
     return (
         <>
             <Typography.H3>Name</Typography.H3>
-            <p>{name}</p>
+            <Text>{name}</Text>
 
             <Typography.H3>Type</Typography.H3>
-            <p>{type.slice('FeatureFlag'.length)}</p>
+            <Text>{type.slice('FeatureFlag'.length)}</Text>
 
             <FeatureFlagValueSettings type={type} value={value} setFlagValue={setFlagValue} />
 

@@ -8,7 +8,7 @@ import { ContributableMenu } from '@sourcegraph/client-api'
 import { asError, ErrorLike, isErrorLike, hasProperty } from '@sourcegraph/common'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Typography } from '@sourcegraph/wildcard'
+import { Typography, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -32,7 +32,7 @@ const ContributionsTable: React.FunctionComponent<
 > = ({ contributionGroups, history }) => (
     <div>
         {contributionGroups.length === 0 && (
-            <p>This extension doesn't define any settings or actions. No configuration is required to use it.</p>
+            <Text>This extension doesn't define any settings or actions. No configuration is required to use it.</Text>
         )}
         {contributionGroups.map(
             (group, index) =>

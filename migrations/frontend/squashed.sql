@@ -22,6 +22,12 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 COMMENT ON EXTENSION pgcrypto IS 'cryptographic functions';
 
+CREATE TYPE audit_log_operation AS ENUM (
+    'create',
+    'modify',
+    'delete'
+);
+
 CREATE TYPE batch_changes_changeset_ui_publication_state AS ENUM (
     'UNPUBLISHED',
     'DRAFT',
@@ -143,9 +149,9 @@ CREATE FUNCTION func_configuration_policies_insert() RETURNS trigger
     AS $$
     BEGIN
         INSERT INTO configuration_policies_audit_logs
-        (policy_id, transition_columns)
+        (policy_id, operation, transition_columns)
         VALUES (
-            NEW.id,
+            NEW.id, 'create',
             func_configuration_policies_transition_columns_diff(
                 (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
                 func_row_to_configuration_policies_transition_columns(NEW)
@@ -224,11 +230,8 @@ CREATE FUNCTION func_configuration_policies_update() RETURNS trigger
 
         IF (array_length(diff, 1) > 0) THEN
             INSERT INTO configuration_policies_audit_logs
-            (policy_id, transition_columns)
-            VALUES (
-                NEW.id,
-                diff
-            );
+            (policy_id, operation, transition_columns)
+            VALUES (NEW.id, 'modify', diff);
         END IF;
 
         RETURN NEW;
@@ -267,11 +270,11 @@ CREATE FUNCTION func_lsif_uploads_insert() RETURNS trigger
         INSERT INTO lsif_uploads_audit_logs
         (upload_id, commit, root, repository_id, uploaded_at,
         indexer, indexer_version, upload_size, associated_index_id,
-        transition_columns)
+        operation, transition_columns)
         VALUES (
             NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,
             NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,
-            func_lsif_uploads_transition_columns_diff(
+            'create', func_lsif_uploads_transition_columns_diff(
                 (NULL, NULL, NULL, NULL, NULL, NULL),
                 func_row_to_lsif_uploads_transition_columns(NEW)
             )
@@ -335,12 +338,12 @@ CREATE FUNCTION func_lsif_uploads_update() RETURNS trigger
             INSERT INTO lsif_uploads_audit_logs
             (reason, upload_id, commit, root, repository_id, uploaded_at,
             indexer, indexer_version, upload_size, associated_index_id,
-            transition_columns)
+            operation, transition_columns)
             VALUES (
                 COALESCE(current_setting('codeintel.lsif_uploads_audit.reason', true), ''),
                 NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,
                 NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,
-                diff
+                'modify', diff
             );
         END IF;
 
@@ -1163,7 +1166,9 @@ CREATE TABLE configuration_policies_audit_logs (
     log_timestamp timestamp with time zone DEFAULT clock_timestamp(),
     record_deleted_at timestamp with time zone,
     policy_id integer NOT NULL,
-    transition_columns hstore[]
+    transition_columns hstore[],
+    sequence bigint NOT NULL,
+    operation audit_log_operation NOT NULL
 );
 
 COMMENT ON COLUMN configuration_policies_audit_logs.log_timestamp IS 'Timestamp for this log entry.';
@@ -1171,6 +1176,15 @@ COMMENT ON COLUMN configuration_policies_audit_logs.log_timestamp IS 'Timestamp 
 COMMENT ON COLUMN configuration_policies_audit_logs.record_deleted_at IS 'Set once the upload this entry is associated with is deleted. Once NOW() - record_deleted_at is above a certain threshold, this log entry will be deleted.';
 
 COMMENT ON COLUMN configuration_policies_audit_logs.transition_columns IS 'Array of changes that occurred to the upload for this entry, in the form of {"column"=>"<column name>", "old"=>"<previous value>", "new"=>"<new value>"}.';
+
+CREATE SEQUENCE configuration_policies_audit_logs_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE configuration_policies_audit_logs_seq OWNED BY configuration_policies_audit_logs.sequence;
 
 CREATE TABLE critical_and_site_config (
     id integer NOT NULL,
@@ -2134,7 +2148,9 @@ CREATE TABLE lsif_uploads_audit_logs (
     upload_size integer,
     associated_index_id integer,
     transition_columns hstore[],
-    reason text DEFAULT ''::text
+    reason text DEFAULT ''::text,
+    sequence bigint NOT NULL,
+    operation audit_log_operation NOT NULL
 );
 
 COMMENT ON COLUMN lsif_uploads_audit_logs.log_timestamp IS 'Timestamp for this log entry.';
@@ -2144,6 +2160,15 @@ COMMENT ON COLUMN lsif_uploads_audit_logs.record_deleted_at IS 'Set once the upl
 COMMENT ON COLUMN lsif_uploads_audit_logs.transition_columns IS 'Array of changes that occurred to the upload for this entry, in the form of {"column"=>"<column name>", "old"=>"<previous value>", "new"=>"<new value>"}.';
 
 COMMENT ON COLUMN lsif_uploads_audit_logs.reason IS 'The reason/source for this entry.';
+
+CREATE SEQUENCE lsif_uploads_audit_logs_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE lsif_uploads_audit_logs_seq OWNED BY lsif_uploads_audit_logs.sequence;
 
 CREATE TABLE lsif_uploads_visible_at_tip (
     repository_id integer NOT NULL,
@@ -2950,6 +2975,8 @@ ALTER TABLE ONLY codeintel_lockfile_references ALTER COLUMN id SET DEFAULT nextv
 
 ALTER TABLE ONLY codeintel_lockfiles ALTER COLUMN id SET DEFAULT nextval('codeintel_lockfiles_id_seq'::regclass);
 
+ALTER TABLE ONLY configuration_policies_audit_logs ALTER COLUMN sequence SET DEFAULT nextval('configuration_policies_audit_logs_seq'::regclass);
+
 ALTER TABLE ONLY critical_and_site_config ALTER COLUMN id SET DEFAULT nextval('critical_and_site_config_id_seq'::regclass);
 
 ALTER TABLE ONLY discussion_comments ALTER COLUMN id SET DEFAULT nextval('discussion_comments_id_seq'::regclass);
@@ -2991,6 +3018,8 @@ ALTER TABLE ONLY lsif_references ALTER COLUMN id SET DEFAULT nextval('lsif_refer
 ALTER TABLE ONLY lsif_retention_configuration ALTER COLUMN id SET DEFAULT nextval('lsif_retention_configuration_id_seq'::regclass);
 
 ALTER TABLE ONLY lsif_uploads ALTER COLUMN id SET DEFAULT nextval('lsif_dumps_id_seq'::regclass);
+
+ALTER TABLE ONLY lsif_uploads_audit_logs ALTER COLUMN sequence SET DEFAULT nextval('lsif_uploads_audit_logs_seq'::regclass);
 
 ALTER TABLE ONLY notebooks ALTER COLUMN id SET DEFAULT nextval('notebooks_id_seq'::regclass);
 

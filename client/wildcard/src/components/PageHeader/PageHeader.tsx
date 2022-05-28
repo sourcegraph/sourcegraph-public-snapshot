@@ -2,6 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
+import { Text } from '../Typography'
 import { HeadingElement } from '../Typography/Heading/Heading'
 
 import { Breadcrumb, BreadcrumbIcon, BreadcrumbText } from './Breadcrumb'
@@ -75,7 +76,7 @@ export const PageHeader: React.FunctionComponent<React.PropsWithChildren<PageHea
                 {annotation && <small className={styles.annotation}>{annotation}</small>}
                 {children || heading}
                 {byline && <small className={styles.byline}>{byline}</small>}
-                {description && <p className={styles.description}>{description}</p>}
+                {description && <Text className={styles.description}>{description}</Text>}
             </div>
             {actions && <div>{actions}</div>}
         </div>

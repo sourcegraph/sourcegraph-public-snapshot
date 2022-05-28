@@ -70,11 +70,17 @@ export const Input = forwardRef((props, reference) => {
                 <Component
                     disabled={disabled}
                     type={type}
-                    className={classNames(styles.input, inputClassName, 'form-control', 'with-invalid-icon', {
-                        'is-valid': status === InputStatus.valid,
-                        'is-invalid': error || status === InputStatus.error,
-                        'form-control-sm': variant === 'small',
-                    })}
+                    className={classNames(
+                        inputClassName,
+                        status === InputStatus.loading && styles.inputLoading,
+                        'form-control',
+                        'with-invalid-icon',
+                        {
+                            'is-valid': status === InputStatus.valid,
+                            'is-invalid': error || status === InputStatus.error,
+                            'form-control-sm': variant === 'small',
+                        }
+                    )}
                     {...otherProps}
                     ref={mergedReference}
                     autoFocus={autoFocus}

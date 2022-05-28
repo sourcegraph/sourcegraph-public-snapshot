@@ -46,7 +46,7 @@ func NewCommitIndexer(background context.Context, base database.DB, insights dbu
 	//TODO(insights): add a setting for historical index length
 	startTime := time.Now().AddDate(-1, 0, 0)
 
-	repoStore := database.Repos(base)
+	repoStore := base.Repos()
 
 	commitStore := NewCommitStore(insights)
 

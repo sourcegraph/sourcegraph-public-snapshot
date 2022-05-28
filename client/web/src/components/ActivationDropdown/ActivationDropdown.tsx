@@ -9,7 +9,7 @@ import { concatMap, delay, filter, map, pairwise, startWith, tap } from 'rxjs/op
 
 import { Activation, percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
-import { Menu, MenuButton, MenuList, Typography } from '@sourcegraph/wildcard'
+import { Menu, MenuButton, MenuList, Typography, Text } from '@sourcegraph/wildcard'
 
 import styles from './ActivationDropdown.module.scss'
 
@@ -137,7 +137,7 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
                                         ? 'Almost there!'
                                         : 'Welcome to Sourcegraph'}
                                 </Typography.H3>
-                                <p className="mb-2">Complete the steps below to finish onboarding!</p>
+                                <Text className="mb-2">Complete the steps below to finish onboarding!</Text>
                             </div>
                             <ActivationChecklist
                                 {...this.props}

@@ -115,7 +115,7 @@ func main() {
 	}
 	db := database.NewDB(sqlDB)
 
-	repoStore := database.Repos(db)
+	repoStore := db.Repos()
 	depsSvc := livedependencies.GetService(db, nil)
 	externalServiceStore := db.ExternalServices()
 

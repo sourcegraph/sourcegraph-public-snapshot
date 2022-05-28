@@ -11,7 +11,7 @@ import { asError, ErrorLike, pluralize, encodeURIPathComponent } from '@sourcegr
 import { gql, useQuery } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Button, Link, Badge, useEventObservable, Alert, LoadingSpinner, Typography } from '@sourcegraph/wildcard'
+import { Button, Link, Badge, useEventObservable, Alert, LoadingSpinner, Typography, Text } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
 import { CodeIntelligenceProps } from '../../codeintel'
@@ -156,7 +156,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
         <div className="w-100">No commits in this tree.</div>
     ) : (
         <div className="test-tree-page-no-recent-commits w-100">
-            <p className="mb-2">No commits in this tree in the past year.</p>
+            <Text className="mb-2">No commits in this tree in the past year.</Text>
             <div className="float-right">
                 <Button onClick={onShowOlderCommitsClicked} variant="link" size="sm" className="float-right p-0">
                     Show older commits
@@ -175,9 +175,9 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                 </>
             ) : (
                 <>
-                    <p className="mb-2">
+                    <Text className="mb-2">
                         {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
-                    </p>
+                    </Text>
                     <div className="float-right">
                         <Button
                             onClick={onShowOlderCommitsClicked}

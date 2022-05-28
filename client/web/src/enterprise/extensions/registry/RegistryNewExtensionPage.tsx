@@ -144,7 +144,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                                     rel="noopener"
                                     to="/help/extensions/authoring"
                                 >
-                                    <Icon as={HelpCircleOutline} />
+                                    <Icon role="img" aria-hidden={true} as={HelpCircleOutline} />
                                 </Link>
                             </>
                         }

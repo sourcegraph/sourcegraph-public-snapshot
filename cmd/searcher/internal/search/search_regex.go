@@ -217,7 +217,7 @@ func (rg *readerGrep) Find(zf *zipFile, f *srcFile, limit int) (matches []protoc
 
 		lastMatchIndex = matchIndex
 		lastLineNumber = lineNumber
-		matches = appendMatches(matches, fileBuf[lineStart:lineEnd], fileMatchBuf[lineStart:lineEnd], lineNumber, start-lineStart, end-lineStart)
+		matches = appendMatches(matches, fileBuf[lineStart:lineEnd], fileMatchBuf[lineStart:lineEnd], lineNumber, lineStart, start-lineStart, end-lineStart)
 	}
 	return matches, nil
 }
@@ -228,7 +228,7 @@ func hydrateLineNumbers(fileBuf []byte, lastLineNumber, lastMatchIndex, lineStar
 }
 
 // matchLineBuf is a byte slice that contains the full line(s) that the match appears on.
-func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []byte, lineNumber, start, end int) []protocol.LineMatch {
+func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []byte, lineNumber, lineOffset, start, end int) []protocol.LineMatch {
 	// If any newlines appear between start and end, we need to append multiple LineMatch.
 	// We assume there are no newlines before start.
 	for len(matchLineBuf) > 0 {
@@ -269,6 +269,7 @@ func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []
 				// Special care must be taken to call Close on all possible paths, including error paths.
 				Preview:          string(fileBuf[:limit]),
 				LineNumber:       lineNumber,
+				LineOffset:       lineOffset,
 				OffsetAndLengths: [][2]int{{offset, length}},
 			})
 		}

@@ -35,6 +35,7 @@ import {
     ButtonGroup,
     Button,
     Badge,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
@@ -263,7 +264,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                         path={[{ icon: SourceRepositoryIcon, text: displayRepoName(repo.name) }]}
                         className="mb-3 test-tree-page-title"
                     />
-                    {repo.description && <p>{repo.description}</p>}
+                    {repo.description && <Text>{repo.description}</Text>}
                 </div>
                 {isNewRepoPageEnabled && (
                     <ButtonGroup>
@@ -276,7 +277,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             as={Link}
                             className="ml-1"
                         >
-                            <Icon as={CodeJsonIcon} /> Search dependencies{' '}
+                            <Icon role="img" as={CodeJsonIcon} aria-hidden={true} /> Search dependencies{' '}
                             <Badge variant="info" className={classNames('text-uppercase')}>
                                 NEW
                             </Badge>
@@ -290,7 +291,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 as={Link}
                                 className="ml-1"
                             >
-                                <Icon as={BatchChangesIcon} /> Create batch change
+                                <Icon role="img" as={BatchChangesIcon} aria-hidden={true} /> Create batch change
                             </Button>
                         )}
 

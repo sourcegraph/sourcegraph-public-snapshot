@@ -6,7 +6,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 
 import { pluralize } from '@sourcegraph/common'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage, Button, Modal, Icon, Typography } from '@sourcegraph/wildcard'
+import { useLocalStorage, Button, Modal, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { FuzzySearch, FuzzySearchResult, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -123,7 +123,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
             }
             const links = fuzzyResult.links
             if (links.length === 0) {
-                setFuzzyResultElement(<p>No files matching '{query}'</p>)
+                setFuzzyResultElement(<Text>No files matching '{query}'</Text>)
                 setResultsCount(0)
                 setTotalFileCount(search.totalFileCount)
                 return setIsComplete(fuzzyResult.isComplete)
@@ -157,11 +157,11 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
         }
 
         if (props.isLoading) {
-            return empty(<p>Downloading...</p>)
+            return empty(<Text>Downloading...</Text>)
         }
 
         if (props.isError) {
-            return empty(<p>Error: {JSON.stringify(props.isError)}</p>)
+            return empty(<Text>Error: {JSON.stringify(props.isError)}</Text>)
         }
 
         switch (props.fsm.key) {
@@ -169,9 +169,9 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                 handleEmpty(props)
                 return empty(<></>)
             case 'downloading':
-                return empty(<p>Downloading...</p>)
+                return empty(<Text>Downloading...</Text>)
             case 'failed':
-                return empty(<p>Error: {props.fsm.errorMessage}</p>)
+                return empty(<Text>Error: {props.fsm.errorMessage}</Text>)
             case 'indexing': {
                 const loader = props.fsm.indexing
                 later()
@@ -183,7 +183,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
             case 'ready':
                 return renderFiles(props.fsm.fuzzy)
             default:
-                return empty(<p>ERROR</p>)
+                return empty(<Text>ERROR</Text>)
         }
     }, [props, focusIndex, maxResults, query])
 

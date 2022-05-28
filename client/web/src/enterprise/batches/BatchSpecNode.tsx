@@ -48,11 +48,7 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                {isExpanded ? (
-                    <Icon aria-label="Close section" as={ChevronDownIcon} />
-                ) : (
-                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
-                )}
+                <Icon role="img" aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
             </Button>
             <div className="d-flex flex-column justify-content-center align-items-center px-2 pb-1">
                 <StateIcon state={node.state} />
@@ -62,7 +58,13 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
                 <Typography.H3 className="pr-2">
                     {currentSpecID === node.id && (
                         <>
-                            <Icon className="text-warning" data-tooltip="Currently applied spec" as={StarIcon} />{' '}
+                            <Icon
+                                role="img"
+                                className="text-warning"
+                                data-tooltip="Currently applied spec"
+                                aria-label="Currently applied spec"
+                                as={StarIcon}
+                            />{' '}
                         </>
                     )}
                     {currentSpecID && (
@@ -113,19 +115,47 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
 const StateIcon: React.FunctionComponent<React.PropsWithChildren<{ state: BatchSpecState }>> = ({ state }) => {
     switch (state) {
         case BatchSpecState.COMPLETED:
-            return <Icon className={classNames(styles.nodeStateIcon, 'text-success mb-1')} as={CheckCircleIcon} />
+            return (
+                <Icon
+                    role="img"
+                    aria-hidden={true}
+                    className={classNames(styles.nodeStateIcon, 'text-success mb-1')}
+                    as={CheckCircleIcon}
+                />
+            )
 
         case BatchSpecState.PROCESSING:
         case BatchSpecState.QUEUED:
-            return <Icon className={classNames(styles.nodeStateIcon, 'text-muted mb-1')} as={TimerSandIcon} />
+            return (
+                <Icon
+                    role="img"
+                    aria-hidden={true}
+                    className={classNames(styles.nodeStateIcon, 'text-muted mb-1')}
+                    as={TimerSandIcon}
+                />
+            )
 
         case BatchSpecState.CANCELED:
         case BatchSpecState.CANCELING:
-            return <Icon className={classNames(styles.nodeStateIcon, 'text-muted mb-1')} as={CancelIcon} />
+            return (
+                <Icon
+                    role="img"
+                    aria-hidden={true}
+                    className={classNames(styles.nodeStateIcon, 'text-muted mb-1')}
+                    as={CancelIcon}
+                />
+            )
 
         case BatchSpecState.FAILED:
         default:
-            return <Icon className={classNames(styles.nodeStateIcon, 'text-danger mb-1')} as={AlertCircleIcon} />
+            return (
+                <Icon
+                    role="img"
+                    aria-hidden={true}
+                    className={classNames(styles.nodeStateIcon, 'text-danger mb-1')}
+                    as={AlertCircleIcon}
+                />
+            )
     }
 }
 
