@@ -11,7 +11,7 @@ func GitServer() *monitoring.Dashboard {
 	const containerName = "gitserver"
 
 	gitserverHighMemoryNoAlertTransformer := func(observable shared.Observable) shared.Observable {
-		return observable.WithNoAlerts(`Git asdfasdf is expected to use up all the memory it is provided.`)
+		return observable.WithNoAlerts(`Git Server is expected to use up all the memory it is provided.`)
 	}
 
 	provisioningIndicatorsOptions := &shared.ContainerProvisioningIndicatorsGroupOptions{
