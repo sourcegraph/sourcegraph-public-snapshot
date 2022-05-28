@@ -85,4 +85,5 @@
     "editor.insertSpaces": true,
     "editor.tabSize": 2,
   },
+  "window.title": "${activeEditorShort}${separator}${rootName} ${separator} [Branch: contractors/35169]",
 }

@@ -38,22 +38,20 @@ export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Pro
      * (every location change, for example). This prevents it from flickering.
      */
     const path = useMemo(
-        () => [
-            {
-                text: (
-                    <span className="align-middle">
-                        {props.user.displayName ? (
-                            <>
-                                {props.user.displayName} ({props.user.username})
-                            </>
-                        ) : (
-                            props.user.username
-                        )}
-                    </span>
-                ),
-                icon: () => <UserAvatar className={styles.avatar} user={props.user} />,
-            },
-        ],
+        () => ({
+            text: (
+                <span className="align-middle">
+                    {props.user.displayName ? (
+                        <>
+                            {props.user.displayName} ({props.user.username})
+                        </>
+                    ) : (
+                        props.user.username
+                    )}
+                </span>
+            ),
+            icon: () => <UserAvatar className={styles.avatar} user={props.user} />,
+        }),
         [props.user]
     )
 
@@ -62,11 +60,7 @@ export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Pro
             <div className="container">
                 <PageHeader className="mb-3">
                     <PageHeader.Heading as="h2" styleAs="h1">
-                        {path.map(({ text, icon }, index) => (
-                            <PageHeader.Breadcrumb key={index} icon={icon}>
-                                {text}
-                            </PageHeader.Breadcrumb>
-                        ))}
+                        <PageHeader.Breadcrumb icon={path.icon}>{path.text}</PageHeader.Breadcrumb>
                     </PageHeader.Heading>
                 </PageHeader>
                 <div className="d-flex align-items-end justify-content-between">
