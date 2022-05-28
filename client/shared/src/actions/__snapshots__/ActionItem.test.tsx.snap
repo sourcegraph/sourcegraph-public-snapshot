@@ -5,6 +5,7 @@ exports[`ActionItem "open" command renders as link 1`] = `
   <a
     class="anchorLink btn btnLink test-action-item actionItemLink"
     href="https://example.com/bar"
+    role="button"
     tabindex="0"
   >
      t 
@@ -18,6 +19,7 @@ exports[`ActionItem "open" command renders as link that opens in a new tab, but 
     class="anchorLink btn btnLink test-action-item actionItemLink"
     href="https://other.com/foo"
     rel="noopener noreferrer"
+    role="button"
     tabindex="0"
     target="_blank"
   >
@@ -32,6 +34,7 @@ exports[`ActionItem "open" command renders as link with icon and opens a new tab
     class="anchorLink btn btnLink test-action-item actionItemLink"
     href="https://other.com/foo"
     rel="noopener noreferrer"
+    role="button"
     tabindex="0"
     target="_blank"
   >

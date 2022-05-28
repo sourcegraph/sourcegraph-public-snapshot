@@ -53,6 +53,7 @@ export const StreamingProgressCount: React.FunctionComponent<
                         'repositories'
                     )}`}
                     as={InformationOutlineIcon}
+                    tabIndex={0}
                     aria-label={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
                         'repository',
                         progress.repositoriesCount,
