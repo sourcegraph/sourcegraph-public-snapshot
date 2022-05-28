@@ -42,9 +42,9 @@ type Context interface {
 //
 // Output is not appropriate for machine-readable data, such as JSON.
 type Output struct {
-	w    io.Writer
-	caps capabilities
-	opts OutputOpts
+	w       io.Writer
+	caps    capabilities
+	verbose bool
 
 	// Unsurprisingly, it would be bad if multiple goroutines wrote at the same
 	// time, so we have a basic mutex to guard against that.
@@ -83,7 +83,7 @@ var newCapabilityWatcher = func(opts OutputOpts) chan capabilities { return nil 
 func NewOutput(w io.Writer, opts OutputOpts) *Output {
 	caps, detectionErr := detectCapabilities(opts)
 
-	o := &Output{caps: caps, opts: opts, w: w}
+	o := &Output{caps: caps, verbose: opts.Verbose, w: w}
 	if newOutputPlatformQuirks != nil {
 		if err := newOutputPlatformQuirks(o); err != nil {
 			o.Verbosef("Error handling platform quirks: %v", err)
@@ -128,7 +128,7 @@ func (o *Output) Lock() {
 func (o *Output) SetVerbose() {
 	o.lock.Lock()
 	defer o.lock.Unlock()
-	o.opts.Verbose = true
+	o.verbose = true
 
 }
 
@@ -140,19 +140,19 @@ func (o *Output) Unlock() {
 }
 
 func (o *Output) Verbose(s string) {
-	if o.opts.Verbose {
+	if o.verbose {
 		o.Write(s)
 	}
 }
 
 func (o *Output) Verbosef(format string, args ...any) {
-	if o.opts.Verbose {
+	if o.verbose {
 		o.Writef(format, args...)
 	}
 }
 
 func (o *Output) VerboseLine(line FancyLine) {
-	if o.opts.Verbose {
+	if o.verbose {
 		o.WriteLine(line)
 	}
 }
