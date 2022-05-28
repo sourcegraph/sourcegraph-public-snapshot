@@ -29,7 +29,9 @@ func NewOutput(dst io.Writer, verbose bool) *Output {
 			ForceTTY:   true,
 			Verbose:    verbose,
 
-			// Buildkite output is always against a dark background.
+			// Buildkite output is always against a dark background, so we disable the
+			// detection. Note that for some reason the dark background detection hangs
+			// indefinitely in Buildkite, so ForceDarkBackground being set is a required.
 			ForceDarkBackground: inBuildkite,
 		}),
 		buildkite: inBuildkite,

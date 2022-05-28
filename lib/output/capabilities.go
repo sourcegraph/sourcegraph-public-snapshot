@@ -20,6 +20,9 @@ type capabilities struct {
 	DarkBackground bool
 }
 
+// detectCapabilities lazily evaluates capabilities using the given options. This means
+// that if an override is indicated in opts, no inference of the relevant capabilities
+// is done at all.
 func detectCapabilities(opts OutputOpts) (caps capabilities, err error) {
 	// Set atty
 	caps.Isatty = opts.ForceTTY
