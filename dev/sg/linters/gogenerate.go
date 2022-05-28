@@ -42,7 +42,7 @@ func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
 	if err != nil {
 		var sb strings.Builder
 		reportOut := std.NewOutput(&sb, true)
-		reportOut.WriteFailuref("Uncommitted changes found after running go generate:")
+		reportOut.WriteWarningf("Uncommitted changes found after running go generate:")
 		if err := reportOut.WriteCode("diff", out); err != nil {
 			// Simply write the output
 			reportOut.Writef("Failed to pretty print diff: %s, dumping output instead:", err.Error())
