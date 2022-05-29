@@ -19,7 +19,7 @@ type Output struct {
 // Out is the standard output which is instantiated when sg gets run.
 var Out *Output
 
-// NewOutput instantiates a new output instance for local use, such as to get
+// NewOutput instantiates a new output instance for local use with inferred configuration.
 func NewOutput(dst io.Writer, verbose bool) *Output {
 	inBuildkite := os.Getenv("BUILDKITE") == "true"
 
@@ -35,6 +35,21 @@ func NewOutput(dst io.Writer, verbose bool) *Output {
 			ForceDarkBackground: inBuildkite,
 		}),
 		buildkite: inBuildkite,
+	}
+}
+
+// NewFixedOutput instantiates a new output instance with fixed configuration, useful for
+// testing or on platforms/scenarios with problematic terminal detection.
+func NewFixedOutput(dst io.Writer, verbose bool) *Output {
+	return &Output{
+		Output: output.NewOutput(dst, output.OutputOpts{
+			ForceColor:          true,
+			ForceTTY:            true,
+			Verbose:             verbose,
+			ForceWidth:          80,
+			ForceHeight:         25,
+			ForceDarkBackground: true,
+		}),
 	}
 }
 
