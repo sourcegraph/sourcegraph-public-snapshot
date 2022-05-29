@@ -11,6 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// capabilities configures everything that might require detection of the terminal
+// environment to change how data is output.
+//
+// When adding new capabilities, make sure an option to disable running any detection at
+// all is provided via OutputOpts, so that issues with detection can be avoided in edge
+// cases by configuring an override.
 type capabilities struct {
 	Color  bool
 	Isatty bool
@@ -32,7 +38,7 @@ func detectCapabilities(opts OutputOpts) (caps capabilities, err error) {
 
 	// Default width and height
 	caps.Width, caps.Height = 80, 25
-	// If all dimensions are foced, detection is not needed
+	// If all dimensions are forced, detection is not needed
 	forceAllDimensions := opts.ForceHeight != 0 && opts.ForceWidth != 0
 	if caps.Isatty && !forceAllDimensions {
 		var size *term.Winsize
