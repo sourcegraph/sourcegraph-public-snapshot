@@ -57,7 +57,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                     >
                         {result.authorName}
                     </button>
-                    {': '}
+                    <span aria-hidden={true}>{': '}</span>
                     <button
                         type="button"
                         className="btn btn-text-link"

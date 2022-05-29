@@ -130,6 +130,9 @@ const ExperimentalActionButton: React.FunctionComponent<
             variant="secondary"
             outline={true}
             size="sm"
+            aria-disabled={props.isNonExperimentalLinkDisabled ? 'true' : undefined}
+            // to make disabled ButtonLink focusable
+            tabIndex={0}
         >
             {props.button}
         </ButtonLink>

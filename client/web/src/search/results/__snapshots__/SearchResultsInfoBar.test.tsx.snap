@@ -514,11 +514,12 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
           data-tooltip="Code monitors only support type:diff or type:commit searches."
         >
           <a
+            aria-disabled="true"
             class="anchorLink btn btnOutlineSecondary btnSm text-decoration-none a11y-ignore create-code-monitor-button disabled"
             disabled=""
             href=""
             role="button"
-            tabindex="-1"
+            tabindex="0"
           >
             <svg
               aria-hidden="true"
