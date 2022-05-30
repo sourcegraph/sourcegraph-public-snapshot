@@ -73,13 +73,13 @@ func (z *ZoektSymbolSearchJob) Tags() []log.Field {
 	return tags
 }
 
-type ZoektGlobalSymbolSearchJob struct {
+type GlobalSymbolSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
 	RepoOpts         search.RepoOptions
 }
 
-func (s *ZoektGlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *GlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
@@ -100,11 +100,11 @@ func (s *ZoektGlobalSymbolSearchJob) Run(ctx context.Context, clients job.Runtim
 	return nil, nil
 }
 
-func (*ZoektGlobalSymbolSearchJob) Name() string {
+func (*GlobalSymbolSearchJob) Name() string {
 	return "ZoektGlobalSymbolSearchJob"
 }
 
-func (s *ZoektGlobalSymbolSearchJob) Tags() []log.Field {
+func (s *GlobalSymbolSearchJob) Tags() []log.Field {
 	return []log.Field{
 		trace.Stringer("query", s.GlobalZoektQuery.query),
 		trace.Printf("repoScope", "%q", s.GlobalZoektQuery.repoScope),

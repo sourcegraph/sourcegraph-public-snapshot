@@ -19,7 +19,7 @@ var allJobs = []job.Job{
 	&zoekt.GlobalTextSearchJob{},
 	&structural.StructuralSearchJob{},
 	&commit.CommitSearchJob{},
-	&zoekt.ZoektGlobalSymbolSearchJob{},
+	&zoekt.GlobalSymbolSearchJob{},
 	&repos.ComputeExcludedReposJob{},
 	&NoopJob{},
 
