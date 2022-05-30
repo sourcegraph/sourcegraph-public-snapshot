@@ -21,6 +21,7 @@ type repositoryFetcher struct {
 	gitserverClient     gitserver.GitserverClient
 	operations          *operations
 	maxTotalPathsLength int
+	maxFileSize         int64
 }
 
 type ParseRequest struct {
@@ -33,11 +34,12 @@ type parseRequestOrError struct {
 	Err          error
 }
 
-func NewRepositoryFetcher(gitserverClient gitserver.GitserverClient, maxTotalPathsLength int, observationContext *observation.Context) RepositoryFetcher {
+func NewRepositoryFetcher(gitserverClient gitserver.GitserverClient, maxTotalPathsLength int, maxFileSize int64, observationContext *observation.Context) RepositoryFetcher {
 	return &repositoryFetcher{
 		gitserverClient:     gitserverClient,
 		operations:          newOperations(observationContext),
 		maxTotalPathsLength: maxTotalPathsLength,
+		maxFileSize:         maxFileSize,
 	}
 }
 
@@ -75,7 +77,7 @@ func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args typ
 		}
 		defer rc.Close()
 
-		err = readTar(ctx, tar.NewReader(rc), callback, trace)
+		err = readTar(ctx, tar.NewReader(rc), callback, trace, f.maxFileSize)
 		if err != nil {
 			return errors.Wrap(err, "readTar")
 		}
@@ -123,7 +125,7 @@ func batchByTotalLength(paths []string, maxTotalLength int) [][]string {
 	return batches
 }
 
-func readTar(ctx context.Context, tarReader *tar.Reader, callback func(request ParseRequest), traceLog observation.TraceLogger) error {
+func readTar(ctx context.Context, tarReader *tar.Reader, callback func(request ParseRequest), traceLog observation.TraceLogger, maxFileSize int64) error {
 	for {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -137,6 +139,11 @@ func readTar(ctx context.Context, tarReader *tar.Reader, callback func(request P
 		}
 
 		if tarHeader.FileInfo().IsDir() || tarHeader.Typeflag == tar.TypeXGlobalHeader {
+			continue
+		}
+
+		if tarHeader.Size > maxFileSize {
+			callback(ParseRequest{Path: tarHeader.Name, Data: []byte{}})
 			continue
 		}
 

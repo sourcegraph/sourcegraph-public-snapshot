@@ -75,11 +75,14 @@ type RepositoryFetcherConfig struct {
 	// We want to remain well under that limit, so defaulting to 100,000 seems safe (see the
 	// MAX_TOTAL_PATHS_LENGTH environment variable below).
 	MaxTotalPathsLength int
+
+	MaxFileSizeKb int
 }
 
 func LoadRepositoryFetcherConfig(baseConfig env.BaseConfig) RepositoryFetcherConfig {
 	return RepositoryFetcherConfig{
 		MaxTotalPathsLength: baseConfig.GetInt("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive"),
+		MaxFileSizeKb:       baseConfig.GetInt("MAX_FILE_SIZE_KB", "1000", "maximum file size in KB, the contents of bigger files are ignored"),
 	}
 }
 
