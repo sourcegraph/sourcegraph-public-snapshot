@@ -139,9 +139,9 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 		span.Finish()
 		duration := time.Since(start).Seconds()
 		if cacheHit {
-			zipAccess.WithLabelValues("true").Observe(duration)
+			metricZipAccess.WithLabelValues("true").Observe(duration)
 		} else {
-			zipAccess.WithLabelValues("false").Observe(duration)
+			metricZipAccess.WithLabelValues("false").Observe(duration)
 		}
 	}()
 
@@ -209,16 +209,16 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 // not populate the in-memory cache. You should probably be calling
 // prepareZip.
 func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitID, largeFilePatterns []string) (rc io.ReadCloser, err error) {
-	fetchQueueSize.Inc()
+	metricFetchQueueSize.Inc()
 	ctx, releaseFetchLimiter, err := s.fetchLimiter.Acquire(ctx) // Acquire concurrent fetches semaphore
 	if err != nil {
 		return nil, err // err will be a context error
 	}
-	fetchQueueSize.Dec()
+	metricFetchQueueSize.Dec()
 
 	ctx, cancel := context.WithCancel(ctx)
 
-	fetching.Inc()
+	metricFetching.Inc()
 	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch")
 	ext.Component.Set(span, "store")
 	span.SetTag("repo", repo)
@@ -238,9 +238,9 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 		if err != nil {
 			ext.Error.Set(span, true)
 			span.SetTag("err", err.Error())
-			fetchFailed.Inc()
+			metricFetchFailed.Inc()
 		}
-		fetching.Dec()
+		metricFetching.Dec()
 		span.Finish()
 	}
 	defer func() {
@@ -390,6 +390,8 @@ func (s *Store) String() string {
 // watchAndEvict is a loop which periodically checks the size of the cache and
 // evicts/deletes items if the store gets too large.
 func (s *Store) watchAndEvict() {
+	metricMaxCacheSizeBytes.Set(float64(s.MaxCacheSizeBytes))
+
 	if s.MaxCacheSizeBytes == 0 {
 		return
 	}
@@ -402,8 +404,8 @@ func (s *Store) watchAndEvict() {
 			s.Log.Error("failed to Evict", log.Error(err))
 			continue
 		}
-		cacheSizeBytes.Set(float64(stats.CacheSize))
-		evictions.Add(float64(stats.Evicted))
+		metricCacheSizeBytes.Set(float64(stats.CacheSize))
+		metricEvictions.Add(float64(stats.Evicted))
 	}
 }
 
@@ -434,27 +436,31 @@ func ignoreSizeMax(name string, patterns []string) bool {
 }
 
 var (
-	cacheSizeBytes = promauto.NewGauge(prometheus.GaugeOpts{
+	metricMaxCacheSizeBytes = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "searcher_store_max_cache_size_bytes",
+		Help: "The configured maximum size of items in the on disk cache before eviction.",
+	})
+	metricCacheSizeBytes = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "searcher_store_cache_size_bytes",
 		Help: "The total size of items in the on disk cache.",
 	})
-	evictions = promauto.NewCounter(prometheus.CounterOpts{
+	metricEvictions = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "searcher_store_evictions",
 		Help: "The total number of items evicted from the cache.",
 	})
-	fetching = promauto.NewGauge(prometheus.GaugeOpts{
+	metricFetching = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "searcher_store_fetching",
 		Help: "The number of fetches currently running.",
 	})
-	fetchQueueSize = promauto.NewGauge(prometheus.GaugeOpts{
+	metricFetchQueueSize = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "searcher_store_fetch_queue_size",
 		Help: "The number of fetch jobs enqueued.",
 	})
-	fetchFailed = promauto.NewCounter(prometheus.CounterOpts{
+	metricFetchFailed = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "searcher_store_fetch_failed",
 		Help: "The total number of archive fetches that failed.",
 	})
-	zipAccess = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	metricZipAccess = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "searcher_store_zip_prepare_duration",
 		Help:    "Observes the duration to prepare the zip file for searching.",
 		Buckets: prometheus.DefBuckets,

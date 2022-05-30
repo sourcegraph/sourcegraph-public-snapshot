@@ -31,10 +31,7 @@ const (
 func Generate(ctx context.Context, args []string, progressBar bool, verbosity OutputVerbosityType) *generate.Report {
 	start := time.Now()
 	var sb strings.Builder
-	reportOut := output.NewOutput(&sb, output.OutputOpts{
-		ForceColor: true,
-		ForceTTY:   true,
-	})
+	reportOut := std.NewOutput(&sb, false)
 
 	// Save working directory
 	cwd, err := os.Getwd()
