@@ -92,10 +92,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
     }
 
     const exposedToMain: FlatExtensionHostAPI = {
-        getManifest: (extensionID: string) => {
-            // request
-        },
-
         haveInitialExtensionsLoaded: () => proxySubscribable(state.haveInitialExtensionsLoaded.asObservable()),
 
         // Configuration

@@ -59,16 +59,22 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
                     if (row) {
                         for (const decoration of decorations) {
                             const style = decorationStyleForTheme(decoration, isLightTheme)
+                            let decorated = false
 
                             if (style.backgroundColor) {
-                                const codeCell = row.querySelector<HTMLTableCellElement>('.code')
+                                const codeCell = row.querySelector<HTMLTableCellElement>('td.code')
 
                                 if (codeCell) {
-                                    codeCell.style.backgroundColor = style.backgroundColor
+                                    // if no extra columns between the code and the line number highlight the whole line
+                                    if (codeCell.previousElementSibling?.matches('[data-line]')) {
+                                        row.style.backgroundColor = style.backgroundColor
+                                        decorated = true
+                                    } else {
+                                        codeCell.style.backgroundColor = style.backgroundColor
+                                    }
                                 }
                             }
 
-                            let decorated = false
                             if (style.border) {
                                 row.style.border = style.border
                                 decorated = true

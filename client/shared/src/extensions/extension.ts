@@ -9,7 +9,7 @@ import { ExtensionManifest, parseExtensionManifestOrError } from './extensionMan
  * The default fields in the {@link ConfiguredExtension} manifest (i.e., the default value of the
  * `K` type parameter).
  */
-export const CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS = ['contributes', 'activationEvents', 'url', 'icon'] as const
+export const CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS = ['contributes', 'activationEvents', 'url'] as const
 export type ConfiguredExtensionManifestDefaultFields = typeof CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS[number]
 
 /**
