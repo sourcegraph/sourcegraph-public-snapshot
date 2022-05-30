@@ -310,3 +310,44 @@ AssociatedIndex.args = {
             },
         }),
 }
+
+export const WithAuditLogs = Template.bind({})
+WithAuditLogs.args = {
+    ...defaults,
+    queryLisfUploadFields: () =>
+        of({
+            ...uploadPrototype,
+            id: '1',
+            state: LSIFUploadState.PROCESSING,
+            uploadedAt: '2020-06-15T12:20:30+00:00',
+            startedAt: '2020-06-15T12:25:30+00:00',
+            auditLogs: [
+                {
+                    logTimestamp: '2020-06-15T12:20:30+00:00',
+                    uploadDeletedAt: null,
+                    reason: null,
+                    changedColumns: [
+                        {
+                            column: 'state',
+                            old: null,
+                            new: 'UPLOADING',
+                        },
+                    ],
+                    operation: AuditLogOperation.CREATE,
+                },
+                {
+                    logTimestamp: '2020-06-15T12:20:30+00:00',
+                    uploadDeletedAt: null,
+                    reason: null,
+                    changedColumns: [
+                        {
+                            column: 'state',
+                            old: 'UPLOADING',
+                            new: 'PROCESSING',
+                        },
+                    ],
+                    operation: AuditLogOperation.MODIFY,
+                },
+            ],
+        }),
+}
