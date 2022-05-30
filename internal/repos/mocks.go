@@ -9,9 +9,9 @@ import (
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	logging "github.com/sourcegraph/sourcegraph/internal/logging"
 	trace "github.com/sourcegraph/sourcegraph/internal/trace"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
+	log "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // MockStore is a mock implementation of the Store interface (from the
@@ -161,7 +161,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		SetLoggerFunc: &StoreSetLoggerFunc{
-			defaultHook: func(logging.ErrorLogger) {
+			defaultHook: func(log.Logger) {
 				return
 			},
 		},
@@ -268,7 +268,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		SetLoggerFunc: &StoreSetLoggerFunc{
-			defaultHook: func(logging.ErrorLogger) {
+			defaultHook: func(log.Logger) {
 				panic("unexpected invocation of MockStore.SetLogger")
 			},
 		},
@@ -1850,15 +1850,15 @@ func (c StoreRepoStoreFuncCall) Results() []interface{} {
 // StoreSetLoggerFunc describes the behavior when the SetLogger method of
 // the parent MockStore instance is invoked.
 type StoreSetLoggerFunc struct {
-	defaultHook func(logging.ErrorLogger)
-	hooks       []func(logging.ErrorLogger)
+	defaultHook func(log.Logger)
+	hooks       []func(log.Logger)
 	history     []StoreSetLoggerFuncCall
 	mutex       sync.Mutex
 }
 
 // SetLogger delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) SetLogger(v0 logging.ErrorLogger) {
+func (m *MockStore) SetLogger(v0 log.Logger) {
 	m.SetLoggerFunc.nextHook()(v0)
 	m.SetLoggerFunc.appendCall(StoreSetLoggerFuncCall{v0})
 	return
@@ -1866,7 +1866,7 @@ func (m *MockStore) SetLogger(v0 logging.ErrorLogger) {
 
 // SetDefaultHook sets function that is called when the SetLogger method of
 // the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreSetLoggerFunc) SetDefaultHook(hook func(logging.ErrorLogger)) {
+func (f *StoreSetLoggerFunc) SetDefaultHook(hook func(log.Logger)) {
 	f.defaultHook = hook
 }
 
@@ -1874,7 +1874,7 @@ func (f *StoreSetLoggerFunc) SetDefaultHook(hook func(logging.ErrorLogger)) {
 // SetLogger method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreSetLoggerFunc) PushHook(hook func(logging.ErrorLogger)) {
+func (f *StoreSetLoggerFunc) PushHook(hook func(log.Logger)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1883,19 +1883,19 @@ func (f *StoreSetLoggerFunc) PushHook(hook func(logging.ErrorLogger)) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreSetLoggerFunc) SetDefaultReturn() {
-	f.SetDefaultHook(func(logging.ErrorLogger) {
+	f.SetDefaultHook(func(log.Logger) {
 		return
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreSetLoggerFunc) PushReturn() {
-	f.PushHook(func(logging.ErrorLogger) {
+	f.PushHook(func(log.Logger) {
 		return
 	})
 }
 
-func (f *StoreSetLoggerFunc) nextHook() func(logging.ErrorLogger) {
+func (f *StoreSetLoggerFunc) nextHook() func(log.Logger) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1930,7 +1930,7 @@ func (f *StoreSetLoggerFunc) History() []StoreSetLoggerFuncCall {
 type StoreSetLoggerFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 logging.ErrorLogger
+	Arg0 log.Logger
 }
 
 // Args returns an interface slice containing the arguments of this
