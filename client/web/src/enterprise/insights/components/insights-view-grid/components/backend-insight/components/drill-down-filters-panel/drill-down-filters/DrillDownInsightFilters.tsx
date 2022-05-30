@@ -123,7 +123,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
 
     const currentRepositoriesFilters = { include: includeRegex.input.value, exclude: excludeRegex.input.value }
     const hasFiltersChanged = !isEqual(originalValues, values)
-    const hasAppliedFilters = hasActiveFilters(originalValues)
+    const hasAppliedFilters = hasActiveFilters(originalValues) && !hasFiltersChanged
     const hasSeriesDisplayOptionsChanged = !isEqual(originalSeriesDisplayOptions, seriesDisplayOptions)
 
     const handleCollapseState = (section: FilterSection, opened: boolean): void => {
