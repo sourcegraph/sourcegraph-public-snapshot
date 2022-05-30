@@ -64,7 +64,7 @@ export function useTour(tourKey: string): UseTourReturnType {
     return {
         ...allToursSate?.[tourKey],
         // To avoid rendering Tour.tsx when state is still loading
-        ...(loadStatus !== 'finished' ? { status: 'closed' } : {}),
+        ...(loadStatus !== 'loaded' ? { status: 'closed' } : {}),
         setLanguage,
         setStepCompleted,
         setStatus,

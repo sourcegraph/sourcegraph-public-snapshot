@@ -33,4 +33,4 @@ export interface ForwardReferenceComponent<
     ): React.ReactElement | null
 }
 
-export type LoadStatus = 'initial' | 'loading' | 'finished'
+export type ObservableStatus = 'initial' | 'next' | 'completed' | 'error'

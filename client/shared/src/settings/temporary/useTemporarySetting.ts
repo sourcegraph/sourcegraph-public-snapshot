@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
-import { LoadStatus, useEnhancedObservable } from '@sourcegraph/wildcard'
+import { ObservableStatus, useObservableWithStatus } from '@sourcegraph/wildcard'
 
 import { TemporarySettings } from './TemporarySettings'
 import { TemporarySettingsContext } from './TemporarySettingsProvider'
@@ -8,8 +8,22 @@ import { TemporarySettingsContext } from './TemporarySettingsProvider'
 type UseTemporarySettingsReturnType<K extends keyof TemporarySettings> = [
     TemporarySettings[K],
     (newValue: TemporarySettings[K] | ((previousValue: TemporarySettings[K]) => TemporarySettings[K])) => void,
-    LoadStatus
+    TemporarySettingsLoadStatus
 ]
+
+type TemporarySettingsLoadStatus = 'initial' | 'loaded' | 'error'
+
+const mapObservableStatusToStatus = (observableStatus: ObservableStatus): TemporarySettingsLoadStatus => {
+    switch (observableStatus) {
+        case 'initial':
+            return 'initial'
+        case 'error':
+            return 'error'
+        default:
+            return 'loaded'
+    }
+}
+
 /**
  * React Hook to get and set a single temporary setting.
  * The setting's value will be kept up to date if another part of the app changes
@@ -26,9 +40,8 @@ export const useTemporarySetting = <K extends keyof TemporarySettings>(
     defaultValue?: TemporarySettings[K]
 ): UseTemporarySettingsReturnType<K> => {
     const temporarySettings = useContext(TemporarySettingsContext)
-    const [status, setStatus] = useState<LoadStatus>('initial')
 
-    const [observableValue, observableLoadStatus] = useEnhancedObservable(
+    const [observableValue, observableStatus] = useObservableWithStatus(
         useMemo(
             () => temporarySettings.get(key, defaultValue),
             // `defaultValue` should not be a dependency, otherwise the
@@ -44,10 +57,13 @@ export const useTemporarySetting = <K extends keyof TemporarySettings>(
     // since when using directly temporary settings doesn't keep previousValue up to date
     const [value, setValue] = useState(observableValue)
 
+    // Using separate "status" state to be in sync with "value"
+    const [status, setStatus] = useState<TemporarySettingsLoadStatus>('initial')
+
     useEffect(() => {
-        setStatus(observableLoadStatus)
+        setStatus(mapObservableStatusToStatus(observableStatus))
         setValue(observableValue)
-    }, [key, observableLoadStatus, observableValue])
+    }, [key, observableStatus, observableValue])
 
     const setValueAndSave: typeof setValue = useCallback(
         newValue =>

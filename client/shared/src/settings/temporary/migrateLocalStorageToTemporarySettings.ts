@@ -80,25 +80,24 @@ export async function migrateLocalStorageToTemporarySettings(storage: TemporaryS
         // Use the first value of the setting to check if it exists.
         // Only migrate if the setting is not already set.
         const temporarySetting = await storage.get(migration.temporarySettingsKey).pipe(take(1)).toPromise()
-        if (typeof temporarySetting !== 'undefined') {
-            continue
-        }
-        try {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            const value = parse(migration.type, localStorage.getItem(migration.localStorageKey))
-            if (!value) {
-                continue
-            }
+        if (typeof temporarySetting === 'undefined') {
+            try {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                const value = parse(migration.type, localStorage.getItem(migration.localStorageKey))
+                if (!value) {
+                    continue
+                }
 
-            storage.set(migration.temporarySettingsKey, migration.transform?.(value) ?? value)
-            if (!migration.preserve) {
-                localStorage.removeItem(migration.localStorageKey)
+                storage.set(migration.temporarySettingsKey, migration.transform?.(value) ?? value)
+                if (!migration.preserve) {
+                    localStorage.removeItem(migration.localStorageKey)
+                }
+            } catch (error) {
+                console.error(
+                    `Failed to migrate temporary settings "${migration.temporarySettingsKey}" from localStorage using key "${migration.localStorageKey}"`,
+                    error
+                )
             }
-        } catch (error) {
-            console.error(
-                `Failed to migrate temporary settings "${migration.temporarySettingsKey}" from localStorage using key "${migration.localStorageKey}"`,
-                error
-            )
         }
     }
 }
