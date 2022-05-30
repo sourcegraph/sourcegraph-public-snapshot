@@ -8,7 +8,7 @@ import { PathSearchResult } from './PathSearchResult'
 import { RepoSearchResult } from './RepoSearchResult'
 import {
     getFirstResultId,
-    getLineMatchIndexOrSymbolIndexForContentOrSymbolResult,
+    getLineMatchIndexOrSymbolIndexForFileResult,
     getMatchId,
     getMatchIdForResult,
     getSearchResultElement,
@@ -53,7 +53,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                     onPreviewChange(
                         match,
                         match.type === 'content' || match.type === 'symbol'
-                            ? getLineMatchIndexOrSymbolIndexForContentOrSymbolResult(resultId)
+                            ? getLineMatchIndexOrSymbolIndexForFileResult(resultId)
                             : undefined
                     )
                 } else {
@@ -107,7 +107,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                     onOpen(
                         match,
                         match.type === 'content' || match.type === 'symbol'
-                            ? getLineMatchIndexOrSymbolIndexForContentOrSymbolResult(selectedResultId)
+                            ? getLineMatchIndexOrSymbolIndexForFileResult(selectedResultId)
                             : undefined
                     )
                 }

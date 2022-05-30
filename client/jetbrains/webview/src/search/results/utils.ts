@@ -46,7 +46,7 @@ export function getResultId(
     return getMatchId(match)
 }
 
-export function getLineMatchIndexOrSymbolIndexForContentOrSymbolResult(resultId: string): number {
+export function getLineMatchIndexOrSymbolIndexForFileResult(resultId: string): number {
     return parseInt(resultId.split('-#-')[1], 10)
 }
 
