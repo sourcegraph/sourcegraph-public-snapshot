@@ -19,6 +19,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.40.2
+
+### Changed
+
+- Updated to the latest SCIP version, fixing a bug for scip-typescript uploads. [sourcegraph/scip#30](https://github.com/sourcegraph/scip/pull/30)
+
 ## 3.40.1
 
 ### Added
