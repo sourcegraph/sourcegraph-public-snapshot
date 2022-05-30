@@ -68,12 +68,17 @@ type WorkspaceResolver interface {
 
 type WorkspaceResolverBuilder func(tx *store.Store) WorkspaceResolver
 
-func NewWorkspaceResolver(s *store.Store) WorkspaceResolver {
-	return &workspaceResolver{store: s, frontendInternalURL: internalapi.Client.URL + "/.internal"}
+func NewWorkspaceResolver(s *store.Store, gitserverClient gitserver.Client) WorkspaceResolver {
+	return &workspaceResolver{
+		store:               s,
+		gitserverClient:     gitserverClient,
+		frontendInternalURL: internalapi.Client.URL + "/.internal",
+	}
 }
 
 type workspaceResolver struct {
 	store               *store.Store
+	gitserverClient     gitserver.Client
 	frontendInternalURL string
 }
 
@@ -91,8 +96,8 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 		return nil, err
 	}
 
-	// Next, find the repos that are ignored through a .batchignore file.
-	ignored, err := findIgnoredRepositories(ctx, database.NewDBWith(wr.store), repos)
+	// Next, find the repos that are ignoredRepos through a .batchignore file.
+	ignoredRepos, err := findIgnoredRepositories(ctx, database.NewDBWith(wr.store), repos)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +115,7 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 			ws.Unsupported = true
 		}
 
-		if _, ok := ignored[ws.Repo]; ok {
+		if _, ok := ignoredRepos[ws.Repo]; ok {
 			ws.Ignored = true
 		}
 	}
@@ -160,6 +165,7 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 	return repoRevs, errs
 }
 
+// TODO: Use a gitserver batch method like https://sourcegraph.com/-/editor?remote_url=github.com%2Fsourcegraph%2Fsourcegraph&branch=es%2Frace-condition-search-result-paths&file=internal%2Fgitserver%2Fclient.go&editor=VSCode&version=2.2.3&start_row=666&start_col=12&end_row=666&end_col=12&utm_campaign=vscode-extension&utm_medium=direct_traffic&utm_source=vscode-extension&utm_content=vsce-commands.
 func findIgnoredRepositories(ctx context.Context, db database.DB, repos []*RepoRevision) (map[*types.Repo]struct{}, error) {
 	type result struct {
 		repo           *RepoRevision
@@ -273,6 +279,7 @@ func (wr *workspaceResolver) resolveRepositoryName(ctx context.Context, name str
 	return repoToRepoRevisionWithDefaultBranch(
 		ctx,
 		database.NewDBWith(wr.store),
+		wr.gitserverClient,
 		repo,
 		// Directly resolved repos don't have any file matches.
 		[]string{},
@@ -291,7 +298,7 @@ func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context,
 		return nil, err
 	}
 
-	commit, err := gitserver.NewClient(database.NewDBWith(wr.store)).ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
+	commit, err := wr.gitserverClient.ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
 		NoEnsureRevision: true,
 	})
 	if err != nil && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
@@ -316,42 +323,93 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 
 	query = setDefaultQueryCount(query)
 
-	repoIDs := []api.RepoID{}
+	repoIDs := make(map[api.RepoID]struct{})
 	repoRevisions := make(map[api.RepoID]string)
-	repoFileMatches := make(map[api.RepoID]map[string]bool)
-	addRepoFilePatch := func(repoID api.RepoID, commit, path string) {
-		if knownRev, ok := repoRevisions[repoID]; ok && knownRev != commit {
-			log15.Warn("Got repo results for multiple commits, this is unexpected", "repo", repoID, "rev1", knownRev, "rev2", commit)
+	repoTargets := make(map[api.RepoID]string)
+	repoFileMatches := make(map[api.RepoID]map[string]struct{})
+	addRepoFilePath := func(repoID api.RepoID, branch, commit, path string) {
+		// We check if we have seen a revision for the repo before. If so, it must be the same.
+		// Otherwise we deem this user error. It's currently not supported to target two revisions
+		// of the same repo.
+		if knownRev, ok := repoRevisions[repoID]; !ok {
+			repoRevisions[repoID] = commit
+		} else if ok && knownRev != commit {
+			log15.Error("Got repo results for multiple commits, this is unexpected", "repo", repoID, "rev1", knownRev, "rev2", commit)
 			// And live on and overwrite the known revision.
 			// TODO: Can this happen when the repo has multiple searchable branches.
 			repoRevisions[repoID] = commit
-		} else {
-			repoRevisions[repoID] = commit
+		}
+
+		if branch != "" {
+			if knownTarget, ok := repoTargets[repoID]; !ok {
+				repoTargets[repoID] = branch
+			} else if ok && knownTarget != branch {
+				log15.Error("Got repo results for multiple branches, this is unexpected", "repo", repoID, "branch1", knownTarget, "branch2", branch)
+				// And live on and overwrite the known revision.
+				// TODO: Can this happen when the repo has multiple searchable branches.
+				repoTargets[repoID] = branch
+			}
 		}
 
 		repoMap, ok := repoFileMatches[repoID]
 		if !ok {
-			repoMap = make(map[string]bool)
+			repoMap = make(map[string]struct{})
 			repoFileMatches[repoID] = repoMap
 		}
 		if _, ok := repoMap[path]; !ok {
-			repoMap[path] = true
+			repoMap[path] = struct{}{}
+		}
+	}
+	visitRepo := func(repoID int32) {
+		id := api.RepoID(repoID)
+		if _, ok := repoIDs[id]; !ok {
+			repoIDs[id] = struct{}{}
 		}
 	}
 	if err := wr.runSearch(ctx, query, func(matches []streamhttp.EventMatch) {
 		for _, match := range matches {
 			switch m := match.(type) {
 			case *streamhttp.EventRepoMatch:
-				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
+				var branch string
+				if len(m.Branches) > 0 {
+					if len(m.Branches) > 1 {
+						// This is an error, but it can currently not happen.
+					}
+					branch = m.Branches[0]
+				}
+				visitRepo(m.RepositoryID)
+				// TODO: this currently overwrites.
+				repoRevisions[api.RepoID(m.RepositoryID)] = branch
 			case *streamhttp.EventContentMatch:
-				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
-				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Commit, m.Path)
+				var branch string
+				if len(m.Branches) > 0 {
+					if len(m.Branches) > 1 {
+						// This is an error, but it can currently not happen.
+					}
+					branch = m.Branches[0]
+				}
+				visitRepo(m.RepositoryID)
+				addRepoFilePath(api.RepoID(m.RepositoryID), branch, m.Commit, m.Path)
 			case *streamhttp.EventPathMatch:
-				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
-				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Commit, m.Path)
+				var branch string
+				if len(m.Branches) > 0 {
+					if len(m.Branches) > 1 {
+						// This is an error, but it can currently not happen.
+					}
+					branch = m.Branches[0]
+				}
+				visitRepo(m.RepositoryID)
+				addRepoFilePath(api.RepoID(m.RepositoryID), branch, m.Commit, m.Path)
 			case *streamhttp.EventSymbolMatch:
-				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
-				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Commit, m.Path)
+				var branch string
+				if len(m.Branches) > 0 {
+					if len(m.Branches) > 1 {
+						// This is an error, but it can currently not happen.
+					}
+					branch = m.Branches[0]
+				}
+				visitRepo(m.RepositoryID)
+				addRepoFilePath(api.RepoID(m.RepositoryID), branch, m.Commit, m.Path)
 			}
 		}
 	}); err != nil {
@@ -363,10 +421,16 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 		return []*RepoRevision{}, nil
 	}
 
+	ids := make([]api.RepoID, 0, len(repoIDs))
+	for id := range repoIDs {
+		ids = append(ids, id)
+	}
+
 	// 🚨 SECURITY: We use database.Repos.List to check whether the user has access to
 	// the repositories or not. We also impersonate on the internal search request to
-	// properly respect these permissions.
-	accessibleRepos, err := wr.store.Repos().List(ctx, database.ReposListOptions{IDs: repoIDs})
+	// properly respect these permissions, so this should not filter anything out,
+	// but better be safe than sorry!
+	accessibleRepos, err := wr.store.Repos().List(ctx, database.ReposListOptions{IDs: ids})
 	if err != nil {
 		return nil, err
 	}
@@ -379,14 +443,29 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 		}
 		sort.Strings(fileMatches)
 
-		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, database.NewDBWith(wr.store), repo, fileMatches)
-		if err != nil {
-			// There is an edge-case where a repo might be returned by a search query that does not exist in gitserver yet.
-			if errcode.IsNotFound(err) {
-				continue
+		var rev *RepoRevision
+		// TODO: Check here if the branch has been overwritten. If, use that instead of the default branch.
+		// Also, validate that the SHA is part of the default branch.
+		if target, ok := repoTargets[repo.ID]; ok {
+			rev, err = repoToRepoRevisionWithBranch(ctx, wr.store.DatabaseDB(), wr.gitserverClient, repo, target, fileMatches)
+			if err != nil {
+				// There is an edge-case where a repo might be returned by a search query that does not exist in gitserver yet.
+				if errcode.IsNotFound(err) {
+					continue
+				}
+				return nil, err
 			}
-			return nil, err
+		} else {
+			rev, err = repoToRepoRevisionWithDefaultBranch(ctx, wr.store.DatabaseDB(), wr.gitserverClient, repo, fileMatches)
+			if err != nil {
+				// There is an edge-case where a repo might be returned by a search query that does not exist in gitserver yet.
+				if errcode.IsNotFound(err) {
+					continue
+				}
+				return nil, err
+			}
 		}
+
 		// If we have searched a different commit than the default branch commit, we overwrite it here.
 		// There can be cases where indexed search lags behind latest main and then the search result paths
 		// can be incorrect for the latest head of the repo.
@@ -403,7 +482,16 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 
 const internalSearchClientUserAgent = "Batch Changes repository resolver"
 
+// TODO: Run the search from within worker, instead of hitting the frontend.
+// This will help with load/memory issues for user-facing requests.
 func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatches func(matches []streamhttp.EventMatch)) (err error) {
+	// We impersonate as the user who initiated this search. This is to properly
+	// scope repository permissions while running the search.
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return errors.New("no user set in workspaceResolver.runSearch")
+	}
+
 	req, err := streamhttp.NewRequest(wr.frontendInternalURL, query)
 	if err != nil {
 		return err
@@ -411,13 +499,6 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 	req = req.WithContext(ctx)
 
 	req.Header.Set("User-Agent", internalSearchClientUserAgent)
-
-	// We impersonate as the user who initiated this search. This is to properly
-	// scope repository permissions while running the search.
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return errors.New("no user set in workspaceResolver.runSearch")
-	}
 
 	resp, err := httpcli.InternalClient.Do(req)
 	if err != nil {
@@ -441,14 +522,16 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 	return err
 }
 
-func repoToRepoRevisionWithDefaultBranch(ctx context.Context, db database.DB, repo *types.Repo, fileMatches []string) (_ *RepoRevision, err error) {
+func repoToRepoRevisionWithBranch(ctx context.Context, db database.DB, gitserverClient gitserver.Client, repo *types.Repo, branch string, fileMatches []string) (_ *RepoRevision, err error) {
 	tr, ctx := trace.New(ctx, "repoToRepoRevision", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	branch, commit, err := gitserver.NewClient(db).GetDefaultBranch(ctx, repo.Name)
+	// TODO: Verify this is the right method for what we want.
+	// (We want to get the latest commit of the branch).
+	commit, err := gitserverClient.ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		return nil, err
 	}
@@ -462,6 +545,35 @@ func repoToRepoRevisionWithDefaultBranch(ctx context.Context, db database.DB, re
 	return repoRev, nil
 }
 
+func repoToRepoRevisionWithDefaultBranch(ctx context.Context, db database.DB, gitserverClient gitserver.Client, repo *types.Repo, fileMatches []string) (_ *RepoRevision, err error) {
+	tr, ctx := trace.New(ctx, "repoToRepoRevision", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	branch, commit, err := gitserverClient.GetDefaultBranch(ctx, repo.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	repoRev := &RepoRevision{
+		Repo:        repo,
+		Branch:      branch,
+		Commit:      commit,
+		FileMatches: fileMatches,
+	}
+	return repoRev, nil
+}
+
+// hasBatchIgnoreFile returns true, if the given RepoRevision contains a .batchignore
+// file at the root of the repository.
+// TODO: Can we change this algorithm slightly to just check if there is a .batchignore file on latest
+// default branch? If so, we could have a background worker determine changes to repos and we wouldn't
+// need to spawn thousands of git stat calls for a larger workspace resolution.
+// We can then look at the last changed date for a repo and the background worker remembers up to which
+// time it has evaluated all repos. We then store in a DB table which repos are ignored.
+// batch_change_ignored_repos (repo_id).
 func hasBatchIgnoreFile(ctx context.Context, db database.DB, r *RepoRevision) (_ bool, err error) {
 	traceTitle := fmt.Sprintf("RepoID: %q", r.Repo.ID)
 	tr, ctx := trace.New(ctx, "hasBatchIgnoreFile", traceTitle)
@@ -478,6 +590,7 @@ func hasBatchIgnoreFile(ctx context.Context, db database.DB, r *RepoRevision) (_
 		}
 		return false, err
 	}
+	// TODO: Should we really error here?
 	if !stat.Mode().IsRegular() {
 		return false, errors.Errorf("not a blob: %q", path)
 	}
@@ -501,6 +614,7 @@ func setDefaultQueryCount(query string) string {
 // The locations are paths relative to the root of the directory.
 // No "/" at the beginning.
 // A dot (".") represents the root directory.
+// TODO: Can we use gitserver here instead of search? If so, we should use a bulk endpoint.
 func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*RepoRevision) (map[repoRevKey][]string, error) {
 	findForRepoRev := func(repoRev *RepoRevision) ([]string, error) {
 		query := fmt.Sprintf(`file:(^|/)%s$ repo:^%s$@%s type:path count:99999`, regexp.QuoteMeta(fileName), regexp.QuoteMeta(string(repoRev.Repo.Name)), repoRev.Commit)
@@ -618,6 +732,7 @@ func findWorkspaces(
 				continue
 			}
 
+			// TODO: Evaluate all matches first and return a multi error. Simpler debugging for users :)
 			// Don't allow duplicate matches.
 			if found {
 				return nil, batcheslib.NewValidationError(errors.Errorf("repository %s matches multiple workspaces.in globs in the batch spec. glob: %q", repoRev.Repo.Name, conf.In))

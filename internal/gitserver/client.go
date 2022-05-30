@@ -79,7 +79,7 @@ func ResetClientMocks() {
 
 // NewClient returns a new gitserver.Client instantiated with default arguments
 // and httpcli.Doer.
-func NewClient(db database.DB) *ClientImplementor {
+func NewClient(db database.DB) Client {
 	return &ClientImplementor{
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
@@ -184,6 +184,11 @@ type Client interface {
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
 	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
 
+	// Diff returns an iterator that can be used to access the diff between two
+	// commits on a per-file basis. The iterator must be closed with Close when no
+	// longer required.
+	Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error)
+
 	// GetObject fetches git object data in the supplied repo
 	GetObject(_ context.Context, _ api.RepoName, objectName string) (*gitdomain.GitObject, error)
 
@@ -197,6 +202,12 @@ type Client interface {
 
 	// ListGitolite lists Gitolite repositories.
 	ListGitolite(_ context.Context, gitoliteHost string) ([]*gitolite.Repo, error)
+
+	// LsFiles returns the output of `git ls-files`.
+	LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...Pathspec) ([]string, error)
+
+	// ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
+	ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error)
 
 	// P4Exec sends a p4 command with given arguments and returns an io.ReadCloser for the output.
 	P4Exec(_ context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error)
@@ -268,6 +279,21 @@ type Client interface {
 
 	// ReadDir reads the contents of the named directory at commit.
 	ReadDir(ctx context.Context, db database.DB, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
+
+	// GetDefaultBranch returns the name of the default branch and the commit it's
+	// currently at from the given repository.
+	//
+	// If the repository is empty or currently being cloned, empty values and no
+	// error are returned.
+	GetDefaultBranch(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error)
+
+	// GetDefaultBranchShort returns the short name of the default branch for the
+	// given repository and the commit it's currently at. A short name would return
+	// something like `main` instead of `refs/heads/main`.
+	//
+	// If the repository is empty or currently being cloned, empty values and no
+	// error are returned.
+	GetDefaultBranchShort(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error)
 }
 
 func (c *ClientImplementor) Addrs() []string {
@@ -709,39 +735,6 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		}
 		defer resp.Body.Close()
 		logger.Log(log.Int("resp.StatusCode", resp.StatusCode))
-
-		// TODO(efritz) - remove after 3.39 branch cut
-		if resp.StatusCode == http.StatusNotFound {
-			// Frontend and gitserver may be rolling out. Fall back to issuing one
-			// command per item in the batch via the original /exec endpoint. We
-			// inline the same behavior as BatchLog here as this is throw-away code.
-
-			for _, repoCommit := range repoCommits {
-				content, err := func() (string, error) {
-					reader, err := c.execReader(ctx, repoCommit.Repo, []string{"log", "-n", "1", "--name-only", opts.Format, string(repoCommit.CommitID)})
-					if err != nil {
-						return "", errors.Wrap(err, "execReader")
-					}
-
-					content, err := io.ReadAll(reader)
-					if err != nil {
-						return "", errors.Wrap(err, "io.ReadAll")
-					}
-
-					return string(content), nil
-				}()
-
-				rawResult := RawBatchLogResult{
-					Stdout: content,
-					Error:  err,
-				}
-				if err := callback(repoCommit, rawResult); err != nil {
-					return errors.Wrap(err, "commitLogCallback")
-				}
-			}
-
-			return nil
-		}
 
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))

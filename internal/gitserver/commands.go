@@ -922,7 +922,7 @@ func runRevParse(ctx context.Context, cmd GitCommand, spec string) (api.CommitID
 	return commit, nil
 }
 
-// LsFiles returns the output of `git ls-files`
+// LsFiles returns the output of `git ls-files`.
 func (c *ClientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...Pathspec) ([]string, error) {
 	if Mocks.LsFiles != nil {
 		return Mocks.LsFiles(repo, commit)
