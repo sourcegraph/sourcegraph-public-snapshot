@@ -62,7 +62,7 @@ export const ChangesetStatusUnpublished: React.FunctionComponent<React.PropsWith
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <SourceBranchIcon aria-hidden={true} />
+        <SourceBranchIcon role="presentation" />
         {label}
     </div>
 )
@@ -72,7 +72,7 @@ export const ChangesetStatusClosed: React.FunctionComponent<React.PropsWithChild
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <SourcePullIcon className="text-danger" aria-hidden={true} />
+        <SourcePullIcon className="text-danger" role="presentation" />
         {label}
     </div>
 )
@@ -82,7 +82,7 @@ export const ChangesetStatusMerged: React.FunctionComponent<React.PropsWithChild
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <SourceMergeIcon className="text-merged" aria-hidden={true} />
+        <SourceMergeIcon className="text-merged" role="presentation" />
         {label}
     </div>
 )
@@ -92,7 +92,7 @@ export const ChangesetStatusOpen: React.FunctionComponent<React.PropsWithChildre
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <SourcePullIcon className="text-success" aria-hidden={true} />
+        <SourcePullIcon className="text-success" role="presentation" />
         {label}
     </div>
 )
@@ -102,7 +102,7 @@ export const ChangesetStatusDraft: React.FunctionComponent<React.PropsWithChildr
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <SourcePullIcon aria-hidden={true} />
+        <SourcePullIcon role="presentation" />
         {label}
     </div>
 )
@@ -112,7 +112,7 @@ export const ChangesetStatusDeleted: React.FunctionComponent<React.PropsWithChil
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <DeleteIcon aria-hidden={true} />
+        <DeleteIcon role="presentation" />
         {label}
     </div>
 )
@@ -122,7 +122,7 @@ export const ChangesetStatusError: React.FunctionComponent<React.PropsWithChildr
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <AlertCircleIcon className="text-danger" aria-hidden={true} />
+        <AlertCircleIcon className="text-danger" role="presentation" />
         {label}
     </div>
 )
@@ -132,7 +132,7 @@ export const ChangesetStatusRetrying: React.FunctionComponent<React.PropsWithChi
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <AutorenewIcon aria-hidden={true} />
+        <AutorenewIcon role="presentation" />
         {label}
     </div>
 )
@@ -143,7 +143,7 @@ export const ChangesetStatusProcessing: React.FunctionComponent<React.PropsWithC
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <TimerSandIcon aria-hidden={true} />
+        <TimerSandIcon role="presentation" />
         {label}
     </div>
 )
@@ -154,7 +154,7 @@ export const ChangesetStatusArchived: React.FunctionComponent<React.PropsWithChi
     ...props
 }) => (
     <div className={classNames(iconClassNames, className)} {...props}>
-        <ArchiveIcon aria-hidden={true} />
+        <ArchiveIcon role="presentation" />
         {label}
     </div>
 )

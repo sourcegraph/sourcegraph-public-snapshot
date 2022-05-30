@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -13,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // HandlerMetrics encapsulates the Prometheus metrics of an http.Handler.
@@ -52,7 +52,7 @@ func (m HandlerMetrics) MustRegister(r prometheus.Registerer) {
 // ObservedHandler returns a decorator that wraps an http.Handler
 // with logging, Prometheus metrics and tracing.
 func ObservedHandler(
-	log log15.Logger,
+	logger log.Logger,
 	m HandlerMetrics,
 	tr opentracing.Tracer,
 ) func(http.Handler) http.Handler {
@@ -60,7 +60,7 @@ func ObservedHandler(
 		return ot.MiddlewareWithTracer(tr,
 			&observedHandler{
 				next:    next,
-				log:     log,
+				logger:  logger,
 				metrics: m,
 			},
 			nethttp.OperationNameFunc(func(r *http.Request) string {
@@ -76,7 +76,7 @@ func ObservedHandler(
 
 type observedHandler struct {
 	next    http.Handler
-	log     log15.Logger
+	logger  log.Logger
 	metrics HandlerMetrics
 }
 
@@ -86,12 +86,12 @@ func (h *observedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func(begin time.Time) {
 		took := time.Since(begin)
 
-		h.log.Debug(
+		h.logger.Debug(
 			"http.request",
-			"method", r.Method,
-			"route", r.URL.Path,
-			"code", rr.code,
-			"duration", took,
+			log.String("method", r.Method),
+			log.String("route", r.URL.Path),
+			log.Int("code", rr.code),
+			log.Duration("duration", took),
 		)
 
 		var err error

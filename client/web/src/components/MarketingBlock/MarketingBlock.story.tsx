@@ -23,7 +23,7 @@ export const Basic = (): JSX.Element => (
         <div>
             <Link to="https://sourcegraph.com/search">
                 Speak to an engineer
-                <Icon className="ml-2" as={ArrowRightIcon} />
+                <Icon role="img" className="ml-2" as={ArrowRightIcon} aria-hidden={true} />
             </Link>
         </div>
     </MarketingBlock>

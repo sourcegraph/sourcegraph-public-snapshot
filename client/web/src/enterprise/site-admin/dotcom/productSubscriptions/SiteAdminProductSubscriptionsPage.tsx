@@ -42,7 +42,7 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.Pr
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <Typography.H2 className="mb-0">Product subscriptions</Typography.H2>
                 <Button to="/site-admin/dotcom/product/subscriptions/new" variant="primary" as={Link}>
-                    <Icon as={AddIcon} />
+                    <Icon role="img" aria-hidden={true} as={AddIcon} />
                     Create product subscription
                 </Button>
             </div>

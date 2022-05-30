@@ -2,6 +2,7 @@ import { Duration } from 'date-fns'
 import { uniq } from 'lodash'
 
 import { InsightViewNode, TimeIntervalStepInput, TimeIntervalStepUnit } from '../../../../../../graphql-operations'
+import { parseSeriesDisplayOptions } from '../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
 import { Insight, InsightExecutionType, InsightType } from '../../../types'
 import { BaseInsight } from '../../../types/insight/common'
 
@@ -16,11 +17,13 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
         id: insight.id,
         isFrozen: insight.isFrozen,
         dashboardReferenceCount: insight.dashboardReferenceCount,
+        seriesDisplayOptions: parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
+        appliedSeriesDisplayOptions: insight.appliedSeriesDisplayOptions,
+        defaultSeriesDisplayOptions: insight.defaultSeriesDisplayOptions,
     }
 
     switch (insight.presentation.__typename) {
         case 'LineChartInsightViewPresentation': {
-            const isBackendInsight = insight.dataSeriesDefinitions.every(series => series.isCalculated)
             const isCaptureGroupInsight = insight.dataSeriesDefinitions.some(
                 series => series.generatedFromCaptureGroups
             )
@@ -48,6 +51,8 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                         excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
                         context: appliedFilters.searchContexts?.[0] ?? '',
                     },
+                    appliedSeriesDisplayOptions: parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
+                    defaultSeriesDisplayOptions: parseSeriesDisplayOptions(insight.defaultSeriesDisplayOptions),
                 }
             }
 
@@ -65,32 +70,21 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                         : '',
             }))
 
-            if (isBackendInsight) {
-                const { presentation, appliedFilters } = insight
-
-                return {
-                    ...baseInsight,
-                    executionType: InsightExecutionType.Backend,
-                    type: InsightType.SearchBased,
-                    title: presentation.title,
-                    series,
-                    step,
-                    filters: {
-                        includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
-                        excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
-                        context: appliedFilters.searchContexts?.[0] ?? '',
-                    },
-                }
-            }
+            const { presentation, appliedFilters } = insight
 
             return {
                 ...baseInsight,
-                executionType: InsightExecutionType.Runtime,
+                executionType: InsightExecutionType.Backend,
                 type: InsightType.SearchBased,
-                title: insight.presentation.title,
-                step,
+                title: presentation.title,
                 repositories,
                 series,
+                step,
+                filters: {
+                    includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
+                    excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
+                    context: appliedFilters.searchContexts?.[0] ?? '',
+                },
             }
         }
 

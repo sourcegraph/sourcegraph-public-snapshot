@@ -162,7 +162,8 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                 )}
                 <hr className="my-3" />
                 <Typography.H3 className="text-muted">
-                    Visibility <Icon data-tooltip="Coming soon" as={InfoCircleOutlineIcon} />
+                    Visibility{' '}
+                    <Icon role="img" aria-label="Coming soon" data-tooltip="Coming soon" as={InfoCircleOutlineIcon} />
                 </Typography.H3>
                 <div className="form-group mb-1">
                     <RadioButton
@@ -183,7 +184,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                         disabled={true}
                         label={
                             <>
-                                Private <Icon className="text-warning" aria-hidden={true} as={LockIcon} />
+                                Private <Icon role="img" aria-hidden={true} className="text-warning" as={LockIcon} />
                             </>
                         }
                         aria-label="Private"

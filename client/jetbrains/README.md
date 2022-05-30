@@ -100,3 +100,16 @@ The publishing process is based on the [intellij-platform-plugin-template](https
 ## Version History
 
 See [`CHANGELOG.md`](https://github.com/sourcegraph/sourcegraph/blob/main/client/jetbrains/CHANGELOG.md).
+
+## Enable web view debugging
+
+Parts of this extension rely on the [JCEF](https://plugins.jetbrains.com/docs/intellij/jcef.html) web view features built into the JetBrains platform. To enable debugging tools for this view, please follow these steps:
+
+1. Open Search Everywhere: (On macOS via `cmd+shift+o`)
+2. Select the "Actions" tab
+3. Search for "Registry..." and open it
+4. Search for an option called `ide.browser.jcef.debug.port`
+5. Change the default value to an open port (e.g. `9222`)
+6. After this, a restart of the IDE may be required
+7. Open the Sourcegraph search inside JetBrains `alt+a`
+8. Now, you can switch to a browser window, navigate to [`localhost:9222`](http://localhost:9222), and select the Sourcegraph window.

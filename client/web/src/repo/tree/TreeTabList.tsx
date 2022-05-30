@@ -31,7 +31,7 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Home',
                 isActive: selectedTab === 'home',
                 logName: 'RepoHomeTab',
-                icon: <Icon as={FileDocumentIcon} />,
+                icon: <Icon role="img" as={FileDocumentIcon} aria-hidden={true} />,
                 url: `${tree.url}/`,
             },
             {
@@ -39,7 +39,7 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Commits',
                 isActive: selectedTab === 'commits',
                 logName: 'RepoCommitsTab',
-                icon: <Icon as={SourceCommitIcon} />,
+                icon: <Icon role="img" as={SourceCommitIcon} aria-hidden={true} />,
                 url: `${tree.url}/-/commits/tab`,
             },
             {
@@ -47,7 +47,7 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Branches',
                 isActive: selectedTab === 'branch',
                 logName: 'RepoBranchesTab',
-                icon: <Icon as={SourceBranchIcon} />,
+                icon: <Icon role="img" as={SourceBranchIcon} aria-hidden={true} />,
                 url: `${tree.url}/-/branch/tab`,
             },
             {
@@ -55,7 +55,7 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Tags',
                 isActive: selectedTab === 'tags',
                 logName: 'RepoTagsTab',
-                icon: <Icon as={TagIcon} />,
+                icon: <Icon role="img" as={TagIcon} aria-hidden={true} />,
                 url: `${tree.url}/-/tag/tab`,
             },
             {
@@ -63,7 +63,7 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Compare',
                 isActive: selectedTab === 'compare',
                 logName: 'RepoCompareTab',
-                icon: <Icon as={HistoryIcon} />,
+                icon: <Icon role="img" as={HistoryIcon} aria-hidden={true} />,
                 url: `${tree.url}/-/compare/tab`,
             },
             {
@@ -71,7 +71,7 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Contributors',
                 isActive: selectedTab === 'contributors',
                 logName: 'RepoContributorsTab',
-                icon: <Icon as={AccountIcon} />,
+                icon: <Icon role="img" as={AccountIcon} aria-hidden={true} />,
                 url: `${tree.url}/-/contributors/tab`,
             },
         ],

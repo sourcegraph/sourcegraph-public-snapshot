@@ -12,14 +12,14 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { SearchContextInputProps, SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, useObservable, Link, Card, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, useObservable, Link, Card, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
@@ -132,15 +132,15 @@ export const CommunitySearchContextPage: React.FunctionComponent<
             {!props.communitySearchContextMetadata.lowProfile && (
                 <div className="row">
                     <div className={classNames('col-xs-12 col-lg-7', styles.column)}>
-                        <p className={classNames('h5 font-weight-normal mb-4', styles.contentDescription)}>
+                        <Text weight="regular" className={classNames('h5 mb-4', styles.contentDescription)}>
                             {props.communitySearchContextMetadata.description}
-                        </p>
+                        </Text>
 
                         <Typography.H2>Search examples</Typography.H2>
                         {props.communitySearchContextMetadata.examples.map(example => (
                             <div className="mt-3" key={example.title}>
                                 <Typography.H3 className="mb-3">{example.title}</Typography.H3>
-                                <p>{example.description}</p>
+                                <Text>{example.description}</Text>
                                 <div className="d-flex mb-4">
                                     <small className={classNames('form-control text-monospace ', styles.exampleBar)}>
                                         <SyntaxHighlightedSearchQuery query={`${contextQuery} ${example.query}`} />
@@ -167,10 +167,15 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                         <div className="order-2-lg order-1-xs">
                             <Card className={styles.repoCard}>
                                 <Typography.H2>
-                                    <Icon className="mr-2" as={SourceRepositoryMultipleIcon} />
+                                    <Icon
+                                        role="img"
+                                        className="mr-2"
+                                        as={SourceRepositoryMultipleIcon}
+                                        aria-hidden={true}
+                                    />
                                     Repositories
                                 </Typography.H2>
-                                <p>
+                                <Text>
                                     Using the syntax{' '}
                                     <Typography.Code>
                                         {/*
@@ -182,7 +187,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                                         {props.communitySearchContextMetadata.spec}
                                     </Typography.Code>{' '}
                                     in a query will search these repositories:
-                                </p>
+                                </Text>
                                 {searchContextOrError &&
                                     !isErrorLike(searchContextOrError) &&
                                     searchContextOrError !== LOADING && (
@@ -226,7 +231,7 @@ const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }
         {repo.startsWith('github.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <Icon className={styles.repoListIcon} as={GithubIcon} />
+                    <Icon role="img" className={styles.repoListIcon} as={GithubIcon} aria-hidden={true} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -236,7 +241,7 @@ const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }
         {repo.startsWith('gitlab.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <Icon className={styles.repoListIcon} as={GitlabIcon} />
+                    <Icon role="img" className={styles.repoListIcon} as={GitlabIcon} aria-hidden={true} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -246,7 +251,7 @@ const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }
         {repo.startsWith('bitbucket.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <Icon className={styles.repoListIcon} as={BitbucketIcon} />
+                    <Icon role="img" className={styles.repoListIcon} as={BitbucketIcon} aria-hidden={true} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}

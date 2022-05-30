@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
+import { Text } from '@sourcegraph/wildcard'
 
 import { ConnectionNodesState, ConnectionProps, getTotalCount } from '../ConnectionNodes'
 import { Connection } from '../ConnectionType'
@@ -61,7 +62,7 @@ export const ConnectionSummary = <C extends Connection<N>, N, NP = {}, HP = {}>(
 
     if (totalCount !== null && totalCount > 0 && !TotalCountSummaryComponent) {
         return (
-            <p className={summaryClassName} data-testid="summary">
+            <Text className={summaryClassName} data-testid="summary">
                 <small>
                     <span>
                         {totalCount} {pluralize(noun, totalCount, pluralNoun)}{' '}
@@ -76,7 +77,7 @@ export const ConnectionSummary = <C extends Connection<N>, N, NP = {}, HP = {}>(
                     </span>{' '}
                     {connection.nodes.length < totalCount && `(showing first ${connection.nodes.length})`}
                 </small>
-            </p>
+            </Text>
         )
     }
 
@@ -87,7 +88,7 @@ export const ConnectionSummary = <C extends Connection<N>, N, NP = {}, HP = {}>(
 
     return (
         emptyElement || (
-            <p className={summaryClassName} data-testid="summary">
+            <Text className={summaryClassName} data-testid="summary">
                 <small>
                     No {pluralNoun}{' '}
                     {connectionQuery && (
@@ -96,7 +97,7 @@ export const ConnectionSummary = <C extends Connection<N>, N, NP = {}, HP = {}>(
                         </span>
                     )}
                 </small>
-            </p>
+            </Text>
         )
     )
 }

@@ -48,8 +48,8 @@ func TestQueueIndexesExplicit(t *testing.T) {
 			},
 			{
 				"root": "web/",
-				"indexer": "lsif-tsc",
-				"indexer_args": ["-p", "."],
+				"indexer": "scip-typescript",
+				"indexer_args": ["index", "--no-progress-bar"],
 				"outfile": "lsif.dump",
 			},
 		]
@@ -119,8 +119,8 @@ func TestQueueIndexesExplicit(t *testing.T) {
 				},
 			},
 			Root:        "web/",
-			Indexer:     "lsif-tsc",
-			IndexerArgs: []string{"-p", "."},
+			Indexer:     "scip-typescript",
+			IndexerArgs: []string{"index", "--no-progress-bar"},
 			Outfile:     "lsif.dump",
 		},
 	}
@@ -157,8 +157,8 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 				},
 				{
 					"root": "web/",
-					"indexer": "lsif-tsc",
-					"indexer_args": ["-p", "."],
+					"indexer": "scip-typescript",
+					"indexer_args": ["index", "--no-progress-bar"],
 					"outfile": "lsif.dump",
 				},
 			]
@@ -245,8 +245,8 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 				},
 			},
 			Root:        "web/",
-			Indexer:     "lsif-tsc",
-			IndexerArgs: []string{"-p", "."},
+			Indexer:     "scip-typescript",
+			IndexerArgs: []string{"index", "--no-progress-bar"},
 			Outfile:     "lsif.dump",
 		},
 	}
@@ -273,8 +273,8 @@ index_jobs:
       - --no-animation
   -
     root: web/
-    indexer: lsif-tsc
-    indexer_args: ['-p', '.']
+    indexer: scip-typescript
+    indexer_args: ['index', '--no-progress-bar']
     outfile: lsif.dump
 `)
 
@@ -351,8 +351,8 @@ func TestQueueIndexesInRepository(t *testing.T) {
 				},
 			},
 			Root:        "web/",
-			Indexer:     "lsif-tsc",
-			IndexerArgs: []string{"-p", "."},
+			Indexer:     "scip-typescript",
+			IndexerArgs: []string{"index", "--no-progress-bar"},
 			Outfile:     "lsif.dump",
 		},
 	}
