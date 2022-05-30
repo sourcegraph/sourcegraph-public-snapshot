@@ -42,9 +42,9 @@ interface Props {
     instanceURL: string
     isGlobbingEnabled: boolean
     accessToken: string | null
-    onPreviewChange: (match: SearchMatch, lineMatchIndex?: number) => void
+    onPreviewChange: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => void
     onPreviewClear: () => void
-    onOpen: (match: SearchMatch, lineMatchIndex?: number) => void
+    onOpen: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => void
     initialSearch: Search | null
     initialAuthenticatedUser: AuthenticatedUser | null
 }

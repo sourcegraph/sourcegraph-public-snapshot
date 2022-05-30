@@ -1,5 +1,5 @@
 import { splitPath } from '@sourcegraph/shared/src/components/RepoLink'
-import { ContentMatch, PathMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { ContentMatch, PathMatch, SearchMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { loadContent } from './lib/blob'
 import { PluginConfig, Search, Theme } from './types'
@@ -82,8 +82,8 @@ export async function indicateFinishedLoading(): Promise<void> {
     }
 }
 
-export async function onPreviewChange(match: SearchMatch, lineMatchIndex?: number): Promise<void> {
-    const request = await createPreviewOrOpenRequest(match, lineMatchIndex, 'preview')
+export async function onPreviewChange(match: SearchMatch, lineMatchIndexOrSymbolIndex?: number): Promise<void> {
+    const request = await createPreviewOrOpenRequest(match, lineMatchIndexOrSymbolIndex, 'preview')
     try {
         await callJava(request)
     } catch (error) {
@@ -99,8 +99,8 @@ export async function onPreviewClear(): Promise<void> {
     }
 }
 
-export async function onOpen(match: SearchMatch, lineMatchIndex?: number): Promise<void> {
-    const request = await createPreviewOrOpenRequest(match, lineMatchIndex, 'open')
+export async function onOpen(match: SearchMatch, lineMatchIndexOrSymbolIndex?: number): Promise<void> {
+    const request = await createPreviewOrOpenRequest(match, lineMatchIndexOrSymbolIndex, 'open')
     if (request.arguments.fileName) {
         try {
             await callJava(request)
@@ -135,7 +135,7 @@ async function callJava(request: Request): Promise<object> {
 
 export async function createPreviewOrOpenRequest(
     match: SearchMatch,
-    lineMatchIndex: number | undefined,
+    lineMatchIndexOrSymbolIndex: number | undefined,
     action: MatchRequest['action']
 ): Promise<MatchRequest> {
     if (match.type === 'commit') {
@@ -152,7 +152,7 @@ export async function createPreviewOrOpenRequest(
     }
 
     if (match.type === 'content') {
-        return createPreviewOrOpenRequestForContentMatch(match, lineMatchIndex as number, action)
+        return createPreviewOrOpenRequestForContentMatch(match, lineMatchIndexOrSymbolIndex as number, action)
     }
 
     if (match.type === 'path') {
@@ -172,6 +172,13 @@ export async function createPreviewOrOpenRequest(
         }
     }
 
+    if (match.type === 'symbol') {
+        return createPreviewOrOpenRequestForSymbolMatch(match, lineMatchIndexOrSymbolIndex as number, action)
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore This is here in preparation for future match types
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     console.log(`Unknown match type: “${match.type}”`)
 
     return {
@@ -213,6 +220,26 @@ export async function createPreviewOrOpenRequestForContentMatch(
 
 export async function createPreviewOrOpenRequestForPathMatch(
     match: PathMatch,
+    action: MatchRequest['action']
+): Promise<MatchRequest> {
+    const fileName = splitPath(match.path)[1]
+    const content = await loadContent(match)
+
+    return {
+        action,
+        arguments: {
+            fileName,
+            path: match.path,
+            content: content.replaceAll('\r\n', '\n'),
+            lineNumber: -1,
+            absoluteOffsetAndLengths: [],
+        },
+    }
+}
+
+export async function createPreviewOrOpenRequestForSymbolMatch(
+    match: SymbolMatch,
+    symbolIndex: number,
     action: MatchRequest['action']
 ): Promise<MatchRequest> {
     const fileName = splitPath(match.path)[1]
