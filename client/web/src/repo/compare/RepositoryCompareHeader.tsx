@@ -36,7 +36,7 @@ export const RepositoryCompareHeader: React.FunctionComponent<
         />
         <div className="d-flex align-items-center">
             <RepositoryComparePopover id="base-popover" type="base" comparison={{ base, head }} repo={repo} />
-            <Icon className="mx-2" as={DotsHorizontalIcon} aria-hidden={true} />
+            <Icon role="img" className="mx-2" as={DotsHorizontalIcon} aria-hidden={true} />
             <RepositoryComparePopover id="head-popover" type="head" comparison={{ base, head }} repo={repo} />
         </div>
     </div>

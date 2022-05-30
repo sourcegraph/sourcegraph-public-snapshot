@@ -29,11 +29,11 @@ func TestUpdater(t *testing.T) {
 		"b": {{IsDefaultBranch: true}},
 	}, nil)
 
-	updater := &Updater{
+	updater := &updater{
 		dbStore:         mockDBStore,
 		locker:          mockLocker,
 		gitserverClient: mockGitserverClient,
-		operations:      newOperations(mockDBStore, &observation.TestContext),
+		operations:      NewOperations(mockDBStore, &observation.TestContext),
 	}
 
 	if err := updater.Handle(context.Background()); err != nil {
@@ -75,11 +75,11 @@ func TestUpdaterNoUploads(t *testing.T) {
 		"b": {{IsDefaultBranch: true}},
 	}, nil)
 
-	updater := &Updater{
+	updater := &updater{
 		dbStore:         mockDBStore,
 		locker:          mockLocker,
 		gitserverClient: mockGitserverClient,
-		operations:      newOperations(mockDBStore, &observation.TestContext),
+		operations:      NewOperations(mockDBStore, &observation.TestContext),
 	}
 
 	if err := updater.Handle(context.Background()); err != nil {
@@ -108,11 +108,11 @@ func TestUpdaterLocked(t *testing.T) {
 		"b": {{IsDefaultBranch: true}},
 	}, nil)
 
-	updater := &Updater{
+	updater := &updater{
 		dbStore:         mockDBStore,
 		locker:          mockLocker,
 		gitserverClient: mockGitserverClient,
-		operations:      newOperations(mockDBStore, &observation.TestContext),
+		operations:      NewOperations(mockDBStore, &observation.TestContext),
 	}
 
 	if err := updater.Handle(context.Background()); err != nil {

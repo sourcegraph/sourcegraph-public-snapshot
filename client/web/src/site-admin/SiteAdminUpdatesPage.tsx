@@ -49,7 +49,7 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<React.PropsWithChildr
                     {!updateCheck.errorMessage &&
                         (updateCheck.updateVersionAvailable ? (
                             <Alert className={styles.alert} variant="success">
-                                <Icon as={CloudDownloadIcon} /> Update available:{' '}
+                                <Icon role="img" as={CloudDownloadIcon} aria-hidden={true} /> Update available:{' '}
                                 <Link to="https://about.sourcegraph.com">{updateCheck.updateVersionAvailable}</Link>
                             </Alert>
                         ) : (

@@ -73,7 +73,7 @@ func (o *Output) WriteSuccessf(fmtStr string, args ...any) {
 //
 // In Buildkite it expands the previous and current section to make them visible.
 func (o *Output) WriteFailuref(fmtStr string, args ...any) {
-	o.writeExpandPrevious(output.Linef(output.EmojiFailure, output.StyleWarning, fmtStr, args...))
+	o.writeExpandPrevious(output.Linef(output.EmojiFailure, output.StyleFailure, fmtStr, args...))
 }
 
 // WriteWarningf should be used to communicate a non-blocking failure to the user.

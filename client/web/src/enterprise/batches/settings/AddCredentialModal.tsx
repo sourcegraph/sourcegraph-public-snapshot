@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Button, Modal, Link, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, Typography, Text, Input } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
@@ -183,12 +183,11 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                                 {requiresUsername && (
                                     <>
                                         <Typography.Label htmlFor="username">Username</Typography.Label>
-                                        <input
+                                        <Input
                                             id="username"
                                             name="username"
-                                            type="text"
                                             autoComplete="off"
-                                            className="form-control mb-2"
+                                            className="mb-2"
                                             required={true}
                                             spellCheck="false"
                                             minLength={1}
@@ -198,12 +197,12 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                                     </>
                                 )}
                                 <Typography.Label htmlFor="token">{patLabel}</Typography.Label>
-                                <input
+                                <Input
                                     id="token"
                                     name="token"
                                     type="password"
                                     autoComplete="off"
-                                    className="form-control test-add-credential-modal-input"
+                                    data-testid="test-add-credential-modal-input"
                                     required={true}
                                     spellCheck="false"
                                     minLength={1}
