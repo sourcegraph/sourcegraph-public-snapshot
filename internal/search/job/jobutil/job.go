@@ -262,7 +262,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 				UseFullDeadline: useFullDeadline,
 			}
 
-			addJob(&structural.StructuralSearchJob{
+			addJob(&structural.SearchJob{
 				ZoektArgs:        zoektArgs,
 				SearcherArgs:     searcherArgs,
 				UseIndex:         f.Index(),
