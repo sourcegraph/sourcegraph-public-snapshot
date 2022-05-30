@@ -105,9 +105,9 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Ru
 	// We use a single start time for the sake of simplicity.
 	start := time.Now()
 
-	// 3 minutes is a very long time for a linter to run for, do not allow linters to take
-	// any longer.
-	linterTimeout := 3 * time.Minute
+	// linterTimeout sets the very long time for a linter to run for. We definitely do not
+	// want to allow linters to take any longer.
+	linterTimeout := 5 * time.Minute
 	runnerCtx, cancelRunners := context.WithTimeout(ctx, linterTimeout)
 	for _, fn := range fns {
 		go func(fn lint.Runner) {
