@@ -158,7 +158,7 @@ func (s *store) transact(ctx context.Context) (stx *store, err error) {
 		secs := time.Since(began).Seconds()
 		s.Metrics.Transact.Observe(secs, 1, &err)
 
-		logger.Error("store error", log.Error(err))
+		logger.Error("store.transact", log.Error(err))
 		tr.SetError(err)
 		// Finish is called in Done in the non-error case
 		tr.Finish()
@@ -194,7 +194,7 @@ func (s *store) Done(err error) error {
 			tr.SetError(err)
 			s.Metrics.Done.Observe(secs, 1, &err)
 
-			logger.Error("store error", log.Error(err))
+			logger.Error("store.done", log.Error(err))
 		}
 
 		if !done {
@@ -227,7 +227,7 @@ func (s *store) CountNamespacedRepos(ctx context.Context, userID, orgID int32) (
 		tr.LogFields(otlog.Int32("user-id", userID), otlog.Int32("org-id", orgID))
 		s.Metrics.CountNamespacedRepos.Observe(secs, float64(count), &err)
 
-		logger.Error("store error",
+		logger.Error("store.count-namespaced-repos",
 			log.Uint64("count", count),
 			log.Int("userID", int(userID)),
 			log.Int("orgID", int(orgID)),
@@ -268,7 +268,7 @@ func (s *store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.
 		secs := time.Since(began).Seconds()
 
 		s.Metrics.DeleteExternalServiceReposNotIn.Observe(secs, 1, &err)
-		logger.Error("store error", log.Int64("externalServiceID", svc.ID), log.Int("len(ids)", len(ids)), log.Error(err))
+		logger.Error("store.delete-external-service-repos-not-in", log.Int64("externalServiceID", svc.ID), log.Int("len(ids)", len(ids)), log.Error(err))
 
 		tr.SetError(err)
 		tr.Finish()
@@ -317,7 +317,7 @@ func (s *store) DeleteExternalServiceRepo(ctx context.Context, svc *types.Extern
 
 		s.Metrics.DeleteExternalServiceRepo.Observe(secs, 1, &err)
 
-		logger.Error("store error", log.Int64("externalServiceID", svc.ID), log.Int("repoID", int(id)), log.Error(err))
+		logger.Error("store.delete-external-service-repo", log.Int64("externalServiceID", svc.ID), log.Int("repoID", int(id)), log.Error(err))
 
 		tr.SetError(err)
 		tr.Finish()
@@ -374,7 +374,7 @@ func (s *store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID a
 		secs := time.Since(began).Seconds()
 		s.Metrics.ListExternalServiceUserIDsByRepoID.Observe(secs, 1, &err)
 
-		logger.Error("store error", log.Int("repoID", int(repoID)), log.Error(err))
+		logger.Error("store.list-external-service-user-ids-by-repo-id", log.Int("repoID", int(repoID)), log.Error(err))
 
 		tr.SetError(err)
 		tr.Finish()
@@ -404,7 +404,7 @@ func (s *store) ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, u
 		secs := time.Since(began).Seconds()
 		s.Metrics.ListExternalServiceRepoIDsByUserID.Observe(secs, 1, &err)
 
-		logger.Error("store error", log.Int("userID", int(userID)), log.Error(err))
+		logger.Error("store.list-extenral-service-private-repo-id-by-user-id", log.Int("userID", int(userID)), log.Error(err))
 
 		tr.SetError(err)
 		tr.Finish()
@@ -437,7 +437,7 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 
 		s.Metrics.CreateExternalServiceRepo.Observe(secs, 1, &err)
 
-		logger.Error("store error",
+		logger.Error("store.create-external-service-repo",
 			log.Int("externalServiceID", int(svc.ID)),
 			log.String("Name", string(r.Name)),
 			log.Object("ExternalRepo",
@@ -549,7 +549,7 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		secs := time.Since(began).Seconds()
 
 		s.Metrics.UpdateExternalServiceRepo.Observe(secs, 1, &err)
-		logger.Error("store error",
+		logger.Error("store.update-external-service-repo",
 			log.Int("externalServiceID", int(svc.ID)),
 			log.String("Name", string(r.Name)),
 			log.Object("ExternalRepo",
