@@ -38,9 +38,7 @@ public class SourcegraphWindow implements Disposable {
             popup.showCenteredInCurrentWindow(project);
         }
 
-        if (shouldHideInsteadOfCancel()) {
-            popup.setUiVisible(true);
-        }
+        popup.setUiVisible(true);
 
         // If the popup is already shown, hitting alt + a gain should behave the same as the native find in files
         // feature and focus the search field.
@@ -49,16 +47,6 @@ public class SourcegraphWindow implements Disposable {
         }
     }
 
-    /**
-     * This is a workaround for #34773: On Mac OS, the web view is empty after opening and closing the popover
-     * repeatedly.
-     *
-     * We work around the issue by forcing hiding the Popover instead of clearing it on Mac OS. This slightly increases
-     * resources consumption but allows us to reuse the JCEF window on this platform.
-     */
-    private boolean shouldHideInsteadOfCancel() {
-        return System.getProperty("os.name").equals("Mac OS X");
-    }
 
     @NotNull
     private JBPopup createPopup() {
@@ -74,39 +62,36 @@ public class SourcegraphWindow implements Disposable {
             .setBelongsToGlobalPopupStack(true)
             .setCancelOnOtherWindowOpen(true)
             .setCancelKeyEnabled(true)
-            .setNormalWindowLevel(true);
-
-        if (shouldHideInsteadOfCancel()) {
-            builder = builder.setCancelCallback(() -> {
+            .setNormalWindowLevel(true)
+            .setCancelCallback(() -> {
                 popup.setUiVisible(false);
                 // We return false to prevent the default cancellation behavior.
                 return false;
             });
 
-            // For some reason, adding a cancelCallback will prevent the cancel event to fire when using the escape
-            // key. To work around this, we add a manual listener to both the popup panel and the browser panel for this
-            // scenario.
-            mainPanel.addKeyListener(new KeyAdapter() {
-                public void keyPressed(KeyEvent event) {
-                    if (event.getKeyCode() == KeyEvent.VK_ESCAPE) {
-                        popup.setUiVisible(false);
-                    }
+        // For some reason, adding a cancelCallback will prevent the cancel event to fire when using the escape
+        // key. To work around this, we add a manual listener to both the popup panel and the browser panel for this
+        // scenario.
+        mainPanel.addKeyListener(new KeyAdapter() {
+            public void keyPressed(KeyEvent event) {
+                if (event.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    popup.setUiVisible(false);
                 }
-            });
-            mainPanel.getBrowser().getJBCefClient().addKeyboardHandler(new CefKeyboardHandler() {
-                @Override
-                public boolean onPreKeyEvent(CefBrowser browser, CefKeyEvent event, BoolRef is_keyboard_shortcut) {
-                    return false;
+            }
+        });
+        mainPanel.getBrowser().getJBCefClient().addKeyboardHandler(new CefKeyboardHandler() {
+            @Override
+            public boolean onPreKeyEvent(CefBrowser browser, CefKeyEvent event, BoolRef is_keyboard_shortcut) {
+                return false;
+            }
+            @Override
+            public boolean onKeyEvent(CefBrowser browser, CefKeyEvent event) {
+                if (event.windows_key_code == KeyEvent.VK_ESCAPE) {
+                    popup.setUiVisible(false);
                 }
-                @Override
-                public boolean onKeyEvent(CefBrowser browser, CefKeyEvent event) {
-                    if (event.windows_key_code == KeyEvent.VK_ESCAPE) {
-                        popup.setUiVisible(false);
-                    }
-                    return false;
-                }
-            }, mainPanel.getBrowser().getCefBrowser());
-        }
+                return false;
+            }
+        }, mainPanel.getBrowser().getCefBrowser());
 
         return builder.createPopup();
     }

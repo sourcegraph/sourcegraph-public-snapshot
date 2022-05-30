@@ -80,7 +80,7 @@ public class JSToJavaBridgeRequestHandler {
                     topPanel.setBrowserVisible(true);
                     return createSuccessResponse(null);
                 default:
-                    return createErrorResponse("Unknown action: “" + action + "”.", "No stack trace");
+                    return createErrorResponse("Unknown action: '" + action + "'.", "No stack trace");
             }
         } catch (Exception e) {
             return createErrorResponse(action + ": " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
