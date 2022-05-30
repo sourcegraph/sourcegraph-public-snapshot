@@ -92,30 +92,33 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Ru
 	}
 
 	// We need the Verbose flag to print above the pending indicator.
-	out := output.NewOutput(dst, output.OutputOpts{
-		ForceColor: true,
-		ForceTTY:   true,
-		Verbose:    true,
-	})
+	out := std.NewOutput(dst, true)
 
-	// Spawn a goroutine for each check and increment count to report completion. We use
-	// a single start time for the sake of simplicity.
-	start := time.Now()
+	// Spawn a goroutine for each check and increment count to report completion.
 	var count int64
 	total := len(fns)
 	pending := out.Pending(output.Styledf(output.StylePending, "Running linters (done: 0/%d)", total))
 	var wg sync.WaitGroup
 	reportsCh := make(chan *lint.Report)
 	wg.Add(total)
+
+	// We use a single start time for the sake of simplicity.
+	start := time.Now()
+
+	// 3 minutes is a very long time for a linter to run for, do not allow linters to take
+	// any longer.
+	linterTimeout := 3 * time.Minute
+	runnerCtx, cancelRunners := context.WithTimeout(ctx, linterTimeout)
 	for _, fn := range fns {
 		go func(fn lint.Runner) {
-			reportsCh <- fn(ctx, repoState)
+			reportsCh <- fn(runnerCtx, repoState)
 			wg.Done()
 		}(fn)
 	}
 	go func() {
 		wg.Wait()
 		close(reportsCh)
+		cancelRunners()
 	}()
 
 	// consume check reports
