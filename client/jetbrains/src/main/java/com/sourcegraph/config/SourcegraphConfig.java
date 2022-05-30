@@ -43,9 +43,12 @@ class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
         return remoteUrlReplacements;
     }
 
-    @NotNull
     public Search getLastSearch() {
-        return new Search(lastSearchQuery, lastSearchCaseSensitive, lastSearchPatternType, lastSearchContextSpec);
+        if (lastSearchQuery == null) {
+            return null;
+        } else {
+            return new Search(lastSearchQuery, lastSearchCaseSensitive, lastSearchPatternType, lastSearchContextSpec);
+        }
     }
 
     public boolean isGlobbingEnabled() {
