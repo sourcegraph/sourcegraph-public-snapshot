@@ -101,7 +101,7 @@ type store struct {
 	*basestore.Store
 
 	// Logger used by the store. Defaults to log15.Root().
-	Log log.Logger
+	Logger log.Logger
 	// Metrics are sent to Prometheus by default.
 	Metrics StoreMetrics
 	// Used for tracing calls to store methods. Uses opentracing.GlobalTracer() by default.
@@ -116,7 +116,7 @@ func NewStore(logger log.Logger, db database.DB, txOpts sql.TxOptions) Store {
 	s := basestore.NewWithDB(db, txOpts)
 	return &store{
 		Store:  s,
-		Log:    logger,
+		Logger: logger,
 		Tracer: trace.Tracer{Tracer: opentracing.GlobalTracer()},
 	}
 }
@@ -133,14 +133,14 @@ func (s *store) ExternalServiceStore() database.ExternalServiceStore {
 	return database.ExternalServicesWith(s)
 }
 
-func (s *store) SetLogger(l log.Logger)    { s.Log = l }
+func (s *store) SetLogger(l log.Logger)    { s.Logger = l }
 func (s *store) SetMetrics(m StoreMetrics) { s.Metrics = m }
 func (s *store) SetTracer(t trace.Tracer)  { s.Tracer = t }
 
 func (s *store) With(other basestore.ShareableStore) Store {
 	return &store{
 		Store:   s.Store.With(other),
-		Log:     s.Log,
+		Logger:  s.Logger,
 		Metrics: s.Metrics,
 		Tracer:  s.Tracer,
 	}
@@ -151,8 +151,8 @@ func (s *store) Transact(ctx context.Context) (Store, error) {
 }
 
 func (s *store) transact(ctx context.Context) (stx *store, err error) {
-	tr, ctx := s.trace(ctx, "transact")
-	logger := trace.Logger(ctx, s.Log)
+	tr, ctx := s.trace(ctx, "Store.Transact")
+	logger := trace.Logger(ctx, s.Logger)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
@@ -172,7 +172,7 @@ func (s *store) transact(ctx context.Context) (stx *store, err error) {
 	}
 	return &store{
 		Store:   txBase,
-		Log:     s.Log,
+		Logger:  s.Logger,
 		Metrics: s.Metrics,
 		Tracer:  s.Tracer,
 		txtrace: tr,
@@ -184,7 +184,7 @@ func (s *store) transact(ctx context.Context) (stx *store, err error) {
 func (s *store) Done(err error) error {
 
 	tr := s.txtrace
-	logger := trace.Logger(s.txctx, s.Log).With(log.String("event", "Done"))
+	logger := trace.Logger(s.txctx, s.Logger).With(log.String("event", "Done"))
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
@@ -194,6 +194,8 @@ func (s *store) Done(err error) error {
 			done = true
 			tr.SetError(err)
 			s.Metrics.Done.Observe(secs, 1, &err)
+
+			logger.Error("store error", log.Error(err))
 
 			if err != nil {
 				logger.Error("store error", log.Error(err))
@@ -221,8 +223,8 @@ func (s *store) trace(ctx context.Context, family string) (*trace.Trace, context
 }
 
 func (s *store) CountNamespacedRepos(ctx context.Context, userID, orgID int32) (count uint64, err error) {
-	tr, ctx := s.trace(ctx, "CountNamespacedRepos")
-	logger := trace.Logger(ctx, s.Log)
+	tr, ctx := s.trace(ctx, "Store.CountNamespacedRepos")
+	logger := trace.Logger(ctx, s.Logger)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
@@ -268,7 +270,7 @@ func (s *store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.
 		otlog.Int("len(ids)", len(ids)),
 		otlog.Int64("external_service_id", svc.ID),
 	)
-	logger := trace.Logger(ctx, s.Log)
+	logger := trace.Logger(ctx, s.Logger)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
@@ -313,12 +315,12 @@ WHERE external_service_id = %s AND repo_id != ALL(%s)
 `
 
 func (s *store) DeleteExternalServiceRepo(ctx context.Context, svc *types.ExternalService, id api.RepoID) (err error) {
-	tr, ctx := s.trace(ctx, "DeleteExternalServiceRepo")
+	tr, ctx := s.trace(ctx, "Store.DeleteExternalServiceRepo")
 	tr.LogFields(
 		otlog.Int32("id", int32(id)),
 		otlog.Int64("external_service_id", svc.ID),
 	)
-	logger := trace.Logger(ctx, s.Log)
+	logger := trace.Logger(ctx, s.Logger)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
@@ -374,11 +376,11 @@ WHERE repo_id = %s AND user_id IS NOT NULL
 `
 
 func (s *store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) (userIDs []int32, err error) {
-	tr, ctx := s.trace(ctx, "ListExternalServiceUserIDsByRepoID")
+	tr, ctx := s.trace(ctx, "Store.ListExternalServiceUserIDsByRepoID")
 	tr.LogFields(
 		otlog.Int32("repo_id", int32(repoID)),
 	)
-	logger := trace.Logger(ctx, s.Log)
+	logger := trace.Logger(ctx, s.Logger)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
@@ -410,7 +412,7 @@ func (s *store) ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, u
 	tr.LogFields(
 		otlog.Int32("user_id", userID),
 	)
-	logger := trace.Logger(ctx, s.Log)
+	logger := trace.Logger(ctx, s.Logger)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
@@ -444,7 +446,7 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		otlog.Int64("external_service_id", svc.ID),
 		otlog.String("external_repo_spec", r.ExternalRepo.String()),
 	)
-	logger := trace.Logger(ctx, s.Log)
+	logger := trace.Logger(ctx, s.Logger)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
@@ -559,7 +561,7 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		otlog.Int64("external_service_id", svc.ID),
 		otlog.String("external_repo_spec", r.ExternalRepo.String()),
 	)
-	logger := trace.Logger(ctx, s.Log)
+	logger := trace.Logger(ctx, s.Logger)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
