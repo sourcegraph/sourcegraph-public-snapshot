@@ -163,7 +163,7 @@ func serveSettingsGetForSubject(db database.DB) func(w http.ResponseWriter, r *h
 		if err := json.NewDecoder(r.Body).Decode(&subject); err != nil {
 			return errors.Wrap(err, "Decode")
 		}
-		settings, err := database.Settings(db).GetLatest(r.Context(), subject)
+		settings, err := db.Settings().GetLatest(r.Context(), subject)
 		if err != nil {
 			return errors.Wrap(err, "Settings.GetLatest")
 		}
