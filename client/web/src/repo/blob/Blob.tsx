@@ -97,7 +97,7 @@ import styles from './Blob.module.scss'
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
-const extensionsInSeparateColumns = new Set(['sourcegraph/git-extras', 'git-extras'])
+const extensionsInSeparateColumns = new Set(['sourcegraph/git-extras'])
 
 export interface BlobProps
     extends SettingsCascadeProps,
@@ -607,6 +607,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 : undefined,
         [decorationsOrError]
     )
+
+    console.log(groupedDecorations)
 
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
