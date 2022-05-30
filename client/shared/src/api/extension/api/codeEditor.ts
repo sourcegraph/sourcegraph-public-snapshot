@@ -50,12 +50,8 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
 
     private _decorationsByType = new Map<sourcegraph.TextDocumentDecorationType, clientType.TextDocumentDecoration[]>()
 
-    private _decorations = new BehaviorSubject<
-        Map<sourcegraph.TextDocumentDecorationType, clientType.TextDocumentDecoration[]>
-    >(new Map())
-    public get decorations(): Observable<
-        Map<sourcegraph.TextDocumentDecorationType, clientType.TextDocumentDecoration[]>
-    > {
+    private _decorations = new BehaviorSubject<Map<string | null, clientType.TextDocumentDecoration[]>>(new Map())
+    public get decorations(): Observable<Map<string | null, clientType.TextDocumentDecoration[]>> {
         return this._decorations
     }
 
@@ -69,13 +65,19 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
         // Replace previous decorations for this decorationType
         this._decorationsByType.set(decorationType, decorations.map(fromTextDocumentDecoration))
         this._decorations.next(
-            new Map(
-                [...this._decorationsByType].reduce((accumulator, [key, decorations]) => {
-                    const notEmtyDecorations = decorations.filter(decoration => !isDecorationEmpty(decoration))
+            [...this._decorationsByType].reduce((accumulator, [{ extensionID }, decorations]) => {
+                const key = extensionID || null
+                const filteredDecorations = decorations.filter(decoration => !isDecorationEmpty(decoration))
 
-                    return notEmtyDecorations.length > 0 ? [...accumulator, [key, notEmtyDecorations]] : accumulator
-                }, [] as [sourcegraph.TextDocumentDecorationType, clientType.TextDocumentDecoration[]][])
-            )
+                const extensionDecorations = accumulator.get(key)
+                if (extensionDecorations) {
+                    extensionDecorations.push(...filteredDecorations)
+                } else {
+                    accumulator.set(key, filteredDecorations)
+                }
+
+                return accumulator
+            }, new Map<string | null, clientType.TextDocumentDecoration[]>())
         )
     }
 

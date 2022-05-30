@@ -625,6 +625,8 @@ declare module 'sourcegraph' {
      * {@link sourcegraph.app.createDecorationType}
      */
     export interface TextDocumentDecorationType {
+        readonly extensionID?: string
+
         /** An opaque identifier. */
         readonly key: string
     }

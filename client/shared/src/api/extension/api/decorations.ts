@@ -13,7 +13,8 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 // LINE DECORATIONS
 
 export const createDecorationType = (extensionID?: string): TextDocumentDecorationType => ({
-    key: extensionID || uniqueId('TextDocumentDecorationType'),
+    extensionID,
+    key: uniqueId('TextDocumentDecorationType'),
 })
 
 /**

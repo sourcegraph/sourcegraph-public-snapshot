@@ -31,7 +31,6 @@ import {
     throttleTime,
     withLatestFrom,
 } from 'rxjs/operators'
-import { TextDocumentDecorationType } from 'sourcegraph'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -278,7 +277,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     }, [blobInfo, nextBlobInfoChange, viewerUpdates])
 
     const [decorationsOrError, setDecorationsOrError] = useState<
-        Map<TextDocumentDecorationType, TextDocumentDecoration[]> | Error | undefined
+        Map<string | null, TextDocumentDecoration[]> | Error | undefined
     >()
 
     const popoverCloses = useMemo(() => new Subject<void>(), [])
@@ -599,7 +598,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
     // Memoize `groupedDecorations` to avoid clearing and setting decorations in `ColumnDecorator`s or `LineDecorator`s
     // on renders in which decorations haven't changed.
-    const groupedDecorations: Map<TextDocumentDecorationType, DecorationMapByLine> | undefined = useMemo(
+    const groupedDecorations: Map<string | null, DecorationMapByLine> | undefined = useMemo(
         () =>
             decorationsOrError && !isErrorLike(decorationsOrError)
                 ? new Map(
@@ -730,8 +729,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 )}
                 {groupedDecorations &&
                     iterate(groupedDecorations)
-                        .map(([{ key: extensionID }, decorations]) => {
-                            if (extensionsInSeparateColumns.has(extensionID)) {
+                        .map(([extensionID, decorations]) => {
+                            if (extensionID && extensionsInSeparateColumns.has(extensionID)) {
                                 return (
                                     <ColumnDecorator
                                         key={extensionID}
