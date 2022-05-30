@@ -83,6 +83,21 @@ func Logger(ctx context.Context, l sglog.Logger) sglog.Logger {
 	return l
 }
 
+// ScopedLogger will set the TraceContext on l if ctx has one, and also assign the trace
+// family as a scope if a trace family is found.
+func ScopedLogger(ctx context.Context, l sglog.Logger) sglog.Logger {
+	if t := TraceFromContext(ctx); t != nil {
+		if tc := ContextFromSpan(t.span); tc != nil {
+			traced := l.WithTrace(*tc)
+			if t.family != "" {
+				return traced.Scoped(t.family, "trace family")
+			}
+			return traced
+		}
+	}
+	return l
+}
+
 // URL returns a trace URL for the given trace ID at the given external URL.
 func URL(traceID, externalURL, traceProvider string) string {
 	if traceID == "" {
