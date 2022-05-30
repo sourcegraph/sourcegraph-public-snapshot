@@ -1,37 +1,16 @@
-import { from, Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { from, iif, Observable, timer } from 'rxjs'
+import { distinctUntilChanged, map, retry, shareReplay, switchMap } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import type { requestGraphQL } from '../../backend/graphql'
-import { EvaluatedFeatureFlagsResult, EvaluateFeatureFlagResult } from '../../graphql-operations'
+import { EvaluateFeatureFlagResult } from '../../graphql-operations'
 import { FeatureFlagName } from '../featureFlags'
 
 import { getFeatureFlagOverride } from './feature-flag-local-overrides'
 
 // exporting for testing purposes only
-export const EVALUATE_FEATURE_FLAGS_QUERY = gql`
-    query EvaluatedFeatureFlags {
-        evaluatedFeatureFlags {
-            name
-            value
-        }
-    }
-`
-
-/**
- * Fetches the evaluated feature flags for the current user
- */
-const fetchEvaluatedFeatureFlags = (
-    requestGraphQLFunc: typeof requestGraphQL
-): Observable<EvaluatedFeatureFlagsResult['evaluatedFeatureFlags']> =>
-    from(requestGraphQLFunc<EvaluatedFeatureFlagsResult>(EVALUATE_FEATURE_FLAGS_QUERY)).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.evaluatedFeatureFlags)
-    )
-
-// exporting for testing purposes only
-export const EVALUATE_FEATURE_FLAG_QUERY = gql`
+const EVALUATE_FEATURE_FLAG_QUERY = gql`
     query EvaluateFeatureFlag($flagName: String!) {
         evaluateFeatureFlag(flagName: $flagName)
     }
@@ -52,65 +31,64 @@ const fetchEvaluateFeatureFlag = (
         map(data => data.evaluateFeatureFlag)
     )
 
-/**
- * A Map wrapper that first looks in localStorage.get when returning values.
- */
-class FeatureFlagsProxyMap extends Map<FeatureFlagName, boolean> {
-    public get(key: FeatureFlagName): boolean | undefined {
-        const overriddenValue = getFeatureFlagOverride(key)
-
-        if (overriddenValue !== null && ['true', 'false'].includes(overriddenValue)) {
-            return JSON.parse(overriddenValue) as boolean
-        }
-
-        return super.get(key)
-    }
-}
-
 export interface IFeatureFlagClient {
-    on(flagName: FeatureFlagName, callback: (value: boolean, error?: Error) => void): () => void
+    /**
+     * Evaluates and returns feature flag value
+     */
+    get(flagName: FeatureFlagName): Observable<boolean>
 }
-
-type FeatureFlagListener = (value: boolean, error?: Error) => void
 
 export class FeatureFlagClient implements IFeatureFlagClient {
-    private cache = new FeatureFlagsProxyMap()
-    private listeners = new Map<FeatureFlagName, Set<FeatureFlagListener>>()
-    constructor(private requestGraphQLFunc: typeof requestGraphQL) {
-        fetchEvaluatedFeatureFlags(this.requestGraphQLFunc)
-            .toPromise()
-            .then(flags => {
-                for (const flag of flags) {
-                    this.cache.set(flag.name as FeatureFlagName, flag.value)
-                }
-            })
-            .catch(console.error)
+    private cache = new Map<FeatureFlagName, Observable<boolean>>()
+    /**
+     *
+     * @param requestGraphQLFn function to use for making GQL API calls
+     * @param interval interval in milliseconds to refetch each feature flag
+     */
+    constructor(private requestGraphQLFn: typeof requestGraphQL, private interval?: number) {}
+
+    /**
+     * For mocking/testing purposes
+     *
+     * @see {MockedFeatureFlagsProvider}
+     */
+    public setRequestGraphQLFn(requestGraphQLFn: typeof requestGraphQL): void {
+        this.requestGraphQLFn = requestGraphQLFn
     }
 
     /**
-     * Calls callback function whenever a feature flag is changed
-     *
-     * @returns a cleanup/unsubscribe function
+     * Evaluates and returns feature flag once or by interval
      */
-    // eslint-disable-next-line id-length
-    public on(flagName: FeatureFlagName, callback: FeatureFlagListener): () => void {
-        if (!this.listeners.has(flagName)) {
-            this.listeners.set(flagName, new Set())
+    public get(flagName: FeatureFlagName): Observable<boolean> {
+        if (!this.cache.has(flagName)) {
+            this.cache.set(
+                flagName,
+                iif(() => typeof this.interval === 'number', timer(0, this.interval), timer(0)).pipe(
+                    switchMap(() =>
+                        fetchEvaluateFeatureFlag(this.requestGraphQLFn, flagName).pipe(
+                            retry(3),
+                            map(value => {
+                                // Use local feature flag override if exists
+                                const overriddenValue = getFeatureFlagOverride(flagName)
+                                if (overriddenValue === null) {
+                                    return value
+                                }
+                                if (['true', 1].includes(overriddenValue)) {
+                                    return true
+                                }
+                                if (['false', 0].includes(overriddenValue)) {
+                                    return false
+                                }
+                                return value
+                            })
+                        )
+                    ),
+                    distinctUntilChanged(),
+                    shareReplay(1)
+                )
+            )
         }
-        this.listeners.get(flagName)?.add(callback)
 
-        fetchEvaluateFeatureFlag(this.requestGraphQLFunc, flagName)
-            .toPromise()
-            .then(flagValue => this.cache.set(flagName, flagValue))
-            .catch(error => callback(this.cache.get(flagName) || false, error))
-            .finally(() => {
-                if (!this.listeners.has(flagName)) {
-                    return
-                }
-                for (const listener of this.listeners.get(flagName)!) {
-                    listener(this.cache.get(flagName) || false)
-                }
-            })
-        return () => this.listeners.get(flagName)?.delete(callback)
+        return this.cache.get(flagName)!
     }
 }

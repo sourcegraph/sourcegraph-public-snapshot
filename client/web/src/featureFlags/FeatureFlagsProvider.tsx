@@ -1,5 +1,7 @@
 import React, { createContext, useEffect, useMemo } from 'react'
 
+import { Observable, of } from 'rxjs'
+
 import { requestGraphQL } from '../backend/graphql'
 
 import { FeatureFlagName } from './featureFlags'
@@ -61,7 +63,8 @@ export const FeatureFlagsProvider: React.FunctionComponent<FeatureFlagsProviderP
 }
 
 interface MockedFeatureFlagsProviderProps {
-    overrides: Map<FeatureFlagName, boolean>
+    overrides: Record<FeatureFlagName, boolean>
+    refetchInterval?: number
 }
 
 /**
@@ -75,19 +78,31 @@ interface MockedFeatureFlagsProviderProps {
  */
 export const MockedFeatureFlagsProvider: React.FunctionComponent<MockedFeatureFlagsProviderProps> = ({
     overrides,
+    refetchInterval,
     children,
 }) => {
-    const client = useMemo(() => new MockFeatureFlagClient(overrides), [overrides])
+    const mockRequestGraphQL = useMemo(
+        () => (
+            query: string,
+            variables: any
+        ): Observable<{
+            data: { evaluateFeatureFlag: boolean }
+        }> =>
+            of({
+                data: { evaluateFeatureFlag: overrides[variables.flagName as FeatureFlagName] ?? false },
+            }),
+        [overrides]
+    )
+
+    const client = useMemo(
+        () => new FeatureFlagClient(mockRequestGraphQL as typeof requestGraphQL, refetchInterval),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    )
+
+    useEffect(() => {
+        client.setRequestGraphQLFn(mockRequestGraphQL as typeof requestGraphQL)
+    }, [client, mockRequestGraphQL])
+
     return <FeatureFlagsContext.Provider value={{ client }}>{children}</FeatureFlagsContext.Provider>
-}
-
-class MockFeatureFlagClient implements IFeatureFlagClient {
-    constructor(private featureFlags: Map<FeatureFlagName, boolean>) {}
-
-    // eslint-disable-next-line id-length
-    public on(flagName: FeatureFlagName, callback: (value: boolean, error?: Error) => void): () => void {
-        callback(this.featureFlags.get(flagName) || false)
-
-        return () => {}
-    }
 }
