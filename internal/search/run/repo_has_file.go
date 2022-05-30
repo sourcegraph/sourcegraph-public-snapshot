@@ -83,7 +83,7 @@ func (s *RepoSearchJob) reposContainingPath(ctx context.Context, clients job.Run
 			return nil, err
 		}
 
-		zoektJob := &zoektutil.ZoektRepoSubsetSearchJob{
+		zoektJob := &zoektutil.RepoSubsetTextSearchJob{
 			Repos:          indexed,
 			Query:          zoektQuery,
 			Typ:            search.TextRequest,
