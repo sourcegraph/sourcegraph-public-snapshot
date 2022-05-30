@@ -880,3 +880,12 @@ func prPreview() operations.Operation {
 			bk.Cmd("dev/ci/render-pr-preview.sh"))
 	}
 }
+
+// TODO testing things with the bundle
+func uploadClientPublicBundle() operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":camel: Upload frontend asset",
+			bk.Cmd("dev/ci/upload-client-bundle.sh"),
+		)
+	}
+}
