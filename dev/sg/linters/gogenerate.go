@@ -38,20 +38,24 @@ func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
 		Header: header,
 	}
 
-	out, err := root.Run(run.Cmd(ctx, "git diff --exit-code -- . :!go.sum")).String()
-	if err != nil {
+	var diffOutput string
+	diffOutput, r.Err = root.Run(run.Cmd(ctx, "git diff --exit-code -- . :!go.sum")).String()
+	// If git diff exits with non-zero status, but gives us no output to work with, do not
+	// set Output so that we can see the error instead.
+	//
+	// TODO in the future we might want to improve usages of Report so that we can print
+	// both Err and Output without worrying about duplication.
+	if r.Err != nil && strings.TrimSpace(diffOutput) == "" {
 		var sb strings.Builder
 		reportOut := std.NewOutput(&sb, true)
 		reportOut.WriteWarningf("Uncommitted changes found after running go generate:")
-		if err := reportOut.WriteCode("diff", out); err != nil {
+		if err := reportOut.WriteCode("diff", diffOutput); err != nil {
 			// Simply write the output
 			reportOut.Writef("Failed to pretty print diff: %s, dumping output instead:", err.Error())
-			reportOut.Write(out)
+			reportOut.Write(diffOutput)
 		}
 		reportOut.WriteSuggestionf("To fix this, run 'sg generate'.")
-		r.Err = err
 		r.Output = sb.String()
-		return &r
 	}
 
 	return &r
