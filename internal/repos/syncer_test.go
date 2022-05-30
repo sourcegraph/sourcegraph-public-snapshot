@@ -1166,7 +1166,7 @@ func testCloudDefaultExternalServicesDontSync(store repos.Store) func(*testing.T
 
 		syncer := &repos.Syncer{
 			Logger: logtest.Scoped(t),
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+			Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 				s := repos.NewFakeSource(svc1, nil, githubRepo)
 				return s, nil
 			},
@@ -1923,13 +1923,8 @@ func testAbortSyncWhenThereIsRepoLimitError(store repos.Store) func(*testing.T) 
 		for _, svc := range svcs {
 			// Sync first service
 			syncer := &repos.Syncer{
-<<<<<<< HEAD
-				Logger: logger,
-				Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-=======
 				Logger: logtest.Scoped(t),
-				Sourcer: func(service *types.ExternalService) (repos.Source, error) {
->>>>>>> 3f12a37a80 (use lib/log better in Syncer)
+				Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 					s := repos.NewFakeSource(svc, nil, githubRepo, githubRepo2)
 					return s, nil
 				},
