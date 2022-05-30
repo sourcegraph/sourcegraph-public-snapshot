@@ -184,7 +184,8 @@ func (s *store) transact(ctx context.Context) (stx *store, err error) {
 func (s *store) Done(err error) error {
 
 	tr := s.txtrace
-	logger := trace.Logger(s.txctx, s.Logger).With(log.String("event", "Done"))
+	tr.LogFields(otlog.String("event", "Store.Done"))
+	logger := trace.Logger(s.txctx, s.Logger)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
@@ -194,8 +195,6 @@ func (s *store) Done(err error) error {
 			done = true
 			tr.SetError(err)
 			s.Metrics.Done.Observe(secs, 1, &err)
-
-			logger.Error("store error", log.Error(err))
 
 			if err != nil {
 				logger.Error("store error", log.Error(err))
