@@ -132,7 +132,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 			})
 		}
 
-		addJob(&searchrepos.ComputeExcludedReposJob{
+		addJob(&searchrepos.ComputeExcludedJob{
 			RepoOpts: repoOptions,
 		})
 	}
