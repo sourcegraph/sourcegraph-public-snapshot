@@ -43,7 +43,7 @@ func setRepos(job job.Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.R
 		return &jobCopy
 	}
 
-	setSymbolSearcherRepos := func(job *searcher.SymbolSearcherJob) *searcher.SymbolSearcherJob {
+	setSymbolSearcherRepos := func(job *searcher.SymbolSearchJob) *searcher.SymbolSearchJob {
 		jobCopy := *job
 		jobCopy.Repos = unindexed
 		return &jobCopy

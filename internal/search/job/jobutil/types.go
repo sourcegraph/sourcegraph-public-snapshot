@@ -14,7 +14,7 @@ var allJobs = []job.Job{
 	&zoekt.RepoSubsetTextSearchJob{},
 	&zoekt.SymbolSearchJob{},
 	&searcher.TextSearchJob{},
-	&searcher.SymbolSearcherJob{},
+	&searcher.SymbolSearchJob{},
 	&run.RepoSearchJob{},
 	&zoekt.GlobalTextSearchJob{},
 	&structural.StructuralSearchJob{},

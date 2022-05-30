@@ -30,7 +30,7 @@ func TestAddCodeMonitorHook(t *testing.T) {
 		erroringJobs := []job.Job{
 			jobutil.NewParallelJob(&run.RepoSearchJob{}, &commit.CommitSearchJob{}),
 			&run.RepoSearchJob{},
-			jobutil.NewAndJob(&searcher.SymbolSearcherJob{}, &commit.CommitSearchJob{}),
+			jobutil.NewAndJob(&searcher.SymbolSearchJob{}, &commit.CommitSearchJob{}),
 			jobutil.NewTimeoutJob(0, &run.RepoSearchJob{}),
 		}
 

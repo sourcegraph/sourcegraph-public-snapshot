@@ -230,7 +230,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 		if resultTypes.Has(result.TypeSymbol) {
 			// Create Symbol Search jobs over repo set.
 			if !skipRepoSubsetSearch {
-				symbolSearchJob := &searcher.SymbolSearcherJob{
+				symbolSearchJob := &searcher.SymbolSearchJob{
 					PatternInfo: patternInfo,
 					Limit:       maxResults,
 				}
