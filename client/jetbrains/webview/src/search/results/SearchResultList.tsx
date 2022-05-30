@@ -195,8 +195,9 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 selectResult={selectResult}
                             />
                         )
-                    // TODO: Add more types
                     default:
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-ignore This is here in preparation for future match types
                         console.log('Unknown search result type:', match.type)
                         return null
                 }

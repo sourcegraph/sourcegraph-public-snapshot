@@ -21,6 +21,8 @@ export function getMatchId(match: SearchMatch): string {
         return match.repository
     }
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore This is here in preparation for future match types
     console.error('Unknown match type:', match.type)
     return ''
 }

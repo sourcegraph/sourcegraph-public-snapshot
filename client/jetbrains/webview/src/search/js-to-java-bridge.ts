@@ -176,6 +176,9 @@ export async function createPreviewOrOpenRequest(
         return createPreviewOrOpenRequestForSymbolMatch(match, lineMatchIndexOrSymbolIndex as number, action)
     }
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore This is here in preparation for future match types
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     console.log(`Unknown match type: “${match.type}”`)
 
     return {
