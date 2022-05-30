@@ -188,7 +188,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
               class="container"
             >
               <div
-                class="container d-flex loader-input"
+                class="container loader-input loaderInput"
               >
                 <input
                   autocomplete="email"
@@ -217,7 +217,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
               class="container"
             >
               <div
-                class="container d-flex loader-input"
+                class="container loader-input loaderInput"
               >
                 <input
                   autocapitalize="off"
@@ -249,7 +249,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
               class="container"
             >
               <div
-                class="container d-flex loader-input"
+                class="container loader-input loaderInput"
               >
                 <input
                   autocomplete="new-password"

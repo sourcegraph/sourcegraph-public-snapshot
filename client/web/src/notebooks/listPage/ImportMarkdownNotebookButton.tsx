@@ -12,8 +12,6 @@ import { CreateNotebookVariables } from '../../graphql-operations'
 import { blockToGQLInput } from '../serialize'
 import { convertMarkdownToBlocks } from '../serialize/convertMarkdownToBlocks'
 
-import styles from './ImportMarkdownNotebookButton.module.scss'
-
 const LOADING = 'loading' as const
 
 const INVALID_IMPORT_FILE_ERROR = new Error(
@@ -81,7 +79,7 @@ export const ImportMarkdownNotebookButton: React.FunctionComponent<
         <>
             <Input
                 type="file"
-                className={styles.input}
+                className="d-none"
                 ref={fileInputReference}
                 accept=".md"
                 onChange={onFileInputChange}

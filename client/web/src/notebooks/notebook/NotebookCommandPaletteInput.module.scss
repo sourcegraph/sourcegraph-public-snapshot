@@ -1,7 +1,3 @@
-:root {
-    --input-placeholder-color: #757575;
-}
-
 .root {
     width: 100%;
     margin-top: 1rem;
@@ -22,10 +18,6 @@
     &:focus-visible {
         box-shadow: none;
     }
-}
-
-.input::placeholder {
-    color: var(--input-placeholder-color);
 }
 
 .command-palette {

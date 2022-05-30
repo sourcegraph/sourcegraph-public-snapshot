@@ -235,7 +235,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
                 class="input-group"
               >
                 <div
-                  class="container d-flex loader-input"
+                  class="container loader-input loaderInput"
                 >
                   <input
                     class="input form-control with-invalid-icon"

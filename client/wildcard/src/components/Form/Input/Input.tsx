@@ -67,7 +67,7 @@ export const Input = forwardRef((props, reference) => {
     const inputWithMessage = (
         <>
             <LoaderInput
-                className={classNames('d-flex loader-input', !label && className)}
+                className={classNames('loader-input', styles.loaderInput, !label && className)}
                 loading={status === InputStatus.loading}
             >
                 <Component

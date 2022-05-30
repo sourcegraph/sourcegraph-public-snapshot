@@ -13,7 +13,7 @@ exports[`RepositoryReleasesTagsPage renders 1`] = `
         class="w-100 d-inline-flex justify-content-between flex-row noncompact"
       >
         <div
-          class="container d-flex loader-input"
+          class="container loader-input loaderInput"
         >
           <input
             autocapitalize="off"
