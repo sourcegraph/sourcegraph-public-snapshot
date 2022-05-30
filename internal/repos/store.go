@@ -454,8 +454,8 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		if err != nil {
 			logger.Error("store error",
 				log.Int("externalServiceID", int(svc.ID)),
-				log.String("name", string(r.Name)),
-				log.Object("externalRepo",
+				log.String("Name", string(r.Name)),
+				log.Object("ExternalRepo",
 					log.String("ID", r.ExternalRepo.ID),
 					log.String("ServiceID", r.ExternalRepo.ServiceID),
 					log.String("ServiceType", r.ExternalRepo.ServiceType),
@@ -568,8 +568,8 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		if err != nil {
 			logger.Error("store error",
 				log.Int("externalServiceID", int(svc.ID)),
-				log.String("name", string(r.Name)),
-				log.Object("externalRepo",
+				log.String("Name", string(r.Name)),
+				log.Object("ExternalRepo",
 					log.String("ID", r.ExternalRepo.ID),
 					log.String("ServiceID", r.ExternalRepo.ServiceID),
 					log.String("ServiceType", r.ExternalRepo.ServiceType),
