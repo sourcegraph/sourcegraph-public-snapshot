@@ -83,7 +83,7 @@ func (s *IndexableReposLister) list(ctx context.Context, onlyPublic bool) (resul
 		return repos, nil
 	}
 
-	// We don't have any epos yet, fetch them
+	// We don't have any repos yet, fetch them
 	if len(repos) == 0 {
 		return s.refreshCache(ctx, onlyPublic)
 	}
