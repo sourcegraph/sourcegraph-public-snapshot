@@ -1592,7 +1592,7 @@
           "Name": "initiator_id",
           "Index": 16,
           "TypeName": "integer",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
