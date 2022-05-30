@@ -18,8 +18,6 @@ import (
 )
 
 func TestGetBatchChangesUsageStatistics(t *testing.T) {
-	t.Skip("2022-05-30 disabled because it fails near end of month")
-
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
 
