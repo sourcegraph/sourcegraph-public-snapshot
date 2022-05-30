@@ -65,8 +65,7 @@ var batchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
 
 const executionPlaceInQueueFragment = `
 SELECT
-	id,
-	ROW_NUMBER() OVER (ORDER BY COALESCE(process_after, created_at), id) as place_in_queue
+	id, place_in_queue
 FROM batch_spec_workspace_execution_queue
 `
 

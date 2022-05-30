@@ -32,4 +32,4 @@ materialized_queue_candidates AS MATERIALIZED (
 			ORDER BY queue.latest_dequeue, exec.id
 		)
 	)
-SELECT * FROM materialized_queue_candidates;
+SELECT ROW_NUMBER() OVER () as place_in_queue, * FROM materialized_queue_candidates;
