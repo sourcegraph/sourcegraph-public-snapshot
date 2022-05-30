@@ -72,8 +72,7 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 
 	// Due to irregularity in the amount of days in a month, subtracting simply a month from a date can deduct
 	// 30 days, but that's incorrect because not every month has 30 days.
-	// this poses a problem.
-	// Therefore deducting three days after the initial month deduction ensures we'll
+	// This poses a problem, therefore deducting three days after the initial month deduction ensures we'll
 	// always get a date that falls in the previous month regardless of the day in question.
 	lastMonthCreationDate := now.AddDate(0, -1, -3)
 	twoMonthsAgoCreationDate := now.AddDate(0, -2, -3)
