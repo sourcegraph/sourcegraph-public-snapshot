@@ -113,14 +113,10 @@ export const NotebookFileBlockInputs: React.FunctionComponent<
                     onChange={onLineRangeInputChange}
                     placeholder="Enter a single line (1), a line range (1-10), or leave empty to show the entire file."
                     label="Line range"
-                    className={isLineRangeValid === false ? 'mb-0' : 'mb-0'}
+                    className="mb-0"
                     error={
-                        isLineRangeValid === false && (
-                            <span className={styles.inputError}>
-                                Line range is invalid. Enter a single line (1), a line range (1-10), or leave empty to
-                                show the entire file.
-                            </span>
-                        )
+                        isLineRangeValid === false &&
+                        'Line range is invalid. Enter a single line (1), a line range (1-10), or leave empty to show the entire file.'
                     }
                 />
             </div>

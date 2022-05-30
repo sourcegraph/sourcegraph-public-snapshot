@@ -72,7 +72,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
         class="input-group"
       >
         <div
-          class="container d-flex"
+          class="container d-flex loader-input"
         >
           <input
             class="input form-control with-invalid-icon"
@@ -178,7 +178,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
         class="input-group"
       >
         <div
-          class="container d-flex"
+          class="container d-flex loader-input"
         >
           <input
             class="input form-control with-invalid-icon"

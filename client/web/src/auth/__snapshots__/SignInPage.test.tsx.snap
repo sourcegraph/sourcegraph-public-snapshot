@@ -66,7 +66,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
                 </p>
               </div>
               <div
-                class="container d-flex"
+                class="container d-flex loader-input"
               >
                 <input
                   autocapitalize="off"
@@ -100,7 +100,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
                 </div>
               </div>
               <div
-                class="container d-flex"
+                class="container d-flex loader-input"
               >
                 <input
                   autocomplete="current-password"
@@ -238,7 +238,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
                 </p>
               </div>
               <div
-                class="container d-flex"
+                class="container d-flex loader-input"
               >
                 <input
                   autocapitalize="off"
@@ -272,7 +272,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
                 </div>
               </div>
               <div
-                class="container d-flex"
+                class="container d-flex loader-input"
               >
                 <input
                   autocomplete="current-password"

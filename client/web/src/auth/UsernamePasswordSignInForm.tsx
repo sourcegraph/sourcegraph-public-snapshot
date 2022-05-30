@@ -103,11 +103,11 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
                     disabled={loading}
                     autoCapitalize="off"
                     autoFocus={true}
-                    autoComplete="username"
                     className="form-group"
                     // There is no well supported way to declare username OR email here.
                     // Using username seems to be the best approach and should still support this behaviour.
                     // See: https://github.com/whatwg/html/issues/4445
+                    autoComplete="username"
                 />
 
                 <PasswordInput

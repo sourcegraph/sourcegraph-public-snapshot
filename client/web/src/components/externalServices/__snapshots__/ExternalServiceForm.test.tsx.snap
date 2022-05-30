@@ -17,7 +17,7 @@ exports[`ExternalServiceForm create GitHub 1`] = `
           Display name:
         </div>
         <div
-          class="container d-flex"
+          class="container d-flex loader-input"
         >
           <input
             autocomplete="off"
@@ -71,7 +71,7 @@ exports[`ExternalServiceForm edit GitHub 1`] = `
           Display name:
         </div>
         <div
-          class="container d-flex"
+          class="container d-flex loader-input"
         >
           <input
             autocomplete="off"
@@ -125,7 +125,7 @@ exports[`ExternalServiceForm edit GitHub, loading 1`] = `
           Display name:
         </div>
         <div
-          class="container d-flex"
+          class="container d-flex loader-input"
         >
           <input
             autocomplete="off"
