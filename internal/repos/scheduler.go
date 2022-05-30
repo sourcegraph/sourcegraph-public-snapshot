@@ -10,8 +10,6 @@ import (
 
 	"github.com/grafana/regexp"
 
-	"github.com/sourcegraph/sourcegraph/lib/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // schedulerConfig tracks the active scheduler configuration.
@@ -138,7 +137,7 @@ func NewUpdateScheduler(logger log.Logger, db database.DB) *UpdateScheduler {
 			index:         make(map[api.RepoID]*scheduledRepoUpdate),
 			wakeup:        make(chan struct{}, notifyChanBuffer),
 			randGenerator: rand.New(rand.NewSource(time.Now().UnixNano())),
-			logger:        updateSchedLogger.Scoped("schedule", ""),
+			logger:        updateSchedLogger.Scoped("Schedule", ""),
 		},
 		logger: updateSchedLogger,
 	}
@@ -202,7 +201,7 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 				break
 			}
 
-			subLogger := s.logger.Scoped("runUpdateLoop", "")
+			subLogger := s.logger.Scoped("RunUpdateLoop", "")
 
 			go func(ctx context.Context, repo configuredRepo, cancel context.CancelFunc) {
 				defer cancel()
@@ -448,7 +447,7 @@ func (s *UpdateScheduler) DebugDump(ctx context.Context, db database.DB) any {
 	var err error
 	data.SyncJobs, err = db.ExternalServices().GetSyncJobs(ctx)
 	if err != nil {
-		s.logger.Warn("Getting external service sync jobs for debug page", log.Error(err))
+		s.logger.Warn("getting external service sync jobs for debug page", log.Error(err))
 	}
 
 	return &data
@@ -813,7 +812,9 @@ func (s *schedule) updateInterval(repo configuredRepo, interval time.Duration) {
 		update.Interval = update.Interval + time.Duration(s.randGenerator.Int63n(2*delta)-delta)
 
 		update.Due = timeNow().Add(update.Interval)
-		s.logger.Debug("updated repo", log.String("repo", string(repo.Name)), log.Duration("due", update.Due.Sub(timeNow())))
+		s.logger.Debug("updated repo",
+			log.Object("repo", log.String("name", string(repo.Name)), log.Duration("due", update.Due.Sub(timeNow()))),
+		)
 		heap.Fix(s, update.Index)
 		s.rescheduleTimer()
 	}
