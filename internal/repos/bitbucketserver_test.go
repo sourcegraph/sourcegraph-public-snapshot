@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -23,8 +26,14 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 	var repos []*bitbucketserver.Repo
+
 	if err := json.Unmarshal(b, &repos); err != nil {
 		t.Fatal(err)
+	}
+
+	fmt.Println("Printing repos...")
+	for _, repo := range repos {
+		fmt.Printf("%+v\n", repo)
 	}
 
 	cases := map[string]*schema.BitbucketServerConnection{
@@ -65,7 +74,7 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 			var got []*types.Repo
 			fmt.Println("Repos:")
 			for _, r := range repos {
-				fmt.Println("R:", r)
+				// fmt.Println("R:", r)
 				got = append(got, s.makeRepo(r, false))
 			}
 
@@ -215,7 +224,126 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 	})
 }
 
+type Client struct {
+	s   *BitbucketServerSource
+	err error
+}
+
+func New(serverUrl string) (*Client, error) {
+	simpleConfig := &schema.BitbucketServerConnection{
+		Url:   serverUrl,
+		Token: "secret",
+	}
+	fmt.Println("Done creating config")
+
+	svc := types.ExternalService{
+		ID:   1,
+		Kind: extsvc.KindBitbucketServer,
+	}
+	fmt.Println("Done creating svc")
+
+	source, err := newBitbucketServerSource(&svc, simpleConfig, nil)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("Done creating source")
+
+	return &Client{
+		s:   source,
+		err: err,
+	}, nil
+}
+
+var (
+	mux    *http.ServeMux
+	server *httptest.Server
+	// client *Client
+)
+
+func setup() *Client {
+	mux = http.NewServeMux()
+	server = httptest.NewServer(mux)
+
+	client, _ := New(server.URL)
+	fmt.Println("Done creating client")
+
+	return client
+}
+
 func TestListRepos(t *testing.T) {
+	client := setup()
+
+	mux.HandleFunc("/rest/api/1.0", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, fixture("repos.json"))
+	})
+
+	mux.HandleFunc("/rest/api/1.0/labels/archived/labeled", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("REACHED ARCHIVED")
+	})
+
+	fmt.Println("Making results...")
+	results := make(chan SourceResult)
+	client.s.ListRepos(context.Background(), results)
+
+	server.Close()
+}
+
+func fixture(path string) string {
+	b, err := ioutil.ReadFile("testdata" + path)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
+
+// func TestListReposv2(t *testing.T) {
+// 	// make the bitbucket server source
+// 	// connect the source
+// 	// add some repos from test file
+// 	// get back the repos
+
+// 	// config := map[string]*schema.BitbucketServerConnection{
+// 	// 	"simple": {
+// 	// 		Url:   "https://bitbucket.example.com",
+// 	// 		Token: "secret",
+// 	// 	},
+// 	// }
+// 	// fmt.Println("Done creating config")
+
+// 	simpleConfig := &schema.BitbucketServerConnection{
+// 		Url:   "https://bitbucket.example.com",
+// 		Token: "secret",
+// 	}
+
+// 	svc := types.ExternalService{
+// 		ID:   1,
+// 		Kind: extsvc.KindBitbucketServer,
+// 	}
+// 	fmt.Println("Done creating svc")
+
+// 	s, err := newBitbucketServerSource(&svc, simpleConfig, nil)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	fmt.Println("Done creating BitbucketServerSource")
+
+// 	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	var repos []*bitbucketserver.Repo
+// 	if err := json.Unmarshal(b, &repos); err != nil {
+// 		t.Fatal(err)
+// 	}
+
+// 	for _, repo := range repos {
+// 		s.config.Repos = append(s.config.Repos, s.makeRepo(repo, false))
+// 	}
+// }
+
+func TestListReposv1(t *testing.T) {
 	fmt.Println("TestListRepos called...")
 
 	config := map[string]*schema.BitbucketServerConnection{

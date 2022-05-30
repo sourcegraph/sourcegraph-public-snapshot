@@ -872,14 +872,17 @@ func (c *Client) Fork(ctx context.Context, projectKey, repoSlug string, input Cr
 }
 
 func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results any) (*PageToken, error) {
+	fmt.Println("IN CLIENT.page()")
 	fmt.Println("Query:", qry)
 	if qry == nil {
 		qry = make(url.Values)
+		fmt.Println("No query, new query is", qry)
 	}
 
 	for k, vs := range token.Values() {
 		fmt.Println("k:", k)
 		qry[k] = append(qry[k], vs...)
+		fmt.Println("query[k]:", qry[k])
 	}
 
 	u := url.URL{Path: path, RawQuery: qry.Encode()}
@@ -927,18 +930,17 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
+	fmt.Println("IN CLIENT.do()")
+
 	req.URL = c.URL.ResolveReference(req.URL)
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	}
 
-	fmt.Println("HTTP C.DO")
-
 	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx),
 		req.WithContext(ctx),
 		nethttp.OperationName("Bitbucket Server"),
 		nethttp.ClientTrace(false))
-	fmt.Println("ht:", ht)
 	defer ht.Finish()
 	fmt.Println("Passed finish")
 
@@ -950,7 +952,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 		return nil, err
 	}
 
-	fmt.Printf("REQ:%+v\n", req)
+	fmt.Println("REQ:", req.URL)
 	resp, err := c.httpClient.Do(req)
 	fmt.Println("ERROR:", err)
 	if err != nil {
@@ -964,6 +966,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("bs:", bs)
 
 	fmt.Println("FOR LOOP")
 	for data := range bs {

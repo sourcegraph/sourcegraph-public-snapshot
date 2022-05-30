@@ -249,6 +249,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 
 	fmt.Println("Starting queries...")
 	for _, q := range s.config.RepositoryQuery {
+		fmt.Println("QUERY:", q)
 		switch q {
 		case "none":
 			continue
@@ -300,16 +301,22 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 }
 
 func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label string) (map[int]struct{}, error) {
-	fmt.Printf("%+v\n", s.client.URL)
+	fmt.Printf("Client URL: %+v\n", s.client.URL)
 	fmt.Println("listAllLabeledRepos starting...")
 	ids := map[int]struct{}{}
 	next := &bitbucketserver.PageToken{Limit: 1000}
 	for next.HasMore() {
 		fmt.Println("Starting LabeledRepos")
 		fmt.Println("Label:", label)
-		fmt.Printf("%+v\n", next)
+		fmt.Printf("Next: %+v\n", next)
 		repos, page, err := s.client.LabeledRepos(ctx, next, label)
+		fmt.Println("repos:", repos)
 		fmt.Println("Done with LabeledRepos")
+		fmt.Println("next:", next)
+		fmt.Println("page:", page)
+		if page == nil {
+			break
+		}
 		if err != nil {
 			// If the instance doesn't have the label then no repos are
 			// labeled. Older versions of bitbucket do not support labels, so
