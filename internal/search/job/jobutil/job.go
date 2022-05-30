@@ -211,7 +211,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
 			// Create Text Search jobs over repo set.
 			if !skipRepoSubsetSearch {
-				searcherJob := &searcher.SearcherJob{
+				searcherJob := &searcher.TextSearchJob{
 					PatternInfo:     patternInfo,
 					Indexed:         false,
 					UseFullDeadline: useFullDeadline,

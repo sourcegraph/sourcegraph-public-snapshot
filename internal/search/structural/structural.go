@@ -62,7 +62,7 @@ type searchRepos struct {
 // getJob returns a function parameterized by ctx to search over repos.
 func (s *searchRepos) getJob(ctx context.Context) func() error {
 	return func() error {
-		searcherJob := &searcher.SearcherJob{
+		searcherJob := &searcher.TextSearchJob{
 			PatternInfo:     s.args.PatternInfo,
 			Repos:           s.repoSet.AsList(),
 			Indexed:         s.repoSet.IsIndexed(),
