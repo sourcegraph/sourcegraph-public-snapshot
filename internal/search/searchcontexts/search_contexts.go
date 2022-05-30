@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -253,8 +252,8 @@ func validateSearchContextQuery(contextQuery string) error {
 	return errs
 }
 
-func validateSearchContextDoesNotExist(ctx context.Context, db dbutil.DB, searchContext *types.SearchContext) error {
-	_, err := database.SearchContexts(db).GetSearchContext(ctx, database.GetSearchContextOptions{
+func validateSearchContextDoesNotExist(ctx context.Context, db database.DB, searchContext *types.SearchContext) error {
+	_, err := db.SearchContexts().GetSearchContext(ctx, database.GetSearchContextOptions{
 		Name:            searchContext.Name,
 		NamespaceUserID: searchContext.NamespaceUserID,
 		NamespaceOrgID:  searchContext.NamespaceOrgID,
