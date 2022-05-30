@@ -13,7 +13,7 @@ export function getMatchId(match: SearchMatch): string {
         return `${match.repository}-${match.oid.slice(0, 7)}`
     }
 
-    if (match.type === 'content') {
+    if (match.type === 'content' || match.type === 'path') {
         return `${match.repository}-${match.path}`
     }
 
