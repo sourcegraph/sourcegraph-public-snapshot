@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
@@ -71,6 +72,15 @@ func ContextFromSpan(span opentracing.Span) *otfields.TraceContext {
 	}
 
 	return nil
+}
+
+// Logger will set the TraceContext on l if ctx has one. This is a
+// convenience function around l.WithTrace for the common case.
+func Logger(ctx context.Context, l sglog.Logger) sglog.Logger {
+	if tc := Context(ctx); tc != nil {
+		return l.WithTrace(*tc)
+	}
+	return l
 }
 
 // URL returns a trace URL for the given trace ID at the given external URL.

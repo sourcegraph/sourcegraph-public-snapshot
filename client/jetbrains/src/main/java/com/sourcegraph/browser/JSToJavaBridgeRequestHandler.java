@@ -52,6 +52,11 @@ public class JSToJavaBridgeRequestHandler {
                     return createSuccessResponse(new JsonObject());
                 case "loadLastSearch":
                     Search lastSearch = ConfigUtil.getLastSearch(this.project);
+
+                    if (lastSearch != null) {
+                        return createSuccessResponse(null);
+                    }
+
                     JsonObject lastSearchAsJson = new JsonObject();
                     lastSearchAsJson.addProperty("query", lastSearch.getQuery());
                     lastSearchAsJson.addProperty("caseSensitive", lastSearch.isCaseSensitive());
@@ -75,7 +80,7 @@ public class JSToJavaBridgeRequestHandler {
                     topPanel.setBrowserVisible(true);
                     return createSuccessResponse(null);
                 default:
-                    return createErrorResponse("Unknown action: “" + action + "”.", "No stack trace");
+                    return createErrorResponse("Unknown action: '" + action + "'.", "No stack trace");
             }
         } catch (Exception e) {
             return createErrorResponse(action + ": " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
@@ -94,7 +99,7 @@ public class JSToJavaBridgeRequestHandler {
 
     @NotNull
     private JBCefJSQuery.Response createSuccessResponse(@Nullable JsonObject result) {
-        return new JBCefJSQuery.Response(result != null ? result.toString() : "{}");
+        return new JBCefJSQuery.Response(result != null ? result.toString() : "null");
     }
 
     @NotNull

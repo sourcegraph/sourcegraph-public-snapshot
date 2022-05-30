@@ -107,8 +107,8 @@ func (w *Worker) DoSomething(params ...int) {
 If you are kicking off a long-running process, you can spawn a child logger and use it directly to maintain relevant context:
 
 ```go
-func (w *Worker) DoBigThing(params ...int) {
-  doLog := w.logger.WithTrace(/* ... */).With("params", params)
+func (w *Worker) DoBigThing(ctx context.Context, params ...int) {
+  doLog := trace.Logger(ctx, w.logger).With("params", params)
 
   // subsequent entries will have trace and params attached
   doLog.Info("starting the big thing")
