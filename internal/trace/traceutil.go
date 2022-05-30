@@ -74,9 +74,9 @@ func ContextFromSpan(span opentracing.Span) *otfields.TraceContext {
 	return nil
 }
 
-// WithLogger will set the TraceContext on l if ctx has one. This is a
+// Logger will set the TraceContext on l if ctx has one. This is a
 // convenience function around l.WithTrace for the common case.
-func WithLogger(ctx context.Context, l sglog.Logger) sglog.Logger {
+func Logger(ctx context.Context, l sglog.Logger) sglog.Logger {
 	if tc := Context(ctx); tc != nil {
 		return l.WithTrace(*tc)
 	}

@@ -108,7 +108,7 @@ If you are kicking off a long-running process, you can spawn a child logger and 
 
 ```go
 func (w *Worker) DoBigThing(ctx context.Context, params ...int) {
-  doLog := trace.WithLogger(ctx, w.logger).With("params", params)
+  doLog := trace.Logger(ctx, w.logger).With("params", params)
 
   // subsequent entries will have trace and params attached
   doLog.Info("starting the big thing")
