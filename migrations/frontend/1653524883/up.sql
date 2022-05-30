@@ -29,7 +29,7 @@ materialized_queue_candidates AS MATERIALIZED (
 		-- Round-robin let tenants dequeue jobs
 		ROW_NUMBER() OVER (
 			PARTITION BY queue.user_id
-			ORDER BY queue.latest_dequeue, exec.id
+			ORDER BY queue.latest_dequeue ASC NULLS FIRST, exec.id
 		)
 	)
-SELECT ROW_NUMBER() OVER () as place_in_queue, * FROM materialized_queue_candidates;
+SELECT ROW_NUMBER() OVER () AS place_in_queue, * FROM materialized_queue_candidates;
