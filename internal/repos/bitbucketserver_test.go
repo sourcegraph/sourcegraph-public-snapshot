@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -272,6 +273,7 @@ func setup() *Client {
 
 func TestListRepos(t *testing.T) {
 	client := setup()
+	client.s.config.RepositoryQuery = []string{"?projectname=\"foo\""}
 
 	mux.HandleFunc("/rest/api/1.0", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -283,9 +285,31 @@ func TestListRepos(t *testing.T) {
 		fmt.Println("REACHED ARCHIVED")
 	})
 
+	mux.HandleFunc("/rest/api/1.0/repos?projectname=foo", func(w http.ResponseWriter, r *http.Request) {
+
+	})
+
 	fmt.Println("Making results...")
 	results := make(chan SourceResult)
 	client.s.ListRepos(context.Background(), results)
+
+	repoNameMap := map[string]struct{}{
+		"python-langserver-fork": {},
+		"python-langserver":      {},
+		"golang-langserver":      {},
+	}
+
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+
+	for i := 0; i < len(repoNameMap); i++ {
+		select {
+		case r := <-results:
+			//verify result is in repoNameMap
+		case <-ctx.Done():
+			//fail test
+			//break
+		}
+	}
 
 	server.Close()
 }
