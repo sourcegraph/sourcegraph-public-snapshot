@@ -885,6 +885,8 @@ func prPreview() operations.Operation {
 func uploadClientPublicBundle() operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":camel: Upload frontend asset",
+			withYarnCache(),
+			bk.Cmd("dev/ci/yarn-run.sh build-web"),
 			bk.Cmd("dev/ci/upload-client-bundle.sh"),
 		)
 	}
