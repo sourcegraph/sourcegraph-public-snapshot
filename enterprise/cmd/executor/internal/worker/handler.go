@@ -106,7 +106,13 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	}
 	defer func() {
 		if !h.options.KeepWorkspaces {
-			_ = os.RemoveAll(workspaceRoot)
+			handle := commandLogger.Log("teardown.fs", nil)
+			handle.Write([]byte(fmt.Sprintf("Removing %s\n", workspaceRoot)))
+			if rmErr := os.RemoveAll(workspaceRoot); rmErr != nil {
+				handle.Write([]byte(fmt.Sprintf("Operation failed: %s\n", rmErr.Error())))
+			}
+			handle.Finalize(0)
+			handle.Close()
 		}
 	}()
 

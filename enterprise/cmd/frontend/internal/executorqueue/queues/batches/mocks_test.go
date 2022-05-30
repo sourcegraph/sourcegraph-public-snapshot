@@ -29,10 +29,6 @@ type MockBatchesStore struct {
 	// GetBatchSpecWorkspaceFunc is an instance of a mock function object
 	// controlling the behavior of the method GetBatchSpecWorkspace.
 	GetBatchSpecWorkspaceFunc *BatchesStoreGetBatchSpecWorkspaceFunc
-	// SetBatchSpecWorkspaceExecutionJobAccessTokenFunc is an instance of a
-	// mock function object controlling the behavior of the method
-	// SetBatchSpecWorkspaceExecutionJobAccessToken.
-	SetBatchSpecWorkspaceExecutionJobAccessTokenFunc *BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFunc
 }
 
 // NewMockBatchesStore creates a new mock of the BatchesStore interface. All
@@ -51,11 +47,6 @@ func NewMockBatchesStore() *MockBatchesStore {
 		},
 		GetBatchSpecWorkspaceFunc: &BatchesStoreGetBatchSpecWorkspaceFunc{
 			defaultHook: func(context.Context, store.GetBatchSpecWorkspaceOpts) (r0 *types.BatchSpecWorkspace, r1 error) {
-				return
-			},
-		},
-		SetBatchSpecWorkspaceExecutionJobAccessTokenFunc: &BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFunc{
-			defaultHook: func(context.Context, int64, int64) (r0 error) {
 				return
 			},
 		},
@@ -81,11 +72,6 @@ func NewStrictMockBatchesStore() *MockBatchesStore {
 				panic("unexpected invocation of MockBatchesStore.GetBatchSpecWorkspace")
 			},
 		},
-		SetBatchSpecWorkspaceExecutionJobAccessTokenFunc: &BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFunc{
-			defaultHook: func(context.Context, int64, int64) error {
-				panic("unexpected invocation of MockBatchesStore.SetBatchSpecWorkspaceExecutionJobAccessToken")
-			},
-		},
 	}
 }
 
@@ -102,9 +88,6 @@ func NewMockBatchesStoreFrom(i BatchesStore) *MockBatchesStore {
 		},
 		GetBatchSpecWorkspaceFunc: &BatchesStoreGetBatchSpecWorkspaceFunc{
 			defaultHook: i.GetBatchSpecWorkspace,
-		},
-		SetBatchSpecWorkspaceExecutionJobAccessTokenFunc: &BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFunc{
-			defaultHook: i.SetBatchSpecWorkspaceExecutionJobAccessToken,
 		},
 	}
 }
@@ -425,118 +408,4 @@ func (c BatchesStoreGetBatchSpecWorkspaceFuncCall) Args() []interface{} {
 // invocation.
 func (c BatchesStoreGetBatchSpecWorkspaceFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFunc describes
-// the behavior when the SetBatchSpecWorkspaceExecutionJobAccessToken method
-// of the parent MockBatchesStore instance is invoked.
-type BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFunc struct {
-	defaultHook func(context.Context, int64, int64) error
-	hooks       []func(context.Context, int64, int64) error
-	history     []BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFuncCall
-	mutex       sync.Mutex
-}
-
-// SetBatchSpecWorkspaceExecutionJobAccessToken delegates to the next hook
-// function in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockBatchesStore) SetBatchSpecWorkspaceExecutionJobAccessToken(v0 context.Context, v1 int64, v2 int64) error {
-	r0 := m.SetBatchSpecWorkspaceExecutionJobAccessTokenFunc.nextHook()(v0, v1, v2)
-	m.SetBatchSpecWorkspaceExecutionJobAccessTokenFunc.appendCall(BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// SetBatchSpecWorkspaceExecutionJobAccessToken method of the parent
-// MockBatchesStore instance is invoked and the hook queue is empty.
-func (f *BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFunc) SetDefaultHook(hook func(context.Context, int64, int64) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SetBatchSpecWorkspaceExecutionJobAccessToken method of the parent
-// MockBatchesStore instance invokes the hook at the front of the queue and
-// discards it. After the queue is empty, the default hook function is
-// invoked for any future action.
-func (f *BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFunc) PushHook(hook func(context.Context, int64, int64) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int64, int64) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int64, int64) error {
-		return r0
-	})
-}
-
-func (f *BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFunc) nextHook() func(context.Context, int64, int64) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFunc) appendCall(r0 BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFuncCall objects
-// describing the invocations of this function.
-func (f *BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFunc) History() []BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFuncCall {
-	f.mutex.Lock()
-	history := make([]BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFuncCall is an
-// object that describes an invocation of method
-// SetBatchSpecWorkspaceExecutionJobAccessToken on an instance of
-// MockBatchesStore.
-type BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int64
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int64
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
