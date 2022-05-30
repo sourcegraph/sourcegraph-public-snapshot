@@ -18,7 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Extensions: Added site config parameter `extensions.allowOnlySourcegraphAuthoredExtensions`. When enabled only extensions authored by Sourcegraph will be able to be viewed and installed. For more information check out the [docs](https://docs.sourcegraph.com/admin/extensions##allow-only-extensions-authored-by-sourcegraph). [#35054](https://github.com/sourcegraph/sourcegraph/pull/35054)
-- Zoekt-indexserver has a new debug landing page, `/debug`, which now exposes information about the queue, the list of indexed repositories, and the list of assigned repositories. Admins can reach the debug landing page by selecting Instrumentation > indexed-search-indexer from the site admin view. The debug page is linked at the top. [#346](https://github.com/sourcegraph/zoekt/pull/346) 
+- Zoekt-indexserver has a new debug landing page, `/debug`, which now exposes information about the queue, the list of indexed repositories, and the list of assigned repositories. Admins can reach the debug landing page by selecting Instrumentation > indexed-search-indexer from the site admin view. The debug page is linked at the top. [#346](https://github.com/sourcegraph/zoekt/pull/346)
 
 ### Changed
 
