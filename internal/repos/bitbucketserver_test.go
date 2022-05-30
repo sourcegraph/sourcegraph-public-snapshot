@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -225,176 +224,101 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 	})
 }
 
-type Client struct {
-	s   *BitbucketServerSource
-	err error
-}
+func TestListRepos(t *testing.T) {
+	ctx := context.Background()
 
-func New(serverUrl string) (*Client, error) {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/rest/api/1.0/labels/archived/labeled", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("LABELED ENDPOINT HIT")
+	})
+
+	mux.HandleFunc("/rest/api/1.0/repos", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("REPOS ENDPOINT HIT")
+
+		jsonFile, err := os.Open("./testdata/bitbucketserver-repos-simple.golden")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer jsonFile.Close()
+
+		byteValue, err := ioutil.ReadAll(jsonFile)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode()
+
+	})
+
+	mux.HandleFunc("/rest/api/1.0/projects", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("PROJECTS ENDPOINT HIT")
+	})
+
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
 	simpleConfig := &schema.BitbucketServerConnection{
-		Url:   serverUrl,
+		Url:   server.URL,
 		Token: "secret",
 	}
-	fmt.Println("Done creating config")
 
 	svc := types.ExternalService{
 		ID:   1,
 		Kind: extsvc.KindBitbucketServer,
 	}
-	fmt.Println("Done creating svc")
 
-	source, err := newBitbucketServerSource(&svc, simpleConfig, nil)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println("Done creating source")
-
-	return &Client{
-		s:   source,
-		err: err,
-	}, nil
-}
-
-var (
-	mux    *http.ServeMux
-	server *httptest.Server
-	// client *Client
-)
-
-func setup() *Client {
-	mux = http.NewServeMux()
-	server = httptest.NewServer(mux)
-
-	client, _ := New(server.URL)
-	fmt.Println("Done creating client")
-
-	return client
-}
-
-func TestListRepos(t *testing.T) {
-	client := setup()
-	client.s.config.RepositoryQuery = []string{"?projectname=\"foo\""}
-
-	mux.HandleFunc("/rest/api/1.0", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, fixture("repos.json"))
-	})
-
-	mux.HandleFunc("/rest/api/1.0/labels/archived/labeled", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("REACHED ARCHIVED")
-	})
-
-	mux.HandleFunc("/rest/api/1.0/repos?projectname=foo", func(w http.ResponseWriter, r *http.Request) {
-
-	})
-
-	fmt.Println("Making results...")
-	results := make(chan SourceResult)
-	client.s.ListRepos(context.Background(), results)
-
-	repoNameMap := map[string]struct{}{
-		"python-langserver-fork": {},
-		"python-langserver":      {},
-		"golang-langserver":      {},
-	}
-
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-
-	for i := 0; i < len(repoNameMap); i++ {
-		select {
-		case r := <-results:
-			//verify result is in repoNameMap
-		case <-ctx.Done():
-			//fail test
-			//break
-		}
-	}
-
-	server.Close()
-}
-
-func fixture(path string) string {
-	b, err := ioutil.ReadFile("testdata" + path)
-	if err != nil {
-		panic(err)
-	}
-	return string(b)
-}
-
-// func TestListReposv2(t *testing.T) {
-// 	// make the bitbucket server source
-// 	// connect the source
-// 	// add some repos from test file
-// 	// get back the repos
-
-// 	// config := map[string]*schema.BitbucketServerConnection{
-// 	// 	"simple": {
-// 	// 		Url:   "https://bitbucket.example.com",
-// 	// 		Token: "secret",
-// 	// 	},
-// 	// }
-// 	// fmt.Println("Done creating config")
-
-// 	simpleConfig := &schema.BitbucketServerConnection{
-// 		Url:   "https://bitbucket.example.com",
-// 		Token: "secret",
-// 	}
-
-// 	svc := types.ExternalService{
-// 		ID:   1,
-// 		Kind: extsvc.KindBitbucketServer,
-// 	}
-// 	fmt.Println("Done creating svc")
-
-// 	s, err := newBitbucketServerSource(&svc, simpleConfig, nil)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	fmt.Println("Done creating BitbucketServerSource")
-
-// 	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	var repos []*bitbucketserver.Repo
-// 	if err := json.Unmarshal(b, &repos); err != nil {
-// 		t.Fatal(err)
-// 	}
-
-// 	for _, repo := range repos {
-// 		s.config.Repos = append(s.config.Repos, s.makeRepo(repo, false))
-// 	}
-// }
-
-func TestListReposv1(t *testing.T) {
-	fmt.Println("TestListRepos called...")
-
-	config := map[string]*schema.BitbucketServerConnection{
-		"simple": {
-			Url:   "https:/example.com/",
-			Token: "secret",
-		},
-	}
-	fmt.Println("Done with config")
-
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
-	fmt.Println("Done with svc")
-
-	s, err := newBitbucketServerSource(&svc, config["simple"], nil)
+	s, err := newBitbucketServerSource(&svc, simpleConfig, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	t.Run("simple", func(t *testing.T) {
-		results := make(chan SourceResult)
-		fmt.Println("Done making results channel")
-		s.ListRepos(context.Background(), results)
-		fmt.Println("Done ListRepos, printing results")
+	s.config.Repos = []string{
+		"SG/go-langserver",
+		"SG/python-langserver",
+		"SG/python-langserver/fork",
+		"~KEEGAN/rgp",
+		"~KEEGAN/rgp-unavailable",
+	}
 
-		r := <-results
-		fmt.Println(r)
-		fmt.Println("Done printing r")
-	})
+	s.config.RepositoryQuery = []string{
+		"?projectName=name1",
+		"?projectName=name2",
+		"?projectName=name3",
+		"?projectKeys=key1",
+		"?projectKeys=key2",
+		"?projectKeys=key3",
+		"",
+	}
+
+	results := make(chan SourceResult)
+	s.ListRepos(ctx, results)
 
 }
+
+// func TestListReposv1(t *testing.T) {
+
+// 	fmt.Println("Making results...")
+// 	results := make(chan SourceResult)
+// 	client.s.ListRepos(context.Background(), results)
+
+// 	repoNameMap := map[string]struct{}{
+// 		"python-langserver-fork": {},
+// 		"python-langserver":      {},
+// 		"golang-langserver":      {},
+// 	}
+
+// 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+
+// 	for i := 0; i < len(repoNameMap); i++ {
+// 		select {
+// 		case r := <-results:
+// 			//verify result is in repoNameMap
+// 		case <-ctx.Done():
+// 			//fail test
+// 			//break
+// 		}
+// 	}
+// }

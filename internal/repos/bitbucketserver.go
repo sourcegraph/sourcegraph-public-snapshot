@@ -195,7 +195,6 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 }
 
 func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan SourceResult) {
-	fmt.Println("listAllRepos starting...")
 	// "archived" label is a convention used at some customers for indicating a
 	// repository is archived (like github's archived state). This is not returned in
 	// the normal repository listing endpoints, so we need to fetch it separately.
@@ -204,7 +203,6 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 		results <- SourceResult{Source: s, Err: errors.Wrap(err, "failed to list repos with archived label")}
 		return
 	}
-	fmt.Println("batch struct")
 
 	type batch struct {
 		repos []*bitbucketserver.Repo
@@ -231,6 +229,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 			}
 
 			projectKey, repoSlug := ps[0], ps[1]
+			fmt.Println("ProjectKey:", projectKey, ", RepoSlug:", repoSlug)
 			repo, err := s.client.Repo(ctx, projectKey, repoSlug)
 			if err != nil {
 				// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
@@ -301,19 +300,11 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 }
 
 func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label string) (map[int]struct{}, error) {
-	fmt.Printf("Client URL: %+v\n", s.client.URL)
-	fmt.Println("listAllLabeledRepos starting...")
 	ids := map[int]struct{}{}
 	next := &bitbucketserver.PageToken{Limit: 1000}
 	for next.HasMore() {
-		fmt.Println("Starting LabeledRepos")
-		fmt.Println("Label:", label)
-		fmt.Printf("Next: %+v\n", next)
 		repos, page, err := s.client.LabeledRepos(ctx, next, label)
-		fmt.Println("repos:", repos)
 		fmt.Println("Done with LabeledRepos")
-		fmt.Println("next:", next)
-		fmt.Println("page:", page)
 		if page == nil {
 			break
 		}

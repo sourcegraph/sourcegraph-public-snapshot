@@ -876,13 +876,10 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 	fmt.Println("Query:", qry)
 	if qry == nil {
 		qry = make(url.Values)
-		fmt.Println("No query, new query is", qry)
 	}
 
 	for k, vs := range token.Values() {
-		fmt.Println("k:", k)
 		qry[k] = append(qry[k], vs...)
-		fmt.Println("query[k]:", qry[k])
 	}
 
 	u := url.URL{Path: path, RawQuery: qry.Encode()}
@@ -961,16 +958,9 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 
 	defer resp.Body.Close()
 
-	fmt.Println("READING FROM RESP BODY")
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
-	}
-	fmt.Println("bs:", bs)
-
-	fmt.Println("FOR LOOP")
-	for data := range bs {
-		fmt.Println("Data:", data)
 	}
 
 	fmt.Println("StatusCode:", resp.StatusCode)
