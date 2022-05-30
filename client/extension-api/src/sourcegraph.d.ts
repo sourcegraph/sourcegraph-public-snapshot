@@ -1834,7 +1834,7 @@ declare module 'sourcegraph' {
             // It might be possible that even with errored response we have
             // a partially resolved data
             // See https://github.com/sourcegraph/sourcegraph/pull/36033
-            data: Partial<T> | undefined
+            data: T | null
             errors: readonly import('graphql').GraphQLError[]
         }
     }
