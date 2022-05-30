@@ -12,7 +12,7 @@ import (
 
 var allJobs = []job.Job{
 	&zoekt.RepoSubsetTextSearchJob{},
-	&zoekt.ZoektSymbolSearchJob{},
+	&zoekt.SymbolSearchJob{},
 	&searcher.SearcherJob{},
 	&searcher.SymbolSearcherJob{},
 	&run.RepoSearchJob{},

@@ -633,7 +633,7 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 
 	switch typ {
 	case search.SymbolRequest:
-		return &zoekt.ZoektSymbolSearchJob{
+		return &zoekt.SymbolSearchJob{
 			Query:          zoektQuery,
 			FileMatchLimit: b.fileMatchLimit,
 			Select:         b.selector,

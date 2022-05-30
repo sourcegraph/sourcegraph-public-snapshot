@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-type ZoektSymbolSearchJob struct {
+type SymbolSearchJob struct {
 	Repos          *IndexedRepoRevs // the set of indexed repository revisions to search.
 	Query          zoektquery.Q
 	FileMatchLimit int32
@@ -24,7 +24,7 @@ type ZoektSymbolSearchJob struct {
 }
 
 // Run calls the zoekt backend to search symbols
-func (z *ZoektSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (z *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, z)
 	defer func() { finish(alert, err) }()
 
@@ -55,11 +55,11 @@ func (z *ZoektSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClien
 	return nil, nil
 }
 
-func (z *ZoektSymbolSearchJob) Name() string {
+func (z *SymbolSearchJob) Name() string {
 	return "ZoektSymbolSearchJob"
 }
 
-func (z *ZoektSymbolSearchJob) Tags() []log.Field {
+func (z *SymbolSearchJob) Tags() []log.Field {
 	tags := []log.Field{
 		trace.Stringer("query", z.Query),
 		log.Int32("fileMatchLimit", z.FileMatchLimit),
