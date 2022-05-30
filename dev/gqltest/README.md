@@ -76,16 +76,10 @@ To ensure your local environment is set up correctly, follow these steps:
 2. Add the following to your `sg.config.overwrite.yaml`
 
 ```yaml
-commands:
+commandsets:
   enterprise-codeinsights:
     env:
       EXTSVC_CONFIG_FILE: ''
-    watch:
-      - lib
-      - internal
-      - cmd/frontend
-      - enterprise/internal
-      - enterprise/cmd/frontend
 ```
 
 3. Start your instance by running `sg start enterprise-codeinsights`
