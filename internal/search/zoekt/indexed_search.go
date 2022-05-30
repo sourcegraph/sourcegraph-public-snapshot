@@ -579,13 +579,13 @@ func (z *RepoSubsetTextSearchJob) Tags() []log.Field {
 	return tags
 }
 
-type ZoektGlobalSearchJob struct {
+type GlobalTextSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
 	RepoOpts         search.RepoOptions
 }
 
-func (t *ZoektGlobalSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, t)
 	defer func() { finish(alert, err) }()
 
@@ -596,11 +596,11 @@ func (t *ZoektGlobalSearchJob) Run(ctx context.Context, clients job.RuntimeClien
 	return nil, DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektArgs, stream)
 }
 
-func (*ZoektGlobalSearchJob) Name() string {
-	return "ZoektGlobalSearchJob"
+func (*GlobalTextSearchJob) Name() string {
+	return "ZoektGlobalTextSearchJob"
 }
 
-func (t *ZoektGlobalSearchJob) Tags() []log.Field {
+func (t *GlobalTextSearchJob) Tags() []log.Field {
 	return []log.Field{
 		trace.Stringer("query", t.GlobalZoektQuery.query),
 		trace.Printf("repoScope", "%q", t.GlobalZoektQuery.repoScope),

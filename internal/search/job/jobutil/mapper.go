@@ -24,7 +24,7 @@ type Mapper struct {
 	MapSearcherJob                func(*searcher.SearcherJob) *searcher.SearcherJob
 	MapSymbolSearcherJob          func(*searcher.SymbolSearcherJob) *searcher.SymbolSearcherJob
 	MapRepoSearchJob              func(*run.RepoSearchJob) *run.RepoSearchJob
-	MapRepoUniverseTextSearchJob  func(*zoekt.ZoektGlobalSearchJob) *zoekt.ZoektGlobalSearchJob
+	MapRepoUniverseTextSearchJob  func(*zoekt.GlobalTextSearchJob) *zoekt.GlobalTextSearchJob
 	MapStructuralSearchJob        func(*structural.StructuralSearchJob) *structural.StructuralSearchJob
 	MapCommitSearchJob            func(*commit.CommitSearchJob) *commit.CommitSearchJob
 	MapComputeExcludedReposJob    func(*repos.ComputeExcludedReposJob) *repos.ComputeExcludedReposJob
@@ -88,7 +88,7 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		}
 		return j
 
-	case *zoekt.ZoektGlobalSearchJob:
+	case *zoekt.GlobalTextSearchJob:
 		if m.MapRepoUniverseTextSearchJob != nil {
 			j = m.MapRepoUniverseTextSearchJob(j)
 		}

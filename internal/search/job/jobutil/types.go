@@ -16,7 +16,7 @@ var allJobs = []job.Job{
 	&searcher.SearcherJob{},
 	&searcher.SymbolSearcherJob{},
 	&run.RepoSearchJob{},
-	&zoekt.ZoektGlobalSearchJob{},
+	&zoekt.GlobalTextSearchJob{},
 	&structural.StructuralSearchJob{},
 	&commit.CommitSearchJob{},
 	&zoekt.ZoektGlobalSymbolSearchJob{},
