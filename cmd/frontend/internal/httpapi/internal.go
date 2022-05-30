@@ -292,39 +292,6 @@ func serveGitResolveRevision(db database.DB) func(w http.ResponseWriter, r *http
 	}
 }
 
-func serveGitTar(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		// used by zoekt-sourcegraph-mirror
-		vars := mux.Vars(r)
-		name := vars["RepoName"]
-		spec := vars["Commit"]
-
-		// Ensure commit exists. Do not want to trigger a repo-updater lookup since this is a batch job.
-		repo := api.RepoName(name)
-		ctx := r.Context()
-		gitserverClient := gitserver.NewClient(db)
-		commit, err := gitserverClient.ResolveRevision(ctx, repo, spec, gitserver.ResolveRevisionOptions{})
-		if err != nil {
-			return err
-		}
-
-		opts := gitserver.ArchiveOptions{
-			Treeish: string(commit),
-			Format:  "tar",
-		}
-
-		location, err := gitserverClient.ArchiveURL(ctx, repo, opts)
-		if err != nil {
-			return err
-		}
-
-		w.Header().Set("Location", location.String())
-		w.WriteHeader(http.StatusFound)
-
-		return nil
-	}
-}
-
 func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		defer r.Body.Close()
