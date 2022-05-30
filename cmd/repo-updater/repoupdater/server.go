@@ -198,7 +198,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		depsSvc := livedependencies.GetService(db, nil)
 		sourcer = repos.NewSourcer(db, httpcli.ExternalClientFactory, repos.WithDependenciesService(depsSvc))
 	}
-	src, err := sourcer(&types.ExternalService{
+	src, err := sourcer(ctx, &types.ExternalService{
 		ID:              req.ExternalService.ID,
 		Kind:            req.ExternalService.Kind,
 		DisplayName:     req.ExternalService.DisplayName,

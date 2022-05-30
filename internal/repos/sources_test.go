@@ -622,7 +622,7 @@ func TestSources_ListRepos(t *testing.T) {
 				lg.SetHandler(log15.DiscardHandler())
 
 				obs := ObservedSource(lg, NewSourceMetrics())
-				src, err := NewSourcer(database.NewMockDB(), cf, obs)(svc)
+				src, err := NewSourcer(database.NewMockDB(), cf, obs)(tc.ctx, svc)
 				if err != nil {
 					t.Fatal(err)
 				}

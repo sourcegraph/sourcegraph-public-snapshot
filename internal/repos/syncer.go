@@ -356,7 +356,7 @@ func (s *Syncer) syncRepo(
 
 	svc = svcs[0]
 
-	src, err := s.Sourcer(svc)
+	src, err := s.Sourcer(ctx, svc)
 	if err != nil {
 		return nil, err
 	}
@@ -550,7 +550,7 @@ func (s *Syncer) SyncExternalService(
 		}
 	}
 
-	src, err := s.Sourcer(svc)
+	src, err := s.Sourcer(ctx, svc)
 	if err != nil {
 		return err
 	}
