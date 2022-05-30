@@ -70,9 +70,10 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Due to irregularity with date libraries, subtracting a month from a date most times deducts
-	// 30 days from the current date. For months like February which has 28 days and those with 31 days
-	// this poses a problem. Therefore deducting three days after the initial month deduction ensures we'd
+	// Due to irregularity in the amount of days in a month, subtracting a month from a date most times deducts
+	// 30 days from the current date which is incorrect becayse or months like February which has 28 days and those with 31 days
+	// this poses a problem.
+	//Therefore deducting three days after the initial month deduction ensures we'll
 	// always get a date that falls in the previous month regardless of the day in question.
 	lastMonthCreationDate := now.AddDate(0, -1, -3)
 	twoMonthsAgoCreationDate := now.AddDate(0, -2, -3)
