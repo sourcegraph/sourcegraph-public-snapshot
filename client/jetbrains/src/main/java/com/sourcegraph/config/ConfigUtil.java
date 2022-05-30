@@ -36,6 +36,7 @@ public class ConfigUtil {
         return url.endsWith("/") ? url : url + "/";
     }
 
+    @Nullable
     public static Search getLastSearch(@NotNull Project project) {
         return getProjectLevelConfig(project).getLastSearch();
     }
