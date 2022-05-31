@@ -76,17 +76,21 @@ public class PreviewPanel extends JBPanelWithEmptyText {
             validate();
 
             if (openInEditor) {
-                // Open file in editor
-                OpenFileDescriptor openFileDescriptor = new OpenFileDescriptor(project, virtualFile, 0);
-                FileEditorManager.getInstance(project).openTextEditor(openFileDescriptor, true);
-
-                // Suppress code issues
-                PsiFile file = PsiManager.getInstance(project).findFile(virtualFile);
-                if (file != null) {
-                    DaemonCodeAnalyzer.getInstance(project).setHighlightingEnabled(file, false);
-                }
+                this.openInEditor();
             }
         });
+    }
+
+    public void openInEditor() {
+        // Open file in editor
+        OpenFileDescriptor openFileDescriptor = new OpenFileDescriptor(project, virtualFile, 0);
+        FileEditorManager.getInstance(project).openTextEditor(openFileDescriptor, true);
+
+        // Suppress code issues
+        PsiFile file = PsiManager.getInstance(project).findFile(virtualFile);
+        if (file != null) {
+            DaemonCodeAnalyzer.getInstance(project).setHighlightingEnabled(file, false);
+        }
     }
 
     private void addHighlights(Editor editor, @NotNull int[][] absoluteOffsetAndLengths) {
