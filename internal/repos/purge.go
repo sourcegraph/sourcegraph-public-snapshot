@@ -16,9 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// RunRepositoryPurgeWorker is a worker which deletes repos which are present
-// on gitserver, but not enabled/present in our repos table.
-func RunRepositoryPurgeWorker(ctx context.Context, db database.DB) {
+// RunRepositoryPurgeWorker is a worker which deletes repos which are present on
+// gitserver, but not enabled/present in our repos table. ttl, should be >= 0 and
+// specifices how long ago a repo must be deleted before it is purged.
+func RunRepositoryPurgeWorker(ctx context.Context, db database.DB, ttl time.Duration) {
 	log := log15.Root().New("worker", "repo-purge")
 
 	// Temporary escape hatch if this feature proves to be dangerous
@@ -28,18 +29,29 @@ func RunRepositoryPurgeWorker(ctx context.Context, db database.DB) {
 	}
 
 	for {
-		// We only run in a 1-hour period on the weekend. During normal
-		// working hours a migration or admin could accidentally remove all
-		// repositories. Recloning all of them is slow, so we drastically
-		// reduce the chance of this happening by only purging at a weird time
-		// to be configuring Sourcegraph.
-		if isSaturdayNight(time.Now()) {
-			err := purge(ctx, db, log, database.IteratePurgableReposOptions{})
+		// We only run in a 1-hour period on the weekend. During normal working hours a
+		// migration or admin could accidentally remove all repositories. Recloning all
+		// of them is slow, so we drastically reduce the chance of this happening by only
+		// purging at a weird time to be configuring Sourcegraph.
+		now := time.Now()
+		if isSaturdayNight(now) {
+			// Set some safe default limits
+			limiter := rate.NewLimiter(10, 1)
+			purged, err := purge(ctx, db, log, database.IteratePurgableReposOptions{
+				Limit:         5000,
+				Limiter:       limiter,
+				DeletedBefore: now.Add(-ttl),
+			})
 			if err != nil {
 				log.Error("failed to run repository clone purge", "error", err)
+				// Backoff on error
+				randSleep(1*time.Minute, 10*time.Second)
+			}
+			if purged == 0 {
+				// Nothing left to purge and no errors, we're done
+				return
 			}
 		}
-		randSleep(10*time.Minute, time.Minute)
 	}
 }
 
@@ -54,7 +66,7 @@ func PurgeOldestRepos(db database.DB, limit int, perSecond float64) error {
 	go func() {
 		limiter := rate.NewLimiter(rate.Limit(perSecond), 1)
 		// Use a background routine so that we don't time out based on the http context.
-		if err := purge(context.Background(), db, log, database.IteratePurgableReposOptions{
+		if _, err := purge(context.Background(), db, log, database.IteratePurgableReposOptions{
 			Limit:   limit,
 			Limiter: limiter,
 		}); err != nil {
@@ -64,7 +76,8 @@ func PurgeOldestRepos(db database.DB, limit int, perSecond float64) error {
 	return nil
 }
 
-func purge(ctx context.Context, db database.DB, log log15.Logger, options database.IteratePurgableReposOptions) error {
+// purge purges repos, returning the number of repos that were successfully purged
+func purge(ctx context.Context, db database.DB, log log15.Logger, options database.IteratePurgableReposOptions) (int, error) {
 	start := time.Now()
 	gitserverClient := gitserver.NewClient(db)
 	var (
@@ -98,7 +111,7 @@ func purge(ctx context.Context, db database.DB, log log15.Logger, options databa
 		statusLogger = log.Warn
 	}
 	statusLogger("repository purge finished", "total", total, "removed", success, "failed", failed, "duration", time.Since(start))
-	return errors.Wrap(err, "iterating purgeable repos")
+	return success, errors.Wrap(err, "iterating purgeable repos")
 }
 
 func isSaturdayNight(t time.Time) bool {
