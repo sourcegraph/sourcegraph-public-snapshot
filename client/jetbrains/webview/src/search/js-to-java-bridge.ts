@@ -165,9 +165,11 @@ export async function createPreviewOrOpenRequest(
     action: MatchRequest['action']
 ): Promise<MatchRequest> {
     if (match.type === 'commit') {
-        const content = match.content.startsWith('```COMMIT_EDITMSG')
-            ? match.content.replace(/^```COMMIT_EDITMSG\n([\S\s]*)\n```$/, '$1')
-            : match.content.replace(/^```diff\n([\S\s]*)\n```$/, '$1')
+        const content = prepareContent(
+            match.content.startsWith('```COMMIT_EDITMSG')
+                ? match.content.replace(/^```COMMIT_EDITMSG\n([\S\s]*)\n```$/, '$1')
+                : match.content.replace(/^```diff\n([\S\s]*)\n```$/, '$1')
+        )
         return {
             action,
             arguments: {
