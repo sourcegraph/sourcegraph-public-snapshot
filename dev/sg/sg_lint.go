@@ -28,8 +28,24 @@ var lintCommand = &cli.Command{
 	Name:        "lint",
 	ArgsUsage:   "[targets...]",
 	Usage:       "Run all or specified linters on the codebase",
-	Description: `Run all or specified linters on the codebase and display failures, if any. To run all checks, don't provide an argument.`,
-	Category:    CategoryDev,
+	Description: `To run all checks, don't provide an argument. You can also provide multiple arguments to run linters for multiple targets.`,
+	UsageText: `
+# Run all possible checks
+sg lint
+
+# Run only go related checks
+sg lint go
+
+# Run only shell related checks
+sg lint shell
+
+# Run only client related checks
+sg lint client
+
+# List all available check groups
+sg lint --help
+`,
+	Category: CategoryDev,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:        "annotations",

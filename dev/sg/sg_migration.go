@@ -135,8 +135,21 @@ var (
 	}
 
 	migrationCommand = &cli.Command{
-		Name:     "migration",
-		Usage:    "Modifies and runs database migrations",
+		Name:  "migration",
+		Usage: "Modifies and runs database migrations",
+		UsageText: `
+# Migrate local default database up all the way
+sg migration up
+
+# Migrate specific database down one migration
+sg migration down --db codeintel
+
+# Add new migration for specific database
+sg migration add --db codeintel 'add missing index'
+
+# Squash migrations for default database
+sg migration squash
+`,
 		Category: CategoryDev,
 		Subcommands: []*cli.Command{
 			addCommand,

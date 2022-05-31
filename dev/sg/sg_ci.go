@@ -68,11 +68,42 @@ func getCIBranch() (branch string, fromFlag bool, err error) {
 }
 
 var ciCommand = &cli.Command{
-	Name:  "ci",
-	Usage: "Interact with Sourcegraph's continuous integration pipelines",
-	Description: `Interact with Sourcegraph's continuous integration pipelines on Buildkite.
+	Name:        "ci",
+	Usage:       "Interact with Sourcegraph's Buildkite continuous integration pipelines",
+	Description: `Note that Sourcegraph's CI pipelines are under our enterprise license: https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise`,
+	UsageText: `
+# Preview what a CI run for your current changes will look like
+sg ci preview
 
-Note that Sourcegraph's CI pipelines are under our enterprise license: https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise`,
+# Check on the status of your changes on the current branch in the Buildkite pipeline
+sg ci status
+# Check on the status of a specific branch instead
+sg ci status --branch my-branch
+# Block until the build has completed (it will send a system notification)
+sg ci status --wait
+# Get status for a specific build number
+sg ci status --build 123456
+
+# Pull logs of failed jobs to stdout
+sg ci logs
+# Push logs of most recent main failure to local Loki for analysis
+# You can spin up a Loki instance with 'sg run loki grafana'
+sg ci logs --branch main --out http://127.0.0.1:3100
+# Get the logs for a specific build number, useful when debugging
+sg ci logs --build 123456
+
+# Manually trigger a build on the CI with the current branch
+sg ci build
+# Manually trigger a build on the CI on the current branch, but with a specific commit
+sg ci build --commit my-commit
+# Manually trigger a main-dry-run build of the HEAD commit on the current branch
+sg ci build main-dry-run
+sg ci build --force main-dry-run
+# Manually trigger a main-dry-run build of a specified commit on the current ranch
+sg ci build --force --commit my-commit main-dry-run
+# View the available special build types
+sg ci build --help
+`,
 	Category: CategoryDev,
 	Subcommands: []*cli.Command{{
 		Name:    "preview",
@@ -214,22 +245,22 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 		Name:      "build",
 		ArgsUsage: "[runtype]",
 		Usage:     "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks or with special run types)",
-		Description: fmt.Sprintf(`Manually request a Buildkite build for the currently checked out commit and branch. Optionally provide a run type to build with.
+		Description: fmt.Sprintf(`Optionally provide a run type to build with.
 
-This is useful when:
+This command is useful when:
 
 - you want to trigger a build with a particular run type, such as 'main-dry-run'
 - triggering builds for PRs from forks (such as those from external contributors), which do not trigger Buildkite builds automatically for security reasons (we do not want to run insecure code on our infrastructure by default!)
 
 Supported run types when providing an argument for 'sg ci build [runtype]':
 
-  %s
+* %s
 
 For run types that require branch arguments, you will be prompted for an argument, or you
 can provide it directly (for example, 'sg ci build [runtype] [argument]').
 
 Learn more about pipeline run types in https://docs.sourcegraph.com/dev/background-information/ci/reference.`,
-			strings.Join(getAllowedBuildTypeArgs(), "\n  ")),
+			strings.Join(getAllowedBuildTypeArgs(), "\n* ")),
 		BashComplete: completeOptions(getAllowedBuildTypeArgs),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -347,7 +378,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 
 The '--job' flag can be used to narrow down the logs returned - you can provide either the ID, or part of the name of the job you want to see logs for.
 
-To send logs to a Loki instance, you can provide '--out=http://127.0.0.1:3100' after spinning up an instance with 'sg run loki grafana'.
+To send logs to a Loki instance, you can provide --out=http://127.0.0.1:3100 after spinning up an instance with 'sg run loki grafana'.
 From there, you can start exploring logs with the Grafana explore panel.
 `,
 		Flags: []cli.Flag{
@@ -366,8 +397,8 @@ From there, you can start exploring logs with the Grafana explore panel.
 			&cli.StringFlag{
 				Name:    "out",
 				Aliases: []string{"o"},
-				Usage: fmt.Sprintf("Output `format`: one of %+v, or a URL pointing to a Loki instance, such as %q",
-					[]string{ciLogsOutTerminal, ciLogsOutSimple, ciLogsOutJSON}, loki.DefaultLokiURL),
+				Usage: fmt.Sprintf("Output `format`: one of [%s], or a URL pointing to a Loki instance, such as %s",
+					strings.Join([]string{ciLogsOutTerminal, ciLogsOutSimple, ciLogsOutJSON}, "|"), loki.DefaultLokiURL),
 				Value: ciLogsOutTerminal,
 			},
 			&cli.StringFlag{
@@ -522,7 +553,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 	}, {
 		Name:        "docs",
 		Usage:       "Render reference documentation for build pipeline types",
-		Description: "Render reference documentation for build pipeline types. An online version of this is also available in https://docs.sourcegraph.com/dev/background-information/ci/reference.",
+		Description: "An online version of the rendered documentation is also available in https://docs.sourcegraph.com/dev/background-information/ci/reference.",
 		Action: execAdapter(func(ctx context.Context, args []string) error {
 			cmd := exec.Command("go", "run", "./enterprise/dev/ci/gen-pipeline.go", "-docs")
 			out, err := run.InRoot(cmd)
@@ -532,10 +563,9 @@ From there, you can start exploring logs with the Grafana explore panel.
 			return std.Out.WriteMarkdown(out)
 		}),
 	}, {
-		Name:        "open",
-		ArgsUsage:   "[pipeline]",
-		Usage:       "Open Sourcegraph's Buildkite page in browser",
-		Description: "Open Sourcegraph's Buildkite page in browser. Optionally specify the pipeline you want to open.",
+		Name:      "open",
+		ArgsUsage: "[pipeline]",
+		Usage:     "Open Sourcegraph's Buildkite page in browser",
 		Action: execAdapter(func(ctx context.Context, args []string) error {
 			buildkiteURL := fmt.Sprintf("https://buildkite.com/%s", bk.BuildkiteOrg)
 			if len(args) > 0 && args[0] != "" {
