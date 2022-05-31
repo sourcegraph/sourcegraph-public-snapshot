@@ -5,11 +5,90 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
-
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+func TestProvider_FetchUserPerms(t *testing.T) {
+	userEmail := "test-email@example.com"
+	userName := "test-user"
+	gerritUserID := int32(123456789)
+	acctData, err := marshalAccountData(userName, userEmail, gerritUserID)
+	if err != nil {
+		t.Fatalf("error marshaling account data: %v", err)
+	}
+	account := extsvc.Account{
+		ID:     1,
+		UserID: 1,
+		AccountData: extsvc.AccountData{
+			Data: acctData,
+		},
+	}
+	testCases := []struct {
+		name          string
+		client        mockClient
+		expectedPerms []extsvc.RepoID
+	}{
+		{
+			name: "one of user's groups has access to one project but not the other",
+			expectedPerms: []extsvc.RepoID{
+				"project-with-access",
+			},
+			client: mockClient{
+				mockGetAccountGroups: func(ctx context.Context, acctID int32) (gerrit.GetAccountGroupsResponse, error) {
+					return gerrit.GetAccountGroupsResponse{
+						{
+							ID: "group-with-access",
+						},
+					}, nil
+				},
+				mockListProjects: func(ctx context.Context, opts gerrit.ListProjectsArgs) (projects *gerrit.ListProjectsResponse, nextPage bool, err error) {
+					return &gerrit.ListProjectsResponse{
+						"project-with-access": {
+							ID: "project-with-access",
+						},
+						"project-without-access": {
+							ID: "project-without-access",
+						},
+					}, false, nil
+				},
+				mockGetProjectAccess: func(ctx context.Context, projects ...string) (gerrit.GetProjectAccessResponse, error) {
+					return gerrit.GetProjectAccessResponse{
+						"project-with-access": {
+							Groups: map[string]gerrit.GroupInfo{
+								"group-with-access": {
+									ID: "group-with-access",
+								},
+							},
+						},
+						"project-without-access": {
+							Groups: map[string]gerrit.GroupInfo{
+								"group-without-access": {
+									ID: "group-without-access",
+								},
+							},
+						},
+					}, nil
+				},
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			p := NewTestProvider(&tc.client)
+			perms, err := p.FetchUserPerms(context.Background(), &account, authz.FetchPermsOptions{})
+			if err != nil {
+				t.Errorf("unexpected error fetching user perms: %v", err)
+			}
+			assert.Equal(t, tc.expectedPerms, perms.Exacts)
+
+		})
+	}
+}
 
 func TestProvider_FetchAccount(t *testing.T) {
 	userEmail := "test-email@example.com"
