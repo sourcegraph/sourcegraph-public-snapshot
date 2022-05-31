@@ -159,9 +159,12 @@ func (s *store) transact(ctx context.Context) (stx *store, err error) {
 		s.Metrics.Transact.Observe(secs, 1, &err)
 
 		logger.Error("store.transact", log.Error(err))
-		tr.SetError(err)
-		// Finish is called in Done in the non-error case
-		tr.Finish()
+
+		if err != nil {
+			tr.SetError(err)
+			// Finish is called in Done in the non-error case
+			tr.Finish()
+		}
 	}(time.Now())
 
 	txBase, err := s.Store.Transact(ctx)
