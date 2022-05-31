@@ -24,8 +24,7 @@ import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestio
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 // Add root Tooltip for JetBrains
-// eslint-disable-next-line no-restricted-imports
-import { useObservable, WildcardThemeContext, Tooltip } from '@sourcegraph/wildcard'
+import { useObservable, WildcardThemeContext, DeprecatedTooltip } from '@sourcegraph/wildcard'
 
 import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
@@ -203,7 +202,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
-            <Tooltip />
+            <DeprecatedTooltip />
             {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
             <div className={styles.root} onMouseDown={preventAll}>
                 <div className={styles.searchBoxContainer}>
