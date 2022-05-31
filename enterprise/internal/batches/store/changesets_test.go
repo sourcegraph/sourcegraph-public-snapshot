@@ -2483,7 +2483,7 @@ func TestCleanDetachedChangesets(t *testing.T) {
 			require.NoError(t, err)
 
 			// Attempt to delete old changesets
-			err = s.CleanDetachedChangesets(ctx, 1)
+			err = s.CleanDetachedChangesets(ctx, 24*time.Hour)
 			assert.NoError(t, err)
 
 			// check if deleted
