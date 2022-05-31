@@ -62,6 +62,9 @@ type MockClient struct {
 	// ListGitoliteFunc is an instance of a mock function object controlling
 	// the behavior of the method ListGitolite.
 	ListGitoliteFunc *ClientListGitoliteFunc
+	// MergeBaseFunc is an instance of a mock function object controlling
+	// the behavior of the method MergeBase.
+	MergeBaseFunc *ClientMergeBaseFunc
 	// P4ExecFunc is an instance of a mock function object controlling the
 	// behavior of the method P4Exec.
 	P4ExecFunc *ClientP4ExecFunc
@@ -169,6 +172,11 @@ func NewMockClient() *MockClient {
 		},
 		ListGitoliteFunc: &ClientListGitoliteFunc{
 			defaultHook: func(context.Context, string) (r0 []*gitolite.Repo, r1 error) {
+				return
+			},
+		},
+		MergeBaseFunc: &ClientMergeBaseFunc{
+			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (r0 api.CommitID, r1 error) {
 				return
 			},
 		},
@@ -309,6 +317,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.ListGitolite")
 			},
 		},
+		MergeBaseFunc: &ClientMergeBaseFunc{
+			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error) {
+				panic("unexpected invocation of MockClient.MergeBase")
+			},
+		},
 		P4ExecFunc: &ClientP4ExecFunc{
 			defaultHook: func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error) {
 				panic("unexpected invocation of MockClient.P4Exec")
@@ -419,6 +432,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		ListGitoliteFunc: &ClientListGitoliteFunc{
 			defaultHook: i.ListGitolite,
+		},
+		MergeBaseFunc: &ClientMergeBaseFunc{
+			defaultHook: i.MergeBase,
 		},
 		P4ExecFunc: &ClientP4ExecFunc{
 			defaultHook: i.P4Exec,
@@ -1869,6 +1885,119 @@ func (c ClientListGitoliteFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientListGitoliteFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientMergeBaseFunc describes the behavior when the MergeBase method of
+// the parent MockClient instance is invoked.
+type ClientMergeBaseFunc struct {
+	defaultHook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error)
+	hooks       []func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error)
+	history     []ClientMergeBaseFuncCall
+	mutex       sync.Mutex
+}
+
+// MergeBase delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockClient) MergeBase(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 api.CommitID) (api.CommitID, error) {
+	r0, r1 := m.MergeBaseFunc.nextHook()(v0, v1, v2, v3)
+	m.MergeBaseFunc.appendCall(ClientMergeBaseFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the MergeBase method of
+// the parent MockClient instance is invoked and the hook queue is empty.
+func (f *ClientMergeBaseFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MergeBase method of the parent MockClient instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ClientMergeBaseFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientMergeBaseFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientMergeBaseFunc) PushReturn(r0 api.CommitID, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientMergeBaseFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientMergeBaseFunc) appendCall(r0 ClientMergeBaseFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientMergeBaseFuncCall objects describing
+// the invocations of this function.
+func (f *ClientMergeBaseFunc) History() []ClientMergeBaseFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientMergeBaseFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientMergeBaseFuncCall is an object that describes an invocation of
+// method MergeBase on an instance of MockClient.
+type ClientMergeBaseFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.CommitID
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 api.CommitID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 api.CommitID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientMergeBaseFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientMergeBaseFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
