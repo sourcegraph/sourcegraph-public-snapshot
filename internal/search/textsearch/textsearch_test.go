@@ -475,7 +475,7 @@ func RunRepoSubsetTextSearch(
 			return nil, streaming.Stats{}, err
 		}
 
-		zoektJob := &zoektutil.ZoektRepoSubsetSearchJob{
+		zoektJob := &zoektutil.RepoSubsetTextSearchJob{
 			Repos:          indexed,
 			Query:          zoektQuery,
 			Typ:            search.TextRequest,
@@ -493,7 +493,7 @@ func RunRepoSubsetTextSearch(
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
-		searcherJob := &searcher.SearcherJob{
+		searcherJob := &searcher.TextSearchJob{
 			PatternInfo:     searcherArgs.PatternInfo,
 			Repos:           unindexed,
 			Indexed:         false,
