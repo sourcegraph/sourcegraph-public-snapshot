@@ -619,8 +619,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         return { column: new Map(), inline: new Map() }
     }, [decorationsOrError])
 
-    console.log(decorations)
-
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
         useObservable(hoverifier.hoverStateUpdates) || {}
