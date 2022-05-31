@@ -130,7 +130,6 @@ function handleRequest(
         }
 
         default: {
-            // noinspection UnnecessaryLocalVariableJS
             const exhaustiveCheck: never = action
             onFailureCallback(2, `Unknown action: ${exhaustiveCheck as string}`)
         }
