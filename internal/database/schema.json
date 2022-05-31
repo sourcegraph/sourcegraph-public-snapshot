@@ -3286,6 +3286,19 @@
           "Comment": ""
         },
         {
+          "Name": "detached_at",
+          "Index": 40,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "diff_stat_added",
           "Index": 15,
           "TypeName": "integer",
@@ -3779,6 +3792,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX changesets_bitbucket_cloud_metadata_source_commit_idx ON changesets USING btree ((((metadata -\u003e 'source'::text) -\u003e 'commit'::text) -\u003e\u003e 'hash'::text))",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "changesets_detached_at",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX changesets_detached_at ON changesets USING btree (detached_at)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },

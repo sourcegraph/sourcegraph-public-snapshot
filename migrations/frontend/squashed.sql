@@ -733,6 +733,7 @@ CREATE TABLE changesets (
     last_heartbeat_at timestamp with time zone,
     external_fork_namespace citext,
     queued_at timestamp with time zone DEFAULT now(),
+    detached_at timestamp with time zone,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),
@@ -3408,6 +3409,8 @@ CREATE INDEX changeset_specs_title ON changeset_specs USING btree (title);
 CREATE INDEX changesets_batch_change_ids ON changesets USING gin (batch_change_ids);
 
 CREATE INDEX changesets_bitbucket_cloud_metadata_source_commit_idx ON changesets USING btree (((((metadata -> 'source'::text) -> 'commit'::text) ->> 'hash'::text)));
+
+CREATE INDEX changesets_detached_at ON changesets USING btree (detached_at);
 
 CREATE INDEX changesets_external_state_idx ON changesets USING btree (external_state);
 
