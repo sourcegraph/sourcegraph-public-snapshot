@@ -97,7 +97,7 @@ import styles from './Blob.module.scss'
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
-const extensionsInSeparateColumns = new Set(['sourcegraph/git-extras'])
+const extensionsInSeparateColumns = new Set(['sourcegraph/git-extras', 'git-extras'])
 
 export interface BlobProps
     extends SettingsCascadeProps,
@@ -596,19 +596,30 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         useMemo(() => haveInitialExtensionsLoaded(extensionsController.extHostAPI), [extensionsController.extHostAPI])
     )
 
-    // Memoize `groupedDecorations` to avoid clearing and setting decorations in `ColumnDecorator`s or `LineDecorator`s
-    // on renders in which decorations haven't changed.
-    const groupedDecorations: Map<string | null, DecorationMapByLine> | undefined = useMemo(
-        () =>
-            decorationsOrError && !isErrorLike(decorationsOrError)
-                ? new Map(
-                      [...decorationsOrError].map(([key, decorations]) => [key, groupDecorationsByLine(decorations)])
-                  )
-                : undefined,
-        [decorationsOrError]
-    )
+    // Memoize column and inline decorations to avoid clearing and setting decorations
+    // in `ColumnDecorator`s or `LineDecorator`s on renders in which decorations haven't changed.
+    const decorations: { column: Map<string, DecorationMapByLine>; inline: DecorationMapByLine } = useMemo(() => {
+        if (decorationsOrError && !isErrorLike(decorationsOrError)) {
+            const result = [...decorationsOrError].reduce(
+                (accumulator, [extensionID, items]) => {
+                    if (extensionID && extensionsInSeparateColumns.has(extensionID)) {
+                        accumulator.column.set(extensionID, groupDecorationsByLine(items))
+                    } else {
+                        accumulator.inline.push(...items)
+                    }
 
-    console.log(groupedDecorations)
+                    return accumulator
+                },
+                { column: new Map<string, DecorationMapByLine>(), inline: [] as TextDocumentDecoration[] }
+            )
+
+            return { column: result.column, inline: groupDecorationsByLine(result.inline) }
+        }
+
+        return { column: new Map(), inline: new Map() }
+    }, [decorationsOrError])
+
+    console.log(decorations)
 
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
@@ -729,39 +740,35 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         extensionsController={extensionsController}
                     />
                 )}
-                {groupedDecorations &&
-                    iterate(groupedDecorations)
-                        .map(([extensionID, decorations]) => {
-                            if (extensionID && extensionsInSeparateColumns.has(extensionID)) {
-                                return (
-                                    <ColumnDecorator
-                                        key={extensionID}
-                                        isLightTheme={isLightTheme}
-                                        extensionID={extensionID}
-                                        decorations={decorations}
-                                        codeViewElements={codeViewElements}
-                                    />
-                                )
-                            }
 
-                            return iterate(decorations)
-                                .map(([line, items]) => {
-                                    const portalID = toPortalID(line)
-                                    return (
-                                        <LineDecorator
-                                            isLightTheme={isLightTheme}
-                                            key={`${portalID}-${blobInfo.filePath}`}
-                                            portalID={portalID}
-                                            getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
-                                            line={line}
-                                            decorations={items}
-                                            codeViewElements={codeViewElements}
-                                        />
-                                    )
-                                })
-                                .toArray()
-                        })
-                        .toArray()}
+                {iterate(decorations.column)
+                    .map(([extensionID, items]) => (
+                        <ColumnDecorator
+                            key={extensionID}
+                            isLightTheme={isLightTheme}
+                            extensionID={extensionID}
+                            decorations={items}
+                            codeViewElements={codeViewElements}
+                        />
+                    ))
+                    .toArray()}
+
+                {iterate(decorations.inline)
+                    .map(([line, items]) => {
+                        const portalID = toPortalID(line)
+                        return (
+                            <LineDecorator
+                                isLightTheme={isLightTheme}
+                                key={`${portalID}-${blobInfo.filePath}`}
+                                portalID={portalID}
+                                getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
+                                line={line}
+                                decorations={items}
+                                codeViewElements={codeViewElements}
+                            />
+                        )
+                    })
+                    .toArray()}
             </div>
             {!props.disableStatusBar && (
                 <StatusBar
