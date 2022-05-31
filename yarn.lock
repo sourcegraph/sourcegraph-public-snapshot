@@ -5621,6 +5621,13 @@
     jest-diff "^26.0.0"
     pretty-format "^26.0.0"
 
+"@types/js-base64@^3.3.1":
+  version "3.3.1"
+  resolved "https://registry.npmjs.org/@types/js-base64/-/js-base64-3.3.1.tgz#36c2d6dc126277ea28a4d0599d0cafbf547b51e6"
+  integrity sha512-Zw33oQNAvDdAN9b0IE5stH0y2MylYvtU7VVTKEJPxhyM2q57CVaNJhtJW258ah24NRtaiA23tptUmVn3dmTKpw==
+  dependencies:
+    js-base64 "*"
+
 "@types/js-cookie@2.2.6":
   version "2.2.6"
   resolved "https://registry.npmjs.org/@types/js-cookie/-/js-cookie-2.2.6.tgz#f1a1cb35aff47bc5cfb05cb0c441ca91e914c26f"
@@ -16767,6 +16774,11 @@ jpeg-js@^0.4.1:
   version "0.4.3"
   resolved "https://registry.npmjs.org/jpeg-js/-/jpeg-js-0.4.3.tgz#6158e09f1983ad773813704be80680550eff977b"
   integrity sha512-ru1HWKek8octvUHFHvE5ZzQ1yAsJmIvRdGWvSoKV52XKyuyYA437QWDttXT8eZXDSbuMpHlLzPDZUPd6idIz+Q==
+
+js-base64@*, js-base64@^3.7.2:
+  version "3.7.2"
+  resolved "https://registry.npmjs.org/js-base64/-/js-base64-3.7.2.tgz#816d11d81a8aff241603d19ce5761e13e41d7745"
+  integrity sha512-NnRs6dsyqUXejqk/yv2aiXlAvOs56sLkX6nUdeaNezI5LFFLlsZjOThmwnrcwh5ZZRwZlCMnVAY3CvhIhoVEKQ==
 
 js-cookie@^2.2.1:
   version "2.2.1"
