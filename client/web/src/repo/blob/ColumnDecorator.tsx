@@ -114,10 +114,7 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                         }`}
                                         className={styles.item}
                                         // eslint-disable-next-line react/forbid-dom-props
-                                        style={{
-                                            color: style.color,
-                                            backgroundColor: style.backgroundColor,
-                                        }}
+                                        style={{ color: style.color }}
                                         data-tooltip={attachment.hoverMessage}
                                         to={attachment.linkURL}
                                         // Use target to open external URLs
