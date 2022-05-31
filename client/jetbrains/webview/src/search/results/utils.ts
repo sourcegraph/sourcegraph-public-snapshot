@@ -1,9 +1,20 @@
 import { ContentMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
+const SUPPORTED_TYPES = ['commit', 'content', 'path', 'symbol', 'repo']
+
 export function getFirstResultId(results: SearchMatch[]): string | null {
-    const firstContentMatch: null | ContentMatch = results.find(result => result.type === 'content') as ContentMatch
-    if (firstContentMatch) {
-        return getResultId(firstContentMatch, firstContentMatch.lineMatches[0])
+    const firstSupportedMatch: null | SearchMatch =
+        results.find(result => SUPPORTED_TYPES.indexOf(result.type) >= 0) ?? null
+
+    if (firstSupportedMatch) {
+        return getResultId(
+            firstSupportedMatch,
+            firstSupportedMatch.type === 'content'
+                ? firstSupportedMatch.lineMatches[0]
+                : firstSupportedMatch.type === 'symbol'
+                ? firstSupportedMatch.symbols[0].name
+                : undefined
+        )
     }
     return null
 }
