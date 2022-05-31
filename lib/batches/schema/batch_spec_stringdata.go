@@ -216,6 +216,27 @@ const BatchSpecJSON = `{
               "${{ outputs.goModFileExists }}",
               "${{ eq previous_step.stdout \"success\" }}"
             ]
+          },
+          "mount": {
+            "description": "Files that are mounted to the Docker container.",
+            "type": ["array", "null"],
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "mountpoint"],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "The path on the local machine of a file to mount.",
+                  "examples": ["local/path/to/file.text"]
+                },
+                "mountpoint": {
+                  "type": "string",
+                  "description": "The path to mount the local file to.",
+                  "examples": ["path/to/file.txt"]
+                }
+              }
+            }
           }
         }
       }
