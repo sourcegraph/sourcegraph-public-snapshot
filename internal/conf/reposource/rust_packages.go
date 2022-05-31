@@ -10,9 +10,6 @@ import (
 type RustDependency struct {
 	Name    string
 	Version string
-
-	// The URL of the package to download. Possibly empty.
-	PackageURL string
 }
 
 func NewRustDependency(name, version string) *RustDependency {

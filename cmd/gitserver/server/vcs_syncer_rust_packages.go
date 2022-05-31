@@ -5,8 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
-	"net/url"
-	"strings"
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
@@ -18,15 +16,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func assertRustParsesPlaceholder() *reposource.RustDependency {
+	placeholder, err := reposource.ParseRustDependency("sourcegraph.com/placeholder@0.0.0")
+	if err != nil {
+		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
+	}
+
+	return placeholder
+}
+
 func NewRustPackagesSyncer(
 	connection *schema.RustPackagesConnection,
 	svc *dependencies.Service,
 	client *crates.Client,
 ) VCSSyncer {
-	placeholder, err := reposource.ParseRustDependency("sourcegraph.com/placeholder@0.0.0")
-	if err != nil {
-		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
-	}
+	placeholder := assertRustParsesPlaceholder()
 
 	return &vcsDependenciesSyncer{
 		typ:         "rust_packages",
@@ -34,41 +38,44 @@ func NewRustPackagesSyncer(
 		placeholder: placeholder,
 		svc:         svc,
 		configDeps:  connection.Dependencies,
-		source:      &rustPackagesSyncer{client: client},
+		source:      &rustDependencySource{client: client},
 	}
 }
 
-type rustPackagesSyncer struct {
+// pythonPackagesSyncer implements dependenciesSource
+type rustDependencySource struct {
 	client *crates.Client
 }
 
-func (rustPackagesSyncer) ParseDependency(dep string) (reposource.PackageDependency, error) {
+func (rustDependencySource) ParseDependency(dep string) (reposource.PackageDependency, error) {
 	return reposource.ParseRustDependency(dep)
 }
 
-func (rustPackagesSyncer) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
+func (rustDependencySource) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
 	return reposource.ParseRustDependencyFromRepoName(repoName)
 }
 
-func (s *rustPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
-	f, err := s.client.Version(ctx, name, version)
-	if err != nil {
-		return nil, err
-	}
+func (s *rustDependencySource) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
+	// f, err := s.client.Version(ctx, name, version)
+	// if err != nil {
+	// 	return nil, err
+	// }
 	dep := reposource.NewRustDependency(name, version)
-	dep.PackageURL = f.URL
 	return dep, nil
 }
 
-func (s *rustPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageDependency) error {
-	packageURL := dep.(*reposource.RustDependency).PackageURL
+func (s *rustDependencySource) Download(ctx context.Context, dir string, dep reposource.PackageDependency) error {
+	// packageURL := dep.(*reposource.RustDependency).PackageURL
+	packageURL := fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s/%s", string(dep.PackageSyntax()), dep.PackageVersion(), "download")
 
 	pkg, err := s.client.Download(ctx, packageURL)
 	if err != nil {
 		return errors.Wrap(err, "download")
 	}
 
-	if err = unpackRustPackage(pkg, packageURL, dir); err != nil {
+	// TODO: we could add `.sourcegraph/repo.json` here with more information,
+	// to be used by rust analyzer
+	if err = unpackRustPackage(pkg, dir); err != nil {
 		return errors.Wrap(err, "failed to unzip rust module")
 	}
 
@@ -76,25 +83,8 @@ func (s *rustPackagesSyncer) Download(ctx context.Context, dir string, dep repos
 }
 
 // unpackRustPackages unpacks the given rust package archive into workDir, skipping any
-// files that aren't valid or that are potentially malicious. It detects the kind of archive
-// and compression used with the given packageURL.
-func unpackRustPackage(pkg []byte, packageURL, workDir string) error {
-	u, err := url.Parse(packageURL)
-	if err != nil {
-		return errors.Wrap(err, "bad rust package URL")
-	}
-	// u.Path
-
-	// splitPath := path.Split(u.Path, "/")
-	splitPath := strings.Split(u.Path, "/")
-	if len(splitPath) != 7 {
-		return errors.Wrap(err, "bad rust package URL")
-	}
-
-	name := splitPath[3]
-	version := splitPath[4]
-	filename := fmt.Sprintf("%s-%s.crate", name, version)
-
+// files that aren't valid or that are potentially malicious.
+func unpackRustPackage(pkg []byte, workDir string) error {
 	r := bytes.NewReader(pkg)
 	opts := unpack.Opts{
 		SkipInvalid: true,
@@ -116,18 +106,7 @@ func unpackRustPackage(pkg []byte, packageURL, workDir string) error {
 		},
 	}
 
-	switch {
-	case strings.HasSuffix(filename, ".tar.gz"), strings.HasSuffix(filename, ".tgz"), strings.HasSuffix(filename, ".crate"):
-		err = unpack.Tgz(r, workDir, opts)
-	case strings.HasSuffix(filename, ".whl"), strings.HasSuffix(filename, ".zip"):
-		err = unpack.Zip(r, int64(len(pkg)), workDir, opts)
-	case strings.HasSuffix(filename, ".tar"):
-		err = unpack.Tar(r, workDir, opts)
-	default:
-		return errors.Errorf("unsupported cargo package type %q", filename)
-	}
-
-	if err != nil {
+	if err := unpack.Tgz(r, workDir, opts); err != nil {
 		return err
 	}
 

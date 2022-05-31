@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"path"
 
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -34,12 +37,12 @@ func NewClient(urn string, urls []string, cli httpcli.Doer) *Client {
 	}
 }
 
-func (c *Client) Version(ctx context.Context, name string, version string) (*RustFile, error) {
-	return &RustFile{
-		Name: name,
-		URL:  fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s/download", name, version),
-	}, nil
-}
+// func (c *Client) Version(ctx context.Context, name string, version string) (*RustFile, error) {
+// 	return &RustFile{
+// 		Name: name,
+// 		URL:  fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s/download", name, version),
+// 	}, nil
+// }
 
 func (c *Client) Download(ctx context.Context, url string) ([]byte, error) {
 	if err := c.limiter.Wait(ctx); err != nil {
@@ -71,6 +74,37 @@ func (e *Error) Error() string {
 
 func (e *Error) NotFound() bool {
 	return e.code == http.StatusNotFound
+}
+
+func (c *Client) get(ctx context.Context, name, version string) (respBody []byte, err error) {
+	var (
+		reqURL *url.URL
+		req    *http.Request
+	)
+
+	for _, baseURL := range c.urls {
+		if err = c.limiter.Wait(ctx); err != nil {
+			return nil, err
+		}
+
+		reqURL, err = url.Parse(baseURL)
+		if err != nil {
+			return nil, errors.Errorf("invalid proxy URL %q", baseURL)
+		}
+
+		reqURL.Path = path.Join(reqURL.Path, name, version, "download")
+		req, err = http.NewRequestWithContext(ctx, "GET", reqURL.String(), nil)
+		if err != nil {
+			return nil, err
+		}
+
+		respBody, err = c.do(req)
+		if err == nil || !errcode.IsNotFound(err) {
+			break
+		}
+	}
+
+	return respBody, err
 }
 
 func (c *Client) do(req *http.Request) ([]byte, error) {

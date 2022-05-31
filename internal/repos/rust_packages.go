@@ -40,10 +40,10 @@ type rustPackagesSource struct {
 var _ dependenciesSource = &rustPackagesSource{}
 
 func (s *rustPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
-	_, err := s.client.Version(ctx, name, version)
-	if err != nil {
-		return nil, err
-	}
+	// _, err := s.client.Version(ctx, name, version)
+	// if err != nil {
+	// 	return nil, err
+	// }
 	return reposource.NewRustDependency(name, version), nil
 }
 
