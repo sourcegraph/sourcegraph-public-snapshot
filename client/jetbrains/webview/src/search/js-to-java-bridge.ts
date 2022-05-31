@@ -1,7 +1,13 @@
 import { encode } from 'js-base64'
 
 import { splitPath } from '@sourcegraph/shared/src/components/RepoLink'
-import { ContentMatch, PathMatch, SearchMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import {
+    ContentMatch,
+    getRepoMatchUrl,
+    PathMatch,
+    SearchMatch,
+    SymbolMatch,
+} from '@sourcegraph/shared/src/search/stream'
 
 import { loadContent } from './lib/blob'
 import { PluginConfig, Search, Theme } from './types'
@@ -110,6 +116,16 @@ export async function onPreviewClear(): Promise<void> {
 }
 
 export async function onOpen(match: SearchMatch, lineMatchIndexOrSymbolIndex?: number): Promise<void> {
+    if (match.type === 'repo' || match.type === 'commit') {
+        const relativeUrl = match.type === 'repo' ? getRepoMatchUrl(match) : match.url
+        try {
+            await callJava({ action: 'openSourcegraphUrl', arguments: { relativeUrl } })
+        } catch (error) {
+            console.error(`Failed to open sourcegraph URL: ${(error as Error).message}`)
+        }
+        return
+    }
+
     const request = await createPreviewOrOpenRequest(match, lineMatchIndexOrSymbolIndex, 'open')
     if (request.arguments.fileName) {
         try {
@@ -137,14 +153,6 @@ export function saveLastSearch(lastSearch: Search): void {
         .catch((error: Error) => {
             console.error(`Failed to save last search: ${error.message}`)
         })
-}
-
-export async function openSourcegraphUrlInBrowser(relativeUrl: string): Promise<void> {
-    try {
-        await callJava({ action: 'openSourcegraphUrl', arguments: { relativeUrl } })
-    } catch (error) {
-        console.error(`Failed to open sourcegraph URL: ${(error as Error).message}`)
-    }
 }
 
 async function callJava(request: Request): Promise<object> {
