@@ -29,14 +29,30 @@ var (
 	dbDatabaseNameFlag string
 
 	dbCommand = &cli.Command{
-		Name:     "db",
-		Usage:    "Interact with local Sourcegraph databases for development",
+		Name:  "db",
+		Usage: "Interact with local Sourcegraph databases for development",
+		UsageText: `
+# Reset the Sourcegraph 'frontend' database
+sg db reset-pg
+
+# Reset the 'frontend' and 'codeintel' databases
+sg db reset-pg -db=frontend,codeintel
+
+# Reset all databases ('frontend', 'codeintel', 'codeinsights')
+sg db reset-pg -db=all
+
+# Reset the redis database
+sg db reset-redis
+
+# Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
+sg db add-user -name=foo
+`,
 		Category: CategoryDev,
 		Subcommands: []*cli.Command{
 			{
 				Name:        "reset-pg",
 				Usage:       "Drops, recreates and migrates the specified Sourcegraph database",
-				Description: `Run 'sg db reset-pg' to drop and recreate Sourcegraph databases. If -db is not set, then the "frontend" database is used (what's set as PGDATABASE in env or the sg.config.yaml). If -db is set to "all" then all databases are reset and recreated.`,
+				Description: `If -db is not set, then the "frontend" database is used (what's set as PGDATABASE in env or the sg.config.yaml). If -db is set to "all" then all databases are reset and recreated.`,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:        "db",
@@ -48,10 +64,10 @@ var (
 				Action: execAdapter(dbResetPGExec),
 			},
 			{
-				Name:        "reset-redis",
-				Usage:       "Drops, recreates and migrates the specified Sourcegraph Redis database",
-				Description: `Run 'sg db reset-redis' to drop and recreate Sourcegraph redis databases.`,
-				Action:      execAdapter(dbResetRedisExec),
+				Name:      "reset-redis",
+				Usage:     "Drops, recreates and migrates the specified Sourcegraph Redis database",
+				UsageText: "sg db reset-redis",
+				Action:    execAdapter(dbResetRedisExec),
 			},
 			{
 				Name:        "add-user",

@@ -18,11 +18,11 @@ func TestSubRepoPermsInsert(t *testing.T) {
 	}
 	t.Parallel()
 
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
-	s := SubRepoPerms(db)
+	s := db.SubRepoPerms()
 
 	userID := int32(1)
 	repoID := api.RepoID(1)
@@ -50,11 +50,11 @@ func TestSubRepoPermsUpsert(t *testing.T) {
 	}
 	t.Parallel()
 
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
-	s := SubRepoPerms(db)
+	s := db.SubRepoPerms()
 
 	userID := int32(1)
 	repoID := api.RepoID(1)
@@ -92,11 +92,11 @@ func TestSubRepoPermsUpsertWithSpec(t *testing.T) {
 	}
 	t.Parallel()
 
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
-	s := SubRepoPerms(db)
+	s := db.SubRepoPerms()
 
 	userID := int32(1)
 	repoID := api.RepoID(1)
@@ -139,10 +139,10 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 	}
 	t.Parallel()
 
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 
 	ctx := context.Background()
-	s := SubRepoPerms(db)
+	s := db.SubRepoPerms()
 	prepareSubRepoTestData(ctx, t, db)
 
 	userID := int32(1)
@@ -190,10 +190,10 @@ func TestSubRepoPermsSupportedForRepoId(t *testing.T) {
 	}
 	t.Parallel()
 
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 
 	ctx := context.Background()
-	s := SubRepoPerms(db)
+	s := db.SubRepoPerms()
 	prepareSubRepoTestData(ctx, t, db)
 
 	testSubRepoNotSupportedForRepo(ctx, t, s, 3, "perforce1", "Repo is not private, therefore sub-repo perms are not supported")

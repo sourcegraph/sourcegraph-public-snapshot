@@ -123,7 +123,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                     size="sm"
                     aria-label={showCommitMessageBody ? 'Hide commit message body' : 'Show commit message body'}
                 >
-                    <Icon as={DotsHorizontalIcon} />
+                    <Icon role="img" as={DotsHorizontalIcon} aria-hidden={true} />
                 </Button>
             )}
             {compact && (
@@ -170,8 +170,9 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                         className={styles.shaAndParentsCopy}
                         onClick={() => copyToClipboard(node.oid)}
                         data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
+                        aria-label="Copy full SHA"
                     >
-                        <Icon as={ContentCopyIcon} />
+                        <Icon role="img" as={ContentCopyIcon} aria-hidden={true} />
                     </Button>
                 </Typography.Code>
             </div>
@@ -194,8 +195,9 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                     className={styles.shaAndParentsCopy}
                                     onClick={() => copyToClipboard(parent.oid)}
                                     data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
+                                    aria-label="Copy full SHA"
                                 >
-                                    <Icon as={ContentCopyIcon} />
+                                    <Icon role="img" as={ContentCopyIcon} aria-hidden={true} />
                                 </Button>
                             </div>
                         ))}
@@ -226,7 +228,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                 size="sm"
                 as={Link}
             >
-                <Icon className="mr-1" as={FileDocumentIcon} />
+                <Icon role="img" className="mr-1" as={FileDocumentIcon} aria-hidden={true} />
                 Browse files at @{node.abbreviatedOID}
             </Button>
             {diffModeSelector()}
@@ -293,7 +295,12 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                                 size="sm"
                                                 aria-label="Copy full SHA"
                                             >
-                                                <Icon className="small" as={ContentCopyIcon} />
+                                                <Icon
+                                                    role="img"
+                                                    className="small"
+                                                    as={ContentCopyIcon}
+                                                    aria-hidden={true}
+                                                />
                                             </Button>
                                         </ButtonGroup>
                                         {node.tree && (
@@ -305,7 +312,12 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                                 as={Link}
                                                 aria-label="View files at this commit"
                                             >
-                                                <Icon className="mr-1" as={FileDocumentIcon} />
+                                                <Icon
+                                                    role="img"
+                                                    className="mr-1"
+                                                    as={FileDocumentIcon}
+                                                    aria-hidden={true}
+                                                />
                                             </Button>
                                         )}
                                     </div>

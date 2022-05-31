@@ -150,7 +150,7 @@ const resolveFileInfoFromFixture = async (
         codeView as HTMLElement,
         mockRequestGraphQL({
             ...DEFAULT_GRAPHQL_RESPONSES,
-            ...(graphQLResponseMap || {}),
+            ...graphQLResponseMap,
         }),
         mockQueryConduit(conduitResponseMap)
     ).toPromise()

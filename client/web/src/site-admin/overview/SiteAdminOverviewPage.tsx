@@ -266,7 +266,8 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                                                             variant="secondary"
                                                             as={Link}
                                                         >
-                                                            View all usage statistics <Icon as={OpenInNewIcon} />
+                                                            View all usage statistics{' '}
+                                                            <Icon role="img" as={OpenInNewIcon} aria-hidden={true} />
                                                         </Button>
                                                     </Typography.H3>
                                                 </div>

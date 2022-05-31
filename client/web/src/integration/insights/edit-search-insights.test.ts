@@ -243,6 +243,7 @@ describe('Code insight edit insight page', () => {
                         includeRepoRegex: '',
                         searchContexts: [],
                     },
+                    seriesDisplayOptions: {},
                 },
             },
             id: '001',

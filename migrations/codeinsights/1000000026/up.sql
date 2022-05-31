@@ -1,7 +1,7 @@
--- +++
--- parent: 1000000025
--- +++
+CREATE EXTENSION IF NOT EXISTS citext;
 
-ALTER TABLE IF EXISTS commit_index
-    ADD COLUMN IF NOT EXISTS indexed_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ADD COLUMN IF NOT EXISTS debug_field TEXT;
+COMMENT ON EXTENSION citext IS 'data type for case-insensitive character strings';
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+COMMENT ON EXTENSION pg_trgm IS 'text similarity measurement and index searching based on trigrams';

@@ -9,7 +9,7 @@ import (
 	"github.com/grafana-tools/sdk"
 )
 
-func Frontend() *monitoring.Container {
+func Frontend() *monitoring.Dashboard {
 	// frontend is sometimes called sourcegraph-frontend in various contexts
 	const containerName = "(frontend|sourcegraph-frontend)"
 
@@ -37,7 +37,7 @@ func Frontend() *monitoring.Container {
 		{"org_repositories", "OrgRepositories", "API requests to list repositories owned by an org"},
 	}
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:        "frontend",
 		Title:       "Frontend",
 		Description: "Serves all end-user browser and API requests.",

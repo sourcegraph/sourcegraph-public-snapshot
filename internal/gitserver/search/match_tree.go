@@ -287,13 +287,11 @@ func matchesToRanges(content []byte, matches [][]int) result.Ranges {
 	var (
 		unscannedOffset          = 0
 		scannedNewlines          = 0
-		scannedRunes             = 0
 		lastScannedNewlineOffset = -1
 	)
 
-	lineColumnOffset := func(byteOffset int) (line, column, offset int) {
+	lineColumnOffset := func(byteOffset int) (line, column int) {
 		unscanned := content[unscannedOffset:byteOffset]
-		scannedRunes += utf8.RuneCount(unscanned)
 		lastUnscannedNewlineOffset := bytes.LastIndexByte(unscanned, '\n')
 		if lastUnscannedNewlineOffset != -1 {
 			lastScannedNewlineOffset = unscannedOffset + lastUnscannedNewlineOffset
@@ -301,16 +299,16 @@ func matchesToRanges(content []byte, matches [][]int) result.Ranges {
 		}
 		column = utf8.RuneCount(content[lastScannedNewlineOffset+1 : byteOffset])
 		unscannedOffset = byteOffset
-		return scannedNewlines, column, scannedRunes
+		return scannedNewlines, column
 	}
 
 	res := make(result.Ranges, 0, len(matches))
 	for _, match := range matches {
-		startLine, startColumn, startOffset := lineColumnOffset(match[0])
-		endLine, endColumn, endOffset := lineColumnOffset(match[1])
+		startLine, startColumn := lineColumnOffset(match[0])
+		endLine, endColumn := lineColumnOffset(match[1])
 		res = append(res, result.Range{
-			Start: result.Location{Line: startLine, Column: startColumn, Offset: startOffset},
-			End:   result.Location{Line: endLine, Column: endColumn, Offset: endOffset},
+			Start: result.Location{Line: startLine, Column: startColumn, Offset: match[0]},
+			End:   result.Location{Line: endLine, Column: endColumn, Offset: match[1]},
 		})
 	}
 	return res

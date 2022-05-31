@@ -5,7 +5,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Insight, isBackendInsight } from '../../../core'
 
 import { BackendInsightView } from './backend-insight/BackendInsight'
-import { BuiltInInsight } from './BuiltInInsight'
+import { BuiltInInsight } from './built-in-insight/BuiltInInsight'
 
 export interface SmartInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
     insight: Insight

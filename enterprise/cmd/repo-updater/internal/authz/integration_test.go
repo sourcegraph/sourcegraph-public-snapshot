@@ -88,7 +88,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewDB(t)
+			testDB := database.NewDB(dbtest.NewDB(t))
 			ctx := actor.WithInternalActor(context.Background())
 
 			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
@@ -128,7 +128,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+			userID, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -169,7 +169,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewDB(t)
+			testDB := database.NewDB(dbtest.NewDB(t))
 			ctx := actor.WithInternalActor(context.Background())
 
 			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
@@ -209,7 +209,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+			userID, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -273,7 +273,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewDB(t)
+			testDB := database.NewDB(dbtest.NewDB(t))
 			ctx := actor.WithInternalActor(context.Background())
 
 			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
@@ -314,7 +314,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
-			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
+			userID, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
 				AuthData: &authData,
 			})
 			if err != nil {
@@ -357,7 +357,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewDB(t)
+			testDB := database.NewDB(dbtest.NewDB(t))
 			ctx := actor.WithInternalActor(context.Background())
 
 			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
@@ -398,7 +398,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
-			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
+			userID, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
 				AuthData: &authData,
 			})
 			if err != nil {

@@ -133,7 +133,8 @@ Then add the following lines to your site configuration:
       "clientID": "replace-with-the-oauth-client-id",
       "clientSecret": "replace-with-the-oauth-client-secret",
       "allowSignup": false,  // CAUTION: Set to true to enable signup. If nothing is specified in `allowOrgs`, any GitHub user can sign up.
-      "allowOrgs": ["your-org-name"] // Restrict logins and signups if enabled to members of these orgs.
+      "allowOrgs": ["your-org-name"], // Restrict logins and signups if enabled to members of these orgs.
+      "allowOrgsMap": { "orgName": ["your-team-name"]} // Restrict logins and signups if enabled to members of teams that belong to a given org.
     }
   ]
 }
@@ -175,7 +176,8 @@ Then add the following lines to your site configuration:
         "displayName": "GitLab",
         "clientID": "replace-with-the-oauth-application-id",
         "clientSecret": "replace-with-the-oauth-secret",
-        "url": "https://gitlab.example.com"
+        "url": "https://gitlab.example.com",
+        "allowGroups":[["group", "group/subgroup", "group/subgroup/subgroup"]], // Restrict logins to members of groups or subgroups based on the full-path provided.
       }
     ]
 ```

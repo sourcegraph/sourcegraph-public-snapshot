@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, Modal, Typography } from '@sourcegraph/wildcard'
+import { Button, Modal, Typography, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
 import { Scalars } from '../../../../graphql-operations'
@@ -40,7 +40,7 @@ export const CloseChangesetsModal: React.FunctionComponent<React.PropsWithChildr
     return (
         <Modal onDismiss={onCancel} aria-labelledby={MODAL_LABEL_ID}>
             <Typography.H3 id={MODAL_LABEL_ID}>Close changesets</Typography.H3>
-            <p className="mb-4">Are you sure you want to close all the selected changesets on the code hosts?</p>
+            <Text className="mb-4">Are you sure you want to close all the selected changesets on the code hosts?</Text>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             <div className="d-flex justify-content-end">
                 <Button

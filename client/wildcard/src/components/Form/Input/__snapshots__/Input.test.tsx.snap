@@ -2,10 +2,10 @@
 
 exports[`Input Renders status 'error' correctly 1`] = `
 <div
-  class="container d-flex"
+  class="container loader-input loaderInput"
 >
   <input
-    class="input form-control with-invalid-icon is-invalid"
+    class="form-control with-invalid-icon is-invalid"
     type="text"
     value=""
   />
@@ -14,10 +14,10 @@ exports[`Input Renders status 'error' correctly 1`] = `
 
 exports[`Input Renders status 'loading' correctly 1`] = `
 <div
-  class="container d-flex"
+  class="container loader-input loaderInput"
 >
   <input
-    class="input form-control with-invalid-icon"
+    class="inputLoading form-control with-invalid-icon"
     type="text"
     value=""
   />
@@ -29,10 +29,10 @@ exports[`Input Renders status 'loading' correctly 1`] = `
 
 exports[`Input Renders status 'valid' correctly 1`] = `
 <div
-  class="container d-flex"
+  class="container loader-input loaderInput"
 >
   <input
-    class="input form-control with-invalid-icon is-valid"
+    class="form-control with-invalid-icon is-valid"
     type="text"
     value=""
   />

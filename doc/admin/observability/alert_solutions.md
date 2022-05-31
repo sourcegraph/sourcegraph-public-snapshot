@@ -5915,3 +5915,28 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
+## codeintel-uploads: codeintel_commit_graph_queued_max_age
+
+<p class="subtitle">repository queue longest time in queue</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> codeintel-uploads: 3600s+ repository queue longest time in queue
+
+**Possible solutions**
+
+- An alert here is generally indicative of either underprovisioned worker instance(s) and/or
+an underprovisioned main postgres instance.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#codeintel-uploads-codeintel-commit-graph-queued-max-age).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_codeintel-uploads_codeintel_commit_graph_queued_max_age"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<br />
+

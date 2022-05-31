@@ -71,7 +71,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB *sql.DB
 	enableSync, _ := strconv.ParseBool(os.Getenv("ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE"))
 	if enableSync {
 		observationContext.Logger.Info("Enabling Code Insights Settings Storage - This is a deprecated functionality!")
-		routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, insightsDB))
+		routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, database.NewDB(mainAppDB), insightsDB))
 	}
 	routines = append(
 		routines,

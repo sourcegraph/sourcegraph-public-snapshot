@@ -68,11 +68,7 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                {isExpanded ? (
-                    <Icon aria-label="Close section" as={ChevronDownIcon} />
-                ) : (
-                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
-                )}
+                <Icon role="img" aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
             </Button>
             {willClose ? (
                 <ChangesetCloseActionClose className={styles.externalChangesetCloseNodeAction} />
@@ -114,11 +110,7 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<
                 outline={true}
                 variant="secondary"
             >
-                {isExpanded ? (
-                    <Icon aria-label="Close section" as={ChevronDownIcon} />
-                ) : (
-                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
-                )}{' '}
+                <Icon role="img" aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (

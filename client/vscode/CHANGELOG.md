@@ -6,9 +6,19 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Changes
 
+- Import Sourcegraph Access token automatically after completing authentication in the browser for Sourcegraph Cloud users [issues/28311](https://github.com/sourcegraph/sourcegraph/issues/28311)
+
+### Fixes
+
+-
+
+## 2.2.3
+
+### Changes
+
 - Update Access Token headers setting method --thanks @ptxmac for the contribution! [issues/34338](https://github.com/sourcegraph/sourcegraph/issues/34338)
 - Add options to choose between main branch or current branch when copy/open file. Always use default branch if set [issues/34591](https://github.com/sourcegraph/sourcegraph/issues/34591)
-- Add ability to import Sourcegraph Access token automatically after logging in on Sourcegraph Cloud [issues/28311](https://github.com/sourcegraph/sourcegraph/issues/28311)
+- CTA for adding Sourcegraph extension to Workspace Recommendations [issues/34829](https://github.com/sourcegraph/sourcegraph/issues/34829)
 
 ### Fixes
 
