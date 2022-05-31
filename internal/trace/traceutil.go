@@ -82,12 +82,11 @@ func ContextFromSpan(span opentracing.Span) *otfields.TraceContext {
 // trace.Context(ctx) instead.
 func Logger(ctx context.Context, l sglog.Logger) sglog.Logger {
 	if t := TraceFromContext(ctx); t != nil {
+		if t.family != "" {
+			l = l.Scoped(t.family, "trace family")
+		}
 		if tc := ContextFromSpan(t.span); tc != nil {
-			traced := l.WithTrace(*tc)
-			if t.family != "" {
-				return traced.Scoped(t.family, "trace family")
-			}
-			return traced
+			l = l.WithTrace(*tc)
 		}
 	}
 	return l
