@@ -7,15 +7,13 @@ import com.intellij.openapi.ui.popup.ComponentPopupBuilder;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.util.Disposer;
-import com.intellij.openapi.util.IconLoader;
 import com.sourcegraph.Icons;
 import org.cef.browser.CefBrowser;
 import org.cef.handler.CefKeyboardHandler;
 import org.cef.misc.BoolRef;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.*;
-import java.awt.event.KeyAdapter;
+import java.awt.*;
 import java.awt.event.KeyEvent;
 
 public class SourcegraphWindow implements Disposable {
@@ -47,7 +45,6 @@ public class SourcegraphWindow implements Disposable {
         }
     }
 
-
     @NotNull
     private JBPopup createPopup() {
         ComponentPopupBuilder builder = JBPopupFactory.getInstance().createComponentPopupBuilder(mainPanel, mainPanel)
@@ -69,16 +66,28 @@ public class SourcegraphWindow implements Disposable {
                 return false;
             });
 
-        // For some reason, adding a cancelCallback will prevent the cancel event to fire when using the escape
-        // key. To work around this, we add a manual listener to both the popup panel and the browser panel for this
-        // scenario.
-        mainPanel.addKeyListener(new KeyAdapter() {
-            public void keyPressed(KeyEvent event) {
-                if (event.getKeyCode() == KeyEvent.VK_ESCAPE) {
-                    popup.setUiVisible(false);
+        // For some reason, adding a cancelCallback will prevent the cancel event to fire when using the escape key. To
+        // work around this, we add a manual listener to both the global key handler (since the editor component seems
+        // to work around the default swing event hands long) and the browser panel which seems to handle events in a
+        // separate queue.
+        registerGlobalKeyListeners();
+        registerJBCefClientKeyListeners();
+
+        return builder.createPopup();
+    }
+
+    private void registerGlobalKeyListeners() {
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+            .addKeyEventDispatcher(e -> {
+                if (e.getID() != KeyEvent.KEY_PRESSED || popup.isDisposed() || !popup.isVisible()) {
+                    return true;
                 }
-            }
-        });
+
+                return handleKeyPress(e.getKeyCode(), e.getModifiersEx());
+            });
+    }
+
+    private void registerJBCefClientKeyListeners() {
         mainPanel.getBrowser().getJBCefClient().addKeyboardHandler(new CefKeyboardHandler() {
             @Override
             public boolean onPreKeyEvent(CefBrowser browser, CefKeyEvent event, BoolRef is_keyboard_shortcut) {
@@ -86,14 +95,18 @@ public class SourcegraphWindow implements Disposable {
             }
             @Override
             public boolean onKeyEvent(CefBrowser browser, CefKeyEvent event) {
-                if (event.windows_key_code == KeyEvent.VK_ESCAPE) {
-                    popup.setUiVisible(false);
-                }
-                return false;
+                return handleKeyPress(event.windows_key_code, event.modifiers);
             }
         }, mainPanel.getBrowser().getCefBrowser());
+    }
 
-        return builder.createPopup();
+    private boolean handleKeyPress(int keyCode, int modifiers) {
+        if (keyCode == KeyEvent.VK_ESCAPE) {
+            popup.setUiVisible(false);
+            return false;
+        }
+
+        return true;
     }
 
     @Override
