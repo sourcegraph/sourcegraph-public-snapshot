@@ -16,14 +16,13 @@ public class SourcegraphWindow implements Disposable {
 
         // Create main panel
         mainPanel = new FindPopupPanel(project);
-
-        Disposer.register(project, this);
     }
 
     synchronized public void showPopup() {
         if (popup == null || popup.isDisposed()) {
             popup = createPopup();
             popup.showCenteredInCurrentWindow(project);
+
         }
 
         // If the popup is already shown, hitting alt + a gain should behave the same as the native find in files
@@ -54,5 +53,10 @@ public class SourcegraphWindow implements Disposable {
         if (popup != null) {
             popup.dispose();
         }
+        if(mainPanel!=null){
+            mainPanel.dispose();
+        }
     }
+
+
 }

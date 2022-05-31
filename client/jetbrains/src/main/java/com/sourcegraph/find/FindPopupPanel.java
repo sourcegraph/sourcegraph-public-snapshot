@@ -6,6 +6,7 @@ import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.colors.EditorColors;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Splitter;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.LightVirtualFile;
 import com.intellij.ui.OnePixelSplitter;
@@ -25,6 +26,7 @@ import java.awt.*;
  */
 public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposable {
     private final SourcegraphJBCefBrowser browser;
+    private Editor editor;
 
     public FindPopupPanel(Project project) {
         super(new BorderLayout());
@@ -67,7 +69,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         VirtualFile virtualFile = new LightVirtualFile("helloWorld.ts", contentTs);
         Document document = editorFactory.createDocument(contentTs);
 
-        Editor editor = editorFactory.createEditor(document, project, virtualFile, true, EditorKind.MAIN_EDITOR);
+        editor = editorFactory.createEditor(document, project, virtualFile, true, EditorKind.MAIN_EDITOR);
 
         EditorSettings settings = editor.getSettings();
         settings.setLineMarkerAreaShown(true);
@@ -85,6 +87,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         editorPanel.invalidate();
         editorPanel.validate();
 
+
         return editorPanel;
     }
 
@@ -93,5 +96,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         if (browser != null) {
             browser.dispose();
         }
+
+        EditorFactory.getInstance().releaseEditor(editor);
     }
 }
