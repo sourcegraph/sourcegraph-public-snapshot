@@ -56,6 +56,24 @@ func main() {
 }
 ```
 
+### Sub-loggers
+
+In a particular scope some fields might be repeatedly emitted. Consider creating a sub-logger in the scope by using `logger.With(...fields)`.
+
+```go
+func (s *Service) MyService(ctx context.Context, logger log.Logger) {
+    subLogger := logger.With(log.Int("id", s.ID), log.String("service", s.Name))
+
+    subLogger.Info("starting up")
+
+    if err := s.Start(); err != nil {
+        subLogger.Error(err)
+    }
+
+    subLogger.Info("done")
+}
+```
+
 ### Attaching context
 
 When your service starts logging, obtain a `log.Logger` instance, attach some relevant context, and start propagating your logger for use.
@@ -115,6 +133,47 @@ func (w *Worker) DoBigThing(ctx context.Context, params ...int) {
 
   // pass the logger to maintain context across function boundaries
   doSubTask(doLog, /*... */)
+}
+```
+
+## Writing log messages
+
+The message in a log line should be in lowercase.
+
+```
+log.Info("this is my lowercase log line")
+log.Debug("this is a debug log line")
+log.Error("this is an error!")
+```
+
+If each word of log message is not a sentence and referring to a func/component ex. `logger.Error("component.update"` prefer to follow the go scoping standard ie. capatalize if it is public accessible, lowercase if it is private.
+
+Furthermore, if there are more than one line that uses this naming scheme (referring to a func/component) consider creating a [sub-logger](#sub-loggers) with the component name.
+
+```go
+func (c *component) update(logger log.Logger) {
+    logger.Error("component.update")
+}
+
+
+func (p *Public) private(logger log.Logger) {
+    logger.Info("Public.private")
+}
+
+func (p *Public) Action(logger log.Logger) {
+    logger.Info("Public.Action")
+}
+
+func (p *Public) Process(logger log.Logger) {
+    pLog := logger.Scoped("Public.Process")
+
+    pLog.Info("starting tasks")
+    // ... things ...
+
+    pLog.Debug("mid checkpoint")
+
+    // ... things ...
+    p.Log.Info("finalizing some things!")
 }
 ```
 
@@ -180,3 +239,11 @@ func TestFooBar(t *testing.T) {
   logs := exportLogs()
 }
 ```
+
+When writing a test, ensure that `logtest.Scope` in the tightest scope possible. This ensures that if a test fails, that the logging is closely tied to the test that failed. Especially if you testcase has sub tests with `t.Run`, prefer to created the test logger inside `t.Run`.
+
+## Conventions
+
+* The first scope of the logger should be the name of the service and following the same naming of the service. In general, if the logger is initialized as described in [handling logging](#handling-logging) the name should be correct.
+* The logger parameter should either be immediately after `ctx context.Context`, or be the first parameter.
+* In some cases there might already be a `log` module imported. Use the alias `sglog` to refer to `lib/log`, for example `import sglog "github.com/sourcegraph/sourcegraph/lib/log"`.
