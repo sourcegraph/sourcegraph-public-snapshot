@@ -13,6 +13,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -147,6 +148,17 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Ru
 		if report.Err != nil {
 			messages = append(messages, report.Header)
 			hasErr = true
+		}
+
+		// Log analytics for each linter
+		const eventName = "lint_runner"
+		labels := []string{report.Header}
+		if runnerCtx.Err() == context.DeadlineExceeded {
+			analytics.LogEvent(ctx, eventName, labels, start, "deadline exceeded")
+		} else if report.Err != nil {
+			analytics.LogEvent(ctx, eventName, labels, start, "failed")
+		} else {
+			analytics.LogEvent(ctx, eventName, labels, start, "succeeded")
 		}
 	}
 
