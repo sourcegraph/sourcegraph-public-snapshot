@@ -177,7 +177,7 @@ Then add the following lines to your site configuration:
         "clientID": "replace-with-the-oauth-application-id",
         "clientSecret": "replace-with-the-oauth-secret",
         "url": "https://gitlab.example.com",
-        "examples":[["group", "group/subgroup", "group/subgroup/subgroup"]], // Restrict logins to members of groups or subgroups based on the full-path provided.
+        "allowGroups":[["group", "group/subgroup", "group/subgroup/subgroup"]], // Restrict logins to members of groups or subgroups based on the full-path provided.
       }
     ]
 ```
