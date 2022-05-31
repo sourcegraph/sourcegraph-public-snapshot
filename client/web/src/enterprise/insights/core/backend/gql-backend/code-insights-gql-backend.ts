@@ -65,6 +65,11 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     constructor(private apolloClient: ApolloClient<object>) {}
 
     // Insights
+
+    /**
+     * Note: UI does not expect this to have deterministic order.
+     * Order is not enforced.
+     */
     public getInsights = (input: { dashboardId: string }): Observable<Insight[]> => {
         const { dashboardId } = input
 
@@ -148,6 +153,10 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // title field as soon as setting-based api will be deprecated
     public findInsightByName = (): Observable<Insight | null> => of(null)
 
+    /**
+     * Note: UI does not expect this to have deterministic order.
+     * Order is not enforced.
+     */
     public getAccessibleInsightsList = (): Observable<AccessibleInsightInfo[]> =>
         fromObservableQuery(
             this.apolloClient.watchQuery<GetAccessibleInsightsListResult>({
@@ -162,9 +171,17 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             )
         )
 
+    /**
+     * Note: UI expects this to have deterministic order.
+     * Order sorted client side in the charts themselves.
+     */
     public getBackendInsightData = (insight: BackendInsight): Observable<BackendInsightData> =>
         getBackendInsightData(this.apolloClient, insight)
 
+    /**
+     * Note: UI expects this to have deterministic order.
+     * Order sorted client side in the charts themselves.
+     */
     public getBuiltInInsightData = getBuiltInInsight
 
     public createInsight = (input: InsightCreateInput): Observable<unknown> => createInsight(this.apolloClient, input)
@@ -209,6 +226,11 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     }
 
     // Dashboards
+
+    /**
+     * Note: UI does not expect this to have deterministic order.
+     * Order is not enforced.
+     */
     public getDashboards = (id?: string): Observable<InsightDashboard[]> => getDashboards(this.apolloClient, id)
 
     public getDashboardById = (input: { dashboardId: string | undefined }): Observable<InsightDashboard | null> =>
@@ -218,6 +240,10 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // So we just return null to get the form to always accept.
     public findDashboardByName = (name: string): Observable<InsightDashboard | null> => of(null)
 
+    /**
+     * Note: UI does not expect this to have deterministic order.
+     * Order is not enforced.
+     */
     public getDashboardOwners = (): Observable<InsightsDashboardOwner[]> => getDashboardOwners(this.apolloClient)
 
     public createDashboard = (input: DashboardCreateInput): Observable<DashboardCreateResult> =>
@@ -246,18 +272,41 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         updateDashboard(this.apolloClient, input)
 
     // Live preview fetchers
+
+    /**
+     * Note: UI expects this to have deterministic order.
+     * Order sorted client side in the charts themselves.
+     */
     public getSearchInsightContent = (input: GetSearchInsightContentInput): Promise<SeriesChartContent<any>> =>
         getSearchInsightContent(input).then(data => data.content)
 
+    /**
+     * Note: UI expects this to have deterministic order.
+     * Order sorted client side in the charts themselves.
+     */
     public getLangStatsInsightContent = (
         input: GetLangStatsInsightContentInput
     ): Promise<CategoricalChartContent<any>> => getLangStatsInsightContent(input).then(data => data.content)
 
+    /**
+     * Note: UI expects this to have deterministic order.
+     * Order sorted client side in the charts themselves.
+     */
     public getInsightPreviewContent = (input: InsightPreviewSettings): Promise<SeriesChartContent<any>> =>
         getInsightsPreview(this.apolloClient, input)
 
     // Repositories API
+
+    /**
+     * Note: UI does not expect this to have deterministic order.
+     * Order is not enforced.
+     */
     public getRepositorySuggestions = getRepositorySuggestions
+
+    /**
+     * Note: UI does not expect this to have deterministic order.
+     * Order is not enforced.
+     */
     public getResolvedSearchRepositories = getResolvedSearchRepositories
 
     public assignInsightsToDashboard = ({
