@@ -109,6 +109,19 @@ func NewStreamFromJobLogs(log *bk.JobLogs) (*Stream, error) {
 			values = append(values, [2]string{ts + "000000", line})
 			previousTimestamp = ts
 		}
+
+		// An entry cannot be larger than 65536 bytes so if it is, we split into chunks of 65536 bytes.
+		// To ensure that each chunked entry doesn't clash with a previous entry in Loki we increment
+		// the nanoseconds of the entry for each chunked entry.
+		if len(line) > 65536 {
+			chunkedEntries, err := chunkEntry(values[len(values)-1], 65536)
+			if err != nil {
+				return nil, errors.Newf("failed to split entry into chunks: %w")
+			}
+			values = append(values, chunkedEntries...)
+			previousTimestamp = values[len(values)-1][0]
+		}
+
 	}
 
 	return &Stream{
