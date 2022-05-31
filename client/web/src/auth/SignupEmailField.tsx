@@ -42,8 +42,13 @@ export const SignupEmailField: React.FunctionComponent<React.PropsWithChildren<S
                 autoFocus={true}
                 placeholder=" "
                 inputRef={emailInputReference}
+                aria-describedby="email-input-invalid-feedback"
             />
         </LoaderInput>
-        {emailState.kind === 'INVALID' && <small className="invalid-feedback">{emailState.reason}</small>}
+        {emailState.kind === 'INVALID' && (
+            <small className="invalid-feedback" id="email-input-invalid-feedback">
+                {emailState.reason}
+            </small>
+        )}
     </div>
 )

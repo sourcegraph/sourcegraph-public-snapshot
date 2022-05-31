@@ -223,10 +223,11 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             disabled={loading}
                             placeholder=" "
                             inputRef={usernameInputReference}
+                            aria-describedby="username-input-invalid-feedback"
                         />
                     </LoaderInput>
                     {usernameState.kind === 'INVALID' && (
-                        <small className="invalid-feedback" role="alert">
+                        <small className="invalid-feedback" id="username-input-invalid-feedback" role="alert">
                             {usernameState.reason}
                         </small>
                     )}
@@ -262,14 +263,17 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             onInvalid={preventDefault}
                             inputRef={passwordInputReference}
                             formNoValidate={true}
+                            aria-describedby="password-input-invalid-feedback password-requirements"
                         />
                     </LoaderInput>
                     {passwordState.kind === 'INVALID' && (
-                        <small className="invalid-feedback" role="alert">
+                        <small className="invalid-feedback" id="password-input-invalid-feedback" role="alert">
                             {passwordState.reason}
                         </small>
                     )}
-                    <small className="form-help text-muted">{getPasswordRequirements(context)}</small>
+                    <small className="form-help text-muted" id="password-requirements">
+                        {getPasswordRequirements(context)}
+                    </small>
                 </div>
                 {!experimental && enterpriseTrial && (
                     <div className="form-group">
