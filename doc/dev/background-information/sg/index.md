@@ -50,8 +50,6 @@ A more detailed introduction is available in the [development quickstart guide](
 
 ## Installation
 
-### Using pre-built binaries (recommended)
-
 Run the following command in a terminal:
 
 ```sh
@@ -60,43 +58,18 @@ curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh
 
 That will download the latest release of `sg` from [here](https://github.com/sourcegraph/sg/releases), put it in a temporary location and run `sg install` to install it to a permanent location in your `$PATH`.
 
-### Manually building the binary
-
-> NOTE: **This method requires that Go has already been installed according to the [development quickstart guide](../../setup/quickstart.md).**
-
-If you want full control over where the `sg` binary ends up, use this option.
-
-In the root of `sourcegraph/sourcegraph`, run:
-
-```sh
-go build -o ~/my/path/sg ./dev/sg
-```
-
-Then make sure that `~/my/path` is in your `$PATH`.
-
-> NOTE: **For Linux users:** A command called [sg](https://www.man7.org/linux/man-pages/man1/sg.1.html) is already available at `/usr/bin/sg`. To use the Sourcegraph `sg` CLI, you need to make sure that its location comes first in `PATH`. For example, by prepending `$GOPATH/bin`:
->
-> `export PATH=$GOPATH/bin:$PATH`
->
-> Instead of the more conventional:
->
-> `export PATH=$PATH:$GOPATH/bin`
->
-> Or you may add an alias to your `.bashrc`:
->
-> `alias sg=$HOME/go/bin/sg`
+For other installation options, see [Advanced installation](#advanced-installation).
 
 ## Updates
 
 Once set up, `sg` will automatically check for updates and update itself if a change is detected in your local copy of `origin/main`.
-
 To force a manual update of `sg`, run:
 
 ```sh
 sg update
 ```
 
-In order to temporarily turn off automatic updates, run your commands with the `-skip-auto-update` flag: 
+In order to temporarily turn off automatic updates, run your commands with the `-skip-auto-update` flag or `SG_SKIP_AUTO_UPDATE` environment variable:
 
 ```sh
 sg -skip-auto-update [cmds ...]
@@ -104,15 +77,15 @@ sg -skip-auto-update [cmds ...]
 
 On the next command run, if a new version is detected, `sg` will auto update before running.
 
-> NOTE: This feature requires that Go has already been installed according to the [development quickstart guide](../../setup/quickstart.md).
+To see what's changed, use `sg version changelog`.
 
 ## Usage
 
-See [configuration](#configuration) to learn more about configuring `sg` behaviour.
+Refer to the [generated `sg` reference](reference.md) for complete documentation of all commands.
 
 ### Help
 
-You can get help about commands in a variety of ways:
+You can get help about commands locally in a variety of ways:
 
 ```sh
 sg help # show all available commands
@@ -121,6 +94,8 @@ sg help # show all available commands
 sg <command> -h
 sg <command> --help
 ```
+
+A full reference is available in the [generated `sg` reference](reference.md). You can also view the full reference locally with `sg help -full`.
 
 ### Autocompletion
 
@@ -141,10 +116,6 @@ Both of the above work if you provide partial values as well to narrow down the 
 ```none
 sg start web-<tab><tab>
 ```
-
-### Commands
-
-Refer to the [generated `sg` reference](reference.md) for complete documentation of all commands.
 
 ## Configuration
 
@@ -241,16 +212,40 @@ Have questions or need help? Feel free to [open a discussion](https://github.com
 
 > NOTE: For Sourcegraph teammates, we have a weekly [`sg` hack hour](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#sg-hack-hour) you can hop in to if you're interested in contributing!
 
-## Dockerized sg
+## Advanced installation
 
-A `sourcegraph/sg` Docker image is available: 
+### Dockerized sg
 
-```
+A `sourcegraph/sg` Docker image is available:
+
+```dockerfile
 # ... 
 COPY --from us.gcr.io/sourcegraph-dev/sg:insiders /usr/local/bin/sg ./sg
 # ...
 ```
 
-### Development tips
+### Manually building the binary
 
-- Due to [#29222](https://github.com/sourcegraph/sourcegraph/issues/29222), you might need to set `CONFIGURATION_MODE: 'empty'` if you encounter errors where `sg` tries to connect to `frontend`.
+> NOTE: **This method requires that Go has already been installed according to the [development quickstart guide](../../setup/quickstart.md).**
+
+If you want full control over where the `sg` binary ends up, use this option.
+
+In the root of `sourcegraph/sourcegraph`, run:
+
+```sh
+go build -o ~/my/path/sg ./dev/sg
+```
+
+Then make sure that `~/my/path` is in your `$PATH`.
+
+> NOTE: **For Linux users:** A command called [sg](https://www.man7.org/linux/man-pages/man1/sg.1.html) is already available at `/usr/bin/sg`. To use the Sourcegraph `sg` CLI, you need to make sure that its location comes first in `PATH`. For example, by prepending `$GOPATH/bin`:
+>
+> `export PATH=$GOPATH/bin:$PATH`
+>
+> Instead of the more conventional:
+>
+> `export PATH=$PATH:$GOPATH/bin`
+>
+> Or you may add an alias to your `.bashrc`:
+>
+> `alias sg=$HOME/go/bin/sg`
