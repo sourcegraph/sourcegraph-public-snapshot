@@ -424,9 +424,6 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 			return errors.Wrap(err, "RecordSeriesPoints Zero Value")
 		}
 		for _, job := range jobs {
-			if job == nil {
-				fmt.Println("NILNILNIL")
-			}
 			j := *job
 			fmt.Printf("job: %v", j)
 			err := h.enqueueQueryRunnerJob(ctx, job)
