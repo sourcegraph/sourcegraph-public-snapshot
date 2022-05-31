@@ -1,10 +1,10 @@
-const cachedContentRequests = new Map<string, Promise<string>>()
+const cachedContentRequests = new Map<string, Promise<string | null>>()
 
 import { ContentMatch, PathMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { getMatchId } from '../results/utils'
 
-export async function loadContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string> {
+export async function loadContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string | null> {
     const cacheKey = getMatchId(match)
 
     if (cachedContentRequests.has(cacheKey)) {
@@ -20,7 +20,7 @@ export async function loadContent(match: ContentMatch | PathMatch | SymbolMatch)
     return loadPromise
 }
 
-async function fetchBlobContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string> {
+async function fetchBlobContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string | null> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
     const response: any = await fetch('https://sourcegraph.com/.api/graphql', {
         method: 'post',
@@ -31,6 +31,11 @@ async function fetchBlobContent(match: ContentMatch | PathMatch | SymbolMatch): 
                         commit(rev: $commitID) {
                             file(path: $filePath) {
                                 content
+                                // We include the highlight part here even though it is not used to get a server side
+                                // error when previewing binary files.
+                                highlight(disableTimeout: false) {
+                                    aborted
+                                }
                             }
                         }
                     }
@@ -45,7 +50,8 @@ async function fetchBlobContent(match: ContentMatch | PathMatch | SymbolMatch): 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
     const content: undefined | string = response?.data?.repository?.commit?.file?.content
     if (content === undefined) {
-        throw new Error('No content found in query response')
+        console.error('No content found in query response', response)
+        return null
     }
     return content
 }
