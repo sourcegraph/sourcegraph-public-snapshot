@@ -46,7 +46,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({ match, sele
                 ref={titleReference}
                 data-tooltip={(truncated && `${match.authorName}: ${match.message.split('\n', 1)[0]}`) || null}
             >
-                {`${displayRepoName(match.repository)} › ${match.authorName}: ${match.message.split('\n', 1)[0]}`}
+                {`${displayRepoName(match.repository)} › ${match.authorName}: ${match.message.split('\n', 1)[0]} `}
                 <SourcegraphLink relativeUrl={match.url}>Open on Sourcegraph</SourcegraphLink>
             </span>
             <span className={styles.spacer} />
