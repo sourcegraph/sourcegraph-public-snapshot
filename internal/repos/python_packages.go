@@ -37,7 +37,7 @@ type pythonPackagesSource struct {
 	client *pypi.Client
 }
 
-var _ dependenciesSource = &pythonPackagesSource{}
+var _ DependenciesSourceInterface = &pythonPackagesSource{}
 
 func (s *pythonPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
 	_, err := s.client.Version(ctx, name, version)

@@ -21,11 +21,16 @@ type DependenciesSource struct {
 	configDeps []string
 	scheme     string
 	depsSvc    *dependencies.Service
-	src        dependenciesSource
+	src        DependenciesSourceInterface
 }
 
-type dependenciesSource interface {
+type DependenciesSourceInterface interface {
+	// Get verifies that a dependency at a specific version exists in the package
+	// host and returns it if so. Otherwise it returns an error that passes
+	// errcode.IsNotFound() test.
 	Get(ctx context.Context, name, version string) (reposource.PackageDependency, error)
+	// ParseDependency parses a package-version string from the external service
+	// configuration. The format of the string varies between external services.
 	ParseDependency(dep string) (reposource.PackageDependency, error)
 	ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error)
 }

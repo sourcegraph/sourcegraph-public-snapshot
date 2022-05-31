@@ -39,7 +39,7 @@ type goModulesSource struct {
 	client *gomodproxy.Client
 }
 
-var _ dependenciesSource = &goModulesSource{}
+var _ DependenciesSourceInterface = &goModulesSource{}
 
 func (s *goModulesSource) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
 	mod, err := s.client.GetVersion(ctx, name, version)

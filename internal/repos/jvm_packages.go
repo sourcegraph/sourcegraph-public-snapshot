@@ -39,7 +39,7 @@ type jvmPackagesSource struct {
 	config *schema.JVMPackagesConnection
 }
 
-var _ dependenciesSource = &jvmPackagesSource{}
+var _ DependenciesSourceInterface = &jvmPackagesSource{}
 
 func (s *jvmPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
 	mavenDependency, err := reposource.ParseMavenDependency(name + ":" + version)

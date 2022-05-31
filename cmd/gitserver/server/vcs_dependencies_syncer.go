@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -37,16 +38,9 @@ var _ VCSSyncer = &vcsDependenciesSyncer{}
 // dependenciesSource encapsulates the methods required to implement a source of
 // package dependencies e.g. npm, go modules, jvm, python.
 type dependenciesSource interface {
-	// Get verifies that a dependency at a specific version exists in the package
-	// host and returns it if so. Otherwise it returns an error that passes
-	// errcode.IsNotFound() test.
-	Get(ctx context.Context, name, version string) (reposource.PackageDependency, error)
+	repos.DependenciesSourceInterface
 	// Download the given dependency's archive and unpack it into dir.
 	Download(ctx context.Context, dir string, dep reposource.PackageDependency) error
-	// ParseDependency parses a package-version string from the external service
-	// configuration. The format of the string varies between external services.
-	ParseDependency(dep string) (reposource.PackageDependency, error)
-	ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error)
 }
 
 // dependenciesService captures the methods we use of the codeintel/dependencies.Service,

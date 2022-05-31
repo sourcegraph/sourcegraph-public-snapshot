@@ -37,7 +37,7 @@ func NewNpmPackagesSource(svc *types.ExternalService, cf *httpcli.Factory) (*Dep
 	}, nil
 }
 
-var _ dependenciesSource = &npmPackagesSource{}
+var _ DependenciesSourceInterface = &npmPackagesSource{}
 
 type npmPackagesSource struct {
 	client npm.Client
