@@ -598,8 +598,11 @@ func allLinesPrefixed(lines []string, match string) bool {
 
 func printBuildOverview(build *buildkite.Build) {
 	std.Out.WriteLine(output.Styledf(output.StyleBold, "Most recent build: %s", *build.WebURL))
-	std.Out.Writef("Commit:\t\t%s\nMessage:\t%s\nAuthor:\t\t%s <%s>",
-		*build.Commit, *build.Message, build.Author.Name, build.Author.Email)
+	std.Out.Writef("Commit:\t\t%s", *build.Commit)
+	std.Out.Writef("Message:\t%s", *build.Message)
+	if build.Author != nil {
+		std.Out.Writef("Author:\t\t%s <%s>", build.Author.Name, build.Author.Email)
+	}
 	if build.PullRequest != nil {
 		std.Out.Writef("PR:\t\thttps://github.com/sourcegraph/sourcegraph/pull/%s", *build.PullRequest.ID)
 	}
