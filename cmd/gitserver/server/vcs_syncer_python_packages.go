@@ -45,7 +45,7 @@ func NewPythonPackagesSyncer(
 	}
 }
 
-// pythonPackagesSyncer implements VSCSyncer
+// pythonPackagesSyncer implements dependenciesSource
 type pythonPackagesSyncer struct {
 	client *pypi.Client
 }
