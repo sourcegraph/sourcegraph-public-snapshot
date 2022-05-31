@@ -119,7 +119,7 @@ function handleRequest(
         }
 
         case 'openSourcegraphUrl': {
-            const { relativeUrl } = (request as OpenSourcegraphUrlRequest).arguments
+            const { relativeUrl } = request.arguments
             window.open(instanceURL + relativeUrl, '_blank')
             onSuccessCallback('null')
             break
