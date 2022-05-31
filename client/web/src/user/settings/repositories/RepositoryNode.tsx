@@ -190,6 +190,7 @@ export const CheckboxRepositoryNode: React.FunctionComponent<React.PropsWithChil
                         aria-label={`select ${name} repository`}
                         onChange={onClick}
                         checked={checked}
+                        label={<small></small>}
                     />
                     <StatusIcon mirrorInfo={mirrorInfo} />
                     <CodeHostIcon hostType={serviceType} />
