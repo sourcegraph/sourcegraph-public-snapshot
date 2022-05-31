@@ -92,7 +92,7 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 	// Create a base store to be used for storing worker state. We store this in the main app Postgres
 	// DB, not the insights DB (which we use only for storing insights data.)
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
-	repoStore := database.Repos(mainAppDB)
+	repoStore := database.NewDB(mainAppDB).Repos()
 
 	// Create basic metrics for recording information about background jobs.
 	observationContext := &observation.Context{
