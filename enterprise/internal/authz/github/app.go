@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
 )
 
 // newAppProvider creates a new authz Provider for GitHub App.
@@ -40,7 +41,7 @@ func newAppProvider(
 	apiURL, _ := github.APIRoot(baseURL)
 	appClient := github.NewV3Client(
 		log.Scoped("app.github.v3", "github v3 client for github app").
-			With(log.String("appID", appID)),
+			With(log.Text("appID", privacy.NewText(appID, privacy.Unknown))),
 		urn, apiURL, auther, cli)
 	return &Provider{
 		urn:      urn,
@@ -52,7 +53,7 @@ func newAppProvider(
 			}
 
 			logger := log.Scoped("installation.github.v3", "github v3 client for installation").
-				With(log.String("appID", appID), log.Int64("installationID", installationID))
+				With(log.Text("appID", privacy.NewText(appID, privacy.Unknown)), log.Int64("installationID", installationID))
 
 			return &ClientAdapter{
 				V3Client: github.NewV3Client(logger, urn, apiURL, &auth.OAuthBearerToken{Token: token}, cli),

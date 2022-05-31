@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
 )
 
 func main() {
@@ -69,7 +70,7 @@ func main() {
 
 		return apiclient.NewTelemetryOptions(ctx)
 	}()
-	logger.Info("Telemetry information gathered", log.String("info", fmt.Sprintf("%+v", telemetryOptions)))
+	logger.Info("Telemetry information gathered", log.Text("info", privacy.NewText(fmt.Sprintf("%+v", telemetryOptions), privacy.Unknown)))
 
 	nameSet := janitor.NewNameSet()
 	ctx, cancel := context.WithCancel(context.Background())

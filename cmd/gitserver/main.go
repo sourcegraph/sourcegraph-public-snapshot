@@ -60,6 +60,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -193,7 +194,7 @@ func main() {
 		Addr:    addr,
 		Handler: handler,
 	}
-	logger.Info("git-server: listening", log.String("addr", srv.Addr))
+	logger.Info("git-server: listening", log.Text("addr", privacy.NewText(srv.Addr, privacy.Unknown)))
 
 	go func() {
 		err := srv.ListenAndServe()

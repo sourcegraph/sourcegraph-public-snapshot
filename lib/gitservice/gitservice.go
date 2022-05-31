@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
 )
 
 var uploadPackArgs = []string{
@@ -146,7 +147,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err = cmd.Run()
 	if err != nil {
 		err = errors.Errorf("error running git service command args=%q: %w", args, err)
-		s.Logger.Error("git-service error", log.Error(err), log.String("stderr", stderr.String()))
+		s.Logger.Error("git-service error", log.Error(err), log.Text("stderr", privacy.NewText( stderr.String(), privacy.Unknown)))
 		_, _ = w.Write([]byte("\n" + err.Error() + "\n"))
 	}
 }

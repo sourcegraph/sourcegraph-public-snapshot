@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
 )
 
 type handler struct {
@@ -258,8 +259,7 @@ func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, db 
 		return false, errors.Wrap(err, "store.Requeue")
 	}
 	logger.Warn("Requeued LSIF upload record",
-		log.Int("id", upload.ID),
-		log.String("reason", reason))
+		log.Int("id", upload.ID), log.Text("reason", privacy.NewText(reason, privacy.Unknown)))
 	return true, nil
 }
 
@@ -290,8 +290,7 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 
 	if err := uploadStore.Delete(ctx, uploadFilename); err != nil {
 		logger.Warn("Failed to delete upload file",
-			log.NamedError("err", err),
-			log.String("filename", uploadFilename))
+			log.NamedError("err", err), log.Text("filename", privacy.NewText(uploadFilename, privacy.Unknown)))
 	}
 
 	return nil
