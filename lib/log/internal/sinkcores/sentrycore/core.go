@@ -6,8 +6,9 @@ package sentrycore
 
 import (
 	"github.com/getsentry/sentry-go"
-	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 )
 
 // baseContext contains the data surrounding an error, that is shared by all errors attached to the current core.
@@ -52,13 +53,13 @@ var _ zapcore.Core = &Core{}
 // NewCore returns a new SentryCore with a ready to use worker. It should be called only once, when attaching
 // this core onto the global logger that is then used to create scoped loggers in other parts of the codebase.
 func NewCore(hub *sentry.Hub) *Core {
-	return &Core{
-		w: &worker{
-			hub:  sentryHub{hub: hub.Clone()}, // Avoid accidental side effects if the hub is modified elsewhere.
-			C:    make(chan *Core, 512),
-			done: make(chan struct{}),
-		},
+	w := &worker{
+		hub:  sentryHub{hub: hub.Clone()}, // Avoid accidental side effects if the hub is modified elsewhere.
+		C:    make(chan *Core, 512),
+		done: make(chan struct{}),
 	}
+	w.start()
+	return &Core{w: w}
 }
 
 // Core returns the underlying zapcore.
@@ -140,11 +141,6 @@ func (c *Core) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	default: // if we can't queue, just drop the errors.
 	}
 	return nil
-}
-
-// Starts launches the go routine responsible for consuming ErrorContext that needs to be submitted to Sentry.
-func (c *Core) Start() {
-	c.w.start()
 }
 
 // Enabled returns false when the log level is below the Warn level.
