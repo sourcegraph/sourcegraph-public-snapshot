@@ -16,7 +16,7 @@ import {
     TabPanel,
     TabPanels,
     Tabs,
-    TooltipController,
+    DeprecatedTooltipController,
     Icon,
     Link,
     ProductStatusBadge,
@@ -208,7 +208,7 @@ const QueryPanel: React.FunctionComponent<React.PropsWithChildren<QueryPanelProp
         setTimeout(() => setCurrentCopyTooltip(copyTooltip), 1000)
 
         requestAnimationFrame(() => {
-            TooltipController.forceUpdate()
+            DeprecatedTooltipController.forceUpdate()
         })
 
         event.preventDefault()

@@ -26,6 +26,9 @@ type MockSyncStore struct {
 	// ExternalServicesFunc is an instance of a mock function object
 	// controlling the behavior of the method ExternalServices.
 	ExternalServicesFunc *SyncStoreExternalServicesFunc
+	// GetBatchChangeFunc is an instance of a mock function object
+	// controlling the behavior of the method GetBatchChange.
+	GetBatchChangeFunc *SyncStoreGetBatchChangeFunc
 	// GetChangesetFunc is an instance of a mock function object controlling
 	// the behavior of the method GetChangeset.
 	GetChangesetFunc *SyncStoreGetChangesetFunc
@@ -75,6 +78,11 @@ func NewMockSyncStore() *MockSyncStore {
 		},
 		ExternalServicesFunc: &SyncStoreExternalServicesFunc{
 			defaultHook: func() (r0 database.ExternalServiceStore) {
+				return
+			},
+		},
+		GetBatchChangeFunc: &SyncStoreGetBatchChangeFunc{
+			defaultHook: func(context.Context, store.GetBatchChangeOpts) (r0 *types.BatchChange, r1 error) {
 				return
 			},
 		},
@@ -150,6 +158,11 @@ func NewStrictMockSyncStore() *MockSyncStore {
 				panic("unexpected invocation of MockSyncStore.ExternalServices")
 			},
 		},
+		GetBatchChangeFunc: &SyncStoreGetBatchChangeFunc{
+			defaultHook: func(context.Context, store.GetBatchChangeOpts) (*types.BatchChange, error) {
+				panic("unexpected invocation of MockSyncStore.GetBatchChange")
+			},
+		},
 		GetChangesetFunc: &SyncStoreGetChangesetFunc{
 			defaultHook: func(context.Context, store.GetChangesetOpts) (*types.Changeset, error) {
 				panic("unexpected invocation of MockSyncStore.GetChangeset")
@@ -215,6 +228,9 @@ func NewMockSyncStoreFrom(i SyncStore) *MockSyncStore {
 		},
 		ExternalServicesFunc: &SyncStoreExternalServicesFunc{
 			defaultHook: i.ExternalServices,
+		},
+		GetBatchChangeFunc: &SyncStoreGetBatchChangeFunc{
+			defaultHook: i.GetBatchChange,
 		},
 		GetChangesetFunc: &SyncStoreGetChangesetFunc{
 			defaultHook: i.GetChangeset,
@@ -542,6 +558,114 @@ func (c SyncStoreExternalServicesFuncCall) Args() []interface{} {
 // invocation.
 func (c SyncStoreExternalServicesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// SyncStoreGetBatchChangeFunc describes the behavior when the
+// GetBatchChange method of the parent MockSyncStore instance is invoked.
+type SyncStoreGetBatchChangeFunc struct {
+	defaultHook func(context.Context, store.GetBatchChangeOpts) (*types.BatchChange, error)
+	hooks       []func(context.Context, store.GetBatchChangeOpts) (*types.BatchChange, error)
+	history     []SyncStoreGetBatchChangeFuncCall
+	mutex       sync.Mutex
+}
+
+// GetBatchChange delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSyncStore) GetBatchChange(v0 context.Context, v1 store.GetBatchChangeOpts) (*types.BatchChange, error) {
+	r0, r1 := m.GetBatchChangeFunc.nextHook()(v0, v1)
+	m.GetBatchChangeFunc.appendCall(SyncStoreGetBatchChangeFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetBatchChange
+// method of the parent MockSyncStore instance is invoked and the hook queue
+// is empty.
+func (f *SyncStoreGetBatchChangeFunc) SetDefaultHook(hook func(context.Context, store.GetBatchChangeOpts) (*types.BatchChange, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetBatchChange method of the parent MockSyncStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *SyncStoreGetBatchChangeFunc) PushHook(hook func(context.Context, store.GetBatchChangeOpts) (*types.BatchChange, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SyncStoreGetBatchChangeFunc) SetDefaultReturn(r0 *types.BatchChange, r1 error) {
+	f.SetDefaultHook(func(context.Context, store.GetBatchChangeOpts) (*types.BatchChange, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SyncStoreGetBatchChangeFunc) PushReturn(r0 *types.BatchChange, r1 error) {
+	f.PushHook(func(context.Context, store.GetBatchChangeOpts) (*types.BatchChange, error) {
+		return r0, r1
+	})
+}
+
+func (f *SyncStoreGetBatchChangeFunc) nextHook() func(context.Context, store.GetBatchChangeOpts) (*types.BatchChange, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SyncStoreGetBatchChangeFunc) appendCall(r0 SyncStoreGetBatchChangeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SyncStoreGetBatchChangeFuncCall objects
+// describing the invocations of this function.
+func (f *SyncStoreGetBatchChangeFunc) History() []SyncStoreGetBatchChangeFuncCall {
+	f.mutex.Lock()
+	history := make([]SyncStoreGetBatchChangeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SyncStoreGetBatchChangeFuncCall is an object that describes an invocation
+// of method GetBatchChange on an instance of MockSyncStore.
+type SyncStoreGetBatchChangeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 store.GetBatchChangeOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.BatchChange
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SyncStoreGetBatchChangeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SyncStoreGetBatchChangeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // SyncStoreGetChangesetFunc describes the behavior when the GetChangeset

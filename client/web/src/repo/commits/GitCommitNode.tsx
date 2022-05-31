@@ -7,7 +7,7 @@ import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, ButtonGroup, TooltipController, Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, DeprecatedTooltipController, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { GitCommitFields } from '../../graphql-operations'
@@ -89,7 +89,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     }, [showCommitMessageBody])
 
     useEffect(() => {
-        TooltipController.forceUpdate()
+        DeprecatedTooltipController.forceUpdate()
     }, [flashCopiedToClipboardMessage])
 
     const copyToClipboard = useCallback((oid): void => {
