@@ -1471,7 +1471,7 @@ func uiPublicationStateColumn(c *btypes.Changeset) *string {
 
 // CleanDetachedChangesets deletes changesets that have been detached after the number of specified days.
 func (s *Store) CleanDetachedChangesets(ctx context.Context, retentionInDays int) (err error) {
-	ctx, _, endObservation := s.operations.cleanDetachChangesets.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.cleanDetachedChangesets.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("RetentionInDays", retentionInDays),
 	}})
 	defer endObservation(1, observation.Args{})
