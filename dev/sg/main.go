@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -26,7 +25,7 @@ func main() {
 		batchCompletionMode = true
 	}
 	if err := sg.RunContext(context.Background(), os.Args); err != nil {
-		fmt.Printf("error: %s\n", err)
+		std.Out.WriteFailuref(err.Error())
 		os.Exit(1)
 	}
 }
@@ -104,6 +103,11 @@ var sg = &cli.App{
 			EnvVars: []string{"SG_DISABLE_ANALYTICS"},
 			Value:   BuildCommit == "dev", // Default to skip in dev
 		},
+		&cli.BoolFlag{
+			Name:    "disable-output-detection",
+			Usage:   "use fixed output configuration instead of detecting terminal capabilities",
+			EnvVars: []string{"SG_DISBALE_OUTPUT_DETECTION"},
+		},
 	},
 	Before: func(cmd *cli.Context) error {
 		if batchCompletionMode {
@@ -115,8 +119,13 @@ var sg = &cli.App{
 		// Let sg components register pre-exit hooks
 		interrupt.Listen()
 
-		// Configure output
-		std.Out = std.NewOutput(cmd.App.Writer, verbose)
+		// Configure global output
+		if cmd.Bool("disable-output-detection") {
+			std.Out = std.NewFixedOutput(cmd.App.Writer, verbose)
+		} else {
+			std.Out = std.NewOutput(cmd.App.Writer, verbose)
+		}
+		// Configure logger output, for components that use loggers
 		os.Setenv("SRC_DEVELOPMENT", "true")
 		os.Setenv("SRC_LOG_FORMAT", "console")
 		syncLogs := log.Init(log.Resource{Name: "sg"})

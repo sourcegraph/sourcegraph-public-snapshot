@@ -7,6 +7,7 @@ import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
+import { SeriesDisplayOptionsInput } from '../../../../../../graphql-operations'
 import { BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
 import { LazyQueryStatus } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
@@ -22,6 +23,8 @@ import {
     DrillDownInsightCreationFormValues,
     BackendInsightChart,
 } from './components'
+import { useSeriesToggle } from './components/backend-insight-chart/use-series-toggle'
+import { parseSeriesDisplayOptions } from './components/drill-down-filters-panel/drill-down-filters/utils'
 
 import styles from './BackendInsight.module.scss'
 
@@ -35,13 +38,14 @@ interface BackendInsightProps
 }
 
 /**
- * Renders BE search based insight. Fetches insight data by gql api handler.
+ * Renders search based insight. Fetches insight data by gql api handler.
  */
 export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren<BackendInsightProps>> = props => {
     const { telemetryService, insight, innerRef, resizing, ...otherProps } = props
 
     const { currentDashboard, dashboards } = useContext(InsightContext)
     const { getBackendInsightData, createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
+    const { toggle, isSeriesSelected, isSeriesHovered, setHoveredId } = useSeriesToggle()
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
@@ -56,10 +60,12 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     // Original insight filters values that are stored in setting subject with insight
     // configuration object, They are updated  whenever the user clicks update/save button
     const [originalInsightFilters, setOriginalInsightFilters] = useState(cachedInsight.filters)
+    const [originalSeriesDisplayOptions] = useState(cachedInsight.seriesDisplayOptions)
 
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
+    const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(originalSeriesDisplayOptions)
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
@@ -69,16 +75,20 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
             () =>
                 getBackendInsightData({
                     ...cachedInsight,
+                    seriesDisplayOptions,
                     filters: debouncedFilters,
                 }),
-            [cachedInsight, debouncedFilters, getBackendInsightData]
+            [cachedInsight, debouncedFilters, getBackendInsightData, seriesDisplayOptions]
         ),
         insightCardReference
     )
 
-    const handleFilterSave = async (filters: InsightFilters): Promise<SubmissionErrors> => {
+    const handleFilterSave = async (
+        filters: InsightFilters,
+        displayOptions: SeriesDisplayOptionsInput
+    ): Promise<SubmissionErrors> => {
         try {
-            const insightWithNewFilters = { ...insight, filters }
+            const insightWithNewFilters = { ...insight, filters, seriesDisplayOptions: displayOptions }
 
             await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
 
@@ -107,6 +117,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                 ...insight,
                 title: insightName,
                 filters,
+                seriesDisplayOptions,
             }
 
             await createInsight({
@@ -116,6 +127,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
 
             telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
             setOriginalInsightFilters(filters)
+            setSeriesDisplayOptions(originalSeriesDisplayOptions)
             setIsFiltersOpen(false)
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
@@ -146,10 +158,15 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                             anchor={insightCardReference}
                             initialFiltersValue={filters}
                             originalFiltersValue={originalInsightFilters}
+                            insight={insight}
                             onFilterChange={setFilters}
                             onFilterSave={handleFilterSave}
                             onInsightCreate={handleInsightFilterCreation}
                             onVisibilityChange={setIsFiltersOpen}
+                            originalSeriesDisplayOptions={parseSeriesDisplayOptions(
+                                insight.defaultSeriesDisplayOptions
+                            )}
+                            onSeriesDisplayOptionsChange={setSeriesDisplayOptions}
                         />
                         <InsightContextMenu
                             insight={insight}
@@ -169,7 +186,16 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
             ) : state.status === LazyQueryStatus.Error ? (
                 <BackendInsightErrorAlert error={state.error} />
             ) : (
-                <BackendInsightChart {...state.data} locked={insight.isFrozen} onDatumClick={trackDatumClicks} />
+                <BackendInsightChart
+                    {...state.data}
+                    locked={insight.isFrozen}
+                    zeroYAxisMin={zeroYAxisMin}
+                    isSeriesSelected={isSeriesSelected}
+                    isSeriesHovered={isSeriesHovered}
+                    onDatumClick={trackDatumClicks}
+                    onLegendItemClick={toggle}
+                    setHoveredId={setHoveredId}
+                />
             )}
             {
                 // Passing children props explicitly to render any top-level content like

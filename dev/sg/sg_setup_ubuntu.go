@@ -22,7 +22,7 @@ var ubuntuOSDependencies = []dependencyCategory{
 			{name: "jq", check: check.InPath("jq"), instructionsCommands: `sudo apt-get update && sudo apt-get -y install jq`},
 			{name: "curl", check: check.InPath("curl"), instructionsCommands: `sudo apt-get update && sudo apt-get -y install curl`},
 			// Comby will fail systematically on linux/arm64 as there aren't binaries available for that platform.
-			{name: "comby", check: check.InPath("comby"), instructionsCommands: `bash <(curl -sL get.comby.dev)`},
+			{name: "comby", check: check.InPath("comby"), instructionsCommands: `bash <(curl -sL get-comby.netlify.app)`},
 			{name: "bash", check: check.CommandOutputContains("bash --version", "version 5"), instructionsCommands: `sudo apt-get update && sudo apt-get -y install bash`},
 			{
 				name: "docker",

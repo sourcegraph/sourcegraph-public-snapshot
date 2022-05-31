@@ -52,14 +52,14 @@ For each directory excluding `node_modules/` directories and their children cont
 indexing_jobs:
   - steps:
       - root: <ancestor(dir)>
-        image: sourcegraph/lsif-node:autoindex
+        image: sourcegraph/scip-typescript:autoindex
         commands:
           # Yarn is used to resolve dependencies in an ancestor directory
           # when lerna.json configuration specifies "yarn" as the npmClient
           # or if the directory contains a yarn.lock file.
           - yarn --ignore-engines
       - root: <ancestor(dir)>
-        image: sourcegraph/lsif-node:autoindex
+        image: sourcegraph/scip-typescript:autoindex
         commands:
           # npm is used to resolve dependencies otherwise.
           - npm install
@@ -72,11 +72,10 @@ indexing_jobs:
       #   - .n-node-version
       - N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl autol
     root: <dir>
-    indexer: sourcegraph/lsif-node:autoindex
+    indexer: sourcegraph/scip-typescript:autoindex
     indexer_args:
-      - lsif-tsc
-      - -p
-      - .
+      - scip-typescript
+      - index
 ```
 
 ## Rust

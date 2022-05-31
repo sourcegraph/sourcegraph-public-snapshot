@@ -956,7 +956,7 @@ describe('Batches', () => {
             // Wait for modal to appear.
             await driver.page.waitForSelector('.test-add-credential-modal')
             // Enter token.
-            await driver.page.type('.test-add-credential-modal-input', 'SUPER SECRET')
+            await driver.page.type('[data-testid="test-add-credential-modal-input"]', 'SUPER SECRET')
             // Click add.
             await driver.page.click('.test-add-credential-modal-submit')
             // Await list reload and expect to be enabled.

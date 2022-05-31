@@ -192,11 +192,15 @@ type Response struct {
 
 // FileMatch is the struct used by vscode to receive search results
 type FileMatch struct {
-	Path        string
-	LineMatches []LineMatch
+	Path string
+
+	MultilineMatches []MultilineMatch
+	LineMatches      []LineMatch
 
 	// MatchCount is the number of matches.  Different from len(LineMatches), as multiple
 	// lines may correspond to one logical match when doing a structural search
+	// TODO remove this because it's not used by any clients and will no longer
+	// be useful once we migrate to use only MultilineMatches
 	MatchCount int
 
 	// LimitHit is true if LineMatches may not include all LineMatches.
@@ -212,8 +216,45 @@ type LineMatch struct {
 	// 1-based line numbers, but internally vscode uses 0-based.
 	LineNumber int
 
+	// LineOffset is the number of bytes from the beginning of the
+	// file to the beginning of the line.
+	LineOffset int
+
 	// OffsetAndLengths is a slice of 2-tuples (Offset, Length)
 	// representing each match on a line.
 	// Offsets and lengths are measured in characters, not bytes.
 	OffsetAndLengths [][2]int
+}
+
+type Location struct {
+	// The byte offset from the beginning of the file.
+	Offset int32
+
+	// Line is the count of newlines before the offset in the file.
+	// Line is 0-based.
+	Line int32
+
+	// Column is the rune offset from the beginning of the last line.
+	Column int32
+}
+
+type MultilineMatch struct {
+	// Preview is a possibly-multiline string that contains all the
+	// lines that the match overlaps.
+	// The number of lines in Preview should be End.Line - Start.Line + 1
+	Preview string
+	Start   Location
+	End     Location
+}
+
+func (m MultilineMatch) MatchedContent() string {
+	runePreview := []rune(m.Preview)
+	lastLineStart := 0
+	for i := len(runePreview) - 1; i >= 0; i-- {
+		if runePreview[i] == rune('\n') {
+			lastLineStart = i + 1
+			break
+		}
+	}
+	return string(runePreview[m.Start.Column : lastLineStart+int(m.End.Column)])
 }

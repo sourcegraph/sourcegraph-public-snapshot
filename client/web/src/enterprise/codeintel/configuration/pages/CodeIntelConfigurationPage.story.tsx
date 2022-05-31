@@ -154,7 +154,7 @@ const repositoryConfigurationRequest: MockedResponse<IndexConfigurationResult> =
                                     "steps": [
                                         {
                                             "root": "",
-                                            "image": "sourcegraph/lsif-node:autoindex",
+                                            "image": "sourcegraph/scip-typescript:autoindex",
                                             "commands": [
                                                 "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto",
                                                 "yarn --ignore-engines"
@@ -162,7 +162,7 @@ const repositoryConfigurationRequest: MockedResponse<IndexConfigurationResult> =
                                         },
                                         {
                                             "root": "client/web",
-                                            "image": "sourcegraph/lsif-node:autoindex",
+                                            "image": "sourcegraph/scip-typescript:autoindex",
                                             "commands": [
                                                 "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto",
                                                 "npm install"
@@ -173,11 +173,10 @@ const repositoryConfigurationRequest: MockedResponse<IndexConfigurationResult> =
                                         "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto"
                                     ],
                                     "root": "client/web",
-                                    "indexer": "sourcegraph/lsif-node:autoindex",
+                                    "indexer": "sourcegraph/scip-typescript:autoindex",
                                     "indexer_args": [
-                                        "lsif-tsc",
-                                        "-p",
-                                        "."
+                                        "scip-typescript",
+                                        "index"
                                     ],
                                     "outfile": ""
                                 }

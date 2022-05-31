@@ -90,7 +90,7 @@ export const queryUploadRetentionMatches = (
     id: string,
     { matchesOnly, after, first, query }: IRetentionPolicyOverviewOnLSIFUploadArguments
 ): Observable<Connection<NormalizedUploadRetentionMatch>> => {
-    const vars: LsifUploadRetentionMatchesVariables = {
+    const variables: LsifUploadRetentionMatchesVariables = {
         id,
         matchesOnly,
         query: query ?? null,
@@ -101,7 +101,7 @@ export const queryUploadRetentionMatches = (
     return from(
         client.query<LsifUploadRetentionMatchesResult, LsifUploadRetentionMatchesVariables>({
             query: getDocumentNode(UPLOAD_RETENTIONS_QUERY),
-            variables: { ...vars },
+            variables: { ...variables },
         })
     ).pipe(
         map(({ data }) => {

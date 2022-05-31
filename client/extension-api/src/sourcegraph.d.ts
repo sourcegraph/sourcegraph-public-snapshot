@@ -1824,14 +1824,17 @@ declare module 'sourcegraph' {
             variables: TVariables
         ): Promise<GraphQLResult<TResult>>
 
-        export type GraphQLResult<T> = SuccessGraphQLResult<T> | ErrorGraphQLResult
+        export type GraphQLResult<T> = SuccessGraphQLResult<T> | ErrorGraphQLResult<T>
 
         export interface SuccessGraphQLResult<T> {
             data: T
             errors: undefined
         }
-        export interface ErrorGraphQLResult {
-            data: undefined
+        export interface ErrorGraphQLResult<T> {
+            // It might be possible that even with errored response we have
+            // a partially resolved data
+            // See https://github.com/sourcegraph/sourcegraph/pull/36033
+            data: T | null
             errors: readonly import('graphql').GraphQLError[]
         }
     }

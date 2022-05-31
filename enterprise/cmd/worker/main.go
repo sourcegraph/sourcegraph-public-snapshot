@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
 	batchesmigrations "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/migrations"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
+	freshcodeintel "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/fresh"
 	codeintelmigrations "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/migrations"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
@@ -38,7 +39,6 @@ func main() {
 	go setAuthzProviders()
 
 	additionalJobs := map[string]job.Job{
-		"codeintel-commitgraph":      codeintel.NewCommitGraphJob(),
 		"codeintel-janitor":          codeintel.NewJanitorJob(),
 		"codeintel-auto-indexing":    codeintel.NewIndexingJob(),
 		"codehost-version-syncing":   versions.NewSyncingJob(),
@@ -51,6 +51,12 @@ func main() {
 		"batches-workspace-resolver": batches.NewWorkspaceResolverJob(),
 		"executors-janitor":          executors.NewJanitorJob(),
 		"codemonitors-job":           codemonitors.NewCodeMonitorJob(),
+
+		// fresh
+		"codeintel-upload-janitor":         freshcodeintel.NewUploadJanitorJob(),
+		"codeintel-upload-expirer":         freshcodeintel.NewUploadExpirerJob(),
+		"codeintel-commitgraph-updater":    freshcodeintel.NewCommitGraphUpdaterJob(),
+		"codeintel-autoindexing-scheduler": freshcodeintel.NewAutoindexingSchedulerJob(),
 	}
 
 	if err := shared.Start(logger, additionalJobs, registerEnterpriseMigrations); err != nil {

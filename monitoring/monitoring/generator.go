@@ -36,7 +36,7 @@ type GenerateOptions struct {
 }
 
 // Generate is the main Sourcegraph monitoring generator entrypoint.
-func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Container) error {
+func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Dashboard) error {
 	logger.Info("Regenerating monitoring", "options", opts, "containers", len(containers))
 
 	var generatedAssets []string

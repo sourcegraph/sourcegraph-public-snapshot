@@ -7,7 +7,10 @@ import (
 	"sync"
 
 	"github.com/charmbracelet/glamour"
+	glamouransi "github.com/charmbracelet/glamour/ansi"
 	"github.com/mattn/go-runewidth"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Writer defines a common set of methods that can be used to output status
@@ -39,9 +42,9 @@ type Context interface {
 //
 // Output is not appropriate for machine-readable data, such as JSON.
 type Output struct {
-	w    io.Writer
-	caps capabilities
-	opts OutputOpts
+	w       io.Writer
+	caps    capabilities
+	verbose bool
 
 	// Unsurprisingly, it would be bad if multiple goroutines wrote at the same
 	// time, so we have a basic mutex to guard against that.
@@ -61,6 +64,10 @@ type OutputOpts struct {
 	// ForceWidth ignores all terminal detection and sets the width to this value.
 	ForceWidth int
 
+	// ForceDarkBackground ignores all terminal detection and sets whether the terminal
+	// background is dark to this value.
+	ForceDarkBackground bool
+
 	Verbose bool
 }
 
@@ -71,11 +78,12 @@ var newOutputPlatformQuirks func(o *Output) error
 // newCapabilityWatcher returns a channel that receives a message when
 // capabilities are updated. By default, no watching functionality is
 // available.
-var newCapabilityWatcher = func() chan capabilities { return nil }
+var newCapabilityWatcher = func(opts OutputOpts) chan capabilities { return nil }
 
 func NewOutput(w io.Writer, opts OutputOpts) *Output {
-	caps, err := detectCapabilities()
-	o := &Output{caps: overrideCapabilitiesFromOptions(caps, opts), opts: opts, w: w}
+	caps, detectionErr := detectCapabilities(opts)
+
+	o := &Output{caps: caps, verbose: opts.Verbose, w: w}
 	if newOutputPlatformQuirks != nil {
 		if err := newOutputPlatformQuirks(o); err != nil {
 			o.Verbosef("Error handling platform quirks: %v", err)
@@ -83,10 +91,10 @@ func NewOutput(w io.Writer, opts OutputOpts) *Output {
 	}
 
 	// If we got an error earlier, now is where we'll report it to the user.
-	if err != nil {
+	if detectionErr != nil {
 		block := o.Block(Linef(EmojiWarning, StyleWarning, "An error was returned when detecting the terminal size and capabilities:"))
 		block.Write("")
-		block.Write(err.Error())
+		block.Write(detectionErr.Error())
 		block.Write("")
 		block.Write("Execution will continue, but please report this, along with your operating")
 		block.Write("system, terminal, and any other details, to:")
@@ -96,32 +104,15 @@ func NewOutput(w io.Writer, opts OutputOpts) *Output {
 
 	// Set up a watcher so we can adjust the size of the output if the terminal
 	// is resized.
-	if c := newCapabilityWatcher(); c != nil {
+	if c := newCapabilityWatcher(opts); c != nil {
 		go func() {
 			for caps := range c {
-				o.caps = overrideCapabilitiesFromOptions(caps, o.opts)
+				o.caps = caps
 			}
 		}()
 	}
 
 	return o
-}
-
-func overrideCapabilitiesFromOptions(caps capabilities, opts OutputOpts) capabilities {
-	if opts.ForceColor {
-		caps.Color = true
-	}
-	if opts.ForceTTY {
-		caps.Isatty = true
-	}
-	if opts.ForceHeight != 0 {
-		caps.Height = opts.ForceHeight
-	}
-	if opts.ForceWidth != 0 {
-		caps.Width = opts.ForceWidth
-	}
-
-	return caps
 }
 
 func (o *Output) Lock() {
@@ -137,7 +128,7 @@ func (o *Output) Lock() {
 func (o *Output) SetVerbose() {
 	o.lock.Lock()
 	defer o.lock.Unlock()
-	o.opts.Verbose = true
+	o.verbose = true
 
 }
 
@@ -149,19 +140,19 @@ func (o *Output) Unlock() {
 }
 
 func (o *Output) Verbose(s string) {
-	if o.opts.Verbose {
+	if o.verbose {
 		o.Write(s)
 	}
 }
 
 func (o *Output) Verbosef(format string, args ...any) {
-	if o.opts.Verbose {
+	if o.verbose {
 		o.Writef(format, args...)
 	}
 }
 
 func (o *Output) VerboseLine(line FancyLine) {
-	if o.opts.Verbose {
+	if o.verbose {
 		o.WriteLine(line)
 	}
 }
@@ -220,26 +211,51 @@ func (o *Output) ProgressWithStatusBars(bars []ProgressBar, statusBars []*Status
 
 // WriteMarkdown renders Markdown nicely, unless color is disabled.
 func (o *Output) WriteMarkdown(str string) error {
+	return o.writeMarkdown(str, false)
+}
+
+// WriteCode renders the given code snippet as Markdown, unless color is disabled.
+func (o *Output) WriteCode(languageName, str string) error {
+	return o.writeMarkdown(fmt.Sprintf("```%s\n%s\n```", languageName, str), true)
+}
+
+func (o *Output) writeMarkdown(str string, noMargin bool) error {
 	if !o.caps.Color {
 		o.Write(str)
 		return nil
 	}
 
+	var style glamouransi.StyleConfig
+	if o.caps.DarkBackground {
+		style = glamour.DarkStyleConfig
+	} else {
+		style = glamour.LightStyleConfig
+	}
+
+	if noMargin {
+		z := uint(0)
+		style.CodeBlock.Margin = &z
+		style.Document.Margin = &z
+		style.Document.BlockPrefix = ""
+		style.Document.BlockSuffix = ""
+	}
+
 	r, err := glamour.NewTermRenderer(
 		// detect background color and pick either the default dark or light theme
-		glamour.WithAutoStyle(),
+		glamour.WithStyles(style),
 		// wrap output at slightly less than terminal width
 		glamour.WithWordWrap(o.caps.Width*4/5),
 		glamour.WithEmoji(),
 	)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "renderer")
 	}
 
 	rendered, err := r.Render(str)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "render")
 	}
+
 	o.Write(rendered)
 	return nil
 }

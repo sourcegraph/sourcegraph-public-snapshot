@@ -5,7 +5,7 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Card, CardBody, Link, PageHeader, LoadingSpinner, Typography } from '@sourcegraph/wildcard'
+import { Card, CardBody, Link, PageHeader, LoadingSpinner, Typography, Text } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
@@ -123,7 +123,7 @@ export const ConnectGitHubAppPage: React.FunctionComponent<React.PropsWithChildr
                             </GitHubOrgListItem>
                         </ul>
                     ) : (
-                        <p>Something went wrong.</p>
+                        <Text>Something went wrong.</Text>
                     )}
                 </CardBody>
             </Card>

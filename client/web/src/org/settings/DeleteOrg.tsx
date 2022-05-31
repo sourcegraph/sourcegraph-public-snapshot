@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { RouteComponentProps } from 'react-router-dom'
 
-import { Button, Container, Typography } from '@sourcegraph/wildcard'
+import { Button, Container, Typography, Text } from '@sourcegraph/wildcard'
 
 import { OrgAreaPageProps } from '../area/OrgArea'
 
@@ -24,9 +24,9 @@ export const DeleteOrg: React.FunctionComponent<React.PropsWithChildren<DeleteOr
         <Container className="mt-3 mb-5">
             <Typography.H3 className="text-danger">Delete this organization</Typography.H3>
             <div className="d-flex justify-content-between">
-                <p className="d-flex justify-content-right">
+                <Text className="d-flex justify-content-right">
                     This cannot be undone. Deleting an organization removes all of its resources.
-                </p>
+                </Text>
                 <Button variant="danger" size="sm" onClick={toggleDeleteModal}>
                     Delete this organization
                 </Button>

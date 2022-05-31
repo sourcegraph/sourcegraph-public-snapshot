@@ -1,19 +1,22 @@
 import { render } from 'react-dom'
 
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
+
+import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
 
 import { App } from './App'
 import {
     getConfig,
     getTheme,
     indicateFinishedLoading,
+    loadLastSearch,
     onOpen,
     onPreviewChange,
     onPreviewClear,
-    PluginConfig,
-    Request,
-    Theme,
-} from './jsToJavaBridgeUtil'
+} from './js-to-java-bridge'
+import type { PluginConfig, Search, Theme } from './types'
 
 setLinkComponent(AnchorLink)
 
@@ -21,13 +24,30 @@ let isDarkTheme = false
 let instanceURL = 'https://sourcegraph.com'
 let isGlobbingEnabled = false
 let accessToken: string | null = null
+let initialSearch: Search | null = null
+let initialAuthenticatedUser: AuthenticatedUser | null
 
-/* Add global functions to global window object */
-declare global {
-    interface Window {
-        initializeSourcegraph: () => void
-        callJava: (request: Request) => Promise<object>
+window.initializeSourcegraph = async () => {
+    const [theme, config, lastSearch, authenticatedUser] = await Promise.allSettled([
+        getTheme(),
+        getConfig(),
+        loadLastSearch(),
+        getAuthenticatedUser(instanceURL, accessToken),
+    ])
+
+    applyConfig((config as PromiseFulfilledResult<PluginConfig>).value)
+    applyTheme((theme as PromiseFulfilledResult<Theme>).value)
+    applyLastSearch((lastSearch as PromiseFulfilledResult<Search | null>).value)
+    applyAuthenticatedUser(authenticatedUser.status === 'fulfilled' ? authenticatedUser.value : null)
+    if (accessToken && authenticatedUser.status === 'rejected') {
+        console.warn(`No initial authenticated user with access token “${accessToken}”`)
     }
+
+    polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
+
+    renderReactApp()
+
+    await indicateFinishedLoading()
 }
 
 function renderReactApp(): void {
@@ -38,9 +58,11 @@ function renderReactApp(): void {
             instanceURL={instanceURL}
             isGlobbingEnabled={isGlobbingEnabled}
             accessToken={accessToken}
+            initialSearch={initialSearch}
             onOpen={onOpen}
             onPreviewChange={onPreviewChange}
             onPreviewClear={onPreviewClear}
+            initialAuthenticatedUser={initialAuthenticatedUser}
         />,
         node
     )
@@ -68,10 +90,10 @@ function applyTheme(theme: Theme): void {
     root.style.setProperty('--primary', buttonColor)
 }
 
-window.initializeSourcegraph = async () => {
-    const [theme, config] = await Promise.all([getTheme(), getConfig()])
-    applyConfig(config)
-    applyTheme(theme)
-    renderReactApp()
-    await indicateFinishedLoading()
+function applyLastSearch(lastSearch: Search | null): void {
+    initialSearch = lastSearch
+}
+
+function applyAuthenticatedUser(authenticatedUser: AuthenticatedUser | null): void {
+    initialAuthenticatedUser = authenticatedUser
 }

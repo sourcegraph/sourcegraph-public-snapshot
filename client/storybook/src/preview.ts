@@ -11,8 +11,8 @@ import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
 
 import { themeDark, themeLight, THEME_DARK_CLASS, THEME_LIGHT_CLASS } from './themes'
 
-const withConsoleDecorator: DecoratorFunction<ReactElement> = (storyFn, context): ReactElement =>
-    withConsole()(storyFn)(context)
+const withConsoleDecorator: DecoratorFunction<ReactElement> = (storyFunc, context): ReactElement =>
+    withConsole()(storyFunc)(context)
 
 export const decorators = [withDesign, withConsoleDecorator]
 

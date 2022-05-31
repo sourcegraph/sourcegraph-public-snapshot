@@ -28,7 +28,7 @@ export const EditorFeedbackPanel: React.FunctionComponent<React.PropsWithChildre
     return (
         <div className={classNames(styles.panel, 'rounded border bg-1 p-2 w-100 mt-2')}>
             <Typography.H4 className="text-danger text-uppercase">
-                <Icon className="text-danger" as={AlertCircleIcon} /> {errorHeading}
+                <Icon role="img" aria-hidden={true} className="text-danger" as={AlertCircleIcon} /> {errorHeading}
             </Typography.H4>
             {compactedErrors.map(error => (
                 <ErrorMessage className="text-monospace" error={error} key={String(error)} />

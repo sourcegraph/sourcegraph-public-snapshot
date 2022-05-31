@@ -62,7 +62,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	}
 	defer gitserver.ResetClientMocks()
 
-	mkResult := func(path string, lineNumbers ...int32) *result.FileMatch {
+	mkResult := func(path string, lineNumbers ...int) *result.FileMatch {
 		rn := types.MinimalRepo{
 			Name: "r",
 		}

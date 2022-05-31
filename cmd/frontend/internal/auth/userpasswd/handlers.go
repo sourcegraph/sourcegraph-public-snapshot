@@ -201,7 +201,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
 		if err := backend.SendUserEmailVerificationEmail(r.Context(), usr.Username, creds.Email, newUserData.EmailVerificationCode); err != nil {
 			log15.Error("failed to send email verification (continuing, user's email will be unverified)", "email", creds.Email, "err", err)
-		} else if err = database.UserEmails(db).SetLastVerification(r.Context(), usr.ID, creds.Email, newUserData.EmailVerificationCode); err != nil {
+		} else if err = db.UserEmails().SetLastVerification(r.Context(), usr.ID, creds.Email, newUserData.EmailVerificationCode); err != nil {
 			log15.Error("failed to set email last verification sent at (user's email is verified)", "email", creds.Email, "err", err)
 		}
 	}

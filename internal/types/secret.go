@@ -39,6 +39,7 @@ func (e *ExternalService) RedactedConfig() (string, error) {
 		es.redactString(c.Token, "token")
 	case *schema.GitLabConnection:
 		es.redactString(c.Token, "token")
+		es.redactString(c.TokenOauthRefresh, "token.oauth.refresh")
 	case *schema.GerritConnection:
 		es.redactString(c.Password, "password")
 	case *schema.BitbucketServerConnection:
@@ -125,6 +126,7 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 	case *schema.GitLabConnection:
 		o := oldCfg.(*schema.GitLabConnection)
 		es.unredactString(c.Token, o.Token, "token")
+		es.unredactString(c.TokenOauthRefresh, o.TokenOauthRefresh, "token.oauth.refresh")
 	case *schema.BitbucketServerConnection:
 		o := oldCfg.(*schema.BitbucketServerConnection)
 		es.unredactString(c.Password, o.Password, "password")

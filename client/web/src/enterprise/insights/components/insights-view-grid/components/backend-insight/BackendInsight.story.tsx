@@ -9,7 +9,7 @@ import { Typography } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
-import { BackendInsightData, SearchBackendBasedInsight, SeriesChartContent } from '../../../../core'
+import { BackendInsightData, SearchBasedInsight, SeriesChartContent } from '../../../../core'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
 import {
     BackendInsight as BackendInsightType,
@@ -27,9 +27,10 @@ const defaultStory: Meta = {
 
 export default defaultStory
 
-const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
+const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
     id: 'searchInsights.insight.mock_backend_insight_id',
     title: 'Backend Insight Mock',
+    repositories: [],
     series: [],
     type: InsightType.SearchBased,
     executionType: InsightExecutionType.Backend,
@@ -37,6 +38,7 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
     filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
     dashboardReferenceCount: 0,
     isFrozen: false,
+    seriesDisplayOptions: {},
 }
 
 interface BackendInsightDatum {
