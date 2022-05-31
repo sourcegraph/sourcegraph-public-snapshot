@@ -97,8 +97,6 @@ import styles from './Blob.module.scss'
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
-const extensionsInSeparateColumns = new Set(['sourcegraph/git-extras', 'git-extras'])
-
 export interface BlobProps
     extends SettingsCascadeProps,
         PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'>,
@@ -596,13 +594,17 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         useMemo(() => haveInitialExtensionsLoaded(extensionsController.extHostAPI), [extensionsController.extHostAPI])
     )
 
+    const showGitBlameInSeparateColumn =
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade.final?.experimentalFeatures?.showGitBlameInSeparateColumn === true
+
     // Memoize column and inline decorations to avoid clearing and setting decorations
     // in `ColumnDecorator`s or `LineDecorator`s on renders in which decorations haven't changed.
     const decorations: { column: Map<string, DecorationMapByLine>; inline: DecorationMapByLine } = useMemo(() => {
         if (decorationsOrError && !isErrorLike(decorationsOrError)) {
             const { column, inline } = [...decorationsOrError].reduce(
                 (accumulator, [extensionID, items]) => {
-                    if (extensionID && extensionsInSeparateColumns.has(extensionID)) {
+                    if (showGitBlameInSeparateColumn && extensionID === 'sourcegraph/git-extras') {
                         accumulator.column.set(extensionID, groupDecorationsByLine(items))
                     } else {
                         accumulator.inline.push(...items)
@@ -617,7 +619,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         }
 
         return { column: new Map(), inline: new Map() }
-    }, [decorationsOrError])
+    }, [decorationsOrError, showGitBlameInSeparateColumn])
 
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =

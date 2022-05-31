@@ -310,6 +310,14 @@
           "!go": {
             "pointer": true
           }
+        },
+        "showGitBlameInSeparateColumn": {
+          "description": "Show git blame in a separte column in the blob view.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"
