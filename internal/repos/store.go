@@ -31,8 +31,6 @@ type Store interface {
 	// database handle.
 	ExternalServiceStore() database.ExternalServiceStore
 
-	// SetLogger updates logger for the store in place.
-	SetLogger(l log.Logger)
 	// SetMetrics updates metrics for the store in place.
 	SetMetrics(m StoreMetrics)
 	// SetTracer updates tracer for the store in place.
