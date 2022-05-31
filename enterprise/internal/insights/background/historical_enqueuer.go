@@ -503,7 +503,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 			}
 
 			// Build historical data for this unique timeframe+repo+series.
-			hardErr, err, job, pre := a.analyzeSeries(ctx, &buildSeriesContext{
+			err, job, pre := a.analyzeSeries(ctx, &buildSeriesContext{
 				execution:       queryExecution,
 				repoName:        api.RepoName(repoName),
 				id:              id,
@@ -515,8 +515,6 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 				softErr = errors.Append(softErr, err)
 				a.statistics[series.SeriesID].Errored += 1
 				continue
-			} else if hardErr != nil {
-				return nil, nil, hardErr, nil
 			}
 			preempted = append(preempted, pre...)
 			if job != nil {
@@ -560,7 +558,7 @@ type buildSeriesContext struct {
 //
 // It may return both hard errors (e.g. DB connection failure, future series are unlikely to build)
 // and soft errors (e.g. user's search query is invalid, future series are likely to build.)
-func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesContext) (hardErr, softErr error, job *queryrunner.Job, preempted []store.RecordSeriesPointArgs) {
+func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesContext) (err error, job *queryrunner.Job, preempted []store.RecordSeriesPointArgs) {
 	query := bctx.series.Query
 	// TODO(slimsag): future: use the search query parser here to avoid any false-positives like a
 	// search query with `content:"repo:"`.
@@ -571,7 +569,7 @@ func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesC
 		//
 		// Another possibility is that they are specifying a non-default branch with the `repo:`
 		// filter. We would need to handle this below if so - we don't today.
-		return nil, nil, nil, nil
+		return nil, nil, nil
 	}
 
 	// Optimization: If the timeframe we're building data for starts (or ends) before the first commit in the
@@ -580,7 +578,7 @@ func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesC
 	repoName := string(bctx.repoName)
 	if bctx.execution.RecordingTime.Before(bctx.firstHEADCommit.Author.Date) {
 		a.statistics[bctx.seriesID].Preempted += 1
-		return hardErr, softErr, nil, bctx.execution.ToRecording(bctx.seriesID, repoName, bctx.id, 0.0)
+		return err, nil, bctx.execution.ToRecording(bctx.seriesID, repoName, bctx.id, 0.0)
 
 		// return // success - nothing else to do
 	}
@@ -611,7 +609,7 @@ func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesC
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 			return // no error - repo may not be cloned yet (or not even pushed to code host yet)
 		}
-		softErr = errors.Append(softErr, errors.Wrap(err, "FindNearestCommit"))
+		err = errors.Append(err, errors.Wrap(err, "FindNearestCommit"))
 		return
 	}
 	var nearestCommit *gitdomain.Commit
@@ -638,14 +636,12 @@ func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesC
 	// Construct the search query that will generate data for this repository and time (revision) tuple.
 	modifiedQuery, err := querybuilder.SingleRepoQuery(query, repoName, revision)
 	if err != nil {
-		softErr = errors.Append(softErr, errors.Wrap(err, "SingleRepoQuery"))
+		err = errors.Append(err, errors.Wrap(err, "SingleRepoQuery"))
 		return
 	}
 
 	job = queryrunner.ToQueueJob(bctx.execution, bctx.seriesID, modifiedQuery, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
-	return hardErr, softErr, job, preempted
-	// hardErr = a.enqueueQueryRunnerJob(ctx, job)
-	// return
+	return err, job, preempted
 }
 
 // cachedGitFirstEverCommit is a simple in-memory cache for gitFirstEverCommit calls. It does so
