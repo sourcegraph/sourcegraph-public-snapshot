@@ -409,7 +409,7 @@ func filterRecordingsBySeriesRepos(ctx context.Context, repoStore discovery.Repo
 		repos[repo.ID] = true
 	}
 
-	filteredRecords := make([]store.RecordSeriesPointArgs, 0, len(recordings)/4)
+	filteredRecords := make([]store.RecordSeriesPointArgs, 0, len(series.Repositories))
 	for _, record := range recordings {
 		if record.RepoID == nil {
 			continue
