@@ -1,6 +1,7 @@
 package com.sourcegraph.find;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.popup.ActiveIcon;
 import com.intellij.openapi.ui.popup.ComponentPopupBuilder;
@@ -108,13 +109,13 @@ public class SourcegraphWindow implements Disposable {
     }
 
     private boolean handleKeyPress(int keyCode, int modifiers) {
-        if (keyCode == KeyEvent.VK_ESCAPE) {
-            hidePopup();
+        if (keyCode == KeyEvent.VK_ESCAPE && modifiers == 0) {
+            ApplicationManager.getApplication().invokeLater(() -> hidePopup());
             return true;
         }
 
         if (keyCode == KeyEvent.VK_ENTER && (modifiers & ALT_DOWN_MASK) == ALT_DOWN_MASK) {
-            mainPanel.getPreviewPanel().openInEditor();
+            ApplicationManager.getApplication().invokeLater(() -> mainPanel.getPreviewPanel().openInEditor());
             return true;
         }
 
