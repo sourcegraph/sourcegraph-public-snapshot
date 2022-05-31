@@ -1856,6 +1856,16 @@
           "description": "The OAuth API scope that should be used",
           "default": "api",
           "enum": ["api", "read_api"]
+        },
+        "allowGroups": {
+          "description": "Restricts new logins to members of these GitLab groups. Existing sessions won't be invalidated. Make sure to inform the full path for groups or subgroups instead of their names. Leave empty or unset for no group restrictions.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "examples": [["group", "group/subgroup", "group/subgroup/subgroup"]]
         }
       }
     },
