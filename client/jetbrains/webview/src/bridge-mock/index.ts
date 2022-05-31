@@ -3,12 +3,15 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { Request } from '../search/js-to-java-bridge'
 import type { Search } from '../search/types'
 
-let savedSearch: Search = {
-    query: 'r:github.com/sourcegraph/sourcegraph jetbrains',
-    caseSensitive: false,
-    patternType: SearchPatternType.literal,
-    selectedSearchContextSpec: 'global',
-}
+const savedSearchFromLocalStorage = localStorage.getItem('savedSearch')
+let savedSearch: Search = savedSearchFromLocalStorage
+    ? (JSON.parse(savedSearchFromLocalStorage) as Search)
+    : {
+          query: 'r:github.com/sourcegraph/sourcegraph jetbrains',
+          caseSensitive: false,
+          patternType: SearchPatternType.literal,
+          selectedSearchContextSpec: 'global',
+      }
 
 const instanceURL = 'https://sourcegraph.com'
 
@@ -104,6 +107,7 @@ function handleRequest(
 
         case 'saveLastSearch': {
             savedSearch = request.arguments
+            localStorage.setItem('savedSearch', JSON.stringify(savedSearch))
             onSuccessCallback('null')
             break
         }
