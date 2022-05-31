@@ -764,7 +764,7 @@ func TestRepos_List_LastChanged(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, err = SearchContexts(db).CreateSearchContextWithRepositoryRevisions(ctx, &types.SearchContext{Name: name}, revs)
+			_, err = db.SearchContexts().CreateSearchContextWithRepositoryRevisions(ctx, &types.SearchContext{Name: name}, revs)
 			if err != nil {
 				t.Fatal(err)
 			}

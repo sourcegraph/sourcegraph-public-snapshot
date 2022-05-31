@@ -600,7 +600,6 @@ func TestServer_RepoLookup(t *testing.T) {
 		},
 	}
 
-	logger := logtest.Scoped(t)
 	for _, tc := range testCases {
 		tc := tc
 
@@ -619,6 +618,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			}
 
 			clock := clock
+			logger := logtest.Scoped(t)
 			syncer := &repos.Syncer{
 				Logger:  logger,
 				Now:     clock.Now,
@@ -740,13 +740,12 @@ func TestServer_handleSchedulePermsSync(t *testing.T) {
 		},
 	}
 
-	logger := logtest.Scoped(t)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			r := httptest.NewRequest("POST", "/schedule-perms-sync", strings.NewReader(test.body))
 			w := httptest.NewRecorder()
 
-			s := &Server{Logger: logger}
+			s := &Server{Logger: logtest.Scoped(t)}
 			// NOTE: An interface has nil value is not a nil interface,
 			// so should only assign to the interface when the value is not nil.
 			if test.permsSyncer != nil {
@@ -786,7 +785,6 @@ func TestServer_handleExternalServiceSync(t *testing.T) {
 		},
 	}
 
-	logger := logtest.Scoped(t)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			src := testSource{
@@ -796,7 +794,7 @@ func TestServer_handleExternalServiceSync(t *testing.T) {
 			}
 			r := httptest.NewRequest("POST", "/sync-external-service", strings.NewReader(`{"ExternalService": {"ID":1,"kind":"GITHUB"}}}`))
 			w := httptest.NewRecorder()
-			s := &Server{Logger: logger, Syncer: &repos.Syncer{Sourcer: repos.NewFakeSourcer(nil, src)}}
+			s := &Server{Logger: logtest.Scoped(t), Syncer: &repos.Syncer{Sourcer: repos.NewFakeSourcer(nil, src)}}
 			s.handleExternalServiceSync(w, r)
 			if w.Code != test.wantErrCode {
 				t.Errorf("Code: want %v but got %v", test.wantErrCode, w.Code)

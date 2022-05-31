@@ -16,7 +16,6 @@ import (
 
 	"github.com/golang/gddo/httputil"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -135,8 +134,8 @@ func Main(enterpriseInit EnterpriseInit) {
 		m.MustRegister(prometheus.DefaultRegisterer)
 
 		depsSvc := livedependencies.GetService(db, nil)
-		// TODO(burmudar): update repos.ObservedSource to use lib/log
-		src = repos.NewSourcer(db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(log15.Root(), m))
+		obsLogger := logger.Scoped("ObservedSource", "")
+		src = repos.NewSourcer(db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(obsLogger, m))
 	}
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
@@ -535,7 +534,7 @@ func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateSc
 			IncludePrivate: true,
 		}
 		if u, err := baseRepoStore.ListIndexableRepos(ctx, opts); err != nil {
-			logger.Error("Listing indexable repos", log.Error(err))
+			logger.Error("listing indexable repos", log.Error(err))
 			return
 		} else {
 			// Ensure that uncloned indexable repos are known to the scheduler

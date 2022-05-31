@@ -39,7 +39,7 @@ exports[`SearchStatsPage limitHit 1`] = `
         class="form-group d-flex"
       >
         <div
-          class="container d-flex mb-0 w-100"
+          class="container loader-input loaderInput mb-0 w-100"
         >
           <input
             autocapitalize="off"
@@ -114,7 +114,7 @@ exports[`SearchStatsPage renders 1`] = `
         class="form-group d-flex"
       >
         <div
-          class="container d-flex mb-0 w-100"
+          class="container loader-input loaderInput mb-0 w-100"
         >
           <input
             autocapitalize="off"

@@ -209,16 +209,16 @@ func toMatcher(languages []string, extensionHint string) string {
 		// Pick the first language, there is no support for applying
 		// multiple language matchers in a single search query.
 		matcher := lookupMatcher(languages[0])
-		requestTotalStructuralSearch.WithLabelValues(matcher).Inc()
+		metricRequestTotalStructuralSearch.WithLabelValues(matcher).Inc()
 		return matcher
 	}
 
 	if extensionHint != "" {
 		extension := extensionToMatcher(extensionHint)
-		requestTotalStructuralSearch.WithLabelValues("inferred:" + extension).Inc()
+		metricRequestTotalStructuralSearch.WithLabelValues("inferred:" + extension).Inc()
 		return extension
 	}
-	requestTotalStructuralSearch.WithLabelValues("inferred:.generic").Inc()
+	metricRequestTotalStructuralSearch.WithLabelValues("inferred:.generic").Inc()
 	return ".generic"
 }
 
@@ -343,7 +343,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender 
 	return structuralSearch(ctx, zipFile.Name(), all, extensionHint, p.Pattern, p.CombyRule, p.Languages, p.Repo, sender)
 }
 
-var requestTotalStructuralSearch = promauto.NewCounterVec(prometheus.CounterOpts{
+var metricRequestTotalStructuralSearch = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "searcher_service_request_total_structural_search",
 	Help: "Number of returned structural search requests.",
 }, []string{"language"})

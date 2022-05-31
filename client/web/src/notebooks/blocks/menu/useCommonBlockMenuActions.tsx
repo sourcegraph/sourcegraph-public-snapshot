@@ -5,7 +5,7 @@ import ArrowUpIcon from 'mdi-react/ArrowUpIcon'
 import ContentDuplicateIcon from 'mdi-react/ContentDuplicateIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 
-import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
+import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps } from '../..'
@@ -21,7 +21,7 @@ export const useCommonBlockMenuActions = ({
     onDeleteBlock,
     onDuplicateBlock,
 }: Pick<BlockProps, 'id' | 'isReadOnly' | 'onDeleteBlock' | 'onDuplicateBlock' | 'onMoveBlock'>): BlockMenuAction[] => {
-    const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
+    const isMacPlatform = useMemo(() => isMacPlatformFunc(), [])
     const modifierKeyLabel = useModifierKeyLabel()
     const isInputFocused = useIsBlockInputFocused(id)
     return useMemo(() => {
