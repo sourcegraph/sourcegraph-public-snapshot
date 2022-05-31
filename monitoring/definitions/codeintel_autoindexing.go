@@ -5,8 +5,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func CodeIntelAutoIndexing() *monitoring.Container {
-	return &monitoring.Container{
+func CodeIntelAutoIndexing() *monitoring.Dashboard {
+	return &monitoring.Dashboard{
 		Name:        "codeintel-autoindexing",
 		Title:       "Code Intelligence > Autoindexing",
 		Description: "The service at `internal/codeintel/autoindexing`.",

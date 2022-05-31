@@ -110,7 +110,7 @@ function getAnchorOffset(floating: HTMLElement, strategy: Strategy): Point {
     return getAbsoluteAnchorOffset(floating)
 }
 
-function getMarkerSize(element?: HTMLElement | null): Rectangle {
+function getMarkerSize(element?: HTMLElement | SVGElement | null): Rectangle {
     if (!element) {
         return createRectangle(0, 0, 0, 0)
     }

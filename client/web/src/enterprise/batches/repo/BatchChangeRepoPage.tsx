@@ -4,7 +4,7 @@ import * as H from 'history'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageHeader, Typography, useObservable } from '@sourcegraph/wildcard'
+import { PageHeader, Typography, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { DiffStat } from '../../../components/diff/DiffStat'
@@ -72,9 +72,9 @@ export const BatchChangeRepoPage: React.FunctionComponent<React.PropsWithChildre
                 </div>
             ) : null}
             {hasChangesets ? (
-                <p>
+                <Text>
                     Batch changes has created {stats?.changesetsStats.total} changesets on {repoDisplayName}
-                </p>
+                </Text>
             ) : (
                 <div className="mb-3" />
             )}

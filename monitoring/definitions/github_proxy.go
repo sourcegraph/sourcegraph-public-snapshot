@@ -7,10 +7,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func GitHubProxy() *monitoring.Container {
+func GitHubProxy() *monitoring.Dashboard {
 	const containerName = "github-proxy"
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:        "github-proxy",
 		Title:       "GitHub Proxy",
 		Description: "Proxies all requests to github.com, keeping track of and managing rate limits.",

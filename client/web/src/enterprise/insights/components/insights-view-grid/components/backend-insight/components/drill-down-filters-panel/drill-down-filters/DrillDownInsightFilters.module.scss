@@ -1,22 +1,35 @@
 .header {
     display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    padding: 0 0 0.75rem 0;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .header-separator {
-    margin-top: 0;
+    margin-top: 0.75rem;
     margin-bottom: 0.25rem;
 }
 
 .heading {
-    margin: 0;
+    flex-shrink: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+
+    &--with-expanded-content {
+        margin-right: auto;
+    }
 }
 
-.clear-filters {
-    margin-left: auto;
+.preview-pills {
+    flex: 1;
+}
+
+.action-button {
     padding: 0;
+    flex-shrink: 0;
+
+    &--with-collapsed {
+        margin-left: auto;
+    }
 }
 
 .input {
@@ -30,19 +43,24 @@
 }
 
 .panels {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-auto-flow: row;
 
     &--horizontal-mode {
+        flex-wrap: wrap;
         flex-direction: row;
-        gap: 1.5rem;
         padding-bottom: 1rem;
+        gap: 1.5rem;
     }
 }
 
 .panel {
     min-width: 0;
-    flex-basis: 50%;
+    flex-grow: 1;
+
+    &--horizontal-mode {
+        flex-basis: 22rem;
+    }
 }
 
 .reg-exp-filters {
@@ -57,8 +75,6 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 1rem;
-
-    margin-top: -0.25rem;
     padding: 0.75rem 0 0 0;
 }
 

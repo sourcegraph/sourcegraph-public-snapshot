@@ -22,6 +22,7 @@ export interface MinSelectedRepo {
 type SelectedRepos = MinSelectedRepo[] | undefined
 const SelectedReposInitialValue: SelectedRepos = undefined
 
+// eslint-disable-next-line unicorn/prevent-abbreviations
 export const selectedReposVar = makeVar<SelectedRepos>(SelectedReposInitialValue)
 
 interface UseSelectedReposResult {

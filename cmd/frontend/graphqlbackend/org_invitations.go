@@ -513,7 +513,7 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 		// Basic abuse prevention for Sourcegraph.com.
 
 		// Only allow email-verified users to send invites.
-		if _, senderEmailVerified, err := database.UserEmails(db).GetPrimaryEmail(ctx, sender.ID); err != nil {
+		if _, senderEmailVerified, err := db.UserEmails().GetPrimaryEmail(ctx, sender.ID); err != nil {
 			return err
 		} else if !senderEmailVerified {
 			return errors.New("must verify your email address to invite a user to an organization")
