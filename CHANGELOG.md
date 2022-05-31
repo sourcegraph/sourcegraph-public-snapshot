@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Code Insights: Added warnings about adding `context:` and `repo:` filters in search query.
+- Gitserver: we disable automatic git-gc for invocations of git-fetch to avoid corruption of repositories by competing git-gc processes. [#36274](https://github.com/sourcegraph/sourcegraph/pull/36274)
 
 ### Fixed
 
