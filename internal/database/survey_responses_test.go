@@ -24,7 +24,7 @@ func TestSurveyResponses_Create_Count(t *testing.T) {
 		t.Fatal("Expected Count to be 0.")
 	}
 
-	_, err = SurveyResponses(db).Create(ctx, nil, nil, 10, nil, nil)
+	_, err = SurveyResponses(db).Create(ctx, nil, nil, 10, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,18 +39,23 @@ func TestSurveyResponses_Create_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	fakeUseCases := []string{"fakeUseCase1", "fakeUseCase2"}
 	fakeResponse, fakeEmail := "lorem ipsum", "email@email.email"
-	_, err = SurveyResponses(db).Create(ctx, &user.ID, nil, 9, &fakeResponse, nil)
+
+	// Basic submission including use cases
+	_, err = SurveyResponses(db).Create(ctx, &user.ID, nil, 9, &fakeUseCases, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = SurveyResponses(db).Create(ctx, &user.ID, &fakeEmail, 8, nil, &fakeResponse)
+	// Advanced submission with email and additional data
+	_, err = SurveyResponses(db).Create(ctx, &user.ID, &fakeEmail, 8, &fakeUseCases, &fakeResponse, &fakeResponse)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = SurveyResponses(db).Create(ctx, nil, &fakeEmail, 8, nil, nil)
+	// Basic submission with email but no user ID
+	_, err = SurveyResponses(db).Create(ctx, nil, &fakeEmail, 8, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -2750,7 +2750,10 @@ CREATE TABLE survey_responses (
     score integer NOT NULL,
     reason text,
     better text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    use_cases text[],
+    other_use_case text,
+    additional_information text
 );
 
 CREATE SEQUENCE survey_responses_id_seq
