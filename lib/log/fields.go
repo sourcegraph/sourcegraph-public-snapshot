@@ -1,6 +1,7 @@
 package log
 
 import (
+	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -48,6 +49,25 @@ var (
 	// third-party libraries.
 	Namespace = zap.Namespace
 )
+
+func Text(key string, t privacy.Text) Field {
+	if t.Privacy() <= privacy.Unknown {
+		return zap.String(key, "<redacted>")
+	}
+	return zap.String(key, t.GetDataUnchecked())
+}
+
+func Texts(key string, ts []privacy.Text) Field {
+	out := make([]string, 0, len(ts))
+	for _, t := range ts {
+		if t.Privacy() <= privacy.Unknown {
+			out = append(out, "<redacted>")
+		} else {
+			out = append(out, t.GetDataUnchecked())
+		}
+	}
+	return zap.Strings(key, out)
+}
 
 // Object constructs a field that places all the given fields within the given key's
 // namespace.
