@@ -53,7 +53,7 @@ public class JSToJavaBridgeRequestHandler {
                 case "loadLastSearch":
                     Search lastSearch = ConfigUtil.getLastSearch(this.project);
 
-                    if (lastSearch != null) {
+                    if (lastSearch == null) {
                         return createSuccessResponse(null);
                     }
 
