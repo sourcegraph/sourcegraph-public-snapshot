@@ -1237,6 +1237,8 @@ type OAuthIdentity struct {
 	Type string `json:"type"`
 }
 type ObservabilityAlerts struct {
+	// Alerts description: Do not use. When set, only receive specifiedalerts. Used by Sourcegraph internally.
+	Alerts []string `json:"alerts,omitempty"`
 	// DisableSendResolved description: Disable notifications when alerts resolve themselves.
 	DisableSendResolved bool `json:"disableSendResolved,omitempty"`
 	// Level description: Sourcegraph alert level to subscribe to notifications for.
