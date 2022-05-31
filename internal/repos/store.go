@@ -131,7 +131,6 @@ func (s *store) ExternalServiceStore() database.ExternalServiceStore {
 	return database.ExternalServicesWith(s)
 }
 
-func (s *store) SetLogger(l log.Logger)    { s.Logger = l }
 func (s *store) SetMetrics(m StoreMetrics) { s.Metrics = m }
 func (s *store) SetTracer(t trace.Tracer)  { s.Tracer = t }
 
