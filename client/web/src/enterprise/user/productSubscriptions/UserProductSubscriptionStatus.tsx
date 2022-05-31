@@ -47,7 +47,8 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<React.PropsW
                 <>
                     <CardFooter className="d-flex align-items-center justify-content-between flex-wrap">
                         <Button className="mr-4 my-1" onClick={toggleShowLicenseKey} variant="primary">
-                            <Icon as={KeyIcon} /> {showLicenseKey ? 'Hide' : 'Reveal'} license key
+                            <Icon role="img" aria-hidden={true} as={KeyIcon} /> {showLicenseKey ? 'Hide' : 'Reveal'}{' '}
+                            license key
                         </Button>
                         <div className="flex-fill" />
                         <div className="my-1" />
@@ -59,7 +60,7 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<React.PropsW
                                 <>
                                     <CopyableText text={licenseKey} className="d-block" />
                                     <small className="mt-2 d-flex align-items-center">
-                                        <Icon className="mr-1" as={InformationIcon} />{' '}
+                                        <Icon role="img" aria-hidden={true} className="mr-1" as={InformationIcon} />{' '}
                                         <span>
                                             Use this license key as the{' '}
                                             <Typography.Code weight="bold">licenseKey</Typography.Code> property value

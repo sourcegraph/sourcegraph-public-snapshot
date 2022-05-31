@@ -11,7 +11,7 @@ import UploadIcon from 'mdi-react/UploadIcon'
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { pluralize } from '@sourcegraph/common'
 import { BulkOperationState, BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
-import { Badge, AlertLink, Link, Alert, Icon, Typography } from '@sourcegraph/wildcard'
+import { Badge, AlertLink, Link, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
 import { Timestamp } from '../../../../components/time/Timestamp'
@@ -22,32 +22,32 @@ import styles from './BulkOperationNode.module.scss'
 const OPERATION_TITLES: Record<BulkOperationType, JSX.Element> = {
     COMMENT: (
         <>
-            <Icon className="text-muted" as={CommentOutlineIcon} /> Comment on changesets
+            <Icon role="img" aria-hidden={true} className="text-muted" as={CommentOutlineIcon} /> Comment on changesets
         </>
     ),
     DETACH: (
         <>
-            <Icon className="text-muted" as={LinkVariantRemoveIcon} /> Detach changesets
+            <Icon role="img" aria-hidden={true} className="text-muted" as={LinkVariantRemoveIcon} /> Detach changesets
         </>
     ),
     REENQUEUE: (
         <>
-            <Icon className="text-muted" as={SyncIcon} /> Retry changesets
+            <Icon role="img" aria-hidden={true} className="text-muted" as={SyncIcon} /> Retry changesets
         </>
     ),
     MERGE: (
         <>
-            <Icon className="text-muted" as={SourceBranchIcon} /> Merge changesets
+            <Icon role="img" aria-hidden={true} className="text-muted" as={SourceBranchIcon} /> Merge changesets
         </>
     ),
     CLOSE: (
         <>
-            <Icon className="text-danger" as={SourceBranchIcon} /> Close changesets
+            <Icon role="img" aria-hidden={true} className="text-danger" as={SourceBranchIcon} /> Close changesets
         </>
     ),
     PUBLISH: (
         <>
-            <Icon className="text-muted" as={UploadIcon} /> Publish changesets
+            <Icon role="img" aria-hidden={true} className="text-muted" as={UploadIcon} /> Publish changesets
         </>
     ),
 }
@@ -70,19 +70,21 @@ export const BulkOperationNode: React.FunctionComponent<React.PropsWithChildren<
                 <Badge variant="secondary" className="mb-2" as="p">
                     {node.changesetCount}
                 </Badge>
-                <p className="mb-0">{pluralize('changeset', node.changesetCount)}</p>
+                <Text className="mb-0">{pluralize('changeset', node.changesetCount)}</Text>
             </div>
             <div className={styles.bulkOperationNodeDivider} />
             <div className="flex-grow-1 ml-3">
                 <Typography.H4>{OPERATION_TITLES[node.type]}</Typography.H4>
-                <p className="mb-0">
+                <Text className="mb-0">
                     <Link to={node.initiator.url}>{node.initiator.username}</Link> <Timestamp date={node.createdAt} />
-                </p>
+                </Text>
             </div>
             {node.state === BulkOperationState.PROCESSING && (
                 <div className={classNames(styles.bulkOperationNodeProgressBar, 'flex-grow-1 ml-3')}>
                     <meter value={node.progress} className="w-100" min={0} max={1} />
-                    <p className="text-center mb-0">{Math.ceil(node.progress * 100)}%</p>
+                    <Text alignment="center" className="mb-0">
+                        {Math.ceil(node.progress * 100)}%
+                    </Text>
                 </div>
             )}
             {node.state === BulkOperationState.FAILED && (
@@ -108,13 +110,14 @@ export const BulkOperationNode: React.FunctionComponent<React.PropsWithChildren<
                 >
                     {node.errors.map((error, index) => (
                         <Alert className="mt-2" key={index} variant="danger">
-                            <p>
+                            <Text>
                                 {error.changeset.__typename === 'HiddenExternalChangeset' ? (
                                     <span className="text-muted">On hidden repository</span>
                                 ) : (
                                     <>
                                         <AlertLink to={error.changeset.externalURL?.url ?? ''}>
-                                            {error.changeset.title} <Icon as={ExternalLinkIcon} />
+                                            {error.changeset.title}{' '}
+                                            <Icon role="img" aria-hidden={true} as={ExternalLinkIcon} />
                                         </AlertLink>{' '}
                                         on{' '}
                                         <AlertLink to={error.changeset.repository.url}>
@@ -123,7 +126,7 @@ export const BulkOperationNode: React.FunctionComponent<React.PropsWithChildren<
                                         .
                                     </>
                                 )}
-                            </p>
+                            </Text>
                             {error.error && <ErrorMessage error={'```\n' + error.error + '\n```'} />}
                         </Alert>
                     ))}

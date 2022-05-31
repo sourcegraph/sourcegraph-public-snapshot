@@ -17,10 +17,16 @@ var (
 	secretListViewFlag bool
 
 	secretCommand = &cli.Command{
-		Name:      "secret",
-		ArgsUsage: "<...subcommand>",
-		Usage:     "Manipulate secrets stored in memory and in file",
-		Category:  CategoryEnv,
+		Name:  "secret",
+		Usage: "Manipulate secrets stored in memory and in file",
+		UsageText: `
+# List all secrets stored in your local configuration.
+sg secret list
+
+# Remove the secrets associated with buildkite (sg ci build)
+sg secret reset buildkite
+`,
+		Category: CategoryEnv,
 		Subcommands: []*cli.Command{
 			{
 				Name:      "reset",

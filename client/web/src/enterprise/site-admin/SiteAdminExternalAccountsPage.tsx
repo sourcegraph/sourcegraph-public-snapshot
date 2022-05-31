@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Button, Link, Typography } from '@sourcegraph/wildcard'
+import { Button, Link, Typography, Text } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -64,10 +64,10 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
                         View auth providers
                     </Button>
                 </div>
-                <p>
+                <Text>
                     An external account (on an <Link to="/site-admin/auth/providers">authentication provider</Link>) is
                     linked to a Sourcegraph user when it's used to sign into Sourcegraph.
-                </p>
+                </Text>
                 <FilteredConnection<ExternalAccountFields, Omit<ExternalAccountNodeProps, 'node'>>
                     className="list-group list-group-flush mt-3"
                     noun="external user account"

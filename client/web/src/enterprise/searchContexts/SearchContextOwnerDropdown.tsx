@@ -57,7 +57,7 @@ export const SearchContextOwnerDropdown: React.FunctionComponent<
                 data-tooltip={isDisabled ? "Owner can't be changed." : ''}
             >
                 {selectedNamespace.type === 'global-owner' ? 'Global' : `@${selectedNamespace.name}`}{' '}
-                <Icon as={MenuDownIcon} />
+                <Icon role="img" aria-hidden={true} as={MenuDownIcon} />
             </MenuButton>
             <MenuList className={styles.menuList}>
                 <MenuItem onSelect={() => setSelectedNamespace(selectedUserNamespace)}>

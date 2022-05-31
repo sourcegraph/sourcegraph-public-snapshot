@@ -47,7 +47,7 @@ export const ImportingChangesetsPreviewList: React.FunctionComponent<
                                     : undefined
                             }
                         >
-                            <Icon as={ImportIcon} />{' '}
+                            <Icon role="img" aria-hidden={true} as={ImportIcon} />{' '}
                             {node.description.__typename === 'ExistingChangesetReference' &&
                                 node.description.baseRepository.name}
                         </LinkOrSpan>{' '}

@@ -2,7 +2,7 @@ import { FunctionComponent, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { Select } from '@sourcegraph/wildcard'
+import { Select, Input } from '@sourcegraph/wildcard'
 
 import { defaultDurationValues } from '../shared'
 
@@ -59,9 +59,9 @@ export const DurationSelect: FunctionComponent<React.PropsWithChildren<DurationS
 
             {isCustom && (
                 <>
-                    <input
+                    <Input
                         type="number"
-                        className="form-control ml-2"
+                        className="ml-2"
                         value={value || defaultCustomValue}
                         min="1"
                         max="219150"

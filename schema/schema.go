@@ -828,6 +828,8 @@ type GitHubWebhook struct {
 
 // GitLabAuthProvider description: Configures the GitLab OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitLab instance: https://docs.gitlab.com/ee/integration/oauth_provider.html. The application should have `api` and `read_user` scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and "/.auth/gitlab/callback".
 type GitLabAuthProvider struct {
+	// AllowGroups description: Restricts new logins to members of these GitLab groups. Existing sessions won't be invalidated. Make sure to inform the full path for groups or subgroups instead of their names. Leave empty or unset for no group restrictions.
+	AllowGroups []string `json:"allowGroups,omitempty"`
 	// ApiScope description: The OAuth API scope that should be used
 	ApiScope string `json:"apiScope,omitempty"`
 	// ClientID description: The Client ID of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance).

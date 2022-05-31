@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
@@ -124,13 +125,13 @@ func filterByIds(ids []string, insight []insights.SearchInsight) []insights.Sear
 }
 
 type settingMigrator struct {
-	base     dbutil.DB
+	base     database.DB
 	insights dbutil.DB
 }
 
 // NewMigrateSettingInsightsJob will migrate insights from settings into the database. This is a job that will be
 // deprecated as soon as this functionality is available over an API.
-func NewMigrateSettingInsightsJob(ctx context.Context, base dbutil.DB, insights dbutil.DB) goroutine.BackgroundRoutine {
+func NewMigrateSettingInsightsJob(ctx context.Context, base database.DB, insights dbutil.DB) goroutine.BackgroundRoutine {
 	interval := time.Minute * 10
 	m := settingMigrator{
 		base:     base,

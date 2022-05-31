@@ -5,7 +5,7 @@ import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, Icon, Link, Typography } from '@sourcegraph/wildcard'
+import { Container, Icon, Link, Typography, Text } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../routes.constants'
 import { ThemePreference } from '../../stores/themeState'
@@ -94,10 +94,10 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     </div>
                     <div className="col-12 col-md-6">
                         <Typography.H2>Create living documentation effortlessly</Typography.H2>
-                        <p>
+                        <Text>
                             Notebooks make creating and sharing knowledge something you'll want to do, not something you
                             avoid.
-                        </p>
+                        </Text>
                         <Typography.H3>Use notebooks to&hellip;</Typography.H3>
                         <ul className={classNames(styles.narrowList, 'mb-0')}>
                             <li className="mb-1">Create focused onboarding docs that stay up to date</li>
@@ -151,15 +151,15 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                 <div className={classNames(styles.row, 'row', 'mb-4')}>
                     <div className="col-12 col-md-6">
                         <strong>Enable the notepad for frictionless knowledge sharing</strong>
-                        <p className="mt-1">
+                        <Text className="mt-1">
                             With the notepad, create notebooks while you browse. Add searches, files, and file ranges
                             without leaving the page you're on, then create a notebook of it all with one click.
-                        </p>
+                        </Text>
                         <strong>Compose rich documentation with multiple block types</strong>
-                        <p className="mt-1">
+                        <Text className="mt-1">
                             Create text content with Markdown blocks, track symbols within files with symbol blocks, and
                             add whole files or line ranges with file blocks.
-                        </p>
+                        </Text>
                     </div>
                     <div className="col-12 col-md-6">
                         <video
@@ -187,7 +187,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                             <div className="my-2">
                                 <strong>{panel.title}</strong>
                             </div>
-                            <p>{panel.description}</p>
+                            <Text>{panel.description}</Text>
                         </Container>
                     </div>
                 ))}

@@ -3,7 +3,7 @@ import React from 'react'
 import { Redirect } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { CardBody, Card, Typography } from '@sourcegraph/wildcard'
+import { CardBody, Card, Typography, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
@@ -80,14 +80,14 @@ export const SiteInitPage: React.FunctionComponent<React.PropsWithChildren<Props
                         // If there's already a user but the site is not initialized, then the we're in an
                         // unexpected state, likely because of a previous bug or because someone manually modified
                         // the site_config DB table.
-                        <p>
+                        <Text>
                             You're signed in as <strong>{authenticatedUser.username}</strong>. A site admin must
                             initialize Sourcegraph before you can continue.
-                        </p>
+                        </Text>
                     ) : (
                         <>
                             <Typography.H2 className="site-init-page__header">Welcome</Typography.H2>
-                            <p>Create an admin account to start using Sourcegraph.</p>
+                            <Text>Create an admin account to start using Sourcegraph.</Text>
                             <SignUpForm
                                 className="w-100"
                                 buttonLabel="Create admin account & continue"

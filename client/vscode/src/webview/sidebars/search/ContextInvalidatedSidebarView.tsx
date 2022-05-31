@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Button, Typography } from '@sourcegraph/wildcard'
+import { Button, Typography, Text } from '@sourcegraph/wildcard'
 
 import { WebviewPageProps } from '../../platform/context'
 
@@ -11,7 +11,7 @@ export const ContextInvalidatedSidebarView: React.FunctionComponent<
 > = ({ extensionCoreAPI }) => (
     <div>
         <Typography.H5 className="mt-3 mb-2">Your Sourcegraph instance URL has changed.</Typography.H5>
-        <p>Please reload VS Code to use to Sourcegraph extension.</p>
+        <Text>Please reload VS Code to use to Sourcegraph extension.</Text>
         <Button
             variant="primary"
             className="font-weight-normal w-100 my-1 border-0"
