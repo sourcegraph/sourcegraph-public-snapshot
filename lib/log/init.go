@@ -4,12 +4,10 @@ import (
 	"os"
 
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/globallogger"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
-	"github.com/sourcegraph/sourcegraph/lib/log/sinks"
 )
 
 const (
@@ -29,7 +27,7 @@ type Resource = otfields.Resource
 // For testing, you can use 'logtest.Init' to initialize the logging library.
 //
 // If Init is not called, Get will panic.
-func Init(r Resource, sinks ...sinks.SinkCore) (sync func() error) {
+func Init(r Resource) (sync func() error) {
 	if globallogger.IsInitialized() {
 		panic("log.Init initialized multiple times")
 	}
@@ -38,9 +36,27 @@ func Init(r Resource, sinks ...sinks.SinkCore) (sync func() error) {
 	format := encoders.ParseOutputFormat(os.Getenv(envSrcLogFormat))
 	development := os.Getenv(envSrcDevelopment) == "true"
 
-	var cores []zapcore.Core
-	for _, s := range sinks {
-		cores = append(cores, s.Core())
+	return globallogger.Init(r, level, format, development, nil)
+}
+
+func InitWithSinks(r Resource, s ...Sink) (sync func() error, update func(SinksConfigGetter) func()) {
+	if globallogger.IsInitialized() {
+		panic("log.Init initialized multiple times")
 	}
-	return globallogger.Init(r, level, format, development, cores)
+
+	level := zap.NewAtomicLevelAt(Level(os.Getenv(envSrcLogLevel)).Parse())
+	format := encoders.ParseOutputFormat(os.Getenv(envSrcLogFormat))
+	development := os.Getenv(envSrcDevelopment) == "true"
+
+	sinks := Sinks(s)
+	update = sinks.Update
+	cores, err := sinks.build()
+	sync = globallogger.Init(r, level, format, development, cores)
+
+	if err != nil {
+		// Log the error
+		Scoped("log.init", "logger initialization").Fatal("core initialization failed", Error(err))
+	}
+
+	return
 }
