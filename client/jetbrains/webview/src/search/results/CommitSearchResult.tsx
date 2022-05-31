@@ -9,6 +9,7 @@ import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Code, useIsTruncated } from '@sourcegraph/wildcard'
 
+import { SourcegraphLink } from './SourcegraphLink'
 import { getResultId } from './utils'
 
 import styles from './SearchResult.module.scss'
@@ -44,7 +45,10 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({ match, sele
                 onMouseEnter={checkTruncation}
                 ref={titleReference}
                 data-tooltip={(truncated && `${match.authorName}: ${match.message.split('\n', 1)[0]}`) || null}
-            >{`${displayRepoName(match.repository)} › ${match.authorName}: ${match.message.split('\n', 1)[0]}`}</span>
+            >
+                {`${displayRepoName(match.repository)} › ${match.authorName}: ${match.message.split('\n', 1)[0]}`}
+                <SourcegraphLink relativeUrl={match.url}>Open on Sourcegraph</SourcegraphLink>
+            </span>
             <span className={styles.spacer} />
             <Code className={styles.commitOid}>{match.oid.slice(0, 7)}</Code>{' '}
             <Timestamp date={match.authorDate} noAbout={true} strict={true} />

@@ -10,6 +10,8 @@ let savedSearch: Search = {
     selectedSearchContextSpec: 'global',
 }
 
+const instanceURL = 'https://sourcegraph.com'
+
 const codeDetailsNode = document.querySelector('#code-details') as HTMLPreElement
 const iframeNode = document.querySelector('#webview') as HTMLIFrameElement
 
@@ -37,7 +39,7 @@ function handleRequest(
         case 'getConfig': {
             onSuccessCallback(
                 JSON.stringify({
-                    instanceURL: 'https://sourcegraph.com',
+                    instanceURL,
                     isGlobbingEnabled: true,
                     accessToken: null,
                 })
@@ -116,7 +118,15 @@ function handleRequest(
             break
         }
 
+        case 'openSourcegraphUrl': {
+            const { relativeUrl } = (request as OpenSourcegraphUrlRequest).arguments
+            window.open(instanceURL + relativeUrl, '_blank')
+            onSuccessCallback('null')
+            break
+        }
+
         default: {
+            // noinspection UnnecessaryLocalVariableJS
             const exhaustiveCheck: never = action
             onFailureCallback(2, `Unknown action: ${exhaustiveCheck as string}`)
         }

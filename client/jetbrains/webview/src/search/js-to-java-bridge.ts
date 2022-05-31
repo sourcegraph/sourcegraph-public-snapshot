@@ -42,6 +42,13 @@ interface IndicateFinishedLoadingRequest {
     action: 'indicateFinishedLoading'
 }
 
+export interface OpenSourcegraphUrlRequest {
+    action: 'openSourcegraphUrl'
+    arguments: {
+        relativeUrl: string
+    }
+}
+
 export type Request =
     | MatchRequest
     | GetConfigRequest
@@ -50,6 +57,7 @@ export type Request =
     | LoadLastSearchRequest
     | ClearPreviewRequest
     | IndicateFinishedLoadingRequest
+    | OpenSourcegraphUrlRequest
 
 export async function getConfig(): Promise<PluginConfig> {
     try {
@@ -129,6 +137,14 @@ export function saveLastSearch(lastSearch: Search): void {
         .catch((error: Error) => {
             console.error(`Failed to save last search: ${error.message}`)
         })
+}
+
+export async function openSourcegraphUrlInBrowser(relativeUrl: string): Promise<void> {
+    try {
+        await callJava({ action: 'openSourcegraphUrl', arguments: { relativeUrl } })
+    } catch (error) {
+        console.error(`Failed to open sourcegraph URL: ${(error as Error).message}`)
+    }
 }
 
 async function callJava(request: Request): Promise<object> {
