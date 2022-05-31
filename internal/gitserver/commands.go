@@ -156,7 +156,7 @@ func (c *ClientImplementor) execReader(ctx context.Context, repo api.RepoName, a
 	span.SetTag("args", args)
 	defer span.Finish()
 
-	if !gitdomain.IsAllowedGitCmd(args) {
+	if !gitdomain.IsAllowedGitCmd(c.logger, args) {
 		return nil, errors.Errorf("command failed: %v is not a allowed git command", args)
 	}
 	cmd := c.GitCommand(repo, args...)
@@ -1206,7 +1206,7 @@ func (c *ClientImplementor) execSafe(ctx context.Context, repo api.RepoName, par
 		return nil, nil, 0, errors.New("at least one argument required")
 	}
 
-	if !gitdomain.IsAllowedGitCmd(params) {
+	if !gitdomain.IsAllowedGitCmd(c.logger, params) {
 		return nil, nil, 0, errors.Errorf("command failed: %q is not a allowed git command", params)
 	}
 
