@@ -1,10 +1,10 @@
 import React from 'react'
 
+import { debounce } from 'lodash'
+
 import { useMatchMedia } from '@sourcegraph/wildcard'
 
 import { useTabsState } from './context'
-
-import { debounce } from 'lodash'
 
 const SCROLL_BACK_WAIT = 500
 
@@ -14,28 +14,28 @@ export function useScrollBackToActive<T extends HTMLElement>(
     const { activeIndex } = useTabsState()
     const isReducedMotion = useMatchMedia('(prefers-reduced-motion: reduce)')
 
-    const scrollBack = React.useMemo(() => {
-        return debounce(() => {
-            if (containerReference?.current) {
-                containerReference.current.children.item(activeIndex)?.scrollIntoView({
-                    behavior: isReducedMotion ? 'auto' : 'smooth',
-                    inline: 'center',
-                })
-            }
-        }, SCROLL_BACK_WAIT)
-    }, [activeIndex, containerReference, isReducedMotion])
-
-    const cancelScrollBack = React.useCallback(() => {
-        scrollBack.cancel()
-    }, [scrollBack])
+    const scrollBack = React.useMemo(
+        () =>
+            debounce(() => {
+                if (containerReference?.current) {
+                    containerReference.current.children.item(activeIndex)?.scrollIntoView({
+                        behavior: isReducedMotion ? 'auto' : 'smooth',
+                        inline: 'center',
+                    })
+                }
+            }, SCROLL_BACK_WAIT),
+        [activeIndex, containerReference, isReducedMotion]
+    )
 
     React.useEffect(() => {
         const container = containerReference?.current
-        container?.addEventListener('mouseenter', cancelScrollBack)
+        const cancel: () => void = () => scrollBack.cancel()
+
+        container?.addEventListener('mouseenter', cancel)
         container?.addEventListener('mouseleave', scrollBack)
         return () => {
-            container?.removeEventListener('mouseenter', cancelScrollBack)
+            container?.removeEventListener('mouseenter', cancel)
             container?.removeEventListener('mouseleave', scrollBack)
         }
-    }, [containerReference, scrollBack, cancelScrollBack])
+    }, [containerReference, scrollBack])
 }
