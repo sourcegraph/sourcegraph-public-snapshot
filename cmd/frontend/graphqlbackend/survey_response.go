@@ -57,6 +57,10 @@ func (s *surveyResponseResolver) Better() *string {
 }
 
 func (s *surveyResponseResolver) UseCases() *[]string {
+	if len(s.surveyResponse.UseCases) == 0 {
+		return nil
+	}
+
 	return &s.surveyResponse.UseCases
 }
 

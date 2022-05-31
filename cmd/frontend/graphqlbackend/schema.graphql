@@ -1058,6 +1058,17 @@ type RandomizeUserPasswordResult {
 }
 
 """
+Possible answers to "You are using Sourcegraph to..." in the NPS Survey.
+"""
+enum SurveyUseCase {
+    UNDERSTAND_NEW_CODE
+    FIX_SECURITY_VULNERABILITIES
+    REUSE_CODE
+    RESPOND_TO_INCIDENTS
+    IMPROVE_CODE_QUALITY
+}
+
+"""
 Input for a user satisfaction (NPS) survey submission.
 """
 input SurveySubmissionInput {
@@ -1073,7 +1084,7 @@ input SurveySubmissionInput {
     """
     The answer to "You are using Sourcegraph to...".
     """
-    useCases: [String!]
+    useCases: [SurveyUseCase!]
     """
     The answer to "What else are you using Sourcegraph to do?".
     """
@@ -5900,7 +5911,7 @@ type SurveyResponse {
     """
     The answer to "You are using Sourcegraph to...".
     """
-    useCases: [String!]
+    useCases: [SurveyUseCase!]
     """
     The answer to "What else are you using Sourcegraph to do?".
     """
