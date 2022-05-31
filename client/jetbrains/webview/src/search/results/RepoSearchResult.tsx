@@ -7,9 +7,10 @@ import SourceForkIcon from 'mdi-react/SourceForkIcon'
 
 import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { getRepoMatchLabel, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { Icon, useIsTruncated } from '@sourcegraph/wildcard'
 
+import { SourcegraphLink } from './SourcegraphLink'
 import { getResultId } from './utils'
 
 import styles from './SearchResult.module.scss'
@@ -53,11 +54,9 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                 ref={titleReference}
                 data-tooltip={(truncated && displayRepoName(getRepoMatchLabel(match))) || null}
             >
-                {displayRepoName(getRepoMatchLabel(match))}
+                {displayRepoName(getRepoMatchLabel(match))} (Repository match){' '}
+                <SourcegraphLink relativeUrl={getRepoMatchUrl(match)}>Open on Sourcegraph</SourcegraphLink>
             </span>
-            <div className={styles.matchType}>
-                <small> (Repository match)</small>
-            </div>
             {match.fork && (
                 <>
                     <div className={styles.divider} />
