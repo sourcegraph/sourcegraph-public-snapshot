@@ -1,17 +1,26 @@
 /**
  * All Sourcegraph Cloud related links
+ * MAIN
  */
-// MAIN
-const VSCE_CALLBACK_CODE = 'VSCEAUTH'
 export const VSCE_LINK_DOTCOM = 'https://sourcegraph.com'
 export const VSCE_LINK_TOKEN_CALLBACK =
     'https://sourcegraph.com/sign-in?returnTo=user/settings/tokens/new/callback?requestFrom=VSCEAUTH'
 export const VSCE_LINK_TOKEN_CALLBACK_TEST =
     'https://sourcegraph.test:3443/sign-in?returnTo=user/settings/tokens/new/callback?requestFrom=VSCEAUTH'
-// PARAMS
+/**
+ * UNRELEASED FEATURE
+ * Token Callback Page
+ */
+// const VSCE_CALLBACK_CODE = 'VSCEAUTH'
+// const VSCE_LINK_PARAMS_TOKEN_REDIRECT = {
+//     returnTo: `user/settings/tokens/new/callback?requestFrom=${VSCE_CALLBACK_CODE}`,
+// }
+/**
+ * Params
+ */
 export const VSCE_SIDEBAR_PARAMS = '?utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up'
 const VSCE_LINK_PARAMS_TOKEN_REDIRECT = {
-    returnTo: `user/settings/tokens/new/callback?requestFrom=${VSCE_CALLBACK_CODE}`,
+    returnTo: 'user/settings/tokens/new',
 }
 const VSCE_LINK_PARAMS_EDITOR = { editor: 'vscode' }
 // UTM for Commands

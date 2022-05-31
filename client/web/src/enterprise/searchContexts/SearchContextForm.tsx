@@ -365,7 +365,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                     <div className={classNames('mb-1', styles.searchContextFormPreviewTitle)}>Preview</div>
                     {searchContextSpecPreview}
                 </div>
-                <hr className={classNames('my-4', styles.searchContextFormDivider)} />
+                <hr aria-hidden={true} className={classNames('my-4', styles.searchContextFormDivider)} />
                 <div>
                     <div className="mb-2">
                         Description <span className="text-muted">(optional)</span>
@@ -386,7 +386,9 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                     <div className="mt-1 text-muted">
                         <small>
                             <span>Markdown formatting is supported</span>
-                            <span className="px-1">&middot;</span>
+                            <span aria-hidden={true} className="px-1">
+                                &middot;
+                            </span>
                             <span>{MAX_DESCRIPTION_LENGTH - description.length} characters remaining</span>
                         </small>
                     </div>
@@ -394,27 +396,31 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                 <div className={classNames('mt-3', styles.searchContextFormVisibility)}>
                     <div className="mb-3">Visibility</div>
                     {visibilityRadioButtons.map((radio, index) => (
-                        <RadioButton
-                            key={radio.visibility}
-                            id={`visibility_${index}`}
-                            className={styles.searchContextFormRadio}
-                            name="visibility"
-                            value={radio.visibility}
-                            checked={visibility === radio.visibility}
-                            required={true}
-                            onChange={() => setVisibility(radio.visibility)}
-                            label={
-                                <div>
-                                    <strong className={styles.searchContextFormVisibilityTitle}>{radio.title}</strong>
-                                    <div className="text-muted">
-                                        <small>{radio.description}</small>
+                        <>
+                            <RadioButton
+                                key={radio.visibility}
+                                id={`visibility_${index}`}
+                                className={styles.searchContextFormRadio}
+                                name="visibility"
+                                value={radio.visibility}
+                                checked={visibility === radio.visibility}
+                                required={true}
+                                onChange={() => setVisibility(radio.visibility)}
+                                label={
+                                    <div>
+                                        <strong className={styles.searchContextFormVisibilityTitle}>
+                                            {radio.title}
+                                        </strong>
                                     </div>
-                                </div>
-                            }
-                        />
+                                }
+                            />
+                            <div className="ml-4 mb-2">
+                                <small className="text-muted">{radio.description}</small>
+                            </div>
+                        </>
                     ))}
                 </div>
-                <hr className={classNames('my-4', styles.searchContextFormDivider)} />
+                <hr aria-hidden={true} className={classNames('my-4', styles.searchContextFormDivider)} />
                 <div>
                     <div className="mb-1">Choose repositories and revisions</div>
                     <div className="text-muted mb-3">

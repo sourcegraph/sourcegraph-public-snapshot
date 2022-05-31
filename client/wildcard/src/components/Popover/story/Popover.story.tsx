@@ -9,7 +9,7 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { Button, Position } from '@sourcegraph/wildcard'
 
-import { Popover, PopoverContent, PopoverOpenEvent, PopoverTrigger } from '../Popover'
+import { Popover, PopoverContent, PopoverOpenEvent, PopoverTail, PopoverTrigger } from '..'
 import { createRectangle, Point, Strategy } from '../tether'
 
 import styles from './Popover.story.module.scss'
@@ -50,7 +50,6 @@ export const PositionSettingsGallery: Story = () => {
                     <PopoverContent
                         position={position}
                         focusLocked={false}
-                        tail={boolean('tail', false)}
                         className={classNames(styles.floating, styles.floatingTooltipLike)}
                     >
                         Position {position}
@@ -230,7 +229,13 @@ export const AbsoluteStrategyExample: Story = () => (
                     Hello
                 </PopoverTrigger>
 
-                <PopoverContent position={Position.rightStart} strategy={Strategy.Absolute} className={styles.floating}>
+                <PopoverContent
+                    position={Position.rightStart}
+                    constrainToScrollParents={true}
+                    overflowToScrollParents={true}
+                    strategy={Strategy.Absolute}
+                    className={styles.floating}
+                >
                     Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
                     Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
                     career and his mother was a homemaker.[6] In the early years of his life his family moved to Kharkiv
@@ -492,7 +497,7 @@ export const WithTail: Story = () => (
                     Hello
                 </PopoverTrigger>
 
-                <PopoverContent tail={true} position={Position.rightStart} className={styles.floating}>
+                <PopoverContent position={Position.rightStart} className={styles.floating}>
                     Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
                     Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
                     career and his mother was a homemaker.[6] In the early years of his life his family moved to Kharkiv
@@ -503,6 +508,8 @@ export const WithTail: Story = () => (
                         <Button variant="secondary">Action 2</Button>
                     </div>
                 </PopoverContent>
+
+                <PopoverTail />
             </Popover>
         </div>
     </ScrollCenterBox>

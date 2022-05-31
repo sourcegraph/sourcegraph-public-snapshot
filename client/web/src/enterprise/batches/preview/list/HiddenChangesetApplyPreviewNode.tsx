@@ -73,7 +73,12 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<
             </Typography.H3>
             <span className="text-danger">
                 No action will be taken on apply.{' '}
-                <Icon data-tooltip="You have no permissions to access this repository." as={InfoCircleOutlineIcon} />
+                <Icon
+                    role="img"
+                    aria-label="You have no permissions to access this repository."
+                    data-tooltip="You have no permissions to access this repository."
+                    as={InfoCircleOutlineIcon}
+                />
             </span>
         </div>
         <span />

@@ -27,7 +27,7 @@ import (
 // A global limiter on number of concurrent searcher searches.
 var textSearchLimiter = mutablelimiter.New(32)
 
-type SearcherJob struct {
+type TextSearchJob struct {
 	PatternInfo *search.TextPatternInfo
 	Repos       []*search.RepositoryRevisions // the set of repositories to search with searcher.
 
@@ -47,7 +47,7 @@ type SearcherJob struct {
 }
 
 // Run calls the searcher service on a set of repositories.
-func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
@@ -133,11 +133,11 @@ func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, strea
 	return nil, g.Wait()
 }
 
-func (s *SearcherJob) Name() string {
-	return "SearcherJob"
+func (s *TextSearchJob) Name() string {
+	return "SearcherTextSearchJob"
 }
 
-func (s *SearcherJob) Tags() []log.Field {
+func (s *TextSearchJob) Tags() []log.Field {
 	return []log.Field{
 		trace.Stringer("patternInfo", s.PatternInfo),
 		log.Int("numRepos", len(s.Repos)),
@@ -222,31 +222,45 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 	return func(searcherMatches []*protocol.FileMatch) []result.Match {
 		matches := make([]result.Match, 0, len(searcherMatches))
 		for _, fm := range searcherMatches {
-			multilineMatches := make([]result.MultilineMatch, 0, len(fm.LineMatches))
+			hunkMatches := make(result.HunkMatches, 0, len(fm.LineMatches))
+
 			for _, lm := range fm.LineMatches {
+				ranges := make(result.Ranges, 0, len(lm.OffsetAndLengths))
 				for _, ol := range lm.OffsetAndLengths {
 					offset, length := ol[0], ol[1]
-					multilineMatches = append(multilineMatches, result.MultilineMatch{
-						Preview: lm.Preview,
-						Range: result.Range{
-							Start: result.Location{
-								Offset: lm.LineOffset + runeOffsetToByteOffset(lm.Preview, offset),
-								Line:   lm.LineNumber,
-								Column: offset,
-							},
-							End: result.Location{
-								Offset: lm.LineOffset + runeOffsetToByteOffset(lm.Preview, offset+length),
-								Line:   lm.LineNumber,
-								Column: offset + length,
-							},
+					ranges = append(ranges, result.Range{
+						Start: result.Location{
+							Offset: lm.LineOffset + runeOffsetToByteOffset(lm.Preview, offset),
+							Line:   lm.LineNumber,
+							Column: offset,
+						},
+						End: result.Location{
+							Offset: lm.LineOffset + runeOffsetToByteOffset(lm.Preview, offset+length),
+							Line:   lm.LineNumber,
+							Column: offset + length,
 						},
 					})
 				}
+				hunkMatches = append(hunkMatches, result.HunkMatch{
+					Content: lm.Preview,
+					ContentStart: result.Location{
+						Offset: lm.LineOffset,
+						Line:   lm.LineNumber,
+						Column: 0,
+					},
+					Ranges: ranges,
+				})
 			}
+
 			for _, mm := range fm.MultilineMatches {
-				multilineMatches = append(multilineMatches, result.MultilineMatch{
-					Preview: mm.Preview,
-					Range: result.Range{
+				hunkMatches = append(hunkMatches, result.HunkMatch{
+					Content: mm.Preview,
+					ContentStart: result.Location{
+						Offset: int(mm.Start.Offset) - runeOffsetToByteOffset(mm.Preview, int(mm.Start.Column)),
+						Line:   int(mm.Start.Line),
+						Column: 0,
+					},
+					Ranges: result.Ranges{{
 						Start: result.Location{
 							Offset: int(mm.Start.Offset),
 							Line:   int(mm.Start.Line),
@@ -257,7 +271,7 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 							Line:   int(mm.End.Line),
 							Column: int(mm.End.Column),
 						},
-					},
+					}},
 				})
 			}
 
@@ -268,8 +282,8 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 					CommitID: commit,
 					InputRev: rev,
 				},
-				MultilineMatches: multilineMatches,
-				LimitHit:         fm.LimitHit,
+				HunkMatches: hunkMatches,
+				LimitHit:    fm.LimitHit,
 			})
 		}
 		return matches

@@ -12,7 +12,7 @@ Each section comprehensively describes the steps needed to upgrade, and any manu
 
 ## Unreleases
 
-## 3.39 -> 3.40
+## 3.39 -> 3.40.1
 
 - `cadvisor` now defaults to run in `privileged` mode. This allows `cadvisor` to collect out of memory events happening to containers which can be used to discover underprovisoned resources. [#804](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/804)
 

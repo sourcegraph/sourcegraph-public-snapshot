@@ -10,6 +10,6 @@ export const NewBatchChangeButton: React.FunctionComponent<React.PropsWithChildr
     to,
 }) => (
     <Button to={to} variant="primary" as={Link}>
-        <Icon as={PlusIcon} /> Create batch change
+        <Icon role="img" aria-hidden={true} as={PlusIcon} /> Create batch change
     </Button>
 )

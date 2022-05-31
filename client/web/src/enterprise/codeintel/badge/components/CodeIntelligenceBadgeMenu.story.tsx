@@ -55,6 +55,7 @@ const executionLogPrototype: ExecutionLogEntryFields = {
 const indexPrototype: Omit<LsifIndexFields, 'id' | 'state' | 'queuedAt'> = {
     __typename: 'LSIFIndex',
     inputCommit: '',
+    tags: [],
     inputRoot: 'web/',
     inputIndexer: 'scip-typescript',
     indexer: { name: 'scip-typescript', url: 'https://github.com/sourcegraph/scip-typescript' },

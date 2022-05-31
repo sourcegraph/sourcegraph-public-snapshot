@@ -73,11 +73,18 @@ export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<Re
             <div className="d-flex align-items-center">
                 {productSubscription.urlForSiteAdminBilling && (
                     <Link to={productSubscription.urlForSiteAdminBilling} className="mr-2 d-flex align-items-center">
-                        View billing subscription <Icon className="ml-1" as={ExternalLinkIcon} />
+                        View billing subscription{' '}
+                        <Icon role="img" aria-hidden={true} className="ml-1" as={ExternalLinkIcon} />
                     </Link>
                 )}
                 {isErrorLike(update) && (
-                    <Icon className="text-danger mr-2" data-tooltip={update.message} as={AlertCircleIcon} />
+                    <Icon
+                        role="img"
+                        className="text-danger mr-2"
+                        aria-label={update.message}
+                        data-tooltip={update.message}
+                        as={AlertCircleIcon}
+                    />
                 )}
                 <Button
                     onClick={productSubscriptionHasLinkedBilling ? onUnlinkBillingClick : onLinkBillingClick}

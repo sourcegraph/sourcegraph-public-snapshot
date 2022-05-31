@@ -58,6 +58,17 @@ func (r *IndexResolver) Steps() gql.IndexStepsResolver {
 }
 func (r *IndexResolver) PlaceInQueue() *int32 { return toInt32(r.index.Rank) }
 
+func (r *IndexResolver) Tags(ctx context.Context) (tagsNames []string, err error) {
+	tags, err := r.gitserver.ListTags(ctx, api.RepoName(r.index.RepositoryName), r.index.Commit)
+	if err != nil {
+		return nil, err
+	}
+	for _, tag := range tags {
+		tagsNames = append(tagsNames, tag.Name)
+	}
+	return
+}
+
 func (r *IndexResolver) State() string {
 	state := strings.ToUpper(r.index.State)
 	if state == "FAILED" {
