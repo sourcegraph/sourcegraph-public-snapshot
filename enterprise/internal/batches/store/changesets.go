@@ -1469,17 +1469,17 @@ func uiPublicationStateColumn(c *btypes.Changeset) *string {
 	return uiPublicationState
 }
 
-// CleanDetachedChangesets deletes changesets that have been detached after the number of specified days.
-func (s *Store) CleanDetachedChangesets(ctx context.Context, retentionInDays int) (err error) {
+// CleanDetachedChangesets deletes changesets that have been detached after duration specified.
+func (s *Store) CleanDetachedChangesets(ctx context.Context, retention time.Duration) (err error) {
 	ctx, _, endObservation := s.operations.cleanDetachedChangesets.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("RetentionInDays", retentionInDays),
+		log.String("Retention", retention.String()),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.Exec(ctx, sqlf.Sprintf(cleanDetachedChangesetsFmtstr, retentionInDays))
+	return s.Exec(ctx, sqlf.Sprintf(cleanDetachedChangesetsFmtstr, retention/time.Second))
 }
 
 const cleanDetachedChangesetsFmtstr = `
 -- source: enterprise/internal/batches/store/changesets.go:CleanDetachedChangesets
-DELETE FROM changesets WHERE detached_at < (NOW() - (%s * '1 day'::interval));
+DELETE FROM changesets WHERE detached_at < (NOW() - (%s * interval '1 second'));
 `
