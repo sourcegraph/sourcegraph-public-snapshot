@@ -239,7 +239,7 @@ func serveUserEmailsGetEmail(db database.DB) func(http.ResponseWriter, *http.Req
 		if err != nil {
 			return errors.Wrap(err, "Decode")
 		}
-		email, _, err := database.UserEmails(db).GetPrimaryEmail(r.Context(), userID)
+		email, _, err := db.UserEmails().GetPrimaryEmail(r.Context(), userID)
 		if err != nil {
 			return errors.Wrap(err, "UserEmails.GetEmail")
 		}

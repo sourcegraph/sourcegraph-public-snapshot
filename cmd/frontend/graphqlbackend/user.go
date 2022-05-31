@@ -24,9 +24,9 @@ import (
 func (r *schemaResolver) User(
 	ctx context.Context,
 	args struct {
-		Username *string
-		Email    *string
-	},
+	Username *string
+	Email    *string
+},
 ) (*UserResolver, error) {
 	var err error
 	var user *types.User
@@ -115,7 +115,7 @@ func (r *UserResolver) Email(ctx context.Context) (string, error) {
 		}
 	}
 
-	email, _, err := database.UserEmails(r.db).GetPrimaryEmail(ctx, r.user.ID)
+	email, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, r.user.ID)
 	if err != nil && !errcode.IsNotFound(err) {
 		return "", err
 	}
