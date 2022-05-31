@@ -26,9 +26,9 @@ var (
 	// Int64 constructs a field with the given key and value.
 	Int64 = zap.Int64
 
-	//Uint constructs a field with the given key and value.
+	// Uint constructs a field with the given key and value.
 	Uint = zap.Uint
-	//Uint64 constructs a field with the given key and value.
+	// Uint64 constructs a field with the given key and value.
 	Uint64 = zap.Uint64
 
 	// Float64 constructs a field that carries a float64. The way the floating-point value

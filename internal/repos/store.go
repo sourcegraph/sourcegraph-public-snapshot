@@ -100,7 +100,7 @@ type Store interface {
 type store struct {
 	*basestore.Store
 
-	// Logger used by the store. Defaults to log15.Root().
+	// Logger used by the store. Does not have a default - it must be provided.
 	Logger log.Logger
 	// Metrics are sent to Prometheus by default.
 	Metrics StoreMetrics
