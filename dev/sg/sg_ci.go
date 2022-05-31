@@ -378,7 +378,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 
 The '--job' flag can be used to narrow down the logs returned - you can provide either the ID, or part of the name of the job you want to see logs for.
 
-To send logs to a Loki instance, you can provide '--out=http://127.0.0.1:3100' after spinning up an instance with 'sg run loki grafana'.
+To send logs to a Loki instance, you can provide --out=http://127.0.0.1:3100 after spinning up an instance with 'sg run loki grafana'.
 From there, you can start exploring logs with the Grafana explore panel.
 `,
 		Flags: []cli.Flag{
@@ -397,7 +397,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 			&cli.StringFlag{
 				Name:    "out",
 				Aliases: []string{"o"},
-				Usage: fmt.Sprintf("Output `format`: one of [%s], or a URL pointing to a Loki instance, such as %q",
+				Usage: fmt.Sprintf("Output `format`: one of [%s], or a URL pointing to a Loki instance, such as %s",
 					strings.Join([]string{ciLogsOutTerminal, ciLogsOutSimple, ciLogsOutJSON}, "|"), loki.DefaultLokiURL),
 				Value: ciLogsOutTerminal,
 			},

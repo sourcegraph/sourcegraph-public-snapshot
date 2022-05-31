@@ -225,7 +225,7 @@ Get logs from CI builds, and output them in stdout or push them to Loki. By defa
 
 The '--job' flag can be used to narrow down the logs returned - you can provide either the ID, or part of the name of the job you want to see logs for.
 
-To send logs to a Loki instance, you can provide '--out=http://127.0.0.1:3100' after spinning up an instance with 'sg run loki grafana'.
+To send logs to a Loki instance, you can provide --out=http://127.0.0.1:3100 after spinning up an instance with 'sg run loki grafana'.
 From there, you can start exploring logs with the Grafana explore panel.
 
 
@@ -234,7 +234,7 @@ Flags:
 
 * `--build="<value>"`: Override branch detection with a specific build `number`
 * `--job, -j="<value>"`: ID or name of the job to export logs for
-* `--out, -o="<value>"`: Output `format`: one of [terminal|simple|json], or a URL pointing to a Loki instance, such as "http://127.0.0.1:3100" (default: terminal)
+* `--out, -o="<value>"`: Output `format`: one of [terminal|simple|json], or a URL pointing to a Loki instance, such as http://127.0.0.1:3100 (default: terminal)
 * `--overwrite-state="<value>"`: `state` to overwrite the job state metadata
 * `--state, -s="<value>"`: Job `state` to export logs for (provide an empty value for all states) (default: failed)
 
