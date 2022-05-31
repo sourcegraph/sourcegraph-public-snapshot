@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/fs"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -61,7 +60,7 @@ func (s *rustDependencySource) Get(ctx context.Context, name, version string) (r
 }
 
 func (s *rustDependencySource) Download(ctx context.Context, dir string, dep reposource.PackageDependency) error {
-	packageURL := fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s/%s", string(dep.PackageSyntax()), dep.PackageVersion(), "download")
+	packageURL := fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s/%s", dep.PackageSyntax(), dep.PackageVersion(), "download")
 
 	pkg, err := s.client.Download(ctx, packageURL)
 	if err != nil {
@@ -88,11 +87,6 @@ func unpackRustPackage(pkg []byte, workDir string) error {
 
 			const sizeLimit = 15 * 1024 * 1024
 			if size >= sizeLimit {
-				log15.Warn("skipping large file in crates package",
-					"path", file.Name(),
-					"size", size,
-					"limit", sizeLimit,
-				)
 				return false
 			}
 
