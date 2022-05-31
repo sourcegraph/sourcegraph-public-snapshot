@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -40,16 +39,6 @@ import (
 var scheduleReposCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_repoupdater_perms_syncer_schedule_repos_total",
 	Help: "Counts number of repos for which permissions syncing request has been scheduled.",
-})
-
-var gitlabTokenRefreshCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_repoupdater_gitlab_token_refresh_count",
-	Help: "Counts the number of times we refresh a GitLab OAuth token",
-}, []string{"source", "success"})
-
-var gitlabTokenMissingRefresh = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_repoupdater_gitlab_token_missing_refresh_count",
-	Help: "Counts the number of times we see a token without a refresh token",
 })
 
 // PermsSyncer is a permissions syncing manager that is in charge of keeping
@@ -294,86 +283,12 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 	if refreshedToken.AccessToken != tok.AccessToken {
 		defer func() {
 			success := err == nil
-			gitlabTokenRefreshCounter.WithLabelValues("external_account", strconv.FormatBool(success)).Inc()
+			gitlab.TokenRefreshCounter.WithLabelValues("external_account", strconv.FormatBool(success)).Inc()
 		}()
 		acct.AccountData.SetAuthData(refreshedToken)
 		_, err := s.db.UserExternalAccounts().LookupUserAndSave(ctx, acct.AccountSpec, acct.AccountData)
 		if err != nil {
 			return errors.Wrap(err, "save refreshed token")
-		}
-	}
-	return nil
-}
-
-func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Context, svc *types.ExternalService) (err error) {
-	if svc.Kind != extsvc.KindGitLab {
-		return nil
-	}
-
-	parsed, err := extsvc.ParseConfig(svc.Kind, svc.Config)
-	if err != nil {
-		return errors.Wrap(err, "parsing external service config")
-	}
-
-	config, ok := parsed.(*schema.GitLabConnection)
-	if !ok {
-		return errors.Errorf("want *schema.GitLabConnection, got %T", parsed)
-	}
-
-	// We may have old config without a refresh token
-	if config.TokenOauthRefresh == "" {
-		gitlabTokenMissingRefresh.Inc()
-		return nil
-	}
-
-	var oauthConfig *oauth2.Config
-	for _, authProvider := range conf.SiteConfig().AuthProviders {
-		if authProvider.Gitlab == nil ||
-			strings.TrimSuffix(config.Url, "/") != strings.TrimSuffix(authProvider.Gitlab.Url, "/") {
-			continue
-		}
-		oauthConfig = oauth2ConfigFromGitLabProvider(authProvider.Gitlab)
-		break
-	}
-
-	if oauthConfig == nil {
-		log15.Warn("PermsSyncer.maybeRefreshGitLabOAuthTokenFromCodeHost, external service has no auth.provider",
-			"externalServiceID", svc.ID,
-		)
-		return nil
-	}
-
-	tok := &oauth2.Token{
-		AccessToken:  config.Token,
-		RefreshToken: config.TokenOauthRefresh,
-		Expiry:       time.Unix(int64(config.TokenOauthExpiry), 0),
-	}
-
-	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
-	if err != nil {
-		return errors.Wrap(err, "refresh token")
-	}
-
-	if refreshedToken.AccessToken != tok.AccessToken {
-		defer func() {
-			success := err == nil
-			gitlabTokenRefreshCounter.WithLabelValues("codehost", strconv.FormatBool(success)).Inc()
-		}()
-		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.AccessToken, "token")
-		if err != nil {
-			return errors.Wrap(err, "updating OAuth token")
-		}
-		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.RefreshToken, "token.oauth.refresh")
-		if err != nil {
-			return errors.Wrap(err, "updating OAuth refresh token")
-		}
-		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.Expiry.Unix(), "token.oauth.expiry")
-		if err != nil {
-			return errors.Wrap(err, "updating OAuth token expiry")
-		}
-		svc.UpdatedAt = time.Now()
-		if err := s.db.ExternalServices().Upsert(ctx, svc); err != nil {
-			return errors.Wrap(err, "upserting external service")
 		}
 	}
 	return nil
@@ -754,11 +669,6 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "get user")
 	}
 
-	// GitLab OAuth tokens expire every two hours and this code path is the best
-	// place to refresh them. Tokens can exist in user code host connections or via a
-	// login connection or both and they can be different so we need to refresh them
-	// in both places.
-
 	// Update tokens stored in external accounts:
 	accts, err := s.permsStore.ListExternalAccounts(ctx, user.ID)
 	if err != nil {
@@ -768,20 +678,6 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		log15.Info("maybe refresh account", "userID", acct.UserID)
 		if err := s.maybeRefreshGitLabOAuthTokenFromAccount(ctx, acct); err != nil {
 			return errors.Wrap(err, "refreshing GitLab OAuth token for account")
-		}
-	}
-
-	// Update tokens stored in user code host connections:
-	svcs, err := s.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
-		NamespaceUserID: userID,
-		Kinds:           []string{extsvc.KindGitLab},
-	})
-	if err != nil {
-		return errors.Wrap(err, "list external services")
-	}
-	for _, svc := range svcs {
-		if err := s.maybeRefreshGitLabOAuthTokenFromCodeHost(ctx, svc); err != nil {
-			return errors.Wrap(err, "refreshing GitLab OAuth token for code host")
 		}
 	}
 

@@ -17,3 +17,6 @@ node_modules
 out/
 src/
 webpack.config.js
+**/*.ts
+**/tsconfig.json
+!file.ts

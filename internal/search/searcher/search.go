@@ -27,7 +27,7 @@ import (
 // A global limiter on number of concurrent searcher searches.
 var textSearchLimiter = mutablelimiter.New(32)
 
-type SearcherJob struct {
+type TextSearchJob struct {
 	PatternInfo *search.TextPatternInfo
 	Repos       []*search.RepositoryRevisions // the set of repositories to search with searcher.
 
@@ -47,7 +47,7 @@ type SearcherJob struct {
 }
 
 // Run calls the searcher service on a set of repositories.
-func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
@@ -133,11 +133,11 @@ func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, strea
 	return nil, g.Wait()
 }
 
-func (s *SearcherJob) Name() string {
-	return "SearcherJob"
+func (s *TextSearchJob) Name() string {
+	return "SearcherTextSearchJob"
 }
 
-func (s *SearcherJob) Tags() []log.Field {
+func (s *TextSearchJob) Tags() []log.Field {
 	return []log.Field{
 		trace.Stringer("patternInfo", s.PatternInfo),
 		log.Int("numRepos", len(s.Repos)),

@@ -176,7 +176,7 @@ func (d *db) SubRepoPerms() SubRepoPermsStore {
 }
 
 func (d *db) TemporarySettings() TemporarySettingsStore {
-	return &temporarySettingsStore{Store: basestore.NewWithHandle(d.Store.Handle())}
+	return TemporarySettingsWith(d.Store)
 }
 
 func (d *db) UserCredentials(key encryption.Key) UserCredentialsStore {

@@ -6,7 +6,7 @@ import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, Button, Link, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Icon, Typography, Text, Input } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CopyableText } from '../../../components/CopyableText'
@@ -125,8 +125,7 @@ export const InvitePane: React.FunctionComponent<React.PropsWithChildren<Props>>
                             onSubmit={preventSubmit}
                             className="flex-1 d-inline-flex justify-content-between flex-row"
                         >
-                            <input
-                                className="form-control"
+                            <Input
                                 type="search"
                                 placeholder="Filter by email or username"
                                 name="query"

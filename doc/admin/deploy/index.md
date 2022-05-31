@@ -25,7 +25,7 @@ We recommend the Kubernetes deployment type if your deployment scenario includes
 | [Kubernetes with Helm](kubernetes/helm.md) | Production deployments of any size | 5 - 90 minutes | YES | YES | YES | Easy - Hard |
 | [Docker Compose](docker-compose/index.md) | Production deployments where Kubernetes with Helm is not viable | 5 - 30 minutes | YES | YES | NO | Easy - Medium |
 | [Kubernetes without Helm](kubernetes/index.md) | Production deployments of any size | 30 - 90 minutes | YES | YES | YES| Medium - Hard |
-| [Docker Single Container](docker-single-container/index.md) | Local testing _(Not recommended for production)_ | 1 minute | NO | NO | NO | Easy |
+| [Docker Single Container](docker-single-container/index.md) | Local testing _(Not recommended for production; no Code Insights support)_ | 1 minute | NO | NO | NO | Easy |
 
 Each of the deployment types listed in the table above provides a different level of capability. As mentioned previously, base your deployment type on the needs of your business. However, you should also consider the technical expertise available for your deployment. The sections below provide more detailed recommendations for each deployment type.
 

@@ -72,7 +72,7 @@ export const SearchContextsListPage: React.FunctionComponent<
                 <PageHeader
                     actions={
                         <Button to="/contexts/new" variant="primary" as={Link}>
-                            <Icon as={PlusIcon} />
+                            <Icon role="img" aria-hidden={true} as={PlusIcon} />
                             Create search context
                         </Button>
                     }
@@ -96,12 +96,14 @@ export const SearchContextsListPage: React.FunctionComponent<
                     </PageHeader.Heading>
                 </PageHeader>
                 <div className="mb-4">
-                    <div className="nav nav-tabs">
+                    <div id="search-context-tabs-list" className="nav nav-tabs">
                         <div className="nav-item">
                             {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                             <Link
                                 to=""
-                                role="button"
+                                role="tab"
+                                aria-selected={selectedTab === 'list'}
+                                aria-controls="search-context-tabs-list"
                                 onClick={onSelectSearchContextsList}
                                 className={classNames('nav-link', selectedTab === 'list' && 'active')}
                             >

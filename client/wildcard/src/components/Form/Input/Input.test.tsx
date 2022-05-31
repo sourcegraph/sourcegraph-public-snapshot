@@ -18,7 +18,7 @@ describe('Input', () => {
 
         expect(container.firstChild).toMatchInlineSnapshot(`
             <div
-              class="container d-flex"
+              class="container loader-input loaderInput"
             >
               <input
                 class="inputLoading form-control with-invalid-icon"
@@ -56,7 +56,7 @@ describe('Input', () => {
                 Input label
               </div>
               <div
-                class="container d-flex"
+                class="container loader-input loaderInput"
               >
                 <input
                   class="inputLoading form-control with-invalid-icon"

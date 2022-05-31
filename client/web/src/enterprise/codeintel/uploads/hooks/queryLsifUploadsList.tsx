@@ -61,7 +61,7 @@ export const queryLsifUploadsList = (
     { query, state, isLatestForRepo, dependencyOf, dependentOf, first, after }: GQL.ILsifUploadsOnRepositoryArguments,
     client: ApolloClient<object>
 ): Observable<LsifUploadConnectionFields> => {
-    const vars: LsifUploadsVariables = {
+    const variables: LsifUploadsVariables = {
         query: query ?? null,
         state: state ?? null,
         isLatestForRepo: isLatestForRepo ?? null,
@@ -74,7 +74,7 @@ export const queryLsifUploadsList = (
     return from(
         client.query<LsifUploadsResult, LsifUploadsVariables>({
             query: getDocumentNode(LSIF_UPLOAD_LIST),
-            variables: { ...vars },
+            variables: { ...variables },
         })
     ).pipe(
         map(({ data }) => data),

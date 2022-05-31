@@ -18,7 +18,7 @@ var funkyLogoCommand = &cli.Command{
 	Name:        "logo",
 	ArgsUsage:   "[classic]",
 	Usage:       "Print the sg logo",
-	Description: "Prints the sg logo in different colors. When the 'classic' argument is passed it prints the classic logo.",
+	Description: "By default, prints the sg logo in different colors. When the 'classic' argument is passed it prints the classic logo.",
 	Category:    CategoryUtil,
 	Action:      execAdapter(logoExec),
 }
