@@ -163,7 +163,7 @@ func serveSettingsGetForSubject(db database.DB) func(w http.ResponseWriter, r *h
 		if err := json.NewDecoder(r.Body).Decode(&subject); err != nil {
 			return errors.Wrap(err, "Decode")
 		}
-		settings, err := database.Settings(db).GetLatest(r.Context(), subject)
+		settings, err := db.Settings().GetLatest(r.Context(), subject)
 		if err != nil {
 			return errors.Wrap(err, "Settings.GetLatest")
 		}
@@ -239,7 +239,7 @@ func serveUserEmailsGetEmail(db database.DB) func(http.ResponseWriter, *http.Req
 		if err != nil {
 			return errors.Wrap(err, "Decode")
 		}
-		email, _, err := database.UserEmails(db).GetPrimaryEmail(r.Context(), userID)
+		email, _, err := db.UserEmails().GetPrimaryEmail(r.Context(), userID)
 		if err != nil {
 			return errors.Wrap(err, "UserEmails.GetEmail")
 		}
@@ -288,39 +288,6 @@ func serveGitResolveRevision(db database.DB) func(w http.ResponseWriter, r *http
 
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(commitID))
-		return nil
-	}
-}
-
-func serveGitTar(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		// used by zoekt-sourcegraph-mirror
-		vars := mux.Vars(r)
-		name := vars["RepoName"]
-		spec := vars["Commit"]
-
-		// Ensure commit exists. Do not want to trigger a repo-updater lookup since this is a batch job.
-		repo := api.RepoName(name)
-		ctx := r.Context()
-		gitserverClient := gitserver.NewClient(db)
-		commit, err := gitserverClient.ResolveRevision(ctx, repo, spec, gitserver.ResolveRevisionOptions{})
-		if err != nil {
-			return err
-		}
-
-		opts := gitserver.ArchiveOptions{
-			Treeish: string(commit),
-			Format:  "tar",
-		}
-
-		location, err := gitserverClient.ArchiveURL(ctx, repo, opts)
-		if err != nil {
-			return err
-		}
-
-		w.Header().Set("Location", location.String())
-		w.WriteHeader(http.StatusFound)
-
 		return nil
 	}
 }

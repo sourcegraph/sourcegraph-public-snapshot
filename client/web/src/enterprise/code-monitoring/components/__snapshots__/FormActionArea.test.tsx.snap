@@ -38,7 +38,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
           Recipients
         </div>
         <div
-          class="container d-flex"
+          class="container loader-input loaderInput"
         >
           <input
             class="form-control with-invalid-icon"

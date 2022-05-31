@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
-	"net/url"
 	"sync"
 	"time"
 
@@ -33,9 +32,6 @@ type MockClient struct {
 	// ArchiveFunc is an instance of a mock function object controlling the
 	// behavior of the method Archive.
 	ArchiveFunc *ClientArchiveFunc
-	// ArchiveURLFunc is an instance of a mock function object controlling
-	// the behavior of the method ArchiveURL.
-	ArchiveURLFunc *ClientArchiveURLFunc
 	// BatchLogFunc is an instance of a mock function object controlling the
 	// behavior of the method BatchLog.
 	BatchLogFunc *ClientBatchLogFunc
@@ -123,11 +119,6 @@ func NewMockClient() *MockClient {
 		},
 		ArchiveFunc: &ClientArchiveFunc{
 			defaultHook: func(context.Context, api.RepoName, ArchiveOptions) (r0 io.ReadCloser, r1 error) {
-				return
-			},
-		},
-		ArchiveURLFunc: &ClientArchiveURLFunc{
-			defaultHook: func(context.Context, api.RepoName, ArchiveOptions) (r0 *url.URL, r1 error) {
 				return
 			},
 		},
@@ -268,11 +259,6 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.Archive")
 			},
 		},
-		ArchiveURLFunc: &ClientArchiveURLFunc{
-			defaultHook: func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error) {
-				panic("unexpected invocation of MockClient.ArchiveURL")
-			},
-		},
 		BatchLogFunc: &ClientBatchLogFunc{
 			defaultHook: func(context.Context, BatchLogOptions, BatchLogCallback) error {
 				panic("unexpected invocation of MockClient.BatchLog")
@@ -403,9 +389,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		ArchiveFunc: &ClientArchiveFunc{
 			defaultHook: i.Archive,
-		},
-		ArchiveURLFunc: &ClientArchiveURLFunc{
-			defaultHook: i.ArchiveURL,
 		},
 		BatchLogFunc: &ClientBatchLogFunc{
 			defaultHook: i.BatchLog,
@@ -791,116 +774,6 @@ func (c ClientArchiveFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientArchiveFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientArchiveURLFunc describes the behavior when the ArchiveURL method of
-// the parent MockClient instance is invoked.
-type ClientArchiveURLFunc struct {
-	defaultHook func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)
-	hooks       []func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)
-	history     []ClientArchiveURLFuncCall
-	mutex       sync.Mutex
-}
-
-// ArchiveURL delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockClient) ArchiveURL(v0 context.Context, v1 api.RepoName, v2 ArchiveOptions) (*url.URL, error) {
-	r0, r1 := m.ArchiveURLFunc.nextHook()(v0, v1, v2)
-	m.ArchiveURLFunc.appendCall(ClientArchiveURLFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ArchiveURL method of
-// the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientArchiveURLFunc) SetDefaultHook(hook func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ArchiveURL method of the parent MockClient instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientArchiveURLFunc) PushHook(hook func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientArchiveURLFunc) SetDefaultReturn(r0 *url.URL, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientArchiveURLFunc) PushReturn(r0 *url.URL, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientArchiveURLFunc) nextHook() func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientArchiveURLFunc) appendCall(r0 ClientArchiveURLFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientArchiveURLFuncCall objects describing
-// the invocations of this function.
-func (f *ClientArchiveURLFunc) History() []ClientArchiveURLFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientArchiveURLFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientArchiveURLFuncCall is an object that describes an invocation of
-// method ArchiveURL on an instance of MockClient.
-type ClientArchiveURLFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 ArchiveOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *url.URL
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientArchiveURLFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientArchiveURLFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

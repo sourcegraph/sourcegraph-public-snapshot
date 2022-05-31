@@ -32,7 +32,7 @@ export const CodeMonitorInfo: React.FunctionComponent<React.PropsWithChildren<{ 
                     className={styles.closeButton}
                     onClick={() => setVisible(false)}
                 >
-                    <Icon as={CloseIcon} />
+                    <Icon role="img" aria-hidden={true} as={CloseIcon} />
                 </Button>
             </Alert>
         )

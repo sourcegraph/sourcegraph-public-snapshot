@@ -88,10 +88,12 @@ func (h *observedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		h.logger.Debug(
 			"http.request",
-			log.String("method", r.Method),
-			log.String("route", r.URL.Path),
-			log.Int("code", rr.code),
-			log.Duration("duration", took),
+			log.Object("request",
+				log.String("method", r.Method),
+				log.String("route", r.URL.Path),
+				log.Int("code", rr.code),
+				log.Duration("duration", took),
+			),
 		)
 
 		var err error

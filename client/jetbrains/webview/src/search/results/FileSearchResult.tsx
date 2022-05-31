@@ -6,23 +6,28 @@ import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import { appendSubtreeQueryParameter } from '@sourcegraph/common'
 import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
 import { displayRepoName, splitPath } from '@sourcegraph/shared/src/components/RepoLink'
-import { ContentMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
-import { Icon, Link, useIsTruncated } from '@sourcegraph/wildcard'
+import { ContentMatch, getFileMatchUrl, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
+import { Icon, Link, Typography, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { TrimmedCodeLineWithHighlights } from './TrimmedCodeLineWithHighlights'
-import { getResultIdForContentMatch } from './utils'
+import { getResultId } from './utils'
 
 import styles from './FileSearchResult.module.scss'
 
 interface Props {
     selectResult: (resultId: string) => void
     selectedResult: null | string
-    match: ContentMatch
+    match: ContentMatch | SymbolMatch
 }
 
-export const FileSearchResult: React.FunctionComponent<Props> = ({ match, selectedResult, selectResult }: Props) => {
-    const lines = match.lineMatches.map(line => {
-        const resultId = getResultIdForContentMatch(match, line)
+function getResultElementsForContentMatch(
+    match: ContentMatch,
+    selectResult: (resultId: string) => void,
+    selectedResult: string | null
+): JSX.Element[] {
+    return match.lineMatches.map(line => {
+        const resultId = getResultId(match, line)
         const onClick = (): void => selectResult(resultId)
 
         return (
@@ -44,6 +49,46 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({ match, select
             </div>
         )
     })
+}
+
+function getResultElementsForSymbolMatch(
+    match: SymbolMatch,
+    selectResult: (resultId: string) => void,
+    selectedResult: string | null
+): JSX.Element[] {
+    return match.symbols.map(symbol => {
+        const resultId = getResultId(match, symbol.name)
+        const onClick = (): void => selectResult(resultId)
+
+        return (
+            // The below element's accessibility is handled via a document level event listener.
+            //
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
+            <div
+                id={`search-result-list-item-${resultId}`}
+                className={classNames(styles.line, {
+                    [styles.lineActive]: resultId === selectedResult,
+                })}
+                onClick={onClick}
+                key={resultId}
+            >
+                <div>
+                    <SymbolIcon kind={symbol.kind} className="mr-1" />
+                    <Typography.Code>
+                        {symbol.name}{' '}
+                        {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
+                    </Typography.Code>
+                </div>
+            </div>
+        )
+    })
+}
+
+export const FileSearchResult: React.FunctionComponent<Props> = ({ match, selectedResult, selectResult }: Props) => {
+    const lines =
+        match.type === 'content'
+            ? getResultElementsForContentMatch(match, selectResult, selectedResult)
+            : getResultElementsForSymbolMatch(match, selectResult, selectedResult)
 
     const repoDisplayName = match.repository
     const repoAtRevisionURL = '#'

@@ -1,5 +1,7 @@
+import { encode } from 'js-base64'
+
 import { splitPath } from '@sourcegraph/shared/src/components/RepoLink'
-import { ContentMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { ContentMatch, PathMatch, SearchMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { loadContent } from './lib/blob'
 import { PluginConfig, Search, Theme } from './types'
@@ -9,7 +11,7 @@ export interface MatchRequest {
     arguments: {
         fileName: string
         path: string
-        content: string
+        content: string | null
         lineNumber: number
         absoluteOffsetAndLengths: number[][]
     }
@@ -82,8 +84,8 @@ export async function indicateFinishedLoading(): Promise<void> {
     }
 }
 
-export async function onPreviewChange(match: SearchMatch, lineMatchIndex?: number): Promise<void> {
-    const request = await createPreviewOrOpenRequest(match, lineMatchIndex, 'preview')
+export async function onPreviewChange(match: SearchMatch, lineMatchIndexOrSymbolIndex?: number): Promise<void> {
+    const request = await createPreviewOrOpenRequest(match, lineMatchIndexOrSymbolIndex, 'preview')
     try {
         await callJava(request)
     } catch (error) {
@@ -99,11 +101,14 @@ export async function onPreviewClear(): Promise<void> {
     }
 }
 
-export async function onOpen(match: SearchMatch, lineMatchIndex?: number): Promise<void> {
-    try {
-        await callJava(await createPreviewOrOpenRequest(match, lineMatchIndex, 'open'))
-    } catch (error) {
-        console.error(`Failed to open match: ${(error as Error).message}`)
+export async function onOpen(match: SearchMatch, lineMatchIndexOrSymbolIndex?: number): Promise<void> {
+    const request = await createPreviewOrOpenRequest(match, lineMatchIndexOrSymbolIndex, 'open')
+    if (request.arguments.fileName) {
+        try {
+            await callJava(request)
+        } catch (error) {
+            console.error(`Failed to open match: ${(error as Error).message}`)
+        }
     }
 }
 
@@ -132,7 +137,7 @@ async function callJava(request: Request): Promise<object> {
 
 export async function createPreviewOrOpenRequest(
     match: SearchMatch,
-    lineMatchIndex: number | undefined,
+    lineMatchIndexOrSymbolIndex: number | undefined,
     action: MatchRequest['action']
 ): Promise<MatchRequest> {
     if (match.type === 'commit') {
@@ -149,7 +154,11 @@ export async function createPreviewOrOpenRequest(
     }
 
     if (match.type === 'content') {
-        return createPreviewOrOpenRequestForContentMatch(match, lineMatchIndex as number, 'preview')
+        return createPreviewOrOpenRequestForContentMatch(match, lineMatchIndexOrSymbolIndex as number, action)
+    }
+
+    if (match.type === 'path') {
+        return createPreviewOrOpenRequestForPathMatch(match, action)
     }
 
     if (match.type === 'repo') {
@@ -158,13 +167,19 @@ export async function createPreviewOrOpenRequest(
             arguments: {
                 fileName: '',
                 path: '',
-                content: '(No preview available)',
+                content: null,
                 lineNumber: -1,
                 absoluteOffsetAndLengths: [],
             },
         }
     }
 
+    if (match.type === 'symbol') {
+        return createPreviewOrOpenRequestForSymbolMatch(match, lineMatchIndexOrSymbolIndex as number, action)
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore This is here in preparation for future match types
     console.log(`Unknown match type: “${match.type}”`)
 
     return {
@@ -172,7 +187,7 @@ export async function createPreviewOrOpenRequest(
         arguments: {
             fileName: '',
             path: '',
-            content: '',
+            content: null,
             lineNumber: -1,
             absoluteOffsetAndLengths: [],
         },
@@ -197,23 +212,77 @@ export async function createPreviewOrOpenRequestForContentMatch(
         arguments: {
             fileName,
             path: match.path,
-            content: content.replaceAll('\r\n', '\n'),
+            content: prepareContent(content),
             lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
             absoluteOffsetAndLengths,
         },
     }
 }
 
-// NOTE: This might be slow when the content is a really large file and the match is in the beginning of the file
-// because we convert all rows to an array first.
+export async function createPreviewOrOpenRequestForPathMatch(
+    match: PathMatch,
+    action: MatchRequest['action']
+): Promise<MatchRequest> {
+    const fileName = splitPath(match.path)[1]
+    const content = await loadContent(match)
+
+    return {
+        action,
+        arguments: {
+            fileName,
+            path: match.path,
+            content: prepareContent(content),
+            lineNumber: -1,
+            absoluteOffsetAndLengths: [],
+        },
+    }
+}
+
+export async function createPreviewOrOpenRequestForSymbolMatch(
+    match: SymbolMatch,
+    symbolIndex: number,
+    action: MatchRequest['action']
+): Promise<MatchRequest> {
+    const fileName = splitPath(match.path)[1]
+    const content = await loadContent(match)
+
+    return {
+        action,
+        arguments: {
+            fileName,
+            path: match.path,
+            content: prepareContent(content),
+            lineNumber: -1,
+            absoluteOffsetAndLengths: [],
+        },
+    }
+}
+
+// We encode the content as base64-encoded string to avoid encoding errors in the Java JSON parser.
+// The Java side also does not expact `\r\n` line endings, so we replace them with `\n`.
+//
+// We can not use the native btoa() function because it does not support all Unicode characters.
+function prepareContent(content: string | null): string | null {
+    if (content === null) {
+        return null
+    }
+    return encode(content.replaceAll('\r\n', '\n'))
+}
+
+// NOTE: This might be slow when the content is a really large file and the match is in the
+// beginning of the file because we convert all rows to an array first.
+//
 // If we ever run into issues with large files, this is a place to get some wins.
-function getCharacterCountUntilLine(content: string, lineNumber: number): number {
+function getCharacterCountUntilLine(content: string | null, lineNumber: number): number {
+    if (content === null) {
+        return 0
+    }
+
     let count = 0
-    const lines = content.split('\n') // This logic should handle \r\n well, too.
+    const lines = content.replaceAll('\r\n', '\n').split('\n')
     for (let index = 0; index < lineNumber; index++) {
         count += lines[index].length + 1
     }
-    console.log(`getCharacterCountUntilLine: ${count}`)
     return count
 }
 

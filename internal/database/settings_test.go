@@ -13,7 +13,7 @@ func TestSettings_ListAll(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user1, err := Users(db).Create(ctx, NewUser{Username: "u1"})
@@ -26,15 +26,15 @@ func TestSettings_ListAll(t *testing.T) {
 	}
 
 	// Try creating both with non-nil author and nil author.
-	if _, err := Settings(db).CreateIfUpToDate(ctx, api.SettingsSubject{User: &user1.ID}, nil, &user1.ID, `{"abc": 1}`); err != nil {
+	if _, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &user1.ID}, nil, &user1.ID, `{"abc": 1}`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Settings(db).CreateIfUpToDate(ctx, api.SettingsSubject{User: &user2.ID}, nil, nil, `{"xyz": 2}`); err != nil {
+	if _, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &user2.ID}, nil, nil, `{"xyz": 2}`); err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("all", func(t *testing.T) {
-		settings, err := Settings(db).ListAll(ctx, "")
+		settings, err := db.Settings().ListAll(ctx, "")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -44,7 +44,7 @@ func TestSettings_ListAll(t *testing.T) {
 	})
 
 	t.Run("impreciseSubstring", func(t *testing.T) {
-		settings, err := Settings(db).ListAll(ctx, "xyz")
+		settings, err := db.Settings().ListAll(ctx, "xyz")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -59,7 +59,7 @@ func TestSettings_ListAll(t *testing.T) {
 
 func TestCreateIfUpToDate(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 	u, err := Users(db).Create(ctx, NewUser{Username: "test"})
 	if err != nil {
@@ -69,7 +69,7 @@ func TestCreateIfUpToDate(t *testing.T) {
 	t.Run("quicklink with safe link", func(t *testing.T) {
 		contents := "{\"quicklinks\": [{\"name\": \"malicious link test\",      \"url\": \"https://example.com\"}]}"
 
-		_, err := Settings(db).CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, contents)
+		_, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, contents)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -80,7 +80,7 @@ func TestCreateIfUpToDate(t *testing.T) {
 
 		want := "invalid settings: quicklinks.0.url: Does not match pattern '^(https?://|/)'"
 
-		_, err := Settings(db).CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, contents)
+		_, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, contents)
 		if err == nil {
 			t.Log("Expected an error")
 			t.Fail()
@@ -94,7 +94,7 @@ func TestCreateIfUpToDate(t *testing.T) {
 }
 
 func TestGetLatestSchemaSettings(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user1, err := Users(db).Create(ctx, NewUser{Username: "u1"})
@@ -102,11 +102,11 @@ func TestGetLatestSchemaSettings(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := Settings(db).CreateIfUpToDate(ctx, api.SettingsSubject{User: &user1.ID}, nil, &user1.ID, `{"search.uppercase": true }`); err != nil {
+	if _, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &user1.ID}, nil, &user1.ID, `{"search.uppercase": true }`); err != nil {
 		t.Error(err)
 	}
 
-	settings, err := Settings(db).GetLastestSchemaSettings(ctx, api.SettingsSubject{User: &user1.ID})
+	settings, err := db.Settings().GetLastestSchemaSettings(ctx, api.SettingsSubject{User: &user1.ID})
 	if err != nil {
 		t.Fatal(err)
 	}

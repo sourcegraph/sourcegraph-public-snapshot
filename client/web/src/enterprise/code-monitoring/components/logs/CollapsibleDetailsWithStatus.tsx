@@ -51,7 +51,12 @@ export const CollapsibleDetailsWithStatus: React.FunctionComponent<
     return (
         <div className={styles.wrapper}>
             <Button onClick={toggleExpanded} className={classNames('btn-icon d-block', styles.expandButton)}>
-                <Icon className="mr-2" as={expanded ? ChevronDownIcon : ChevronRightIcon} />
+                <Icon
+                    role="img"
+                    aria-hidden={true}
+                    className="mr-2"
+                    as={expanded ? ChevronDownIcon : ChevronRightIcon}
+                />
                 <span>{title}</span>
                 <Badge variant={statusBadge} className="ml-2 text-uppercase">
                     {statusText}

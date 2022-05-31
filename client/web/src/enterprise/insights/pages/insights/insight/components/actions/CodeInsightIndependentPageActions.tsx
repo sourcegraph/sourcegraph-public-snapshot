@@ -47,7 +47,7 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
                 data-tooltip={isCopied ? 'Copied!' : undefined}
                 onClick={handleCopyLinkClick}
             >
-                <Icon as={LinkVariantIcon} /> Copy link
+                <Icon role="img" aria-hidden={true} as={LinkVariantIcon} /> Copy link
             </Button>
             <Button variant="danger" onClick={handleDeleteClick}>
                 Delete

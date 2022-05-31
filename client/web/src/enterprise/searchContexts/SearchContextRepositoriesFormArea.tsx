@@ -164,7 +164,13 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<
             >
                 {isValidConfig ? (
                     <span className="d-flex align-items-center">
-                        <Icon as="span" data-testid="repositories-config-success" className="text-success mr-1">
+                        <Icon
+                            role="img"
+                            aria-hidden={true}
+                            as="span"
+                            data-testid="repositories-config-success"
+                            className="text-success mr-1"
+                        >
                             <CheckIcon />{' '}
                         </Icon>
                         <span>Valid configuration</span>

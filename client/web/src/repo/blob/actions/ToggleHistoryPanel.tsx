@@ -90,7 +90,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
         if (this.props.actionType === 'dropdown') {
             return (
                 <RepoHeaderActionButtonLink file={true} onSelect={this.onClick}>
-                    <Icon as={HistoryIcon} />
+                    <Icon role="img" as={HistoryIcon} aria-hidden={true} />
                     <span>{visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)</span>
                 </RepoHeaderActionButtonLink>
             )
@@ -101,8 +101,9 @@ export class ToggleHistoryPanel extends React.PureComponent<
                 file={false}
                 onSelect={this.onClick}
                 data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}
+                aria-label={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}
             >
-                <Icon as={HistoryIcon} />
+                <Icon role="img" as={HistoryIcon} aria-hidden={true} />
             </RepoHeaderActionButtonLink>
         )
     }

@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { useAutoFocus } from '@sourcegraph/wildcard'
+import { useAutoFocus, Input } from '@sourcegraph/wildcard'
 
 import { FilterControl, FilteredConnectionFilter, FilteredConnectionFilterValue } from '../FilterControl'
 
@@ -99,8 +99,8 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
                     </FilterControl>
                 )}
                 {!hideSearch && (
-                    <input
-                        className={classNames('form-control', inputClassName)}
+                    <Input
+                        className={inputClassName}
                         type="search"
                         placeholder={inputPlaceholder}
                         name="query"

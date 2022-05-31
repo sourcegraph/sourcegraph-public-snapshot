@@ -18,7 +18,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
           Tags
         </label>
         <div
-          class="container d-flex form-control"
+          class="container loader-input loaderInput form-control"
         >
           <input
             class="form-control with-invalid-icon"
@@ -81,7 +81,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
           Users
         </label>
         <div
-          class="container d-flex"
+          class="container loader-input loaderInput"
         >
           <input
             class="form-control with-invalid-icon"
@@ -102,7 +102,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
           Valid for (days)
         </label>
         <div
-          class="container d-flex"
+          class="container loader-input loaderInput"
         >
           <input
             class="form-control with-invalid-icon"

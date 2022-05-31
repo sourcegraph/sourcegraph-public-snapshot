@@ -1,6 +1,6 @@
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
-import type { MatchRequest, Request, SaveLastSearchRequest } from '../search/js-to-java-bridge'
+import type { Request } from '../search/js-to-java-bridge'
 import type { Search } from '../search/types'
 
 let savedSearch: Search = {
@@ -62,41 +62,47 @@ function handleRequest(
         }
 
         case 'preview': {
-            const { content, absoluteOffsetAndLengths } = (request as MatchRequest).arguments
+            const { content, absoluteOffsetAndLengths } = request.arguments
 
             const start = absoluteOffsetAndLengths.length > 0 ? absoluteOffsetAndLengths[0][0] : 0
             const length = absoluteOffsetAndLengths.length > 0 ? absoluteOffsetAndLengths[0][1] : 0
 
-            let htmlContent: string = escapeHTML(content.slice(0, start))
-            htmlContent += `<span id="code-details-highlight">${escapeHTML(
-                content.slice(start, start + length)
-            )}</span>`
-            htmlContent += escapeHTML(content.slice(start + length))
+            let htmlContent: string
+            if (content === null) {
+                htmlContent = '(No preview available)'
+            } else {
+                const decodedContent = atob(content)
+                htmlContent = escapeHTML(decodedContent.slice(0, start))
+                htmlContent += `<span id="code-details-highlight">${escapeHTML(
+                    decodedContent.slice(start, start + length)
+                )}</span>`
+                htmlContent += escapeHTML(decodedContent.slice(start + length))
+            }
 
             codeDetailsNode.innerHTML = htmlContent
 
             document.querySelector('#code-details-highlight')?.scrollIntoView({ block: 'center', inline: 'center' })
 
-            onSuccessCallback('{}')
+            onSuccessCallback('null')
             break
         }
 
         case 'clearPreview': {
             codeDetailsNode.textContent = ''
-            onSuccessCallback('{}')
+            onSuccessCallback('null')
             break
         }
 
         case 'open': {
-            const { path } = (request as MatchRequest).arguments
+            const { path } = request.arguments
             alert(`Opening ${path}`)
-            onSuccessCallback('{}')
+            onSuccessCallback('null')
             break
         }
 
         case 'saveLastSearch': {
-            savedSearch = (request as SaveLastSearchRequest).arguments
-            onSuccessCallback('{}')
+            savedSearch = request.arguments
+            onSuccessCallback('null')
             break
         }
 
@@ -106,7 +112,7 @@ function handleRequest(
         }
 
         case 'indicateFinishedLoading': {
-            onSuccessCallback('{}')
+            onSuccessCallback('null')
             break
         }
 
