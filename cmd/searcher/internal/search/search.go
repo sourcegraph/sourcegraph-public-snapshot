@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
 )
 
 const (
@@ -165,20 +166,20 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		span.SetTag("limitHit", sender.LimitHit())
 		span.Finish()
 		s.Log.Debug("search request",
-			log.String("repo", string(p.Repo)),
-			log.String("commit", string(p.Commit)),
-			log.String("pattern", p.Pattern),
+			log.Text("repo", privacy.NewText(string(p.Repo), privacy.Unknown)),
+			log.Text("commit", privacy.NewText(string(p.Commit), privacy.Unknown)),
+			log.Text("pattern", privacy.NewText(p.Pattern, privacy.Unknown)),
 			log.Bool("isRegExp", p.IsRegExp),
 			log.Bool("isStructuralPat", p.IsStructuralPat),
-			log.Strings("languages", p.Languages),
+			log.Texts("languages", privacy.NewTexts(p.Languages, privacy.Unknown)),
 			log.Bool("isWordMatch", p.IsWordMatch),
 			log.Bool("isCaseSensitive", p.IsCaseSensitive),
 			log.Bool("patternMatchesContent", p.PatternMatchesContent),
 			log.Bool("patternMatchesPath", p.PatternMatchesPath),
 			log.Int("matches", sender.SentCount()),
-			log.String("code", code),
+			log.Text("code", privacy.NewText(code, privacy.Unknown)),
 			log.Duration("duration", time.Since(start)),
-			log.Strings("indexerEndpoints", p.IndexerEndpoints),
+			log.Texts("indexerEndpoints", privacy.NewTexts(p.IndexerEndpoints, privacy.Unknown)),
 			log.Error(err))
 	}(time.Now())
 

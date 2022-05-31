@@ -15,11 +15,6 @@ import (
 type Field = zapcore.Field
 
 var (
-	// String constructs a field with the given key and value.
-	String = zap.String
-	// Strings constructs a field that carries a slice of strings.
-	Strings = zap.Strings
-
 	// Int constructs a field with the given key and value.
 	Int = zap.Int
 	// Ints constructs a field that carries a slice of integers.
@@ -74,6 +69,25 @@ func Texts(key string, ts []privacy.Text) Field {
 	return zap.Strings(key, out)
 }
 
+type UseFuncTextInstead struct{ _ struct{} }
+type UseFuncTextsInstead struct{ _ struct{} }
+
+// String is a function that should not be implemented. It's presence would increase
+// the risk of accidentally log user-private data, making it visible to a site-admin.
+//
+// Use Text instead.
+func String(key string, nope UseFuncTextInstead) Field {
+	panic("Impossible to call!")
+}
+
+// String is a function that should not be implemented. It's presence would increase
+// the risk of accidentally log user-private data, making it visible to a site-admin.
+//
+// Use Texts instead.
+func Strings(key string, nope UseFuncTextsInstead) Field {
+	panic("Impossible to call!")
+}
+
 // Object constructs a field that places all the given fields within the given key's
 // namespace.
 func Object(key string, fields ...Field) Field {
@@ -93,7 +107,7 @@ func Error(err error) Field {
 // we don't want the additional verbosity at the moment.
 func NamedError(key string, err error) Field {
 	if err == nil {
-		return String(key, "<nil>")
+		return Text(key, privacy.NewText("<nil>", privacy.Public))
 	}
-	return String(key, err.Error())
+	return Text(key, privacy.NewText(err.Error(), privacy.Public))
 }

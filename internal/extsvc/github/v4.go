@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
 )
 
 // V4Client is a GitHub GraphQL API client.
@@ -348,8 +349,8 @@ func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Vers
 	v, err := v3Client.GetVersion(ctx)
 	if err != nil {
 		c.log.Warn("Failed to fetch GitHub enterprise version",
-			log.String("method", "fetchGitHubVersion"),
-			log.String("apiURL", c.apiURL.String()),
+			log.Text("method", privacy.NewText("fetchGitHubVersion", privacy.Unknown)),
+			log.Text("apiURL", privacy.NewText(c.apiURL.String(), privacy.Unknown)),
 			log.Error(err),
 		)
 		return allMatchingSemver
@@ -701,8 +702,8 @@ func (c *V4Client) RecentCommitters(ctx context.Context, params *RecentCommitter
 
 func graphQLErrorField(err graphqlError) log.Field {
 	return log.Object("err",
-		log.String("message", err.Message),
-		log.String("type", err.Type),
-		log.String("path", fmt.Sprintf("%+v", err.Path)),
-		log.String("locations", fmt.Sprintf("%+v", err.Locations)))
+		log.Text("message", privacy.NewText(err.Message, privacy.Unknown)),
+		log.Text("type", privacy.NewText(err.Type, privacy.Unknown)),
+		log.Text("path", privacy.NewText(fmt.Sprintf("%+v", err.Path), privacy.Unknown)),
+		log.Text("locations", privacy.NewText(fmt.Sprintf("%+v", err.Locations), privacy.Unknown)))
 }

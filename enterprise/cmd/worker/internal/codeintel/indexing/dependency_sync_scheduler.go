@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
 )
 
 var schemeToExternalService = map[string]string{
@@ -134,7 +135,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 		logger.Info("syncing external services",
 			log.Int("upload", job.UploadID),
 			log.Int("numExtSvc", len(externalServices)),
-			log.Strings("schemaKinds", kindsArray),
+			log.Texts("schemaKinds", privacy.NewTexts(kindsArray, privacy.Unknown)),
 			log.Int("newRepos", newDependencyReposInserted),
 			log.Int("existingInserts", oldDependencyReposInserted))
 

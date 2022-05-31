@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
 )
 
 type projectResult struct {
@@ -84,7 +85,7 @@ func main() {
 	syncLogs := log.Init(log.Resource{Name: "lsif-index-tester"})
 	defer syncLogs()
 
-	logger := log.Scoped(raw_indexer, "indexer testing").With(log.String("directory", directory))
+	logger := log.Scoped(raw_indexer, "indexer testing").With(log.Text("directory", privacy.NewText( directory, privacy.Unknown)))
 
 	if raw_indexer == "" {
 		logger.Fatal("Indexer is required. Pass with --indexer")
@@ -140,7 +141,7 @@ func testDirectory(ctx context.Context, logger log.Logger, indexer []string, dir
 		if res.err != nil {
 			successful = false
 
-			logger.Warn("Failed to run test", log.String("name", res.name))
+			logger.Warn("Failed to run test", log.Text("name", privacy.NewText( res.name, privacy.Unknown)))
 			fmt.Println(res.err)
 			continue
 		}
@@ -185,7 +186,7 @@ func testProject(ctx context.Context, logger log.Logger, indexer []string, proje
 	}
 
 	usageData, _ := json.Marshal(result.usage)
-	logger.Debug("... \t Resource usage", log.String("usage", string(usageData)))
+	logger.Debug("... \t Resource usage", log.Text("usage", privacy.NewText( string(usageData), privacy.Unknown)))
 
 	bundleResult, err := validateDump(project)
 	if err != nil {
@@ -276,7 +277,7 @@ func validateTestCases(logger log.Logger, projectRoot string, bundle *precise.Gr
 	testFiles, err := os.ReadDir(filepath.Join(projectRoot, "lsif_tests"))
 	if err != nil {
 		if os.IsNotExist(err) {
-			logger.Warn("No lsif test directory exists here", log.String("directory", projectRoot))
+			logger.Warn("No lsif test directory exists here", log.Text("directory", privacy.NewText( projectRoot, privacy.Unknown)))
 			return testSuiteResult{}, nil
 		}
 
@@ -292,7 +293,7 @@ func validateTestCases(logger log.Logger, projectRoot string, bundle *precise.Gr
 		testFileName := filepath.Join(projectRoot, "lsif_tests", file.Name())
 		fileResult, err := runOneTestFile(logger, projectRoot, testFileName, bundle)
 		if err != nil {
-			logger.Fatal("Had an error while we do the test file", log.String("file", testFileName), log.Error(err))
+			logger.Fatal("Had an error while we do the test file", log.Text("file", privacy.NewText( testFileName, privacy.Unknown)), log.Error(err))
 		}
 
 		fileResults = append(fileResults, fileResult)
@@ -506,7 +507,7 @@ func runOneDefinitionRequest(logger log.Logger, projectRoot string, bundle *prec
 
 	definitions := results[0].Definitions
 	definitionsData, _ := json.Marshal(definitions)
-	definitionsField := log.String("definitions", string(definitionsData))
+	definitionsField := log.Text("definitions", privacy.NewText( string(definitionsData), privacy.Unknown))
 
 	if len(definitions) > 1 {
 		logger.Fatal("Had too many definitions", definitionsField)

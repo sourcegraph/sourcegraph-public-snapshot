@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/globallogger"
 	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
@@ -23,18 +24,18 @@ func TestLogger(t *testing.T) {
 
 	logger.Debug("a debug message") // 0
 
-	logger = logger.With(log.String("some", "field"))
+	logger = logger.With(log.Text("some", privacy.NewText( "field", privacy.Unknown)))
 
-	logger.Info("hello world", log.String("hello", "world")) // 1
+	logger.Info("hello world", log.Text("hello", privacy.NewText( "world", privacy.Unknown))) // 1
 
 	logger = logger.WithTrace(log.TraceContext{TraceID: "1234abcde"})
-	logger.Info("goodbye", log.String("world", "hello")) // 2
+	logger.Info("goodbye", log.Text("world", privacy.NewText( "hello", privacy.Unknown))) // 2
 	logger.Warn("another message")                       // 3
 
 	logger.Error("object of fields", // 4
 		log.Object("object",
-			log.String("field1", "value"),
-			log.String("field2", "value"),
+			log.Text("field1", privacy.NewText( "value", privacy.Unknown)),
+			log.Text("field2", privacy.NewText( "value", privacy.Unknown)),
 		))
 
 	logs := exportLogs()

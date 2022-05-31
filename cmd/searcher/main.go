@@ -41,6 +41,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
 )
 
 var (
@@ -176,7 +177,7 @@ func run(logger log.Logger) error {
 
 	// Listen
 	g.Go(func() error {
-		logger.Info("listening", log.String("addr", server.Addr))
+		logger.Info("listening", log.Text("addr", privacy.NewText(server.Addr, privacy.Unknown)))
 		if err := server.ListenAndServe(); err != http.ErrServerClosed {
 			return err
 		}

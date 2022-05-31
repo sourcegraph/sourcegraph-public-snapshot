@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
 )
 
 // schedulerConfig tracks the active scheduler configuration.
@@ -65,7 +66,7 @@ func RunScheduler(ctx context.Context, logger log.Logger, scheduler *UpdateSched
 
 		logger.Debug(
 			"started configured scheduler",
-			log.String("version", "new"),
+			log.Text("version", privacy.NewText("new", privacy.Unknown)),
 			log.Bool("auto-git-updates", want.autoGitUpdatesEnabled),
 		)
 
@@ -214,10 +215,10 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 				resp, err := requestRepoUpdate(ctx, s.db, repo, 1*time.Second)
 				if err != nil {
 					schedError.WithLabelValues("requestRepoUpdate").Inc()
-					subLogger.Error("error requesting repo update", log.Error(err), log.String("uri", string(repo.Name)))
+					subLogger.Error("error requesting repo update", log.Error(err), log.Text("uri", privacy.NewText(string(repo.Name), privacy.Unknown)))
 				} else if resp != nil && resp.Error != "" {
 					schedError.WithLabelValues("repoUpdateResponse").Inc()
-					subLogger.Error("error updating repo", log.String("err", resp.Error), log.String("uri", string(repo.Name)))
+					subLogger.Error("error updating repo", log.Text("err", privacy.NewText(resp.Error, privacy.Unknown)), log.Text("uri", privacy.NewText(string(repo.Name), privacy.Unknown)))
 				}
 
 				if interval := getCustomInterval(subLogger, conf.Get(), string(repo.Name)); interval > 0 {
@@ -350,7 +351,7 @@ func (s *UpdateScheduler) ListRepoIDs() []api.RepoID {
 // fetch/clone soon.
 func (s *UpdateScheduler) upsert(r *types.Repo, enqueue bool) {
 	repo := configuredRepoFromRepo(r)
-	logger := s.logger.With(log.String("repo", string(r.Name)))
+	logger := s.logger.With(log.Text("repo", privacy.NewText(string(r.Name), privacy.Unknown)))
 
 	updated := s.schedule.upsert(repo)
 	logger.Debug("scheduler.schedule.upserted", log.Bool("updated", updated))
@@ -364,7 +365,7 @@ func (s *UpdateScheduler) upsert(r *types.Repo, enqueue bool) {
 
 func (s *UpdateScheduler) remove(r *types.Repo) {
 	repo := configuredRepoFromRepo(r)
-	logger := s.logger.With(log.String("repo", string(r.Name)))
+	logger := s.logger.With(log.Text("repo", privacy.NewText(string(r.Name), privacy.Unknown)))
 
 	if s.schedule.remove(repo) {
 		logger.Debug("scheduler.schedule.removed")
@@ -813,7 +814,7 @@ func (s *schedule) updateInterval(repo configuredRepo, interval time.Duration) {
 
 		update.Due = timeNow().Add(update.Interval)
 		s.logger.Debug("updated repo",
-			log.Object("repo", log.String("name", string(repo.Name)), log.Duration("due", update.Due.Sub(timeNow()))),
+			log.Object("repo", log.Text("name", privacy.NewText(string(repo.Name), privacy.Unknown)), log.Duration("due", update.Due.Sub(timeNow()))),
 		)
 		heap.Fix(s, update.Index)
 		s.rescheduleTimer()

@@ -49,6 +49,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
 )
 
 const port = "3182"
@@ -211,7 +212,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	addr := net.JoinHostPort(host, port)
-	logger.Info("listening", log.String("addr", addr))
+	logger.Info("listening", log.Text("addr", privacy.NewText(addr, privacy.Unknown)))
 
 	var handler http.Handler
 	{
