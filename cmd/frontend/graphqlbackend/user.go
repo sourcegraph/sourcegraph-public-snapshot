@@ -24,9 +24,9 @@ import (
 func (r *schemaResolver) User(
 	ctx context.Context,
 	args struct {
-	Username *string
-	Email    *string
-},
+		Username *string
+		Email    *string
+	},
 ) (*UserResolver, error) {
 	var err error
 	var user *types.User
