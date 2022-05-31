@@ -18,7 +18,7 @@ import adminConfigurationStyles from '../site-admin/SiteAdminConfigurationPage.m
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
  */
-const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
+const disposableToFunc = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
 interface Props<T extends object>
     extends Pick<_monacoSettingsEditorModule.Props, 'id' | 'readOnly' | 'height' | 'jsonSchema' | 'language'>,
@@ -194,7 +194,7 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
         this.monaco = monacoValue
         if (this.monaco && MonacoSettingsEditor._result) {
             this.subscriptions.add(
-                disposableToFn(
+                disposableToFunc(
                     this.monaco.editor.onDidCreateEditor(editor => {
                         this.configEditor = editor
                         this.props.onEditor?.(editor)
@@ -202,7 +202,7 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                 )
             )
             this.subscriptions.add(
-                disposableToFn(
+                disposableToFunc(
                     this.monaco.editor.onDidCreateModel(async model => {
                         // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
                         // so this import call will not incur another load.
