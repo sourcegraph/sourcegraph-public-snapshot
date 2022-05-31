@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
-import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Typography, Input } from '@sourcegraph/wildcard'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
 
@@ -127,17 +127,15 @@ export const SearchSidebarSection: React.FunctionComponent<
                     <CollapsePanel>
                         <div className={classNames('pb-4', !searchVisible && 'border-top')}>
                             {searchVisible && (
-                                <input
+                                <Input
                                     type="search"
                                     placeholder="Find..."
                                     aria-label="Find filters"
                                     value={filter}
                                     onChange={event => setFilter(event.currentTarget.value)}
                                     data-testid="sidebar-section-search-box"
-                                    className={classNames(
-                                        'form-control form-control-sm',
-                                        styles.sidebarSectionSearchBox
-                                    )}
+                                    inputClassName={styles.sidebarSectionSearchBox}
+                                    variant="small"
                                 />
                             )}
                             {body}
