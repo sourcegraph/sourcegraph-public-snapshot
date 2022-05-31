@@ -25,6 +25,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
 		schemaName := schemaNameFlag.Get(cmd)
+		version := versionFlag.Get(cmd)
 
 		_, store, err := setupStore(ctx, factory, schemaName)
 		if err != nil {
@@ -40,12 +41,12 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		if err != nil {
 			return err
 		}
-		expectedSchema, err := expectedSchemaFactory(filename, versionFlag.Get(cmd))
+		expectedSchema, err := expectedSchemaFactory(filename, version)
 		if err != nil {
 			return err
 		}
 
-		return compareSchemaDescriptions(out, schemaName, canonicalize(schema), canonicalize(expectedSchema))
+		return compareSchemaDescriptions(out, schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
 	})
 
 	return &cli.Command{

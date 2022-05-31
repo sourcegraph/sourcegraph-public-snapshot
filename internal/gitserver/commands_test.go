@@ -201,7 +201,7 @@ index 9bd8209..d2acfa9 100644
 +Another line
 `
 
-		var testDiffFileNames = []string{
+		testDiffFileNames := []string{
 			"INSTALL.md",
 			"JOKES.md",
 			"README.md",
@@ -391,7 +391,8 @@ func TestRepository_BlameFile(t *testing.T) {
 }
 
 func runBlameFileTest(ctx context.Context, t *testing.T, repo api.RepoName, path string, opt *BlameOptions,
-	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk) {
+	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk,
+) {
 	t.Helper()
 	hunks, err := NewClient(database.NewMockDB()).BlameFile(ctx, repo, path, opt, checker)
 	if err != nil {
@@ -560,7 +561,8 @@ func TestLsFiles(t *testing.T) {
 // runFileListingTest tests the specified function which must return a list of filenames and an error. The test first
 // tests the basic case (all paths returned), then the case with sub-repo permissions specified.
 func runFileListingTest(t *testing.T,
-	listingFunctionToTest func(context.Context, authz.SubRepoPermissionChecker, api.RepoName) ([]string, error)) {
+	listingFunctionToTest func(context.Context, authz.SubRepoPermissionChecker, api.RepoName) ([]string, error),
+) {
 	t.Helper()
 	gitCommands := []string{
 		"touch file1",
@@ -765,6 +767,8 @@ func TestListTags(t *testing.T) {
 		"git tag t0",
 		"git tag t1",
 		dateEnv + " git tag --annotate -m foo t2",
+		dateEnv + " git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git tag t3",
 	}
 
 	repo := MakeGitRepository(t, gitCommands...)
@@ -772,6 +776,7 @@ func TestListTags(t *testing.T) {
 		{Name: "t0", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 		{Name: "t1", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 		{Name: "t2", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+		{Name: "t3", CommitID: "afeafc4a918c144329807df307e68899e6b65018", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 	}
 
 	client := NewClient(database.NewMockDB())
@@ -784,6 +789,18 @@ func TestListTags(t *testing.T) {
 	if diff := cmp.Diff(wantTags, tags); diff != "" {
 		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
 	}
+
+	tags, err = client.ListTags(context.Background(), repo, "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8")
+	require.Nil(t, err)
+	if diff := cmp.Diff(wantTags[:3], tags); diff != "" {
+		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
+	}
+
+	tags, err = client.ListTags(context.Background(), repo, "afeafc4a918c144329807df307e68899e6b65018")
+	require.Nil(t, err)
+	if diff := cmp.Diff([]*gitdomain.Tag{wantTags[3]}, tags); diff != "" {
+		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
+	}
 }
 
 // See https://github.com/sourcegraph/sourcegraph/issues/5453
@@ -793,7 +810,6 @@ func TestParseTags_WithoutCreatorDate(t *testing.T) {
 			"c39ae07f393806ccf406ef966e9a15afc43cc36a\x00v2.6.11-tree\x00\n" +
 			"c39ae07f393806ccf406ef966e9a15afc43cc36a\x00v2.6.11\x00\n",
 	))
-
 	if err != nil {
 		t.Fatalf("parseTags: have err %v, want nil", err)
 	}

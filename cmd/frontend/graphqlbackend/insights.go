@@ -192,6 +192,8 @@ type InsightViewResolver interface {
 	DataSeriesDefinitions(ctx context.Context) ([]InsightDataSeriesDefinition, error)
 	DashboardReferenceCount(ctx context.Context) (int32, error)
 	IsFrozen(ctx context.Context) (bool, error)
+	DefaultSeriesDisplayOptions(ctx context.Context) (InsightViewSeriesDisplayOptionsResolver, error)
+	AppliedSeriesDisplayOptions(ctx context.Context) (InsightViewSeriesDisplayOptionsResolver, error)
 	Dashboards(ctx context.Context, args *InsightsDashboardsArgs) InsightsDashboardConnectionResolver
 }
 
@@ -300,6 +302,16 @@ type InsightViewFiltersResolver interface {
 	SearchContexts(ctx context.Context) (*[]string, error)
 }
 
+type InsightViewSeriesDisplayOptionsResolver interface {
+	SortOptions(ctx context.Context) (InsightViewSeriesSortOptionsResolver, error)
+	Limit(ctx context.Context) (*int32, error)
+}
+
+type InsightViewSeriesSortOptionsResolver interface {
+	Mode(ctx context.Context) (*string, error)
+	Direction(ctx context.Context) (*string, error)
+}
+
 type CreateLineChartSearchInsightArgs struct {
 	Input CreateLineChartSearchInsightInput
 }
@@ -350,7 +362,28 @@ type PieChartOptionsInput struct {
 }
 
 type InsightViewControlsInput struct {
-	Filters InsightViewFiltersInput
+	Filters              InsightViewFiltersInput
+	SeriesDisplayOptions SeriesDisplayOptionsInput
+}
+
+type SeriesDisplayOptions struct {
+	SortOptions *SeriesSortOptions
+	Limit       *int32
+}
+
+type SeriesDisplayOptionsInput struct {
+	SortOptions *SeriesSortOptionsInput
+	Limit       *int32
+}
+
+type SeriesSortOptions struct {
+	Mode      *string // enum
+	Direction *string // enum
+}
+
+type SeriesSortOptionsInput struct {
+	Mode      string // enum
+	Direction string // enum
 }
 
 type InsightViewFiltersInput struct {
@@ -395,11 +428,12 @@ type InsightViewPayloadResolver interface {
 }
 
 type InsightViewQueryArgs struct {
-	First    *int32
-	After    *string
-	Id       *graphql.ID
-	IsFrozen *bool
-	Filters  *InsightViewFiltersInput
+	First                *int32
+	After                *string
+	Id                   *graphql.ID
+	IsFrozen             *bool
+	Filters              *InsightViewFiltersInput
+	SeriesDisplayOptions *SeriesDisplayOptionsInput
 }
 
 type DeleteInsightViewArgs struct {

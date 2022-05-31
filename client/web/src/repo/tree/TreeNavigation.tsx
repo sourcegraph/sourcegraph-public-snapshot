@@ -32,13 +32,13 @@ export const TreeNavigation: React.FunctionComponent<React.PropsWithChildren<Tre
 }) => (
     <ButtonGroup>
         <Button to={`${tree.url}/-/commits`} variant="secondary" outline={true} as={Link}>
-            <Icon as={SourceCommitIcon} /> Commits
+            <Icon role="img" as={SourceCommitIcon} aria-hidden={true} /> Commits
         </Button>
         <Button to={`/${encodeURIPathComponent(repo.name)}/-/branches`} variant="secondary" outline={true} as={Link}>
-            <Icon as={SourceBranchIcon} /> Branches
+            <Icon role="img" as={SourceBranchIcon} aria-hidden={true} /> Branches
         </Button>
         <Button to={`/${encodeURIPathComponent(repo.name)}/-/tags`} variant="secondary" outline={true} as={Link}>
-            <Icon as={TagIcon} /> Tags
+            <Icon role="img" as={TagIcon} aria-hidden={true} /> Tags
         </Button>
         <Button
             to={
@@ -50,7 +50,7 @@ export const TreeNavigation: React.FunctionComponent<React.PropsWithChildren<Tre
             outline={true}
             as={Link}
         >
-            <Icon as={HistoryIcon} /> Compare
+            <Icon role="img" as={HistoryIcon} aria-hidden={true} /> Compare
         </Button>
         <Button
             to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
@@ -58,7 +58,7 @@ export const TreeNavigation: React.FunctionComponent<React.PropsWithChildren<Tre
             outline={true}
             as={Link}
         >
-            <Icon as={AccountIcon} /> Contributors
+            <Icon role="img" as={AccountIcon} aria-hidden={true} /> Contributors
         </Button>
         {codeIntelligenceEnabled && (
             <Button
@@ -67,7 +67,7 @@ export const TreeNavigation: React.FunctionComponent<React.PropsWithChildren<Tre
                 outline={true}
                 as={Link}
             >
-                <Icon as={BrainIcon} /> Code Intelligence
+                <Icon role="img" as={BrainIcon} aria-hidden={true} /> Code Intelligence
             </Button>
         )}
         {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
@@ -78,7 +78,7 @@ export const TreeNavigation: React.FunctionComponent<React.PropsWithChildren<Tre
                 outline={true}
                 as={Link}
             >
-                <Icon as={SettingsIcon} /> Settings
+                <Icon role="img" as={SettingsIcon} aria-hidden={true} /> Settings
             </Button>
         )}
     </ButtonGroup>

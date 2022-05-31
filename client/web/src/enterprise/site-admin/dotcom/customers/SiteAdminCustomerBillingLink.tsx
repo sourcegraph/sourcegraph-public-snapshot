@@ -69,11 +69,18 @@ export const SiteAdminCustomerBillingLink: React.FunctionComponent<React.PropsWi
             <div className="d-flex align-items-center">
                 {customer.urlForSiteAdminBilling && (
                     <Link to={customer.urlForSiteAdminBilling} className="mr-2 d-flex align-items-center">
-                        View customer account <Icon className="ml-1" as={ExternalLinkIcon} />
+                        View customer account{' '}
+                        <Icon role="img" aria-hidden={true} className="ml-1" as={ExternalLinkIcon} />
                     </Link>
                 )}
                 {isErrorLike(update) && (
-                    <Icon className="text-danger mr-2" data-tooltip={update.message} as={AlertCircleIcon} />
+                    <Icon
+                        role="img"
+                        aria-label={update.message}
+                        className="text-danger mr-2"
+                        data-tooltip={update.message}
+                        as={AlertCircleIcon}
+                    />
                 )}
                 <Button
                     onClick={customerHasLinkedBilling ? onUnlinkBillingClick : onLinkBillingClick}

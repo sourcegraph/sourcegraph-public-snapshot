@@ -40,26 +40,22 @@ describe('components/FileMatchContext', () => {
                       {
                         "line": 0,
                         "character": 0,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "highlightLength": 5
                       },
                       {
                         "line": 1,
                         "character": 0,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "highlightLength": 5
                       },
                       {
                         "line": 2,
                         "character": 0,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "highlightLength": 5
                       },
                       {
                         "line": 3,
                         "character": 0,
-                        "highlightLength": 5,
-                        "isInContext": true
+                        "highlightLength": 5
                       }
                     ],
                     "position": {
@@ -84,20 +80,17 @@ describe('components/FileMatchContext', () => {
                       {
                         "line": 0,
                         "character": 0,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "highlightLength": 5
                       },
                       {
                         "line": 1,
                         "character": 0,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "highlightLength": 5
                       },
                       {
                         "line": 2,
                         "character": 0,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "highlightLength": 5
                       }
                     ],
                     "position": {
@@ -122,32 +115,27 @@ describe('components/FileMatchContext', () => {
                       {
                         "line": 0,
                         "character": 51,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "highlightLength": 5
                       },
                       {
                         "line": 2,
                         "character": 48,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "highlightLength": 5
                       },
                       {
                         "line": 3,
                         "character": 15,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "highlightLength": 5
                       },
                       {
                         "line": 3,
                         "character": 39,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "highlightLength": 5
                       },
                       {
                         "line": 8,
                         "character": 2,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "highlightLength": 5
                       }
                     ],
                     "position": {
@@ -162,8 +150,7 @@ describe('components/FileMatchContext', () => {
                       {
                         "line": 14,
                         "character": 19,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "highlightLength": 5
                       }
                     ],
                     "position": {
@@ -178,38 +165,32 @@ describe('components/FileMatchContext', () => {
                       {
                         "line": 20,
                         "character": 11,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "highlightLength": 5
                       },
                       {
                         "line": 24,
                         "character": 8,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "highlightLength": 5
                       },
                       {
                         "line": 24,
                         "character": 19,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "highlightLength": 5
                       },
                       {
                         "line": 27,
                         "character": 53,
-                        "highlightLength": 5,
-                        "isInContext": false
+                        "highlightLength": 5
                       },
                       {
                         "line": 28,
                         "character": 3,
-                        "highlightLength": 5,
-                        "isInContext": true
+                        "highlightLength": 5
                       },
                       {
                         "line": 29,
                         "character": 13,
-                        "highlightLength": 5,
-                        "isInContext": true
+                        "highlightLength": 5
                       }
                     ],
                     "position": {

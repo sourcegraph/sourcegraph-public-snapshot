@@ -72,7 +72,7 @@ func CreateTestRepo(t *testing.T, ctx context.Context, db database.DB) (*types.R
 func CreateTestRepos(t *testing.T, ctx context.Context, db database.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
-	repoStore := database.Repos(db)
+	repoStore := db.Repos()
 	esStore := db.ExternalServices()
 
 	ext := &types.ExternalService{
@@ -117,7 +117,7 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db database.DB, count in
 func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db database.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
-	repoStore := database.Repos(db)
+	repoStore := db.Repos()
 	esStore := db.ExternalServices()
 
 	ext := &types.ExternalService{
@@ -195,7 +195,7 @@ func CreateGitHubSSHTestRepos(t *testing.T, ctx context.Context, db database.DB,
 		rs = append(rs, r)
 	}
 
-	err := database.Repos(db).Create(ctx, rs...)
+	err := db.Repos().Create(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -221,7 +221,7 @@ func CreateBbsSSHTestRepos(t *testing.T, ctx context.Context, db database.DB, co
 func createBbsRepos(t *testing.T, ctx context.Context, db database.DB, ext *types.ExternalService, count int, cloneBaseURL string) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
-	repoStore := database.Repos(db)
+	repoStore := db.Repos()
 	esStore := db.ExternalServices()
 
 	if err := esStore.Upsert(ctx, ext); err != nil {
@@ -258,7 +258,7 @@ func createBbsRepos(t *testing.T, ctx context.Context, db database.DB, ext *type
 func CreateAWSCodeCommitTestRepos(t *testing.T, ctx context.Context, db database.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
-	repoStore := database.Repos(db)
+	repoStore := db.Repos()
 	esStore := db.ExternalServices()
 
 	ext := &types.ExternalService{

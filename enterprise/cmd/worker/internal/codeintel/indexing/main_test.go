@@ -8,6 +8,10 @@ import (
 	"github.com/inconshreveable/log15"
 )
 
+func init() {
+	autoIndexingEnabled = func() bool { return true }
+}
+
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {

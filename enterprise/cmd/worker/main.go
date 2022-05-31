@@ -39,7 +39,6 @@ func main() {
 	go setAuthzProviders()
 
 	additionalJobs := map[string]job.Job{
-		"codeintel-commitgraph":      codeintel.NewCommitGraphJob(),
 		"codeintel-janitor":          codeintel.NewJanitorJob(),
 		"codeintel-auto-indexing":    codeintel.NewIndexingJob(),
 		"codehost-version-syncing":   versions.NewSyncingJob(),

@@ -29,6 +29,7 @@ export const FormRadioInput: React.FunctionComponent<React.PropsWithChildren<Rad
                 'text-muted': otherProps.disabled,
             })}
         >
+            {/* eslint-disable-next-line react/forbid-elements */}
             <input type="radio" {...otherProps} />
 
             <span className="pl-2">{title}</span>

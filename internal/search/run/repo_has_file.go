@@ -83,7 +83,7 @@ func (s *RepoSearchJob) reposContainingPath(ctx context.Context, clients job.Run
 			return nil, err
 		}
 
-		zoektJob := &zoektutil.ZoektRepoSubsetSearchJob{
+		zoektJob := &zoektutil.RepoSubsetTextSearchJob{
 			Repos:          indexed,
 			Query:          zoektQuery,
 			Typ:            search.TextRequest,
@@ -101,7 +101,7 @@ func (s *RepoSearchJob) reposContainingPath(ctx context.Context, clients job.Run
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
-		searcherJob := &searcher.SearcherJob{
+		searcherJob := &searcher.TextSearchJob{
 			PatternInfo:     searcherArgs.PatternInfo,
 			Repos:           unindexed,
 			Indexed:         false,

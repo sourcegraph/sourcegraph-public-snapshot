@@ -10,9 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var uploadPackArgs = []string{
@@ -41,6 +40,8 @@ var uploadPackArgs = []string{
 // protocol. We aim to support modern git features such as protocol v2 to
 // minimize traffic.
 type Handler struct {
+	Logger log.Logger
+
 	// Dir is a funcion which takes a repository name and returns an absolute
 	// path to the GIT_DIR for it.
 	Dir func(string) string
@@ -145,7 +146,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err = cmd.Run()
 	if err != nil {
 		err = errors.Errorf("error running git service command args=%q: %w", args, err)
-		log15.Error("git-service error", "error", err, "stderr", stderr.String())
+		s.Logger.Error("git-service error", log.Error(err), log.String("stderr", stderr.String()))
 		_, _ = w.Write([]byte("\n" + err.Error() + "\n"))
 	}
 }

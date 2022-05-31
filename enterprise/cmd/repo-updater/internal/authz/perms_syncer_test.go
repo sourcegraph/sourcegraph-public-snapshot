@@ -818,7 +818,7 @@ func TestPermsSyncer_syncPerms(t *testing.T) {
 	}
 }
 
-func TestPermsSyncer_RefreshGitLabOAuthToken(t *testing.T) {
+func TestPermsSyncer_maybeRefreshGitLabOAuthTokenFromAccount(t *testing.T) {
 	tests := []struct {
 		name    string
 		expired bool
@@ -915,7 +915,7 @@ func TestPermsSyncer_RefreshGitLabOAuthToken(t *testing.T) {
 				AccountData: accountData,
 			}
 
-			err := s.maybeRefreshGitLabOAuthToken(context.Background(), extAccount)
+			err := s.maybeRefreshGitLabOAuthTokenFromAccount(context.Background(), extAccount)
 			if err != nil {
 				t.Error(err)
 			}
