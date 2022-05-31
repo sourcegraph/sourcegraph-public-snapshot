@@ -10,7 +10,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container, Button, useEventObservable, Alert, Link, Select, Typography } from '@sourcegraph/wildcard'
+import { Container, Button, useEventObservable, Alert, Link, Select, Input } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
@@ -158,16 +158,15 @@ export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<Co
             <Form className="my-4 pb-5" data-testid="monitor-form" onSubmit={requestOnSubmit}>
                 <Container className="mb-3">
                     <div className="form-group">
-                        <Typography.Label htmlFor="code-monitor-form-name">Name</Typography.Label>
-                        <input
+                        <Input
                             id="code-monitor-form-name"
-                            type="text"
-                            className="form-control mb-2 test-name-input"
+                            className="mb-2"
                             data-testid="name-input"
                             required={true}
                             onChange={event => {
                                 onNameChange(event.target.value)
                             }}
+                            label="Name"
                             value={currentCodeMonitorState.description}
                             autoFocus={true}
                             spellCheck={false}

@@ -222,6 +222,20 @@ describe('Code insight create insight page', () => {
                                     __typename: 'SearchInsightDataSeriesDefinition',
                                 },
                             ],
+                            appliedSeriesDisplayOptions: {
+                                limit: null,
+                                sortOptions: {
+                                    direction: null,
+                                    mode: null,
+                                },
+                            },
+                            defaultSeriesDisplayOptions: {
+                                limit: null,
+                                sortOptions: {
+                                    direction: null,
+                                    mode: null,
+                                },
+                            },
                             __typename: 'InsightView',
                         },
                         __typename: 'InsightViewPayload',

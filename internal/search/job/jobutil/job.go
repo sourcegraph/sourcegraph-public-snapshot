@@ -122,7 +122,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 			diff := resultTypes.Has(result.TypeDiff)
 			repoOptionsCopy := repoOptions
 			repoOptionsCopy.OnlyCloned = true
-			addJob(&commit.CommitSearchJob{
+			addJob(&commit.SearchJob{
 				Query:                commit.QueryToGitQuery(b, diff),
 				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
@@ -132,7 +132,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 			})
 		}
 
-		addJob(&searchrepos.ComputeExcludedReposJob{
+		addJob(&searchrepos.ComputeExcludedJob{
 			RepoOpts: repoOptions,
 		})
 	}
@@ -211,7 +211,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
 			// Create Text Search jobs over repo set.
 			if !skipRepoSubsetSearch {
-				searcherJob := &searcher.SearcherJob{
+				searcherJob := &searcher.TextSearchJob{
 					PatternInfo:     patternInfo,
 					Indexed:         false,
 					UseFullDeadline: useFullDeadline,
@@ -230,7 +230,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 		if resultTypes.Has(result.TypeSymbol) {
 			// Create Symbol Search jobs over repo set.
 			if !skipRepoSubsetSearch {
-				symbolSearchJob := &searcher.SymbolSearcherJob{
+				symbolSearchJob := &searcher.SymbolSearchJob{
 					PatternInfo: patternInfo,
 					Limit:       maxResults,
 				}
@@ -262,7 +262,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 				UseFullDeadline: useFullDeadline,
 			}
 
-			addJob(&structural.StructuralSearchJob{
+			addJob(&structural.SearchJob{
 				ZoektArgs:        zoektArgs,
 				SearcherArgs:     searcherArgs,
 				UseIndex:         f.Index(),
@@ -610,13 +610,13 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 
 	switch typ {
 	case search.SymbolRequest:
-		return &zoekt.ZoektGlobalSymbolSearchJob{
+		return &zoekt.GlobalSymbolSearchJob{
 			GlobalZoektQuery: globalZoektQuery,
 			ZoektArgs:        zoektArgs,
 			RepoOpts:         b.repoOptions,
 		}, nil
 	case search.TextRequest:
-		return &zoekt.ZoektGlobalSearchJob{
+		return &zoekt.GlobalTextSearchJob{
 			GlobalZoektQuery: globalZoektQuery,
 			ZoektArgs:        zoektArgs,
 			RepoOpts:         b.repoOptions,
@@ -633,13 +633,13 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 
 	switch typ {
 	case search.SymbolRequest:
-		return &zoekt.ZoektSymbolSearchJob{
+		return &zoekt.SymbolSearchJob{
 			Query:          zoektQuery,
 			FileMatchLimit: b.fileMatchLimit,
 			Select:         b.selector,
 		}, nil
 	case search.TextRequest:
-		return &zoekt.ZoektRepoSubsetSearchJob{
+		return &zoekt.RepoSubsetTextSearchJob{
 			Query:          zoektQuery,
 			Typ:            typ,
 			FileMatchLimit: b.fileMatchLimit,

@@ -32,7 +32,7 @@ Pushing a branch with the changes | 🟢 | 🟡 | 🔴
 Updating a changeset | 🟢 | 🟡 | 🔴
 Closing a changeset | 🟢 | 🟡 | 🔴
 [Importing a changeset](./tracking_existing_changesets.md) | 🔴 | 🟢 | 🟡
-Syncing a changeset | 🔴 | 🟢 | 🟡
+Syncing a changeset | 🟢 | 🟡 | 🟡
 
 When writing a changeset to the code host, the author will reflect the token used (e.g., on GitHub, the pull request author will be you). It is for this reason that a personal access token is preferred for most operations.
 

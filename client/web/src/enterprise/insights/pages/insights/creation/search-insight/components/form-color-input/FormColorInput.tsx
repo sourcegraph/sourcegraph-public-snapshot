@@ -42,6 +42,7 @@ export const FormColorInput: React.FunctionComponent<React.PropsWithChildren<For
                         title={startCase(key.toLocaleLowerCase())}
                         className={styles.formColorPickerColorBlock}
                     >
+                        {/* eslint-disable-next-line react/forbid-elements */}
                         <input
                             type="radio"
                             name={name}

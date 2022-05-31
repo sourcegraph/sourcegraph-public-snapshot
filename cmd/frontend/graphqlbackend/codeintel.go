@@ -90,6 +90,7 @@ type LSIFUploadRetentionPolicyMatchesArgs struct {
 type LSIFUploadResolver interface {
 	ID() graphql.ID
 	InputCommit() string
+	Tags(ctx context.Context) ([]string, error)
 	InputRoot() string
 	IsLatestForRepo() bool
 	UploadedAt() DateTime
@@ -136,6 +137,7 @@ type LSIFRepositoryIndexesQueryArgs struct {
 type LSIFIndexResolver interface {
 	ID() graphql.ID
 	InputCommit() string
+	Tags(ctx context.Context) ([]string, error)
 	InputRoot() string
 	InputIndexer() string
 	Indexer() CodeIntelIndexerResolver

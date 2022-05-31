@@ -60,12 +60,6 @@ const config = {
             message: 'Use the <Form /> component from @sourcegraph/branded package instead',
           },
           {
-            name: '@sourcegraph/wildcard',
-            importNames: ['Tooltip'],
-            message:
-              'Please ensure there is only a single `<Tooltip />` component present in the React tree. To display a specific tooltip, you can add the `data-tooltip` attribute to the relevant element.',
-          },
-          {
             name: 'zustand',
             importNames: ['default'],
             message:
@@ -143,6 +137,11 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
             message: 'Use the <Typography.H6 /> component from @sourcegraph/wildcard instead.',
           },
           {
+            element: 'p',
+            message:
+              'Use the <Text /> component from @sourcegraph/wildcard instead. Check out the RFC for more context: https://bit.ly/3PFw0HM',
+          },
+          {
             element: 'code',
             message: 'Use the <Typography.Code /> component from @sourcegraph/wildcard instead.',
           },
@@ -176,10 +175,22 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
         message:
           'Consider using useTemporarySetting instead of useLocalStorage so settings are synced when users log in elsewhere. More info at https://docs.sourcegraph.com/dev/background-information/web/temporary_settings',
       },
+      {
+        selector: 'JSXAttribute JSXIdentifier[name="data-tooltip"]',
+        message:
+          'The use of data-tooltip has been deprecated. Please wrap your trigger element with the <Tooltip> component from Wildcard instead. If there are problems using the new <Tooltip>, please contact the Frontend Platform Team.',
+      },
     ],
     // https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html#eslint
     'react/jsx-uses-react': 'off',
     'react/react-in-jsx-scope': 'off',
+    'import/extensions': [
+      'error',
+      'never',
+      {
+        schema: 'always',
+      },
+    ],
   },
   overrides: [
     {

@@ -2,7 +2,7 @@
 
 ## [Language-specific guides](index.md)
 
-We are working on creating language specific guides for use with LSIF indexers, so make sure to check for the documentation for your language! If there isn't a guide for your language, this general guide will help you through the precise code intelligence setup process.
+We are working on creating language specific guides for use with different indexers, so make sure to check for the documentation for your language! If there isn't a guide for your language, this general guide will help you through the precise code intelligence setup process.
 
 > NOTE: First make sure to complete the [how-to guides on indexing](../how-to/index.md).
 
@@ -18,7 +18,7 @@ Setting up a source code indexing job in your CI build provides you with fast co
   - [Circle CI Examples](#circle-ci-examples)
   - [Travis CI Examples](#travis-ci-examples)
 - [Recommended upload frequency](#recommended-upload-frequency)
-- [Uploading LSIF data to Sourcegraph.com](#uploading-lsif-data-to-sourcegraph-com)
+- [Uploading indexes to Sourcegraph.com](#uploading-indexes-to-sourcegraph-com)
 
 ## Using indexer containers
 
@@ -37,9 +37,9 @@ jobs:
     container: sourcegraph/lsif-go:latest
     steps:
       - uses: actions/checkout@v1
-      - name: Generate LSIF data
+      - name: Generate index
         run: lsif-go
-      - name: Upload LSIF data
+      - name: Upload index
         # this will upload to Sourcegraph.com, you may need to substitute a different command
         # by default, we ignore failures to avoid disrupting CI pipelines with non-critical errors.
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -ignore-upload-failure
@@ -58,10 +58,10 @@ jobs:
     container: sourcegraph/lsif-go:latest
     steps:
       - uses: actions/checkout@v1
-      - name: Generate LSIF data
+      - name: Generate index
         working-directory: backend/
         run: lsif-go
-      - name: Upload LSIF data
+      - name: Upload index
         # note that the upload command also needs to happen in the same directory!
         working-directory: backend/
         # this will upload to Sourcegraph.com, you may need to substitute a different command
@@ -89,11 +89,11 @@ jobs:
       - uses: actions/checkout@v1
       - name: Install dependencies
         run: <install dependencies>
-      - name: Generate LSIF data
+      - name: Generate index
         uses: docker://sourcegraph/scip-typescript:latest
         with:
           args: scip-typescript index
-      - name: Upload LSIF data
+      - name: Upload index
         uses: docker://sourcegraph/src-cli:latest
         with:
           # this will upload to Sourcegraph.com, you may need to substitute a different command
@@ -103,7 +103,7 @@ jobs:
 
 
 ### GitHub Action Examples
-The following projects have example GitHub Action workflows to generate and upload LSIF indexes.
+The following projects have example GitHub Action workflows to generate and upload indexes.
 
 - [elastic/kibana](https://github.com/sourcegraph-codeintel-showcase/kibana/blob/7ed559df0e2036487ae6d606e9ffa29d90d49e38/.github/workflows/lsif.yml)
 - [golang/go](https://github.com/sourcegraph-codeintel-showcase/go/blob/f40606b1241b0ca4802d7b00a763241b03404eea/.github/workflows/lsif.yml)
@@ -154,7 +154,7 @@ workflows:
             - install-deps
 ```
 
-The following projects have example CircleCI configurations to generate and upload LSIF indexes.
+The following projects have example CircleCI configurations to generate and upload indexes.
 
 - [angular/angular](https://github.com/sourcegraph-codeintel-showcase/angular/blob/f06eec98cadab2ff7a1cef2a03ba7c42015eb399/.circleci/config.yml)
 - [facebook/jest](https://github.com/sourcegraph-codeintel-showcase/jest/blob/b781fa2b6683f04324edbc4b41552a94f97cd479/.circleci/config.yml)
@@ -165,7 +165,7 @@ The following projects have example CircleCI configurations to generate and uplo
 - [ReactiveX/rxjs](https://github.com/sourcegraph-codeintel-showcase/rxjs/blob/c9d3c1a76a68273863fc59075a71b4cc43c06114/.circleci/config.yml)
 
 ### Travis CI Examples
-The following projects have example Travis CI configurations to generate and upload LSIF indexes.
+The following projects have example Travis CI configurations to generate and upload indexes.
 
 - [aws/aws-sdk-go](https://github.com/sourcegraph-codeintel-showcase/aws-sdk-go/blob/92f67a061fcdd46d6a418b28838b10b6ac63a880/.travis.yml)
 - [etcd-io/etcd](https://github.com/sourcegraph-codeintel-showcase/etcd/blob/eae726706fe8ebf7e08b45ba29a70388595db31b/.travis.yml)
@@ -184,12 +184,12 @@ If you're indexing a language we haven't documented yet in our [language-specifi
 Your CI machines will need two command-line tools installed. Depending on your build system setup, you can do this as part of the CI step, or you can add it directly to your CI machines for use by the build.
 
 1. The [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli).
-1. The [LSIF indexer](https://lsif.dev) for your language.
+1. The [indexer](../references/indexers.md) for your language.
 
 ### Add steps to your CI
 
-1. **Generate the LSIF file** for a project within your repository by running the LSIF indexer in the project directory (see docs for your LSIF indexer).
-1. **[Upload that generated LSIF file](../how-to/index.md)** to your Sourcegraph instance.
+1. **Generate an index** for a project within your repository by running the indexer in the project directory (consult your indexer's docs).
+1. **[Upload that generated index](../how-to/index.md)** to your Sourcegraph instance.
 
 ## Recommended upload frequency
 
@@ -199,8 +199,8 @@ If you see too much load on your CI, your Sourcegraph instance, or a rapid decre
 
 With periodic jobs, you should still receive precise code intelligence on non-indexed commits on lines that are unchanged since the nearest indexed commit. This requires that the indexed commit be a direct ancestor or descendant no more than [100 commits](https://github.com/sourcegraph/sourcegraph/blob/e7803474dbac8021e93ae2af930269045aece079/lsif/src/shared/constants.ts#L25) away. If your commit frequency is too high and your index frequency is too low, you may find commits with no precise code intelligence at all. In this case, we recommend you try to increase your index frequency if possible.
 
-## Uploading LSIF data to Sourcegraph.com
+## Uploading indexes to Sourcegraph.com
 
-LSIF data can be uploaded to a self-hosted Sourcegraph instance or to [Sourcegraph.com](https://sourcegraph.com). Using the [Sourcegraph.com](https://sourcegraph.com) endpoint will surface code intelligence for your public repositories directly on GitHub via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension) and at `https://sourcegraph.com/github.com/<your-username>/<your-repo>`.
+Indexes can be uploaded to a self-hosted Sourcegraph instance or to [Sourcegraph.com](https://sourcegraph.com). Using the [Sourcegraph.com](https://sourcegraph.com) endpoint will surface code intelligence for your public repositories directly on GitHub via the [Sourcegraph browser extension](https://docs.sourcegraph.com/integration/browser_extension) and at `https://sourcegraph.com/github.com/<your-username>/<your-repo>`.
 
-Using the [Sourcegraph.com](https://sourcegraph.com) endpoint is free and your LSIF data is treated as User-Generated Content (you own it, as covered in our [Sourcegraph.com terms of service](https://about.sourcegraph.com/terms-dotcom#3-proprietary-rights-and-licenses)). If you run into trouble, or a situation arises where you need all of your LSIF data expunged, please reach out to us at [support@sourcegraph.com](mailto:support@sourcegraph.com).
+Using the [Sourcegraph.com](https://sourcegraph.com) endpoint is free and your index is treated as User-Generated Content (you own it, as covered in our [Sourcegraph.com terms of service](https://about.sourcegraph.com/terms-dotcom#3-proprietary-rights-and-licenses)). If you run into trouble, or a situation arises where you need all of your index expunged, please reach out to us at [support@sourcegraph.com](mailto:support@sourcegraph.com).

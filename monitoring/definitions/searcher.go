@@ -7,10 +7,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func Searcher() *monitoring.Container {
+func Searcher() *monitoring.Dashboard {
 	const containerName = "searcher"
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:        "searcher",
 		Title:       "Searcher",
 		Description: "Performs unindexed searches (diff and commit search, text search for unindexed branches).",

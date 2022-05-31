@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Modal, Typography } from '@sourcegraph/wildcard'
+import { Button, Modal, Typography, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
 import { Scalars } from '../../../../graphql-operations'
@@ -45,7 +45,7 @@ export const DetachChangesetsModal: React.FunctionComponent<React.PropsWithChild
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
             <Typography.H3 id={labelId}>Detach changesets</Typography.H3>
-            <p className="mb-4">Are you sure you want to detach the selected changesets?</p>
+            <Text className="mb-4">Are you sure you want to detach the selected changesets?</Text>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             <div className="d-flex justify-content-end">
                 <Button
