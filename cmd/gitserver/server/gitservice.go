@@ -10,9 +10,11 @@ import (
 	"github.com/mxk/go-flowrate/flowrate"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var gitServiceMaxEgressBytesPerSecond = func() int64 {
@@ -52,6 +54,8 @@ func flowrateWriter(w io.Writer) io.Writer {
 
 func (s *Server) gitServiceHandler() *gitservice.Handler {
 	return &gitservice.Handler{
+		Logger: log.Scoped("gitservice.handler", "smart Git HTTP transfer protocol"),
+
 		Dir: func(d string) string {
 			return string(s.dir(api.RepoName(d)))
 		},
