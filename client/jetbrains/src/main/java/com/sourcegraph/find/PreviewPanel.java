@@ -44,7 +44,7 @@ public class PreviewPanel extends JBPanelWithEmptyText {
 
         fileName = previewContent.getFileName();
         fileContent = previewContent.getContent();
-        if(fileContent == null) {
+        if (fileContent == null) {
             fileContent = "(No preview available)";
         }
         lineNumber = previewContent.getLineNumber();
