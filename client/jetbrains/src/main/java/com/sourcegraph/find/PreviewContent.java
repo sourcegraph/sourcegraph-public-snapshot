@@ -44,7 +44,7 @@ public class PreviewContent {
 
     @Nullable
     private static String convertBase64ToString(@Nullable String base64String) {
-        if(base64String == null) {
+        if (base64String == null) {
             return null;
         }
         byte[] decodedBytes = Base64.getDecoder().decode(base64String);

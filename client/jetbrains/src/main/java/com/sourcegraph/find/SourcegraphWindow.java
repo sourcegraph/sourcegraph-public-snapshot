@@ -84,6 +84,7 @@ public class SourcegraphWindow implements Disposable {
             public boolean onPreKeyEvent(CefBrowser browser, CefKeyEvent event, BoolRef is_keyboard_shortcut) {
                 return false;
             }
+
             @Override
             public boolean onKeyEvent(CefBrowser browser, CefKeyEvent event) {
                 if (event.windows_key_code == KeyEvent.VK_ESCAPE) {
