@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -58,6 +59,8 @@ var (
 	batchCompletionMode bool
 )
 
+const sgBugReportTemplate = "https://github.com/sourcegraph/sourcegraph/issues/new?template=sg_bug.md"
+
 // sg is the main sg CLI application.
 //
 //go:generate go run . help -full -output ./doc/dev/background-information/sg/reference.md
@@ -111,34 +114,55 @@ var sg = &cli.App{
 			EnvVars: []string{"SG_DISBALE_OUTPUT_DETECTION"},
 		},
 	},
-	Before: func(cmd *cli.Context) error {
+	Before: func(cmd *cli.Context) (err error) {
 		if batchCompletionMode {
 			// All other setup pertains to running commands - to keep completions fast,
 			// we skip all other setup.
 			return nil
 		}
 
-		// Let sg components register pre-exit hooks
+		var (
+			start                  = time.Now()
+			disableAnalytics       = cmd.Bool("disable-analytics")
+			disableOutputDetection = cmd.Bool("disable-output-detection")
+		)
+
+		// Let sg components register pre-interrupt hooks
 		interrupt.Listen()
 
 		// Configure global output
-		if cmd.Bool("disable-output-detection") {
+		if disableOutputDetection {
 			std.Out = std.NewFixedOutput(cmd.App.Writer, verbose)
 		} else {
 			std.Out = std.NewOutput(cmd.App.Writer, verbose)
 		}
-		// Configure logger output, for components that use loggers
+
+		// Set up analytics and hooks for each command.
+		if !disableAnalytics {
+			cmd.Context = analytics.WithContext(cmd.Context, cmd.App.Version)
+			addAnalyticsHooks(start, []string{"sg"}, cmd.App.Commands)
+
+			// Lots of setup happens in Before - we want to make sure anything that
+			// happens here is tracked. We set this up here after setting up output and
+			// some initial safe setup.
+			defer func() {
+				if p := recover(); p != nil {
+					std.Out.WriteWarningf("Encountered panic - please open an issue with the command output:\n\t%s",
+						sgBugReportTemplate)
+					message := fmt.Sprintf("%v:\n%s", p, getRelevantStack())
+					err = cli.NewExitError(message, 1)
+
+					analytics.LogEvent(cmd.Context, "sg_before", nil, start, "panic")
+					analytics.Persist(cmd.Context, "sg", cmd.FlagNames())
+				}
+			}()
+		}
+
+		// Configure logger, for commands that use components that use loggers
 		os.Setenv("SRC_DEVELOPMENT", "true")
 		os.Setenv("SRC_LOG_FORMAT", "console")
 		syncLogs := log.Init(log.Resource{Name: "sg"})
 		interrupt.Register(func() { syncLogs() })
-
-		// Configure analytics - this should be the first thing to be configured.
-		if !cmd.Bool("disable-analytics") {
-			cmd.Context = analytics.WithContext(cmd.Context, cmd.App.Version)
-			start := time.Now() // Start the clock immediately
-			addAnalyticsHooks(start, []string{"sg"}, cmd.App.Commands)
-		}
 
 		// Add autosuggestion hooks to commands with subcommands but no action
 		addSuggestionHooks(cmd.App.Commands)
