@@ -27,7 +27,7 @@ exports[`ProductSubscriptionForm edit existing subscription 1`] = `
               class="d-flex align-items-center"
             >
               <div
-                class="container d-flex w-auto"
+                class="container loader-input loaderInput w-auto"
               >
                 <input
                   class="form-control with-invalid-icon"
@@ -117,7 +117,7 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
               class="d-flex align-items-center"
             >
               <div
-                class="container d-flex w-auto"
+                class="container loader-input loaderInput w-auto"
               >
                 <input
                   class="form-control with-invalid-icon"
@@ -224,7 +224,7 @@ exports[`ProductSubscriptionForm new subscription for existing account 1`] = `
               class="d-flex align-items-center"
             >
               <div
-                class="container d-flex w-auto"
+                class="container loader-input loaderInput w-auto"
               >
                 <input
                   class="form-control with-invalid-icon"

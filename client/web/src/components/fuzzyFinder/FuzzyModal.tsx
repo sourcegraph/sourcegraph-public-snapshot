@@ -6,7 +6,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 
 import { pluralize } from '@sourcegraph/common'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage, Button, Modal, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { useLocalStorage, Button, Modal, Icon, Typography, Text, Input } from '@sourcegraph/wildcard'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { FuzzySearch, FuzzySearchResult, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -245,7 +245,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                         <Icon role="img" className={styles.closeIcon} as={CloseIcon} aria-hidden={true} />
                     </Button>
                 </div>
-                <input
+                <Input
                     autoComplete="off"
                     spellCheck="false"
                     role="combobox"
@@ -256,14 +256,13 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                     aria-expanded={props.fsm.key !== 'downloading'}
                     aria-activedescendant={fuzzyResultId(focusIndex)}
                     id="fuzzy-modal-input"
-                    className={classNames('form-control py-1', styles.input)}
+                    className={styles.input}
                     placeholder="Enter a partial file path or name"
                     value={query}
                     onChange={({ target: { value } }) => {
                         setQuery(value)
                         setFocusIndex(0)
                     }}
-                    type="text"
                     onKeyDown={onInputKeyDown}
                 />
                 <div className={styles.summary}>

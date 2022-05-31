@@ -45,7 +45,7 @@ import featureTourStyles from '../FeatureTour.module.scss'
 import createActionsStyles from './CreateActions.module.scss'
 import styles from './SearchResultsInfoBar.module.scss'
 
-function getFeatureTourElementFn(isAuthenticatedUser: boolean): (onClose: () => void) => HTMLElement {
+function getFeatureTourElementFunc(isAuthenticatedUser: boolean): (onClose: () => void) => HTMLElement {
     return (onClose: () => void): HTMLElement => {
         const container = document.createElement('div')
         container.className = featureTourStyles.featureTourStep
@@ -183,7 +183,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             canCreateMonitorFromQuery &&
             hasSeenSearchContextsFeatureTour &&
             props.resultsFound,
-        getFeatureTourElementFn(!!props.authenticatedUser),
+        getFeatureTourElementFunc(!!props.authenticatedUser),
         HAS_SEEN_CODE_MONITOR_FEATURE_TOUR_KEY,
         getTourOptions({
             attachTo: {

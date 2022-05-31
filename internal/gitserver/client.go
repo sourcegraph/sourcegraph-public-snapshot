@@ -169,10 +169,6 @@ type Client interface {
 	// Archive produces an archive from a Git repository.
 	Archive(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
 
-	// ArchiveURL returns a URL from which an archive of the given Git repository can
-	// be downloaded from.
-	ArchiveURL(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)
-
 	// BatchLog invokes the given callback with the `git log` output for a batch of repository
 	// and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
 	// to abort processing further results.
@@ -415,9 +411,9 @@ func (a *archiveReader) Close() error {
 	return a.base.Close()
 }
 
-// ArchiveURL returns a URL from which an archive of the given Git repository can
+// archiveURL returns a URL from which an archive of the given Git repository can
 // be downloaded from.
-func (c *ClientImplementor) ArchiveURL(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (*url.URL, error) {
+func (c *ClientImplementor) archiveURL(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (*url.URL, error) {
 	q := url.Values{
 		"repo":    {string(repo)},
 		"treeish": {opt.Treeish},
@@ -461,7 +457,7 @@ func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt 
 		return nil, err
 	}
 
-	u, err := c.ArchiveURL(ctx, repo, opt)
+	u, err := c.archiveURL(ctx, repo, opt)
 	if err != nil {
 		return nil, err
 	}

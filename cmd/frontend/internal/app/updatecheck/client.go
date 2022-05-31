@@ -123,7 +123,7 @@ func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
 
 func getInitialSiteAdminInfo(ctx context.Context, db database.DB) (_ string, _ bool, err error) {
 	defer recordOperation("getInitialSiteAdminInfo")(&err)
-	return database.UserEmails(db).GetInitialSiteAdminInfo(ctx)
+	return db.UserEmails().GetInitialSiteAdminInfo(ctx)
 }
 
 func getAndMarshalBatchChangesUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {

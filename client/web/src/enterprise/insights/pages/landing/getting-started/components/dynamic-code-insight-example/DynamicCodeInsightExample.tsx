@@ -153,7 +153,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
                 <footer className={styles.footer}>
                     {licensed ? (
                         <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
-                            <Icon as={PlusIcon} /> Create your first insight
+                            <Icon role="img" aria-hidden={true} as={PlusIcon} /> Create your first insight
                         </Button>
                     ) : (
                         <Button

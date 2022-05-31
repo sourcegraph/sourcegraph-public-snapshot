@@ -13,7 +13,9 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
         href="/site-admin/dotcom/product/subscriptions"
       >
         <arrowlefticon
+          aria-hidden="true"
           class="iconInline"
+          role="img"
         />
          All subscriptions
       </a>
@@ -163,7 +165,9 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
           type="button"
         >
           <addicon
+            aria-hidden="true"
             class="iconInline"
+            role="img"
           />
            Generate new license manually
         </button>
@@ -230,12 +234,16 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
               <div
                 class="input-group"
               >
-                <input
-                  class="form-control input"
-                  readonly=""
-                  type="text"
-                  value="lk1"
-                />
+                <div
+                  class="container loader-input loaderInput"
+                >
+                  <input
+                    class="input form-control with-invalid-icon"
+                    readonly=""
+                    type="text"
+                    value="lk1"
+                  />
+                </div>
                 <div
                   class="input-group-append"
                 >

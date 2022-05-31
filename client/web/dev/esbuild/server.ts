@@ -43,6 +43,7 @@ export const esbuildDevelopmentServer = async (
     configureProxy(proxyApp)
 
     const proxyServer = proxyApp.listen(listenAddress)
+    // eslint-disable-next-line @typescript-eslint/return-await
     return await new Promise<void>((resolve, reject) => {
         proxyServer.once('listening', () => {
             signale.success('esbuild server is ready')
