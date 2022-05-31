@@ -50,9 +50,9 @@ func setRepos(job job.Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.R
 	}
 
 	setRepos := Mapper{
-		MapZoektRepoSubsetSearchJob: setZoektRepos,
+		MapZoektRepoSubsetTextSearchJob: setZoektRepos,
 		MapZoektSymbolSearchJob:     setZoektSymbolRepos,
-		MapSearcherJob:              setSearcherRepos,
+		MapSearcherTextSearchJob:              setSearcherRepos,
 		MapSymbolSearcherJob:        setSymbolSearcherRepos,
 	}
 
