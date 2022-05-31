@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -115,6 +117,46 @@ func NewStreamFromJobLogs(log *bk.JobLogs) (*Stream, error) {
 	}, nil
 }
 
+func chunkEntry(entry [2]string, chunkSize int) ([][2]string, error) {
+	// the first item in an entry is the timestamp
+	epoch, err := strconv.ParseInt(entry[0], 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	chunks := splitIntoChunks([]byte(entry[1]), chunkSize)
+
+	results := make([][2]string, len(chunks))
+	for i, c := range chunks {
+		ts := fmt.Sprintf("%d", epoch+int64(i))
+		results[i] = [2]string{ts, string(c)}
+	}
+
+	return results, nil
+}
+
+func splitIntoChunks(data []byte, chunkSize int) [][]byte {
+	count := math.Ceil(float64(len(data)) / float64(chunkSize))
+
+	if count <= 1 {
+		return [][]byte{data}
+	}
+
+	chunks := make([][]byte, int(count))
+
+	for i := 0; i < int(count); i++ {
+		start := i * chunkSize
+		end := start + chunkSize
+
+		if end <= len(data) {
+			chunks[i] = data[start:end]
+		} else {
+			chunks[i] = data[start:]
+		}
+	}
+
+	return chunks
+}
+
 // https://grafana.com/docs/loki/latest/api/#post-lokiapiv1push
 type jsonPushBody struct {
 	Streams []*Stream `json:"streams"`
@@ -133,6 +175,7 @@ func (c *Client) PushStreams(ctx context.Context, streams []*Stream) error {
 	if err != nil {
 		return err
 	}
+
 	req, err := http.NewRequest(http.MethodPost, c.lokiURL.String()+pushEndpoint, bytes.NewBuffer(body))
 	if err != nil {
 		return err
