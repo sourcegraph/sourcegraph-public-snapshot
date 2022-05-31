@@ -16,6 +16,8 @@ import org.jetbrains.annotations.NotNull;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 
+import static java.awt.event.InputEvent.ALT_DOWN_MASK;
+
 public class SourcegraphWindow implements Disposable {
     private final Project project;
     private final FindPopupPanel mainPanel;
@@ -103,6 +105,11 @@ public class SourcegraphWindow implements Disposable {
     private boolean handleKeyPress(int keyCode, int modifiers) {
         if (keyCode == KeyEvent.VK_ESCAPE) {
             popup.setUiVisible(false);
+            return false;
+        }
+
+        if (keyCode == KeyEvent.VK_ENTER && (modifiers & ALT_DOWN_MASK) == ALT_DOWN_MASK) {
+            mainPanel.getPreviewPanel().openInEditor();
             return false;
         }
 
