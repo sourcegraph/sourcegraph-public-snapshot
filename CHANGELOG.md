@@ -275,6 +275,8 @@ All notable changes to Sourcegraph are documented in this file.
 - [Running batch changes server-side](https://docs.sourcegraph.com/batch_changes/explanations/server_side) is now in beta! In addition to using src-cli to run batch changes locally, you can now run them server-side as well. This requires installing executors. While running server-side unlocks a new and improved UI experience, you can still use src-cli just like before.
 - Code Monitoring: pings for new action types [#37288](https://github.com/sourcegraph/sourcegraph/pull/37288)
 - Better search-based code navigation for Java using tree-sitter [#34875](https://github.com/sourcegraph/sourcegraph/pull/34875)
+- A new [templating](https://docs.sourcegraph.com/campaigns/references/batch_spec_templating) variable, `batch_change_link` has been added for more control over where the "Created by Sourcegraph batch change ..." message appears in the published changeset description. [#491](https://github.com/sourcegraph/sourcegraph/pull/35319)
+- `observability.alerts` now supports a new `alerts` attribute that expects a list of [alerts](https://docs.sourcegraph.com/admin/observability/alert_solutions). When set, you only receive specified alerts. [#36321](https://github.com/sourcegraph/sourcegraph/pull/36321)
 
 ### Changed
 

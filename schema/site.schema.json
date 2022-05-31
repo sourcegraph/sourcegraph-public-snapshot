@@ -1347,6 +1347,13 @@
             "items": {
               "type": "string"
             }
+          },
+          "alerts": {
+            "description": "Do not use. When set, only receive specified alerts. Used by Sourcegraph internally.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "default": {

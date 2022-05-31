@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rand"
 	"fmt"
 	"net/url"
 	"strings"
@@ -145,8 +146,80 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 		}
 		colorTemplate := fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, activeColor, colorGood)
 
-		// Generate receiver and route for alerts with 'Owners'
-		if len(alert.Owners) > 0 {
+		if len(alert.Owners) == 0 && len(alert.Alerts) > 0 {
+			// Generate receiver and route for alerts with 'Alerts` but no 'Owners'
+			alerts := strings.Join(alert.Alerts, "|")
+			alertsRegexp, err := amconfig.NewRegexp(fmt.Sprintf("^(%s)$", alerts))
+			if err != nil {
+				newProblem(errors.Errorf("failed to apply alert %d: %w", i, err))
+				continue
+			}
+
+			receiverName := fmt.Sprintf("src-%s-on-%s", alert.Level, randomToken(8))
+			if r, exists := additionalReceivers[receiverName]; exists {
+				receiver = r
+			} else {
+				receiver = &amconfig.Receiver{Name: receiverName}
+				additionalReceivers[receiverName] = receiver
+				additionalRoutes = append(additionalRoutes, &amconfig.Route{
+					Receiver: receiverName,
+					Match: map[string]string{
+						"level": alert.Level,
+					},
+					MatchRE: amconfig.MatchRegexps{
+						"alertname": *alertsRegexp,
+					},
+					// Generated routes are set up as siblings. Generally, Alertmanager
+					// matches on exactly one route, but for additionalRoutes we don't
+					// want to prevent other routes from getting this alert, so we configure
+					// this route with 'continue: true'
+					//
+					// Also see https://prometheus.io/docs/alerting/latest/configuration/#route
+					Continue: true,
+				})
+			}
+		} else if len(alert.Owners) > 0 && len(alert.Alerts) > 0 {
+			// Generate receiver and route for alerts with 'Owners' and 'Alerts'
+			owners := strings.Join(alert.Owners, "|")
+			ownerRegexp, err := amconfig.NewRegexp(fmt.Sprintf("^(%s)$", owners))
+			if err != nil {
+				newProblem(errors.Errorf("failed to apply alert %d: %w", i, err))
+				continue
+			}
+
+			alerts := strings.Join(alert.Alerts, "|")
+			alertsRegexp, err := amconfig.NewRegexp(fmt.Sprintf("^(%s)$", alerts))
+			if err != nil {
+				newProblem(errors.Errorf("failed to apply alert %d: %w", i, err))
+				continue
+			}
+
+			receiverName := fmt.Sprintf("src-%s-on-%s", alert.Level, owners)
+			if r, exists := additionalReceivers[receiverName]; exists {
+				receiver = r
+			} else {
+				receiver = &amconfig.Receiver{Name: receiverName}
+				additionalReceivers[receiverName] = receiver
+				additionalRoutes = append(additionalRoutes, &amconfig.Route{
+					Receiver: receiverName,
+					Match: map[string]string{
+						"level": alert.Level,
+					},
+					MatchRE: amconfig.MatchRegexps{
+						"owner":     *ownerRegexp,
+						"alertname": *alertsRegexp,
+					},
+					// Generated routes are set up as siblings. Generally, Alertmanager
+					// matches on exactly one route, but for additionalRoutes we don't
+					// want to prevent other routes from getting this alert, so we configure
+					// this route with 'continue: true'
+					//
+					// Also see https://prometheus.io/docs/alerting/latest/configuration/#route
+					Continue: true,
+				})
+			}
+		} else if len(alert.Owners) > 0 && len(alert.Alerts) == 0 {
+			// Generate receiver and route for alerts with 'Owners'
 			owners := strings.Join(alert.Owners, "|")
 			ownerRegexp, err := amconfig.NewRegexp(fmt.Sprintf("^(%s)$", owners))
 			if err != nil {
@@ -387,4 +460,10 @@ func newRootRoute(routes []*amconfig.Route) *amconfig.Route {
 		// Fallback to do nothing for alerts not compatible with our receivers
 		Receiver: alertmanagerNoopReceiver,
 	}
+}
+
+func randomToken(size int) string {
+	b := make([]byte, size)
+	rand.Read(b)
+	return fmt.Sprintf("%x", b)
 }
