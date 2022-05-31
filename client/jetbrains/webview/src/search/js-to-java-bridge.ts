@@ -1,10 +1,10 @@
+import { encode } from 'js-base64'
+
 import { splitPath } from '@sourcegraph/shared/src/components/RepoLink'
 import { ContentMatch, PathMatch, SearchMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { loadContent } from './lib/blob'
 import { PluginConfig, Search, Theme } from './types'
-
-import { encode } from 'js-base64'
 
 export interface MatchRequest {
     action: 'preview' | 'open'

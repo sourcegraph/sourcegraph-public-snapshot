@@ -1,10 +1,9 @@
 import { ContentMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
-const SUPPORTED_TYPES = ['commit', 'content', 'path', 'symbol', 'repo']
+const SUPPORTED_TYPES = new Set(['commit', 'content', 'path', 'symbol', 'repo'])
 
 export function getFirstResultId(results: SearchMatch[]): string | null {
-    const firstSupportedMatch: null | SearchMatch =
-        results.find(result => SUPPORTED_TYPES.indexOf(result.type) >= 0) ?? null
+    const firstSupportedMatch: null | SearchMatch = results.find(result => SUPPORTED_TYPES.has(result.type)) ?? null
 
     if (firstSupportedMatch) {
         return getResultId(
