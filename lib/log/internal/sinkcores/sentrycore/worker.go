@@ -77,6 +77,7 @@ func (w *worker) process() {
 	}
 }
 
+// start kicks off goroutines that the worker requires.
 func (w *worker) start() {
 	go w.accept()
 	go w.process()
