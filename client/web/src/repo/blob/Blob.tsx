@@ -600,7 +600,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     // in `ColumnDecorator`s or `LineDecorator`s on renders in which decorations haven't changed.
     const decorations: { column: Map<string, DecorationMapByLine>; inline: DecorationMapByLine } = useMemo(() => {
         if (decorationsOrError && !isErrorLike(decorationsOrError)) {
-            const {column, inline} = [...decorationsOrError].reduce(
+            const { column, inline } = [...decorationsOrError].reduce(
                 (accumulator, [extensionID, items]) => {
                     if (extensionID && extensionsInSeparateColumns.has(extensionID)) {
                         accumulator.column.set(extensionID, groupDecorationsByLine(items))
