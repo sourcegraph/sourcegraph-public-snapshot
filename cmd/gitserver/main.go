@@ -476,7 +476,7 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		cli := crates.NewClient(urn, c.Urls, httpcli.ExternalDoer)
+		cli := crates.NewClient(urn, httpcli.ExternalDoer)
 		return server.NewRustPackagesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil

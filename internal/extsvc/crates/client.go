@@ -8,16 +8,12 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Client struct {
-	// A list of crates proxies.
-	urls []string
-
 	cli httpcli.Doer
 
 	// Self-imposed rate-limiter.
@@ -29,9 +25,8 @@ type RustFile struct {
 	URL  string
 }
 
-func NewClient(urn string, urls []string, cli httpcli.Doer) *Client {
+func NewClient(urn string, cli httpcli.Doer) *Client {
 	return &Client{
-		urls:    urls,
 		cli:     cli,
 		limiter: ratelimit.DefaultRegistry.Get(urn),
 	}
@@ -82,29 +77,24 @@ func (c *Client) get(ctx context.Context, name, version string) (respBody []byte
 		req    *http.Request
 	)
 
-	for _, baseURL := range c.urls {
-		if err = c.limiter.Wait(ctx); err != nil {
-			return nil, err
-		}
-
-		reqURL, err = url.Parse(baseURL)
-		if err != nil {
-			return nil, errors.Errorf("invalid proxy URL %q", baseURL)
-		}
-
-		reqURL.Path = path.Join(reqURL.Path, name, version, "download")
-		req, err = http.NewRequestWithContext(ctx, "GET", reqURL.String(), nil)
-		if err != nil {
-			return nil, err
-		}
-
-		respBody, err = c.do(req)
-		if err == nil || !errcode.IsNotFound(err) {
-			break
-		}
+	if err = c.limiter.Wait(ctx); err != nil {
+		return nil, err
 	}
 
-	return respBody, err
+	// TODO(crates): Add Urls support
+	baseURL := "https://crates.io/api/v1/crates/"
+	reqURL, err = url.Parse(baseURL)
+	if err != nil {
+		return nil, errors.Errorf("invalid proxy URL %q", baseURL)
+	}
+
+	reqURL.Path = path.Join(reqURL.Path, name, version, "download")
+	req, err = http.NewRequestWithContext(ctx, "GET", reqURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.do(req)
 }
 
 func (c *Client) do(req *http.Request) ([]byte, error) {

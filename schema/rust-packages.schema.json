@@ -6,17 +6,7 @@
   "allowComments": true,
   "type": "object",
   "additionalProperties": false,
-  "required": ["urls"],
   "properties": {
-    "urls": {
-      "description": "The list of Crates repository URLs to fetch packages from. 404 Not found or 410 Gone responses will result in the next URL to be attempted.",
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "default": ["https://crates.io/api"],
-      "examples": [["https://private.mycorp.org/simple", "https://pypi.org/simple"]]
-    },
     "rateLimit": {
       "description": "Rate limit applied when making background API requests to the configured Rust repository APIs.",
       "title": "RustRateLimit",

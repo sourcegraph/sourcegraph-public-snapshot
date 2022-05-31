@@ -517,8 +517,6 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.RustPackagesConnection:
-		// Unlike the GitHub or GitLab APIs, the pypi.org doesn't
-		// document an enforced req/s rate limit.
 		limit = rate.Limit(57600.0 / 3600.0) // 16/second same as default in rust-packages.schema.json
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)

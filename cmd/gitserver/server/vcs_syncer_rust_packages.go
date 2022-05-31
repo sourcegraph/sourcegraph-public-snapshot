@@ -56,16 +56,11 @@ func (rustDependencySource) ParseDependencyFromRepoName(repoName string) (reposo
 }
 
 func (s *rustDependencySource) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
-	// f, err := s.client.Version(ctx, name, version)
-	// if err != nil {
-	// 	return nil, err
-	// }
 	dep := reposource.NewRustDependency(name, version)
 	return dep, nil
 }
 
 func (s *rustDependencySource) Download(ctx context.Context, dir string, dep reposource.PackageDependency) error {
-	// packageURL := dep.(*reposource.RustDependency).PackageURL
 	packageURL := fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s/%s", string(dep.PackageSyntax()), dep.PackageVersion(), "download")
 
 	pkg, err := s.client.Download(ctx, packageURL)
@@ -93,7 +88,7 @@ func unpackRustPackage(pkg []byte, workDir string) error {
 
 			const sizeLimit = 15 * 1024 * 1024
 			if size >= sizeLimit {
-				log15.Warn("skipping large file in cargo package",
+				log15.Warn("skipping large file in crates package",
 					"path", file.Name(),
 					"size", size,
 					"limit", sizeLimit,

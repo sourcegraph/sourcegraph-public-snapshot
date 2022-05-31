@@ -1512,8 +1512,6 @@ type RustPackagesConnection struct {
 	Dependencies []string `json:"dependencies,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to the configured Rust repository APIs.
 	RateLimit *RustRateLimit `json:"rateLimit,omitempty"`
-	// Urls description: The list of Crates repository URLs to fetch packages from. 404 Not found or 410 Gone responses will result in the next URL to be attempted.
-	Urls []string `json:"urls"`
 }
 
 // RustRateLimit description: Rate limit applied when making background API requests to the configured Rust repository APIs.

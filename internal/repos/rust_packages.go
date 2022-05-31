@@ -29,7 +29,7 @@ func NewRustPackagesSource(svc *types.ExternalService, cf *httpcli.Factory) (*De
 		svc:        svc,
 		configDeps: c.Dependencies,
 		scheme:     dependencies.RustPackagesScheme,
-		src:        &rustPackagesSource{client: crates.NewClient(svc.URN(), c.Urls, cli)},
+		src:        &rustPackagesSource{client: crates.NewClient(svc.URN(), cli)},
 	}, nil
 }
 

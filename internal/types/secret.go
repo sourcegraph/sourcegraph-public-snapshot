@@ -71,12 +71,7 @@ func (e *ExternalService) RedactedConfig() (string, error) {
 			}
 		}
 	case *schema.RustPackagesConnection:
-		for i := range c.Urls {
-			err = es.redactURL(c.Urls[i], "urls", i)
-			if err != nil {
-				return "", err
-			}
-		}
+		// Nothing to redact
 	case *schema.JVMPackagesConnection:
 		if c.Maven != nil {
 			es.redactString(c.Maven.Credentials, "maven", "credentials")
@@ -164,10 +159,7 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 			return err
 		}
 	case *schema.RustPackagesConnection:
-		err = es.unredactURLs(c.Urls, oldCfg.(*schema.RustPackagesConnection).Urls)
-		if err != nil {
-			return err
-		}
+		// Nothing to unredact
 	case *schema.JVMPackagesConnection:
 		o := oldCfg.(*schema.JVMPackagesConnection)
 		if c.Maven != nil && o.Maven != nil {
