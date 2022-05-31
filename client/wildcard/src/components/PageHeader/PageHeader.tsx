@@ -62,7 +62,6 @@ export const PageHeader: React.FunctionComponent<React.PropsWithChildren<PageHea
 
     const heading = (
         <Heading as={headingElement}>
-            <p>Test breaking change</p>
             {path.map(({ to, text, icon, ariaLabel }, index) => (
                 <Breadcrumb key={index} to={to} icon={icon} aria-label={ariaLabel}>
                     {text}
