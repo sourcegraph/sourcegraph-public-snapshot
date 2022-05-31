@@ -9,6 +9,7 @@ import { useField } from '../../../../../components/form/hooks/useField'
 import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../../components/form/validators'
 import { Insight } from '../../../../../core'
+import { LineChartLivePreview } from '../../LineChartLivePreview'
 import {
     repositoriesExistValidator,
     repositoriesFieldValidator,
@@ -18,7 +19,6 @@ import { CaptureGroupFormFields } from '../types'
 import { searchQueryValidator } from '../utils/search-query-validator'
 
 import { CaptureGroupCreationForm } from './CaptureGoupCreationForm'
-import { CaptureGroupCreationLivePreview } from './CaptureGroupCreationLivePreview'
 
 const INITIAL_VALUES: CaptureGroupFormFields = {
     repositories: '',
@@ -168,15 +168,26 @@ export const CaptureGroupCreationContent: React.FunctionComponent<
                 onFormReset={handleFormReset}
             />
 
-            <CaptureGroupCreationLivePreview
+            <LineChartLivePreview
                 disabled={!areAllFieldsForPreviewValid}
                 isAllReposMode={allReposMode.input.value}
                 repositories={repositories.meta.value}
-                query={query.meta.value}
+                series={captureGroupPreviewSeries(query.meta.value)}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}
                 className={styles.contentLivePreview}
             />
         </div>
     )
+}
+
+function captureGroupPreviewSeries(query: string): any {
+    return [
+        {
+            generatedFromCaptureGroup: true,
+            label: '',
+            query,
+            stroke: '',
+        },
+    ]
 }

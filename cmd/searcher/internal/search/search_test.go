@@ -19,6 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
@@ -521,6 +523,11 @@ func newStore(t *testing.T, files map[string]struct {
 		},
 		Path: t.TempDir(),
 		Log:  logtest.Scoped(t),
+
+		ObservationContext: &observation.Context{
+			Registerer: metrics.TestRegisterer,
+			Logger:     logtest.Scoped(t),
+		},
 	}
 }
 
@@ -536,7 +543,7 @@ func fetchTimeoutForCI(t *testing.T) string {
 func toString(m []protocol.FileMatch) string {
 	buf := new(bytes.Buffer)
 	for _, f := range m {
-		if len(f.LineMatches) == 0 {
+		if len(f.LineMatches) == 0 && len(f.MultilineMatches) == 0 {
 			buf.WriteString(f.Path)
 			buf.WriteByte('\n')
 		}
@@ -544,6 +551,14 @@ func toString(m []protocol.FileMatch) string {
 			buf.WriteString(f.Path)
 			buf.WriteByte(':')
 			buf.WriteString(strconv.Itoa(l.LineNumber + 1))
+			buf.WriteByte(':')
+			buf.WriteString(l.Preview)
+			buf.WriteByte('\n')
+		}
+		for _, l := range f.MultilineMatches {
+			buf.WriteString(f.Path)
+			buf.WriteByte(':')
+			buf.WriteString(strconv.Itoa(int(l.Start.Line) + 1))
 			buf.WriteByte(':')
 			buf.WriteString(l.Preview)
 			buf.WriteByte('\n')

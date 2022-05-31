@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -162,12 +163,19 @@ func (s *Store) Keys() []string {
 	return keys
 }
 
+// getSecretmanagerClient instantiates a Google Secrets Manager client once and returns it.
 func (s *Store) getSecretmanagerClient(ctx context.Context) (*secretmanager.Client, error) {
 	s.secretmanagerOnce.Do(func() {
 		var err error
 		s.secretmanager, err = secretmanager.NewClient(ctx)
 		if err != nil {
-			s.secretmanagerErr = errors.Errorf("failed to create secretmanager client: %v", err)
+			const defaultMessage = "failed to create Google Secrets Manager client"
+			if strings.Contains(err.Error(), "could not find default credentials") {
+				s.secretmanagerErr = errors.Errorf("%s: %v - you might need to run 'sg setup' again to set up 'gcloud'",
+					defaultMessage, err)
+			} else {
+				s.secretmanagerErr = errors.Wrap(err, defaultMessage)
+			}
 		}
 	})
 	return s.secretmanager, s.secretmanagerErr

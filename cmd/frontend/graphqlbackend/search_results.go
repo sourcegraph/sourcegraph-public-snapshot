@@ -248,15 +248,15 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 	}()
 
 	// Blame the first line match.
-	if len(fm.MultilineMatches) == 0 {
+	if len(fm.HunkMatches) == 0 {
 		// No line match
 		return time.Time{}, nil
 	}
-	lm := fm.MultilineMatches[0]
+	hm := fm.HunkMatches[0]
 	hunks, err := gitserver.NewClient(sr.db).BlameFile(ctx, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
 		NewestCommit: fm.CommitID,
-		StartLine:    int(lm.Start.Line),
-		EndLine:      int(lm.Start.Line),
+		StartLine:    hm.Ranges[0].Start.Line,
+		EndLine:      hm.Ranges[0].Start.Line,
 	}, authz.DefaultSubRepoPermsChecker)
 	if err != nil {
 		return time.Time{}, err

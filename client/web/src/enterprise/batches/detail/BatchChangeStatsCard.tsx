@@ -60,6 +60,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                 <div className="d-flex align-items-center">
                     <Typography.H1 className="d-inline mb-0" aria-label="Batch Change Status">
                         <Icon
+                            role="img"
                             className={classNames('mr-2', isCompleted ? 'text-success' : 'text-muted')}
                             as={BatchChangeStatusIcon}
                             aria-label="Batch Change Status Icon"

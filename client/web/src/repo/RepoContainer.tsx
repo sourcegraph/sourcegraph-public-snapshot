@@ -21,7 +21,7 @@ import {
     isRepoSeeOtherErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -245,7 +245,8 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                 size="sm"
                                 as={Link}
                             >
-                                <Icon as={SourceRepositoryIcon} /> {displayRepoName(repoOrError.name)}
+                                <Icon role="img" as={SourceRepositoryIcon} aria-hidden={true} />{' '}
+                                {displayRepoName(repoOrError.name)}
                             </Button>
                             <PopoverTrigger
                                 as={Button}
@@ -255,7 +256,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                 variant="secondary"
                                 size="sm"
                             >
-                                <Icon as={ChevronDownIcon} />
+                                <Icon role="img" as={ChevronDownIcon} aria-hidden={true} />
                             </PopoverTrigger>
                         </ButtonGroup>
                         <PopoverContent position={Position.bottomStart} className="pt-0 pb-0">

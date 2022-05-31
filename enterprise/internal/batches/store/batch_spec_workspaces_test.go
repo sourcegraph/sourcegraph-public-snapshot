@@ -197,17 +197,17 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 
 		t.Run("OnlyWithoutExecution", func(t *testing.T) {
 			have, _, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
-				OnlyWithoutExecution: true,
+				OnlyWithoutExecutionAndNotCached: true,
 			})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if len(have) != 2 {
+			if len(have) != 1 {
 				t.Fatalf("wrong number of results. have=%d", len(have))
 			}
 
-			if diff := cmp.Diff(have, workspaces[1:3]); diff != "" {
+			if diff := cmp.Diff(have, workspaces[2:3]); diff != "" {
 				t.Fatalf("invalid jobs returned: %s", diff)
 			}
 		})

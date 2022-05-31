@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Badge, Link } from '@sourcegraph/wildcard'
+import { Badge, Link, Text } from '@sourcegraph/wildcard'
 
 import styles from './CodeInsightsLimitAccessBanner.module.scss'
 
@@ -14,7 +14,7 @@ export const CodeInsightsLimitAccessBanner: React.FunctionComponent<
     <div {...props} className={classNames(styles.banner, props.className)}>
         <div className={styles.content}>
             <Badge className={classNames('mb-2', styles.badge)}>LIMITED ACCESS</Badge>
-            <p className="m-0">
+            <Text className="m-0">
                 Contact your admin or{' '}
                 <Link to="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
                     reach out to us
@@ -23,7 +23,7 @@ export const CodeInsightsLimitAccessBanner: React.FunctionComponent<
                 <Link to="/help/code_insights/references/license" rel="noopener noreferrer" target="_blank">
                     Learn more
                 </Link>
-            </p>
+            </Text>
         </div>
     </div>
 )

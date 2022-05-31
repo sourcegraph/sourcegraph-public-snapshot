@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { gql, useMutation } from '@apollo/client'
 
-import { Link, Alert, AnchorLink, Checkbox, Typography } from '@sourcegraph/wildcard'
+import { Link, Alert, AnchorLink, Checkbox, Typography, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 
@@ -48,10 +48,10 @@ export const TosConsentModal: React.FunctionComponent<React.PropsWithChildren<{ 
             <SourcegraphIcon className={styles.icon} />
             <div className={styles.content}>
                 <Typography.H1>We respect your data privacy</Typography.H1>
-                <p className="mb-5">
+                <Text className="mb-5">
                     We take data privacy seriously. We collect only what we need to provide a great experience, and we
                     never have access to your private data or code.
-                </p>
+                </Text>
                 {/* eslint-disable-next-line react/forbid-elements */}
                 <form onSubmit={onSubmit}>
                     <div className="form-group">
@@ -82,10 +82,10 @@ export const TosConsentModal: React.FunctionComponent<React.PropsWithChildren<{ 
                         variant="primary"
                     />
                 </form>
-                <p className="mt-5">
+                <Text className="mt-5">
                     If you do not agree, <AnchorLink to="/-/sign-out">sign out</AnchorLink> and contact your site admin
                     to have your account deleted.
-                </p>
+                </Text>
                 {error && (
                     <Alert className="mt-4" variant="danger">
                         Error accepting Terms of Service: {error.message}

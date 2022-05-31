@@ -32,6 +32,6 @@ export const CodeIntelDeleteUpload: FunctionComponent<React.PropsWithChildren<Co
                     : 'Delete this upload immediately'
             }
         >
-            <Icon as={DeleteIcon} /> Delete upload
+            <Icon role="img" aria-hidden={true} as={DeleteIcon} /> Delete upload
         </Button>
     )

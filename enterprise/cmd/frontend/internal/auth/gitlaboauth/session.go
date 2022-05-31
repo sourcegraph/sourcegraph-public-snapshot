@@ -128,9 +128,11 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
   "url": "%s",
   "token": "%s",
   "token.type": "oauth",
+  "token.oauth.refresh": "%s",
+  "token.oauth.expiry": %d,
   "projectQuery": ["projects?id_before=0"]
 }
-`, p.ServiceID, token.AccessToken),
+`, p.ServiceID, token.AccessToken, token.RefreshToken, token.Expiry.Unix()),
 			NamespaceUserID: actor.UID,
 		}
 	} else if len(services) > 1 {
@@ -145,6 +147,14 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 		svc.Config, err = jsonc.Edit(svc.Config, "oauth", "token.type")
 		if err != nil {
 			return nil, "Error updating token type", err
+		}
+		svc.Config, err = jsonc.Edit(svc.Config, token.RefreshToken, "token.oauth.refresh")
+		if err != nil {
+			return nil, "Error updating refresh token", err
+		}
+		svc.Config, err = jsonc.Edit(svc.Config, token.Expiry.Unix(), "token.oauth.expiry")
+		if err != nil {
+			return nil, "Error updating token expiry", err
 		}
 		svc.UpdatedAt = now
 	}

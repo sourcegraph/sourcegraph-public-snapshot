@@ -28,7 +28,7 @@ export { Icon } from './Icon'
 export { ButtonLink } from './ButtonLink'
 export { Menu, MenuButton, MenuDivider, MenuHeader, MenuItem, MenuLink, MenuList, MenuText } from './Menu'
 export { NavMenu } from './NavMenu'
-export { Typography } from './Typography'
+export { Typography, Text, Label, Heading, Code, H1, H2, H3, H4, H5, H6 } from './Typography'
 export { AnchorLink, RouterLink, setLinkComponent, Link } from './Link'
 export { Modal } from './Modal'
 export { FeedbackBadge, FeedbackText, FeedbackPrompt } from './Feedback'
@@ -37,6 +37,7 @@ export {
     PopoverTrigger,
     PopoverContent,
     Position,
+    PopoverTail,
     PopoverOpenEventReason,
     EMPTY_RECTANGLE,
     createRectangle,
@@ -57,6 +58,7 @@ export type { PopoverOpenEvent } from './Popover'
 export type { TabsProps } from './Tabs'
 export type { IconProps } from './Icon'
 export type { Point } from './Popover'
+export type { HeadingProps, HeadingElement } from './Typography'
 export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatusBadgeProps } from './Badge'
 export type { AnchorLinkProps } from './Link'
 export type { ModalProps } from './Modal'

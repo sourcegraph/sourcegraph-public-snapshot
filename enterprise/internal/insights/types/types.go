@@ -34,6 +34,9 @@ type InsightViewSeries struct {
 	JustInTime                    bool
 	GenerationMethod              GenerationMethod
 	IsFrozen                      bool
+	SeriesSortMode                *SeriesSortMode
+	SeriesSortDirection           *SeriesSortDirection
+	SeriesLimit                   *int32
 }
 
 type Insight struct {
@@ -47,6 +50,7 @@ type Insight struct {
 	OtherThreshold   *float64
 	PresentationType PresentationType
 	IsFrozen         bool
+	SeriesOptions    SeriesDisplayOptions
 }
 
 type InsightViewFilters struct {
@@ -63,14 +67,17 @@ type InsightViewSeriesMetadata struct {
 
 // InsightView is a single insight view that may or may not have any associated series.
 type InsightView struct {
-	ID               int
-	Title            string
-	Description      string
-	UniqueID         string
-	Filters          InsightViewFilters
-	OtherThreshold   *float64
-	PresentationType PresentationType
-	IsFrozen         bool
+	ID                  int
+	Title               string
+	Description         string
+	UniqueID            string
+	Filters             InsightViewFilters
+	OtherThreshold      *float64
+	PresentationType    PresentationType
+	IsFrozen            bool
+	SeriesSortMode      *SeriesSortMode
+	SeriesSortDirection *SeriesSortDirection
+	SeriesLimit         *int32
 }
 
 // InsightSeries is a single data series for a Code Insight. This contains some metadata about the data series, as well
@@ -160,4 +167,29 @@ type Frame struct {
 	From   time.Time
 	To     time.Time
 	Commit string
+}
+
+type SeriesSortMode string
+
+const (
+	ResultCount     SeriesSortMode = "RESULT_COUNT"    // Sorts by the number of results for the most recent datapoint of a series.
+	DateAdded       SeriesSortMode = "DATE_ADDED"      // Sorts by the date of the earliest datapoint in the series.
+	Lexicographical SeriesSortMode = "LEXICOGRAPHICAL" // Sorts by label: first by semantic version and then alphabetically.
+)
+
+type SeriesSortDirection string
+
+const (
+	Asc  SeriesSortDirection = "ASC"
+	Desc SeriesSortDirection = "DESC"
+)
+
+type SeriesDisplayOptions struct {
+	SortOptions *SeriesSortOptions
+	Limit       *int32
+}
+
+type SeriesSortOptions struct {
+	Mode      SeriesSortMode
+	Direction SeriesSortDirection
 }

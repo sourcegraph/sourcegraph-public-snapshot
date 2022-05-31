@@ -28,7 +28,7 @@ class CodeInsightExampleBackend extends CodeInsightsGqlBackend {
             { id: '4', name: 'github.com/another-example/sub-repo-2' },
         ])
 
-    public getCaptureInsightContent = (): Promise<SeriesChartContent<any>> => Promise.resolve({ series: [] })
+    public getInsightPreviewContent = (): Promise<SeriesChartContent<any>> => Promise.resolve({ series: [] })
 }
 
 const api = new CodeInsightExampleBackend({} as any)

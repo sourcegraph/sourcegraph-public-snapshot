@@ -205,7 +205,7 @@ export const ChangesetSelectRow: React.FunctionComponent<React.PropsWithChildren
         <>
             <div className="row align-items-center no-gutters mb-2">
                 <div className="ml-2 col d-flex align-items-center">
-                    <Icon className="text-muted mr-2" as={InfoCircleOutlineIcon} />
+                    <Icon role="img" aria-hidden={true} className="text-muted mr-2" as={InfoCircleOutlineIcon} />
                     {selected === 'all' || allChangesetIDs?.length === selected.size ? (
                         <AllSelectedLabel count={allChangesetIDs?.length} />
                     ) : (

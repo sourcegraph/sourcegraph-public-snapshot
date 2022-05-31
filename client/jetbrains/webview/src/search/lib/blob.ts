@@ -1,11 +1,11 @@
 const cachedContentRequests = new Map<string, Promise<string>>()
 
-import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
+import { ContentMatch, PathMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 
-import { getIdForMatch } from '../results/utils'
+import { getMatchId } from '../results/utils'
 
-export async function loadContent(match: ContentMatch): Promise<string> {
-    const cacheKey = getIdForMatch(match)
+export async function loadContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string> {
+    const cacheKey = getMatchId(match)
 
     if (cachedContentRequests.has(cacheKey)) {
         return (await cachedContentRequests.get(cacheKey)) as string
@@ -20,7 +20,7 @@ export async function loadContent(match: ContentMatch): Promise<string> {
     return loadPromise
 }
 
-async function fetchBlobContent(match: ContentMatch): Promise<string> {
+async function fetchBlobContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
     const response: any = await fetch('https://sourcegraph.com/.api/graphql', {
         method: 'post',

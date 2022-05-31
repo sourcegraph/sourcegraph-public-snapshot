@@ -42,7 +42,7 @@ export const queryLsifIndexListByRepository = (
     repository: string,
     client: ApolloClient<object>
 ): Observable<IndexConnection> => {
-    const vars = {
+    const variables = {
         repository,
         query: query ?? null,
         state: state ?? null,
@@ -53,7 +53,7 @@ export const queryLsifIndexListByRepository = (
     return from(
         client.query<LsifIndexesForRepoResult, LsifIndexesForRepoVariables>({
             query: getDocumentNode(LSIF_INDEX_FOR_REPOSITORY),
-            variables: { ...vars },
+            variables: { ...variables },
         })
     ).pipe(
         map(({ data }) => data),

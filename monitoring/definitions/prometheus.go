@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func Prometheus() *monitoring.Container {
+func Prometheus() *monitoring.Dashboard {
 	const (
 		containerName = "prometheus"
 
@@ -15,7 +15,7 @@ func Prometheus() *monitoring.Container {
 		ruleGroupInterpretation = `Rules that Sourcegraph ships with are grouped under '/sg_config_prometheus'. [Custom rules are grouped under '/sg_prometheus_addons'](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration).`
 	)
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:                     "prometheus",
 		Title:                    "Prometheus",
 		Description:              "Sourcegraph's all-in-one Prometheus and Alertmanager service.",

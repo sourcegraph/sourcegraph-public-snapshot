@@ -151,7 +151,7 @@ func (r *Resolver) repositoryRevisionsFromInputArgs(ctx context.Context, args []
 		}
 		repoIDs = append(repoIDs, repoID)
 	}
-	idToRepo, err := database.Repos(r.db).GetReposSetByIDs(ctx, repoIDs...)
+	idToRepo, err := r.db.Repos().GetReposSetByIDs(ctx, repoIDs...)
 	if err != nil {
 		return nil, err
 	}
@@ -395,7 +395,7 @@ func (r *searchContextResolver) Repositories(ctx context.Context) ([]graphqlback
 		return []graphqlbackend.SearchContextRepositoryRevisionsResolver{}, nil
 	}
 
-	repoRevs, err := database.SearchContexts(r.db).GetSearchContextRepositoryRevisions(ctx, r.sc.ID)
+	repoRevs, err := r.db.SearchContexts().GetSearchContextRepositoryRevisions(ctx, r.sc.ID)
 	if err != nil {
 		return nil, err
 	}

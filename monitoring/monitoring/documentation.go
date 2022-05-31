@@ -46,7 +46,7 @@ func fprintSubtitle(w io.Writer, text string) {
 // Write a standardized Observable header that one can reliably generate an anchor link for.
 //
 // See `observableAnchor`.
-func fprintObservableHeader(w io.Writer, c *Container, o *Observable, headerLevel int) {
+func fprintObservableHeader(w io.Writer, c *Dashboard, o *Observable, headerLevel int) {
 	fmt.Fprint(w, strings.Repeat("#", headerLevel))
 	fmt.Fprintf(w, " %s: %s\n\n", c.Name, o.Name)
 }
@@ -59,7 +59,7 @@ func fprintOwnedBy(w io.Writer, owner ObservableOwner) {
 // Create an anchor link that matches `fprintObservableHeader`
 //
 // Must match Prometheus template in `docker-images/prometheus/cmd/prom-wrapper/receivers.go`
-func observableDocAnchor(c *Container, o Observable) string {
+func observableDocAnchor(c *Dashboard, o Observable) string {
 	observableAnchor := strings.ReplaceAll(o.Name, "_", "-")
 	return fmt.Sprintf("%s-%s", c.Name, observableAnchor)
 }
@@ -69,7 +69,7 @@ type documentation struct {
 	dashboards     bytes.Buffer
 }
 
-func renderDocumentation(containers []*Container) (*documentation, error) {
+func renderDocumentation(containers []*Dashboard) (*documentation, error) {
 	var docs documentation
 
 	fmt.Fprint(&docs.alertSolutions, alertSolutionsHeader)
@@ -101,7 +101,7 @@ func renderDocumentation(containers []*Container) (*documentation, error) {
 	return &docs, nil
 }
 
-func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) error {
+func (d *documentation) renderAlertSolutionEntry(c *Dashboard, o Observable) error {
 	if o.Warning == nil && o.Critical == nil {
 		return nil
 	}
@@ -161,7 +161,7 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 	return nil
 }
 
-func (d *documentation) renderDashboardPanelEntry(c *Container, o Observable, panelID uint) {
+func (d *documentation) renderDashboardPanelEntry(c *Dashboard, o Observable, panelID uint) {
 	fprintObservableHeader(&d.dashboards, c, &o, 4)
 	fprintSubtitle(&d.dashboards, upperFirst(o.Description))
 

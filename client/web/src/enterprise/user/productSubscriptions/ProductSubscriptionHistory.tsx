@@ -32,7 +32,9 @@ export const ProductSubscriptionHistory: React.FunctionComponent<
                         <td className="w-100">
                             <LinkOrSpan to={event.url} target="_blank" rel="noopener noreferrer">
                                 {event.title}
-                                {event.url && <Icon className="ml-1" as={ExternalLinkIcon} />}
+                                {event.url && (
+                                    <Icon role="img" aria-hidden={true} className="ml-1" as={ExternalLinkIcon} />
+                                )}
                             </LinkOrSpan>
                             {event.description && <small className="d-block text-muted">{event.description}</small>}
                         </td>
