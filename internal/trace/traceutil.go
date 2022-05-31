@@ -74,7 +74,7 @@ func ContextFromSpan(span opentracing.Span) *otfields.TraceContext {
 	return nil
 }
 
-// ScopedLogger will set the TraceContext on l if ctx has one, and also assign the trace
+// Logger will set the TraceContext on l if ctx has one, and also assign the trace
 // family as a scope if a trace family is found. This is an expanded convenience function
 // around l.WithTrace for the common case.
 //
