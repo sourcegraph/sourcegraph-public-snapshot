@@ -47,6 +47,10 @@ public class SourcegraphWindow implements Disposable {
         }
     }
 
+    public void hidePopup() {
+        popup.setUiVisible(false);
+    }
+
     @NotNull
     private JBPopup createPopup() {
         ComponentPopupBuilder builder = JBPopupFactory.getInstance().createComponentPopupBuilder(mainPanel, mainPanel)
@@ -63,7 +67,7 @@ public class SourcegraphWindow implements Disposable {
             .setCancelKeyEnabled(true)
             .setNormalWindowLevel(true)
             .setCancelCallback(() -> {
-                popup.setUiVisible(false);
+                hidePopup();
                 // We return false to prevent the default cancellation behavior.
                 return false;
             });
@@ -81,8 +85,8 @@ public class SourcegraphWindow implements Disposable {
     private void registerGlobalKeyListeners() {
         KeyboardFocusManager.getCurrentKeyboardFocusManager()
             .addKeyEventDispatcher(e -> {
-                if (e.getID() != KeyEvent.KEY_PRESSED || popup.isDisposed() || !popup.isVisible()) {
-                    return true;
+                if (e.getID() != KeyEvent.KEY_PRESSED || popup.isDisposed() || !popup.isVisible() || !popup.isFocused()) {
+                    return false;
                 }
 
                 return handleKeyPress(e.getKeyCode(), e.getModifiersEx());
@@ -95,6 +99,7 @@ public class SourcegraphWindow implements Disposable {
             public boolean onPreKeyEvent(CefBrowser browser, CefKeyEvent event, BoolRef is_keyboard_shortcut) {
                 return false;
             }
+
             @Override
             public boolean onKeyEvent(CefBrowser browser, CefKeyEvent event) {
                 return handleKeyPress(event.windows_key_code, event.modifiers);
@@ -104,16 +109,16 @@ public class SourcegraphWindow implements Disposable {
 
     private boolean handleKeyPress(int keyCode, int modifiers) {
         if (keyCode == KeyEvent.VK_ESCAPE) {
-            popup.setUiVisible(false);
-            return false;
+            hidePopup();
+            return true;
         }
 
         if (keyCode == KeyEvent.VK_ENTER && (modifiers & ALT_DOWN_MASK) == ALT_DOWN_MASK) {
             mainPanel.getPreviewPanel().openInEditor();
-            return false;
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     @Override
