@@ -6,7 +6,7 @@ import { Contributions } from '@sourcegraph/client-api'
 import { Context } from '@sourcegraph/template-parser'
 
 import { ConfiguredExtension } from '../../extensions/extension'
-import { SettingsCascade } from '../../settings/settings'
+import { Settings, SettingsCascade } from '../../settings/settings'
 import { MainThreadAPI } from '../contract'
 import { ExtensionViewer, ViewerUpdate } from '../viewerTypes'
 
@@ -23,6 +23,7 @@ import {
     ProgressNotification,
 } from './extensionHostApi'
 import { ReferenceCounter } from './utils/ReferenceCounter'
+import { isErrorLike } from '@sourcegraph/common'
 
 export function createExtensionHostState(
     initData: Pick<InitData, 'initialSettings' | 'clientApplication'>,
@@ -60,6 +61,11 @@ export function createExtensionHostState(
 
         context: new BehaviorSubject<Context>({
             'clientApplication.isSourcegraph': initData.clientApplication === 'sourcegraph',
+
+            'experimentalFeatures.showGitBlameInSeparateColumn':
+                !isErrorLike(initData.initialSettings.final) &&
+                (initData.initialSettings.final as Settings).experimentalFeatures?.showGitBlameInSeparateColumn ===
+                    true,
 
             // Arbitrary, undocumented versioning for extensions that need different behavior for different
             // Sourcegraph versions.
