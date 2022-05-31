@@ -3,7 +3,6 @@ package gerrit
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/url"
 
 	jsoniter "github.com/json-iterator/go"
@@ -111,7 +110,16 @@ func marshalAccountData(username, email string, acctID int32) (*json.RawMessage,
 	return (*json.RawMessage)(&accountData), nil
 }
 
+// FetchUserPerms is a WIP
+// TODO: caching for the projects/project access so we don't have to make these calls every time for every user.
+// TODO: handle "revision" field of access info
 func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	var (
+		// perms tracks repos this user has access to
+		perms = &authz.ExternalUserPermissions{
+			Exacts: make([]extsvc.RepoID, 0, 10), // TODO: how to determine length?
+		}
+	)
 	// fetch account data from Gerrit by the account id
 	user, err := gerrit.GetExternalAccountData(&account.AccountData)
 	if err != nil {
@@ -124,28 +132,32 @@ func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, o
 		return nil, err
 	}
 
-	// get a list of repos to check
+	projectAccessMap := map[string]gerrit.ProjectAccessInfo{} // TODO: potentially store this on the Provider?
+	// Fetch all projects (in batches?) and determine if the user has access to each
 	for {
-		// TODO: pagination?
+		// TODO: pagination (how many projects should we list at a time?)
+		// List all projects
 		page, nextPage, err := p.client.ListProjects(ctx, gerrit.ListProjectsArgs{})
 		if err != nil {
-			// TODO: handle error?
-			continue
+			return nil, errors.Wrap(err, "listing projects")
 		}
 		names := getProjectNamesFromMap(page)
-		fmt.Printf("names: %v\n", names)
+		// Fetch the project access info for all of these projects
 		resp, err := p.client.GetProjectAccess(ctx, names...)
 		if err != nil {
-			//todo handle error
-			fmt.Printf("Error getting project access: %s", err)
-			continue
+			return nil, errors.Wrap(err, "getting project access")
 		}
-		interpretProjectAccess(resp, groups)
+		// Based on the project access information determine if the user has access to this project/repo
+		repoAccess, err := p.interpretProjectAccess(ctx, resp, groups, projectAccessMap)
+		if err != nil {
+			return perms, err
+		}
+		addReposToUserPerms(repoAccess, perms)
 		if !nextPage {
 			break
 		}
 	}
-	return nil, &authz.ErrUnimplemented{Feature: "gerrit.FetchUserPerms"}
+	return perms, nil
 }
 
 func getProjectNamesFromMap(page *gerrit.ListProjectsResponse) []string {
@@ -156,13 +168,83 @@ func getProjectNamesFromMap(page *gerrit.ListProjectsResponse) []string {
 	return names
 }
 
-func interpretProjectAccess(accessResp gerrit.GetProjectAccessResponse, groups gerrit.GetAccountGroupsResponse) {
-	for proj, access := range accessResp {
-		fmt.Printf("Access for project: %s\n", proj)
-		fmt.Printf("Groups? %v\n", access.Groups)
-		fmt.Printf("Inherits from? %v\n", access.InheritsFrom)
-		fmt.Println()
+func (p Provider) interpretProjectAccess(ctx context.Context,
+	accessResp gerrit.GetProjectAccessResponse,
+	groups gerrit.GetAccountGroupsResponse,
+	projectAccessMap map[string]gerrit.ProjectAccessInfo) (map[string]bool, error) {
+
+	repoAccessMap := make(map[string]bool, len(accessResp))
+	for name, access := range accessResp {
+		// If applicable, fetch inherited access information from the api or the projectAccessMap
+		inheritedAccess, err := p.getInheritedAccess(ctx, access.InheritsFrom, projectAccessMap)
+		if err != nil {
+			return repoAccessMap, err
+		}
+		// Determine if user has access to this project and add it to the repoAccessMap if they do
+		if hasAccess, err := userHasAccess(groups, name, access.Groups, inheritedAccess); hasAccess {
+			repoAccessMap[name] = true
+		} else if err != nil {
+			return repoAccessMap, err
+		}
 	}
+	return repoAccessMap, nil
+}
+
+// userHasAccess checks if this user has access to the project based on if it is a member of a group which has access to the project, or if it inherits permissions from a project
+// which grants permissions to a group the user has access to.
+func userHasAccess(accountGroups gerrit.GetAccountGroupsResponse, projectName string, projectAccessGroups map[string]gerrit.GroupInfo, inheritedAccess *gerrit.ProjectAccessInfo) (bool, error) {
+	if len(projectAccessGroups) != 0 {
+		// Check if one of the groups for this user has access to this project
+		if checkGroupAccess(accountGroups, projectName, projectAccessGroups) {
+			return true, nil
+		}
+	}
+	if inheritedAccess != nil {
+		if !inheritedAccess.InheritsFrom.IsEmpty() {
+			return false, errors.New("Unsupported permissions format: inherited project permissions cannot also inherit from another project.")
+		}
+		if checkGroupAccess(accountGroups, projectName, inheritedAccess.Groups) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func checkGroupAccess(accountGroups gerrit.GetAccountGroupsResponse, projectName string, projectAccessGroups map[string]gerrit.GroupInfo) bool {
+	for groupID, group := range projectAccessGroups {
+		for _, aGroup := range accountGroups {
+			if group.ID == aGroup.ID || groupID == aGroup.ID {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (p Provider) getInheritedAccess(ctx context.Context, inheritsFrom gerrit.Project, projectAccessMap map[string]gerrit.ProjectAccessInfo) (*gerrit.ProjectAccessInfo, error) {
+	if inheritsFrom.ID != "" { // TODO: check name as well?
+		// check if we've already fetched the access info for this project
+		if access, ok := projectAccessMap[inheritsFrom.ID]; ok {
+			return &access, nil
+		}
+
+		// fetch project access
+		inheritedAccess, err := p.client.GetProjectAccess(ctx, inheritsFrom.ID)
+		if err != nil {
+			return nil, err
+		}
+		for pname, ia := range inheritedAccess {
+			projectAccessMap[pname] = ia
+		}
+	}
+	return nil, nil
+}
+
+func addReposToUserPerms(repoAccessMap map[string]bool, userPerms *authz.ExternalUserPermissions) *authz.ExternalUserPermissions {
+	for repo := range repoAccessMap {
+		userPerms.Exacts = append(userPerms.Exacts, extsvc.RepoID(repo)) // todo: figure out repo id?
+	}
+	return userPerms
 }
 
 func (p Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {

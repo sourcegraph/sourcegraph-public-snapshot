@@ -235,6 +235,10 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	return resp, json.Unmarshal(bs[4:], result)
 }
 
+func (p Project) IsEmpty() bool {
+	return p.ID == "" && p.Name == "" && p.Parent == "" && p.State == "" && p.Description == "" && len(p.Branches) == 0 && len(p.Labels) == 0
+}
+
 type ProjectAccessInfo struct {
 	Revision     string               `json:"revision"`
 	InheritsFrom Project              `json:"inherits_from"`
