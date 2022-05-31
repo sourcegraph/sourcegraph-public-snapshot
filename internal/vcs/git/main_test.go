@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 	flag.Parse()
 
 	if !testing.Verbose() {
-		logtest.Init(m)
+		logtest.InitWithLevel(m, sglog.LevelNone)
 	}
 
 	code := m.Run()
