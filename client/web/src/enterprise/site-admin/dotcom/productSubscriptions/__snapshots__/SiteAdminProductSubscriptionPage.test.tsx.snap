@@ -234,12 +234,16 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
               <div
                 class="input-group"
               >
-                <input
-                  class="form-control input"
-                  readonly=""
-                  type="text"
-                  value="lk1"
-                />
+                <div
+                  class="container loader-input loaderInput"
+                >
+                  <input
+                    class="input form-control with-invalid-icon"
+                    readonly=""
+                    type="text"
+                    value="lk1"
+                  />
+                </div>
                 <div
                   class="input-group-append"
                 >

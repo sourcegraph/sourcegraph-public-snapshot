@@ -46,7 +46,7 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
                 class="d-flex align-items-center"
               >
                 <div
-                  class="container d-flex w-auto"
+                  class="container loader-input loaderInput w-auto"
                 >
                   <input
                     class="form-control with-invalid-icon"
