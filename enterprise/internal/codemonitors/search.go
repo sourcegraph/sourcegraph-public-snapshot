@@ -229,7 +229,7 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 			jobCopy.CodeMonitorSearchWrapper = hook
 			return &jobCopy
 		case *repos.ComputeExcludedJob, *jobutil.NoopJob:
-			// ComputeExcludedReposJob is fine for code monitor jobs
+			// ComputeExcludedJob is fine for code monitor jobs
 			return atom
 		default:
 			if err == nil {
