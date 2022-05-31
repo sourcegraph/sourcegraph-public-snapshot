@@ -30,12 +30,14 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       500
       (PARALLEL
-        (REPOPAGER
-          ZoektRepoSubsetTextSearchJob)
+        (SEQUENTIAL
+          (REPOPAGER
+            ZoektRepoSubsetTextSearchJob)
+          (REPOPAGER
+            SearcherTextSearchJob))
         ReposComputeExcludedJob
         (PARALLEL
-          (REPOPAGER
-            SearcherTextSearchJob)
+          NoopJob
           RepoSearchJob)))))`),
 	}, {
 		query:      `foo context:global`,
@@ -76,12 +78,14 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       500
       (PARALLEL
-        (REPOPAGER
-          ZoektRepoSubsetTextSearchJob)
+        (SEQUENTIAL
+          (REPOPAGER
+            ZoektRepoSubsetTextSearchJob)
+          (REPOPAGER
+            SearcherTextSearchJob))
         ReposComputeExcludedJob
         (PARALLEL
-          (REPOPAGER
-            SearcherTextSearchJob)
+          NoopJob
           RepoSearchJob)))))`),
 	}, {
 		query:      `ok ok`,
@@ -207,15 +211,17 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       500
       (PARALLEL
-        (REPOPAGER
-          ZoektRepoSubsetTextSearchJob)
+        (SEQUENTIAL
+          (REPOPAGER
+            ZoektRepoSubsetTextSearchJob)
+          (REPOPAGER
+            SearcherTextSearchJob))
         (REPOPAGER
           ZoektSymbolSearchJob)
         CommitSearchJob
         ReposComputeExcludedJob
         (PARALLEL
-          (REPOPAGER
-            SearcherTextSearchJob)
+          NoopJob
           (REPOPAGER
             SearcherSymbolSearchJob)
           RepoSearchJob)))))`),
@@ -245,15 +251,17 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       500
       (PARALLEL
-        (REPOPAGER
-          ZoektRepoSubsetTextSearchJob)
+        (SEQUENTIAL
+          (REPOPAGER
+            ZoektRepoSubsetTextSearchJob)
+          (REPOPAGER
+            SearcherTextSearchJob))
         (REPOPAGER
           ZoektSymbolSearchJob)
         CommitSearchJob
         ReposComputeExcludedJob
         (PARALLEL
-          (REPOPAGER
-            SearcherTextSearchJob)
+          NoopJob
           (REPOPAGER
             SearcherSymbolSearchJob)
           RepoSearchJob)))))`),
