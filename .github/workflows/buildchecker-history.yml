@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  report-to-platorms:
+  report:
     runs-on: ubuntu-latest
 
     # secrets for this workflow are configured in the 'autobuildsherrif' environment.
