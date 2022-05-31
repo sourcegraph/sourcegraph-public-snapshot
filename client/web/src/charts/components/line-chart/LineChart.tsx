@@ -167,6 +167,10 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                 {stacked && <StackedArea dataSeries={dataSeries} xScale={xScale} yScale={yScale} />}
 
                 {[...dataSeries]
+                    // resorts array based on hover state
+                    // this is to make sure the hovered series is always rendered on top
+                    // since SVGs do not support z-index, we have to render the hovered
+                    // series last
                     .sort(series => sortByDataKey(series.id, activePoint?.seriesId || ''))
                     .map(line => (
                         <Group key={line.id} style={getHoverStyle(`${line.id}`)}>
@@ -180,21 +184,19 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                                 strokeLinecap="round"
                                 strokeWidth={2}
                             />
-                            {points[line.id]
-                                .sort(point => sortByDataKey(point.seriesId, activePoint?.seriesId || ''))
-                                .map(point => (
-                                    <PointGlyph
-                                        key={point.id}
-                                        left={point.x}
-                                        top={point.y}
-                                        active={activePoint?.id === point.id}
-                                        color={point.color}
-                                        linkURL={point.linkUrl}
-                                        onClick={onDatumClick}
-                                        onFocus={event => setActivePoint({ ...point, element: event.target })}
-                                        onBlur={() => setActivePoint(undefined)}
-                                    />
-                                ))}
+                            {points[line.id].map(point => (
+                                <PointGlyph
+                                    key={point.id}
+                                    left={point.x}
+                                    top={point.y}
+                                    active={activePoint?.id === point.id}
+                                    color={point.color}
+                                    linkURL={point.linkUrl}
+                                    onClick={onDatumClick}
+                                    onFocus={event => setActivePoint({ ...point, element: event.target })}
+                                    onBlur={() => setActivePoint(undefined)}
+                                />
+                            ))}
                         </Group>
                     ))}
             </Group>
