@@ -597,7 +597,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			})
 
 			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo, true)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
 
@@ -632,7 +632,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			})
 
 			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo, true)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
 
@@ -664,7 +664,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			css.ValidateAuthenticatorFunc.SetDefaultReturn(want)
 
 			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo, true)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 			assert.Same(t, css, have)
 			assert.Same(t, want, css.ValidateAuthenticator(ctx))
 		})
@@ -691,7 +691,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			})
 
 			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo, true)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
 
@@ -710,7 +710,7 @@ func TestWithAuthenticatorForChangeset(t *testing.T) {
 			css.ValidateAuthenticatorFunc.SetDefaultReturn(want)
 
 			have, err := WithAuthenticatorForChangeset(ctx, tx, css, ch, repo, true)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 			assert.Same(t, css, have)
 			assert.Same(t, want, css.ValidateAuthenticator(ctx))
 		})

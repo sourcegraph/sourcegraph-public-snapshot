@@ -373,10 +373,10 @@ func TestLoadChangesetSource(t *testing.T) {
 			})
 
 			src, err := loadChangesetSource(ctx, cf, syncStore, ch, repo)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			err = src.ValidateAuthenticator(ctx)
-			assert.NotNil(t, err)
+			assert.Error(t, err)
 			assert.Equal(t, "Bearer 789", err.Error())
 		})
 
@@ -402,10 +402,10 @@ func TestLoadChangesetSource(t *testing.T) {
 			})
 
 			src, err := loadChangesetSource(ctx, cf, syncStore, ch, repo)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			err = src.ValidateAuthenticator(ctx)
-			assert.NotNil(t, err)
+			assert.Error(t, err)
 			assert.Equal(t, "Bearer 456", err.Error())
 		})
 
@@ -424,10 +424,10 @@ func TestLoadChangesetSource(t *testing.T) {
 			})
 
 			src, err := loadChangesetSource(ctx, cf, syncStore, ch, repo)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			err = src.ValidateAuthenticator(ctx)
-			assert.NotNil(t, err)
+			assert.Error(t, err)
 			assert.Equal(t, "Bearer 123", err.Error())
 		})
 	})
