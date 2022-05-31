@@ -192,7 +192,6 @@ This format omits fields like OpenTelemetry Resource and renders certain field t
 
 Additionally, in `SRC_DEVELOPMENT=true` using `log.Scoped` without calling `log.Init` will panic (in production, a no-op logger will be returned).
 
-
 ## Testing usage
 
 For testing purposes, we also provide:
@@ -241,10 +240,10 @@ func TestFooBar(t *testing.T) {
 }
 ```
 
-When writing a test, ensure that `logtest.Scope` in the tightest scope possible. This ensures that if a test fails, that the logging is closely tied to the test that failed. Especially if you testcase has sub tests with `t.Run`, prefer to created the test logger inside `t.Run`
+When writing a test, ensure that `logtest.Scope` in the tightest scope possible. This ensures that if a test fails, that the logging is closely tied to the test that failed. Especially if you testcase has sub tests with `t.Run`, prefer to created the test logger inside `t.Run`.
 
 ## Conventions
 
 * The first scope of the logger should be the name of the service and following the same naming of the service. In general, if the logger is initialized as described in [handling logging](#handling-logging) the name should be correct.
 * The logger parameter should either be immediately after `ctx context.Context`, or be the first parameter.
-* In some cases there might already be a `log` module imported. Use the alias `sglog` to refer to `lib/log` as can be seen [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/searcher/internal/search/search.go?L35-36).
+* In some cases there might already be a `log` module imported. Use the alias `sglog` to refer to `lib/log`, for example `import sglog "github.com/sourcegraph/sourcegraph/lib/log"`.
