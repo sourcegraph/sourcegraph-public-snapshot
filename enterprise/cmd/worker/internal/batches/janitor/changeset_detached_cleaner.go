@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
@@ -17,8 +18,17 @@ func NewChangesetDetachedCleaner(ctx context.Context, s *store.Store) goroutine.
 		ctx,
 		changesetCleanInterval,
 		goroutine.NewHandlerWithErrorMessage("cleaning detached changeset entries", func(ctx context.Context) error {
-			// delete detached changesets that are 2 weeks old
-			return s.CleanDetachedChangesets(ctx, 336*time.Hour)
+			// get the configuration value when the handler runs to get the latest value
+			retention := conf.Get().BatchChangesChangesetsRetention
+			if len(retention) > 0 {
+				d, err := time.ParseDuration(retention)
+				if err != nil {
+					return err
+				}
+				return s.CleanDetachedChangesets(ctx, d)
+			}
+			// nothing to do
+			return nil
 		}),
 	)
 }
