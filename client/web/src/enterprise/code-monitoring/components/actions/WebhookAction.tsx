@@ -127,7 +127,7 @@ export const WebhookAction: React.FunctionComponent<React.PropsWithChildren<Acti
             onTest={onSendTestMessage}
             _testStartOpen={_testStartOpen}
         >
-            <Alert variant="info" className="mt-4">
+            <Alert aria-live="off" variant="info" className="mt-4">
                 The specified webhook URL will be called with a JSON payload.
                 <br />
                 <Link to="/help/code_monitoring/how-tos/webhook" target="_blank" rel="noopener">
