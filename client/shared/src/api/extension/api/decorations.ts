@@ -124,3 +124,7 @@ export function validateFileDecoration(fileDecoration: unknown): fileDecoration 
 
     return !textContentIsObject
 }
+
+export const flattenDecorations = (
+    decorationsByExtension: [string | null, TextDocumentDecoration[]][]
+): TextDocumentDecoration[] => decorationsByExtension.map(([, values]) => values).flat()

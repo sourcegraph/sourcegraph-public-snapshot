@@ -40,6 +40,7 @@ import {
 } from './codeHost'
 import { toCodeViewResolver } from './codeViews'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './testHelpers'
+import { flattenDecorations } from '@sourcegraph/shared/src/api/extension/api/decorations'
 
 const RENDER = sinon.spy()
 
@@ -359,7 +360,7 @@ describe('codeHost', () => {
                 const decorated = (editor: ExtensionCodeEditor): Promise<TextDocumentDecoration[] | null> =>
                     wrapRemoteObservable(extensionHostAPI.getTextDecorations({ viewerId: editor.viewerId }))
                         .pipe(
-                            map(decorations => [...decorations.values()].flat()),
+                            map(flattenDecorations),
                             first(decorations => !isEmpty(decorations))
                         )
                         .toPromise()
@@ -390,7 +391,7 @@ describe('codeHost', () => {
                 ])
                 await wrapRemoteObservable(extensionHostAPI.getTextDecorations({ viewerId: editor.viewerId }))
                     .pipe(
-                        map(decorations => [...decorations.values()].flat()),
+                        map(flattenDecorations),
                         filter(
                             decorations =>
                                 !!decorations &&
@@ -468,7 +469,7 @@ describe('codeHost', () => {
                 const decorated = (editor: ExtensionCodeEditor): Promise<TextDocumentDecoration[] | null> =>
                     wrapRemoteObservable(extensionHostAPI.getTextDecorations({ viewerId: editor.viewerId }))
                         .pipe(
-                            map(decorations => [...decorations.values()].flat()),
+                            map(flattenDecorations),
                             first(decorations => !isEmpty(decorations))
                         )
                         .toPromise()

@@ -50,10 +50,8 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
 
     private _decorationsByType = new Map<sourcegraph.TextDocumentDecorationType, clientType.TextDocumentDecoration[]>()
 
-    private _decorationsByExtension = new BehaviorSubject<Map<string | null, clientType.TextDocumentDecoration[]>>(
-        new Map()
-    )
-    public get decorationsByExtension(): Observable<Map<string | null, clientType.TextDocumentDecoration[]>> {
+    private _decorationsByExtension = new BehaviorSubject<[string | null, clientType.TextDocumentDecoration[]][]>([])
+    public get decorationsByExtension(): Observable<[string | null, clientType.TextDocumentDecoration[]][]> {
         return this._decorationsByExtension
     }
 
@@ -66,21 +64,20 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
         decorationType = decorationType || DEFAULT_DECORATION_TYPE
         // Replace previous decorations for this decorationType
         this._decorationsByType.set(decorationType, decorations.map(fromTextDocumentDecoration))
-        this._decorationsByExtension.next(
-            [...this._decorationsByType].reduce((accumulator, [{ extensionID }, decorations]) => {
-                const key = extensionID || null
-                const filteredDecorations = decorations.filter(decoration => !isDecorationEmpty(decoration))
 
-                const extensionDecorations = accumulator.get(key)
-                if (extensionDecorations) {
-                    extensionDecorations.push(...filteredDecorations)
-                } else {
-                    accumulator.set(key, filteredDecorations)
-                }
+        const updatedDecorationsByExtension = new Map<string | null, clientType.TextDocumentDecoration[]>()
+        for (const [{ extensionID }, decorations] of this._decorationsByType) {
+            const key = extensionID || null
+            const filteredDecorations = decorations.filter(decoration => !isDecorationEmpty(decoration))
 
-                return accumulator
-            }, new Map<string | null, clientType.TextDocumentDecoration[]>())
-        )
+            const extensionDecorations = updatedDecorationsByExtension.get(key)
+            if (extensionDecorations) {
+                extensionDecorations.push(...filteredDecorations)
+            } else {
+                updatedDecorationsByExtension.set(key, filteredDecorations)
+            }
+        }
+        this._decorationsByExtension.next([...updatedDecorationsByExtension.entries()])
     }
 
     private _statusBarItemsByType = new Map<sourcegraph.StatusBarItemType, StatusBarItemWithKey>()

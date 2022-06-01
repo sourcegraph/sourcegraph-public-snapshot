@@ -275,7 +275,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     }, [blobInfo, nextBlobInfoChange, viewerUpdates])
 
     const [decorationsOrError, setDecorationsOrError] = useState<
-        Map<string | null, TextDocumentDecoration[]> | Error | undefined
+        [string | null, TextDocumentDecoration[]][] | Error | undefined
     >()
 
     const popoverCloses = useMemo(() => new Subject<void>(), [])
@@ -602,7 +602,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     // in `ColumnDecorator`s or `LineDecorator`s on renders in which decorations haven't changed.
     const decorations: { column: Map<string, DecorationMapByLine>; inline: DecorationMapByLine } = useMemo(() => {
         if (decorationsOrError && !isErrorLike(decorationsOrError)) {
-            const { column, inline } = [...decorationsOrError].reduce(
+            const { column, inline } = decorationsOrError.reduce(
                 (accumulator, [extensionID, items]) => {
                     if (showGitBlameInSeparateColumn && extensionID === 'sourcegraph/git-extras') {
                         accumulator.column.set(extensionID, groupDecorationsByLine(items))
