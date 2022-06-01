@@ -19,6 +19,8 @@ const (
 	// - Project: 1password vault
 	// - Name: <itemName> | <itemID> | <shareLink>
 	// - Field: field in item
+	//
+	// All 1password items are fetched from https://team-sourcegraph.1password.com/
 	ExternalProvider1Pass = "1pass"
 )
 

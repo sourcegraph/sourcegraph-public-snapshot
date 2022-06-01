@@ -24,6 +24,10 @@ const (
 
 var (
 	ErrSecretNotFound = errors.New("secret not found")
+
+	// externalSecretTTL declares how long external secrets are allowed to be persisted
+	// once fetched.
+	externalSecretTTL = 24 * time.Hour
 )
 
 // Store holds secrets regardless on their form, as long as they are marshallable in JSON.
@@ -121,7 +125,13 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret) (string,
 
 	// Check if we already have this secret
 	if err := s.Get(secret.id(), &value); err == nil {
-		return value.Value, nil
+		if time.Since(value.Fetched) < externalSecretTTL {
+			return value.Value, nil
+		}
+
+		// If expired, remove the secret and fetch a new one.
+		_ = s.Remove(secret.id())
+		value = externalSecretValue{}
 	}
 
 	// Get secret from provider
@@ -162,10 +172,9 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret) (string,
 		return "", errors.Wrap(err, errMessaage)
 	}
 
+	// Return and persist the fetched secret
 	value.Fetched = time.Now()
-	s.Put(secret.id(), &value)
-
-	return value.Value, nil
+	return value.Value, s.PutAndSave(secret.id(), &value)
 }
 
 // Remove deletes a value from memory.
