@@ -19,18 +19,18 @@ If you're using the default `--volume $HOME/.sourcegraph/data:/var/opt/sourcegra
 
 2.  Stop Sourcegraph if it is running. This is to ensure it doesn't interfere with the clone.
 
-3.  On the host machine, ensure that a bare Git clone of the repository exists at `$HOME/.sourcegraph/data/repos/github.com/my/repo/.git`.
+3.  On the host machine, ensure that a bare Git clone of the repository exists at `$HOME/.sourcegraph/repos/github.com/my/repo/.git`.
 
     To create a new clone given its clone URL:
 
     ```
-    git clone --mirror YOUR-REPOSITORY-CLONE-URL $HOME/.sourcegraph/data/repos/github.com/my/repo/.git
+    git clone --mirror YOUR-REPOSITORY-CLONE-URL $HOME/.sourcegraph/repos/github.com/my/repo/.git
     ```
 
     Or, as an optimization, you can reuse an existing local clone to avoid needing to fetch all the repository data again:
 
     ```
-    git clone --mirror --reference PATH-TO-YOUR-EXISTING-LOCAL-CLONE --dissociate YOUR-REPOSITORY-CLONE-URL $HOME/.sourcegraph/data/repos/github.com/my/repo/.git
+    git clone --mirror --reference PATH-TO-YOUR-EXISTING-LOCAL-CLONE --dissociate YOUR-REPOSITORY-CLONE-URL $HOME/.sourcegraph/repos/github.com/my/repo/.git
     ```
 
 If this repository exists on a code host that Sourcegraph integrates with, then use that code host's configuration (as described in the [code host documentation](../external_service/index.md)). After updating the code host configuration, if you used the correct repository path, Sourcegraph will detect and reuse the existing clone. (For example, if you're working with a repository on GitHub.com, ensure that the repository path name you used is of the form `github.com/my/repo`.)
