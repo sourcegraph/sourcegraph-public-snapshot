@@ -71,8 +71,9 @@ func queryRFCs(ctx context.Context, query string, orderBy string, pager func(r *
 	clientCredentials, err := sec.GetExternal(ctx, secrets.ExternalSecret{
 		Provider: secrets.ExternalProvider1Pass,
 		Project:  "Shared",
-		Name:     "xyyaeojdvkch3uksxb5yoye7am",
-		Field:    "credential",
+		// sg Google client credentials
+		Name:  "xyyaeojdvkch3uksxb5yoye7am",
+		Field: "credential",
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to get google client credentials")
