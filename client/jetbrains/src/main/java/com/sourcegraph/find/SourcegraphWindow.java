@@ -95,28 +95,38 @@ public class SourcegraphWindow implements Disposable {
     }
 
     private void registerJBCefClientKeyListeners() {
-        mainPanel.getBrowser().getJBCefClient().addKeyboardHandler(new CefKeyboardHandler() {
-            @Override
-            public boolean onPreKeyEvent(CefBrowser browser, CefKeyEvent event, BoolRef is_keyboard_shortcut) {
-                return false;
-            }
+        if (mainPanel.getBrowser() != null) {
+            mainPanel.getBrowser().getJBCefClient().addKeyboardHandler(new CefKeyboardHandler() {
+                @Override
+                public boolean onPreKeyEvent(CefBrowser browser, CefKeyEvent event, BoolRef is_keyboard_shortcut) {
+                    return false;
+                }
 
-            @Override
-            public boolean onKeyEvent(CefBrowser browser, CefKeyEvent event) {
-                return handleKeyPress(event.windows_key_code, event.modifiers);
-            }
-        }, mainPanel.getBrowser().getCefBrowser());
+                @Override
+                public boolean onKeyEvent(CefBrowser browser, CefKeyEvent event) {
+                    return handleKeyPress(event.windows_key_code, event.modifiers);
+                }
+            }, mainPanel.getBrowser().getCefBrowser());
+        }
     }
 
     private boolean handleKeyPress(int keyCode, int modifiers) {
         if (keyCode == KeyEvent.VK_ESCAPE && modifiers == 0) {
-            ApplicationManager.getApplication().invokeLater(() -> hidePopup());
+            ApplicationManager.getApplication().invokeLater(this::hidePopup);
             return true;
         }
 
         if (keyCode == KeyEvent.VK_ENTER && (modifiers & ALT_DOWN_MASK) == ALT_DOWN_MASK) {
-            ApplicationManager.getApplication().invokeLater(() -> mainPanel.getPreviewPanel().openInEditor());
-            return true;
+            if (mainPanel.getPreviewPanel() != null) {
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    try {
+                        mainPanel.getPreviewPanel().openInEditorOrBrowser();
+                    } catch (Exception e) {
+                        // Swallow error
+                    }
+                });
+                return true;
+            }
         }
 
         return false;

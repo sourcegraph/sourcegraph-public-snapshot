@@ -13,10 +13,8 @@ import com.sourcegraph.find.Search;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import java.awt.*;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.URI;
 
 public class JSToJavaBridgeRequestHandler {
     private final Project project;
@@ -68,29 +66,21 @@ public class JSToJavaBridgeRequestHandler {
                 case "preview":
                     arguments = request.getAsJsonObject("arguments");
                     previewContent = gson.fromJson(arguments, PreviewContent.class);
-                    previewPanel.setContent(previewContent, false);
+                    previewPanel.setContent(previewContent);
                     return createSuccessResponse(null);
                 case "clearPreview":
                     previewPanel.clearContent();
                     return createSuccessResponse(null);
                 case "open":
-                    arguments = request.getAsJsonObject("arguments");
-                    previewContent = gson.fromJson(arguments, PreviewContent.class);
-                    previewPanel.setContent(previewContent, true);
+                    try {
+                        previewPanel.openInEditorOrBrowser();
+                    } catch (Exception e) {
+                        return createErrorResponse("Error while opening link: " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
+                    }
                     return createSuccessResponse(null);
                 case "indicateFinishedLoading":
                     topPanel.setBrowserVisible(true);
                     return createSuccessResponse(null);
-                case "openSourcegraphUrl":
-                    // Source: https://stackoverflow.com/questions/5226212/how-to-open-the-default-webbrowser-using-java
-                    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                        String sourcegraphUrl = ConfigUtil.getSourcegraphUrl(this.project);
-                        String relativeUrl = request.getAsJsonObject("arguments").get("relativeUrl").getAsString();
-                        Desktop.getDesktop().browse(new URI(sourcegraphUrl + "/" + relativeUrl));
-                        return createSuccessResponse(null);
-                    } else {
-                        return createErrorResponse("Can't open link. Desktop is not supported.", "No stack trace");
-                    }
                 default:
                     return createErrorResponse("Unknown action: '" + action + "'.", "No stack trace");
             }
