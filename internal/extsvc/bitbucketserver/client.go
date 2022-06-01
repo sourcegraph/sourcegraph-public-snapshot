@@ -813,15 +813,12 @@ func (c *Client) Repos(ctx context.Context, pageToken *PageToken, searchQueries 
 }
 
 func (c *Client) LabeledRepos(ctx context.Context, pageToken *PageToken, label string) ([]*Repo, *PageToken, error) {
-	fmt.Println("IN LABELED REPOS")
 	u := fmt.Sprintf("rest/api/1.0/labels/%s/labeled", label)
 	qry := url.Values{
 		"REPOSITORY": []string{""},
 	}
 
 	var repos []*Repo
-	fmt.Println("URL:", u)
-	fmt.Printf("PageToken: %+v\n", pageToken)
 	next, err := c.page(ctx, u, qry, pageToken, &repos)
 	return repos, next, err
 }
@@ -872,8 +869,6 @@ func (c *Client) Fork(ctx context.Context, projectKey, repoSlug string, input Cr
 }
 
 func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results any) (*PageToken, error) {
-	fmt.Println("IN CLIENT.page()")
-	fmt.Println("Query:", qry)
 	if qry == nil {
 		qry = make(url.Values)
 	}
@@ -890,8 +885,8 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 
 	var next PageToken
 	_, err = c.do(ctx, req, &struct {
-		*PageToken
-		Values any `json:"values"`
+		*PageToken `json:"pageToken"`
+		Values     any `json:"values"`
 	}{
 		PageToken: &next,
 		Values:    results,
@@ -927,8 +922,6 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
-	fmt.Println("IN CLIENT.do()")
-
 	req.URL = c.URL.ResolveReference(req.URL)
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -939,7 +932,6 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 		nethttp.OperationName("Bitbucket Server"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
-	fmt.Println("Passed finish")
 
 	if err := c.Auth.Authenticate(req); err != nil {
 		return nil, err
@@ -949,9 +941,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 		return nil, err
 	}
 
-	fmt.Println("REQ:", req.URL)
 	resp, err := c.httpClient.Do(req)
-	fmt.Println("ERROR:", err)
 	if err != nil {
 		return nil, err
 	}
@@ -963,7 +953,6 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 		return nil, err
 	}
 
-	fmt.Println("StatusCode:", resp.StatusCode)
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		return nil, errors.WithStack(&httpError{
 			URL:        req.URL,

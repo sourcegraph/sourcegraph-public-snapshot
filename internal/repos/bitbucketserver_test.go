@@ -247,9 +247,36 @@ func TestListRepos(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode()
+		var repos []bitbucketserver.Repo
+		if err := json.Unmarshal(byteValue, &repos); err != nil {
+			t.Fatal(err)
+		}
+
+		projectName := r.URL.Query().Get("projectName")
+		fmt.Println("ProjectName:", projectName)
+		for _, repo := range repos {
+			repoName := repo.Name
+			if projectName == repoName {
+				fmt.Println("===== MATCH =====, Repo:", repo.Name)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+
+				json.NewEncoder(w).Encode(struct {
+					PageToken bitbucketserver.PageToken `json:"pageToken"`
+					Values    any                       `json:"values"`
+				}{
+					PageToken: bitbucketserver.PageToken{
+						Size:          1,
+						Limit:         1000,
+						IsLastPage:    true,
+						Start:         1,
+						NextPageStart: 1,
+					},
+					Values: []bitbucketserver.Repo{repo},
+				})
+
+			}
+		}
 
 	})
 
@@ -275,26 +302,27 @@ func TestListRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s.config.Repos = []string{
-		"SG/go-langserver",
-		"SG/python-langserver",
-		"SG/python-langserver/fork",
-		"~KEEGAN/rgp",
-		"~KEEGAN/rgp-unavailable",
-	}
+	// s.config.Repos = []string{
+	// 	"/SG/go-langserver",
+	// 	"/SG/python-langserver",
+	// 	"/SG/python-langserver/fork",
+	// 	"/~KEEGAN/rgp",
+	// 	"/~KEEGAN/rgp-unavailable",
+	// }
 
 	s.config.RepositoryQuery = []string{
-		"?projectName=name1",
-		"?projectName=name2",
-		"?projectName=name3",
-		"?projectKeys=key1",
-		"?projectKeys=key2",
-		"?projectKeys=key3",
-		"",
+		"?projectName=/SG/go-langserver",
+		"?projectName=/SG/python-langserver",
+		"?projectName=/SG/python-langserver-fork",
+		"?projectName=/~KEEGAN/rgp",
+		"?projectName=/~KEEGAN/rgp-unavailable",
+		// "",
 	}
 
 	results := make(chan SourceResult)
 	s.ListRepos(ctx, results)
+
+	// fmt.Println("Results", <-results)
 
 }
 

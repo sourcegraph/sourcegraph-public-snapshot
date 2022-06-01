@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -88,7 +87,6 @@ func newBitbucketServerSource(svc *types.ExternalService, c *schema.BitbucketSer
 // ListRepos returns all BitbucketServer repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
 func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan SourceResult) {
-	log.Println("******************* LISTING ALL REPOS *********************")
 	s.listAllRepos(ctx, results)
 }
 
@@ -213,7 +211,6 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 
 	var wg sync.WaitGroup
 
-	fmt.Println("Starting waitgroup...")
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -244,9 +241,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 			}
 		}
 	}()
-	fmt.Println("Done with waitgroup!")
 
-	fmt.Println("Starting queries...")
 	for _, q := range s.config.RepositoryQuery {
 		fmt.Println("QUERY:", q)
 		switch q {
@@ -263,6 +258,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 			next := &bitbucketserver.PageToken{Limit: 1000}
 			for next.HasMore() {
 				repos, page, err := s.client.Repos(ctx, next, q)
+				// fmt.Println("Repos:", (*repos[0]).Name)
 				if err != nil {
 					ch <- batch{err: errors.Wrapf(err, "bitbucketserver.repositoryQuery: query=%q, page=%+v", q, next)}
 					break
@@ -273,22 +269,24 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 			}
 		}(q)
 	}
-	fmt.Println("Done with queries")
 
 	go func() {
 		wg.Wait()
 		close(ch)
 	}()
-	fmt.Println("Closing waitgroup")
 
 	seen := make(map[int]bool)
 	for r := range ch {
+		fmt.Println("Batch:", (r.repos[0].Name))
 		if r.err != nil {
 			results <- SourceResult{Source: s, Err: r.err}
 			continue
 		}
 
 		for _, repo := range r.repos {
+			// fmt.Println("Repo:", repo.Name)
+			// fmt.Println("Seen:", seen[repo.ID])
+			// fmt.Println("Excludes:", s.excludes(repo))
 			if !seen[repo.ID] && !s.excludes(repo) {
 				_, isArchived := archived[repo.ID]
 				results <- SourceResult{Source: s, Repo: s.makeRepo(repo, isArchived)}
@@ -296,6 +294,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 			}
 		}
 	}
+	// fmt.Println(<-results)
 	fmt.Println("DONE WITH listAllRepos")
 }
 
@@ -304,7 +303,6 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 	next := &bitbucketserver.PageToken{Limit: 1000}
 	for next.HasMore() {
 		repos, page, err := s.client.LabeledRepos(ctx, next, label)
-		fmt.Println("Done with LabeledRepos")
 		if page == nil {
 			break
 		}
@@ -312,27 +310,21 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 			// If the instance doesn't have the label then no repos are
 			// labeled. Older versions of bitbucket do not support labels, so
 			// they too have no labelled repos.
-			fmt.Println("Error checking...")
 			if bitbucketserver.IsNoSuchLabel(err) || bitbucketserver.IsNotFound(err) {
 				fmt.Println("EMPTY")
 				// treat as empty
 				return ids, nil
 			}
-			fmt.Println("ERROR:", err)
 			return nil, err
 		}
-		fmt.Println("Done with error checking")
 
 		for _, r := range repos {
 			ids[r.ID] = struct{}{}
 		}
-		fmt.Println("Done with struct{}{}")
 
 		next = page
-		fmt.Println("Done with next")
 	}
 
-	fmt.Println("Done with listAllLabeledRepos")
 	return ids, nil
 }
 
