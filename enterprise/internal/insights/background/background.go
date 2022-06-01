@@ -46,12 +46,13 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB *sql.DB
 	}
 
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
+	featureFlagStore := database.NewDB(mainAppDB).FeatureFlags()
 
 	// Start background goroutines for all of our workers.
 	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
 	routines := []goroutine.BackgroundRoutine{
 		// Register the background goroutine which discovers and enqueues insights work.
-		newInsightEnqueuer(ctx, workerBaseStore, insightsMetadataStore, observationContext),
+		newInsightEnqueuer(ctx, workerBaseStore, insightsMetadataStore, featureFlagStore, observationContext),
 
 		// TODO(slimsag): future: register another worker here for webhook querying.
 	}
