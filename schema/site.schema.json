@@ -1858,7 +1858,7 @@
           "enum": ["api", "read_api"]
         },
         "allowSignup": {
-          "description": "Allows new visitors to sign up for accounts via GitLab authentication. If false or not set, users signing in via GitLab must have an existing Sourcegraph account, which will be linked to their GitLab identity after sign-in.",
+          "description": "Allows new visitors to sign up for accounts via GitLab authentication. If false, users signing in via GitLab must have an existing Sourcegraph account, which will be linked to their GitLab identity after sign-in.",
           "default": true,
           "type": "boolean",
           "!go": { "pointer": true }
