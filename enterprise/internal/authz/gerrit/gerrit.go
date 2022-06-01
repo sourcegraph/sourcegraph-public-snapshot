@@ -3,6 +3,7 @@ package gerrit
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/url"
 
 	jsoniter "github.com/json-iterator/go"
@@ -14,23 +15,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const (
+	adminGroupName = "Administrators"
+)
+
 type Provider struct {
 	urn      string
 	client   client
 	codeHost *extsvc.CodeHost
 }
 
-func NewProvider(conn *types.GerritConnection) *Provider {
+func NewProvider(conn *types.GerritConnection) (*Provider, error) {
 	baseURL, _ := url.Parse(conn.Url)
 	gClient, err := gerrit.NewClient(conn.URN, conn.GerritConnection, nil)
 	if err != nil {
-		//TODO: handle error
+		return nil, err
 	}
 	return &Provider{
 		urn:      conn.URN,
 		client:   gClient,
 		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeGerrit),
-	}
+	}, nil
 }
 
 func (p Provider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, verifiedEmails []string) (*extsvc.Account, error) {
@@ -40,7 +45,7 @@ func (p Provider) FetchAccount(ctx context.Context, user *types.User, current []
 		return nil, err
 	}
 	// Check that this account from Gerrit correlates to a verified email
-	if acct, found := p.checkAccountsAgainstVerifiedEmails(accts, user, verifiedEmails); found {
+	if acct, found, err := p.checkAccountsAgainstVerifiedEmails(accts, user, verifiedEmails); found && err == nil {
 		return acct, nil
 	}
 
@@ -51,30 +56,29 @@ func (p Provider) FetchAccount(ctx context.Context, user *types.User, current []
 			return nil, err
 		}
 		for _, acct := range accts {
-			return p.createAccount(acct, user, email)
+			return p.buildExtsvcAccount(acct, user, email)
 		}
 	}
 
 	return nil, nil
 }
 
-func (p Provider) checkAccountsAgainstVerifiedEmails(accts gerrit.ListAccountsResponse, user *types.User, verifiedEmails []string) (*extsvc.Account, bool) {
-	if accts != nil || len(accts) > 0 {
-		for _, email := range verifiedEmails {
-			for _, acct := range accts {
-				if acct.Email == email && acct.Username == user.Username {
-					foundAcct, _ := p.createAccount(acct, user, email)
-					// todo: handle error
-					return foundAcct, true
-				}
+func (p Provider) checkAccountsAgainstVerifiedEmails(accts gerrit.ListAccountsResponse, user *types.User, verifiedEmails []string) (*extsvc.Account, bool, error) {
+	if accts == nil || len(accts) == 0 {
+		return nil, false, nil
+	}
+	for _, email := range verifiedEmails {
+		for _, acct := range accts {
+			if acct.Email == email && acct.Username == user.Username {
+				foundAcct, err := p.buildExtsvcAccount(acct, user, email)
+				return foundAcct, true, err
 			}
 		}
 	}
-	return nil, false
+	return nil, false, nil
 }
 
-// TODO: better naming. This seems to imply we're actually making something (i.e. storing in a db) but we're just creating the object
-func (p Provider) createAccount(acct gerrit.Account, user *types.User, email string) (*extsvc.Account, error) {
+func (p Provider) buildExtsvcAccount(acct gerrit.Account, user *types.User, email string) (*extsvc.Account, error) {
 	acctData, err := marshalAccountData(acct.Username, acct.Email, acct.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshaling account data")
@@ -133,6 +137,23 @@ func (p Provider) URN() string {
 	return p.urn
 }
 
+// ValidateConnection validates the connection to the Gerrit code host.
+// Currently, this is done by querying for the Administrators group and validating that the
+// group returned is valid, hence meaning that the given credentials have Admin permissions.
 func (p Provider) ValidateConnection(ctx context.Context) (warnings []string) {
-	return nil
+
+	adminGroup, err := p.client.GetGroup(ctx, adminGroupName)
+	if err != nil {
+		return []string{
+			fmt.Sprintf("Unable to get %s group: %v", adminGroupName, err),
+		}
+	}
+
+	if adminGroup.ID == "" || adminGroup.Name != adminGroupName || adminGroup.CreatedOn == "" {
+		return []string{
+			fmt.Sprintf("Gerrit credentials not sufficent enough to query %s group", adminGroupName),
+		}
+	}
+
+	return []string{}
 }
