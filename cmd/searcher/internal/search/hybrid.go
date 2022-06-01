@@ -20,11 +20,11 @@ import (
 
 // TODO(keegancsmith) prometheus metrics
 
-// hybrid search is an experimental feature which will search zoekt only the
-// paths that are the same for p.Commit. unsearched is the paths that searcher
-// needs to search on p.Commit. If ok is false, then the zoekt search failed
-// in a way where we should fallback to a normal unindexed search on the whole
-// commit.
+// hybrid search is an experimental feature which will search zoekt only for
+// the paths that are the same for p.Commit. unsearched is the paths that
+// searcher needs to search on p.Commit. If ok is false, then the zoekt search
+// failed in a way where we should fallback to a normal unindexed search on
+// the whole commit.
 func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchSender) (unsearched []string, ok bool, err error) {
 	logger := logWithTrace(ctx, s.Log).Scoped("hybrid", "experimental hybrid search").With(
 		log.String("repo", string(p.Repo)),
