@@ -131,7 +131,162 @@ var (
 	minCode     = env.MustGetInt("SRC_HTTP_LOG_MIN_CODE", 500, "min http code before http responses are logged")
 )
 
-func HTTPMiddlewareWithSentrySink(next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
+// HTTPMiddlewareWithSentrySink captures and exports metrics to Prometheus, etc.
+//
+// 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
+// not authenticated. It must not reveal any sensitive information.
+func HTTPMiddlewareWithSentrySink(logger log.Logger, next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
+	logger = logger.Scoped("http", "http tracing middleware")
+	return sentry.RecovererWithSentrySink(logger, http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		// extract propagated span
+		wireContext, err := ot.GetTracer(ctx).Extract(
+			opentracing.HTTPHeaders,
+			opentracing.HTTPHeadersCarrier(r.Header))
+		if err != nil && err != opentracing.ErrSpanContextNotFound {
+			logger.Warn("extracting parent span failed", log.Error(err))
+		}
+
+		// start new span
+		span, ctx := ot.StartSpanFromContext(ctx, "", ext.RPCServerOption(wireContext))
+		ext.HTTPUrl.Set(span, r.URL.String())
+		ext.HTTPMethod.Set(span, r.Method)
+		span.SetTag("http.referer", r.Header.Get("referer"))
+		defer span.Finish()
+
+		// get trace ID
+		trace := ContextFromSpan(span)
+		var traceURL string
+		if trace != nil && trace.TraceID != "" {
+			var traceType string
+			if ob := siteConfig.SiteConfig().ObservabilityTracing; ob == nil {
+				traceType = ""
+			} else {
+				traceType = ob.Type
+			}
+
+			traceURL = URL(trace.TraceID, siteConfig.SiteConfig().ExternalURL, traceType)
+			rw.Header().Set("X-Trace", traceURL)
+			logger = logger.WithTrace(*trace)
+		}
+
+		ctx = opentracing.ContextWithSpan(ctx, span)
+
+		// route name is only known after the request has been handled
+		routeName := "unknown"
+		ctx = context.WithValue(ctx, routeNameKey, &routeName)
+
+		var userID int32
+		ctx = context.WithValue(ctx, userKey, &userID)
+
+		var requestErrorCause error
+		ctx = context.WithValue(ctx, requestErrorCauseKey, &requestErrorCause)
+
+		origin := "unknown"
+		if r.Header.Get("Origin") == trackOrigin {
+			origin = trackOrigin
+		}
+		ctx = WithRequestOrigin(ctx, origin)
+
+		// handle request
+		m := httpsnoop.CaptureMetrics(next, rw, r.WithContext(ctx))
+
+		// get root name, which is set after request is handled
+		if routeName == "graphql" {
+			// We use the query to denote the type of a GraphQL request, e.g. /.api/graphql?Repositories
+			if r.URL.RawQuery != "" {
+				routeName = "graphql: " + r.URL.RawQuery
+			} else {
+				routeName = "graphql: unknown"
+			}
+		}
+		span.SetOperationName("Serve: " + routeName)
+		span.SetTag("Route", routeName)
+
+		ext.HTTPStatusCode.Set(span, uint16(m.Code))
+
+		labels := prometheus.Labels{
+			"route":  routeName,
+			"method": strings.ToLower(r.Method),
+			"code":   strconv.Itoa(m.Code),
+			"repo":   repotrackutil.GetTrackedRepo(api.RepoName(r.URL.Path)),
+			"origin": origin,
+		}
+		requestDuration.With(labels).Observe(m.Duration.Seconds())
+		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
+
+		// if it's not a graphql request, then this includes graphql_error=false in the log entry
+		gqlErr := false
+		span.Context().ForeachBaggageItem(func(k, v string) bool {
+			if k == "graphql.error" {
+				gqlErr = true
+			}
+			return !gqlErr
+		})
+
+		if customDuration, ok := slowPaths[r.URL.Path]; ok {
+			minDuration = customDuration
+		}
+
+		if m.Code >= minCode || m.Duration >= minDuration {
+			fields := make([]log.Field, 0, 10)
+			fields = append(fields,
+				log.String("route_name", routeName),
+				log.String("method", r.Method),
+				log.String("url", truncate(r.URL.String(), 100)),
+				log.Int("code", m.Code),
+				log.Duration("duration", m.Duration),
+			)
+
+			if v := r.Header.Get("X-Forwarded-For"); v != "" {
+				fields = append(fields, log.String("x_forwarded_for", v))
+			}
+
+			if userID != 0 {
+				fields = append(fields, log.Int("user", int(userID)))
+			}
+
+			if gqlErr {
+				fields = append(fields, log.Bool("graphql_error", gqlErr))
+			}
+			var parts []string
+			if m.Duration >= minDuration {
+				parts = append(parts, "slow http request")
+			}
+			if m.Code >= minCode {
+				parts = append(parts, "unexpected status code")
+			}
+
+			msg := strings.Join(parts, ", ")
+			switch {
+			case m.Code == http.StatusNotFound:
+				logger.Info(msg, fields...)
+			case m.Code == http.StatusUnauthorized:
+				logger.Warn(msg, fields...)
+			case m.Code >= http.StatusInternalServerError && requestErrorCause != nil:
+				// Always wrapping error without a true cause creates loads of events on which we
+				// do not have the stack trace and that are barely usable. Once we find a better
+				// way to handle such cases, we should bring back the deleted lines from
+				// https://github.com/sourcegraph/sourcegraph/pull/29312.
+				fields = append(fields, log.Error(requestErrorCause))
+				logger.Error(msg, fields...)
+			default:
+				logger.Error(msg, fields...)
+			}
+		}
+
+		// Notify sentry if the status code indicates our system had an error (e.g. 5xx).
+		if m.Code >= 500 {
+			if requestErrorCause == nil {
+				// Always wrapping error without a true cause creates loads of events on which we
+				// do not have the stack trace and that are barely usable. Once we find a better
+				// way to handle such cases, we should bring back the deleted lines from
+				// https://github.com/sourcegraph/sourcegraph/pull/29312.
+				return
+			}
+		}
+	}))
 }
 
 // HTTPMiddleware captures and exports metrics to Prometheus, etc.
@@ -320,6 +475,7 @@ func User(ctx context.Context, userID int32) {
 // Sentry.
 func SetRequestErrorCause(ctx context.Context, err error) {
 	if p, ok := ctx.Value(requestErrorCauseKey).(*error); ok {
+		println("are we here?", err)
 		*p = err
 	}
 }
