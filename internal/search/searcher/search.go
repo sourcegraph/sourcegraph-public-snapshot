@@ -222,7 +222,7 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 	return func(searcherMatches []*protocol.FileMatch) []result.Match {
 		matches := make([]result.Match, 0, len(searcherMatches))
 		for _, fm := range searcherMatches {
-			hunkMatches := make(result.HunkMatches, 0, len(fm.LineMatches))
+			hunkMatches := make(result.ChunkMatches, 0, len(fm.LineMatches))
 
 			for _, lm := range fm.LineMatches {
 				ranges := make(result.Ranges, 0, len(lm.OffsetAndLengths))
@@ -241,7 +241,7 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 						},
 					})
 				}
-				hunkMatches = append(hunkMatches, result.HunkMatch{
+				hunkMatches = append(hunkMatches, result.ChunkMatch{
 					Content: lm.Preview,
 					ContentStart: result.Location{
 						Offset: lm.LineOffset,
@@ -253,7 +253,7 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 			}
 
 			for _, mm := range fm.MultilineMatches {
-				hunkMatches = append(hunkMatches, result.HunkMatch{
+				hunkMatches = append(hunkMatches, result.ChunkMatch{
 					Content: mm.Preview,
 					ContentStart: result.Location{
 						Offset: int(mm.Start.Offset) - runeOffsetToByteOffset(mm.Preview, int(mm.Start.Column)),
@@ -282,8 +282,8 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 					CommitID: commit,
 					InputRev: rev,
 				},
-				HunkMatches: hunkMatches,
-				LimitHit:    fm.LimitHit,
+				ChunkMatches: hunkMatches,
+				LimitHit:     fm.LimitHit,
 			})
 		}
 		return matches
