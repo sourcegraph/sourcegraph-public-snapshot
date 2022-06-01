@@ -142,9 +142,9 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret) (string,
 		}
 
 	case ExternalProvider1Pass:
-		value.Value, err = run.Cmd(ctx, "op item get", run.Arg(secret.Name),
-			"--vault", run.Arg(secret.Project),
-			"--field", run.Arg(secret.Field)).
+		value.Value, err = run.Cmd(ctx, "op read",
+			run.Arg(fmt.Sprintf("op://%s/%s/%s", secret.Project, secret.Name, secret.Field)),
+			`--account="team-sourcegraph.1password.com"`).
 			Run().String()
 
 	default:
