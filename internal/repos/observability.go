@@ -94,7 +94,9 @@ func (o *observedSource) ListRepos(ctx context.Context, results chan SourceResul
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		o.metrics.ListRepos.Observe(secs, count, &err)
-		o.logger.Error("source.list-repos", log.Error(err))
+		if err != nil {
+			o.logger.Error("source.list-repos", log.Error(err))
+		}
 	}(time.Now())
 
 	uncounted := make(chan SourceResult)
