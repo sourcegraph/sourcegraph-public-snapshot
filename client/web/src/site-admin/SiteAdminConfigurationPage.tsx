@@ -230,8 +230,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     private siteReloads = new Subject<void>()
     private subscriptions = new Subscription()
 
-    private onSaveCallback: null | ((value: string) => void) = null
-
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminConfiguration')
 
@@ -243,10 +241,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         error: undefined,
                         loading: false,
                     })
-
-                    if (this.onSaveCallback) {
-                        this.onSaveCallback(site.configuration.effectiveContents)
-                    }
                 },
                 error => this.setState({ error, loading: false })
             )
