@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -222,7 +223,7 @@ func (h HunkMatch) AsLineMatches() []*LineMatch {
 						start = rr.Start.Column
 					}
 
-					end := len(line)
+					end := utf8.RuneCountInString(line)
 					if rangeLine == rr.End.Line {
 						end = rr.End.Column
 					}
