@@ -329,7 +329,11 @@ func (e *executor) detachChangeset() {
 			e.ch.RemoveBatchChangeID(assoc.BatchChangeID)
 		}
 	}
-	e.ch.DetachedAt = time.Now()
+	// A changeset can be associated with multiple batch changes. Only set the detached_at field when the changeset is
+	// no longer associated with any batch changes.
+	if len(e.ch.BatchChanges) == 0 {
+		e.ch.DetachedAt = time.Now()
+	}
 }
 
 // archiveChangeset sets all associations to archived that are marked as "to-be-archived".
