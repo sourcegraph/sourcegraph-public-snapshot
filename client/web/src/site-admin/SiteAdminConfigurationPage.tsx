@@ -466,9 +466,8 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         )
     }
 
-    private onSave = async (value: string): Promise<string> => {
+    private onSave = async (newContents: string): Promise<string> => {
         eventLogger.log('SiteConfigurationSaved')
-        const newContents = value
 
         this.setState({ saving: true, error: undefined })
 
@@ -497,20 +496,16 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 this.setState({ saving: false })
             })
 
-        return new Promise<string>((resolve, reject) => {
-            resolve(
-                fetchSite()
-                    .toPromise()
-                    .then(site => {
-                        this.setState({
-                            site,
-                            error: undefined,
-                            loading: false,
-                        })
-                        return site.configuration.effectiveContents
-                    })
-            )
-        })
+        return fetchSite()
+            .toPromise()
+            .then(site => {
+                this.setState({
+                    site,
+                    error: undefined,
+                    loading: false,
+                })
+                return site.configuration.effectiveContents
+            })
     }
 
     private reloadSite = (): void => {
