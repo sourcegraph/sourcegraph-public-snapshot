@@ -1032,6 +1032,9 @@ type LSIFUpload implements Node {
     """
     documentPaths(pattern: String!): LSIFUploadDocumentPathsConnection!
 
+    """
+    Audit logs representing each state change of the upload in order from earliest to latest.
+    """
     auditLogs: [LSIFUploadAuditLog!]
 }
 

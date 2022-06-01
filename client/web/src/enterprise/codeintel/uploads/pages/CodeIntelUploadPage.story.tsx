@@ -4,7 +4,7 @@ import { of } from 'rxjs'
 import { GitObjectType, LSIFIndexState } from '@sourcegraph/shared/src/schema'
 
 import { WebStory } from '../../../../components/WebStory'
-import { LsifUploadFields, LSIFUploadState } from '../../../../graphql-operations'
+import { LsifUploadFields, LSIFUploadState, AuditLogOperation } from '../../../../graphql-operations'
 
 import { CodeIntelUploadPage, CodeIntelUploadPageProps } from './CodeIntelUploadPage'
 
@@ -34,6 +34,7 @@ const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
         },
     },
     associatedIndex: null,
+    auditLogs: [],
 }
 
 const dependendentPrototype = {
