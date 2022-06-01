@@ -31,7 +31,7 @@ describe('gitlab/codeHost', () => {
                     {
                         repoName: 'sourcegraph/sourcegraph',
                         rawRepoName: 'gitlab.com/sourcegraph/sourcegraph',
-                        revision: 'master',
+                        revision: 'main',
                         filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                         position: {
                             line: 5,
@@ -53,7 +53,7 @@ describe('gitlab/codeHost', () => {
                     {
                         repoName: 'sourcegraph/sourcegraph',
                         rawRepoName: 'gitlab.sgdev.org/sourcegraph/sourcegraph',
-                        revision: 'master',
+                        revision: 'main',
                         filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                         position: {
                             line: 5,
@@ -73,7 +73,7 @@ describe('gitlab/codeHost', () => {
                     {
                         repoName: 'sourcegraph/sourcegraph',
                         rawRepoName: 'gitlab.com/sourcegraph/sourcegraph',
-                        revision: 'master',
+                        revision: 'main',
                         filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                         position: {
                             line: 5,
@@ -83,7 +83,7 @@ describe('gitlab/codeHost', () => {
                     { part: undefined }
                 )
             ).toBe(
-                'https://gitlab.com/sourcegraph/sourcegraph/blob/master/browser/src/shared/code-hosts/code_intelligence.tsx#L5'
+                'https://gitlab.com/sourcegraph/sourcegraph/blob/main/browser/src/shared/code-hosts/code_intelligence.tsx#L5'
             )
         })
         it('returns an URL to the file on the same merge request if possible', () => {
