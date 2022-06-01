@@ -180,6 +180,10 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
         })
     }
 
+    public updateContents = (contents: string): void => {
+        this.setState({ value: contents })
+    }
+
     private discard = (): void => {
         if (
             this.state.value === undefined ||

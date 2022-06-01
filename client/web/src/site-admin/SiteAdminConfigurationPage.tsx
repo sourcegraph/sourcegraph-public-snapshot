@@ -230,17 +230,21 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     private siteReloads = new Subject<void>()
     private subscriptions = new Subscription()
 
+    private editor = React.createRef<DynamicallyImportedMonacoSettingsEditor>()
+
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminConfiguration')
 
         this.subscriptions.add(
             this.remoteRefreshes.pipe(mergeMap(() => fetchSite())).subscribe(
-                site =>
+                site => {
                     this.setState({
                         site,
                         error: undefined,
                         loading: false,
-                    }),
+                    })
+                    this.editor.current?.updateContents(site.configuration.effectiveContents)
+                },
                 error => this.setState({ error, loading: false })
             )
         )
@@ -440,6 +444,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 {this.state.site?.configuration && (
                     <div>
                         <DynamicallyImportedMonacoSettingsEditor
+                            ref={this.editor}
                             value={contents || ''}
                             jsonSchema={siteSchemaJSON}
                             canEdit={true}
