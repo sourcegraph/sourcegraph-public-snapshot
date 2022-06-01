@@ -68,14 +68,6 @@ func (c *internalClient) OrgsGetByName(ctx context.Context, orgName string) (org
 	return orgID, nil
 }
 
-func (c *internalClient) UsersGetByUsername(ctx context.Context, username string) (user *int32, err error) {
-	err = c.postInternal(ctx, "users/get-by-username", username, &user)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
 func (c *internalClient) UserEmailsGetEmail(ctx context.Context, userID int32) (email *string, err error) {
 	err = c.postInternal(ctx, "user-emails/get-email", userID, &email)
 	if err != nil {
