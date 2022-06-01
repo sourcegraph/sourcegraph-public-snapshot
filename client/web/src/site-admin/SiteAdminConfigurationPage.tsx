@@ -206,7 +206,6 @@ interface Props extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
 
 interface State {
     site?: GQL.ISite
-    contents: string
     loading: boolean
     error?: Error
 
@@ -240,8 +239,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         this.subscriptions.add(
             this.remoteRefreshes.pipe(mergeMap(() => fetchSite())).subscribe(
                 site => {
-                    let newContents = ''
-                    newContents = newContents + site.configuration.effectiveContents
                     this.setState({
                         site,
                         error: undefined,
