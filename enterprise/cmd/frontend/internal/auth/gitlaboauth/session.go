@@ -57,8 +57,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, message, errors.New(message)
 	}
 
-	// AllowSignup defaults to true, unlinke with GitHub. If not set, we will create an account for the user with their GitLab email address.
-	// If false, a new account won't be created for the GitLab user.
+	// AllowSignup defaults to true. When true or not set, we create an account for the user with their GitLab email address.
 	signupAllowed := true
 	if s.allowSignup != nil && *s.allowSignup == false {
 		signupAllowed = false
