@@ -193,7 +193,7 @@ export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<M
             setEditor(editor)
             onEditorCreatedCallback?.(editor)
         },
-        [setEditor, onEditorCreatedCallback, placeholder]
+        [setEditor, onEditorCreatedCallback, ariaLabel]
     )
 
     // Trigger a layout of the Monaco editor when its container gets resized.
