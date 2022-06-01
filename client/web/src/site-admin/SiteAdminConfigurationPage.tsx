@@ -474,27 +474,26 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         const lastConfiguration = this.state.site?.configuration
         const lastConfigurationID = lastConfiguration?.id || 0
 
-        await updateSiteConfiguration(lastConfigurationID, newContents)
-            .toPromise<boolean>()
-            .catch(error => {
-                console.error(error)
-                this.setState({ saving: false, error })
-            })
-            .then(() => {
-                const oldContents = lastConfiguration?.effectiveContents || ''
-                const oldConfiguration = jsonc.parse(oldContents) as SiteConfiguration
-                const newConfiguration = jsonc.parse(newContents) as SiteConfiguration
+        try {
+            await updateSiteConfiguration(lastConfigurationID, newContents).toPromise<boolean>()
+        } catch (error) {
+            console.error(error)
+            this.setState({ saving: false, error })
+        }
 
-                // Flipping these feature flags require a reload for the
-                // UI to be rendered correctly in the navbar and the sidebar.
-                const keys: (keyof SiteConfiguration)[] = ['batchChanges.enabled', 'codeIntelAutoIndexing.enabled']
+        const oldContents = lastConfiguration?.effectiveContents || ''
+        const oldConfiguration = jsonc.parse(oldContents) as SiteConfiguration
+        const newConfiguration = jsonc.parse(newContents) as SiteConfiguration
 
-                if (!keys.every(key => Boolean(oldConfiguration?.[key]) === Boolean(newConfiguration?.[key]))) {
-                    window.location.reload()
-                }
+        // Flipping these feature flags require a reload for the
+        // UI to be rendered correctly in the navbar and the sidebar.
+        const keys: (keyof SiteConfiguration)[] = ['batchChanges.enabled', 'codeIntelAutoIndexing.enabled']
 
-                this.setState({ saving: false })
-            })
+        if (!keys.every(key => Boolean(oldConfiguration?.[key]) === Boolean(newConfiguration?.[key]))) {
+            window.location.reload()
+        }
+
+        this.setState({ saving: false })
 
         return fetchSite()
             .toPromise()
