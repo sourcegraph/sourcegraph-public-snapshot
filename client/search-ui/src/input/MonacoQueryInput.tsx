@@ -96,6 +96,8 @@ export interface MonacoQueryInputProps
      */
     placeholder?: string
 
+    ariaLabel?: string
+
     editorClassName?: string
 }
 
@@ -176,15 +178,18 @@ export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<M
     editorClassName,
     onEditorCreated: onEditorCreatedCallback,
     placeholder,
+    ariaLabel = 'Search query',
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
 
     const onEditorCreated = useCallback(
         (editor: Monaco.editor.IStandaloneCodeEditor) => {
-            // `aria-label` and `role` set to fix accessibility issues
+            // `role` set to fix accessibility issues
             // https://github.com/sourcegraph/sourcegraph/issues/34733
             editor.getDomNode()?.setAttribute('role', 'textbox')
-            editor.getDomNode()?.setAttribute('aria-label', placeholder || 'Enter your query...')
+            // `aria-label` to fix accessibility audit
+            editor.getDomNode()?.setAttribute('aria-label', ariaLabel)
+
             setEditor(editor)
             onEditorCreatedCallback?.(editor)
         },
