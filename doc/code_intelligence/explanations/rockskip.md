@@ -78,7 +78,7 @@ For other deployments, make sure that:
 1. Click on the branch selector, click **Commits**, and select the second most recent commit (this avoids routing the request to Zoekt)
 1. Open the symbols sidebar to kick off indexing (it's ok to see a loading spinner, that probably means indexing is in progress)
 
-**Step 3:** See the section below to [check on the indexing status](#how-do-i-check-the-indexing-status).
+**Step 3:** Check the indexing status by following the [instructions below](#how-do-i-check-the-indexing-status).
 
 **Step 4:** Open the symbols sidebar again and the symbols should appear quickly. Hover popovers and jump-to-definition via search-based code intelligence should also respond quickly.
 
