@@ -153,7 +153,3 @@ func (c *Core) Enabled(level zapcore.Level) bool {
 func (c *Core) Sync() error {
 	return c.w.Flush()
 }
-
-func (c *Core) Stop() {
-	// close(s.worker.done)
-}
