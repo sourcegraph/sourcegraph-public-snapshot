@@ -40,6 +40,7 @@ export interface BaseInsight {
     executionType: InsightExecutionType
     type: InsightType
     dashboardReferenceCount: number
+    dashboards: InsightDashboardReference[]
     isFrozen: boolean
 
     seriesDisplayOptions?: SeriesDisplayOptionsInput
@@ -52,4 +53,9 @@ export interface BaseInsight {
 export interface SeriesDisplayOptionsInputRequired extends SeriesDisplayOptionsInput {
     limit: number
     sortOptions: SeriesSortOptionsInput
+}
+
+export interface InsightDashboardReference {
+    id: string
+    title: string
 }
