@@ -715,9 +715,10 @@ type Observable struct {
 	NoAlert bool
 
 	// PossibleSolutions is Markdown describing possible solutions in the event that the
-	// alert is firing. This field not required if no alerts are attached to this Observable.
-	// If there is no clear potential resolution or there is no alert configured, "none"
-	// must be explicitly stated.
+	// alert is firing. This field is not required if no alerts are attached to this
+	// Observable. If there is no clear potential resolution or there is no alert
+	// configured, "none" must be explicitly stated. If a Critical alert is defined,
+	// providing "none" is not allowed.
 	//
 	// Use the Interpretation field for additional guidance on understanding this Observable
 	// that isn't directly related to solving it.
@@ -823,10 +824,19 @@ func (o Observable) validate() error {
 				return errors.Errorf("%s Alert: %w", alertLevel, err)
 			}
 		}
+
 		// PossibleSolutions must be provided and valid
 		if o.PossibleSolutions == "" {
 			return errors.Errorf(`PossibleSolutions must list solutions or an explicit "none"`)
-		} else if o.PossibleSolutions != "none" {
+		}
+
+		// If a critical alert is set, PossibleSolutiosn must be provided. Empty case
+		if !o.Critical.isEmpty() && o.PossibleSolutions == "none" {
+			return errors.Newf(`PossibleSolutions must be provided if a critical alert is set`)
+		}
+
+		// Check if provided PossibleSolutiosn is valid
+		if o.PossibleSolutions != "none" {
 			if solutions, err := toMarkdown(o.PossibleSolutions, true); err != nil {
 				return errors.Errorf("PossibleSolutions cannot be converted to Markdown: %w", err)
 			} else if l := strings.ToLower(solutions); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {
