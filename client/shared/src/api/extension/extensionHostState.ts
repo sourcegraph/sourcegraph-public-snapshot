@@ -3,6 +3,7 @@ import { BehaviorSubject, Observable, ReplaySubject, Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
 import { Contributions } from '@sourcegraph/client-api'
+import { isErrorLike } from '@sourcegraph/common'
 import { Context } from '@sourcegraph/template-parser'
 
 import { ConfiguredExtension } from '../../extensions/extension'
@@ -23,7 +24,6 @@ import {
     ProgressNotification,
 } from './extensionHostApi'
 import { ReferenceCounter } from './utils/ReferenceCounter'
-import { isErrorLike } from '@sourcegraph/common'
 
 export function createExtensionHostState(
     initData: Pick<InitData, 'initialSettings' | 'clientApplication'>,
