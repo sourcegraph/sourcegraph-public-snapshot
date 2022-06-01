@@ -7,7 +7,7 @@ import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 // eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Typography, useIsTruncated } from '@sourcegraph/wildcard'
+import { Code, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { getResultId } from './utils'
 
@@ -46,7 +46,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({ match, sele
                 data-tooltip={(truncated && `${match.authorName}: ${match.message.split('\n', 1)[0]}`) || null}
             >{`${displayRepoName(match.repository)} › ${match.authorName}: ${match.message.split('\n', 1)[0]}`}</span>
             <span className={styles.spacer} />
-            <Typography.Code className={styles.commitOid}>{match.oid.slice(0, 7)}</Typography.Code>{' '}
+            <Code className={styles.commitOid}>{match.oid.slice(0, 7)}</Code>{' '}
             <Timestamp date={match.authorDate} noAbout={true} strict={true} />
             {formattedRepositoryStarCount && (
                 <>

@@ -140,7 +140,7 @@ func AlertForStructuralSearchNotSet(queryString string) *Alert {
 	return &Alert{
 		PrometheusType: "structural_search_not_set",
 		Title:          "No results",
-		Description:    "It looks like you may have meant to run a structural search, but it is not toggled.",
+		Description:    "It looks like you're trying to run a structural search, but it is not enabled using the patterntype keyword or UI toggle.",
 		ProposedQueries: []*ProposedQuery{
 			{
 				Description: "Activate structural search",

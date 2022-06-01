@@ -129,7 +129,7 @@ const reposStatsName = "repos-stats.json"
 // 9. Perform sg-maintenance
 // 10. Git prune
 // 11. Only during first run: Set sizes of repos which don't have it in a database.
-func (s *Server) cleanupRepos() {
+func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	janitorRunning.Set(1)
 	defer janitorRunning.Set(0)
 	cleanupLogger := s.Logger.Scoped("cleanup", "cleanup operation")
@@ -142,10 +142,29 @@ func (s *Server) cleanupRepos() {
 	}
 
 	repoToSize := make(map[api.RepoName]int64)
+	var wrongShardRepoCount int64
+	var wrongShardRepoSize int64
+	defer func() {
+		// We want to set the gauge only at the end when we know the total
+		wrongShardReposTotal.Set(float64(wrongShardRepoCount))
+		wrongShardReposSizeTotalBytes.Set(float64(wrongShardRepoSize))
+	}()
+
 	computeStats := func(dir GitDir) (done bool, err error) {
 		size := dirSize(dir.Path("."))
 		stats.GitDirBytes += size
-		repoToSize[s.name(dir)] = size
+		name := s.name(dir)
+		repoToSize[name] = size
+
+		// Record the number and disk usage used of repos that should
+		// not belong on this instance. This is in preparation to a job that
+		// will actually remove these repos.
+		addr := addrForKey(name, gitServerAddrs)
+		if !s.hostnameMatch(addr) {
+			wrongShardRepoCount++
+			wrongShardRepoSize += size
+		}
+
 		return false, nil
 	}
 

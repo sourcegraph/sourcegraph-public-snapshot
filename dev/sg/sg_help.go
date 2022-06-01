@@ -54,7 +54,7 @@ var helpCommand = &cli.Command{
 
 		if output := cmd.String("output"); output != "" {
 			cmd := run.Cmd(cmd.Context, "cp /dev/stdin", output).
-				Input(strings.NewReader(" \n\n" + doc))
+				Input(strings.NewReader(generatedSgReferenceHeader + "\n\n" + doc))
 			if err := root.Run(cmd).Wait(); err != nil {
 				return errors.Wrapf(err, "failed to write reference to %q", output)
 			}

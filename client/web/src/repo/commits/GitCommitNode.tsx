@@ -7,7 +7,7 @@ import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, ButtonGroup, DeprecatedTooltipController, Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, DeprecatedTooltipController, Link, Icon, Code } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { GitCommitFields } from '../../graphql-operations'
@@ -163,7 +163,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
         <div className={classNames('w-100', styles.shaAndParents)}>
             <div className="d-flex mb-1">
                 <span className={styles.shaAndParentsLabel}>Commit:</span>
-                <Typography.Code className={styles.shaAndParentsSha}>
+                <Code className={styles.shaAndParentsSha}>
                     {node.oid}{' '}
                     <Button
                         variant="icon"
@@ -174,7 +174,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                     >
                         <Icon role="img" as={ContentCopyIcon} aria-hidden={true} />
                     </Button>
-                </Typography.Code>
+                </Code>
             </div>
             <div className="align-items-center d-flex">
                 {node.parents.length > 0 ? (
@@ -188,7 +188,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                         {node.parents.map((parent, index) => (
                             <div className="d-flex" key={index}>
                                 <Link className={styles.shaAndParentsParent} to={parent.url}>
-                                    <Typography.Code>{parent.oid}</Typography.Code>
+                                    <Code>{parent.oid}</Code>
                                 </Link>
                                 <Button
                                     variant="icon"
@@ -236,9 +236,9 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     )
 
     const oidElement = (
-        <Typography.Code className={styles.oid} data-testid="git-commit-node-oid">
+        <Code className={styles.oid} data-testid="git-commit-node-oid">
             {node.abbreviatedOID}
-        </Typography.Code>
+        </Code>
     )
 
     if (sidebar) {

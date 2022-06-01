@@ -85,6 +85,9 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 			}
 
 			tr := *tabulationResult
+			if len(tr.SkippedReasons) > 0 {
+				log15.Error("insights query issue", "reasons", tr.SkippedReasons, "query", query)
+			}
 			if len(tr.Errors) > 0 {
 				return nil, errors.Errorf("streaming search: errors: %v", tr.Errors)
 			}

@@ -12,7 +12,7 @@ import {
     MenuList,
     Position,
     MenuItem,
-    Typography,
+    H4,
     Text,
 } from '@sourcegraph/wildcard'
 
@@ -176,7 +176,7 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
     }, [setSelectedType, action.type])
     return (
         <MenuItem className={styles.menuListItem} onSelect={onSelect} disabled={action.disabled}>
-            <Typography.H4 className="mb-1">
+            <H4 className="mb-1">
                 {action.dropdownTitle}
                 {action.experimental && (
                     <>
@@ -184,7 +184,7 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
                         <ProductStatusBadge status="experimental" as="small" />
                     </>
                 )}
-            </Typography.H4>
+            </H4>
             <Text className="text-wrap text-muted mb-0">
                 <small>{action.dropdownDescription}</small>
             </Text>

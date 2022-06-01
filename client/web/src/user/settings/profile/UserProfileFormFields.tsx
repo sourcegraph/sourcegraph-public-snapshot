@@ -3,7 +3,7 @@ import React, { useCallback } from 'react'
 import classNames from 'classnames'
 
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Typography } from '@sourcegraph/wildcard'
+import { Label } from '@sourcegraph/wildcard'
 
 import { USER_DISPLAY_NAME_MAX_LENGTH } from '../..'
 import { UsernameInput } from '../../../auth/SignInSignUpCommon'
@@ -42,7 +42,7 @@ export const UserProfileFormFields: React.FunctionComponent<React.PropsWithChild
     return (
         <div data-testid="user-profile-form-fields">
             <div className="form-group">
-                <Typography.Label htmlFor="UserProfileFormFields__username">Username</Typography.Label>
+                <Label htmlFor="UserProfileFormFields__username">Username</Label>
                 <UsernameInput
                     id="UserProfileFormFields__username"
                     className="test-UserProfileFormFields-username"
@@ -58,7 +58,7 @@ export const UserProfileFormFields: React.FunctionComponent<React.PropsWithChild
                 </small>
             </div>
             <div className="form-group">
-                <Typography.Label htmlFor="UserProfileFormFields__displayName">Display name</Typography.Label>
+                <Label htmlFor="UserProfileFormFields__displayName">Display name</Label>
                 <input
                     id="UserProfileFormFields__displayName"
                     type="text"
@@ -73,7 +73,7 @@ export const UserProfileFormFields: React.FunctionComponent<React.PropsWithChild
             </div>
             <div className="d-flex align-items-center">
                 <div className="form-group w-100">
-                    <Typography.Label htmlFor="UserProfileFormFields__avatarURL">Avatar URL</Typography.Label>
+                    <Label htmlFor="UserProfileFormFields__avatarURL">Avatar URL</Label>
                     <input
                         id="UserProfileFormFields__avatarURL"
                         type="url"

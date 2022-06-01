@@ -19,7 +19,7 @@ import { Key } from 'ts-key-enum'
 
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
 import { memoizeObservable } from '@sourcegraph/common'
-import { Button, ButtonProps, LoadingSpinner, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, ButtonProps, LoadingSpinner, Icon, Label, Input } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -212,14 +212,13 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                 <header>
                     {/* eslint-disable-next-line react/forbid-elements */}
                     <form className={this.props.formClassName} onSubmit={this.onSubmit}>
-                        <Typography.Label className="sr-only" htmlFor="command-list-input">
+                        <Label className="sr-only" htmlFor="command-list-input">
                             Command
-                        </Typography.Label>
-                        <input
+                        </Label>
+                        <Input
                             id="command-list-input"
                             ref={input => input && this.state.autoFocus && input.focus({ preventScroll: true })}
-                            type="text"
-                            className={this.props.inputClassName}
+                            inputClassName={this.props.inputClassName}
                             value={this.state.input}
                             placeholder="Run Sourcegraph action..."
                             spellCheck={false}

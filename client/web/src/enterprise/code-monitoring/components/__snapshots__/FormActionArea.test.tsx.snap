@@ -96,6 +96,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
         Send test email
       </button>
       <div
+        aria-live="polite"
         class="mt-2 testActionError"
       >
         Please provide a name for the code monitor before sending a test

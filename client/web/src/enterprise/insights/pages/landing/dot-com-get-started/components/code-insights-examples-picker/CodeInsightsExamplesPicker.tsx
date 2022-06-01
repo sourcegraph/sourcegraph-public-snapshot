@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { throttle } from 'lodash'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, H2, Text } from '@sourcegraph/wildcard'
 
 import { CodeInsightExampleCard } from '../../../getting-started/components/code-insights-examples/code-insight-example-card/CodeInsightExampleCard'
 
@@ -39,7 +39,7 @@ export const CodeInsightsExamplesPicker: FunctionComponent<CodeInsightsExamplesP
     return (
         <Card as={CardBody} className={classNames(styles.root, { [styles.rootMobile]: isMobileLayout })}>
             <div className={styles.section}>
-                <Typography.H2>How engineering teams and leaders use Code Insights</Typography.H2>
+                <H2>How engineering teams and leaders use Code Insights</H2>
 
                 <Text className="text-muted">
                     We've created a few common simple insights to show you what the tool can do.{' '}

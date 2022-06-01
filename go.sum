@@ -2167,8 +2167,8 @@ github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWii
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf/go.mod h1:ppFaPm6kpcHnZGqQTFhUIAQRIEhdQDWP1PCv4/ON354=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c h1:HGa4iJr6MGKnB5qbU7tI511NdGuHUHnNCqP67G6KmfE=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c/go.mod h1:KelEdhl1UZF7XfJ4dDtk6s++YSgaE7mD/BuKKDLBl4A=
-github.com/sourcegraph/run v0.8.0 h1:XwyWq7qWVmqOxvBB9wTXYspuKzFLU2eslCec8cuC99Y=
-github.com/sourcegraph/run v0.8.0/go.mod h1:j6Do38ccF+w/rSWgOuu4Ou/eOIDiU6pC87BZmq0DXDY=
+github.com/sourcegraph/run v0.8.2 h1:aK6KCeuZ86kcVc6rYnskVZGWaH8OZrDGhx4y3GfsHPQ=
+github.com/sourcegraph/run v0.8.2/go.mod h1:j6Do38ccF+w/rSWgOuu4Ou/eOIDiU6pC87BZmq0DXDY=
 github.com/sourcegraph/scip v0.0.0-20220518222722-74aaacf8e4fb h1:E4sBHcgNB09NkTw7dokfZ7st7qQbsvaYKm0gN1meN2U=
 github.com/sourcegraph/scip v0.0.0-20220518222722-74aaacf8e4fb/go.mod h1:vaoij7+8gIg/qTDwvGIHtJY8j3zU5EFMfBsRuACze8I=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=

@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
-import { Button, Container, Link, Typography } from '@sourcegraph/wildcard'
+import { Button, Container, Link, H2, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -25,7 +25,7 @@ const CodeMonitorEmptyList: React.FunctionComponent<
     React.PropsWithChildren<{ authenticatedUser: AuthenticatedUser | null }>
 > = ({ authenticatedUser }) => (
     <div className="text-center">
-        <Typography.H2 className="text-muted mb-2">No code monitors have been created.</Typography.H2>
+        <H2 className="text-muted mb-2">No code monitors have been created.</H2>
         {!authenticatedUser && (
             <CodeMonitorSignUpLink
                 className="my-3"
@@ -68,7 +68,7 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
         <>
             <div className="row mb-5">
                 <div className="d-flex flex-column col-2 mr-2">
-                    <Typography.H3 as={Typography.H2}>Filters</Typography.H3>
+                    <H3 as={H2}>Filters</H3>
                     <Button
                         className="text-left"
                         onClick={() => setMonitorListFilter('all')}
@@ -86,9 +86,9 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                 </div>
                 <div className="d-flex flex-column w-100 col">
                     <CodeMonitorInfo />
-                    <Typography.H3 className="mb-2">
+                    <H3 className="mb-2">
                         {`${monitorListFilter === 'all' ? 'All code monitors' : 'Your code monitors'}`}
-                    </Typography.H3>
+                    </H3>
                     <Container className="py-3">
                         <FilteredConnection<
                             CodeMonitorFields,
