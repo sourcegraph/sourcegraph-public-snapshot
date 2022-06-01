@@ -1,4 +1,4 @@
- 
+<!-- DO NOT EDIT: generated via: go generate ./dev/sg -->
 
 # sg reference
 
@@ -660,6 +660,22 @@ Flags:
 * `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--in-container`: Launch Postgres in a Docker container for squashing; do not use the host
 * `--skip-teardown`: Skip tearing down the database created to run all registered migrations
+* `-f="<value>"`: The output filepath
+
+### sg migration visualize
+
+Output a DOT visualization of the migration graph.
+
+Available schemas:
+
+* frontend
+* codeintel
+* codeinsights
+
+
+Flags:
+
+* `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `-f="<value>"`: The output filepath
 
 ## sg doctor

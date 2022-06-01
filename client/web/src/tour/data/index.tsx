@@ -248,7 +248,6 @@ export const authenticatedTasks: TourTaskType[] = [
             },
         ],
     },
-
     {
         title: 'Install an IDE extension',
         icon: <PuzzleOutlineIcon size="2.3rem" />,
