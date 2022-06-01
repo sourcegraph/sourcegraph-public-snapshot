@@ -135,7 +135,6 @@ func (c *Core) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	}
 	c.base.Fields = append(sentryFields, c.base.Fields...)
 
-	// c.w.in.Add(1)
 	select {
 	case c.w.C <- c:
 	default: // if we can't queue, just drop the errors.
