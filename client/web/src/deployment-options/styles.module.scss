@@ -1,0 +1,28 @@
+.hero p {
+    font-size: 1.125rem;
+    line-height: 1.4125rem;
+}
+
+// Global page paragraphs
+.root p {
+    font-size: 1.125rem;
+    line-height: 1.375rem;
+    margin-bottom: 32px;
+}
+
+// Get started page index specific
+.getStartedPage {
+    background: linear-gradient(90deg, #d5e6f7, #e8d1ff 50%, #d5e6f7 0, #bceee9);
+
+    section h1 {
+        font-size: 2.75rem;
+        line-height: 3.75rem;
+    }
+
+    color: #343a4d;
+}
+
+.bestForTitle {
+    font-size: 0.875rem;
+    line-height: 1.125rem;
+}
