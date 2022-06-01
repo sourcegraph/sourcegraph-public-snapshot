@@ -42,7 +42,7 @@ interface Props {
     accessToken: string | null
     onPreviewChange: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => Promise<void>
     onPreviewClear: () => Promise<void>
-    onOpen: () => Promise<void>
+    onOpen: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => Promise<void>
     initialSearch: Search | null
     initialAuthenticatedUser: AuthenticatedUser | null
 }

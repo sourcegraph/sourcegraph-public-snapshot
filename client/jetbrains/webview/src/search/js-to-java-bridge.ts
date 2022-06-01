@@ -12,20 +12,23 @@ import {
 import { loadContent } from './lib/blob'
 import { PluginConfig, Search, Theme } from './types'
 
+export interface PreviewContent {
+    fileName: string
+    path: string
+    content: string | null
+    lineNumber: number
+    absoluteOffsetAndLengths: number[][]
+    relativeUrl: string
+}
+
 export interface PreviewRequest {
     action: 'preview'
-    arguments: {
-        fileName: string
-        path: string
-        content: string | null
-        lineNumber: number
-        absoluteOffsetAndLengths: number[][]
-        relativeUrl: string
-    }
+    arguments: PreviewContent
 }
 
 interface OpenRequest {
     action: 'open'
+    arguments: PreviewContent
 }
 
 interface GetConfigRequest {
@@ -97,11 +100,10 @@ export async function indicateFinishedLoading(): Promise<void> {
 }
 
 export async function onPreviewChange(match: SearchMatch, lineMatchIndexOrSymbolIndex?: number): Promise<void> {
-    const request = await createPreviewRequest(match, lineMatchIndexOrSymbolIndex)
     try {
-        await callJava(request)
+        await callJava({ action: 'preview', arguments: await createPreviewContent(match, lineMatchIndexOrSymbolIndex) })
     } catch (error) {
-        console.error(`Failed to preview match: ${(error as Error).message}`, request)
+        console.error(`Failed to preview match: ${(error as Error).message}`)
     }
 }
 
@@ -113,9 +115,9 @@ export async function onPreviewClear(): Promise<void> {
     }
 }
 
-export async function onOpen(): Promise<void> {
+export async function onOpen(match: SearchMatch, lineMatchIndexOrSymbolIndex?: number): Promise<void> {
     try {
-        await callJava({ action: 'open' })
+        await callJava({ action: 'open', arguments: await createPreviewContent(match, lineMatchIndexOrSymbolIndex) })
     } catch (error) {
         console.error(`Failed to open match: ${(error as Error).message}`)
     }
@@ -144,10 +146,10 @@ async function callJava(request: Request): Promise<object> {
     return window.callJava(request)
 }
 
-export async function createPreviewRequest(
+export async function createPreviewContent(
     match: SearchMatch,
     lineMatchIndexOrSymbolIndex: number | undefined
-): Promise<PreviewRequest> {
+): Promise<PreviewContent> {
     if (match.type === 'commit') {
         const content = prepareContent(
             match.content.startsWith('```COMMIT_EDITMSG')
@@ -155,42 +157,36 @@ export async function createPreviewRequest(
                 : match.content.replace(/^```diff\n([\S\s]*)\n```$/, '$1')
         )
         return {
-            action: 'preview',
-            arguments: {
-                fileName: '',
-                path: '',
-                content,
-                lineNumber: -1,
-                absoluteOffsetAndLengths: [],
-                relativeUrl: match.url,
-            },
+            fileName: '',
+            path: '',
+            content,
+            lineNumber: -1,
+            absoluteOffsetAndLengths: [],
+            relativeUrl: match.url,
         }
     }
 
     if (match.type === 'content') {
-        return createPreviewRequestForContentMatch(match, lineMatchIndexOrSymbolIndex as number)
+        return createPreviewContentForContentMatch(match, lineMatchIndexOrSymbolIndex as number)
     }
 
     if (match.type === 'path') {
-        return createPreviewRequestForPathMatch(match)
+        return createPreviewContentForPathMatch(match)
     }
 
     if (match.type === 'repo') {
         return {
-            action: 'preview',
-            arguments: {
-                fileName: '',
-                path: '',
-                content: null,
-                lineNumber: -1,
-                absoluteOffsetAndLengths: [],
-                relativeUrl: getRepoMatchUrl(match),
-            },
+            fileName: '',
+            path: '',
+            content: null,
+            lineNumber: -1,
+            absoluteOffsetAndLengths: [],
+            relativeUrl: getRepoMatchUrl(match),
         }
     }
 
     if (match.type === 'symbol') {
-        return createPreviewRequestForSymbolMatch(match)
+        return createPreviewContentForSymbolMatch(match)
     }
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -198,22 +194,19 @@ export async function createPreviewRequest(
     console.log(`Unknown match type: “${match.type}”`)
 
     return {
-        action: 'preview',
-        arguments: {
-            fileName: '',
-            path: '',
-            content: null,
-            lineNumber: -1,
-            absoluteOffsetAndLengths: [],
-            relativeUrl: '',
-        },
+        fileName: '',
+        path: '',
+        content: null,
+        lineNumber: -1,
+        absoluteOffsetAndLengths: [],
+        relativeUrl: '',
     }
 }
 
-export async function createPreviewRequestForContentMatch(
+async function createPreviewContentForContentMatch(
     match: ContentMatch,
     lineMatchIndex: number
-): Promise<PreviewRequest> {
+): Promise<PreviewContent> {
     const fileName = splitPath(match.path)[1]
     const content = await loadContent(match)
     const characterCountUntilLine = getCharacterCountUntilLine(content, match.lineMatches[lineMatchIndex].lineNumber)
@@ -223,51 +216,40 @@ export async function createPreviewRequestForContentMatch(
     )
 
     return {
-        action: 'preview',
-        arguments: {
-            fileName,
-            path: match.path,
-            content: prepareContent(content),
-            lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
-            absoluteOffsetAndLengths,
-            relativeUrl: '',
-        },
+        fileName,
+        path: match.path,
+        content: prepareContent(content),
+        lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
+        absoluteOffsetAndLengths,
+        relativeUrl: '',
     }
 }
 
-export async function createPreviewRequestForPathMatch(match: PathMatch): Promise<PreviewRequest> {
+async function createPreviewContentForPathMatch(match: PathMatch): Promise<PreviewContent> {
     const fileName = splitPath(match.path)[1]
     const content = await loadContent(match)
 
     return {
-        action: 'preview',
-        arguments: {
-            fileName,
-            path: match.path,
-            content: prepareContent(content),
-            lineNumber: -1,
-            absoluteOffsetAndLengths: [],
-            relativeUrl: '',
-        },
+        fileName,
+        path: match.path,
+        content: prepareContent(content),
+        lineNumber: -1,
+        absoluteOffsetAndLengths: [],
+        relativeUrl: '',
     }
 }
 
-export async function createPreviewRequestForSymbolMatch(
-    match: SymbolMatch,
-): Promise<PreviewRequest> {
+async function createPreviewContentForSymbolMatch(match: SymbolMatch): Promise<PreviewContent> {
     const fileName = splitPath(match.path)[1]
     const content = await loadContent(match)
 
     return {
-        action: 'preview',
-        arguments: {
-            fileName,
-            path: match.path,
-            content: prepareContent(content),
-            lineNumber: -1,
-            absoluteOffsetAndLengths: [],
-            relativeUrl: ''
-        },
+        fileName,
+        path: match.path,
+        content: prepareContent(content),
+        lineNumber: -1,
+        absoluteOffsetAndLengths: [],
+        relativeUrl: '',
     }
 }
 

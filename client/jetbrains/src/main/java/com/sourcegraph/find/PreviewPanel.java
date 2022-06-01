@@ -16,12 +16,14 @@ import com.intellij.testFramework.LightVirtualFile;
 import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.sourcegraph.config.ConfigUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Objects;
 
 public class PreviewPanel extends JBPanelWithEmptyText {
     private final Project project;
@@ -79,20 +81,29 @@ public class PreviewPanel extends JBPanelWithEmptyText {
         });
     }
 
-    public void openInEditorOrBrowser() throws URISyntaxException, IOException, NotSupportedException {
+    /**
+     * Using this method is slightly unsafe: a race condition might occur if the preview is still being loaded,
+     * typically in the case of a large file and slow connection.
+     */
+    public void unsafeOpenInEditorOrBrowser() throws URISyntaxException, IOException, NotSupportedException {
+        openInEditorOrBrowser(this.previewContent);
+    }
+
+    public void openInEditorOrBrowser(@Nullable PreviewContent previewContent) throws URISyntaxException, IOException, NotSupportedException {
         if (previewContent == null) {
             return;
         }
 
         if (previewContent.getFileName().length() == 0) {
-            openInBrowser();
+            openInBrowser(previewContent);
         } else {
-            openInEditor();
+            openInEditor(previewContent);
         }
     }
 
-    public void openInEditor() {
+    private void openInEditor(@NotNull PreviewContent previewContent) {
         // Open file in editor
+        virtualFile = new LightVirtualFile(this.previewContent.getFileName(), Objects.requireNonNull(previewContent.getContent()));
         OpenFileDescriptor openFileDescriptor = new OpenFileDescriptor(project, virtualFile, 0);
         FileEditorManager.getInstance(project).openTextEditor(openFileDescriptor, true);
 
@@ -103,7 +114,7 @@ public class PreviewPanel extends JBPanelWithEmptyText {
         }
     }
 
-    public void openInBrowser() throws URISyntaxException, IOException, NotSupportedException {
+    private void openInBrowser(@NotNull PreviewContent previewContent) throws URISyntaxException, IOException, NotSupportedException {
         // Source: https://stackoverflow.com/questions/5226212/how-to-open-the-default-webbrowser-using-java
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
             String sourcegraphUrl = ConfigUtil.getSourcegraphUrl(this.project);

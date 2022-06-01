@@ -72,8 +72,10 @@ public class JSToJavaBridgeRequestHandler {
                     previewPanel.clearContent();
                     return createSuccessResponse(null);
                 case "open":
+                    arguments = request.getAsJsonObject("arguments");
+                    previewContent = gson.fromJson(arguments, PreviewContent.class);
                     try {
-                        previewPanel.openInEditorOrBrowser();
+                        previewPanel.openInEditorOrBrowser(previewContent);
                     } catch (Exception e) {
                         return createErrorResponse("Error while opening link: " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
                     }

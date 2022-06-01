@@ -102,12 +102,11 @@ function handleRequest(
         }
 
         case 'open': {
-            if (previewContent) {
-                if (previewContent.fileName) {
-                    alert(`Now the IDE would open ${previewContent.path} in the editor...`)
-                } else {
-                    window.open(instanceURL + previewContent.relativeUrl, '_blank')
-                }
+            previewContent = request.arguments
+            if (previewContent.fileName) {
+                alert(`Now the IDE would open ${previewContent.path} in the editor...`)
+            } else {
+                window.open(instanceURL + previewContent.relativeUrl, '_blank')
             }
             onSuccessCallback('null')
             break

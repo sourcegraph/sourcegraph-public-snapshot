@@ -20,7 +20,7 @@ import styles from './SearchResultList.module.scss'
 interface Props {
     onPreviewChange: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => Promise<void>
     onPreviewClear: () => Promise<void>
-    onOpen: () => Promise<void>
+    onOpen: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => Promise<void>
     matches: SearchMatch[]
 }
 
@@ -62,7 +62,9 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                     console.log(`No match found for result id: ${resultId}`)
                 }
             } else {
-                onPreviewClear().then(() => {}).catch(() => {})
+                onPreviewClear()
+                    .then(() => {})
+                    .catch(() => {})
             }
             setSelectedResultId(resultId)
         },
@@ -106,7 +108,12 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                 const matchId = getMatchIdForResult(selectedResultId)
                 const match = matchIdToMatchMap.get(matchId)
                 if (match) {
-                    onOpen()
+                    onOpen(
+                        match,
+                        match.type === 'content' || match.type === 'symbol'
+                            ? getLineMatchIndexOrSymbolIndexForFileResult(selectedResultId)
+                            : undefined
+                    )
                         .then(() => {})
                         .catch(() => {})
                 }
