@@ -13,6 +13,7 @@ import org.cef.browser.CefBrowser;
 import org.cef.handler.CefKeyboardHandler;
 import org.cef.misc.BoolRef;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -95,19 +96,22 @@ public class SourcegraphWindow implements Disposable {
     }
 
     private void registerJBCefClientKeyListeners() {
-        if (mainPanel.getBrowser() != null) {
-            mainPanel.getBrowser().getJBCefClient().addKeyboardHandler(new CefKeyboardHandler() {
-                @Override
-                public boolean onPreKeyEvent(CefBrowser browser, CefKeyEvent event, BoolRef is_keyboard_shortcut) {
-                    return false;
-                }
-
-                @Override
-                public boolean onKeyEvent(CefBrowser browser, CefKeyEvent event) {
-                    return handleKeyPress(event.windows_key_code, event.modifiers);
-                }
-            }, mainPanel.getBrowser().getCefBrowser());
+        if (mainPanel.getBrowser() == null) {
+            LoggerFactory.getLogger(SourcegraphWindow.class).error("Browser panel is null");
+            return;
         }
+
+        mainPanel.getBrowser().getJBCefClient().addKeyboardHandler(new CefKeyboardHandler() {
+            @Override
+            public boolean onPreKeyEvent(CefBrowser browser, CefKeyEvent event, BoolRef is_keyboard_shortcut) {
+                return false;
+            }
+
+            @Override
+            public boolean onKeyEvent(CefBrowser browser, CefKeyEvent event) {
+                return handleKeyPress(event.windows_key_code, event.modifiers);
+            }
+        }, mainPanel.getBrowser().getCefBrowser());
     }
 
     private boolean handleKeyPress(int keyCode, int modifiers) {
