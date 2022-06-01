@@ -8,7 +8,7 @@ import { BrowserExtensionAlert } from './BrowserExtensionAlert'
 const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
 
 const config: Meta = {
-    title: 'web/repo/actions',
+    title: 'web/repo/actions/BrowserExtensionAlert',
     decorators: [decorator],
     parameters: {
         component: BrowserExtensionAlert,

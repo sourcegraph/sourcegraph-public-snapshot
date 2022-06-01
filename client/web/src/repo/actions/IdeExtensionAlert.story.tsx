@@ -8,7 +8,7 @@ import { IDEExtensionAlert } from './IdeExtensionAlert'
 const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
 
 const config: Meta = {
-    title: 'web/repo/actions',
+    title: 'web/repo/actions/IDEExtensionAlert',
     decorators: [decorator],
     parameters: {
         component: IDEExtensionAlert,
