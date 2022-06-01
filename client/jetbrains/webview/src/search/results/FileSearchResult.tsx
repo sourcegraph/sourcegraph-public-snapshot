@@ -8,7 +8,7 @@ import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sour
 import { displayRepoName, splitPath } from '@sourcegraph/shared/src/components/RepoLink'
 import { ContentMatch, getFileMatchUrl, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
-import { Icon, Link, Typography, useIsTruncated } from '@sourcegraph/wildcard'
+import { Icon, Link, Code, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { TrimmedCodeLineWithHighlights } from './TrimmedCodeLineWithHighlights'
 import { getResultId } from './utils'
@@ -74,10 +74,10 @@ function getResultElementsForSymbolMatch(
             >
                 <div>
                     <SymbolIcon kind={symbol.kind} className="mr-1" />
-                    <Typography.Code>
+                    <Code>
                         {symbol.name}{' '}
                         {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
-                    </Typography.Code>
+                    </Code>
                 </div>
             </div>
         )

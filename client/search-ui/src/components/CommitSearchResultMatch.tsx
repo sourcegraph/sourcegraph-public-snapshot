@@ -12,7 +12,7 @@ import { highlightCode } from '@sourcegraph/search'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
-import { LoadingSpinner, Link, useEventObservable, Typography } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Link, useEventObservable, Code } from '@sourcegraph/wildcard'
 
 import { LastSyncedIcon } from './LastSyncedIcon'
 
@@ -131,14 +131,14 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
                         className={searchResultStyles.searchResultMatch}
                         {...openInNewTabProps}
                     >
-                        <Typography.Code>
+                        <Code>
                             <Markdown
                                 ref={containerElement}
                                 testId="search-result-match-code-excerpt"
                                 className={classNames(styles.markdown, styles.codeExcerpt)}
                                 dangerousInnerHTML={syntaxHighlighting}
                             />
-                        </Typography.Code>
+                        </Code>
                     </Link>
                 ) : (
                     <>
@@ -149,7 +149,7 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
                                     <tr key={`${item.url}#${index}`}>
                                         {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
                                         <td className={styles.lineHidden}>
-                                            <Typography.Code>{index}</Typography.Code>
+                                            <Code>{index}</Code>
                                         </td>
                                         <td className="code"> </td>
                                     </tr>

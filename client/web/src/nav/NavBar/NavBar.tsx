@@ -7,7 +7,7 @@ import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
-import { Button, Link, Icon, Typography, ForwardReferenceComponent } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, H1, ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../routes.constants'
 
@@ -63,11 +63,11 @@ const useOutsideClickDetector = (
 export const NavBar = forwardRef(
     ({ children, logo }, reference): JSX.Element => (
         <nav aria-label="Main Menu" className={navBarStyles.navbar} ref={reference}>
-            <Typography.H1 className={navBarStyles.logo}>
+            <H1 className={navBarStyles.logo}>
                 <RouterLink className="d-flex align-items-center" to={PageRoutes.Search}>
                     {logo}
                 </RouterLink>
-            </Typography.H1>
+            </H1>
             <hr className={navBarStyles.divider} aria-hidden={true} />
             {children}
         </nav>

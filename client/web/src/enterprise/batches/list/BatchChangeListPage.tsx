@@ -13,7 +13,9 @@ import {
     Card,
     Link,
     Container,
-    Typography,
+    H2,
+    H3,
+    H4,
     Text,
     screenReaderAnnounce,
 } from '@sourcegraph/wildcard'
@@ -164,13 +166,13 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     <ConnectionContainer>
                         <div className={styles.filtersRow}>
                             {(licenseAndUsageInfo?.allBatchChanges.totalCount || 0) > 0 && (
-                                <Typography.H3 as={Typography.H2} className="align-self-end flex-1">
+                                <H3 as={H2} className="align-self-end flex-1">
                                     {`${lastTotalCount} batch changes`}
-                                </Typography.H3>
+                                </H3>
                             )}
-                            <Typography.H4 as={Typography.H3} className="mb-0 mr-2">
+                            <H4 as={H3} className="mb-0 mr-2">
                                 Status
-                            </Typography.H4>
+                            </H4>
                             <BatchChangeListFilters
                                 className="m-0"
                                 isExecutionEnabled={isExecutionEnabled}
@@ -320,11 +322,11 @@ const GettingStartedFooter: React.FunctionComponent<React.PropsWithChildren<{}>>
             <Card>
                 <CardBody className="text-center">
                     <Text>Create your first batch change</Text>
-                    <Typography.H2 className="mb-0">
+                    <H2 className="mb-0">
                         <Link to="/help/batch_changes/quickstart" target="_blank" rel="noopener">
                             Batch Changes quickstart
                         </Link>
-                    </Typography.H2>
+                    </H2>
                 </CardBody>
             </Card>
         </div>

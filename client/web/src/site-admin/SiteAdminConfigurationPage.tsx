@@ -13,7 +13,7 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, Link, Alert, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link, Alert, Code, H2, Text } from '@sourcegraph/wildcard'
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
@@ -418,9 +418,9 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             alerts.push(
                 <Alert key="legacy-cluster-props-present" className={styles.alert} variant="info">
                     The configuration contains properties that are valid only in the
-                    <Typography.Code>values.yaml</Typography.Code> config file used for Kubernetes cluster deployments
-                    of Sourcegraph: <Typography.Code>{legacyKubernetesConfigProps.join(' ')}</Typography.Code>. You can
-                    disregard the validation warnings for these properties reported by the configuration editor.
+                    <Code>values.yaml</Code> config file used for Kubernetes cluster deployments of Sourcegraph:{' '}
+                    <Code>{legacyKubernetesConfigProps.join(' ')}</Code>. You can disregard the validation warnings for
+                    these properties reported by the configuration editor.
                 </Alert>
             )
         }
@@ -430,7 +430,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         return (
             <div>
                 <PageTitle title="Configuration - Admin" />
-                <Typography.H2>Site configuration</Typography.H2>
+                <H2>Site configuration</H2>
                 <Text>
                     View and edit the Sourcegraph site configuration. See{' '}
                     <Link to="/help/admin/config/site_config">documentation</Link> for more information.
