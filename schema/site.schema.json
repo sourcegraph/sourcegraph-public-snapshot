@@ -548,7 +548,7 @@
       "default": false
     },
     "batchChanges.changesetsRetention": {
-      "description": "The duration for how long changesets are retained for.",
+      "description": "The duration for how long changesets are retained for after they have been detached from a batch change.",
       "type": "string",
       "group": "BatchChanges",
       "examples": ["14d"]
