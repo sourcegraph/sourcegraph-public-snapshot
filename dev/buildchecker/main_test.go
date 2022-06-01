@@ -6,10 +6,9 @@ import (
 	"github.com/hexops/autogold"
 )
 
-func TestGenerateMessage(t *testing.T) {
+func TestGenerateSummaryMessage(t *testing.T) {
 	dayString := "2006-01-02"
-
-	got := generateMessage(dayString, dayString, 5, 1, 20, 150)
+	got := generateSummaryMessage(dayString, dayString, 5, 1, 20, 150)
 	want := autogold.Want("name", `:bar_chart: Welcome to your weekly CI report for period *2006-01-02* to *2006-01-02*!
 • Total builds: *5*
 • Total flakes: *1*

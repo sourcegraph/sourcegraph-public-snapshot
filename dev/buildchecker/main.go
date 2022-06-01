@@ -407,7 +407,7 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 
 		avgFlakes := math.Round(float64(totalFlakes) / float64(totalBuilds) * 100)
 
-		message := generateMessage(historyFlags.createdFromDate, historyFlags.createdToDate, totalBuilds, totalFlakes, avgFlakes, time.Duration(totalTime*int(time.Minute)))
+		message := generateSummaryMessage(historyFlags.createdFromDate, historyFlags.createdToDate, totalBuilds, totalFlakes, avgFlakes, time.Duration(totalTime*int(time.Minute)))
 
 		if _, err := postSlackUpdate([]string{historyFlags.slackReportWebHook}, message); err != nil {
 			log.Fatal("postSlackUpdate: ", err)
@@ -425,7 +425,7 @@ func writeCSV(p string, records [][]string) error {
 	return fCsv.WriteAll(records)
 }
 
-func generateMessage(dateFrom, dateTo string, builds, flakes int, avgFlakes float64, downtime time.Duration) string {
+func generateSummaryMessage(dateFrom, dateTo string, builds, flakes int, avgFlakes float64, downtime time.Duration) string {
 
 	return fmt.Sprintf(`:bar_chart: Welcome to your weekly CI report for period *%s* to *%s*!
 	• Total builds: *%d*
