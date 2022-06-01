@@ -36,7 +36,6 @@ func RunRepositoryPurgeWorker(ctx context.Context, db database.DB, ttl time.Dura
 		// purging at a weird time to be configuring Sourcegraph.
 		now := time.Now()
 		if isSaturdayNight(now) {
-			// Set some safe default limits
 			if err := purge(ctx, db, log, database.IteratePurgableReposOptions{
 				Limit:         5000,
 				Limiter:       limiter,
