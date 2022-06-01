@@ -404,7 +404,7 @@ func TestCreatingSearchContexts(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	existingSearchContext, err := database.SearchContexts(db).CreateSearchContextWithRepositoryRevisions(
+	existingSearchContext, err := db.SearchContexts().CreateSearchContextWithRepositoryRevisions(
 		internalCtx,
 		&types.SearchContext{Name: "existing"},
 		[]*types.SearchContextRepositoryRevisions{},
@@ -504,7 +504,7 @@ func TestUpdatingSearchContexts(t *testing.T) {
 
 	var scs []*types.SearchContext
 	for i := 0; i < 6; i++ {
-		sc, err := database.SearchContexts(db).CreateSearchContextWithRepositoryRevisions(
+		sc, err := db.SearchContexts().CreateSearchContextWithRepositoryRevisions(
 			internalCtx,
 			&types.SearchContext{Name: strconv.Itoa(i)},
 			[]*types.SearchContextRepositoryRevisions{},

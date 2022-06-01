@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Container, PageHeader, Button, LoadingSpinner, Typography } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button, LoadingSpinner, Label, Text } from '@sourcegraph/wildcard'
 
 import { ORG_DISPLAY_NAME_MAX_LENGTH } from '../..'
 import { PageTitle } from '../../../components/PageTitle'
@@ -88,9 +88,7 @@ export const OrgSettingsProfilePage: React.FunctionComponent<React.PropsWithChil
             <Container>
                 <Form className="org-settings-profile-page" onSubmit={onSubmit}>
                     <div className="form-group">
-                        <Typography.Label htmlFor="org-settings-profile-page-display-name">
-                            Display name
-                        </Typography.Label>
+                        <Label htmlFor="org-settings-profile-page-display-name">Display name</Label>
                         <input
                             id="org-settings-profile-page-display-name"
                             type="text"
@@ -107,9 +105,9 @@ export const OrgSettingsProfilePage: React.FunctionComponent<React.PropsWithChil
                     </Button>
                     {isLoading === true && <LoadingSpinner />}
                     {updated && (
-                        <p className="mb-0">
+                        <Text className="mb-0">
                             <small>Updated!</small>
-                        </p>
+                        </Text>
                     )}
                     {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
                 </Form>

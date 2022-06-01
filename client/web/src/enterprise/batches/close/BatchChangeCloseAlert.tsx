@@ -4,7 +4,7 @@ import * as H from 'history'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike, asError, pluralize } from '@sourcegraph/common'
-import { Button, AlertLink, CardBody, Card, Alert, Checkbox } from '@sourcegraph/wildcard'
+import { Button, AlertLink, CardBody, Card, Alert, Checkbox, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars } from '../../../graphql-operations'
@@ -57,14 +57,14 @@ export const BatchChangeCloseAlert: React.FunctionComponent<React.PropsWithChild
         <>
             <Card className="mb-3">
                 <CardBody>
-                    <p>
+                    <Text>
                         <strong>
                             After closing this batch change, it will be read-only and no new batch specs can be applied.
                         </strong>
-                    </p>
+                    </Text>
                     {totalCount > 0 && (
                         <>
-                            <p>By default, all changesets remain untouched.</p>
+                            <Text>By default, all changesets remain untouched.</Text>
                             <Checkbox
                                 wrapperClassName="mb-3"
                                 id="closeChangesets"

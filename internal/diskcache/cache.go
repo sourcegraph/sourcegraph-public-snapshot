@@ -313,6 +313,13 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 	err = filepath.Walk(s.dir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
+				if os.IsNotExist(err) {
+					// we can race with diskcache renaming tmp files to final
+					// destination. Just ignore these files rather than returning
+					// early.
+					return nil
+				}
+
 				return err
 			}
 			entries = append(entries, absFileInfo{absPath: path, info: info})

@@ -1,16 +1,14 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Button, Grid, Typography } from '..'
+import { Button, Grid, Code, Text } from '..'
 
-import { Tooltip } from './Tooltip'
-import { TooltipController } from './TooltipController'
+import { Tooltip } from '.'
 
-// BrandedStory already renders `<Tooltip />` so in Stories we don't render `<Tooltip />`
 const decorator: DecoratorFn = story => (
     <BrandedStory styles={webStyles}>{() => <div className="p-5">{story()}</div>}</BrandedStory>
 )
@@ -40,141 +38,166 @@ const config: Meta = {
 export default config
 
 export const Basic: Story = () => (
-    <>
-        <p>
-            You can <strong data-tooltip="Tooltip 1">hover me</strong> or <strong data-tooltip="Tooltip 2">me</strong>.
-        </p>
-    </>
+    <Text>
+        You can{' '}
+        <Tooltip content="Tooltip 1">
+            <strong>hover me</strong>
+        </Tooltip>{' '}
+        or{' '}
+        <Tooltip content="Tooltip 2">
+            <strong>me</strong>
+        </Tooltip>
+        .
+    </Text>
 )
 
-Basic.parameters = {
-    chromatic: {
-        disable: true,
-    },
-}
+export const Conditional: Story = () => {
+    const [clicked, setClicked] = useState<boolean>(false)
 
-export const Positions: Story = () => (
-    <>
-        <Typography.H1>Tooltip</Typography.H1>
-        <Typography.H2>Positions</Typography.H2>
-
-        <Grid columnCount={4}>
-            <div>
-                <Button variant="secondary" data-placement="top" data-tooltip="Tooltip on top">
-                    Tooltip on top
-                </Button>
-            </div>
-            <div>
-                <Button variant="secondary" data-placement="bottom" data-tooltip="Tooltip on bottom">
-                    Tooltip on bottom
-                </Button>
-            </div>
-            <div>
-                <Button variant="secondary" data-placement="left" data-tooltip="Tooltip on left">
-                    Tooltip on left
-                </Button>
-            </div>
-            <div>
-                <Button variant="secondary" data-placement="right" data-tooltip="Tooltip on right">
-                    Tooltip on right
-                </Button>
-            </div>
-        </Grid>
-
-        <Typography.H2>Max width</Typography.H2>
-        <Grid columnCount={1}>
-            <div>
-                <Button
-                    variant="secondary"
-                    data-tooltip="Nulla porttitor accumsan tincidunt. Proin eget tortor risus. Quisque velit nisi, pretium ut lacinia in, elementum id enim. Donec rutrum congue leo eget malesuada."
-                >
-                    Tooltip with long text
-                </Button>
-            </div>
-        </Grid>
-    </>
-)
-
-Positions.parameters = {
-    chromatic: {
-        disable: true,
-    },
-}
-
-/*
-    If you take a look at the handleEvent function in useTooltipState, you can see that the listeners are being added to the 'document',
-    which means any 'mouseover/click' event will cause the tooltip to disappear.
-*/
-export const Pinned: Story = () => {
-    const clickElement = useCallback((element: HTMLElement | null) => {
-        if (element) {
-            // The tooltip takes some time to set-up.
-            // hence we need to delay the click by some ms.
-            setTimeout(() => {
-                element.click()
-            }, 10)
-        }
-    }, [])
+    function onClick() {
+        setClicked(true)
+        setTimeout(() => setClicked(false), 1500)
+    }
 
     return (
-        <>
-            <span data-tooltip="My tooltip" ref={clickElement}>
-                Example
-            </span>
-            <p>
-                <small>
-                    (A pinned tooltip is shown when the target element is rendered, without any user interaction
-                    needed.)
-                </small>
-            </p>
-        </>
+        <Grid columnCount={1}>
+            <div>
+                <Tooltip content={clicked ? "Now there's a Tooltip!" : null}>
+                    <Button variant="primary" onClick={onClick}>
+                        Click Me to See a Tooltip!
+                    </Button>
+                </Tooltip>
+            </div>
+
+            <Text>
+                A Tooltip can be conditionally shown by alternating between passing <Code>null</Code> and a{' '}
+                <Code>string</Code> in as <Code>content</Code>.
+            </Text>
+        </Grid>
     )
 }
 
-Pinned.parameters = {
+export const DisabledTrigger: Story = () => (
+    <Grid columnCount={1}>
+        <div>
+            <Tooltip content="Tooltip still works properly">
+                <Button variant="primary" disabled={true} style={{ pointerEvents: 'none' }}>
+                    Disabled Button 🚫
+                </Button>
+            </Tooltip>
+        </div>
+
+        <Text>
+            {/**
+             * This is necessary to support our current implementation using Radix.
+             * Reference: https://www.radix-ui.com/docs/primitives/components/tooltip#displaying-a-tooltip-from-a-disabled-button
+             * */}
+            When rendering a Tooltip for a disabled <Code>{'<Button>'}</Code>, the button element also needs to have the
+            CSS property <Code>pointer-events: none</Code>.
+        </Text>
+    </Grid>
+)
+
+export const LongContent: Story = () => (
+    <Grid columnCount={1}>
+        <div>
+            <Tooltip content="Nulla porttitor accumsan tincidunt. Proin eget tortor risus. Quisque velit nisi, pretium ut lacinia in, elementum id enim. Donec rutrum congue leo eget malesuada.">
+                <Button variant="primary">Example</Button>
+            </Tooltip>
+        </div>
+
+        <Text>
+            Tooltips with long text will not exceed the width specified by <Code>--tooltip-max-width</Code>.
+        </Text>
+    </Grid>
+)
+
+export const DefaultOpen: Story = () => (
+    <Grid columnCount={1}>
+        <div>
+            <Tooltip content="Click me!" defaultOpen={true}>
+                <Button variant="primary">Example</Button>
+            </Tooltip>
+        </div>
+
+        <Text>
+            A pinned tooltip is shown on initial render (no user input required) by setting{' '}
+            <Code>defaultOpen={'{true}'}</Code>.
+        </Text>
+    </Grid>
+)
+
+DefaultOpen.storyName = 'Default Open (Pinned)'
+DefaultOpen.parameters = {
     chromatic: {
-        // Chromatic pauses CSS animations by default and resets them to their initial state
-        pauseAnimationAtEnd: true,
         enableDarkMode: true,
         disableSnapshot: false,
     },
 }
 
-const ForceUpdateTooltip = () => {
-    const [copied, setCopied] = useState<boolean>(false)
+export const PlacementOptions: Story = () => (
+    <>
+        <Grid columnCount={5}>
+            <div>
+                <Tooltip content="Tooltip on top" placement="top">
+                    <Button variant="primary">top</Button>
+                </Tooltip>
+            </div>
 
-    useEffect(() => {
-        TooltipController.forceUpdate()
-    }, [copied])
+            <div>
+                <Tooltip content="Tooltip on right" placement="right">
+                    <Button variant="primary">right</Button>
+                </Tooltip>
+            </div>
 
-    const onClick: React.MouseEventHandler<HTMLButtonElement> = event => {
-        event.preventDefault()
+            <div>
+                <Tooltip content="Tooltip on bottom" placement="bottom">
+                    <Button variant="primary">bottom</Button>
+                </Tooltip>
+            </div>
 
-        setCopied(true)
+            <div>
+                <Tooltip content="Tooltip on left" placement="left">
+                    <Button variant="primary">left</Button>
+                </Tooltip>
+            </div>
 
-        setTimeout(() => {
-            setCopied(false)
-        }, 1500)
+            <div>
+                <Tooltip content="Default Tooltip placement">
+                    <Button variant="primary">(default)</Button>
+                </Tooltip>
+            </div>
+        </Grid>
+
+        <Text>
+            The Tooltip will use the specified <Code>placement</Code> unless a viewport collision is detected, in which
+            case it will be mirrored.
+        </Text>
+    </>
+)
+
+export const UpdateContent: Story = () => {
+    const [clicked, setClicked] = useState<boolean>(false)
+
+    function onClick() {
+        setClicked(true)
+        setTimeout(() => setClicked(false), 1500)
     }
 
     return (
-        <>
-            <Typography.H2>
-                Force update tooltip with <Typography.Code>TooltipController.forceUpdate()</Typography.Code>
-            </Typography.H2>
-            <p>
-                <Button variant="primary" onClick={onClick} data-tooltip={copied ? 'Copied!' : 'Click to copy'}>
-                    Button
-                </Button>
-            </p>
-        </>
+        <Grid columnCount={1}>
+            <div>
+                <Tooltip content={clicked ? 'New message!' : 'Click to change the message.'}>
+                    <Button variant="primary" onClick={onClick}>
+                        Click Me
+                    </Button>
+                </Tooltip>
+            </div>
+
+            <Text>
+                The string passed in as <Code>content</Code> can be modified without any controlled or forced updates
+                required.
+            </Text>
+        </Grid>
     )
-}
-
-export const Controller: Story = () => <ForceUpdateTooltip />
-
-Controller.parameters = {
-    chromatic: {
-        disable: true,
-    },
 }

@@ -7,13 +7,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func Redis() *monitoring.Container {
+func Redis() *monitoring.Dashboard {
 	const (
 		redisCache = "redis-cache"
 		redisStore = "redis-store"
 	)
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:                     "redis",
 		Title:                    "Redis",
 		Description:              "Metrics from both redis databases.",

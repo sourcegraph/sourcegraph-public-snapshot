@@ -34,7 +34,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const (
@@ -60,8 +59,8 @@ type Service struct {
 // ServeHTTP handles HTTP based search requests
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	running.Inc()
-	defer running.Dec()
+	metricRunning.Inc()
+	defer metricRunning.Dec()
 
 	var p protocol.Request
 	dec := json.NewDecoder(r.Body)
@@ -169,26 +168,26 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		}
 		tr.LazyPrintf("code=%s matches=%d limitHit=%v", code, sender.SentCount(), sender.LimitHit())
 		tr.Finish()
-		requestTotal.WithLabelValues(code).Inc()
+		metricRequestTotal.WithLabelValues(code).Inc()
 		span.LogFields(otlog.Int("matches.len", sender.SentCount()))
 		span.SetTag("limitHit", sender.LimitHit())
 		span.Finish()
 		s.Log.Debug("search request",
-			sglog.String("repo", string(p.Repo)),
-			sglog.String("commit", string(p.Commit)),
-			sglog.String("pattern", p.Pattern),
-			sglog.Bool("isRegExp", p.IsRegExp),
-			sglog.Bool("isStructuralPat", p.IsStructuralPat),
-			sglog.Strings("languages", p.Languages),
-			sglog.Bool("isWordMatch", p.IsWordMatch),
-			sglog.Bool("isCaseSensitive", p.IsCaseSensitive),
-			sglog.Bool("patternMatchesContent", p.PatternMatchesContent),
-			sglog.Bool("patternMatchesPath", p.PatternMatchesPath),
-			sglog.Int("matches", sender.SentCount()),
-			sglog.String("code", code),
-			sglog.Duration("duration", time.Since(start)),
-			sglog.Strings("indexerEndpoints", p.IndexerEndpoints),
-			sglog.Error(err))
+			log.String("repo", string(p.Repo)),
+			log.String("commit", string(p.Commit)),
+			log.String("pattern", p.Pattern),
+			log.Bool("isRegExp", p.IsRegExp),
+			log.Bool("isStructuralPat", p.IsStructuralPat),
+			log.Strings("languages", p.Languages),
+			log.Bool("isWordMatch", p.IsWordMatch),
+			log.Bool("isCaseSensitive", p.IsCaseSensitive),
+			log.Bool("patternMatchesContent", p.PatternMatchesContent),
+			log.Bool("patternMatchesPath", p.PatternMatchesPath),
+			log.Int("matches", sender.SentCount()),
+			log.String("code", code),
+			log.Duration("duration", time.Since(start)),
+			log.Strings("indexerEndpoints", p.IndexerEndpoints),
+			log.Error(err))
 	}(time.Now())
 
 	if p.IsStructuralPat && p.Indexed {
@@ -269,8 +268,8 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	span.LogFields(
 		otlog.Uint64("archive.files", nFiles),
 		otlog.Int64("archive.size", bytes))
-	archiveFiles.Observe(float64(nFiles))
-	archiveSize.Observe(float64(bytes))
+	metricArchiveFiles.Observe(float64(nFiles))
+	metricArchiveSize.Observe(float64(bytes))
 
 	if p.IsStructuralPat {
 		return filteredStructuralSearch(ctx, zipPath, zf, &p.PatternInfo, p.Repo, sender)
@@ -299,21 +298,21 @@ func validateParams(p *protocol.Request) error {
 const megabyte = float64(1000 * 1000)
 
 var (
-	running = promauto.NewGauge(prometheus.GaugeOpts{
+	metricRunning = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "searcher_service_running",
 		Help: "Number of running search requests.",
 	})
-	archiveSize = promauto.NewHistogram(prometheus.HistogramOpts{
+	metricArchiveSize = promauto.NewHistogram(prometheus.HistogramOpts{
 		Name:    "searcher_service_archive_size_bytes",
 		Help:    "Observes the size when an archive is searched.",
 		Buckets: []float64{1 * megabyte, 10 * megabyte, 100 * megabyte, 500 * megabyte, 1000 * megabyte, 5000 * megabyte},
 	})
-	archiveFiles = promauto.NewHistogram(prometheus.HistogramOpts{
+	metricArchiveFiles = promauto.NewHistogram(prometheus.HistogramOpts{
 		Name:    "searcher_service_archive_files",
 		Help:    "Observes the number of files when an archive is searched.",
 		Buckets: []float64{100, 1000, 10000, 50000, 100000},
 	})
-	requestTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+	metricRequestTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "searcher_service_request_total",
 		Help: "Number of returned search requests.",
 	}, []string{"code"})

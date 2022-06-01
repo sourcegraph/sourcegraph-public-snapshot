@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
-import { Container, PageHeader, Typography } from '@sourcegraph/wildcard'
+import { Container, PageHeader, H5 } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
@@ -75,8 +75,8 @@ export const WebhookLogPage: React.FunctionComponent<React.PropsWithChildren<Pro
 const Header: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <>
         <span className="d-none d-md-block" />
-        <Typography.H5 className="d-none d-md-block text-uppercase text-center text-nowrap">Status code</Typography.H5>
-        <Typography.H5 className="d-none d-md-block text-uppercase text-nowrap">External service</Typography.H5>
-        <Typography.H5 className="d-none d-md-block text-uppercase text-center text-nowrap">Received at</Typography.H5>
+        <H5 className="d-none d-md-block text-uppercase text-center text-nowrap">Status code</H5>
+        <H5 className="d-none d-md-block text-uppercase text-nowrap">External service</H5>
+        <H5 className="d-none d-md-block text-uppercase text-center text-nowrap">Received at</H5>
     </>
 )

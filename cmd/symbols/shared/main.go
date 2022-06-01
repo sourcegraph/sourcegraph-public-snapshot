@@ -67,7 +67,8 @@ func Main(setup SetupFunc) {
 
 	// Run setup
 	gitserverClient := gitserver.NewClient(observationContext)
-	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, types.LoadRepositoryFetcherConfig(env.BaseConfig{}).MaxTotalPathsLength, observationContext)
+	repositoryFetcherConfig := types.LoadRepositoryFetcherConfig(env.BaseConfig{})
+	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, repositoryFetcherConfig.MaxTotalPathsLength, int64(repositoryFetcherConfig.MaxFileSizeKb)*1000, observationContext)
 	searchFunc, handleStatus, newRoutines, ctagsBinary, err := setup(observationContext, gitserverClient, repositoryFetcher)
 	if err != nil {
 		logger.Fatal("Failed to set up", log.Error(err))

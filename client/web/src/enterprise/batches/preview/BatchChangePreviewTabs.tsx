@@ -59,7 +59,7 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
             <BatchChangeTabList>
                 <BatchChangeTab index={0} name="previewchangesets">
                     <span>
-                        <Icon className="text-muted mr-1" as={SourceBranchIcon} />
+                        <Icon role="img" aria-hidden={true} className="text-muted mr-1" as={SourceBranchIcon} />
                         <span className="text-content" data-tab-content="Preview changesets">
                             Preview changesets
                         </span>{' '}
@@ -70,7 +70,7 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
                 </BatchChangeTab>
                 <BatchChangeTab index={1} name="spec">
                     <span>
-                        <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
+                        <Icon role="img" aria-hidden={true} className="text-muted mr-1" as={FileDocumentIcon} />{' '}
                         <span className="text-content" data-tab-content="Spec">
                             Spec
                         </span>

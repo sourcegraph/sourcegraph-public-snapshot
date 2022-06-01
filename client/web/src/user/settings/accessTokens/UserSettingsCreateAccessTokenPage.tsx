@@ -18,7 +18,8 @@ import {
     Link,
     Icon,
     Checkbox,
-    Typography,
+    Label,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
@@ -111,9 +112,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
             <Form onSubmit={onSubmit}>
                 <Container className="mb-3">
                     <div className="form-group">
-                        <Typography.Label htmlFor="user-settings-create-access-token-page__note">
-                            Token description
-                        </Typography.Label>
+                        <Label htmlFor="user-settings-create-access-token-page__note">Token description</Label>
                         <input
                             type="text"
                             className="form-control test-create-access-token-description"
@@ -125,17 +124,14 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         />
                     </div>
                     <div className="form-group mb-0">
-                        <Typography.Label
-                            htmlFor="user-settings-create-access-token-page__scope-user:all"
-                            className="mb-0"
-                        >
+                        <Label htmlFor="user-settings-create-access-token-page__scope-user:all" className="mb-0">
                             Token scope
-                        </Typography.Label>
-                        <p>
+                        </Label>
+                        <Text>
                             <small className="form-help text-muted">
                                 Tokens with limited user scopes are not yet supported.
                             </small>
-                        </p>
+                        </Text>
 
                         <Checkbox
                             id="user-settings-create-access-token-page__scope-user:all"
@@ -174,7 +170,12 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         className="test-create-access-token-submit"
                         variant="primary"
                     >
-                        {creationOrError === 'loading' ? <LoadingSpinner /> : <Icon as={AddIcon} />} Generate token
+                        {creationOrError === 'loading' ? (
+                            <LoadingSpinner />
+                        ) : (
+                            <Icon role="img" as={AddIcon} aria-hidden={true} />
+                        )}{' '}
+                        Generate token
                     </Button>
                     <Button
                         className="ml-2 test-create-access-token-cancel"

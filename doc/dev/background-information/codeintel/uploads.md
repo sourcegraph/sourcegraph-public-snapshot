@@ -1,8 +1,8 @@
-# How LSIF indexes are processed
+# How indexes are processed
 
-An LSIF indexer produces a file containing the definition, reference, hover, and diagnostic data for a project. Users upload this index file to a Sourcegraph instance, which converts it into an internal format that can support [code intelligence queries](./queries.md).
+An indexer produces a file containing the definition, reference, hover, and diagnostic data for a project. Users upload this index file to a Sourcegraph instance, which converts it into an internal format that can support [code intelligence queries](./queries.md).
 
-The sequence of actions required to to upload and convert this data is shown below (click to enlarge).
+The sequence of actions required to upload and convert this data is shown below (click to enlarge).
 
 <a href="diagrams/upload.svg" target="_blank">
   <img src="diagrams/upload.svg">
@@ -10,15 +10,15 @@ The sequence of actions required to to upload and convert this data is shown bel
 
 ## Uploading
 
-The API used to upload an LSIF index is modeled after the [S3 multipart upload API](https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html). Many LSIF uploads can be fairly large and the [network is generally not reliable](https://aphyr.com/posts/288-the-network-is-reliable). To get around frequent failure of large uploads (and to get around uploads limits in Cloudflare), the upload is broken into multiple, independently gzipped chunks. Each chunk is uploaded in sequence to the instances, where it is concatenated into a single file on the remote end. This allows us to retry chunks independently in the case of an upload failure without sacrificing the entire operation.
+The API used to upload an index is modeled after the [S3 multipart upload API](https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html). Many uploads can be fairly large and the [network is generally not reliable](https://aphyr.com/posts/288-the-network-is-reliable). To get around frequent failure of large uploads (and to get around uploads limits in Cloudflare), the upload is broken into multiple, independently gzipped chunks. Each chunk is uploaded in sequence to the instances, where it is concatenated into a single file on the remote end. This allows us to retry chunks independently in the case of an upload failure without sacrificing the entire operation.
 
 An initial request adds an upload into the database with the `uploading` state and marks the number of upload chunks it expects to see. The subsequent requests specify the upload identifier (returned in the initial request), and the index of the chunk that is being uploaded. If this upload part successfully makes it to disk, it is marked as received in the upload record. The last request is a request marking upload completion from the client. At this point, the frontend ensures that all the expected chunks have been received and reside on disk. The frontend informs the blob storage server to concatenate the files, and the upload record is moved from the `uploading` state to the `queued` state, where it is made visible to the worker process.
 
 ## Processing
 
-The worker process polls Postgres for upload records in the `queued` state. When such a record is available, it is marked as `processing` and is locked in a transaction to ensure that it is not double-processed by another worker instance. The worker asks the blob storage server for the raw LSIF upload data. Because this data is generally large, the data is streamed to the worker while it is being processed (and retry logic inside the client will retry the request from the last byte it received on transient failures).
+The worker process polls Postgres for upload records in the `queued` state. When such a record is available, it is marked as `processing` and is locked in a transaction to ensure that it is not double-processed by another worker instance. The worker asks the blob storage server for the raw upload data. Because this data is generally large, the data is streamed to the worker while it is being processed (and retry logic inside the client will retry the request from the last byte it received on transient failures).
 
-The worker then converts the raw LSIF data into a re-indexed internal representation which is inserted into the codeintel database:
+The worker then converts the raw index into an internal representation which is inserted into the codeintel database:
 
 - [correlateFromReader](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Elib/codeintel/lsif/conversion/correlate%5C.go+func+correlateFromReader%28&patternType=literal) step streams raw LSIF data from the blob storage server and produces a stream of JSON objects. Each object in the stream is interpreted as an LSIF vertex or edge. Objects are validated, then inserted into an in-memory representation of the graph.
 - [canonicalize](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Elib/codeintel/lsif/conversion/canonicalize%5C.go+func+canonicalize%28&patternType=literal) step collapses the in-memory representation of the graph produced by the previous step. Most notably, it ensures that the data attached to a range vertex _transitively_ is now attached to the range vertex _directly_.

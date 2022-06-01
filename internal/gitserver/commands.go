@@ -156,7 +156,7 @@ func (c *ClientImplementor) execReader(ctx context.Context, repo api.RepoName, a
 	span.SetTag("args", args)
 	defer span.Finish()
 
-	if !gitdomain.IsAllowedGitCmd(args) {
+	if !gitdomain.IsAllowedGitCmd(c.logger, args) {
 		return nil, errors.Errorf("command failed: %v is not a allowed git command", args)
 	}
 	cmd := c.GitCommand(repo, args...)
@@ -1077,15 +1077,21 @@ func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
 	return childrenMap
 }
 
-// ListTags returns a list of all tags in the repository.
-func (c *ClientImplementor) ListTags(ctx context.Context, repo api.RepoName) ([]*gitdomain.Tag, error) {
+// ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
+func (c *ClientImplementor) ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Tags")
 	defer span.Finish()
 
 	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
 	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
 	// using committerdate).
-	cmd := c.GitCommand(repo, "tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)")
+	args := []string{"tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)"}
+
+	for _, commit := range commitObjs {
+		args = append(args, "--points-at", commit)
+	}
+
+	cmd := c.GitCommand(repo, args...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if gitdomain.IsRepoNotExist(err) {
@@ -1150,7 +1156,7 @@ func (c *ClientImplementor) GetDefaultBranchShort(ctx context.Context, repo api.
 	return c.getDefaultBranch(ctx, repo, true)
 }
 
-// GetDefaultBranch returns the name of the default branch and the commit it's
+// getDefaultBranch returns the name of the default branch and the commit it's
 // currently at from the given repository.
 //
 // If the repository is empty or currently being cloned, empty values and no
@@ -1200,7 +1206,7 @@ func (c *ClientImplementor) execSafe(ctx context.Context, repo api.RepoName, par
 		return nil, nil, 0, errors.New("at least one argument required")
 	}
 
-	if !gitdomain.IsAllowedGitCmd(params) {
+	if !gitdomain.IsAllowedGitCmd(c.logger, params) {
 		return nil, nil, 0, errors.Errorf("command failed: %q is not a allowed git command", params)
 	}
 
@@ -1211,4 +1217,22 @@ func (c *ClientImplementor) execSafe(ctx context.Context, repo api.RepoName, par
 		err = nil // the error must just indicate that the exit code was nonzero
 	}
 	return stdout, stderr, exitCode, err
+}
+
+// MergeBase returns the merge base commit for the specified commits.
+func (c *ClientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+	if Mocks.MergeBase != nil {
+		return Mocks.MergeBase(repo, a, b)
+	}
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: MergeBase")
+	span.SetTag("A", a)
+	span.SetTag("B", b)
+	defer span.Finish()
+
+	cmd := c.GitCommand(repo, "merge-base", "--", string(a), string(b))
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+	}
+	return api.CommitID(bytes.TrimSpace(out)), nil
 }

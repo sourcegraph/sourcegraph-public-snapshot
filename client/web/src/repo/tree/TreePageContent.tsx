@@ -18,7 +18,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Typography, useObservable } from '@sourcegraph/wildcard'
+import { Button, H2, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -139,7 +139,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         <>No commits in this tree.</>
     ) : (
         <div className="test-tree-page-no-recent-commits">
-            <p className="mb-2">No commits in this tree in the past year.</p>
+            <Text className="mb-2">No commits in this tree in the past year.</Text>
             <Button
                 className="test-tree-page-show-all-commits"
                 onClick={onShowOlderCommitsClicked}
@@ -161,9 +161,9 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                 </>
             ) : (
                 <>
-                    <p className="mb-2">
+                    <Text className="mb-2">
                         {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
-                    </p>
+                    </Text>
                     <Button onClick={onShowOlderCommitsClicked} variant="secondary" size="sm">
                         Show all commits
                     </Button>
@@ -175,7 +175,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
     return (
         <>
             <section className={classNames('test-tree-entries mb-3', styles.section)}>
-                <Typography.H2>Files and directories</Typography.H2>
+                <H2>Files and directories</H2>
                 <TreeEntriesSection
                     parentPath={filePath}
                     entries={tree.entries}
@@ -186,7 +186,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
             <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
                 {items => (
                     <section className={styles.section}>
-                        <Typography.H2>Actions</Typography.H2>
+                        <H2>Actions</H2>
                         {items.map(item => (
                             <Button
                                 {...props}
@@ -202,7 +202,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
             </ActionsContainer>
 
             <div className={styles.section}>
-                <Typography.H2>Changes</Typography.H2>
+                <H2>Changes</H2>
                 <FilteredConnection<
                     GitCommitFields,
                     Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement'>

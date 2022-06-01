@@ -1,19 +1,12 @@
 import React from 'react'
 
-import {
-    formatRepositoryStarCount,
-    SearchResultStyles as styles,
-    CodeHostIcon,
-    ResultContainer,
-    SearchResultStar,
-    CommitSearchResultMatch,
-} from '@sourcegraph/search-ui'
+import { SearchResultStyles as styles, ResultContainer, CommitSearchResultMatch } from '@sourcegraph/search-ui'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl } from '@sourcegraph/shared/src/search/stream'
 // eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Typography } from '@sourcegraph/wildcard'
+import { Code } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 interface Props extends PlatformContextProps<'requestGraphQL'> {
@@ -28,7 +21,6 @@ interface Props extends PlatformContextProps<'requestGraphQL'> {
 export const CommitSearchResult: React.FunctionComponent<Props> = ({
     result,
     icon,
-    repoName,
     platformContext,
     onSelect,
     openInNewTab,
@@ -41,64 +33,54 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
      */
     const { openRepo, openCommit, instanceURL } = useOpenSearchResultsContext()
 
-    const renderTitle = (): JSX.Element => {
-        const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
-        return (
-            <div className={styles.title}>
-                <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0" />
-                <span className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate">
-                    <>
-                        <button
-                            type="button"
-                            className="btn btn-text-link"
-                            onClick={() =>
-                                openRepo({
-                                    repository: result.repository,
-                                    branches: [result.oid],
-                                })
-                            }
-                        >
-                            {displayRepoName(result.repository)}
-                        </button>
-                        {' › '}
-                        <button
-                            type="button"
-                            className="btn btn-text-link"
-                            onClick={() => openCommit(getCommitMatchUrl(result))}
-                        >
-                            {result.authorName}
-                        </button>
-                        {': '}
-                        <button
-                            type="button"
-                            className="btn btn-text-link"
-                            onClick={() => openCommit(getCommitMatchUrl(result))}
-                        >
-                            {result.message.split('\n', 1)[0]}
-                        </button>
-                    </>
-                </span>
-                <span className={styles.spacer} />
-                {result.type === 'commit' && (
+    const renderTitle = (): JSX.Element => (
+        <div className={styles.title}>
+            <span className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate">
+                <>
+                    <button
+                        type="button"
+                        className="btn btn-text-link"
+                        onClick={() =>
+                            openRepo({
+                                repository: result.repository,
+                                branches: [result.oid],
+                            })
+                        }
+                    >
+                        {displayRepoName(result.repository)}
+                    </button>
+                    {' › '}
                     <button
                         type="button"
                         className="btn btn-text-link"
                         onClick={() => openCommit(getCommitMatchUrl(result))}
                     >
-                        <Typography.Code className={styles.commitOid}>{result.oid.slice(0, 7)}</Typography.Code>{' '}
-                        <Timestamp date={result.authorDate} noAbout={true} strict={true} />
+                        {result.authorName}
                     </button>
-                )}
-                {formattedRepositoryStarCount && (
-                    <>
-                        <div className={styles.divider} />
-                        <SearchResultStar />
-                        {formattedRepositoryStarCount}
-                    </>
-                )}
-            </div>
-        )
-    }
+                    {': '}
+                    <button
+                        type="button"
+                        className="btn btn-text-link"
+                        onClick={() => openCommit(getCommitMatchUrl(result))}
+                    >
+                        {result.message.split('\n', 1)[0]}
+                    </button>
+                </>
+            </span>
+            <span className={styles.spacer} />
+            {result.type === 'commit' && (
+                <button
+                    type="button"
+                    className="btn btn-text-link"
+                    onClick={() => openCommit(getCommitMatchUrl(result))}
+                >
+                    <Code className={styles.commitOid}>{result.oid.slice(0, 7)}</Code>{' '}
+                    <Timestamp date={result.authorDate} noAbout={true} strict={true} />
+                </button>
+            )}
+            {result.repoStars && <div className={styles.divider} />}
+        </div>
+    )
 
     const renderBody = (): JSX.Element => (
         <CommitSearchResultMatch
@@ -123,6 +105,8 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
             onResultClicked={onSelect}
             expandedChildren={renderBody()}
             className={containerClassName}
+            repoName={result.repository}
+            repoStars={result.repoStars}
         />
     )
 }

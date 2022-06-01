@@ -34,7 +34,7 @@ Install the indexer for the required programming language of your repository by 
   1. [Java](https://github.com/sourcegraph/scip-java)
   1. [JavaScript/TypeScript](https://github.com/sourcegraph/scip-typescript)
   1. [Jsonnet](https://github.com/sourcegraph/lsif-jsonnet)
-  1. [Python](https://github.com/sourcegraph/lsif-py)
+  1. [Python](https://github.com/sourcegraph/scip-python)
   1. [OCaml](https://github.com/rvantonder/lsif-ocaml)
   1. [Scala](https://github.com/sourcegraph/lsif-semanticdb)
 

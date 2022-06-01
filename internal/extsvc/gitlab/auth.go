@@ -4,9 +4,24 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
+
+// Metrics here exported as they are needed from two different packages
+
+var TokenRefreshCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_repoupdater_gitlab_token_refresh_count",
+	Help: "Counts the number of times we refresh a GitLab OAuth token",
+}, []string{"source", "success"})
+
+var TokenMissingRefreshCounter = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_repoupdater_gitlab_token_missing_refresh_count",
+	Help: "Counts the number of times we see a token without a refresh token",
+})
 
 // SudoableToken represents a personal access token with an optional sudo scope.
 type SudoableToken struct {

@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import TwitterIcon from 'mdi-react/TwitterIcon'
 
-import { ButtonLink, Icon } from '@sourcegraph/wildcard'
+import { ButtonLink, Icon, Text } from '@sourcegraph/wildcard'
 
 export interface TweetFeedbackProps {
     score: number
@@ -20,9 +20,9 @@ export const TweetFeedback: React.FunctionComponent<React.PropsWithChildren<Twee
         url.searchParams.set('text', `After using @sourcegraph: ${feedback}`)
         return (
             <>
-                <p className="mt-2">
+                <Text className="mt-2">
                     One more favor, could you share your feedback on Twitter? We'd really appreciate it!
-                </p>
+                </Text>
                 <ButtonLink
                     className="d-inline-block mt-2"
                     to={url.href}

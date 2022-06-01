@@ -19,7 +19,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, useObservable, Link, Card, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, useObservable, Link, Card, Icon, Code, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
@@ -132,15 +132,15 @@ export const CommunitySearchContextPage: React.FunctionComponent<
             {!props.communitySearchContextMetadata.lowProfile && (
                 <div className="row">
                     <div className={classNames('col-xs-12 col-lg-7', styles.column)}>
-                        <p className={classNames('h5 font-weight-normal mb-4', styles.contentDescription)}>
+                        <Text weight="regular" className={classNames('h5 mb-4', styles.contentDescription)}>
                             {props.communitySearchContextMetadata.description}
-                        </p>
+                        </Text>
 
-                        <Typography.H2>Search examples</Typography.H2>
+                        <H2>Search examples</H2>
                         {props.communitySearchContextMetadata.examples.map(example => (
                             <div className="mt-3" key={example.title}>
-                                <Typography.H3 className="mb-3">{example.title}</Typography.H3>
-                                <p>{example.description}</p>
+                                <H3 className="mb-3">{example.title}</H3>
+                                <Text>{example.description}</Text>
                                 <div className="d-flex mb-4">
                                     <small className={classNames('form-control text-monospace ', styles.exampleBar)}>
                                         <SyntaxHighlightedSearchQuery query={`${contextQuery} ${example.query}`} />
@@ -166,7 +166,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                     <div className={classNames('col-xs-12 col-lg-5', styles.column)}>
                         <div className="order-2-lg order-1-xs">
                             <Card className={styles.repoCard}>
-                                <Typography.H2>
+                                <H2>
                                     <Icon
                                         role="img"
                                         className="mr-2"
@@ -174,10 +174,10 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                                         aria-hidden={true}
                                     />
                                     Repositories
-                                </Typography.H2>
-                                <p>
+                                </H2>
+                                <Text>
                                     Using the syntax{' '}
-                                    <Typography.Code>
+                                    <Code>
                                         {/*
                                             a11y-ignore
                                             Rule: "color-contrast" (Elements must have sufficient color contrast)
@@ -185,9 +185,9 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                                           */}
                                         <span className="search-filter-keyword a11y-ignore">context:</span>
                                         {props.communitySearchContextMetadata.spec}
-                                    </Typography.Code>{' '}
+                                    </Code>{' '}
                                     in a query will search these repositories:
-                                </p>
+                                </Text>
                                 {searchContextOrError &&
                                     !isErrorLike(searchContextOrError) &&
                                     searchContextOrError !== LOADING && (
@@ -274,8 +274,8 @@ const CommunitySearchContextPageLogo: React.FunctionComponent<
 > = props => (
     <div className={classNames('d-flex align-items-center', styles.logoContainer)}>
         <img {...props} src={props.icon} alt="" />
-        <Typography.H3 as="span" className="font-weight-normal mb-0 ml-1">
+        <H3 as="span" className="font-weight-normal mb-0 ml-1">
             {props.text}
-        </Typography.H3>
+        </H3>
     </div>
 )

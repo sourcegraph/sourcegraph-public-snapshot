@@ -14,9 +14,20 @@ import (
 )
 
 var liveCommand = &cli.Command{
-	Name:        "live",
-	ArgsUsage:   "<environment-name-or-url>",
-	Usage:       "Reports which version of Sourcegraph is currently live in the given environment",
+	Name:      "live",
+	ArgsUsage: "<environment-name-or-url>",
+	Usage:     "Reports which version of Sourcegraph is currently live in the given environment",
+	UsageText: `
+# See which version is deployed on a preset environment
+sg live cloud
+sg live k8s
+
+# See which version is deployed on a custom environment
+sg live https://demo.sourcegraph.com
+
+# List environments:
+sg live -help
+	`,
 	Category:    CategoryCompany,
 	Description: constructLiveCmdLongHelp(),
 	Action:      execAdapter(liveExec),
@@ -29,12 +40,11 @@ func constructLiveCmdLongHelp() string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "Prints the Sourcegraph version deployed to the given environment.")
-	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "AVAILABLE PRESET ENVIRONMENTS:\n")
+	fmt.Fprintf(&out, "\n\n")
+	fmt.Fprintf(&out, "Available preset environments:\n")
 
 	for _, name := range environmentNames() {
-		fmt.Fprintf(&out, "  %s\n", name)
+		fmt.Fprintf(&out, "\n* %s", name)
 	}
 
 	return out.String()

@@ -36,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestClient_ListCloned(t *testing.T) {
@@ -172,6 +173,7 @@ func TestClient_Archive(t *testing.T) {
 	}
 
 	srv := httptest.NewServer((&server.Server{
+		Logger:   logtest.Scoped(t),
 		ReposDir: filepath.Join(root, "repos"),
 		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
 			testData := tests[name]
@@ -538,6 +540,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 	}}
 
 	srv := httptest.NewServer((&server.Server{
+		Logger:   logtest.Scoped(t),
 		ReposDir: filepath.Join(root, "repos"),
 		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
 			return remote, nil

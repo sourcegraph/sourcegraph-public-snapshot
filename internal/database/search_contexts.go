@@ -19,11 +19,6 @@ import (
 
 var ErrSearchContextNotFound = errors.New("search context not found")
 
-func SearchContexts(db dbutil.DB) SearchContextsStore {
-	store := basestore.NewWithDB(db, sql.TxOptions{})
-	return &searchContextsStore{store}
-}
-
 func SearchContextsWith(other basestore.ShareableStore) SearchContextsStore {
 	return &searchContextsStore{basestore.NewWithHandle(other.Handle())}
 }

@@ -7,7 +7,7 @@ import { switchMap } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
-import { Container, PageHeader, LoadingSpinner, Typography } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Label, Text } from '@sourcegraph/wildcard'
 
 import { ExternalServiceCard } from '../../components/externalServices/ExternalServiceCard'
 import { defaultExternalServices } from '../../components/externalServices/externalServices'
@@ -85,19 +85,17 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                                 </div>
                             ))}
                             {services.length > 1 && (
-                                <p>
+                                <Text>
                                     This repository is mirrored by multiple external services. To change access,
                                     disable, or remove this repository, the configuration must be updated on all
                                     external services.
-                                </p>
+                                </Text>
                             )}
                         </div>
                     )}
                     <Form>
                         <div className="form-group mb-0">
-                            <Typography.Label htmlFor="repo-settings-options-page__name">
-                                Repository name
-                            </Typography.Label>
+                            <Label htmlFor="repo-settings-options-page__name">Repository name</Label>
                             <input
                                 id="repo-settings-options-page__name"
                                 type="text"

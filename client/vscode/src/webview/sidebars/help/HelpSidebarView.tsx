@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react'
+
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
+
+import { Text } from '@sourcegraph/wildcard'
 
 import { version } from '../../../../package.json'
 import {
@@ -44,7 +47,6 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
                 })
         }
     }, [extensionCoreAPI.getEditorTheme, isLightTheme])
-    console.log(isLightTheme)
 
     const onHelpItemClick = async (url: string, item: string): Promise<void> => {
         platformContext.telemetryService.log(`VSCEHelpSidebar${item}Click`)
@@ -103,7 +105,7 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
                             authenticatedUser={authenticatedUser}
                         />
                     ) : (
-                        <p className="ml-2">Connected to {new URL(instanceURL).hostname}</p>
+                        <Text className="ml-2">Connected to {new URL(instanceURL).hostname}</Text>
                     )}
                 </div>
             )}
