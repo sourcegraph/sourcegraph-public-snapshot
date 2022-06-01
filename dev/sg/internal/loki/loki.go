@@ -20,6 +20,8 @@ import (
 
 const pushEndpoint = "/loki/api/v1/push"
 
+const maxEntrySize = 65536
+
 // To point at a custom instance, e.g. one on Grafana Cloud, refer to:
 // https://grafana.com/orgs/sourcegraph/hosted-logs/85581#sending-logs
 // The URL should have the format https://85581:$TOKEN@logs-prod-us-central1.grafana.net
@@ -110,11 +112,12 @@ func NewStreamFromJobLogs(log *bk.JobLogs) (*Stream, error) {
 			previousTimestamp = ts
 		}
 
-		// An entry cannot be larger than 65536 bytes so if it is, we split into chunks of 65536 bytes.
+		// An entry cannot be larger than maxEntrySize i(65536) in bytes so if it is, we split into chunks
+		// of maxEntrySize bytes.
 		// To ensure that each chunked entry doesn't clash with a previous entry in Loki we increment
 		// the nanoseconds of the entry for each chunked entry.
-		if len(line) > 65536 {
-			chunkedEntries, err := chunkEntry(values[len(values)-1], 65536)
+		if len(line) > maxEntrySize {
+			chunkedEntries, err := chunkEntry(values[len(values)-1], maxEntrySize)
 			if err != nil {
 				return nil, errors.Newf("failed to split entry into chunks: %w")
 			}
