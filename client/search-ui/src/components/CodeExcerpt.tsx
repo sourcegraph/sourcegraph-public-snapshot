@@ -10,13 +10,12 @@ import { catchError, filter } from 'rxjs/operators'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
 import { asError, ErrorLike, isDefined, isErrorLike, highlightNode } from '@sourcegraph/common'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
+import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Repo } from '@sourcegraph/shared/src/util/url'
 import { Icon, Typography } from '@sourcegraph/wildcard'
-
-import { ActionItemAction } from '../actions/ActionItem'
-import { ViewerId } from '../api/viewerTypes'
-import { HoverContext } from '../hover/HoverOverlay.types'
-import * as GQL from '../schema'
-import { Repo } from '../util/url'
 
 import styles from './CodeExcerpt.module.scss'
 

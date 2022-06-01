@@ -4,7 +4,7 @@ import FileIcon from 'mdi-react/FileIcon'
 import _VisibilitySensor from 'react-visibility-sensor'
 import sinon from 'sinon'
 
-import { MockVisibilitySensor } from '@sourcegraph/shared/src/components/CodeExcerpt.test'
+import { MockVisibilitySensor } from './CodeExcerpt.test'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
