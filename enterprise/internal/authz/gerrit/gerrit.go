@@ -3,6 +3,7 @@ package gerrit
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/url"
 
 	jsoniter "github.com/json-iterator/go"
@@ -222,20 +223,27 @@ func checkGroupAccess(accountGroups gerrit.GetAccountGroupsResponse, projectName
 }
 
 func (p Provider) getInheritedAccess(ctx context.Context, inheritsFrom gerrit.Project, projectAccessMap map[string]gerrit.ProjectAccessInfo) (*gerrit.ProjectAccessInfo, error) {
-	if inheritsFrom.ID != "" { // TODO: check name as well?
-		// check if we've already fetched the access info for this project
-		if access, ok := projectAccessMap[inheritsFrom.ID]; ok {
-			return &access, nil
-		}
+	if inheritsFrom.ID == "" { // TODO: check name as well?
+		return nil, nil
+	}
 
-		// fetch project access
-		inheritedAccess, err := p.client.GetProjectAccess(ctx, inheritsFrom.ID)
-		if err != nil {
-			return nil, err
-		}
-		for pname, ia := range inheritedAccess {
-			projectAccessMap[pname] = ia
-		}
+	// check if we've already fetched the access info for this project
+	if access, ok := projectAccessMap[inheritsFrom.ID]; ok {
+		return &access, nil
+	}
+
+	// fetch project access for this inherited project
+	inheritedAccessResponse, err := p.client.GetProjectAccess(ctx, inheritsFrom.ID)
+	if err != nil {
+		return nil, err
+	}
+	if len(inheritedAccessResponse) != 1 {
+		return nil, errors.New(fmt.Sprintf("A project can only inherit access from one other project, got %d instead", len(inheritedAccessResponse)))
+	}
+	for pname, ia := range inheritedAccessResponse {
+		projectAccessMap[pname] = ia
+		// we only have one result here so return immediately
+		return &ia, nil
 	}
 	return nil, nil
 }
