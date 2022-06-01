@@ -126,7 +126,7 @@ public class SourcegraphWindow implements Disposable {
             if (mainPanel.getPreviewPanel() != null) {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     try {
-                        mainPanel.getPreviewPanel().unsafeOpenInEditorOrBrowser();
+                        mainPanel.getPreviewPanel().openInEditorOrBrowser();
                     } catch (Exception e) {
                         logger.error("Error opening file in editor", e);
                     }

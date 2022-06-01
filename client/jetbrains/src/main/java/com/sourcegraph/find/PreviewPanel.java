@@ -81,11 +81,7 @@ public class PreviewPanel extends JBPanelWithEmptyText {
         });
     }
 
-    /**
-     * Using this method is slightly unsafe: a race condition might occur if the preview is still being loaded,
-     * typically in the case of a large file and slow connection.
-     */
-    public void unsafeOpenInEditorOrBrowser() throws URISyntaxException, IOException, NotSupportedException {
+    public void openInEditorOrBrowser() throws URISyntaxException, IOException, NotSupportedException {
         openInEditorOrBrowser(this.previewContent);
     }
 
