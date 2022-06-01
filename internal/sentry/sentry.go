@@ -147,5 +147,7 @@ func RecovererWithSentrySink(logger log.Logger, handler http.Handler) http.Handl
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}()
+
+		handler.ServeHTTP(w, r)
 	})
 }
