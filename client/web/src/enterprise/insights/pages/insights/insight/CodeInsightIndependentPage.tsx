@@ -9,6 +9,7 @@ import { CodeInsightsPage } from '../../../components/code-insights-page/CodeIns
 import { CodeInsightsBackendContext } from '../../../core'
 
 import { CodeInsightIndependentPageActions } from './components/actions/CodeInsightIndependentPageActions'
+import { StandaloneInsightDashboardPills } from './components/dashboard-pills/StandaloneInsightDashboardPills'
 import { SmartStandaloneInsight } from './components/SmartStandaloneInsight'
 import { Standalone404Insight } from './components/standalone-404-insight/Standalone404Insight'
 
@@ -39,6 +40,8 @@ export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependen
                 path={[{ to: '/insights/dashboards/all', icon: CodeInsightsIcon }, { text: insight.title }]}
                 actions={<CodeInsightIndependentPageActions insight={insight} />}
             />
+
+            <StandaloneInsightDashboardPills dashboards={insight.dashboards} className={styles.dashboards} />
 
             <div className={styles.content}>
                 <SmartStandaloneInsight insight={insight} telemetryService={telemetryService} />
