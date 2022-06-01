@@ -252,29 +252,6 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 				})
 			}
 
-			for _, mm := range fm.MultilineMatches {
-				chunkMatches = append(chunkMatches, result.ChunkMatch{
-					Content: mm.Preview,
-					ContentStart: result.Location{
-						Offset: int(mm.Start.Offset) - runeOffsetToByteOffset(mm.Preview, int(mm.Start.Column)),
-						Line:   int(mm.Start.Line),
-						Column: 0,
-					},
-					Ranges: result.Ranges{{
-						Start: result.Location{
-							Offset: int(mm.Start.Offset),
-							Line:   int(mm.Start.Line),
-							Column: int(mm.Start.Column),
-						},
-						End: result.Location{
-							Offset: int(mm.End.Offset),
-							Line:   int(mm.End.Line),
-							Column: int(mm.End.Column),
-						},
-					}},
-				})
-			}
-
 			for _, cm := range fm.ChunkMatches {
 				ranges := make(result.Ranges, 0, len(cm.Ranges))
 				for _, rr := range cm.Ranges {

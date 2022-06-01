@@ -77,13 +77,13 @@ func foo(go string) {}
 				}
 				var got []string
 				for _, fileMatches := range sender.collected {
-					for _, m := range fileMatches.MultilineMatches {
-						got = append(got, m.MatchedContent())
+					for _, m := range fileMatches.ChunkMatches {
+						got = append(got, m.MatchedContent()...)
 					}
 				}
 
 				if !reflect.DeepEqual(got, tt.Want) {
-					t.Fatalf("got file matches %v, want %v", got, tt.Want)
+					t.Fatalf("got file matches %q, want %q", got, tt.Want)
 				}
 			})
 		}
@@ -134,8 +134,8 @@ func foo(go.txt) {}
 		}
 		var got []string
 		for _, fileMatches := range sender.collected {
-			for _, m := range fileMatches.MultilineMatches {
-				got = append(got, m.MatchedContent())
+			for _, m := range fileMatches.ChunkMatches {
+				got = append(got, m.MatchedContent()...)
 			}
 		}
 		sort.Strings(got)
@@ -222,7 +222,7 @@ func foo(real string) {}
 	if err != nil {
 		t.Fatal(err)
 	}
-	got := sender.collected[0].MultilineMatches[0].MatchedContent()
+	got := sender.collected[0].ChunkMatches[0].MatchedContent()[0]
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -370,10 +370,13 @@ func TestRule(t *testing.T) {
 	want := []protocol.FileMatch{{
 		Path:     "file.go",
 		LimitHit: false,
-		MultilineMatches: []protocol.MultilineMatch{{
-			Preview: "func foo(success) {} func bar(fail) {}",
-			Start:   protocol.Location{Offset: 0, Line: 0, Column: 0},
-			End:     protocol.Location{Offset: 17, Line: 0, Column: 17},
+		ChunkMatches: []protocol.ChunkMatch{{
+			Content:      "func foo(success) {} func bar(fail) {}",
+			ContentStart: protocol.Location{Offset: 0, Line: 0, Column: 0},
+			Ranges: []protocol.Range{{
+				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Location{Offset: 17, Line: 0, Column: 17},
+			}},
 		}},
 		MatchCount: 1,
 	}}
@@ -523,14 +526,20 @@ func bar() {
 		expected := []protocol.FileMatch{{
 			Path:       "main.go",
 			MatchCount: 2,
-			MultilineMatches: []protocol.MultilineMatch{{
-				Preview: "func foo() {\n    fmt.Println(\"foo\")\n}",
-				Start:   protocol.Location{Offset: 12, Line: 1, Column: 11},
-				End:     protocol.Location{Offset: 38, Line: 3, Column: 1},
+			ChunkMatches: []protocol.ChunkMatch{{
+				Content:      "func foo() {\n    fmt.Println(\"foo\")\n}",
+				ContentStart: protocol.Location{Offset: 1, Line: 1},
+				Ranges: []protocol.Range{{
+					Start: protocol.Location{Offset: 12, Line: 1, Column: 11},
+					End:   protocol.Location{Offset: 38, Line: 3, Column: 1},
+				}},
 			}, {
-				Preview: "func bar() {\n    fmt.Println(\"bar\")\n}",
-				Start:   protocol.Location{Offset: 51, Line: 5, Column: 11},
-				End:     protocol.Location{Offset: 77, Line: 7, Column: 1},
+				Content:      "func bar() {\n    fmt.Println(\"bar\")\n}",
+				ContentStart: protocol.Location{Offset: 40, Line: 5},
+				Ranges: []protocol.Range{{
+					Start: protocol.Location{Offset: 51, Line: 5, Column: 11},
+					End:   protocol.Location{Offset: 77, Line: 7, Column: 1},
+				}},
 			}},
 		}}
 		require.Equal(t, expected, matches)

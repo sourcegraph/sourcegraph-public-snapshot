@@ -40,7 +40,7 @@ func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.F
 	}
 
 	// Convert comby matches to ranges
-	ranges := make([]protocol.Range, len(combyMatch.Matches))
+	ranges := make([]protocol.Range, 0, len(combyMatch.Matches))
 	for _, r := range combyMatch.Matches {
 		// trust, but verify
 		if r.Range.Start.Offset > len(fileBuf) || r.Range.End.Offset > len(fileBuf) {
