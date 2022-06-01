@@ -39,8 +39,6 @@ func main() {
 	go setAuthzProviders()
 
 	additionalJobs := map[string]job.Job{
-		"codeintel-janitor":          codeintel.NewJanitorJob(),
-		"codeintel-auto-indexing":    codeintel.NewIndexingJob(),
 		"codehost-version-syncing":   versions.NewSyncingJob(),
 		"insights-job":               workerinsights.NewInsightsJob(),
 		"insights-query-runner-job":  workerinsights.NewInsightsQueryRunnerJob(),
@@ -57,6 +55,10 @@ func main() {
 		"codeintel-upload-expirer":         freshcodeintel.NewUploadExpirerJob(),
 		"codeintel-commitgraph-updater":    freshcodeintel.NewCommitGraphUpdaterJob(),
 		"codeintel-autoindexing-scheduler": freshcodeintel.NewAutoindexingSchedulerJob(),
+
+		// temporary
+		"codeintel-janitor":       codeintel.NewJanitorJob(),
+		"codeintel-auto-indexing": codeintel.NewIndexingJob(),
 	}
 
 	if err := shared.Start(logger, additionalJobs, registerEnterpriseMigrations); err != nil {
