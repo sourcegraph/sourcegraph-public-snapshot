@@ -35,16 +35,18 @@ func RunRepositoryPurgeWorker(ctx context.Context, db database.DB, ttl time.Dura
 		// of them is slow, so we drastically reduce the chance of this happening by only
 		// purging at a weird time to be configuring Sourcegraph.
 		now := time.Now()
-		if isSaturdayNight(now) {
-			if err := purge(ctx, db, log, database.IteratePurgableReposOptions{
-				Limit:         5000,
-				Limiter:       limiter,
-				DeletedBefore: now.Add(-ttl),
-			}); err != nil {
-				log.Error("failed to run repository clone purge", "error", err)
-			}
+		if !isSaturdayNight(now) {
+			randSleep(10*time.Minute, 1*time.Minute)
+			continue
 		}
-		randSleep(10*time.Minute, time.Minute)
+		if err := purge(ctx, db, log, database.IteratePurgableReposOptions{
+			Limit:         5000,
+			Limiter:       limiter,
+			DeletedBefore: now.Add(-ttl),
+		}); err != nil {
+			log.Error("failed to run repository clone purge", "error", err)
+		}
+		randSleep(1*time.Minute, 10*time.Second)
 	}
 }
 
