@@ -8,7 +8,7 @@ import (
 // NewAuthzProviders returns the set of Gerrit authz providers derived from the connections.
 func NewAuthzProviders(conns []*types.GerritConnection) (ps []authz.Provider) {
 	for _, c := range conns {
-		p := NewProvider(c)
+		p, _ := NewProvider(c)
 		if p != nil {
 			ps = append(ps, p)
 		}
