@@ -180,7 +180,6 @@ func (s *store) transact(ctx context.Context) (stx *store, err error) {
 
 // Done calls into the inner Store Done method.
 func (s *store) Done(err error) error {
-
 	tr := s.txtrace
 	tr.LogFields(otlog.String("event", "Store.Done"))
 	logger := trace.Logger(s.txctx, s.Logger)
