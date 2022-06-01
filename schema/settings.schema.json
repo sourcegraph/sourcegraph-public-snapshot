@@ -15,7 +15,7 @@
         "type": "boolean",
         "default": false,
         "deprecated": false,
-        "description": "Enable the home panels compute suggestions feature. This feature is now enabled by default."
+        "description": "Enable the home panels compute suggestions feature."
       },
       "properties": {
         "codeInsights": {
