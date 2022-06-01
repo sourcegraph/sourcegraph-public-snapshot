@@ -206,6 +206,7 @@ interface Props extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
 
 interface State {
     site?: GQL.ISite
+    contents: string
     loading: boolean
     error?: Error
 
@@ -222,6 +223,7 @@ const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     public state: State = {
         loading: true,
+        contents: '',
         restartToApply: window.context.needServerRestart,
     }
 
@@ -230,17 +232,26 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     private siteReloads = new Subject<void>()
     private subscriptions = new Subscription()
 
+    private onSaveCallback: null | ((value: string) => void) = null
+
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminConfiguration')
 
         this.subscriptions.add(
             this.remoteRefreshes.pipe(mergeMap(() => fetchSite())).subscribe(
-                site =>
+                site => {
+                    let newContents = ''
+                    newContents = newContents + site.configuration.effectiveContents
                     this.setState({
                         site,
                         error: undefined,
                         loading: false,
-                    }),
+                    })
+
+                    if (this.onSaveCallback) {
+                        this.onSaveCallback(site.configuration.effectiveContents)
+                    }
+                },
                 error => this.setState({ error, loading: false })
             )
         )
@@ -465,7 +476,8 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         )
     }
 
-    private onSave = (value: string): void => {
+    private onSave = (value: string, onSaveCallback: ((value: string) => void) | null): void => {
+        this.onSaveCallback = onSaveCallback
         eventLogger.log('SiteConfigurationSaved')
         this.remoteUpdates.next(value)
     }
