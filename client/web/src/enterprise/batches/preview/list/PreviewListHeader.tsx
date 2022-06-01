@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Typography } from '@sourcegraph/wildcard'
+import { H3, H5 } from '@sourcegraph/wildcard'
 
 import { InputTooltip } from '../../../../components/InputTooltip'
 
@@ -27,23 +27,23 @@ export const PreviewListHeader: React.FunctionComponent<React.PropsWithChildren<
                 <span className="pl-2 d-block d-sm-none">Select all</span>
             </div>
         )}
-        <Typography.H5 as={Typography.H3} className="p-2 d-none d-sm-block text-uppercase text-center">
+        <H5 as={H3} className="p-2 d-none d-sm-block text-uppercase text-center">
             Current state
-        </Typography.H5>
-        <Typography.H5 as={Typography.H3} className="d-none d-sm-block text-uppercase text-center">
+        </H5>
+        <H5 as={H3} className="d-none d-sm-block text-uppercase text-center">
             +<br />-
-        </Typography.H5>
-        <Typography.H5 as={Typography.H3} className="p-2 d-none d-sm-block text-uppercase text-nowrap">
+        </H5>
+        <H5 as={H3} className="p-2 d-none d-sm-block text-uppercase text-nowrap">
             Actions
-        </Typography.H5>
-        <Typography.H5 as={Typography.H3} className="p-2 d-none d-sm-block text-uppercase text-nowrap">
+        </H5>
+        <H5 as={H3} className="p-2 d-none d-sm-block text-uppercase text-nowrap">
             Changeset information
-        </Typography.H5>
-        <Typography.H5 as={Typography.H3} className="p-2 d-none d-sm-block text-uppercase text-center text-nowrap">
+        </H5>
+        <H5 as={H3} className="p-2 d-none d-sm-block text-uppercase text-center text-nowrap">
             Commit changes
-        </Typography.H5>
-        <Typography.H5 as={Typography.H3} className="p-2 d-none d-sm-block text-uppercase text-center text-nowrap">
+        </H5>
+        <H5 as={H3} className="p-2 d-none d-sm-block text-uppercase text-center text-nowrap">
             Change state
-        </Typography.H5>
+        </H5>
     </>
 )

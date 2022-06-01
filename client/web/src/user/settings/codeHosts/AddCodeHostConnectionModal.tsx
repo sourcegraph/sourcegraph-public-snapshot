@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { Button, Modal, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Modal, Label, H3, Text } from '@sourcegraph/wildcard'
 
 import { addExternalService } from '../../../components/externalServices/backend'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
@@ -86,14 +86,14 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<
             onDismiss={onDidCancel}
         >
             <div className="web-content">
-                <Typography.H3 id={`heading--connect-with-${serviceName}`} className="mb-4">
+                <H3 id={`heading--connect-with-${serviceName}`} className="mb-4">
                     Connect with {serviceName}
-                </Typography.H3>
+                </H3>
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">
                         {didAckMachineUserHint ? (
                             <>
-                                <Typography.Label htmlFor="code-host-token">Access token</Typography.Label>
+                                <Label htmlFor="code-host-token">Access token</Label>
                                 <div className="position-relative">
                                     <input
                                         id="code-host-token"

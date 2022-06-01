@@ -11,7 +11,7 @@ import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Alert, Icon, Tabs, TabList, TabPanels, TabPanel, Tab, Typography } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, Tabs, TabList, TabPanels, TabPanel, Tab, H3 } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { InputTooltip } from '../../../../components/InputTooltip'
@@ -367,15 +367,15 @@ const ExpandedSection: React.FunctionComponent<
                         node.targets.changeset.currentSpec?.description.__typename ===
                             'GitBranchChangesetDescription' && (
                             <>
-                                <Typography.H3 className="text-muted">
+                                <H3 className="text-muted">
                                     <del>{node.targets.changeset.currentSpec.description.title}</del>
-                                </Typography.H3>
+                                </H3>
                                 <del className="text-muted">
                                     <Description description={node.targets.changeset.currentSpec.description.body} />
                                 </del>
                             </>
                         )}
-                    <Typography.H3>
+                    <H3>
                         {node.targets.changesetSpec.description.title}{' '}
                         <small>
                             by{' '}
@@ -392,7 +392,7 @@ const ExpandedSection: React.FunctionComponent<
                                 }
                             />
                         </small>
-                    </Typography.H3>
+                    </H3>
                     <Description description={node.targets.changesetSpec.description.body} />
                 </TabPanel>
 
@@ -415,7 +415,7 @@ const ChangesetSpecTitle: React.FunctionComponent<
     if (spec.targets.__typename === 'VisibleApplyPreviewTargetsAttach') {
         // An import changeset does not display a regular title
         if (spec.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
-            return <Typography.H3>Import changeset #{spec.targets.changesetSpec.description.externalID}</Typography.H3>
+            return <H3>Import changeset #{spec.targets.changesetSpec.description.externalID}</H3>
         }
 
         title = spec.targets.changesetSpec.description.title
@@ -434,7 +434,7 @@ const ChangesetSpecTitle: React.FunctionComponent<
             : null
 
     return (
-        <Typography.H3>
+        <H3>
             {newTitle ? (
                 <>
                     <del className="mr-1">
@@ -450,7 +450,7 @@ const ChangesetSpecTitle: React.FunctionComponent<
             ) : (
                 <ExternalChangesetTitle externalID={externalID} externalURL={externalURL} title={title} />
             )}
-        </Typography.H3>
+        </H3>
     )
 }
 

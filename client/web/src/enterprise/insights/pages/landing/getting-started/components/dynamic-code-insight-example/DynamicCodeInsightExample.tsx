@@ -5,7 +5,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import { noop } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, Link, useObservable, useDebounce, Icon, Input, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Card, Link, useObservable, useDebounce, Icon, Input, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { getDefaultInputProps } from '../../../../../components/form/getDefaultInputProps'
 import { useField } from '../../../../../components/form/hooks/useField'
@@ -131,9 +131,9 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
             </form>
 
             <section>
-                <Typography.H2 className={classNames(styles.cardTitle)}>
+                <H2 className={classNames(styles.cardTitle)}>
                     Draw insights from your codebase about how different initiatives track over time
-                </Typography.H2>
+                </H2>
 
                 <Text>
                     Create visual dashboards with meaningful, customizable codebase signals your team can use to answer
@@ -141,7 +141,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
                     difficult or impossible to answer before.
                 </Text>
 
-                <Typography.H3 className={classNames(styles.bulletTitle)}>Use Code Insights to...</Typography.H3>
+                <H3 className={classNames(styles.bulletTitle)}>Use Code Insights to...</H3>
 
                 <ul>
                     <li>Track migrations, adoption, and deprecations</li>

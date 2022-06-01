@@ -10,7 +10,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, ButtonLink, Link, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Link, Icon, H2, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection, FilteredConnectionFilter } from '../../components/FilteredConnection'
@@ -188,7 +188,7 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
             <div className="registry-extensions-page">
                 <PageTitle title="Registry extensions" />
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Typography.H2 className="mb-0">Registry extensions</Typography.H2>
+                    <H2 className="mb-0">Registry extensions</H2>
                     <div>
                         <Button className="mr-sm-2" to="/extensions" variant="link" as={Link}>
                             View extensions

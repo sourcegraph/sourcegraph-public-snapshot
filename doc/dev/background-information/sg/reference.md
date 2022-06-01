@@ -1,4 +1,4 @@
- 
+<!-- DO NOT EDIT: generated via: go generate ./dev/sg -->
 
 # sg reference
 

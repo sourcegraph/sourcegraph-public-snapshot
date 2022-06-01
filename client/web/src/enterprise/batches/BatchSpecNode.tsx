@@ -13,7 +13,7 @@ import TimerSandIcon from 'mdi-react/TimerSandIcon'
 
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, H3, H4 } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchSpecListFields, Scalars } from '../../graphql-operations'
@@ -55,7 +55,7 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
                 <span className="text-muted">{upperFirst(node.state.toLowerCase())}</span>
             </div>
             <div className="px-2 pb-1">
-                <Typography.H3 className="pr-2">
+                <H3 className="pr-2">
                     {currentSpecID === node.id && (
                         <>
                             <Icon
@@ -86,7 +86,7 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
                             </Link>
                         </>
                     )}
-                </Typography.H3>
+                </H3>
                 {!currentSpecID && (
                     <small className="text-muted d-block">
                         Executed by <strong>{node.creator?.username}</strong>{' '}
@@ -99,7 +99,7 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
             </div>
             {isExpanded && (
                 <div className={styles.nodeExpandedSection}>
-                    <Typography.H4>Input spec</Typography.H4>
+                    <H4>Input spec</H4>
                     <BatchSpec
                         isLightTheme={isLightTheme}
                         name={node.description.name}

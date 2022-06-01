@@ -17,7 +17,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
@@ -26,6 +25,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 var root string
@@ -38,7 +39,7 @@ func TestMain(m *testing.M) {
 	flag.Parse()
 
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
+		logtest.InitWithLevel(m, sglog.LevelNone)
 	}
 
 	code := m.Run()
@@ -67,6 +68,7 @@ func init() {
 
 	srv := &http.Server{
 		Handler: (&server.Server{
+			Logger:   sglog.Scoped("gitserver", "gitserver server log"),
 			ReposDir: filepath.Join(root, "repos"),
 			GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 				return filepath.Join(root, "remotes", string(name)), nil
