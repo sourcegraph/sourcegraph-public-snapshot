@@ -56,4 +56,17 @@ public class PreviewContent {
         byte[] decodedBytes = Base64.getDecoder().decode(base64String);
         return new String(decodedBytes);
     }
+
+    @Override
+    public boolean equals(@Nullable Object obj) {
+        return obj instanceof PreviewContent && equals((PreviewContent) obj);
+    }
+
+    private boolean equals(PreviewContent other) {
+        return fileName.equals(other.fileName)
+            && path.equals(other.path)
+            && content.equals(other.content)
+            && lineNumber == other.lineNumber
+            && relativeUrl.equals(other.relativeUrl);
+    }
 }
