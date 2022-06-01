@@ -206,6 +206,7 @@ interface Props extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
 
 interface State {
     site?: GQL.ISite
+    contents: string
     loading: boolean
     error?: Error
 
@@ -222,6 +223,7 @@ const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     public state: State = {
         loading: true,
+        contents: '',
         restartToApply: window.context.needServerRestart,
     }
 
@@ -229,6 +231,8 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     private remoteUpdates = new Subject<string>()
     private siteReloads = new Subject<void>()
     private subscriptions = new Subscription()
+
+    private onSaveCallback: null | ((value: string) => void) = null
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminConfiguration')
