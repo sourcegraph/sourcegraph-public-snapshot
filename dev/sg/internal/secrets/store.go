@@ -152,7 +152,14 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret) (string,
 	}
 
 	if err != nil {
-		return "", errors.Wrapf(err, "%s: failed to access secret %q from %q", secret.Provider, secret.Name, secret.Project)
+		errMessaage := fmt.Sprintf("%s: failed to access secret %q from %q",
+			secret.Provider, secret.Name, secret.Project)
+		// Some secret providers use their respective CLI, if not found the user might not
+		// have run 'sg setup' to set up the relevant tool.
+		if strings.Contains(err.Error(), "command not found") {
+			errMessaage += "- you may need to run 'sg setup' again"
+		}
+		return "", errors.Wrap(err, errMessaage)
 	}
 
 	value.Fetched = time.Now()
