@@ -13,6 +13,7 @@ import org.cef.browser.CefBrowser;
 import org.cef.handler.CefKeyboardHandler;
 import org.cef.misc.BoolRef;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
@@ -24,6 +25,7 @@ public class SourcegraphWindow implements Disposable {
     private final Project project;
     private final FindPopupPanel mainPanel;
     private JBPopup popup;
+    private static final Logger logger = LoggerFactory.getLogger(SourcegraphWindow.class);
 
     public SourcegraphWindow(@NotNull Project project) {
         this.project = project;
@@ -97,7 +99,7 @@ public class SourcegraphWindow implements Disposable {
 
     private void registerJBCefClientKeyListeners() {
         if (mainPanel.getBrowser() == null) {
-            LoggerFactory.getLogger(SourcegraphWindow.class).error("Browser panel is null");
+            logger.error("Browser panel is null");
             return;
         }
 
@@ -126,7 +128,7 @@ public class SourcegraphWindow implements Disposable {
                     try {
                         mainPanel.getPreviewPanel().openInEditorOrBrowser();
                     } catch (Exception e) {
-                        // Swallow error
+                        logger.error("Error opening file in editor", e);
                     }
                 });
                 return true;
