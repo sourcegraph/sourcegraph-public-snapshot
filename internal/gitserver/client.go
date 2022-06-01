@@ -19,16 +19,16 @@ import (
 	"time"
 
 	"github.com/cespare/xxhash/v2"
-	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
+
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/go-rendezvous"
@@ -81,6 +81,7 @@ func ResetClientMocks() {
 // and httpcli.Doer.
 func NewClient(db database.DB) *ClientImplementor {
 	return &ClientImplementor{
+		logger: sglog.Scoped("NewClient", "returns a new gitserver.Client instantiated with default arguments and httpcli.Doer."),
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
 		},
@@ -104,6 +105,7 @@ func NewClient(db database.DB) *ClientImplementor {
 
 func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImplementor {
 	return &ClientImplementor{
+		logger: sglog.Scoped("NewTestClient", "Test New client"),
 		addrs: func() []string {
 			return addrs
 		},
@@ -124,6 +126,9 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImpl
 
 // ClientImplementor is a gitserver client.
 type ClientImplementor struct {
+	// logger is a standardized, strongly-typed, and structured logging interface
+	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
+	logger sglog.Logger
 	// HTTP client to use
 	HTTPClient httpcli.Doer
 
@@ -446,7 +451,7 @@ func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt 
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
-			span.LogFields(otlog.Error(err))
+			span.LogFields(log.Error(err))
 		}
 		span.Finish()
 	}()
@@ -1357,6 +1362,7 @@ func (c *ClientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 func (c *ClientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
 	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)
+
 	if err != nil {
 		return "", err
 	}
@@ -1364,14 +1370,14 @@ func (c *ClientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log15.Warn("reading gitserver create-commit-from-patch response", "err", err.Error())
+		c.logger.Warn("reading gitserver create-commit-from-patch response", sglog.Error(err))
 		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: errors.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, err.Error())}
 	}
 
 	var res protocol.CreateCommitFromPatchResponse
 	err = json.Unmarshal(data, &res)
 	if err != nil {
-		log15.Warn("decoding gitserver create-commit-from-patch response", "err", err.Error())
+		c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
 		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: errors.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, string(data))}
 	}
 
@@ -1398,14 +1404,14 @@ func (c *ClientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log15.Warn("reading gitserver get-object response", "err", err.Error())
+		c.logger.Warn("reading gitserver get-object response", sglog.Error(err))
 		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "GetObject", Err: errors.Errorf("GetObject: http status %d %s", resp.StatusCode, err.Error())}
 	}
 
 	var res protocol.GetObjectResponse
 	err = json.Unmarshal(data, &res)
 	if err != nil {
-		log15.Warn("decoding gitserver get-object response", "err", err.Error())
+		c.logger.Warn("decoding gitserver get-object response", sglog.Error(err))
 		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "GetObject", Err: errors.Errorf("GetObject: http status %d %s", resp.StatusCode, string(data))}
 	}
 

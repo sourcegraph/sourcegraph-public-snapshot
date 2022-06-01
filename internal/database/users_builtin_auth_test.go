@@ -16,7 +16,7 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	if _, err := Users(db).Create(ctx, NewUser{
@@ -38,24 +38,24 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, verified, err := UserEmails(db).GetPrimaryEmail(ctx, usr.ID)
+	_, verified, err := db.UserEmails().GetPrimaryEmail(ctx, usr.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if verified {
 		t.Fatal("new user should not be verified")
 	}
-	if isValid, err := UserEmails(db).Verify(ctx, usr.ID, "foo@bar.com", "wrong_email-code"); err == nil && isValid {
+	if isValid, err := db.UserEmails().Verify(ctx, usr.ID, "foo@bar.com", "wrong_email-code"); err == nil && isValid {
 		t.Fatal("should not validate email with wrong code")
 	}
-	if isValid, err := UserEmails(db).Verify(ctx, usr.ID, "foo@bar.com", "email-code"); err != nil || !isValid {
+	if isValid, err := db.UserEmails().Verify(ctx, usr.ID, "foo@bar.com", "email-code"); err != nil || !isValid {
 		t.Fatal("couldn't vaidate email")
 	}
 	usr, err = Users(db).GetByID(ctx, usr.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, verified, err := UserEmails(db).GetPrimaryEmail(ctx, usr.ID); err != nil {
+	if _, verified, err := db.UserEmails().GetPrimaryEmail(ctx, usr.ID); err != nil {
 		t.Fatal(err)
 	} else if !verified {
 		t.Fatal("user should not be verified")
@@ -115,7 +115,7 @@ func TestUsers_BuiltinAuth_VerifiedEmail(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -128,7 +128,7 @@ func TestUsers_BuiltinAuth_VerifiedEmail(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, verified, err := UserEmails(db).GetPrimaryEmail(ctx, user.ID)
+	_, verified, err := db.UserEmails().GetPrimaryEmail(ctx, user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func TestUsers_BuiltinAuthPasswordResetRateLimit(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	oldPasswordResetRateLimit := passwordResetRateLimit
@@ -181,7 +181,7 @@ func TestUsers_UpdatePassword(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	usr, err := Users(db).Create(ctx, NewUser{
@@ -229,7 +229,7 @@ func TestUsers_CreatePassword(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// User without a password
@@ -264,7 +264,7 @@ func TestUsers_CreatePassword(t *testing.T) {
 	}
 
 	// A new user with an external account can't create a password
-	newID, err := ExternalAccounts(db).CreateUserAndSave(ctx, NewUser{
+	newID, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{
 		Email:                 "usr3@bar.com",
 		Username:              "usr3",
 		Password:              "",
@@ -295,7 +295,7 @@ func TestUsers_PasswordResetExpiry(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{

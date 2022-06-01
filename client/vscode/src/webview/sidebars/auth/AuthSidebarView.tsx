@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert, Typography, Text, Link, Input } from '@sourcegraph/wildcard'
+import { Alert, Text, Link, Input, H5 } from '@sourcegraph/wildcard'
 
 import {
     VSCE_LINK_DOTCOM,
@@ -130,7 +130,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
         <div className={classNames(styles.ctaContainer)}>
             <Form onSubmit={validateAccessToken}>
                 <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
-                    <Typography.H5 className="flex-grow-1">Search your private code</Typography.H5>
+                    <H5 className="flex-grow-1">Search your private code</H5>
                 </button>
                 {content}
             </Form>
@@ -278,7 +278,7 @@ export const AuthSidebarCta: React.FunctionComponent<React.PropsWithChildren<Aut
     return (
         <div>
             <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
-                <Typography.H5 className="flex-grow-1">Welcome</Typography.H5>
+                <H5 className="flex-grow-1">Welcome</H5>
             </button>
             <Text className={classNames(styles.ctaParagraph)}>
                 The Sourcegraph extension allows you to search millions of open source repositories without cloning them

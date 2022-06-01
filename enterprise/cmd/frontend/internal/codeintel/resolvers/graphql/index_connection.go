@@ -25,6 +25,7 @@ type IndexConnectionResolver struct {
 func NewIndexConnectionResolver(db database.DB, gitserver GitserverClient, resolver resolvers.Resolver, indexesResolver *resolvers.IndexesResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.LSIFIndexConnectionResolver {
 	return &IndexConnectionResolver{
 		db:               db,
+		gitserver:        gitserver,
 		resolver:         resolver,
 		indexesResolver:  indexesResolver,
 		prefetcher:       prefetcher,

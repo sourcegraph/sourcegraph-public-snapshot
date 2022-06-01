@@ -6,7 +6,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { Badge, Container, Link, PageHeader, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { Badge, Container, Link, PageHeader, Icon, H3, H4, Text } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
 import {
@@ -78,7 +78,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
             />
 
             <Container className="mb-3">
-                <Typography.H3>Setting up executors</Typography.H3>
+                <H3>Setting up executors</H3>
                 <Text className="mb-0">
                     Executors enable{' '}
                     <Link to="/help/code_intelligence/explanations/auto_indexing" rel="noopener">
@@ -129,7 +129,7 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
             title={
                 <div className="d-flex justify-content-between">
                     <div>
-                        <Typography.H4 className="mb-0">
+                        <H4 className="mb-0">
                             {node.active ? (
                                 <Icon
                                     role="img"
@@ -153,7 +153,7 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
                             >
                                 {node.queueName}
                             </Badge>
-                        </Typography.H4>
+                        </H4>
                     </div>
                     <span>
                         last seen <Timestamp date={node.lastSeenAt} />

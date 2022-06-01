@@ -40,16 +40,16 @@ func SexpFormat(j job.Job, sep, indent string) string {
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearchJob,
-			*zoekt.ZoektSymbolSearchJob,
-			*searcher.SearcherJob,
-			*searcher.SymbolSearcherJob,
+			*zoekt.RepoSubsetTextSearchJob,
+			*zoekt.SymbolSearchJob,
+			*searcher.TextSearchJob,
+			*searcher.SymbolSearchJob,
 			*run.RepoSearchJob,
-			*zoekt.ZoektGlobalSearchJob,
-			*structural.StructuralSearchJob,
-			*commit.CommitSearchJob,
-			*zoekt.ZoektGlobalSymbolSearchJob,
-			*repos.ComputeExcludedReposJob,
+			*zoekt.GlobalTextSearchJob,
+			*structural.SearchJob,
+			*commit.SearchJob,
+			*zoekt.GlobalSymbolSearchJob,
+			*repos.ComputeExcludedJob,
 			*NoopJob:
 			b.WriteString(j.Name())
 
@@ -200,16 +200,16 @@ func PrettyMermaid(j job.Job) string {
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearchJob,
-			*zoekt.ZoektSymbolSearchJob,
-			*searcher.SearcherJob,
-			*searcher.SymbolSearcherJob,
+			*zoekt.RepoSubsetTextSearchJob,
+			*zoekt.SymbolSearchJob,
+			*searcher.TextSearchJob,
+			*searcher.SymbolSearchJob,
 			*run.RepoSearchJob,
-			*zoekt.ZoektGlobalSearchJob,
-			*structural.StructuralSearchJob,
-			*commit.CommitSearchJob,
-			*zoekt.ZoektGlobalSymbolSearchJob,
-			*repos.ComputeExcludedReposJob,
+			*zoekt.GlobalTextSearchJob,
+			*structural.SearchJob,
+			*commit.SearchJob,
+			*zoekt.GlobalSymbolSearchJob,
+			*repos.ComputeExcludedJob,
 			*NoopJob:
 			writeNode(b, depth, RoundedStyle, &id, j.Name())
 
@@ -318,16 +318,16 @@ func toJSON(j job.Job, verbose bool) any {
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearchJob,
-			*zoekt.ZoektSymbolSearchJob,
-			*searcher.SearcherJob,
-			*searcher.SymbolSearcherJob,
+			*zoekt.RepoSubsetTextSearchJob,
+			*zoekt.SymbolSearchJob,
+			*searcher.TextSearchJob,
+			*searcher.SymbolSearchJob,
 			*run.RepoSearchJob,
-			*zoekt.ZoektGlobalSearchJob,
-			*structural.StructuralSearchJob,
-			*commit.CommitSearchJob,
-			*zoekt.ZoektGlobalSymbolSearchJob,
-			*repos.ComputeExcludedReposJob,
+			*zoekt.GlobalTextSearchJob,
+			*structural.SearchJob,
+			*commit.SearchJob,
+			*zoekt.GlobalSymbolSearchJob,
+			*repos.ComputeExcludedJob,
 			*NoopJob:
 			if verbose {
 				return map[string]any{j.Name(): j}

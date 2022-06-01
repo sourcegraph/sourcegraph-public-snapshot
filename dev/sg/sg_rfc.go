@@ -11,11 +11,20 @@ import (
 )
 
 var rfcCommand = &cli.Command{
-	Name:        "rfc",
-	Usage:       "Run the given RFC command to manage RFCs",
-	Description: `List, search and open Sourcegraph RFCs`,
-	Category:    CategoryCompany,
-	Action:      execAdapter(rfcExec),
+	Name:  "rfc",
+	Usage: `List, search, and open Sourcegraph RFCs`,
+	UsageText: `
+# List all RFCs
+sg rfc list
+
+# Search for an RFC
+sg rfc search "search terms"
+
+# Open a specific RFC
+sg rfc open 420
+`,
+	Category: CategoryCompany,
+	Action:   execAdapter(rfcExec),
 }
 
 func rfcExec(ctx context.Context, args []string) error {

@@ -93,9 +93,11 @@ var analyticsCommand = &cli.Command{
 							metrics = append(metrics, fmt.Sprintf("%s: %s", k, v.ValueString()))
 						}
 
-						entry := fmt.Sprintf("- [%s] `%s`: %s _(%s)_",
-							ts, ev.Name, strings.Join(ev.Labels, ", "), strings.Join(metrics, ", "))
-						out.WriteString(entry)
+						entry := fmt.Sprintf("- [%s] `%s`", ts, ev.Name)
+						if len(ev.Labels) > 0 {
+							entry += fmt.Sprintf(": %s", strings.Join(ev.Labels, ", "))
+						}
+						out.WriteString(entry + fmt.Sprintf(" _(%s)_", strings.Join(metrics, ", ")))
 
 						out.WriteString("\n")
 					}
