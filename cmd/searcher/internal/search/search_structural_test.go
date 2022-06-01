@@ -570,8 +570,10 @@ func Test_chunkRanges(t *testing.T) {
 		}},
 		mergeThreshold: 0,
 		output: []rangeChunk{{
-			minLoc: protocol.Location{Offset: 0, Line: 0, Column: 0},
-			maxLoc: protocol.Location{Offset: 20, Line: 1, Column: 10},
+			cover: protocol.Range{
+				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
+			},
 			ranges: []protocol.Range{{
 				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
 				End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
@@ -588,8 +590,10 @@ func Test_chunkRanges(t *testing.T) {
 		}},
 		mergeThreshold: 0,
 		output: []rangeChunk{{
-			minLoc: protocol.Location{Offset: 0, Line: 0, Column: 0},
-			maxLoc: protocol.Location{Offset: 25, Line: 1, Column: 15},
+			cover: protocol.Range{
+				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Location{Offset: 25, Line: 1, Column: 15},
+			},
 			ranges: []protocol.Range{{
 				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
 				End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
@@ -609,8 +613,10 @@ func Test_chunkRanges(t *testing.T) {
 		}},
 		mergeThreshold: 0,
 		output: []rangeChunk{{
-			minLoc: protocol.Location{Offset: 0, Line: 0, Column: 0},
-			maxLoc: protocol.Location{Offset: 35, Line: 2, Column: 5},
+			cover: protocol.Range{
+				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Location{Offset: 35, Line: 2, Column: 5},
+			},
 			ranges: []protocol.Range{{
 				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
 				End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
@@ -630,15 +636,19 @@ func Test_chunkRanges(t *testing.T) {
 		}},
 		mergeThreshold: 0,
 		output: []rangeChunk{{
-			minLoc: protocol.Location{Offset: 0, Line: 0, Column: 0},
-			maxLoc: protocol.Location{Offset: 10, Line: 0, Column: 10},
+			cover: protocol.Range{
+				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Location{Offset: 10, Line: 0, Column: 10},
+			},
 			ranges: []protocol.Range{{
 				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
 				End:   protocol.Location{Offset: 10, Line: 0, Column: 10},
 			}},
 		}, {
-			minLoc: protocol.Location{Offset: 11, Line: 1, Column: 0},
-			maxLoc: protocol.Location{Offset: 20, Line: 1, Column: 9},
+			cover: protocol.Range{
+				Start: protocol.Location{Offset: 11, Line: 1, Column: 0},
+				End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
+			},
 			ranges: []protocol.Range{{
 				Start: protocol.Location{Offset: 11, Line: 1, Column: 0},
 				End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
@@ -655,8 +665,10 @@ func Test_chunkRanges(t *testing.T) {
 		}},
 		mergeThreshold: 1,
 		output: []rangeChunk{{
-			minLoc: protocol.Location{Offset: 0, Line: 0, Column: 0},
-			maxLoc: protocol.Location{Offset: 20, Line: 1, Column: 9},
+			cover: protocol.Range{
+				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
+			},
 			ranges: []protocol.Range{{
 				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
 				End:   protocol.Location{Offset: 10, Line: 0, Column: 10},

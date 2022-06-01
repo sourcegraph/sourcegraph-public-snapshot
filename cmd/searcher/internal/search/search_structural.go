@@ -68,21 +68,21 @@ func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.F
 	for _, chunk := range chunks {
 		// Find the beginning of the line the chunk starts on
 		firstLineStart := int32(0)
-		if off := bytes.LastIndexByte(fileBuf[:chunk.minLoc.Offset], '\n'); off >= 0 {
+		if off := bytes.LastIndexByte(fileBuf[:chunk.cover.Start.Offset], '\n'); off >= 0 {
 			firstLineStart = int32(off) + 1
 		}
 
 		// Find the end of the line the chunk ends on
 		lastLineEnd := int32(len(fileBuf))
-		if off := bytes.IndexByte(fileBuf[chunk.maxLoc.Offset:], '\n'); off >= 0 {
-			lastLineEnd = chunk.maxLoc.Offset + int32(off)
+		if off := bytes.IndexByte(fileBuf[chunk.cover.End.Offset:], '\n'); off >= 0 {
+			lastLineEnd = chunk.cover.End.Offset + int32(off)
 		}
 
 		chunkMatches = append(chunkMatches, protocol.ChunkMatch{
 			Content: string(fileBuf[firstLineStart:lastLineEnd]),
 			ContentStart: protocol.Location{
 				Offset: firstLineStart,
-				Line:   chunk.minLoc.Line,
+				Line:   chunk.cover.Start.Line,
 				Column: 0,
 			},
 			Ranges: chunk.ranges,
@@ -97,23 +97,28 @@ func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.F
 	}, nil
 }
 
-// rangeChunk represents a set of lines in a file along with the ranges
-// that are completely contained in that set of lines.
+// rangeChunk represents a set of adjacent ranges
 type rangeChunk struct {
-	// minLoc is the smallest Start location in `ranges`
-	minLoc protocol.Location
-
-	// maxLoc is the largest End location in `ranges`
-	maxLoc protocol.Location
-
+	// cover is the smallest range that completely contains every range in
+	// `ranges`. More precisely, cover.Start is the minimum range.Start in all
+	// `ranges` and cover.End is the maximum range.End in all `ranges`.
+	cover  protocol.Range
 	ranges []protocol.Range
 }
 
-// chunkRanges groups a set of ranges into chunks of adjacent ranges. If the
-// number of lines between chunks is less than `mergeThreshold`, they will be
-// merged into a single chunk. The chunks returned will be ordered and
-// the lines in them will be non-overlapping.
-func chunkRanges(ranges []protocol.Range, mergeThreshold int) []rangeChunk {
+// chunkRanges groups a set of ranges into chunks of adjacent ranges.
+//
+// `interChunkLines` is the minimum number of lines allowed between chunks. If
+// two chunks would have fewer than `interChunkLines` lines between them, they
+// are instead merged into a single chunk. For example, calling `chunkRanges`
+// with `interChunkLines == 0` means ranges on two adjacent lines would be
+// returned as two separate chunks.
+//
+// This function guarantees that the chunks returned are ordered by line number,
+// have no overlapping lines, and the line ranges covered are spaced apart by
+// a minimum of `interChunkLines`. More precisely, for any return value `rangeChunks`:
+// rangeChunks[i].cover.End.Line + interChunkLines < rangeChunks[i+1].cover.Start.Line
+func chunkRanges(ranges []protocol.Range, interChunkLines int) []rangeChunk {
 	// Sort by range start
 	sort.Slice(ranges, func(i, j int) bool {
 		return ranges[i].Start.Offset < ranges[j].Start.Offset
@@ -124,29 +129,25 @@ func chunkRanges(ranges []protocol.Range, mergeThreshold int) []rangeChunk {
 		if i == 0 {
 			// First iteration, there are no chunks, so create a new one
 			chunks = append(chunks, rangeChunk{
-				minLoc: rr.Start,
-				maxLoc: rr.End,
+				cover:  rr,
 				ranges: []protocol.Range{rr},
 			})
 			continue
 		}
 
 		lastChunk := &chunks[len(chunks)-1] // pointer for mutability
-		if int(lastChunk.maxLoc.Line)+mergeThreshold >= int(rr.Start.Line) {
+		if int(lastChunk.cover.End.Line)+interChunkLines >= int(rr.Start.Line) {
 			// The current range overlaps with the current chunk, so merge them
 			lastChunk.ranges = append(lastChunk.ranges, rr)
 
-			// Expand the chunk bounds if needed. Since we sort
-			// by offset, minLoc should never need updated after
-			// a chunk is created.
-			if rr.End.Offset > lastChunk.maxLoc.Offset {
-				lastChunk.maxLoc = rr.End
+			// Expand the chunk coverRange if needed
+			if rr.End.Offset > lastChunk.cover.End.Offset {
+				lastChunk.cover.End = rr.End
 			}
 		} else {
 			// No overlap, so create a new chunk
 			chunks = append(chunks, rangeChunk{
-				minLoc: rr.Start,
-				maxLoc: rr.End,
+				cover:  rr,
 				ranges: []protocol.Range{rr},
 			})
 		}
