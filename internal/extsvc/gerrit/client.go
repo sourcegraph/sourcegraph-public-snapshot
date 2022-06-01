@@ -85,6 +85,23 @@ func (c *Client) listAccounts(ctx context.Context, qsAccounts url.Values) (ListA
 	return respAllAccts, nil
 }
 
+func (c *Client) GetGroup(ctx context.Context, groupName string) (Group, error) {
+
+	urlGroup := url.URL{Path: fmt.Sprintf("a/groups/%s", groupName)}
+
+	reqAllAccounts, err := http.NewRequest("GET", urlGroup.String(), nil)
+
+	if err != nil {
+		return Group{}, err
+	}
+
+	respGetGroup := Group{}
+	if _, err = c.do(ctx, reqAllAccounts, &respGetGroup); err != nil {
+		return respGetGroup, err
+	}
+	return respGetGroup, nil
+}
+
 // ListProjectsArgs defines options to be set on ListProjects method calls.
 type ListProjectsArgs struct {
 	Cursor *Pagination
@@ -96,7 +113,7 @@ type ListProjectsResponse map[string]*Project
 func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (projects *ListProjectsResponse, nextPage bool, err error) {
 
 	// Unfortunately Gerrit APIs are quite limited and don't support pagination well.
-	// Currently, if you want to only get CODE projects and know if there is another page
+	// Currently, if you want to only get CODE projects and want to know if there is another page
 	// to query for, the only way to do that is to query twice and compare the results.
 	qsAllProjects := make(url.Values)
 	qsCodeProjects := make(url.Values)
@@ -199,6 +216,16 @@ type Account struct {
 	DisplayName string `json:"display_name"`
 	Email       string `json:"email"`
 	Username    string `json:"username"`
+}
+
+type Group struct {
+	ID          string `json:"id"`
+	GroupID     int32  `json:"group_id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	CreatedOn   string `json:"created_on"`
+	Owner       string `json:"owner"`
+	OwnerID     string `json:"owner_id"`
 }
 
 type Project struct {
