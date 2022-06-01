@@ -85,14 +85,14 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                     <ButtonGroup className={styles.toggleGroup}>
                         <ToggleButton
                             selected={selectedOption}
-                            value={{ mode: SeriesSortMode.DATE_ADDED, direction: SeriesSortDirection.ASC }}
+                            value={{ mode: SeriesSortMode.DATE_ADDED, direction: SeriesSortDirection.DESC }}
                             onClick={handleToggle}
                         >
                             Latest
                         </ToggleButton>
                         <ToggleButton
                             selected={selectedOption}
-                            value={{ mode: SeriesSortMode.DATE_ADDED, direction: SeriesSortDirection.DESC }}
+                            value={{ mode: SeriesSortMode.DATE_ADDED, direction: SeriesSortDirection.ASC }}
                             onClick={handleToggle}
                         >
                             Oldest
@@ -102,7 +102,14 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
             </section>
             <footer className={styles.footer}>
                 <span>Number of data series</span>
-                <Input type="number" step="1" value={limit || seriesCount} onChange={handleChange} variant="small" />
+                <Input
+                    type="number"
+                    step="1"
+                    max={20}
+                    value={limit || seriesCount}
+                    onChange={handleChange}
+                    variant="small"
+                />
             </footer>
         </section>
     )
