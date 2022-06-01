@@ -23,7 +23,6 @@ exports[`<ButtonLink /> renders correctly anchor attributes 1`] = `
     data-tooltip="SourceGraph.com"
     href="https://sourcegraph.com"
     rel="noopener noreferrer"
-    role="button"
     tabindex="0"
     target="_blank"
   >
@@ -37,7 +36,6 @@ exports[`<ButtonLink /> renders correctly btn classes 1`] = `
   <a
     class="anchorLink btn btnSecondary btnLg"
     href="http://example.com"
-    role="button"
     tabindex="0"
   >
     Button link

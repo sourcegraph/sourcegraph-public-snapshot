@@ -79,13 +79,11 @@ export const ButtonLink = React.forwardRef((props, reference) => {
     // We need to set up a keypress listener because <a onclick> doesn't get
     // triggered by enter.
     const handleKeyPress = (event: React.KeyboardEvent<HTMLElement>): void => {
-        if (!disabled && isSelectKeyPress(event)) {
-            if (onSelect) {
-                onSelect(event)
-            } else {
-                buttonReference.current?.click()
-            }
+        if (disabled || !isSelectKeyPress(event)) {
+            return
         }
+
+        buttonReference.current?.click()
     }
 
     const handleClick = (event: React.MouseEvent<HTMLElement>): void => {
@@ -104,7 +102,7 @@ export const ButtonLink = React.forwardRef((props, reference) => {
         className: classNames(className, disabled && ['disabled', disabledClassName]),
         'data-tooltip': tooltip,
         'aria-label': tooltip,
-        role: 'button',
+        role: typeof pressed === 'boolean' ? 'button' : undefined,
         'aria-pressed': pressed,
         tabIndex: isDefined(tabIndex) ? tabIndex : disabled ? -1 : 0,
         onClick: onSelect,
@@ -116,7 +114,15 @@ export const ButtonLink = React.forwardRef((props, reference) => {
 
     if (!to || disabled) {
         return (
-            <Button {...commonProps} as={AnchorLink} to="" onClick={handleClick} onAuxClick={handleClick} {...rest}>
+            <Button
+                {...commonProps}
+                as={AnchorLink}
+                to=""
+                onClick={handleClick}
+                onAuxClick={handleClick}
+                role="button"
+                {...rest}
+            >
                 {children}
             </Button>
         )
