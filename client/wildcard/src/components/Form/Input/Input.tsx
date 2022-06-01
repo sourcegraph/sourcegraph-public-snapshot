@@ -66,7 +66,10 @@ export const Input = forwardRef((props, reference) => {
     const messageClassName = 'form-text font-weight-normal mt-2'
     const inputWithMessage = (
         <>
-            <LoaderInput className={classNames('d-flex', !label && className)} loading={status === InputStatus.loading}>
+            <LoaderInput
+                className={classNames('loader-input', styles.loaderInput, !label && className)}
+                loading={status === InputStatus.loading}
+            >
                 <Component
                     disabled={disabled}
                     type={type}

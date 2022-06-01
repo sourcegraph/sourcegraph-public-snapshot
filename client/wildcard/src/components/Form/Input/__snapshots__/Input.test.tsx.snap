@@ -2,7 +2,7 @@
 
 exports[`Input Renders status 'error' correctly 1`] = `
 <div
-  class="container d-flex"
+  class="container loader-input loaderInput"
 >
   <input
     class="form-control with-invalid-icon is-invalid"
@@ -14,7 +14,7 @@ exports[`Input Renders status 'error' correctly 1`] = `
 
 exports[`Input Renders status 'loading' correctly 1`] = `
 <div
-  class="container d-flex"
+  class="container loader-input loaderInput"
 >
   <input
     class="inputLoading form-control with-invalid-icon"
@@ -29,7 +29,7 @@ exports[`Input Renders status 'loading' correctly 1`] = `
 
 exports[`Input Renders status 'valid' correctly 1`] = `
 <div
-  class="container d-flex"
+  class="container loader-input loaderInput"
 >
   <input
     class="form-control with-invalid-icon is-valid"

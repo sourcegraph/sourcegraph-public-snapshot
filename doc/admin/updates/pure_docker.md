@@ -10,7 +10,7 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 ## Unreleased
 
-## 3.39 -> 3.40
+## 3.39 -> 3.40.1
 
 - A fix that corrects the default behavior of the `migrator` service is included in this release. An attempt to standardize CLI packages in v3.39.0 unintentionally
 broke the default behavior. In order to guard against this, all command line arguments are explicitly set in the deployment manifest.

@@ -90,11 +90,13 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
     return (
         <div className="saved-search-form" data-testid="saved-search-form">
             <PageHeader
-                path={[{ text: props.title }]}
-                headingElement="h2"
                 description="Get notifications when there are new results for specific search queries."
                 className="mb-3"
-            />
+            >
+                <PageHeader.Heading as="h3" styleAs="h2">
+                    <PageHeader.Breadcrumb>{props.title}</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
             <Form onSubmit={handleSubmit}>
                 <Container className="mb-3">
                     <div className="form-group">

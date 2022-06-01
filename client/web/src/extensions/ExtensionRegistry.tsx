@@ -13,7 +13,7 @@ import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src
 import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { AlertLink, useLocalStorage, useEventObservable, Alert, Link } from '@sourcegraph/wildcard'
+import { AlertLink, useLocalStorage, useEventObservable, Alert, Link, Input } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import {
@@ -342,8 +342,8 @@ export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<
                             </div>
                             <Form onSubmit={preventDefault} className="form-inline">
                                 <div className="shadow flex-grow-1">
-                                    <input
-                                        className="form-control w-100 test-extension-registry-input"
+                                    <Input
+                                        inputClassName="w-100 test-extension-registry-input"
                                         type="search"
                                         placeholder="Search extensions..."
                                         name="query"

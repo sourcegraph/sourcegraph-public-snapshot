@@ -12,7 +12,15 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
 import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable, useLocalStorage, Popover, PopoverTrigger, PopoverOpenEvent, Icon } from '@sourcegraph/wildcard'
+import {
+    useObservable,
+    useLocalStorage,
+    Popover,
+    PopoverTrigger,
+    PopoverTail,
+    PopoverOpenEvent,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -265,6 +273,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
                     onReject={onReject}
                     onInstall={onInstall}
                 />
+                <PopoverTail />
             </Popover>
         )
     }

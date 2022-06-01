@@ -72,6 +72,7 @@ case "${exitCode:-"0"}" in
     ;;
   "${VULNERABILITY_EXIT_CODE}")
     # we found vulnerabilities - upload the annotation
+    echo "Trivy found issues. More information [here](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/security/trivy/#for-sourcegraph-engineers)" > ./annotations/trivy-scan-high-critical.md
     create_annotation "${ARTIFACT_FILE}" "${IMAGE}"
     exit "${VULNERABILITY_EXIT_CODE}"
     ;;
