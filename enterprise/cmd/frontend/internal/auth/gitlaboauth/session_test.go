@@ -36,14 +36,19 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 	authSaveableUsers := map[string]int32{
 		"alice": 1,
 		"cindy": 3,
+		"dan":   4,
 	}
+
+	signupNotAllowed := new(bool)
+	signupAllowed := new(bool)
+	*signupAllowed = true
 
 	type input struct {
 		description     string
 		glUser          *gitlab.User
 		glUserGroups    []*gitlab.Group
 		glUserGroupsErr error
-		allowSignup     bool
+		allowSignup     *bool
 		allowGroups     []string
 	}
 
@@ -55,7 +60,33 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 	}{
 		{
 			inputs: []input{{
-				description: "glUser, allowSignup not set, defaults to false -> no new user nor session created",
+				description: "glUser, allowSignup not set, defaults to true ->  new user and session created",
+				glUser: &gitlab.User{
+					ID:       int32(104),
+					Username: string("dan"),
+					Email:    string("dan@example.com"),
+				},
+			}},
+			expActor: &actor.Actor{UID: 4},
+			expAuthUserOp: &auth.GetAndSaveUserOp{
+				UserProps: database.NewUser{
+					Username:        "dan",
+					Email:           "dan@example.com",
+					EmailIsVerified: true,
+				},
+				ExternalAccount: extsvc.AccountSpec{
+					ServiceType: extsvc.TypeGitLab,
+					ServiceID:   "https://gitlab.com/",
+					ClientID:    clientID,
+					AccountID:   "104",
+				},
+				CreateIfNotExist: true,
+			},
+		},
+		{
+			inputs: []input{{
+				description: "glUser, allowSignup set to false -> no new user nor session created",
+				allowSignup: signupNotAllowed,
 				glUser: &gitlab.User{
 					ID:       int32(102),
 					Username: string("bob"),
@@ -66,20 +97,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 		},
 		{
 			inputs: []input{{
-				description: "glUser, allowSignup is false -> no new user nor session created",
-				allowSignup: false,
-				glUser: &gitlab.User{
-					ID:       int32(102),
-					Username: string("bob"),
-					Email:    string("bob@example.com"),
-				},
-			}},
-			expErr: true,
-		},
-		{
-			inputs: []input{{
-				description: "glUser, allowSignup is true -> new user and session created",
-				allowSignup: true,
+				description: "glUser, allowSignup set true -> new user and session created",
+				allowSignup: signupAllowed,
 				glUser: &gitlab.User{
 					ID:       int32(103),
 					Username: string("cindy"),

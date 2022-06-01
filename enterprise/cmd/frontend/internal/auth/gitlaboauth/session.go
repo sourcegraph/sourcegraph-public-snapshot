@@ -27,7 +27,7 @@ type sessionIssuerHelper struct {
 	*extsvc.CodeHost
 	clientID    string
 	db          database.DB
-	allowSignup bool
+	allowSignup *bool
 	allowGroups []string
 }
 
@@ -57,11 +57,11 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, message, errors.New(message)
 	}
 
-	// If allowSignup is true, we will create an account using the email address from GitLab.
-	// If not set or false, a new account will not be created.
-	signupAllowed := false
-	if s.allowSignup {
-		signupAllowed = true
+	// AllowSignup defaults to true, unlinke with GitHub. If not set, we will create an account for the user with their GitLab email address.
+	// If false, a new account won't be created for the GitLab user.
+	signupAllowed := true
+	if s.allowSignup != nil && *s.allowSignup == false {
+		signupAllowed = false
 	}
 
 	var data extsvc.AccountData
