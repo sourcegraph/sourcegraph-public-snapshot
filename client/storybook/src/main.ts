@@ -79,6 +79,9 @@ const config = {
                 loaderOptions: {
                     injectStoryParameters: false,
                 },
+                rule: {
+                    test: [/\.story\.tsx?$/],
+                },
             },
         },
     ],
@@ -141,6 +144,18 @@ const config = {
 
         // We don't use Storybook's default Babel config for our repo, it doesn't include everything we need.
         config.module.rules.splice(0, 1)
+
+        config.module.rules.unshift({
+            test: /\.story\.tsx?$/,
+            use: [
+                {
+                    loader: require.resolve('@storybook/source-loader'),
+                    options: { parser: 'typescript' },
+                },
+            ],
+            enforce: 'pre',
+        })
+
         config.module.rules.unshift({
             test: /\.tsx?$/,
             ...getBabelLoader(),

@@ -5207,7 +5207,7 @@
     core-js "^3.6.5"
     find-up "^4.1.0"
 
-"@storybook/source-loader@6.5.6":
+"@storybook/source-loader@6.5.6", "@storybook/source-loader@^6.5.6":
   version "6.5.6"
   resolved "https://registry.npmjs.org/@storybook/source-loader/-/source-loader-6.5.6.tgz#e20c6a827c2021bbbab05d0bb2c1e6fb66e133a9"
   integrity sha512-KsV9DU3JucYjWHq55f1bOu52mprgSpTIRUnvK2BojQdjY+kqN2ow0pP/I9FZzNpEKKsGFWdnREfYM5dYHZyvLw==
