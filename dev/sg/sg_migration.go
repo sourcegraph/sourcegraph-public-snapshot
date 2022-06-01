@@ -134,6 +134,15 @@ var (
 		Action:      execAdapter(squashAllExec),
 	}
 
+	visualizeCommand = &cli.Command{
+		Name:        "visualize",
+		ArgsUsage:   "",
+		Usage:       "Output a DOT visualization of the migration graph",
+		Description: cliutil.ConstructLongHelp(),
+		Flags:       []cli.Flag{migrateTargetDatabaseFlag, outputFilepathFlag},
+		Action:      execAdapter(visualizeExec),
+	}
+
 	migrationCommand = &cli.Command{
 		Name:  "migration",
 		Usage: "Modifies and runs database migrations",
@@ -165,6 +174,7 @@ sg migration squash
 			leavesCommand,
 			squashCommand,
 			squashAllCommand,
+			visualizeCommand,
 		},
 	}
 )
@@ -277,6 +287,23 @@ func squashExec(ctx context.Context, args []string) (err error) {
 	std.Out.Writef("Squashing migration files defined up through %s", commit)
 
 	return migration.Squash(database, commit, squashInContainer, skipTeardown)
+}
+
+func visualizeExec(ctx context.Context, args []string) (err error) {
+	if len(args) != 0 {
+		cli.NewExitError("too many arguments", 1)
+	}
+
+	var (
+		databaseName = migrateTargetDatabase
+		database, ok = db.DatabaseByName(databaseName)
+	)
+
+	if !ok {
+		cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
+	}
+
+	return migration.Visualize(database, outputFilepath)
 }
 
 func squashAllExec(ctx context.Context, args []string) (err error) {
