@@ -155,7 +155,6 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret) (string,
 		return "", errors.Wrapf(err, "%s: failed to access secret %q from %q", secret.Provider, secret.Name, secret.Project)
 	}
 
-	// cache value, but don't save - TBD if we want to persist these secrets
 	value.Fetched = time.Now()
 	s.Put(secret.id(), &value)
 
