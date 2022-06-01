@@ -1,3 +1,5 @@
+<!-- DO NOT EDIT: generated via: go generate ./dev/sg -->
+
 # sg reference
 
 sg - The Sourcegraph developer tool!
