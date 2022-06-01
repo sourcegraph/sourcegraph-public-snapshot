@@ -9,7 +9,7 @@ import {
     HIGHLIGHTED_FILE_LINES,
     HIGHLIGHTED_FILE_LINES_LONG,
     HIGHLIGHTED_FILE_LINES_SIMPLE,
-} from '../testing/searchTestHelpers'
+} from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { CodeExcerpt } from './CodeExcerpt'
 
