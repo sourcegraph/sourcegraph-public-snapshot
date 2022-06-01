@@ -43,7 +43,7 @@ func ParseRustDependencyFromRepoName(name string) (*RustDependency, error) {
 }
 
 func (p *RustDependency) Scheme() string {
-	return "rust"
+	return "rust-analyzer"
 }
 
 func (p *RustDependency) PackageSyntax() string {
