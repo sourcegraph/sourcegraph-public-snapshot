@@ -222,7 +222,6 @@ const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     public state: State = {
         loading: true,
-        contents: '',
         restartToApply: window.context.needServerRestart,
     }
 
