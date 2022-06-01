@@ -3,7 +3,7 @@ import React, { useState, useCallback } from 'react'
 import InformationIcon from 'mdi-react/InformationIcon'
 import KeyIcon from 'mdi-react/KeyIcon'
 
-import { Button, CardFooter, Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, CardFooter, Link, Icon, Code, H3 } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../components/CopyableText'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'
@@ -55,16 +55,15 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<React.PropsW
                     </CardFooter>
                     {showLicenseKey && (
                         <CardFooter>
-                            <Typography.H3>License key</Typography.H3>
+                            <H3>License key</H3>
                             {licenseKey ? (
                                 <>
                                     <CopyableText text={licenseKey} className="d-block" />
                                     <small className="mt-2 d-flex align-items-center">
                                         <Icon role="img" aria-hidden={true} className="mr-1" as={InformationIcon} />{' '}
                                         <span>
-                                            Use this license key as the{' '}
-                                            <Typography.Code weight="bold">licenseKey</Typography.Code> property value
-                                            in Sourcegraph site configuration.
+                                            Use this license key as the <Code weight="bold">licenseKey</Code> property
+                                            value in Sourcegraph site configuration.
                                         </span>
                                     </small>
                                     <LicenseGenerationKeyWarning className="mb-0 mt-1" />

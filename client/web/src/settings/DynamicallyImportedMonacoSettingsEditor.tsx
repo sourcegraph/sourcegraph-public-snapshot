@@ -43,7 +43,7 @@ interface Props<T extends object>
      */
     blockNavigationIfDirty?: boolean
 
-    onSave?: (value: string) => void
+    onSave?: (value: string) => Promise<string | void>
     onChange?: (value: string) => void
     onDirtyChange?: (dirty: boolean) => void
     onEditor?: (editor: _monaco.editor.ICodeEditor) => void
@@ -162,10 +162,13 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
         )
     }
 
-    private onSave = (): void => {
+    private onSave = async (): Promise<void> => {
         const value = this.effectiveValue
         if (this.props.onSave) {
-            this.props.onSave(value)
+            const newConfig = await this.props.onSave(value)
+            if (newConfig) {
+                this.setState({ value: newConfig })
+            }
         }
     }
 
@@ -192,7 +195,7 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
 
     private monacoRef = (monacoValue: typeof _monaco | null): void => {
         this.monaco = monacoValue
-        if (this.monaco && MonacoSettingsEditor._result) {
+        if (this.monaco) {
             this.subscriptions.add(
                 disposableToFunc(
                     this.monaco.editor.onDidCreateEditor(editor => {

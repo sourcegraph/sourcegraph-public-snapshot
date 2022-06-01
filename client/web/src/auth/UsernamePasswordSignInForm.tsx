@@ -5,7 +5,7 @@ import * as H from 'history'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
-import { Button, LoadingSpinner, Link, Input, Text } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link, Text, Input } from '@sourcegraph/wildcard'
 
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'

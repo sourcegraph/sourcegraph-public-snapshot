@@ -162,7 +162,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 	}
 
 	initStore := func(db database.DB) repos.Store {
-		store := repos.NewStore(db, sql.TxOptions{})
+		store := repos.NewStore(logtest.Scoped(t), db, sql.TxOptions{})
 		if err := store.ExternalServiceStore().Upsert(ctx, &svc); err != nil {
 			t.Fatal(err)
 		}
@@ -237,7 +237,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 
 func TestServer_RepoLookup(t *testing.T) {
 	db := dbtest.NewDB(t)
-	store := repos.NewStore(database.NewDB(db), sql.TxOptions{})
+	store := repos.NewStore(logtest.Scoped(t), database.NewDB(db), sql.TxOptions{})
 	ctx := context.Background()
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()

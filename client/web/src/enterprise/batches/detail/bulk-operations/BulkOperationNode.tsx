@@ -11,7 +11,7 @@ import UploadIcon from 'mdi-react/UploadIcon'
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { pluralize } from '@sourcegraph/common'
 import { BulkOperationState, BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
-import { Badge, AlertLink, Link, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { Badge, AlertLink, Link, Alert, Icon, H4, Text } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
 import { Timestamp } from '../../../../components/time/Timestamp'
@@ -74,7 +74,7 @@ export const BulkOperationNode: React.FunctionComponent<React.PropsWithChildren<
             </div>
             <div className={styles.bulkOperationNodeDivider} />
             <div className="flex-grow-1 ml-3">
-                <Typography.H4>{OPERATION_TITLES[node.type]}</Typography.H4>
+                <H4>{OPERATION_TITLES[node.type]}</H4>
                 <Text className="mb-0">
                     <Link to={node.initiator.url}>{node.initiator.username}</Link> <Timestamp date={node.createdAt} />
                 </Text>
@@ -102,11 +102,7 @@ export const BulkOperationNode: React.FunctionComponent<React.PropsWithChildren<
             <div className={classNames(styles.bulkOperationNodeErrors, 'px-4')}>
                 <Collapsible
                     titleClassName="flex-grow-1 p-3"
-                    title={
-                        <Typography.H4 className="mb-0">
-                            The following errors occured while running this task:
-                        </Typography.H4>
-                    }
+                    title={<H4 className="mb-0">The following errors occured while running this task:</H4>}
                 >
                     {node.errors.map((error, index) => (
                         <Alert className="mt-2" key={index} variant="danger">

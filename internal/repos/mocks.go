@@ -9,7 +9,6 @@ import (
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	logging "github.com/sourcegraph/sourcegraph/internal/logging"
 	trace "github.com/sourcegraph/sourcegraph/internal/trace"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -65,9 +64,6 @@ type MockStore struct {
 	// RepoStoreFunc is an instance of a mock function object controlling
 	// the behavior of the method RepoStore.
 	RepoStoreFunc *StoreRepoStoreFunc
-	// SetLoggerFunc is an instance of a mock function object controlling
-	// the behavior of the method SetLogger.
-	SetLoggerFunc *StoreSetLoggerFunc
 	// SetMetricsFunc is an instance of a mock function object controlling
 	// the behavior of the method SetMetrics.
 	SetMetricsFunc *StoreSetMetricsFunc
@@ -157,11 +153,6 @@ func NewMockStore() *MockStore {
 		},
 		RepoStoreFunc: &StoreRepoStoreFunc{
 			defaultHook: func() (r0 database.RepoStore) {
-				return
-			},
-		},
-		SetLoggerFunc: &StoreSetLoggerFunc{
-			defaultHook: func(logging.ErrorLogger) {
 				return
 			},
 		},
@@ -267,11 +258,6 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.RepoStore")
 			},
 		},
-		SetLoggerFunc: &StoreSetLoggerFunc{
-			defaultHook: func(logging.ErrorLogger) {
-				panic("unexpected invocation of MockStore.SetLogger")
-			},
-		},
 		SetMetricsFunc: &StoreSetMetricsFunc{
 			defaultHook: func(StoreMetrics) {
 				panic("unexpected invocation of MockStore.SetMetrics")
@@ -345,9 +331,6 @@ func NewMockStoreFrom(i Store) *MockStore {
 		},
 		RepoStoreFunc: &StoreRepoStoreFunc{
 			defaultHook: i.RepoStore,
-		},
-		SetLoggerFunc: &StoreSetLoggerFunc{
-			defaultHook: i.SetLogger,
 		},
 		SetMetricsFunc: &StoreSetMetricsFunc{
 			defaultHook: i.SetMetrics,
@@ -1845,104 +1828,6 @@ func (c StoreRepoStoreFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreRepoStoreFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// StoreSetLoggerFunc describes the behavior when the SetLogger method of
-// the parent MockStore instance is invoked.
-type StoreSetLoggerFunc struct {
-	defaultHook func(logging.ErrorLogger)
-	hooks       []func(logging.ErrorLogger)
-	history     []StoreSetLoggerFuncCall
-	mutex       sync.Mutex
-}
-
-// SetLogger delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockStore) SetLogger(v0 logging.ErrorLogger) {
-	m.SetLoggerFunc.nextHook()(v0)
-	m.SetLoggerFunc.appendCall(StoreSetLoggerFuncCall{v0})
-	return
-}
-
-// SetDefaultHook sets function that is called when the SetLogger method of
-// the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreSetLoggerFunc) SetDefaultHook(hook func(logging.ErrorLogger)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SetLogger method of the parent MockStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *StoreSetLoggerFunc) PushHook(hook func(logging.ErrorLogger)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreSetLoggerFunc) SetDefaultReturn() {
-	f.SetDefaultHook(func(logging.ErrorLogger) {
-		return
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreSetLoggerFunc) PushReturn() {
-	f.PushHook(func(logging.ErrorLogger) {
-		return
-	})
-}
-
-func (f *StoreSetLoggerFunc) nextHook() func(logging.ErrorLogger) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreSetLoggerFunc) appendCall(r0 StoreSetLoggerFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreSetLoggerFuncCall objects describing
-// the invocations of this function.
-func (f *StoreSetLoggerFunc) History() []StoreSetLoggerFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreSetLoggerFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreSetLoggerFuncCall is an object that describes an invocation of
-// method SetLogger on an instance of MockStore.
-type StoreSetLoggerFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 logging.ErrorLogger
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreSetLoggerFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreSetLoggerFuncCall) Results() []interface{} {
-	return []interface{}{}
 }
 
 // StoreSetMetricsFunc describes the behavior when the SetMetrics method of

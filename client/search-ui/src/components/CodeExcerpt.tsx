@@ -15,7 +15,7 @@ import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Repo } from '@sourcegraph/shared/src/util/url'
-import { Icon, Typography } from '@sourcegraph/wildcard'
+import { Icon, Code } from '@sourcegraph/wildcard'
 
 import styles from './CodeExcerpt.module.scss'
 
@@ -187,7 +187,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
 
     return (
         <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={visibilitySensorOffset}>
-            <Typography.Code
+            <Code
                 data-testid="code-excerpt"
                 className={classNames(
                     styles.codeExcerpt,
@@ -220,7 +220,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
                         </tbody>
                     </table>
                 )}
-            </Typography.Code>
+            </Code>
         </VisibilitySensor>
     )
 }
