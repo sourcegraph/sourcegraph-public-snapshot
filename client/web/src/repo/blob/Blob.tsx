@@ -604,7 +604,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         if (decorationsOrError && !isErrorLike(decorationsOrError)) {
             const { column, inline } = [...decorationsOrError].reduce(
                 (accumulator, [extensionID, items]) => {
-                    if (showGitBlameInSeparateColumn && extensionID === 'git-extras') {
+                    if (showGitBlameInSeparateColumn && extensionID === 'sourcegraph/git-extras') {
                         accumulator.column.set(extensionID, groupDecorationsByLine(items))
                     } else {
                         accumulator.inline.push(...items)
