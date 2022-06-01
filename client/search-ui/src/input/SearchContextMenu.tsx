@@ -21,7 +21,7 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Badge, Button, useObservable, Link, Icon } from '@sourcegraph/wildcard'
+import { Badge, Button, useObservable, Link, Icon, Input } from '@sourcegraph/wildcard'
 
 import { HighlightedSearchContextSpec } from './HighlightedSearchContextSpec'
 
@@ -315,7 +315,7 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
                 </Button>
             </div>
             <div className={classNames('d-flex', styles.header)}>
-                <input
+                <Input
                     ref={inputElement}
                     onInput={onSearchFilterChanged}
                     onKeyDown={onInputKeyDown}
@@ -323,7 +323,9 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
                     placeholder="Find..."
                     aria-label="Find a context"
                     data-testid="search-context-menu-header-input"
-                    className={classNames('form-control form-control-sm', styles.headerInput)}
+                    className="w-100"
+                    inputClassName={styles.headerInput}
+                    variant="small"
                 />
             </div>
             <div data-testid="search-context-menu-list" className={styles.list} ref={infiniteScrollList} role="menu">
