@@ -502,9 +502,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                                 findPositionsFromEvents({ domFunctions })
                             ),
                             positionJumps: locationPositions.pipe(
-                                tap(position => {
-                                    console.log('🟠', position)
-                                }),
                                 withLatestFrom(
                                     codeViewElements.pipe(filter(isDefined)),
                                     blobElements.pipe(filter(isDefined))
