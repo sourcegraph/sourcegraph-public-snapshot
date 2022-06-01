@@ -50,7 +50,7 @@ func InitWithSinks(r Resource, s ...Sink) (sync func() error, update func(SinksC
 
 	sinks := Sinks(s)
 	update = sinks.Update
-	cores, err := sinks.build()
+	cores, err := sinks.Build()
 	sync = globallogger.Init(r, level, format, development, cores)
 
 	if err != nil {

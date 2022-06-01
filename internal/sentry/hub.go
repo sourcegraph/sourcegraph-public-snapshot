@@ -10,50 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log/sinks"
 )
 
 type Hub struct {
 	*sentry.Hub
-}
-
-func NewLoggerSink(dsn string, conf conftypes.WatchableSiteConfig, onChange OnChangeFunc) (sinks.SinkCore, error) {
-	initClient := func(dsn string) (*sentry.Client, error) {
-		c, err := sentry.NewClient(sentry.ClientOptions{
-			Dsn:        dsn,
-			Debug:      sentryDebug,
-			ServerName: "", // Sentry client will gather the server name when leave empty
-			Release:    version.Version(),
-		})
-		if err != nil {
-			return nil, err
-		}
-		return c, nil
-	}
-
-	client, err := initClient(dsn)
-	if err != nil {
-		return nil, err
-	}
-
-	h := sentry.NewHub(client, sentry.NewScope())
-
-	sink, updateFn := sinks.NewSentrySinkCore(h)
-
-	conf.Watch(func() {
-		newDsn := onChange(conf)
-		if newDsn != "" && newDsn != client.Options().Dsn {
-			c, err := initClient(newDsn)
-			if err != nil {
-				log15.Error("sentry.dsn.initClient", "error", err)
-				return
-			}
-			h := sentry.NewHub(c, sentry.NewScope())
-			updateFn(h)
-		}
-	})
-
-	return sink, nil
 }
 
 type OnChangeFunc func(c conftypes.SiteConfigQuerier) (dsn string)

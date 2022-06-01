@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/globallogger"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
-	"github.com/sourcegraph/sourcegraph/lib/log/sinks"
+	"github.com/stretchr/testify/assert"
 )
 
 // Init can be used to instantiate the log package for running tests, to be called in
@@ -112,16 +112,20 @@ func ScopedWith(t testing.TB, options LoggerOptions) log.Logger {
 
 // Captured retrieves a logger from scoped to the the given test, and returns a callback,
 // dumpLogs, which flushes the logger buffer and returns log entries.
-func Captured(t testing.TB, sinks ...sinks.SinkCore) (logger log.Logger, exportLogs func() []CapturedLog) {
+func Captured(t testing.TB, s ...log.Sink) (logger log.Logger, exportLogs func() []CapturedLog) {
 	// Cast into internal APIs
 	configurable := scopedTestLogger(t, LoggerOptions{}).(configurableAdapter)
 
 	observerCore, entries := observer.New(zap.DebugLevel) // capture all levels
 	var cores []zapcore.Core
+
+	sinks := log.Sinks(s)
+	cores, err := sinks.Build()
+	if err != nil {
+		assert.NoError(t, err)
+	}
+
 	logger = configurable.WithCore(func(c zapcore.Core) zapcore.Core {
-		for _, s := range sinks {
-			cores = append(cores, s.Core())
-		}
 		return zapcore.NewTee(append(cores, observerCore, c)...)
 	})
 

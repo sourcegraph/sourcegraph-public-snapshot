@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/sinkcores/sentrycore"
 	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
-	"github.com/sourcegraph/sourcegraph/lib/log/sinks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap/zapcore"
 )
@@ -210,7 +209,6 @@ func TestFlush(t *testing.T) {
 	e := errors.New("test error")
 	hub, tr := newTestHub(t)
 	core := sentrycore.NewCore(hub)
-	core.Start()
 	go func() {
 		for {
 			// Without this sleep, we're hitting the max goroutine count that the race detector can handle, which
@@ -258,10 +256,10 @@ func logWithLevel(logger log.Logger, level zapcore.Level, msg string, fields ...
 }
 
 func newTestLogger(t testing.TB) (log.Logger, *sentrycore.TransportMock, func()) {
-	hub, tr := newTestHub(t)
-	sink, _ := sinks.NewSentrySinkCore(hub)
+	transport := &sentrycore.TransportMock{}
+	sink := log.NewSentrySinkWithOptions(sentry.ClientOptions{Transport: transport})
 	logger, exportLogs := logtest.Captured(t, sink)
-	return logger, tr, func() { _ = exportLogs() }
+	return logger, transport, func() { _ = exportLogs() }
 }
 
 func newTestHub(t testing.TB) (*sentry.Hub, *sentrycore.TransportMock) {
