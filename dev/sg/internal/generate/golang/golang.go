@@ -77,6 +77,7 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 	if goGenerateErr != nil {
 		return &generate.Report{Output: sb.String(), Err: errors.Wrap(err, "go generate")}
 	}
+	return &generate.Report{Output: sb.String(), Err: errors.Wrap(err, "fake error go generate")}
 
 	// Run goimports -w
 	if verbosity != QuietOutput {
