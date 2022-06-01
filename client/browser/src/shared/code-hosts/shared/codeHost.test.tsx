@@ -18,6 +18,7 @@ import { SuccessGraphQLResult } from '@sourcegraph/http-client'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
+import { flattenDecorations } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { integrationTestContext } from '@sourcegraph/shared/src/api/integration-test/testHelpers'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
@@ -40,7 +41,6 @@ import {
 } from './codeHost'
 import { toCodeViewResolver } from './codeViews'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './testHelpers'
-import { flattenDecorations } from '@sourcegraph/shared/src/api/extension/api/decorations'
 
 const RENDER = sinon.spy()
 
