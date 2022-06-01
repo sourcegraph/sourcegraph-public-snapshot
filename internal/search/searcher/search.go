@@ -206,7 +206,7 @@ func (s *SearcherJob) searchFilesInRepo(
 		})
 	}
 
-	return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, indexerEndpoints, onMatches)
+	return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, indexerEndpoints, s.Features, onMatches)
 }
 
 // newToMatches returns a closure that converts []*protocol.FileMatch to []result.Match.
@@ -299,8 +299,10 @@ func repoHasFilesWithNamesMatching(
 				foundMatches = true
 			}
 		}
+		// TODO(keegancsmith) we should be passing in more state here like
+		// indexer endpoints and features.
 		p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-		_, err := Search(ctx, searcherURLs, repo.Name, repo.ID, "", commit, false, &p, fetchTimeout, []string{}, onMatches)
+		_, err := Search(ctx, searcherURLs, repo.Name, repo.ID, "", commit, false, &p, fetchTimeout, []string{}, search.Features{}, onMatches)
 		if err != nil {
 			return false, err
 		}
