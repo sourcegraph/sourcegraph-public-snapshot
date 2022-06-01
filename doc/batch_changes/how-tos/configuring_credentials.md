@@ -116,7 +116,13 @@ To finish configuring the new credentials, you will need to create a new persona
 
 ### GitHub
 
-Follow the steps to [create a personal access token](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token) on GitHub. Batch Changes requires the following scopes:
+#### GitHub.com
+
+On GitHub.com, [you can create a code host token with the correct scopes at this link](https://github.com/settings/tokens/new?scopes=repo,read:org,user:email,read:discussion,workflow).
+
+#### GitHub Enterprise
+
+Follow the steps to [create a personal access token](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token) on GitHub Enterprise. Batch Changes requires the following scopes:
 
 - `repo`
 - `read:org`
