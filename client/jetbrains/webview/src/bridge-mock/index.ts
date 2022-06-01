@@ -1,23 +1,17 @@
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
-import type { PreviewRequest, Request } from '../search/js-to-java-bridge'
+import type { Request } from '../search/js-to-java-bridge'
 import type { Search } from '../search/types'
 
-const instanceURL = 'https://sourcegraph.com'
+let savedSearch: Search = {
+    query: 'r:github.com/sourcegraph/sourcegraph jetbrains',
+    caseSensitive: false,
+    patternType: SearchPatternType.literal,
+    selectedSearchContextSpec: 'global',
+}
 
 const codeDetailsNode = document.querySelector('#code-details') as HTMLPreElement
 const iframeNode = document.querySelector('#webview') as HTMLIFrameElement
-
-const savedSearchFromLocalStorage = localStorage.getItem('savedSearch')
-let savedSearch: Search = savedSearchFromLocalStorage
-    ? (JSON.parse(savedSearchFromLocalStorage) as Search)
-    : {
-          query: 'r:github.com/sourcegraph/sourcegraph jetbrains',
-          caseSensitive: false,
-          patternType: SearchPatternType.literal,
-          selectedSearchContextSpec: 'global',
-      }
-let previewContent: PreviewRequest['arguments'] | null = null
 
 function callJava(request: Request): Promise<object> {
     return new Promise((resolve, reject) => {
@@ -43,7 +37,7 @@ function handleRequest(
         case 'getConfig': {
             onSuccessCallback(
                 JSON.stringify({
-                    instanceURL,
+                    instanceURL: 'https://sourcegraph.com',
                     isGlobbingEnabled: true,
                     accessToken: null,
                 })
@@ -68,18 +62,16 @@ function handleRequest(
         }
 
         case 'preview': {
-            previewContent = request.arguments
+            const { content, absoluteOffsetAndLengths } = request.arguments
 
-            const start =
-                previewContent.absoluteOffsetAndLengths.length > 0 ? previewContent.absoluteOffsetAndLengths[0][0] : 0
-            const length =
-                previewContent.absoluteOffsetAndLengths.length > 0 ? previewContent.absoluteOffsetAndLengths[0][1] : 0
+            const start = absoluteOffsetAndLengths.length > 0 ? absoluteOffsetAndLengths[0][0] : 0
+            const length = absoluteOffsetAndLengths.length > 0 ? absoluteOffsetAndLengths[0][1] : 0
 
             let htmlContent: string
-            if (previewContent.content === null) {
+            if (content === null) {
                 htmlContent = '(No preview available)'
             } else {
-                const decodedContent = atob(previewContent.content)
+                const decodedContent = atob(content)
                 htmlContent = escapeHTML(decodedContent.slice(0, start))
                 htmlContent += `<span id="code-details-highlight">${escapeHTML(
                     decodedContent.slice(start, start + length)
@@ -102,19 +94,14 @@ function handleRequest(
         }
 
         case 'open': {
-            previewContent = request.arguments
-            if (previewContent.fileName) {
-                alert(`Now the IDE would open ${previewContent.path} in the editor...`)
-            } else {
-                window.open(instanceURL + previewContent.relativeUrl, '_blank')
-            }
+            const { path } = request.arguments
+            alert(`Opening ${path}`)
             onSuccessCallback('null')
             break
         }
 
         case 'saveLastSearch': {
             savedSearch = request.arguments
-            localStorage.setItem('savedSearch', JSON.stringify(savedSearch))
             onSuccessCallback('null')
             break
         }
@@ -141,10 +128,7 @@ iframeNode.addEventListener('load', () => {
     const iframeWindow = iframeNode.contentWindow
     if (iframeWindow !== null) {
         iframeWindow.callJava = callJava
-        iframeWindow
-            .initializeSourcegraph()
-            .then(() => {})
-            .catch(() => {})
+        iframeWindow.initializeSourcegraph()
     }
 })
 

@@ -10,9 +10,8 @@ public class PreviewContent {
     private final String content;
     private final int lineNumber;
     private final int[][] absoluteOffsetAndLengths;
-    private final String relativeUrl;
 
-    public PreviewContent(String fileName, String path, String content, int lineNumber, int[][] absoluteOffsetAndLengths, String relativeUrl) {
+    public PreviewContent(String fileName, String path, String content, int lineNumber, int[][] absoluteOffsetAndLengths) {
         // It seems like the constructor is not called when we use the JSON parser to create instances of this class, so
         // avoid adding any computation here.
         this.fileName = fileName;
@@ -20,7 +19,6 @@ public class PreviewContent {
         this.content = content;
         this.lineNumber = lineNumber;
         this.absoluteOffsetAndLengths = absoluteOffsetAndLengths;
-        this.relativeUrl = relativeUrl;
     }
 
     public String getFileName() {
@@ -44,10 +42,6 @@ public class PreviewContent {
         return absoluteOffsetAndLengths;
     }
 
-    public String getRelativeUrl() {
-        return relativeUrl;
-    }
-
     @Nullable
     private static String convertBase64ToString(@Nullable String base64String) {
         if (base64String == null) {
@@ -55,18 +49,5 @@ public class PreviewContent {
         }
         byte[] decodedBytes = Base64.getDecoder().decode(base64String);
         return new String(decodedBytes);
-    }
-
-    @Override
-    public boolean equals(@Nullable Object obj) {
-        return obj instanceof PreviewContent && equals((PreviewContent) obj);
-    }
-
-    private boolean equals(PreviewContent other) {
-        return fileName.equals(other.fileName)
-            && path.equals(other.path)
-            && content.equals(other.content)
-            && lineNumber == other.lineNumber
-            && relativeUrl.equals(other.relativeUrl);
     }
 }

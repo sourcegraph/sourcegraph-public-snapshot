@@ -7,10 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 
 	"github.com/grafana/regexp"
@@ -470,26 +466,10 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.Wrap(err, "CreateView")
 	}
 
-	var scoped []types.InsightSeries
 	for _, series := range args.Input.DataSeries {
-		c, err := createAndAttachSeries(ctx, insightTx, view, series)
+		err = createAndAttachSeries(ctx, insightTx, view, series)
 		if err != nil {
 			return nil, errors.Wrap(err, "createAndAttachSeries")
-		}
-		if len(c.Repositories) > 0 {
-			scoped = append(scoped, *c)
-		}
-	}
-
-	flags := featureflag.FromContext(ctx)
-	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", true)
-	if len(scoped) > 0 && deprecateJustInTime {
-		insightPermStore := store.NewInsightPermissionStore(r.postgresDB)
-		insightsStore := store.New(r.insightsDB, insightPermStore)
-		backfiller := background.NewScopedBackfiller(r.workerBaseStore, insightsStore)
-		err := backfiller.ScopedBackfill(ctx, scoped)
-		if err != nil {
-			return nil, err
 		}
 	}
 
@@ -575,7 +555,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 
 	for _, series := range args.Input.DataSeries {
 		if series.SeriesId == nil {
-			_, err = createAndAttachSeries(ctx, tx, view, series)
+			err = createAndAttachSeries(ctx, tx, view, series)
 			if err != nil {
 				return nil, errors.Wrap(err, "createAndAttachSeries")
 			}
@@ -598,7 +578,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 				if err != nil {
 					return nil, errors.Wrap(err, "RemoveViewSeries")
 				}
-				_, err = createAndAttachSeries(ctx, tx, view, series)
+				err = createAndAttachSeries(ctx, tx, view, series)
 				if err != nil {
 					return nil, errors.Wrap(err, "createAndAttachSeries")
 				}
@@ -982,7 +962,7 @@ func validateUserDashboardPermissions(ctx context.Context, store store.Dashboard
 	return nil
 }
 
-func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) (*types.InsightSeries, error) {
+func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
 	var seriesToAdd, matchingSeries types.InsightSeries
 	var foundSeries bool
 	var err error
@@ -1000,12 +980,9 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 			GenerateFromCaptureGroups: dynamic,
 		})
 		if err != nil {
-			return nil, errors.Wrap(err, "FindMatchingSeries")
+			return errors.Wrap(err, "FindMatchingSeries")
 		}
 	}
-
-	flags := featureflag.FromContext(ctx)
-	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", true)
 
 	if !foundSeries {
 		repos := series.RepositoryScope.Repositories
@@ -1017,18 +994,11 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 			SampleIntervalUnit:         series.TimeScope.StepInterval.Unit,
 			SampleIntervalValue:        int(series.TimeScope.StepInterval.Value),
 			GeneratedFromCaptureGroups: dynamic,
-			JustInTime:                 service.IsJustInTime(repos) && !deprecateJustInTime,
-			// JustInTime:       false,
-			GenerationMethod: searchGenerationMethod(series),
+			JustInTime:                 service.IsJustInTime(repos),
+			GenerationMethod:           searchGenerationMethod(series),
 		})
 		if err != nil {
-			return nil, errors.Wrap(err, "CreateSeries")
-		}
-		if len(seriesToAdd.Repositories) > 0 {
-			_, err := tx.StampBackfill(ctx, seriesToAdd)
-			if err != nil {
-				return nil, errors.Wrap(err, "StampBackfill")
-			}
+			return errors.Wrap(err, "CreateSeries")
 		}
 	} else {
 		seriesToAdd = matchingSeries
@@ -1042,10 +1012,9 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 		Stroke: emptyIfNil(series.Options.LineColor),
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "AttachSeriesToView")
+		return errors.Wrap(err, "AttachSeriesToView")
 	}
-
-	return &seriesToAdd, nil
+	return nil
 }
 
 func searchGenerationMethod(series graphqlbackend.LineChartSearchInsightDataSeriesInput) types.GenerationMethod {

@@ -19,9 +19,9 @@ import {
     Select,
     BUTTON_SIZES,
     Checkbox,
-    Input,
     Text,
     Code,
+    Label,
     H1,
     H2,
     H3,
@@ -397,7 +397,7 @@ export const InputGroups: Story = () => (
         <H2>Example</H2>
         <div>
             <div className="input-group" style={{ maxWidth: '24rem' }}>
-                <Input type="search" placeholder="Search code..." aria-label="Search query" />
+                <input type="search" className="form-control" placeholder="Search code..." aria-label="Search query" />
                 <div className="input-group-append">
                     <Button type="submit" variant="primary">
                         Submit
@@ -420,22 +420,23 @@ export const Forms: Story = () => (
             </Link>
         </Text>
         <Form onSubmit={preventDefault}>
-            <Input
-                type="email"
-                id="example-email-input"
-                placeholder="me@example.com"
-                label="Email address"
-                message="We'll never share your email with anyone else."
-                className="form-group"
-                inputClassName="mb-0"
-            />
-            <Input
-                type="password"
-                id="example-input-password"
-                className="form-group"
-                inputClassName="mb-0"
-                label="Password"
-            />
+            <div className="form-group">
+                <Label htmlFor="example-email-input">Email address</Label>
+                <input
+                    type="email"
+                    className="form-control"
+                    id="example-email-input"
+                    aria-describedby="email-help"
+                    placeholder="me@example.com"
+                />
+                <small id="email-help" className="form-text text-muted">
+                    We'll never share your email with anyone else.
+                </small>
+            </div>
+            <div className="form-group">
+                <Label htmlFor="example-input-password">Password</Label>
+                <input type="password" className="form-control" id="example-input-password" />
+            </div>
 
             <Select isCustomStyle={true} aria-label="Example select" label="Example select">
                 <option>Option A</option>
@@ -457,13 +458,10 @@ export const Forms: Story = () => (
         <H2 className="mt-3">Disabled</H2>
         <Form>
             <fieldset disabled={true}>
-                <Input
-                    id="disabledTextInput"
-                    placeholder="Disabled input"
-                    className="form-group"
-                    inputClassName="mb-0"
-                    label="Disabled input"
-                />
+                <div className="form-group">
+                    <Label htmlFor="disabledTextInput">Disabled input</Label>
+                    <input type="text" id="disabledTextInput" className="form-control" placeholder="Disabled input" />
+                </div>
 
                 <Select
                     isCustomStyle={true}
@@ -491,7 +489,7 @@ export const Forms: Story = () => (
         <div className="d-flex">
             <fieldset>
                 <div className="form-group">
-                    <Input className="mb-1" placeholder="Small input" variant="small" />
+                    <input className="form-control form-control-sm mb-1" type="text" placeholder="Small input" />
                     <TextArea size="small" className="mb-1" placeholder="Small textarea" />
                     <Select
                         isCustomStyle={true}

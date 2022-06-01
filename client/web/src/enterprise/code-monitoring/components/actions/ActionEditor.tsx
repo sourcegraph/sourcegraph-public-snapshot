@@ -148,16 +148,11 @@ export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<Actio
                                 {testAgainButtonText}
                             </Button>
                         )}
-
                         {testButtonDisabledReason && (
-                            <div aria-live="polite" className={classNames('mt-2', styles.testActionError)}>
-                                {testButtonDisabledReason}
-                            </div>
+                            <div className={classNames('mt-2', styles.testActionError)}>{testButtonDisabledReason}</div>
                         )}
-
                         {isErrorLike(testState) && (
                             <div
-                                aria-live="polite"
                                 className={classNames('mt-2', styles.testActionError)}
                                 data-testid={`test-${idName}-error`}
                             >

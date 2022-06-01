@@ -6,7 +6,7 @@ import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Label } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
@@ -159,7 +159,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                     hidden={true}
                                 />
                                 <div className="form-group">
-                                    <Label htmlFor="oldPassword">Old password</Label>
+                                    <Typography.Label htmlFor="oldPassword">Old password</Typography.Label>
                                     <PasswordInput
                                         value={this.state.oldPassword}
                                         onChange={this.onOldPasswordFieldChange}
@@ -174,7 +174,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                 </div>
 
                                 <div className="form-group">
-                                    <Label htmlFor="newPassword">New password</Label>
+                                    <Typography.Label htmlFor="newPassword">New password</Typography.Label>
                                     <PasswordInput
                                         value={this.state.newPassword}
                                         onChange={this.onNewPasswordFieldChange}
@@ -196,7 +196,9 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                     {this.getPasswordRequirements()}
                                 </div>
                                 <div className="form-group mb-0">
-                                    <Label htmlFor="newPasswordConfirmation">Confirm new password</Label>
+                                    <Typography.Label htmlFor="newPasswordConfirmation">
+                                        Confirm new password
+                                    </Typography.Label>
                                     <PasswordInput
                                         value={this.state.newPasswordConfirmation}
                                         onChange={this.onNewPasswordConfirmationFieldChange}

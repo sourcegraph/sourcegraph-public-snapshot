@@ -35,7 +35,7 @@ func TestToResultResolverList(t *testing.T) {
 
 	nonNilMatches := []result.Match{
 		&result.FileMatch{
-			ChunkMatches: result.ChunkMatches{{
+			HunkMatches: result.HunkMatches{{
 				Content: "a",
 				Ranges: result.Ranges{{
 					Start: result.Location{Line: 1, Column: 0},

@@ -6,12 +6,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func (s *Server) RegisterMetrics(db dbutil.DB, observationContext *observation.Context) {
@@ -22,21 +22,21 @@ func (s *Server) RegisterMetrics(db dbutil.DB, observationContext *observation.C
 		Help: "Duration of executing the echo command.",
 	})
 	prometheus.MustRegister(echoDuration)
-	go func(server *Server) {
+	go func() {
 		for {
 			time.Sleep(10 * time.Second)
 			s := time.Now()
 			if err := exec.Command("echo").Run(); err != nil {
-				server.Logger.Warn("exec measurement failed", log.Error(err))
+				log15.Warn("exec measurement failed", "error", err)
 				continue
 			}
 			echoDuration.Set(time.Since(s).Seconds())
 		}
-	}(s)
+	}()
 
 	// report the size of the repos dir
 	if s.ReposDir == "" {
-		s.Logger.Error("ReposDir is not set, cannot export disk_space_available metric.")
+		log15.Error("ReposDir is not set, cannot export disk_space_available metric.")
 		return
 	}
 
@@ -79,7 +79,7 @@ func (s *Server) RegisterMetrics(db dbutil.DB, observationContext *observation.C
 			WHERE g.last_error IS NOT NULL AND r.deleted_at IS NULL
 		`).Scan(&count)
 		if err != nil {
-			s.Logger.Error("failed to count repository errors", log.Error(err))
+			log15.Error("failed to count repository errors", "err", err)
 			return 0
 		}
 		return float64(count)

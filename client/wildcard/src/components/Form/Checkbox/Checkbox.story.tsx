@@ -5,7 +5,7 @@ import { Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { H1, H2 } from '../..'
+import { Typography } from '../..'
 import { Grid } from '../../Grid'
 
 import { Checkbox, CheckboxProps } from './Checkbox'
@@ -54,22 +54,22 @@ const BaseCheckbox = ({ name, ...props }: { name: string } & Pick<CheckboxProps,
 
 export const CheckboxExamples: Story = () => (
     <>
-        <H1>Checkbox</H1>
+        <Typography.H1>Checkbox</Typography.H1>
         <Grid columnCount={4}>
             <div>
-                <H2>Standard</H2>
+                <Typography.H2>Standard</Typography.H2>
                 <BaseCheckbox name="standard-example" />
             </div>
             <div>
-                <H2>Valid</H2>
+                <Typography.H2>Valid</Typography.H2>
                 <BaseCheckbox name="valid-example" isValid={true} />
             </div>
             <div>
-                <H2>Invalid</H2>
+                <Typography.H2>Invalid</Typography.H2>
                 <BaseCheckbox name="invalid-example" isValid={false} />
             </div>
             <div>
-                <H2>Disabled</H2>
+                <Typography.H2>Disabled</Typography.H2>
                 <BaseCheckbox name="disabled-example" disabled={true} />
             </div>
         </Grid>

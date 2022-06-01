@@ -13,7 +13,17 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, LoadingSpinner, Link, CardHeader, CardBody, Card, Alert, Icon, Code, H2 } from '@sourcegraph/wildcard'
+import {
+    Button,
+    LoadingSpinner,
+    Link,
+    CardHeader,
+    CardBody,
+    Card,
+    Alert,
+    Icon,
+    Typography,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -155,7 +165,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
             return (
                 <div className="registry-extension-manage-page">
                     <PageTitle title="Manage extension" />
-                    <H2>Manage extension</H2>
+                    <Typography.H2>Manage extension</Typography.H2>
                     <Form onSubmit={this.onSubmit}>
                         <RegistryPublisherFormGroup
                             className={styles.input}
@@ -174,9 +184,9 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                             this.state.name !== this.props.extension.registryExtension.name && (
                                 <Alert variant="primary">
                                     Extension will be renamed. New extension ID:{' '}
-                                    <Code id="registry-extension__extensionID" weight="bold">
+                                    <Typography.Code id="registry-extension__extensionID" weight="bold">
                                         {extensionID}
-                                    </Code>
+                                    </Typography.Code>
                                 </Alert>
                             )}
                         <div aria-live="polite">

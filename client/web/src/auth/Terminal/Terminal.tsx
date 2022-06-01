@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Code } from '@sourcegraph/wildcard'
+import { Typography } from '@sourcegraph/wildcard'
 
 import terminalStyles from './Terminal.module.scss'
 
@@ -15,7 +15,7 @@ export const Terminal: React.FunctionComponent<React.PropsWithChildren<unknown>>
 
 export const TerminalTitle: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => (
     <header className={terminalStyles.terminalTitle}>
-        <Code>{children}</Code>
+        <Typography.Code>{children}</Typography.Code>
     </header>
 )
 
@@ -25,7 +25,7 @@ export const TerminalLine: React.FunctionComponent<React.PropsWithChildren<unkno
 
 export const TerminalDetails: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => (
     <div>
-        <Code>{children}</Code>
+        <Typography.Code>{children}</Typography.Code>
     </div>
 )
 
@@ -34,5 +34,7 @@ export const TerminalProgress: React.FunctionComponent<
 > = ({ progress = 0, character = '#' }) => {
     const numberOfChars = Math.ceil((progress / 100) * CHARACTERS_LENGTH)
 
-    return <Code className={terminalStyles.downloadProgress}>{character.repeat(numberOfChars)}</Code>
+    return (
+        <Typography.Code className={terminalStyles.downloadProgress}>{character.repeat(numberOfChars)}</Typography.Code>
+    )
 }

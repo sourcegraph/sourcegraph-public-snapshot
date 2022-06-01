@@ -8,7 +8,7 @@ import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sour
 import { displayRepoName, splitPath } from '@sourcegraph/shared/src/components/RepoLink'
 import { ContentMatch, getFileMatchUrl, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
-import { Code, Icon, Link, Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
+import { Icon, Link, Typography, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { TrimmedCodeLineWithHighlights } from './TrimmedCodeLineWithHighlights'
 import { getResultId } from './utils'
@@ -74,10 +74,10 @@ function getResultElementsForSymbolMatch(
             >
                 <div>
                     <SymbolIcon kind={symbol.kind} className="mr-1" />
-                    <Code>
+                    <Typography.Code>
                         {symbol.name}{' '}
                         {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
-                    </Code>
+                    </Typography.Code>
                 </div>
             </div>
         )
@@ -156,17 +156,20 @@ const RepoFileLinkWithoutTabStop: React.FunctionComponent<React.PropsWithChildre
     const [titleReference, truncated, checkTruncation] = useIsTruncated()
 
     return (
-        <Tooltip content={truncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}>
-            <div ref={titleReference} onMouseEnter={checkTruncation} className={classNames(className)}>
-                <Link tabIndex={-1} to={repoURL}>
-                    {repoDisplayName || displayRepoName(repoName)}
-                </Link>{' '}
-                ›{' '}
-                <Link tabIndex={-1} to={appendSubtreeQueryParameter(fileURL)}>
-                    {fileBase ? `${fileBase}/` : null}
-                    <strong>{fileName}</strong>
-                </Link>
-            </div>
-        </Tooltip>
+        <div
+            ref={titleReference}
+            onMouseEnter={checkTruncation}
+            className={classNames(className)}
+            data-tooltip={truncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}
+        >
+            <Link tabIndex={-1} to={repoURL}>
+                {repoDisplayName || displayRepoName(repoName)}
+            </Link>{' '}
+            ›{' '}
+            <Link tabIndex={-1} to={appendSubtreeQueryParameter(fileURL)}>
+                {fileBase ? `${fileBase}/` : null}
+                <strong>{fileName}</strong>
+            </Link>
+        </div>
     )
 }

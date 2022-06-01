@@ -293,9 +293,9 @@ func TestExactlyOneRepo(t *testing.T) {
 }
 
 func mkFileMatch(repo types.MinimalRepo, path string, lineNumbers ...int) *result.FileMatch {
-	var hms result.ChunkMatches
+	var hms result.HunkMatches
 	for _, n := range lineNumbers {
-		hms = append(hms, result.ChunkMatch{
+		hms = append(hms, result.HunkMatch{
 			Ranges: []result.Range{{
 				Start: result.Location{Line: n},
 				End:   result.Location{Line: n},
@@ -308,7 +308,7 @@ func mkFileMatch(repo types.MinimalRepo, path string, lineNumbers ...int) *resul
 			Path: path,
 			Repo: repo,
 		},
-		ChunkMatches: hms,
+		HunkMatches: hms,
 	}
 }
 

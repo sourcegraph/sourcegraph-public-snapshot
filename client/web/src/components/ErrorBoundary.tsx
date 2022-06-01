@@ -5,7 +5,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
 
 import { asError } from '@sourcegraph/common'
-import { Button, Code, Text } from '@sourcegraph/wildcard'
+import { Button, Typography, Text } from '@sourcegraph/wildcard'
 
 import { DatadogClient, isWebpackChunkError } from '../monitoring'
 
@@ -112,7 +112,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                                 contact your site admin or Sourcegraph support.
                             </Text>
                             <Text>
-                                <Code className="text-wrap">{this.state.error.message}</Code>
+                                <Typography.Code className="text-wrap">{this.state.error.message}</Typography.Code>
                             </Text>
                             {this.props.extraContext}
                         </div>

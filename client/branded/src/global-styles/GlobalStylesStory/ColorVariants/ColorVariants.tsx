@@ -1,7 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-import { Code } from '@sourcegraph/wildcard'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { getSemanticColorVariables } from '../utils'
 
@@ -15,7 +15,7 @@ export const ColorVariants: React.FunctionComponent<React.PropsWithChildren<unkn
                     className="rounded"
                     style={{ width: '6rem', height: '6rem', backgroundColor: `var(${variant})` }}
                 />
-                <Code>{variant}</Code>
+                <Typography.Code>{variant}</Typography.Code>
             </div>
         ))}
     </div>

@@ -194,7 +194,6 @@ type Response struct {
 type FileMatch struct {
 	Path string
 
-	ChunkMatches     []ChunkMatch
 	MultilineMatches []MultilineMatch
 	LineMatches      []LineMatch
 
@@ -258,15 +257,4 @@ func (m MultilineMatch) MatchedContent() string {
 		}
 	}
 	return string(runePreview[m.Start.Column : lastLineStart+int(m.End.Column)])
-}
-
-type ChunkMatch struct {
-	Content      string
-	ContentStart Location
-	Ranges       []Range
-}
-
-type Range struct {
-	Start Location
-	End   Location
 }

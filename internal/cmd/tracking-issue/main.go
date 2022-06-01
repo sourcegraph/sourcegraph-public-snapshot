@@ -10,8 +10,9 @@ import (
 	"strings"
 
 	"github.com/machinebox/graphql"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
@@ -31,21 +32,8 @@ func main() {
 	flag.Parse()
 
 	if err := run(*token, *org, *dry, *verbose); err != nil {
-		if isRateLimitErr(err) {
-			log.Printf("Github API limit reached - soft failing. Err: %s\n", err)
-		} else {
-			log.Fatal(err)
-		}
+		log.Fatal(err)
 	}
-}
-
-func isRateLimitErr(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	baseErr := errors.UnwrapAll(err)
-	return strings.Contains(baseErr.Error(), "API rate limit exceeded")
 }
 
 func run(token, org string, dry, verbose bool) (err error) {

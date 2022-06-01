@@ -19,13 +19,11 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Code Insights: Added toggle display of data series in line charts
 - Extensions: Added site config parameter `extensions.allowOnlySourcegraphAuthoredExtensions`. When enabled only extensions authored by Sourcegraph will be able to be viewed and installed. For more information check out the [docs](https://docs.sourcegraph.com/admin/extensions##allow-only-extensions-authored-by-sourcegraph). [#35054](https://github.com/sourcegraph/sourcegraph/pull/35054)
-- Batch Changes Credentials can now be manually validated. [#35948](https://github.com/sourcegraph/sourcegraph/pull/35948)
 - Zoekt-indexserver has a new debug landing page, `/debug`, which now exposes information about the queue, the list of indexed repositories, and the list of assigned repositories. Admins can reach the debug landing page by selecting Instrumentation > indexed-search-indexer from the site admin view. The debug page is linked at the top. [#346](https://github.com/sourcegraph/zoekt/pull/346)
 
 ### Changed
 
 - Code Insights: Added warnings about adding `context:` and `repo:` filters in search query.
-- Batch Changes: The credentials of the last applying user will now be used to sync changesets when available. If unavailable, then the previous behaviour of using a site or code host configuration credential is retained. [#33413](https://github.com/sourcegraph/sourcegraph/issues/33413)
 - Gitserver: we disable automatic git-gc for invocations of git-fetch to avoid corruption of repositories by competing git-gc processes. [#36274](https://github.com/sourcegraph/sourcegraph/pull/36274)
 
 ### Fixed

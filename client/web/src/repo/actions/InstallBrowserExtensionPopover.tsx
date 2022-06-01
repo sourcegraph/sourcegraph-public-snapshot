@@ -5,7 +5,7 @@ import ExportIcon from 'mdi-react/ExportIcon'
 import PlusThickIcon from 'mdi-react/PlusThickIcon'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
-import { ButtonLink, PopoverContent, Position, H3, Text } from '@sourcegraph/wildcard'
+import { ButtonLink, PopoverContent, Position, Typography, Text } from '@sourcegraph/wildcard'
 
 import { SourcegraphIcon } from '../../auth/icons'
 
@@ -41,9 +41,9 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<React.Props
             className={classNames(styles.installBrowserExtensionPopover)}
         >
             <div className="p-3 text-wrap  test-install-browser-extension-popover">
-                <H3 className="mb-0 test-install-browser-extension-popover-header">
+                <Typography.H3 className="mb-0 test-install-browser-extension-popover-header">
                     Take Sourcegraph's code intelligence to {displayName}!
-                </H3>
+                </Typography.H3>
                 <Text className="py-3">
                     Install Sourcegraph browser extension to add code intelligence{' '}
                     {serviceKind === ExternalServiceKind.PHABRICATOR

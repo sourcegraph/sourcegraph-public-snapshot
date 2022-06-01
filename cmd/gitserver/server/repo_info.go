@@ -8,12 +8,13 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.RepoInfo, error) {
@@ -43,19 +44,19 @@ func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.Rep
 	}
 	if resp.Cloned {
 		if mtime, err := repoLastFetched(dir); err != nil {
-			s.Logger.Warn("error computing last-fetched date", log.String("repo", string(repo)), log.Error(err))
+			log15.Warn("error computing last-fetched date", "repo", repo, "err", err)
 		} else {
 			resp.LastFetched = &mtime
 		}
 
 		if cloneTime, err := getRecloneTime(dir); err != nil {
-			s.Logger.Warn("error getting re-clone time", log.String("repo", string(repo)), log.Error(err))
+			log15.Warn("error getting re-clone time", "repo", repo, "err", err)
 		} else {
 			resp.CloneTime = &cloneTime
 		}
 
 		if lastChanged, err := repoLastChanged(dir); err != nil {
-			s.Logger.Warn("error getting last changed", log.String("repo", string(repo)), log.Error(err))
+			log15.Warn("error getting last changed", "repo", repo, "err", err)
 		} else {
 			resp.LastChanged = &lastChanged
 		}
@@ -146,11 +147,11 @@ func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.deleteRepo(r.Context(), req.Repo); err != nil {
-		s.Logger.Error("failed to delete repository", log.String("repo", string(req.Repo)), log.Error(err))
+		log15.Error("failed to delete repository", "repo", req.Repo, "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.Logger.Info("deleted repository", log.String("repo", string(req.Repo)))
+	log15.Info("deleted repository", "repo", req.Repo)
 }
 
 func (s *Server) deleteRepo(ctx context.Context, repo api.RepoName) error {

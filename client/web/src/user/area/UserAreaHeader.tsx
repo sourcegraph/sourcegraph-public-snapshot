@@ -38,31 +38,29 @@ export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Pro
      * (every location change, for example). This prevents it from flickering.
      */
     const path = useMemo(
-        () => ({
-            text: (
-                <span className="align-middle">
-                    {props.user.displayName ? (
-                        <>
-                            {props.user.displayName} ({props.user.username})
-                        </>
-                    ) : (
-                        props.user.username
-                    )}
-                </span>
-            ),
-            icon: () => <UserAvatar className={styles.avatar} user={props.user} />,
-        }),
+        () => [
+            {
+                text: (
+                    <span className="align-middle">
+                        {props.user.displayName ? (
+                            <>
+                                {props.user.displayName} ({props.user.username})
+                            </>
+                        ) : (
+                            props.user.username
+                        )}
+                    </span>
+                ),
+                icon: () => <UserAvatar className={styles.avatar} user={props.user} />,
+            },
+        ],
         [props.user]
     )
 
     return (
         <div className={className}>
             <div className="container">
-                <PageHeader className="mb-3">
-                    <PageHeader.Heading as="h2" styleAs="h1">
-                        <PageHeader.Breadcrumb icon={path.icon}>{path.text}</PageHeader.Breadcrumb>
-                    </PageHeader.Heading>
-                </PageHeader>
+                <PageHeader path={path} className="mb-3" />
                 <div className="d-flex align-items-end justify-content-between">
                     <ul className="nav nav-tabs w-100">
                         {navItems.map(

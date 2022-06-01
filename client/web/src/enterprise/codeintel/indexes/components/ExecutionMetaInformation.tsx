@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Code } from '@sourcegraph/wildcard'
+import { Typography } from '@sourcegraph/wildcard'
 
 import styles from './ExecutionMetaInformation.module.scss'
 
@@ -23,7 +23,7 @@ export const ExecutionMetaInformation: React.FunctionComponent<
         <div className={classNames(styles.dockerCommandSpec, 'py-2 border-top pl-2')}>
             <strong className={styles.header}>Commands</strong>
             <div>
-                <Code>{commands.join(' ')}</Code>
+                <Typography.Code>{commands.join(' ')}</Typography.Code>
             </div>
         </div>
         <div className={classNames(styles.dockerCommandSpec, 'py-2 border-top pl-2')}>

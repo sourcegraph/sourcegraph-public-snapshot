@@ -107,10 +107,6 @@ func (c *batchChangesUserCredentialResolver) IsSiteCredential() bool {
 	return false
 }
 
-func (c *batchChangesUserCredentialResolver) authenticator(ctx context.Context) (auth.Authenticator, error) {
-	return c.credential.Authenticator(ctx)
-}
-
 type batchChangesSiteCredentialResolver struct {
 	credential *btypes.SiteCredential
 }
@@ -149,8 +145,4 @@ func (c *batchChangesSiteCredentialResolver) CreatedAt() graphqlbackend.DateTime
 
 func (c *batchChangesSiteCredentialResolver) IsSiteCredential() bool {
 	return true
-}
-
-func (c *batchChangesSiteCredentialResolver) authenticator(ctx context.Context) (auth.Authenticator, error) {
-	return c.credential.Authenticator(ctx)
 }

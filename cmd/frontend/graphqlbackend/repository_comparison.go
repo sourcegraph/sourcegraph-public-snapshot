@@ -75,7 +75,6 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryR
 		headRevspec = *args.Head
 	}
 
-	client := gitserver.NewClient(db)
 	getCommit := func(ctx context.Context, repo api.RepoName, revspec string) (*GitCommitResolver, error) {
 		if revspec == git.DevNullSHA {
 			return nil, nil
@@ -87,7 +86,7 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryR
 
 		// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
 		// exist).
-		commitID, err := client.ResolveRevision(ctx, repo, revspec, opt)
+		commitID, err := gitserver.NewClient(db).ResolveRevision(ctx, repo, revspec, opt)
 		if err != nil {
 			return nil, err
 		}
@@ -102,7 +101,7 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryR
 
 	// Find the common merge-base for the diff. That's the revision the diff applies to,
 	// not the baseRevspec.
-	mergeBaseCommit, err := client.MergeBase(ctx, r.RepoName(), api.CommitID(baseRevspec), api.CommitID(headRevspec))
+	mergeBaseCommit, err := git.MergeBase(ctx, db, r.RepoName(), api.CommitID(baseRevspec), api.CommitID(headRevspec))
 
 	// If possible, use the merge-base as the base commit, as the diff will only be guaranteed to be
 	// applicable to the file from that revision.

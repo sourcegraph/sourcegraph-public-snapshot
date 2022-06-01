@@ -5,8 +5,8 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { TYPOGRAPHY_ALIGNMENTS, TYPOGRAPHY_MODES } from './constants'
-
-import { Code, Label, H1, H2, H3, H4, H5, H6, Text } from '.'
+import * as Typography from './Typography'
+import { Text } from './Typography'
 
 const decorator: DecoratorFn = story => <BrandedStory styles={webStyles}>{() => <div>{story()}</div>}</BrandedStory>
 
@@ -16,7 +16,7 @@ const config: Meta = {
     decorators: [decorator],
 
     parameters: {
-        component: Label,
+        component: Typography.Label,
         chromatic: {
             enableDarkMode: true,
             disableSnapshot: false,
@@ -33,235 +33,235 @@ export default config
 
 export const Simple: Story = () => (
     <>
-        <H2>Headings</H2>
+        <Typography.H2>Headings</Typography.H2>
         <table className="table">
             <tbody>
                 <tr>
                     <td>
-                        <Code>
+                        <Typography.Code>
                             {'<'}
                             H1
                             {'>'}
-                        </Code>
+                        </Typography.Code>
                     </td>
                     <td>
-                        <H1
+                        <Typography.H1
                             mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                             alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                         >
                             This is H1
-                        </H1>
+                        </Typography.H1>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <Code>
+                        <Typography.Code>
                             {'<'}
                             H2
                             {'>'}
-                        </Code>
+                        </Typography.Code>
                     </td>
                     <td>
-                        <H2
+                        <Typography.H2
                             mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                             alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                         >
                             This is H2
-                        </H2>
+                        </Typography.H2>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <Code>
+                        <Typography.Code>
                             {'<'}
                             H3
                             {'>'}
-                        </Code>
+                        </Typography.Code>
                     </td>
                     <td>
-                        <H3
+                        <Typography.H3
                             mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                             alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                         >
                             This is H3
-                        </H3>
+                        </Typography.H3>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <Code>
+                        <Typography.Code>
                             {'<'}
                             H4
                             {'>'}
-                        </Code>
+                        </Typography.Code>
                     </td>
                     <td>
-                        <H4
+                        <Typography.H4
                             mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                             alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                         >
                             This is H4
-                        </H4>
+                        </Typography.H4>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <Code>
+                        <Typography.Code>
                             {'<'}
                             H5
                             {'>'}
-                        </Code>
+                        </Typography.Code>
                     </td>
                     <td>
-                        <H5
+                        <Typography.H5
                             mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                             alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                         >
                             This is H5
-                        </H5>
+                        </Typography.H5>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <Code>
+                        <Typography.Code>
                             {'<'}
                             H6
                             {'>'}
-                        </Code>
+                        </Typography.Code>
                     </td>
                     <td>
-                        <H6
+                        <Typography.H6
                             mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                             alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                         >
                             This is H6
-                        </H6>
+                        </Typography.H6>
                     </td>
                 </tr>
             </tbody>
         </table>
 
-        <H2>Code</H2>
+        <Typography.H2>Code</Typography.H2>
         <table className="table">
             <tbody>
                 <tr>
                     <td>
-                        <Code>
+                        <Typography.Code>
                             {'<'}
                             Code
                             {'>'}
-                        </Code>
+                        </Typography.Code>
                     </td>
                     <td>
                         <div>
-                            <Code size="base" weight="regular">
+                            <Typography.Code size="base" weight="regular">
                                 This is Code / Base / Regular
-                            </Code>
+                            </Typography.Code>
                         </div>
                         <div>
-                            <Code size="base" weight="bold">
+                            <Typography.Code size="base" weight="bold">
                                 This is Code / Base / Bold
-                            </Code>
+                            </Typography.Code>
                         </div>
                         <div>
-                            <Code size="small" weight="regular">
+                            <Typography.Code size="small" weight="regular">
                                 This is Code / Small / Regular
-                            </Code>
+                            </Typography.Code>
                         </div>
                         <div>
-                            <Code size="small" weight="bold">
+                            <Typography.Code size="small" weight="bold">
                                 This is Code / Small / Bold
-                            </Code>
+                            </Typography.Code>
                         </div>
                     </td>
                 </tr>
             </tbody>
         </table>
 
-        <H2>Label</H2>
+        <Typography.H2>Label</Typography.H2>
         <table className="table">
             <tbody>
                 <tr>
                     <td>
-                        <Code>
+                        <Typography.Code>
                             {'<'}
                             Label
                             {'>'}
-                        </Code>
+                        </Typography.Code>
                     </td>
                     <td>
                         <div>
-                            <Label
+                            <Typography.Label
                                 mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                                 alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                                 size="base"
                             >
                                 This is Label / Base
-                            </Label>
+                            </Typography.Label>
                         </div>
                         <div>
-                            <Label
+                            <Typography.Label
                                 mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                                 alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                                 size="base"
                                 isUnderline={true}
                             >
                                 This is Label / Base - underline
-                            </Label>
+                            </Typography.Label>
                         </div>
                         <div>
-                            <Label
+                            <Typography.Label
                                 mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                                 alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                                 size="small"
                             >
                                 This is Label / Small
-                            </Label>
+                            </Typography.Label>
                         </div>
                         <div>
-                            <Label
+                            <Typography.Label
                                 mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                                 alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                                 size="small"
                                 isUnderline={true}
                             >
                                 This is Label / Small - underline
-                            </Label>
+                            </Typography.Label>
                         </div>
                         <div>
-                            <Label
+                            <Typography.Label
                                 mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                                 alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                                 isUppercase={true}
                             >
                                 This is Label / Uppercase / Base
-                            </Label>
+                            </Typography.Label>
                         </div>
                         <div>
-                            <Label
+                            <Typography.Label
                                 mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                                 alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                                 size="small"
                                 isUppercase={true}
                             >
                                 This is Label / Uppercase / Small
-                            </Label>
+                            </Typography.Label>
                         </div>
                     </td>
                 </tr>
             </tbody>
         </table>
 
-        <H2>Text</H2>
+        <Typography.H2>Text</Typography.H2>
         <table className="table">
             <tbody>
                 <tr>
                     <td>
-                        <Code>
+                        <Typography.Code>
                             {'<'}
                             Text
                             {'>'}
-                        </Code>
+                        </Typography.Code>
                     </td>
                     <td>
                         <Text

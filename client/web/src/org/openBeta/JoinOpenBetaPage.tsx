@@ -16,8 +16,7 @@ import {
     LoadingSpinner,
     PageHeader,
     RadioButton,
-    H3,
-    Label,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../components/MarketingBlock'
@@ -190,11 +189,11 @@ export const JoinOpenBetaPage: React.FunctionComponent<React.PropsWithChildren<P
                 }
             />
             <MarketingBlock contentClassName={styles.marketingContent}>
-                <H3 className="pr-3">
+                <Typography.H3 className="pr-3">
                     <Badge variant="info" small={true}>
                         BETA
                     </Badge>
-                </H3>
+                </Typography.H3>
                 <div>
                     Sourcegraph Cloud for small teams is in open beta. During this time, it’s free to use for 30 days.{' '}
                     <Link to="https://docs.sourcegraph.com/cloud/organizations/beta-operations">
@@ -203,11 +202,13 @@ export const JoinOpenBetaPage: React.FunctionComponent<React.PropsWithChildren<P
                     .
                 </div>
             </MarketingBlock>
-            <H3 className="mt-4 mb-4">To get started, please tell us about your organization:</H3>
+            <Typography.H3 className="mt-4 mb-4">To get started, please tell us about your organization:</Typography.H3>
             <Form className="mb-5" onSubmit={onSubmit}>
                 {error && <ErrorAlert className="mb-3" error={error} />}
                 <div className={classNames('form-group', styles.formItem)}>
-                    <Label htmlFor="company_employees_band">About how many developers work for your company?</Label>
+                    <Typography.Label htmlFor="company_employees_band">
+                        About how many developers work for your company?
+                    </Typography.Label>
 
                     <div className="mt-2">
                         {CompanyDevsSize.map(item => (
@@ -232,9 +233,9 @@ export const JoinOpenBetaPage: React.FunctionComponent<React.PropsWithChildren<P
                         showOtherRepo ? styles.otherBottom : undefined
                     )}
                 >
-                    <Label className={styles.cbLabel} htmlFor="company_code_repo">
+                    <Typography.Label className={styles.cbLabel} htmlFor="company_code_repo">
                         Where does your company store your code today?
-                    </Label>
+                    </Typography.Label>
                     <span className={classNames('text-muted d-block', styles.cbSubLabel)}>
                         <small>Select all that apply</small>
                     </span>
@@ -277,9 +278,9 @@ export const JoinOpenBetaPage: React.FunctionComponent<React.PropsWithChildren<P
                         showOtherPlan ? styles.otherBottom : undefined
                     )}
                 >
-                    <Label className={styles.cbLabel} htmlFor="sg_usage_plan">
+                    <Typography.Label className={styles.cbLabel} htmlFor="sg_usage_plan">
                         What do you plan to use Sourcegraph to do?
-                    </Label>
+                    </Typography.Label>
                     <span className={classNames('text-muted d-block', styles.cbSubLabel)}>
                         <small>Select all that apply</small>
                     </span>

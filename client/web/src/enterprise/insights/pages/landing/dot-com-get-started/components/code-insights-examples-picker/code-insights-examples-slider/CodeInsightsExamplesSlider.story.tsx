@@ -7,7 +7,7 @@ import { WebStory } from '../../../../../../../../components/WebStory'
 import { CodeInsightsExamplesSlider } from './CodeInsightsExamplesSlider'
 
 export default {
-    title: 'web/insights/dot-com-landing/CodeInsightsExampleSlider',
+    title: 'insights/dot-com-landing/CodeInsightsExampleSlider',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 } as Meta
 

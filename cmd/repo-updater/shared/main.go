@@ -119,7 +119,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	repos.MustRegisterMetrics(db, envvar.SourcegraphDotComMode())
 
-	store := repos.NewStore(logger.Scoped("store", "repo store"), db, sql.TxOptions{Isolation: sql.LevelDefault})
+	store := repos.NewStore(db, sql.TxOptions{Isolation: sql.LevelDefault})
 	{
 		m := repos.NewStoreMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
@@ -194,12 +194,10 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 
-	// git-server repos purging thread
-	var purgeTTL time.Duration
-	if envvar.SourcegraphDotComMode() {
-		purgeTTL = 14 * 24 * time.Hour // two weeks
+	if !envvar.SourcegraphDotComMode() {
+		// git-server repos purging thread
+		go repos.RunRepositoryPurgeWorker(ctx, db)
 	}
-	go repos.RunRepositoryPurgeWorker(ctx, db, purgeTTL)
 
 	// Git fetches scheduler
 	go repos.RunScheduler(ctx, logger, updateScheduler)

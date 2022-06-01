@@ -12,7 +12,7 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Icon, Code, H2, H3, H4, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { ModalVideo } from '../documentation/ModalVideo'
 
@@ -60,7 +60,7 @@ const SearchInputExample: React.FunctionComponent<React.PropsWithChildren<Search
                                     'text-monospace dropdown-toggle'
                                 )}
                             >
-                                <Code className={searchContextDropDownStyles.buttonContent}>
+                                <Typography.Code className={searchContextDropDownStyles.buttonContent}>
                                     {/*
                                        a11y-ignore
                                        Rule: "color-contrast" (Elements must have sufficient color contrast)
@@ -68,7 +68,7 @@ const SearchInputExample: React.FunctionComponent<React.PropsWithChildren<Search
                                      */}
                                     <span className="search-filter-keyword a11y-ignore">context:</span>
                                     global
-                                </Code>
+                                </Typography.Code>
                             </Button>
                         </div>
                         <div className={classNames(searchBoxStyle.searchBoxSeparator, styles.fakeSearchboxSeparator)} />
@@ -137,14 +137,14 @@ const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>
     className = '',
 }) => (
     <div className={classNames(styles.container, className)}>
-        <H3 className={styles.title}>
+        <Typography.H3 className={styles.title}>
             <span className="flex-1">{title}</span>
             {sectionID && (
                 <Button variant="icon" aria-label="Hide Section" onClick={() => onClose?.(sectionID)}>
                     <Icon role="img" aria-hidden={true} as={CloseIcon} />
                 </Button>
             )}
-        </H3>
+        </Typography.H3>
         <div className={styles.content}>{children}</div>
     </div>
 )
@@ -205,7 +205,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
-            <H2>Sourcegraph basics</H2>
+            <Typography.H2>Sourcegraph basics</Typography.H2>
             <div className={styles.panels}>
                 {!hiddenSectionIDs?.includes(SectionID.VIDEOS) && (
                     <div className="mr-3">
@@ -253,13 +253,14 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                             onClose={onClose}
                         >
                             <Text>
-                                If you type <Code>facebook react</Code>, we will search for file names, file contents,
-                                repo names, etc. for the exact, ordered phrase <Code>facebook react</Code>. If you add
-                                quotes around your search phrase, we will include the quotes in the search. Literal
-                                search makes it easy to find code like:{' '}
-                                <Code>
+                                If you type <Typography.Code>facebook react</Typography.Code>, we will search for file
+                                names, file contents, repo names, etc. for the exact, ordered phrase{' '}
+                                <Typography.Code>facebook react</Typography.Code>. If you add quotes around your search
+                                phrase, we will include the quotes in the search. Literal search makes it easy to find
+                                code like:{' '}
+                                <Typography.Code>
                                     {'{'} url: "https://sourcegraph.com" {'}'}
-                                </Code>{' '}
+                                </Typography.Code>{' '}
                                 without escaping.
                             </Text>
                             <Text>
@@ -279,7 +280,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                     )}
                     {!hiddenSectionIDs?.includes(SectionID.COMMON_PROBLEMS) && (
                         <Container sectionID={SectionID.COMMON_PROBLEMS} title="Common Problems" onClose={onClose}>
-                            <H4>Finding a specific repository</H4>
+                            <Typography.H4>Finding a specific repository</Typography.H4>
                             <Text>Repositories are specified by their org/repository-name convention:</Text>
                             <SearchInputExample
                                 showSearchContext={searchContextsEnabled && showSearchContext}
@@ -316,7 +317,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                 </small>
                             </Text>
 
-                            <H4>AND, OR, NOT</H4>
+                            <Typography.H4>AND, OR, NOT</Typography.H4>
                             <Text>Conditionals and grouping are possible within queries:</Text>
                             <SearchInputExample
                                 showSearchContext={searchContextsEnabled && showSearchContext}
@@ -325,7 +326,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                 onRun={() => telemetryService.log('NoResultsCommonProblems', { search: 'and or' })}
                             />
 
-                            <H4>Escaping</H4>
+                            <Typography.H4>Escaping</Typography.H4>
                             <Text>
                                 Because our default mode is literal, escaping requires a dedicated filter. Use the
                                 content filter to include spaces and filter keywords in searches.

@@ -143,6 +143,8 @@ export class SavedSearchListPage extends React.Component<Props, State> {
         return (
             <div className={styles.savedSearchListPage} data-testid="saved-searches-list-page">
                 <PageHeader
+                    path={[{ text: 'Saved searches' }]}
+                    headingElement="h2"
                     description="Manage notifications and alerts for specific search queries."
                     actions={
                         <Button
@@ -155,11 +157,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                         </Button>
                     }
                     className="mb-3"
-                >
-                    <PageHeader.Heading as="h3" styleAs="h2">
-                        <PageHeader.Breadcrumb>Saved searches</PageHeader.Breadcrumb>
-                    </PageHeader.Heading>
-                </PageHeader>
+                />
                 <SavedSearchListPageContent onDelete={this.onDelete} {...this.props} {...this.state} />
             </div>
         )

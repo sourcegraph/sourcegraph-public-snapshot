@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 const (
@@ -63,9 +62,7 @@ func TestCleanup_computeStats(t *testing.T) {
 
 	// We run cleanupRepos because we want to test as a side-effect it creates
 	// the correct file in the correct place.
-	s := &Server{ReposDir: root,
-		Logger: logtest.Scoped(t),
-	}
+	s := &Server{ReposDir: root}
 	s.testSetup(t)
 
 	if _, err := s.DB.ExecContext(context.Background(), `
@@ -76,7 +73,7 @@ update gitserver_repos set repo_size_bytes = 228 where repo_id = 3;
 		t.Fatalf("unexpected error while inserting test data: %s", err)
 	}
 
-	s.cleanupRepos([]string{"gitserver-0"})
+	s.cleanupRepos()
 
 	for i := 1; i <= 3; i++ {
 		repo, err := s.DB.GitserverRepos().GetByID(context.Background(), 1)
@@ -127,11 +124,9 @@ func TestCleanupInactive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s := &Server{ReposDir: root,
-		Logger: logtest.Scoped(t),
-	}
+	s := &Server{ReposDir: root}
 	s.testSetup(t)
-	s.cleanupRepos([]string{"gitserver-0"})
+	s.cleanupRepos()
 
 	if _, err := os.Stat(repoA); os.IsNotExist(err) {
 		t.Error("expected repoA not to be removed")
@@ -191,11 +186,9 @@ func TestGitGCAuto(t *testing.T) {
 	}
 
 	// Handler must be invoked for Server side-effects.
-	s := &Server{ReposDir: root,
-		Logger: logtest.Scoped(t),
-	}
+	s := &Server{ReposDir: root}
 	s.testSetup(t)
-	s.cleanupRepos([]string{"gitserver-0"})
+	s.cleanupRepos()
 
 	// Verify that there are no more GC-able objects in the repository.
 	if !strings.Contains(countObjects(), "count: 0") {
@@ -307,7 +300,6 @@ func TestCleanupExpired(t *testing.T) {
 	}
 
 	s := &Server{
-		Logger:           logtest.Scoped(t),
 		ReposDir:         root,
 		GetRemoteURLFunc: getRemoteURL,
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
@@ -315,7 +307,7 @@ func TestCleanupExpired(t *testing.T) {
 		},
 	}
 	s.testSetup(t)
-	s.cleanupRepos([]string{"gitserver-0"})
+	s.cleanupRepos()
 
 	// repos that shouldn't be re-cloned
 	if repoNewTime.Before(modTime(repoNew)) {
@@ -476,9 +468,9 @@ func TestCleanupOldLocks(t *testing.T) {
 		}
 	}
 
-	s := &Server{ReposDir: root, Logger: logtest.Scoped(t)}
+	s := &Server{ReposDir: root}
 	s.testSetup(t)
-	s.cleanupRepos([]string{"gitserver-0"})
+	s.cleanupRepos()
 
 	isRemoved := func(path string) bool {
 		_, err := os.Stat(path)
@@ -500,7 +492,7 @@ func TestCleanupOldLocks(t *testing.T) {
 func TestSetupAndClearTmp(t *testing.T) {
 	root := t.TempDir()
 
-	s := &Server{ReposDir: root, Logger: logtest.Scoped(t)}
+	s := &Server{ReposDir: root}
 
 	// All non .git paths should become .git
 	mkFiles(t, root,
@@ -562,7 +554,7 @@ func TestSetupAndClearTmp(t *testing.T) {
 func TestSetupAndClearTmp_Empty(t *testing.T) {
 	root := t.TempDir()
 
-	s := &Server{ReposDir: root, Logger: logtest.Scoped(t)}
+	s := &Server{ReposDir: root}
 
 	_, err := s.SetupAndClearTmp()
 	if err != nil {
@@ -615,7 +607,6 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	}
 
 	s := &Server{
-		Logger:   logtest.Scoped(t),
 		ReposDir: root,
 		DB:       db,
 		ctx:      ctx,
@@ -678,7 +669,6 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 		"github.com/foo/baz/.git/HEAD",
 	)
 	s := &Server{
-		Logger:   logtest.Scoped(t),
 		ReposDir: root,
 	}
 
@@ -694,7 +684,6 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 func TestHowManyBytesToFree(t *testing.T) {
 	const G = 1024 * 1024 * 1024
 	s := &Server{
-		Logger:             logtest.Scoped(t),
 		DesiredPercentFree: 10,
 	}
 
@@ -836,13 +825,13 @@ func isEmptyDir(path string) (bool, error) {
 
 func TestFreeUpSpace(t *testing.T) {
 	t.Run("no error if no space requested and no repos", func(t *testing.T) {
-		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logtest.Scoped(t)}
+		s := &Server{DiskSizer: &fakeDiskSizer{}}
 		if err := s.freeUpSpace(0); err != nil {
 			t.Fatal(err)
 		}
 	})
 	t.Run("error if space requested and no repos", func(t *testing.T) {
-		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logtest.Scoped(t)}
+		s := &Server{DiskSizer: &fakeDiskSizer{}}
 		if err := s.freeUpSpace(1); err == nil {
 			t.Fatal("want error")
 		}
@@ -871,7 +860,6 @@ func TestFreeUpSpace(t *testing.T) {
 
 		// Run.
 		s := Server{
-			Logger:    logtest.Scoped(t),
 			ReposDir:  rd,
 			DiskSizer: &fakeDiskSizer{},
 		}
@@ -1241,7 +1229,7 @@ func TestCleanup_setRepoSizes(t *testing.T) {
 
 	// We run cleanupRepos because we want to test as a side-effect it creates
 	// the correct file in the correct place.
-	s := &Server{ReposDir: root, Logger: logtest.Scoped(t)}
+	s := &Server{ReposDir: root}
 	s.Handler() // Handler as a side-effect sets up Server
 	db := dbtest.NewDB(t)
 	s.DB = database.NewDB(db)
@@ -1258,7 +1246,7 @@ update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 		t.Fatalf("unexpected error while inserting test data: %s", err)
 	}
 
-	s.cleanupRepos([]string{"gitserver-0"})
+	s.cleanupRepos()
 
 	for i := 1; i <= 3; i++ {
 		repo, err := s.DB.GitserverRepos().GetByID(context.Background(), 1)
@@ -1278,7 +1266,6 @@ update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 }
 
 func TestSGMLogFile(t *testing.T) {
-	logger := logtest.Scoped(t)
 	dir := GitDir(t.TempDir())
 	cmd := exec.Command("git", "--bare", "init")
 	dir.Set(cmd)
@@ -1304,7 +1291,7 @@ func TestSGMLogFile(t *testing.T) {
 	}
 
 	// failed run => log file
-	if err := sgMaintenance(logger, dir); err == nil {
+	if err := sgMaintenance(dir); err == nil {
 		t.Fatal("sgMaintenance should have returned an error")
 	}
 	mustHaveLogFile(t)
@@ -1317,7 +1304,7 @@ func TestSGMLogFile(t *testing.T) {
 	os.Remove(fakeRef)
 
 	// fresh sgmLog file => skip execution
-	if err := sgMaintenance(logger, dir); err != nil {
+	if err := sgMaintenance(dir); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	}
 	mustHaveLogFile(t)
@@ -1327,7 +1314,7 @@ func TestSGMLogFile(t *testing.T) {
 	if err := os.Chtimes(dir.Path(sgmLog), old, old); err != nil {
 		t.Fatal(err)
 	}
-	if err := sgMaintenance(logger, dir); err != nil {
+	if err := sgMaintenance(dir); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	}
 	if _, err := os.Stat(dir.Path(sgmLog)); err == nil {

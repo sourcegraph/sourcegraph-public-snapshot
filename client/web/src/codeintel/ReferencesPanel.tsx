@@ -46,8 +46,7 @@ import {
     Collapse,
     CollapseHeader,
     CollapsePanel,
-    Code,
-    H4,
+    Typography,
     Text,
 } from '@sourcegraph/wildcard'
 
@@ -534,7 +533,7 @@ const CollapsibleLocationList: React.FunctionComponent<
                         ) : (
                             <Icon role="img" aria-label="Expand" as={ChevronRightIcon} />
                         )}{' '}
-                        <H4 className="mb-0">{capitalize(props.name)}</H4>
+                        <Typography.H4 className="mb-0">{capitalize(props.name)}</Typography.H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
                             ({props.locations.length} displayed{props.hasMore ? ', more available)' : ')'}
                         </span>
@@ -618,7 +617,7 @@ const SideBlob: React.FunctionComponent<
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
                 <Text alignment="center" className="text-muted">
                     <i>
-                        Loading <Code>{props.activeLocation.file}</Code>...
+                        Loading <Typography.Code>{props.activeLocation.file}</Typography.Code>...
                     </i>
                 </Text>
             </>
@@ -630,7 +629,7 @@ const SideBlob: React.FunctionComponent<
         return (
             <div>
                 <Text className="text-danger">
-                    Loading <Code>{props.activeLocation.file}</Code> failed:
+                    Loading <Typography.Code>{props.activeLocation.file}</Typography.Code> failed:
                 </Text>
                 <pre>{error.message}</pre>
             </div>
@@ -647,7 +646,7 @@ const SideBlob: React.FunctionComponent<
         return (
             <Text alignment="center" className="text-warning">
                 <i>
-                    Highlighting <Code>{props.activeLocation.file}</Code> failed
+                    Highlighting <Typography.Code>{props.activeLocation.file}</Typography.Code> failed
                 </i>
             </Text>
         )
@@ -860,25 +859,25 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                             {group.locations.map(reference => {
                                 const className = isActiveLocation(reference) ? styles.locationActive : ''
 
-                                const locationLine = getLineContent(reference)
+                                const locationLine = getPrePostLineContent(reference)
                                 const lineWithHighlightedToken = locationLine.prePostToken ? (
                                     <>
                                         {locationLine.prePostToken.pre === '' ? (
                                             <></>
                                         ) : (
-                                            <Code>{locationLine.prePostToken.pre}</Code>
+                                            <Typography.Code>{locationLine.prePostToken.pre}</Typography.Code>
                                         )}
                                         <mark className="p-0 selection-highlight sourcegraph-document-highlight">
-                                            <Code>{locationLine.prePostToken.token}</Code>
+                                            <Typography.Code>{searchToken}</Typography.Code>
                                         </mark>
                                         {locationLine.prePostToken.post === '' ? (
                                             <></>
                                         ) : (
-                                            <Code>{locationLine.prePostToken.post}</Code>
+                                            <Typography.Code>{locationLine.prePostToken.post}</Typography.Code>
                                         )}
                                     </>
                                 ) : locationLine.line ? (
-                                    <Code>{locationLine.line}</Code>
+                                    <Typography.Code>{locationLine.line}</Typography.Code>
                                 ) : (
                                     ''
                                 )
@@ -915,13 +914,12 @@ const CollapsibleLocationGroup: React.FunctionComponent<
 }
 
 interface LocationLine {
-    prePostToken?: { pre: string; token: string; post: string }
+    prePostToken?: { pre: string; post: string }
     line?: string
 }
 
-export const getLineContent = (location: Location): LocationLine => {
+const getPrePostLineContent = (location: Location): LocationLine => {
     const range = location.range
-    console.log(location)
     if (range !== undefined) {
         const line = location.lines[range.start.line]
 
@@ -929,18 +927,13 @@ export const getLineContent = (location: Location): LocationLine => {
             return {
                 prePostToken: {
                     pre: line.slice(0, range.start.character).trimStart(),
-                    token: line.slice(range.start.character, range.end.character),
                     post: line.slice(range.end.character),
                 },
                 line: line.trimStart(),
             }
         }
         return {
-            prePostToken: {
-                pre: line.slice(0, range.start.character).trimStart(),
-                token: line.slice(range.start.character),
-                post: '',
-            },
+            prePostToken: { pre: line.slice(0, range.start.character).trim(), post: '' },
             line: line.trimStart(),
         }
     }

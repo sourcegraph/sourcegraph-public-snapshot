@@ -9,10 +9,10 @@ import (
 func TestConvertMatches(t *testing.T) {
 	t.Run("AsLineMatches", func(t *testing.T) {
 		cases := []struct {
-			input  ChunkMatch
+			input  HunkMatch
 			output []*LineMatch
 		}{{
-			input: ChunkMatch{
+			input: HunkMatch{
 				Content:      "line1\nline2\nline3",
 				ContentStart: Location{Line: 1},
 				Ranges: Ranges{{
@@ -34,30 +34,7 @@ func TestConvertMatches(t *testing.T) {
 				OffsetAndLengths: [][2]int32{{0, 1}},
 			}},
 		}, {
-			input: ChunkMatch{
-				Content:      "line1\nstart 的<-multibyte\nline3",
-				ContentStart: Location{Line: 1},
-				Ranges: Ranges{{
-					Start: Location{0, 1, 0},
-					End:   Location{32, 3, 5},
-				}},
-			},
-			output: []*LineMatch{{
-				Preview:          "line1",
-				LineNumber:       1,
-				OffsetAndLengths: [][2]int32{{0, 5}},
-			}, {
-				Preview:    "start 的<-multibyte",
-				LineNumber: 2,
-				// 18 is rune length, not the byte length
-				OffsetAndLengths: [][2]int32{{0, 18}},
-			}, {
-				Preview:          "line3",
-				LineNumber:       3,
-				OffsetAndLengths: [][2]int32{{0, 5}},
-			}},
-		}, {
-			input: ChunkMatch{
+			input: HunkMatch{
 				Content:      "line1",
 				ContentStart: Location{Line: 1},
 				Ranges: Ranges{{
@@ -81,12 +58,12 @@ func TestConvertMatches(t *testing.T) {
 		}
 	})
 
-	t.Run("ChunkMatchesAsLineMatches", func(t *testing.T) {
+	t.Run("HunkMatchesAsLineMatches", func(t *testing.T) {
 		cases := []struct {
-			input  ChunkMatches
+			input  HunkMatches
 			output []*LineMatch
 		}{{
-			input: ChunkMatches{{
+			input: HunkMatches{{
 				Content:      "line1\nline2\nline3\nline4",
 				ContentStart: Location{Line: 1},
 				Ranges: Ranges{{
@@ -115,7 +92,7 @@ func TestConvertMatches(t *testing.T) {
 				OffsetAndLengths: [][2]int32{{0, 1}},
 			}},
 		}, {
-			input: ChunkMatches{{
+			input: HunkMatches{{
 				Content:      "line1\nline2\nline3",
 				ContentStart: Location{Line: 1},
 				Ranges: Ranges{{
@@ -156,7 +133,7 @@ func TestConvertMatches(t *testing.T) {
 				OffsetAndLengths: [][2]int32{{0, 1}},
 			}},
 		}, {
-			input:  ChunkMatches{},
+			input:  HunkMatches{},
 			output: []*LineMatch{},
 		}}
 
@@ -168,7 +145,7 @@ func TestConvertMatches(t *testing.T) {
 	})
 }
 
-func TestChunkMatches_Limit(t *testing.T) {
+func TestHunkMatches_Limit(t *testing.T) {
 	cases := []struct {
 		rangeLens         []int
 		limit             int
@@ -201,9 +178,9 @@ func TestChunkMatches_Limit(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run("", func(t *testing.T) {
-			var hs ChunkMatches
+			var hs HunkMatches
 			for _, i := range tc.rangeLens {
-				hs = append(hs, ChunkMatch{Ranges: make(Ranges, i)})
+				hs = append(hs, HunkMatch{Ranges: make(Ranges, i)})
 			}
 			hs.Limit(tc.limit)
 			var gotLens []int
@@ -215,12 +192,12 @@ func TestChunkMatches_Limit(t *testing.T) {
 	}
 }
 
-func TestChunkMatches_MatchedContent(t *testing.T) {
+func TestHunkMatches_MatchedContent(t *testing.T) {
 	cases := []struct {
-		input  ChunkMatch
+		input  HunkMatch
 		output []string
 	}{{
-		input: ChunkMatch{
+		input: HunkMatch{
 			Content:      "abc",
 			ContentStart: Location{0, 0, 0},
 			Ranges: Ranges{{
@@ -230,7 +207,7 @@ func TestChunkMatches_MatchedContent(t *testing.T) {
 		},
 		output: []string{"b"},
 	}, {
-		input: ChunkMatch{
+		input: HunkMatch{
 			Content:      "def",
 			ContentStart: Location{4, 1, 0}, // abc\ndef
 			Ranges: Ranges{{
@@ -240,7 +217,7 @@ func TestChunkMatches_MatchedContent(t *testing.T) {
 		},
 		output: []string{"e"},
 	}, {
-		input: ChunkMatch{
+		input: HunkMatch{
 			Content:      "abc\ndef",
 			ContentStart: Location{0, 0, 0},
 			Ranges: Ranges{{
@@ -250,7 +227,7 @@ func TestChunkMatches_MatchedContent(t *testing.T) {
 		},
 		output: []string{"c\nd"},
 	}, {
-		input: ChunkMatch{
+		input: HunkMatch{
 			Content:      "abc\ndef",
 			ContentStart: Location{0, 0, 0},
 			Ranges: Ranges{{

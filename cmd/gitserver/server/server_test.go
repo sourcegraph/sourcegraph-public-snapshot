@@ -34,8 +34,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -148,7 +146,6 @@ func TestRequest(t *testing.T) {
 	}
 
 	s := &Server{
-		Logger:            logtest.Scoped(t),
 		ReposDir:          "/testroot",
 		skipCloneForTests: true,
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
@@ -505,9 +502,8 @@ func addCommitToRepo(cmd func(string, ...string) string) string {
 	return cmd("git", "rev-parse", "HEAD")
 }
 
-func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, db database.DB) *Server {
+func makeTestServer(ctx context.Context, repoDir, remote string, db database.DB) *Server {
 	s := &Server{
-		Logger:           logtest.Scoped(t).Scoped("server", "test server"),
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
@@ -576,7 +572,7 @@ func TestCloneRepo(t *testing.T) {
 	cmd("git", "tag", "HEAD")
 
 	reposDir := t.TempDir()
-	s := makeTestServer(ctx, t, reposDir, remote, db)
+	s := makeTestServer(ctx, reposDir, remote, db)
 
 	_, err := s.cloneRepo(ctx, repoName, nil)
 	if err != nil {
@@ -669,7 +665,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 
 	reposDir := t.TempDir()
 
-	s := makeTestServer(ctx, t, reposDir, remote, db)
+	s := makeTestServer(ctx, reposDir, remote, db)
 
 	// We need some of the side effects here
 	_ = s.Handler()
@@ -785,7 +781,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	reposDir := t.TempDir()
 
-	s := makeTestServer(ctx, t, reposDir, remote, db)
+	s := makeTestServer(ctx, reposDir, remote, db)
 
 	// We need some of the side effects here
 	_ = s.Handler()
@@ -903,12 +899,12 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 	cmd("git", "tag", "HEAD")
 
 	// source server
-	srv := httptest.NewServer(makeTestServer(ctx, t, reposDirSource, remote, db).Handler())
+	srv := httptest.NewServer(makeTestServer(ctx, reposDirSource, remote, db).Handler())
 	defer srv.Close()
 
 	// dest server
 	reposDirDest := t.TempDir()
-	s := makeTestServer(ctx, t, reposDirDest, "", db)
+	s := makeTestServer(ctx, reposDirDest, "", db)
 	// We need some of the side effects here
 	_ = s.Handler()
 
@@ -1034,7 +1030,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		cmd("git", "init", ".")
 		cmd("rm", ".git/HEAD")
 
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
+		s := makeTestServer(ctx, reposDir, remote, nil)
 		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err == nil {
 			t.Fatal("expected an error, got none")
 		}
@@ -1052,7 +1048,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		cmd("git", "init", ".")
 		cmd("sh", "-c", ": > .git/HEAD")
 
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
+		s := makeTestServer(ctx, reposDir, remote, nil)
 		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err == nil {
 			t.Fatal("expected an error, got none")
 		}
@@ -1068,7 +1064,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		)
 
 		_ = makeSingleCommitRepo(cmd)
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
+		s := makeTestServer(ctx, reposDir, remote, nil)
 
 		testRepoCorrupter = func(_ context.Context, tmpDir GitDir) {
 			if err := os.Remove(tmpDir.Path("HEAD")); err != nil {
@@ -1108,7 +1104,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		)
 
 		_ = makeSingleCommitRepo(cmd)
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
+		s := makeTestServer(ctx, reposDir, remote, nil)
 
 		testRepoCorrupter = func(_ context.Context, tmpDir GitDir) {
 			cmd("sh", "-c", fmt.Sprintf(": > %s/HEAD", tmpDir))
@@ -1218,7 +1214,7 @@ func TestSyncRepoState(t *testing.T) {
 	repoName := api.RepoName("example.com/foo/bar")
 	hostname := "test"
 
-	s := makeTestServer(ctx, t, reposDir, remoteDir, db)
+	s := makeTestServer(ctx, reposDir, remoteDir, db)
 	s.Hostname = hostname
 
 	dbRepo := &types.Repo{

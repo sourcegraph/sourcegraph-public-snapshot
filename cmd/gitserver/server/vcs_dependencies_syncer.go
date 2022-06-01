@@ -8,18 +8,18 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // vcsDependenciesSyncer implements the VCSSyncer interface for dependency repos
 // of different types.
 type vcsDependenciesSyncer struct {
-	logger log.Logger
 	typ    string
 	scheme string
 
@@ -107,11 +107,7 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 	for _, version := range versions {
 		if d, err := s.source.Get(ctx, depName, version); err != nil {
 			if errcode.IsNotFound(err) {
-				s.logger.Warn("skipping missing dependency",
-					log.String("dep", depName),
-					log.String("version", version),
-					log.String("type", s.typ),
-				)
+				log15.Warn("skipping missing dependency", "dep", depName, "version", version, "type", s.typ)
 			} else {
 				errs = errors.Append(errs, err)
 			}
@@ -176,10 +172,7 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 		if _, isDependencyTag := dependencyTags[tag]; !isDependencyTag {
 			cmd := exec.CommandContext(ctx, "git", "tag", "-d", tag)
 			if _, err := runCommandInDirectory(ctx, cmd, string(dir), s.placeholder); err != nil {
-				s.logger.Error("failed to delete git tag",
-					log.Error(err),
-					log.String("tag", tag),
-				)
+				log15.Error("failed to delete git tag", "error", err, "tag", tag)
 				continue
 			}
 		}
@@ -254,7 +247,7 @@ func (s *vcsDependenciesSyncer) versions(ctx context.Context, packageName string
 	for _, d := range s.configDeps {
 		dep, err := s.source.ParseDependency(d)
 		if err != nil {
-			s.logger.Warn("skipping malformed dependency", log.String("dep", d), log.Error(err))
+			log15.Warn("skipping malformed dependency", "dep", d, "error", err)
 			continue
 		}
 

@@ -5,7 +5,7 @@ import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
+import { Container, Icon, Link, Typography, Text } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../routes.constants'
 import { ThemePreference } from '../../stores/themeState'
@@ -93,12 +93,12 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                         </video>
                     </div>
                     <div className="col-12 col-md-6">
-                        <H2>Create living documentation effortlessly</H2>
+                        <Typography.H2>Create living documentation effortlessly</Typography.H2>
                         <Text>
                             Notebooks make creating and sharing knowledge something you'll want to do, not something you
                             avoid.
                         </Text>
-                        <H3>Use notebooks to&hellip;</H3>
+                        <Typography.H3>Use notebooks to&hellip;</Typography.H3>
                         <ul className={classNames(styles.narrowList, 'mb-0')}>
                             <li className="mb-1">Create focused onboarding docs that stay up to date</li>
                             <li className="mb-1">Prepare pull request walkthroughs for your teammates</li>
@@ -118,7 +118,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     </div>
                 </div>
             </Container>
-            <H3>Example notebooks</H3>
+            <Typography.H3>Example notebooks</Typography.H3>
             <div className={classNames(styles.row, 'row', 'mb-4')}>
                 <div className="col-12 col-md-6">
                     <Container>
@@ -146,7 +146,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     </Container>
                 </div>
             </div>
-            <H3>Powerful creation features</H3>
+            <Typography.H3>Powerful creation features</Typography.H3>
             <Container className="mb-4">
                 <div className={classNames(styles.row, 'row', 'mb-4')}>
                     <div className="col-12 col-md-6">
@@ -174,7 +174,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     </div>
                 </div>
             </Container>
-            <H3>Functionality</H3>
+            <Typography.H3>Functionality</Typography.H3>
             <div className={classNames(styles.row, 'row', 'mb-4')}>
                 {functionalityPanels.map(panel => (
                     <div key={panel.title} className="col-12 col-md-4">

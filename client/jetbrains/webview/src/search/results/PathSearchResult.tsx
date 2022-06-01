@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
 import { displayRepoName, splitPath } from '@sourcegraph/shared/src/components/RepoLink'
 import { PathMatch } from '@sourcegraph/shared/src/search/stream'
-import { Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
+import { useIsTruncated } from '@sourcegraph/wildcard'
 
 import { getResultId } from './utils'
 
@@ -40,12 +40,14 @@ export const PathSearchResult: React.FunctionComponent<Props> = ({ match, select
             key={resultId}
         >
             <CodeHostIcon repoName={match.repository} className="text-muted flex-shrink-0" />
-            <Tooltip content={truncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}>
-                <div ref={titleReference} onMouseEnter={checkTruncation}>
-                    {displayRepoName(match.repository)} › {fileBase ? `${fileBase}/` : null}
-                    <strong>{fileName}</strong>
-                </div>
-            </Tooltip>
+            <div
+                ref={titleReference}
+                onMouseEnter={checkTruncation}
+                data-tooltip={truncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}
+            >
+                {displayRepoName(match.repository)} › {fileBase ? `${fileBase}/` : null}
+                <strong>{fileName}</strong>
+            </div>
             <span className={styles.spacer} />
             {formattedRepositoryStarCount && (
                 <>

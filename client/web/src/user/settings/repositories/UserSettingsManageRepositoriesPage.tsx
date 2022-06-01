@@ -19,9 +19,7 @@ import {
     Alert,
     Link,
     Checkbox,
-    H2,
-    H3,
-    H4,
+    Typography,
     Text,
 } from '@sourcegraph/wildcard'
 
@@ -126,7 +124,7 @@ type affiliateRepoProblemType = undefined | string | ErrorLike | ErrorLike[]
 
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
     <Alert className="my-3" role="alert" key={warning} variant="warning">
-        <H4 className="align-middle mb-1">{capitalize(warning)}</H4>
+        <Typography.H4 className="align-middle mb-1">{capitalize(warning)}</Typography.H4>
         <Text className="align-middle mb-0">
             {hint} {hint ? 'for more details.' : null}
         </Text>
@@ -135,7 +133,7 @@ const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
 
 const displayError = (error: ErrorLike, hint?: JSX.Element): JSX.Element => (
     <Alert className="my-3" role="alert" key={error.message} variant="danger">
-        <H4 className="align-middle mb-1">{capitalize(error.message)}</H4>
+        <Typography.H4 className="align-middle mb-1">{capitalize(error.message)}</Typography.H4>
         <Text className="align-middle mb-0">
             {hint} {hint ? 'for more details.' : null}
         </Text>
@@ -792,9 +790,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
     return (
         <UserSettingReposContainer>
             <PageTitle title="Manage Repositories" />
-            <H2 className="d-flex mb-2">
+            <Typography.H2 className="d-flex mb-2">
                 Manage Repositories <ProductStatusBadge status="beta" className="ml-2" linkToDocs={true} />
-            </H2>
+            </Typography.H2>
             <Text className="text-muted">
                 Choose repositories to sync with Sourcegraph.
                 <Link
@@ -811,7 +809,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
                 <ul className="list-group">
                     <ListItemContainer key="from-code-hosts">
                         <div>
-                            <H3>{owner.name ? `${owner.name}'s` : 'Your'} repositories</H3>
+                            <Typography.H3>{owner.name ? `${owner.name}'s` : 'Your'} repositories</Typography.H3>
 
                             <Text className="text-muted">
                                 Repositories{' '}
@@ -875,7 +873,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
                     {window.context.sourcegraphDotComMode && !isOrgOwner && (
                         <ListItemContainer key="add-textarea">
                             <div>
-                                <H3>Other public repositories</H3>
+                                <Typography.H3>Other public repositories</Typography.H3>
                                 <Text className="text-muted">Public repositories on GitHub and GitLab</Text>
                                 <Checkbox
                                     id="add-public-repos"

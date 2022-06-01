@@ -12,7 +12,7 @@ import {
     CardHeader,
     CardBody,
     Alert,
-    H4,
+    Typography,
     Text,
 } from '@sourcegraph/wildcard'
 
@@ -75,7 +75,7 @@ export const ActiveExtensionsPanel: React.FunctionComponent<
                 </CardBody>
             )}
             <CardBody className="border-top">
-                <H4>Sideload extension</H4>
+                <Typography.H4>Sideload extension</Typography.H4>
                 {sideloadedExtensionURL ? (
                     <div>
                         <Text>

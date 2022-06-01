@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 )
 
-var updateRecordings = flag.Bool("update-integration", false, "refresh integration test recordings")
+var updateRecordings = flag.Bool("update", false, "update integration test")
 
 func newTestGitHubClient(ctx context.Context, t *testing.T) (ghc *github.Client, stop func() error) {
 	recording := filepath.Join("testdata", strings.ReplaceAll(t.Name(), " ", "-"))

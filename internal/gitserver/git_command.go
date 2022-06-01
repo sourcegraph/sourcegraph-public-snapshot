@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -62,7 +62,6 @@ type GitCommand interface {
 // This struct uses composition with exec.RemoteGitCommand which already provides all necessary means to run commands against
 // local system.
 type LocalGitCommand struct {
-	Logger  log.Logger
 	command *exec.Cmd
 
 	// ReposDir is needed in order to LocalGitCommand be used like RemoteGitCommand (providing only repo name without its full path)
@@ -88,7 +87,7 @@ const NoReposDirErrorMsg = "No ReposDir provided, command cannot be run without 
 
 func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
 	if l.ReposDir == "" {
-		l.Logger.Error(NoReposDirErrorMsg)
+		log15.Error(NoReposDirErrorMsg)
 		return nil, nil, errors.New(NoReposDirErrorMsg)
 	}
 	// cmd is a version of the command in LocalGitCommand with given context

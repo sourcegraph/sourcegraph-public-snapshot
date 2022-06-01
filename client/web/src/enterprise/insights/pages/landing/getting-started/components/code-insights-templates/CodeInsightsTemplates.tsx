@@ -16,11 +16,11 @@ import {
     TabPanel,
     TabPanels,
     Tabs,
-    DeprecatedTooltipController,
+    TooltipController,
     Icon,
     Link,
     ProductStatusBadge,
-    H2,
+    Typography,
     Text,
 } from '@sourcegraph/wildcard'
 
@@ -64,7 +64,7 @@ export const CodeInsightsTemplates: React.FunctionComponent<React.PropsWithChild
 
     return (
         <section {...otherProps}>
-            <H2 id="code-insights-templates">Templates</H2>
+            <Typography.H2 id="code-insights-templates">Templates</Typography.H2>
             <Text className="text-muted">
                 Some of the most popular{' '}
                 <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
@@ -208,7 +208,7 @@ const QueryPanel: React.FunctionComponent<React.PropsWithChildren<QueryPanelProp
         setTimeout(() => setCurrentCopyTooltip(copyTooltip), 1000)
 
         requestAnimationFrame(() => {
-            DeprecatedTooltipController.forceUpdate()
+            TooltipController.forceUpdate()
         })
 
         event.preventDefault()

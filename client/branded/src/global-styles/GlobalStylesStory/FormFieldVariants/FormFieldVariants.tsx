@@ -1,13 +1,13 @@
 import React, { ReactNode } from 'react'
 
-import { Checkbox, RadioButton, Select, TextArea, Input } from '@sourcegraph/wildcard'
+import classNames from 'classnames'
+
+import { Checkbox, RadioButton, Select, TextArea } from '@sourcegraph/wildcard'
 import 'storybook-addon-designs'
 
 import styles from './FormFieldVariants.module.scss'
 
-type FieldVariants = 'standard' | 'invalid' | 'valid' | 'disabled' | 'error'
-
-type InputStatus = 'initial' | 'error' | 'loading' | 'valid'
+type FieldVariants = 'standard' | 'invalid' | 'valid' | 'disabled'
 
 interface WithVariantsProps {
     field: React.ComponentType<
@@ -16,7 +16,6 @@ interface WithVariantsProps {
             disabled?: boolean
             message?: ReactNode
             variant: FieldVariants
-            status?: InputStatus
         }>
     >
 }
@@ -33,18 +32,8 @@ const WithVariantsAndMessageElements: React.FunctionComponent<React.PropsWithChi
 }) => (
     <>
         <Field variant="standard" message={<FieldMessage className="field-message" />} />
-        <Field
-            status="error"
-            variant="error"
-            className="is-invalid"
-            message={<FieldMessage className="invalid-feedback" />}
-        />
-        <Field
-            status="valid"
-            variant="valid"
-            className="is-valid"
-            message={<FieldMessage className="valid-feedback" />}
-        />
+        <Field variant="invalid" className="is-invalid" message={<FieldMessage className="invalid-feedback" />} />
+        <Field variant="valid" className="is-valid" message={<FieldMessage className="valid-feedback" />} />
         <Field variant="disabled" disabled={true} message={<FieldMessage className="field-message" />} />
     </>
 )
@@ -61,9 +50,14 @@ const WithVariants: React.FunctionComponent<React.PropsWithChildren<WithVariants
 export const FormFieldVariants: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className={styles.grid}>
         <WithVariantsAndMessageElements
-            field={({ className, variant, message, ...props }) => (
+            field={({ className, message, ...props }) => (
                 <fieldset className="form-group">
-                    <Input placeholder="Form field" className={className} {...props} />
+                    <input
+                        type="text"
+                        placeholder="Form field"
+                        className={classNames('form-control', className)}
+                        {...props}
+                    />
                     {message}
                 </fieldset>
             )}

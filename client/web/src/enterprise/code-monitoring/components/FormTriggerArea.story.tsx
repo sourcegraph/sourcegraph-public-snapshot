@@ -1,7 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import sinon from 'sinon'
 
-import { H2 } from '@sourcegraph/wildcard'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
 
@@ -26,7 +26,7 @@ add('FormTrigerArea', () => (
     <WebStory>
         {props => (
             <>
-                <H2>Closed, empty query</H2>
+                <Typography.H2>Closed, empty query</Typography.H2>
                 <div className="my-2">
                     <FormTriggerArea
                         {...props}
@@ -42,7 +42,7 @@ add('FormTrigerArea', () => (
                     />
                 </div>
 
-                <H2>Open, empty query</H2>
+                <Typography.H2>Open, empty query</Typography.H2>
                 <div className="my-2">
                     <FormTriggerArea
                         {...props}
@@ -58,7 +58,7 @@ add('FormTrigerArea', () => (
                     />
                 </div>
 
-                <H2>Open, partially valid query</H2>
+                <Typography.H2>Open, partially valid query</Typography.H2>
                 <div className="my-2">
                     <FormTriggerArea
                         {...props}
@@ -74,7 +74,7 @@ add('FormTrigerArea', () => (
                     />
                 </div>
 
-                <H2>Open, fully valid query</H2>
+                <Typography.H2>Open, fully valid query</Typography.H2>
                 <div className="my-2">
                     <FormTriggerArea
                         {...props}

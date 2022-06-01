@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Link, Code } from '@sourcegraph/wildcard'
+import { Link, Typography } from '@sourcegraph/wildcard'
 
 import styles from './HighlightedLink.module.scss'
 
@@ -65,11 +65,11 @@ export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<Hi
     pushElement('span', start, props.text.length)
 
     return props.url ? (
-        <Code>
+        <Typography.Code>
             <Link tabIndex={-1} className={styles.link} to={props.url} onClick={() => props.onClick?.()}>
                 {spans}
             </Link>
-        </Code>
+        </Typography.Code>
     ) : (
         <>{spans}</>
     )

@@ -80,7 +80,7 @@ import {
     toURIWithPath,
     parseQueryAndHash,
 } from '@sourcegraph/shared/src/util/url'
-import { Code, useObservable } from '@sourcegraph/wildcard'
+import { Typography, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
@@ -391,14 +391,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         parameters.delete('popover')
                         nextPopoverClose()
 
-                        if (position && !('character' in position)) {
-                            // Only change the URL when clicking on blank space on the line (not on
-                            // characters). Otherwise, this would interfere with go to definition.
-                            props.history.push({
-                                ...location,
-                                search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
-                            })
-                        }
+                        props.history.push({
+                            ...location,
+                            search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
+                        })
                     }),
                     mapTo(undefined)
                 ),
@@ -703,7 +699,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     return (
         <>
             <div className={classNames(props.className, styles.blob)} ref={nextBlobElement}>
-                <Code
+                <Typography.Code
                     className={classNames('test-blob', styles.blobCode, props.wrapCode && styles.blobCodeWrapped)}
                     ref={nextCodeViewElement}
                     dangerouslySetInnerHTML={{

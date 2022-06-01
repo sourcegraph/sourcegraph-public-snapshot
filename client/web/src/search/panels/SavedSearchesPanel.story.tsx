@@ -2,7 +2,7 @@ import { storiesOf } from '@storybook/react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { H2 } from '@sourcegraph/wildcard'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
 
@@ -28,13 +28,13 @@ add('SavedSearchesPanel', () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>
-                <H2>Populated</H2>
+                <Typography.H2>Populated</Typography.H2>
                 <SavedSearchesPanel {...props} />
 
-                <H2>Loading</H2>
+                <Typography.H2>Loading</Typography.H2>
                 <SavedSearchesPanel {...props} savedSearchesFragment={null} />
 
-                <H2>Empty</H2>
+                <Typography.H2>Empty</Typography.H2>
                 <SavedSearchesPanel {...props} savedSearchesFragment={{ savedSearches: [] }} />
             </div>
         )}

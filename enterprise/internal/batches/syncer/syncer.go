@@ -443,7 +443,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		return err
 	}
 
-	source, err := loadChangesetSource(ctx, s.httpFactory, s.syncStore, cs, repo)
+	source, err := loadChangesetSource(ctx, s.httpFactory, s.syncStore, repo)
 	if err != nil {
 		return err
 	}
@@ -494,10 +494,7 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source sources.Chan
 	return tx.UpsertChangesetEvents(ctx, events...)
 }
 
-func loadChangesetSource(
-	ctx context.Context, cf *httpcli.Factory, syncStore SyncStore,
-	ch *btypes.Changeset, repo *types.Repo,
-) (sources.ChangesetSource, error) {
+func loadChangesetSource(ctx context.Context, cf *httpcli.Factory, syncStore SyncStore, repo *types.Repo) (sources.ChangesetSource, error) {
 	srcer := sources.NewSourcer(cf)
 	// This is a ChangesetSource authenticated with the external service
 	// token.
@@ -505,6 +502,7 @@ func loadChangesetSource(
 	if err != nil {
 		return nil, err
 	}
-
-	return sources.WithAuthenticatorForChangeset(ctx, syncStore, source, ch, repo, true)
+	// Try to use a site credential. If none is present, this falls back to
+	// the external service config. This code path should error in the future.
+	return sources.WithSiteAuthenticator(ctx, syncStore, source, repo)
 }

@@ -23,5 +23,4 @@ type SyncStore interface {
 	DatabaseDB() database.DB
 	GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
 	UserCredentials() database.UserCredentialsStore
-	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error)
 }

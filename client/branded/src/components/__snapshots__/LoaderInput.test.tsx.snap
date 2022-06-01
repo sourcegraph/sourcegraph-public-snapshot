@@ -5,14 +5,9 @@ exports[`LoaderInput should not render a loading spinner when loading prop is fa
   <div
     class="container"
   >
-    <div
-      class="container loader-input loaderInput"
-    >
-      <input
-        class="form-control with-invalid-icon"
-        type="text"
-      />
-    </div>
+    <input
+      type="text"
+    />
   </div>
 </DocumentFragment>
 `;
@@ -22,14 +17,9 @@ exports[`LoaderInput should render a loading spinner when loading prop is true 1
   <div
     class="container"
   >
-    <div
-      class="container loader-input loaderInput"
-    >
-      <input
-        class="form-control with-invalid-icon"
-        type="text"
-      />
-    </div>
+    <input
+      type="text"
+    />
     <div
       class="loadingSpinner spinner"
     />

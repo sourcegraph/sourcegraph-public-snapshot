@@ -133,23 +133,19 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 
 	limiter := rate.NewLimiter(10, 1)
 
-	stats := make(statistics)
-	analyzer := backfillAnalyzer{
-		statistics:  stats,
-		frameFilter: &dataFrameFilter,
-
-		limiter:             limiter,
-		gitFirstEverCommit:  gitFirstEverCommit,
-		gitFindRecentCommit: gitFindRecentCommit,
-	}
 	historicalEnqueuer := &historicalEnqueuer{
 		now:                   clock,
 		insightsStore:         insightsStore,
 		enqueueQueryRunnerJob: enqueueQueryRunnerJob,
-		repoIterator:          allReposIterator,
-		analyzer:              analyzer,
+		allReposIterator:      allReposIterator,
+		gitFirstEverCommit:    gitFirstEverCommit,
+		gitFindRecentCommit:   gitFindRecentCommit,
+		limiter:               limiter,
+		frameFilter:           &dataFrameFilter,
+		framesToBackfill:      func() int { return p.frames },
+		frameLength:           func() time.Duration { return 7 * 24 * time.Hour },
 		dataSeriesStore:       dataSeriesStore,
-		statistics:            stats,
+		statistics:            make(statistics),
 	}
 
 	// If we do an iteration without any insights or repos, we should expect no sleep calls to be made.

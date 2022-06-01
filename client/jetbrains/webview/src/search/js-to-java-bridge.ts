@@ -1,34 +1,20 @@
 import { encode } from 'js-base64'
 
 import { splitPath } from '@sourcegraph/shared/src/components/RepoLink'
-import {
-    ContentMatch,
-    getRepoMatchUrl,
-    PathMatch,
-    SearchMatch,
-    SymbolMatch,
-} from '@sourcegraph/shared/src/search/stream'
+import { ContentMatch, PathMatch, SearchMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { loadContent } from './lib/blob'
 import { PluginConfig, Search, Theme } from './types'
 
-export interface PreviewContent {
-    fileName: string
-    path: string
-    content: string | null
-    lineNumber: number
-    absoluteOffsetAndLengths: number[][]
-    relativeUrl: string
-}
-
-export interface PreviewRequest {
-    action: 'preview'
-    arguments: PreviewContent
-}
-
-interface OpenRequest {
-    action: 'open'
-    arguments: PreviewContent
+export interface MatchRequest {
+    action: 'preview' | 'open'
+    arguments: {
+        fileName: string
+        path: string
+        content: string | null
+        lineNumber: number
+        absoluteOffsetAndLengths: number[][]
+    }
 }
 
 interface GetConfigRequest {
@@ -57,8 +43,7 @@ interface IndicateFinishedLoadingRequest {
 }
 
 export type Request =
-    | PreviewRequest
-    | OpenRequest
+    | MatchRequest
     | GetConfigRequest
     | GetThemeRequest
     | SaveLastSearchRequest
@@ -100,10 +85,11 @@ export async function indicateFinishedLoading(): Promise<void> {
 }
 
 export async function onPreviewChange(match: SearchMatch, lineMatchIndexOrSymbolIndex?: number): Promise<void> {
+    const request = await createPreviewOrOpenRequest(match, lineMatchIndexOrSymbolIndex, 'preview')
     try {
-        await callJava({ action: 'preview', arguments: await createPreviewContent(match, lineMatchIndexOrSymbolIndex) })
+        await callJava(request)
     } catch (error) {
-        console.error(`Failed to preview match: ${(error as Error).message}`)
+        console.error(`Failed to preview match: ${(error as Error).message}`, request)
     }
 }
 
@@ -116,10 +102,13 @@ export async function onPreviewClear(): Promise<void> {
 }
 
 export async function onOpen(match: SearchMatch, lineMatchIndexOrSymbolIndex?: number): Promise<void> {
-    try {
-        await callJava({ action: 'open', arguments: await createPreviewContent(match, lineMatchIndexOrSymbolIndex) })
-    } catch (error) {
-        console.error(`Failed to open match: ${(error as Error).message}`)
+    const request = await createPreviewOrOpenRequest(match, lineMatchIndexOrSymbolIndex, 'open')
+    if (request.arguments.fileName) {
+        try {
+            await callJava(request)
+        } catch (error) {
+            console.error(`Failed to open match: ${(error as Error).message}`)
+        }
     }
 }
 
@@ -146,47 +135,47 @@ async function callJava(request: Request): Promise<object> {
     return window.callJava(request)
 }
 
-export async function createPreviewContent(
+export async function createPreviewOrOpenRequest(
     match: SearchMatch,
-    lineMatchIndexOrSymbolIndex: number | undefined
-): Promise<PreviewContent> {
+    lineMatchIndexOrSymbolIndex: number | undefined,
+    action: MatchRequest['action']
+): Promise<MatchRequest> {
     if (match.type === 'commit') {
-        const content = prepareContent(
-            match.content.startsWith('```COMMIT_EDITMSG')
-                ? match.content.replace(/^```COMMIT_EDITMSG\n([\S\s]*)\n```$/, '$1')
-                : match.content.replace(/^```diff\n([\S\s]*)\n```$/, '$1')
-        )
         return {
-            fileName: '',
-            path: '',
-            content,
-            lineNumber: -1,
-            absoluteOffsetAndLengths: [],
-            relativeUrl: match.url,
+            action,
+            arguments: {
+                fileName: '',
+                path: '',
+                content: match.message,
+                lineNumber: -1,
+                absoluteOffsetAndLengths: [],
+            },
         }
     }
 
     if (match.type === 'content') {
-        return createPreviewContentForContentMatch(match, lineMatchIndexOrSymbolIndex as number)
+        return createPreviewOrOpenRequestForContentMatch(match, lineMatchIndexOrSymbolIndex as number, action)
     }
 
     if (match.type === 'path') {
-        return createPreviewContentForPathMatch(match)
+        return createPreviewOrOpenRequestForPathMatch(match, action)
     }
 
     if (match.type === 'repo') {
         return {
-            fileName: '',
-            path: '',
-            content: null,
-            lineNumber: -1,
-            absoluteOffsetAndLengths: [],
-            relativeUrl: getRepoMatchUrl(match),
+            action,
+            arguments: {
+                fileName: '',
+                path: '',
+                content: null,
+                lineNumber: -1,
+                absoluteOffsetAndLengths: [],
+            },
         }
     }
 
     if (match.type === 'symbol') {
-        return createPreviewContentForSymbolMatch(match)
+        return createPreviewOrOpenRequestForSymbolMatch(match, lineMatchIndexOrSymbolIndex as number, action)
     }
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -194,19 +183,22 @@ export async function createPreviewContent(
     console.log(`Unknown match type: “${match.type}”`)
 
     return {
-        fileName: '',
-        path: '',
-        content: null,
-        lineNumber: -1,
-        absoluteOffsetAndLengths: [],
-        relativeUrl: '',
+        action,
+        arguments: {
+            fileName: '',
+            path: '',
+            content: null,
+            lineNumber: -1,
+            absoluteOffsetAndLengths: [],
+        },
     }
 }
 
-async function createPreviewContentForContentMatch(
+export async function createPreviewOrOpenRequestForContentMatch(
     match: ContentMatch,
-    lineMatchIndex: number
-): Promise<PreviewContent> {
+    lineMatchIndex: number,
+    action: MatchRequest['action']
+): Promise<MatchRequest> {
     const fileName = splitPath(match.path)[1]
     const content = await loadContent(match)
     const characterCountUntilLine = getCharacterCountUntilLine(content, match.lineMatches[lineMatchIndex].lineNumber)
@@ -216,45 +208,58 @@ async function createPreviewContentForContentMatch(
     )
 
     return {
-        fileName,
-        path: match.path,
-        content: prepareContent(content),
-        lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
-        absoluteOffsetAndLengths,
-        relativeUrl: '',
+        action,
+        arguments: {
+            fileName,
+            path: match.path,
+            content: prepareContent(content),
+            lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
+            absoluteOffsetAndLengths,
+        },
     }
 }
 
-async function createPreviewContentForPathMatch(match: PathMatch): Promise<PreviewContent> {
+export async function createPreviewOrOpenRequestForPathMatch(
+    match: PathMatch,
+    action: MatchRequest['action']
+): Promise<MatchRequest> {
     const fileName = splitPath(match.path)[1]
     const content = await loadContent(match)
 
     return {
-        fileName,
-        path: match.path,
-        content: prepareContent(content),
-        lineNumber: -1,
-        absoluteOffsetAndLengths: [],
-        relativeUrl: '',
+        action,
+        arguments: {
+            fileName,
+            path: match.path,
+            content: prepareContent(content),
+            lineNumber: -1,
+            absoluteOffsetAndLengths: [],
+        },
     }
 }
 
-async function createPreviewContentForSymbolMatch(match: SymbolMatch): Promise<PreviewContent> {
+export async function createPreviewOrOpenRequestForSymbolMatch(
+    match: SymbolMatch,
+    symbolIndex: number,
+    action: MatchRequest['action']
+): Promise<MatchRequest> {
     const fileName = splitPath(match.path)[1]
     const content = await loadContent(match)
 
     return {
-        fileName,
-        path: match.path,
-        content: prepareContent(content),
-        lineNumber: -1,
-        absoluteOffsetAndLengths: [],
-        relativeUrl: '',
+        action,
+        arguments: {
+            fileName,
+            path: match.path,
+            content: prepareContent(content),
+            lineNumber: -1,
+            absoluteOffsetAndLengths: [],
+        },
     }
 }
 
 // We encode the content as base64-encoded string to avoid encoding errors in the Java JSON parser.
-// The Java side also does not expect `\r\n` line endings, so we replace them with `\n`.
+// The Java side also does not expact `\r\n` line endings, so we replace them with `\n`.
 //
 // We can not use the native btoa() function because it does not support all Unicode characters.
 function prepareContent(content: string | null): string | null {

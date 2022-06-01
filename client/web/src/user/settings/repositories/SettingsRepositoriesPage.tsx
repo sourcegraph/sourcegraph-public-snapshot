@@ -18,9 +18,7 @@ import {
     Alert,
     Link,
     Icon,
-    H3,
-    H4,
-    Code,
+    Typography,
     Text,
 } from '@sourcegraph/wildcard'
 
@@ -96,7 +94,9 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
 
     const NoAddedReposBanner = (
         <Container className="text-center">
-            <H4>{owner.name ? `${owner.name} has` : 'You have'} not added any repositories to Sourcegraph</H4>
+            <Typography.H4>
+                {owner.name ? `${owner.name} has` : 'You have'} not added any repositories to Sourcegraph
+            </Typography.H4>
 
             {externalServices?.length !== 0 ? (
                 <span className="text-muted">
@@ -306,15 +306,15 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
 
     const getSearchContextBanner = (orgName: string): JSX.Element => (
         <Alert className="my-3" role="alert" key="add-repos" variant="success">
-            <H4 className="align-middle mb-1">Added repositories</H4>
+            <Typography.H4 className="align-middle mb-1">Added repositories</Typography.H4>
             <Text className="align-middle mb-0">
                 Search across all repositories added by {orgName} with{' '}
-                <Code className="user-code-hosts-page__code--inline">
+                <Typography.Code className="user-code-hosts-page__code--inline">
                     <Link className="font-weight-normal" to={`/search?q=context:%40${orgName.toLowerCase()}`}>
                         context:
                     </Link>
                     @{orgName}
-                </Code>
+                </Typography.Code>
                 .
             </Text>
         </Alert>
@@ -406,7 +406,9 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                 className="mb-3"
             />
             {isErrorLike(status) ? (
-                <H3 className="text-muted">Sorry, we couldn’t fetch your repositories. Try again?</H3>
+                <Typography.H3 className="text-muted">
+                    Sorry, we couldn’t fetch your repositories. Try again?
+                </Typography.H3>
             ) : !externalServices ? (
                 <div className="d-flex justify-content-center mt-4">
                     <LoadingSpinner />

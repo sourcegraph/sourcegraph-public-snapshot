@@ -14,8 +14,7 @@ import {
     Link,
     Alert,
     Checkbox,
-    Code,
-    Label,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -91,19 +90,17 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
     return (
         <div className="saved-search-form" data-testid="saved-search-form">
             <PageHeader
+                path={[{ text: props.title }]}
+                headingElement="h2"
                 description="Get notifications when there are new results for specific search queries."
                 className="mb-3"
-            >
-                <PageHeader.Heading as="h3" styleAs="h2">
-                    <PageHeader.Breadcrumb>{props.title}</PageHeader.Breadcrumb>
-                </PageHeader.Heading>
-            </PageHeader>
+            />
             <Form onSubmit={handleSubmit}>
                 <Container className="mb-3">
                     <div className="form-group">
-                        <Label className={styles.label} htmlFor="saved-search-form-input-description">
+                        <Typography.Label className={styles.label} htmlFor="saved-search-form-input-description">
                             Description
-                        </Label>
+                        </Typography.Label>
                         <input
                             id="saved-search-form-input-description"
                             type="text"
@@ -116,9 +113,9 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                         />
                     </div>
                     <div className="form-group">
-                        <Label className={styles.label} htmlFor="saved-search-form-input-query">
+                        <Typography.Label className={styles.label} htmlFor="saved-search-form-input-query">
                             Query
-                        </Label>
+                        </Typography.Label>
                         <input
                             id="saved-search-form-input-query"
                             type="text"
@@ -135,9 +132,9 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                         <div className="form-group mb-0">
                             {/* Label is for visual benefit, input has more specific label attached */}
                             {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <Label className={styles.label} id="saved-search-form-email-notifications">
+                            <Typography.Label className={styles.label} id="saved-search-form-email-notifications">
                                 Email notifications
-                            </Label>
+                            </Typography.Label>
                             <div aria-labelledby="saved-search-form-email-notifications">
                                 <Checkbox
                                     name="Notify owner"
@@ -172,9 +169,9 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
 
                     {notifySlack && slackWebhookURL && (
                         <div className="form-group mt-3 mb-0">
-                            <Label className={styles.label} htmlFor="saved-search-form-input-slack">
+                            <Typography.Label className={styles.label} htmlFor="saved-search-form-input-slack">
                                 Slack notifications
-                            </Label>
+                            </Typography.Label>
                             <input
                                 id="saved-search-form-input-slack"
                                 type="text"
@@ -192,7 +189,8 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                     {isUnsupportedNotifyQuery && (
                         <Alert className="mt-3 mb-0" variant="warning">
                             <strong>Warning:</strong> non-commit searches do not currently support notifications.
-                            Consider adding <Code>type:diff</Code> or <Code>type:commit</Code> to your query.
+                            Consider adding <Typography.Code>type:diff</Typography.Code> or{' '}
+                            <Typography.Code>type:commit</Typography.Code> to your query.
                         </Alert>
                     )}
                     {notify && !window.context.emailEnabled && !isUnsupportedNotifyQuery && (

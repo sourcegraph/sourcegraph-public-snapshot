@@ -191,7 +191,6 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
                 class="container loader-input loaderInput"
               >
                 <input
-                  aria-describedby="email-input-invalid-feedback"
                   autocomplete="email"
                   class="form-control with-invalid-icon"
                   id="email"
@@ -221,7 +220,6 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
                 class="container loader-input loaderInput"
               >
                 <input
-                  aria-describedby="username-input-invalid-feedback"
                   autocapitalize="off"
                   autocomplete="username"
                   class="form-control with-invalid-icon"
@@ -254,7 +252,6 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
                 class="container loader-input loaderInput"
               >
                 <input
-                  aria-describedby="password-input-invalid-feedback password-requirements"
                   autocomplete="new-password"
                   class="form-control with-invalid-icon"
                   formnovalidate=""
@@ -270,7 +267,6 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             </div>
             <small
               class="form-help text-muted"
-              id="password-requirements"
             >
               At least 12 characters
             </small>

@@ -12,9 +12,12 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -22,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // GitDir is an absolute path to a GIT_DIR.
@@ -105,8 +107,6 @@ var tlsExternal = conf.Cached(func() any {
 	exp := conf.ExperimentalFeatures()
 	c := exp.TlsExternal
 
-	logger := log.Scoped("tls-external", "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.")
-
 	if c == nil {
 		return &tlsConfig{}
 	}
@@ -121,7 +121,7 @@ var tlsExternal = conf.Cached(func() any {
 		// We don't clean up the file since it has a process life time.
 		p, err := writeTempFile("gitserver*.crt", b.Bytes())
 		if err != nil {
-			logger.Error("failed to create file holding tls.external.certificates for git", log.Error(err))
+			log15.Error("failed to create file holding tls.external.certificates for git", "error", err)
 		} else {
 			sslCAInfo = p
 		}
@@ -153,8 +153,6 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		Bytes() []byte
 	}
 
-	logger := log.Scoped("runWith", "runWithRemoteOpts runs the command after applying the remote options.")
-
 	if progress != nil {
 		var pw progressWriter
 		r, w := io.Pipe()
@@ -164,7 +162,7 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		cmd.Stderr = mr
 		go func() {
 			if _, err := io.Copy(progress, r); err != nil {
-				logger.Error("error while copying progress", log.Error(err))
+				log15.Error("error while copying progress", "error", err)
 			}
 		}()
 		b = &pw
@@ -398,10 +396,9 @@ var logUnflushableResponseWriterOnce sync.Once
 func newFlushingResponseWriter(w http.ResponseWriter) *flushingResponseWriter {
 	// We panic if we don't implement the needed interfaces.
 	flusher := hackilyGetHTTPFlusher(w)
-	logger := log.Scoped("newFlushingResponseWriter", "creates a new flushing response writer")
 	if flusher == nil {
 		logUnflushableResponseWriterOnce.Do(func() {
-			logger.Warn("Unable to flush HTTP response bodies. Diff search performance and completeness will be affected.", log.String("type", reflect.TypeOf(w).String()))
+			log15.Warn("Unable to flush HTTP response bodies. Diff search performance and completeness will be affected.", "type", reflect.TypeOf(w).String())
 		})
 		return nil
 	}
@@ -535,16 +532,23 @@ func (w *progressWriter) Bytes() []byte {
 	return w.buf
 }
 
-// mapToLoggerField translates a map to log context fields.
-func mapToLoggerField(m map[string]any) []log.Field {
-	LogFields := []log.Field{}
-
-	for i, v := range m {
-
-		LogFields = append(LogFields, log.String(i, fmt.Sprint(v)))
+// mapToLog15Ctx translates a map to log15 context fields.
+func mapToLog15Ctx(m map[string]any) []any {
+	// sort so its stable
+	keys := make([]string, len(m))
+	i := 0
+	for k := range m {
+		keys[i] = k
+		i++
 	}
-
-	return LogFields
+	sort.Strings(keys)
+	ctx := make([]any, len(m)*2)
+	for i, k := range keys {
+		j := i * 2
+		ctx[j] = k
+		ctx[j+1] = m[k]
+	}
+	return ctx
 }
 
 // isPaused returns true if a file "SG_PAUSE" is present in dir. If the file is
@@ -569,14 +573,13 @@ func isPaused(dir string) (string, bool) {
 // disappears between readdir and the stat of the file. In either case this
 // error can be ignored for best effort code.
 func bestEffortWalk(root string, walkFn func(path string, info fs.FileInfo) error) error {
-	logger := log.Scoped("bestEffortWalk", "bestEffortWalk is a filepath.Walk which ignores errors that can be passed to walkFn.")
 	return filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return nil
 		}
 
 		if msg, ok := isPaused(path); ok {
-			logger.Warn("bestEffortWalk paused", log.String("dir", path), log.String("reason", msg))
+			log15.Warn("bestEffortWalk paused", "dir", path, "reason", msg)
 			return filepath.SkipDir
 		}
 

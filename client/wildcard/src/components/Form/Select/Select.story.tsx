@@ -5,7 +5,7 @@ import { Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { H1, H2 } from '../..'
+import { Typography } from '../..'
 import { Grid } from '../../Grid/Grid'
 
 import { Select, SelectProps } from './Select'
@@ -59,19 +59,19 @@ const SelectVariants = ({ isCustomStyle }: Pick<SelectProps, 'isCustomStyle'>) =
     return (
         <Grid columnCount={4}>
             <div>
-                <H2>Standard</H2>
+                <Typography.H2>Standard</Typography.H2>
                 <BaseSelect id={`${idPrefix}-standard`} isCustomStyle={isCustomStyle} />
             </div>
             <div>
-                <H2>Valid</H2>
+                <Typography.H2>Valid</Typography.H2>
                 <BaseSelect id={`${idPrefix}-valid`} isCustomStyle={isCustomStyle} isValid={true} />
             </div>
             <div>
-                <H2>Invalid</H2>
+                <Typography.H2>Invalid</Typography.H2>
                 <BaseSelect id={`${idPrefix}-invalid`} isCustomStyle={isCustomStyle} isValid={false} />
             </div>
             <div>
-                <H2>Disabled</H2>
+                <Typography.H2>Disabled</Typography.H2>
                 <BaseSelect id={`${idPrefix}-disabled`} isCustomStyle={isCustomStyle} disabled={true} />
             </div>
         </Grid>
@@ -80,10 +80,10 @@ const SelectVariants = ({ isCustomStyle }: Pick<SelectProps, 'isCustomStyle'>) =
 
 export const SelectExamples: Story = () => (
     <>
-        <H1>Select</H1>
-        <H2>Native</H2>
+        <Typography.H1>Select</Typography.H1>
+        <Typography.H2>Native</Typography.H2>
         <SelectVariants />
-        <H2>Custom</H2>
+        <Typography.H2>Custom</Typography.H2>
         <SelectVariants isCustomStyle={true} />
     </>
 )

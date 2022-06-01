@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -31,7 +30,6 @@ func NewGoModulesSyncer(
 	}
 
 	return &vcsDependenciesSyncer{
-		logger:      log.Scoped("vcs syncer", "csDependenciesSyncer implements the VCSSyncer interface for dependency repos"),
 		typ:         "go_modules",
 		scheme:      dependencies.GoModulesScheme,
 		placeholder: placeholder,

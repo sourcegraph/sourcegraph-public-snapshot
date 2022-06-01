@@ -24,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -48,7 +48,7 @@ func main() {
 }
 
 func mainErr(ctx context.Context, args []string) error {
-	syncLogs := log.Init(log.Resource{
+	syncLogs := sglog.Init(sglog.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
@@ -100,7 +100,7 @@ func mainErr(ctx context.Context, args []string) error {
 
 func newRunnerFactory() func(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
 	observationContext := &observation.Context{
-		Logger:     log.Scoped("runner", ""),
+		Logger:     sglog.Scoped("runner", ""),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

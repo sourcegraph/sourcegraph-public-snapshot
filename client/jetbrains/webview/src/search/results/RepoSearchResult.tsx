@@ -8,7 +8,7 @@ import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { getRepoMatchLabel, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { Icon, Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
+import { Icon, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { getResultId } from './utils'
 
@@ -47,15 +47,17 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             key={resultId}
         >
             <CodeHostIcon repoName={match.repository} className="text-muted flex-shrink-0" />
-            <Tooltip content={(truncated && displayRepoName(getRepoMatchLabel(match))) || null}>
-                <span
-                    onMouseEnter={checkTruncation}
-                    className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
-                    ref={titleReference}
-                >
-                    {displayRepoName(getRepoMatchLabel(match))} (Repository match)
-                </span>
-            </Tooltip>
+            <span
+                onMouseEnter={checkTruncation}
+                className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
+                ref={titleReference}
+                data-tooltip={(truncated && displayRepoName(getRepoMatchLabel(match))) || null}
+            >
+                {displayRepoName(getRepoMatchLabel(match))}
+            </span>
+            <div className={styles.matchType}>
+                <small> (Repository match)</small>
+            </div>
             {match.fork && (
                 <>
                     <div className={styles.divider} />

@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Label } from '@sourcegraph/wildcard'
+import { Typography } from '@sourcegraph/wildcard'
 
 import styles from './LimitedAccessLabel.module.scss'
 
@@ -18,9 +18,9 @@ export const LimitedAccessLabel: React.FunctionComponent<React.PropsWithChildren
     className,
 }) => (
     <div className={classNames(styles.wrapper, className)}>
-        <Label className={styles.label} isUppercase={true}>
+        <Typography.Label className={styles.label} isUppercase={true}>
             <small>{label || 'Limited access'}</small>
-        </Label>
+        </Typography.Label>
         <span className={classNames(styles.message, 'small')}>{message}</span>
     </div>
 )

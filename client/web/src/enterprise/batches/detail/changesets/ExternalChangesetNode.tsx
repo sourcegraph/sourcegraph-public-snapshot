@@ -15,7 +15,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, Alert, Icon, H4, Text } from '@sourcegraph/wildcard'
+import { Button, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { InputTooltip } from '../../../../components/InputTooltip'
@@ -217,9 +217,9 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
 
 const SyncerError: React.FunctionComponent<React.PropsWithChildren<{ syncerError: string }>> = ({ syncerError }) => (
     <Alert role="alert" variant="danger">
-        <H4 className={classNames(styles.alertHeading)}>
+        <Typography.H4 className={classNames(styles.alertHeading)}>
             Encountered error during last attempt to sync changeset data from code host
-        </H4>
+        </Typography.H4>
         <ErrorMessage error={syncerError} />
         <hr className="my-2" />
         <Text className="mb-0">
@@ -239,7 +239,9 @@ const ChangesetError: React.FunctionComponent<
 
     return (
         <Alert role="alert" variant="danger">
-            <H4 className={classNames(styles.alertHeading)}>Failed to run operations on changeset</H4>
+            <Typography.H4 className={classNames(styles.alertHeading)}>
+                Failed to run operations on changeset
+            </Typography.H4>
             <ErrorMessage error={node.error} />
         </Alert>
     )

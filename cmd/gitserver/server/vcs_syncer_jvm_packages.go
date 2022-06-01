@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -44,7 +43,6 @@ func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *depende
 	}
 
 	return &vcsDependenciesSyncer{
-		logger:      log.Scoped("vcs syncer", "csDependenciesSyncer implements the VCSSyncer interface for dependency repos"),
 		typ:         "jvm_packages",
 		scheme:      dependencies.JVMPackagesScheme,
 		placeholder: placeholder,

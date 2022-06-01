@@ -3,7 +3,7 @@ import { Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { H1, Text } from '../..'
+import { Typography, Text } from '../..'
 
 import { FeedbackText } from '.'
 
@@ -28,7 +28,7 @@ export default config
 
 export const FeedbackTextExample: Story = () => (
     <>
-        <H1>FeedbackText</H1>
+        <Typography.H1>FeedbackText</Typography.H1>
         <Text>This is an example of a feedback with a header</Text>
         <FeedbackText headerText="This is a header text" />
         <Text>This is an example of a feedback with a footer</Text>

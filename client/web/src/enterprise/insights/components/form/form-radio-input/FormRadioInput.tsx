@@ -2,7 +2,7 @@ import React, { InputHTMLAttributes } from 'react'
 
 import classNames from 'classnames'
 
-import { Label } from '@sourcegraph/wildcard'
+import { Typography } from '@sourcegraph/wildcard'
 
 interface RadioInputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** Title of radio input. */
@@ -22,7 +22,7 @@ export const FormRadioInput: React.FunctionComponent<React.PropsWithChildren<Rad
     const { title, description, className, labelTooltipText, labelTooltipPosition, ...otherProps } = props
 
     return (
-        <Label
+        <Typography.Label
             data-placement={labelTooltipPosition}
             data-tooltip={labelTooltipText}
             className={classNames('d-flex flex-wrap align-items-center', className, {
@@ -40,6 +40,6 @@ export const FormRadioInput: React.FunctionComponent<React.PropsWithChildren<Rad
                     <span className="text-muted">{description}</span>
                 </>
             )}
-        </Label>
+        </Typography.Label>
     )
 }

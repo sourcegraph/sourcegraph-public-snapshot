@@ -5,7 +5,7 @@ import type { Request } from './js-to-java-bridge'
 /* Add global functions to global window object */
 declare global {
     interface Window {
-        initializeSourcegraph: () => Promise<void>
+        initializeSourcegraph: () => void
         callJava: (request: Request) => Promise<object>
     }
 }

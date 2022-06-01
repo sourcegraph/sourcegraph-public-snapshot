@@ -51,7 +51,8 @@ import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/tempo
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import {
     // This is the root Tooltip usage
-    DeprecatedTooltip,
+    // eslint-disable-next-line no-restricted-imports
+    Tooltip,
     FeedbackText,
     setLinkComponent,
     RouterLink,
@@ -467,7 +468,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     <BrowserExtensionTracker />
                                                 </Router>
                                             </ScrollManager>
-                                            <DeprecatedTooltip key={1} />
+                                            <Tooltip key={1} />
                                             <Notifications
                                                 key={2}
                                                 extensionsController={this.extensionsController}
