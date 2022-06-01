@@ -65,15 +65,7 @@ export async function getConfig(): Promise<PluginConfig> {
 }
 
 export async function getTheme(): Promise<Theme> {
-    try {
-        return (await callJava({ action: 'getTheme' })) as Theme
-    } catch (error) {
-        console.error(`Failed to get theme: ${(error as Error).message}`)
-        return {
-            isDarkTheme: true,
-            buttonColor: '#0078d4',
-        }
-    }
+    return (await callJava({ action: 'getTheme' })) as Theme
 }
 
 export async function indicateFinishedLoading(): Promise<void> {

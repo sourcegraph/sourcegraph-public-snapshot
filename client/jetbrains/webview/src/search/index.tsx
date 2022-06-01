@@ -81,13 +81,13 @@ function applyTheme(theme: Theme): void {
     document.documentElement.classList.add(theme.isDarkTheme ? 'theme-dark' : 'theme-light')
     isDarkTheme = theme.isDarkTheme
 
-    // Button color (test)
-    const buttonColor = theme.buttonColor
+    // Find the name of properties here: https://plugins.jetbrains.com/docs/intellij/themes-metadata.html#key-naming-scheme
+    const intellijTheme = theme.intelliJTheme
     const root = document.querySelector(':root') as HTMLElement
-    if (buttonColor) {
-        root.style.setProperty('--button-color', buttonColor)
-    }
-    root.style.setProperty('--primary', buttonColor)
+
+    // Button color (test)
+    root.style.setProperty('--button-color', intellijTheme['Button.default.startBackground'])
+    root.style.setProperty('--primary', intellijTheme['Button.default.startBackground'])
 }
 
 function applyLastSearch(lastSearch: Search | null): void {

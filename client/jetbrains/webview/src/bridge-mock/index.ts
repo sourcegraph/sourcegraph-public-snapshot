@@ -1,7 +1,11 @@
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
 import type { Request } from '../search/js-to-java-bridge'
-import type { Search } from '../search/types'
+import type { Search, Theme } from '../search/types'
+
+import { renderColorDebugger } from './renderColorDebugger'
+import { dark } from './theme-snapshots/dark'
+import { light } from './theme-snapshots/light'
 
 let savedSearch: Search = {
     query: 'r:github.com/sourcegraph/sourcegraph jetbrains',
@@ -9,6 +13,8 @@ let savedSearch: Search = {
     patternType: SearchPatternType.literal,
     selectedSearchContextSpec: 'global',
 }
+
+let isDarkTheme = false
 
 const codeDetailsNode = document.querySelector('#code-details') as HTMLPreElement
 const iframeNode = document.querySelector('#webview') as HTMLIFrameElement
@@ -46,18 +52,10 @@ function handleRequest(
         }
 
         case 'getTheme': {
-            onSuccessCallback(
-                JSON.stringify({
-                    isDarkTheme: true,
-                    backgroundColor: 'blue',
-                    buttonArc: '2px',
-                    buttonColor: 'red',
-                    color: 'green',
-                    font: 'Times New Roman',
-                    fontSize: '12px',
-                    labelBackground: 'gray',
-                })
-            )
+            const theme: Theme = isDarkTheme
+                ? { isDarkTheme: true, intelliJTheme: dark }
+                : { isDarkTheme: false, intelliJTheme: light }
+            onSuccessCallback(JSON.stringify(theme))
             break
         }
 
@@ -123,7 +121,7 @@ function handleRequest(
     }
 }
 
-/* Initialize app for standalone server */
+// Initialize app for standalone server
 iframeNode.addEventListener('load', () => {
     const iframeWindow = iframeNode.contentWindow
     if (iframeWindow !== null) {
@@ -131,6 +129,18 @@ iframeNode.addEventListener('load', () => {
         iframeWindow.initializeSourcegraph()
     }
 })
+
+// Detect dark or light mode preference
+if (location.href.includes('dark')) {
+    isDarkTheme = true
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    document.body.parentElement!.className = 'dark'
+}
+
+// Render the theme color debuggerwhen the URL contains `?color-debug`
+if (location.href.includes('color-debug')) {
+    renderColorDebugger()
+}
 
 function escapeHTML(unsafe: string): string {
     return unsafe.replace(

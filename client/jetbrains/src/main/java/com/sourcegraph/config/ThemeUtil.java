@@ -7,20 +7,32 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 
 public class ThemeUtil {
     @NotNull
     public static JsonObject getCurrentThemeAsJson() {
-        // Find the name of properties here: https://plugins.jetbrains.com/docs/intellij/themes-metadata.html#key-naming-scheme
+        JsonObject intelliJTheme = new JsonObject();
+
+        UIDefaults defaults = UIManager.getDefaults();
+        Enumeration<Object> keysEnumeration = defaults.keys();
+        ArrayList<Object> keysList = Collections.list(keysEnumeration);
+        for (Object key : keysList) {
+            try {
+                Object value = UIManager.get(key);
+                if (value.getClass().getName().equals("javax.swing.plaf.ColorUIResource")) {
+                    intelliJTheme.addProperty(key.toString(), getHexString(UIManager.getColor(key)));
+                }
+            } catch (Exception e) {
+                System.out.println(e);
+            }
+        }
+
         JsonObject theme = new JsonObject();
         theme.addProperty("isDarkTheme", isDarkTheme());
-        theme.addProperty("backgroundColor", getHexString(UIUtil.getPanelBackground()));
-        theme.addProperty("buttonArc", UIManager.get("Button.arc").toString());
-        theme.addProperty("buttonColor", getHexString(UIManager.getColor("Button.default.background")));
-        theme.addProperty("color", getHexString(UIUtil.getLabelForeground()));
-        theme.addProperty("font", UIUtil.getLabelFont().getFontName());
-        theme.addProperty("fontSize", UIUtil.getLabelFont().getSize());
-        theme.addProperty("labelBackground", getHexString(UIManager.getColor("Label.background")));
+        theme.add("intelliJTheme", intelliJTheme);
         return theme;
     }
 
