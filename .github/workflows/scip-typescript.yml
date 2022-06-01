@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - '**.ts'
+      - '**.tsx'
       - '**.js'
 
 jobs:
