@@ -5,7 +5,7 @@ import (
 )
 
 type Sink interface {
-	build() (zapcore.Core, error)
+	Build() (zapcore.Core, error)
 	update(SinksConfig) error
 }
 
@@ -29,11 +29,11 @@ func (s Sinks) Update(get SinksConfigGetter) func() {
 	}
 }
 
-func (s Sinks) build() ([]zapcore.Core, error) {
+func (s Sinks) Build() ([]zapcore.Core, error) {
 	var cores []zapcore.Core
 
 	for _, sink := range s {
-		sc, err := sink.build()
+		sc, err := sink.Build()
 		if err != nil {
 			return nil, err
 		}

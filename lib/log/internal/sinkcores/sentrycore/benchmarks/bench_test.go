@@ -8,8 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/sinkcores/sentrycore"
 	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
-	"github.com/sourcegraph/sourcegraph/lib/log/sinks"
-	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkWithSentry(b *testing.B) {
@@ -30,16 +28,8 @@ func BenchmarkWithoutSentry(b *testing.B) {
 }
 
 func newTestLogger(t testing.TB) (log.Logger, *sentrycore.TransportMock, func()) {
-	hub, tr := newTestHub(t)
-	sink, _ := sinks.NewSentrySinkCore(hub)
-	logger, exportLogs := logtest.Captured(t, sink)
-	return logger, tr, func() { _ = exportLogs() }
-}
-
-func newTestHub(t testing.TB) (*sentry.Hub, *sentrycore.TransportMock) {
 	transport := &sentrycore.TransportMock{}
-	c, err := sentry.NewClient(sentry.ClientOptions{Transport: transport})
-	assert.NoError(t, err)
-	hub := sentry.NewHub(c, sentry.NewScope())
-	return hub, transport
+	sink := log.NewSentrySinkWithOptions(sentry.ClientOptions{Transport: transport})
+	logger, exportLogs := logtest.Captured(t, sink)
+	return logger, transport, func() { _ = exportLogs() }
 }

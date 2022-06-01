@@ -8,7 +8,8 @@ import (
 )
 
 type SentrySink struct {
-	DSN string
+	DSN     string
+	options sentry.ClientOptions
 }
 
 type sentrySink struct {
@@ -19,10 +20,14 @@ type sentrySink struct {
 
 func NewSentrySink() Sink { return &sentrySink{} }
 
-func (s *sentrySink) build() (zapcore.Core, error) {
-	client, err := sentry.NewClient(sentry.ClientOptions{
-		Dsn: s.DSN,
-	})
+func NewSentrySinkWithOptions(opts sentry.ClientOptions) Sink {
+	return &sentrySink{SentrySink: SentrySink{options: opts}}
+}
+
+func (s *sentrySink) Build() (zapcore.Core, error) {
+	opts := s.SentrySink.options
+	opts.Dsn = s.DSN
+	client, err := sentry.NewClient(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -40,9 +45,9 @@ func (s *sentrySink) update(updated SinksConfig) error {
 		return nil
 	}
 
-	client, err := sentry.NewClient(sentry.ClientOptions{
-		Dsn: updatedDSN,
-	})
+	opts := s.SentrySink.options
+	opts.Dsn = updatedDSN
+	client, err := sentry.NewClient(opts)
 	if err != nil {
 		return err
 	}
