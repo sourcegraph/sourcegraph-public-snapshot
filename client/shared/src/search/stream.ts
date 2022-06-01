@@ -551,7 +551,10 @@ const computeStreamUrl = '/.api/compute/stream'
 export function streamComputeQuery(query: string): Observable<string> {
     return new Observable<string>(observer => {
         fetchEventSource(`${computeStreamUrl}?q=${encodeURIComponent(query)}`, {
-            method: 'POST',
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'Sourcegraph'
+            },
             onmessage(event) {
                 observer.next(event.data)
             },
