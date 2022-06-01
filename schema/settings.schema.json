@@ -11,6 +11,12 @@
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
       "additionalProperties": false,
+      "homePanelsComputeSuggestions": {
+        "type": "boolean",
+        "default": true,
+        "deprecated": false,
+        "description": "Enable the home panels compute suggestions feature. This feature is now enabled by default."
+      },
       "properties": {
         "codeInsights": {
           "description": "Enables code insights on directory pages.",
