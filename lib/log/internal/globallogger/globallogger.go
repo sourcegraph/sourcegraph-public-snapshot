@@ -56,7 +56,6 @@ func initLogger(r otfields.Resource, level zapcore.LevelEnabler, format encoders
 		panic(err.Error())
 	}
 
-	// TODO add the cores
 	options := []zap.Option{zap.ErrorOutput(errSink), zap.AddCaller()}
 	if development {
 		options = append(options, zap.Development())
