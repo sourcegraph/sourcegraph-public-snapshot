@@ -434,5 +434,5 @@ func generateSummaryMessage(dateFrom, dateTo string, builds, flakes int, avgFlak
 	• Total incident duration: *%v*
 
 	For more information, view the dashboards at <https://app.okayhq.com/dashboards/3856903d-33ea-4d60-9719-68fec0eb4313/build-stats-kpis|OkayHQ>.
-`, dateFrom, dateFrom, builds, flakes, avgFlakes, downtime)
+`, dateFrom, dateTo, builds, flakes, avgFlakes, downtime)
 }

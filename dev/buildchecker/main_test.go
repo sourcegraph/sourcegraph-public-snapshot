@@ -7,9 +7,10 @@ import (
 )
 
 func TestGenerateSummaryMessage(t *testing.T) {
-	dayString := "2006-01-02"
-	got := generateSummaryMessage(dayString, dayString, 5, 1, 20, 150)
-	want := autogold.Want("name", `:bar_chart: Welcome to your weekly CI report for period *2006-01-02* to *2006-01-02*!
+	fromString := "2006-01-02"
+	toString := "2006-01-03"
+	got := generateSummaryMessage(fromString, toString, 5, 1, 20, 150)
+	want := autogold.Want("name", `:bar_chart: Welcome to your weekly CI report for period *2006-01-02* to *2006-01-03*!
 • Total builds: *5*
 • Total flakes: *1*
 • Average % of build flakes: *20%*
