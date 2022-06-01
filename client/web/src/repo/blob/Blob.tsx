@@ -604,7 +604,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         if (decorationsOrError && !isErrorLike(decorationsOrError)) {
             const { column, inline } = [...decorationsOrError].reduce(
                 (accumulator, [extensionID, items]) => {
-                    if (showGitBlameInSeparateColumn && extensionID === 'sourcegraph/git-extras') {
+                    if (showGitBlameInSeparateColumn && extensionID === 'git-extras') {
                         accumulator.column.set(extensionID, groupDecorationsByLine(items))
                     } else {
                         accumulator.inline.push(...items)
@@ -742,15 +742,17 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 )}
 
                 {iterate(decorations.column)
-                    .map(([extensionID, items]) => (
-                        <ColumnDecorator
-                            key={extensionID}
-                            isLightTheme={isLightTheme}
-                            extensionID={extensionID}
-                            decorations={items}
-                            codeViewElements={codeViewElements}
-                        />
-                    ))
+                    .map(([extensionID, items]) =>
+                        items.size > 0 ? (
+                            <ColumnDecorator
+                                key={extensionID}
+                                isLightTheme={isLightTheme}
+                                extensionID={extensionID}
+                                decorations={items}
+                                codeViewElements={codeViewElements}
+                            />
+                        ) : null
+                    )
                     .toArray()}
 
                 {iterate(decorations.inline)

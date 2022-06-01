@@ -51,10 +51,14 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
         useLayoutEffect(() => {
             const addedCells = new Map<HTMLTableCellElement, TextDocumentDecoration[] | undefined>()
 
-            const removeAddedCells = (): void => {
+            const cleanup = (): void => {
+                // remove added cells
                 for (const [cell] of addedCells) {
                     cell.remove()
                 }
+
+                // reset state
+                setPortalNodes(undefined)
             }
 
             const subscription = codeViewElements.subscribe(codeView => {
@@ -84,13 +88,13 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                     setPortalNodes(addedCells)
                 } else {
                     // code view ref passed `null`, so element is leaving DOM
-                    removeAddedCells()
+                    cleanup()
                 }
             })
 
             return () => {
                 subscription.unsubscribe()
-                removeAddedCells()
+                cleanup()
             }
         }, [codeViewElements, decorations, extensionID])
 
