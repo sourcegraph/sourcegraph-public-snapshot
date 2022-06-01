@@ -45,7 +45,7 @@ func newOperations(observationContext *observation.Context) *operations {
 				}
 
 				if gitdomain.IsCloneInProgress(err) {
-					return observation.EmitForNone
+					return observation.EmitForLogs
 				}
 
 				return observation.EmitForDefault
