@@ -678,6 +678,10 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 // In fact this commit will be just reverted.
 // If it still bothers you -- contact sashaostrikov
 func addrForKey(repo api.RepoName, addrs []string) string {
+	if len(addrs) == 0 {
+		// Avoid a panic where we index lower down
+		return ""
+	}
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	rs := string(repo)
 	sum := md5.Sum([]byte(rs))
