@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, TextArea, Modal, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, TextArea, Modal, H3, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
 import { Scalars } from '../../../../graphql-operations'
@@ -49,7 +49,7 @@ export const CreateCommentModal: React.FunctionComponent<React.PropsWithChildren
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={LABEL_ID}>
-            <Typography.H3 id={LABEL_ID}>Post a bulk comment on changesets</Typography.H3>
+            <H3 id={LABEL_ID}>Post a bulk comment on changesets</H3>
             <Text className="mb-4">Use this feature to create a bulk comment on all the selected code hosts.</Text>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             <Form onSubmit={onSubmit}>

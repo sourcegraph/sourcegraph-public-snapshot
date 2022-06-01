@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader, Link, Typography } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link, Code } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -35,7 +35,7 @@ export const UserEventNode: React.FunctionComponent<React.PropsWithChildren<User
 }: UserEventNodeProps) => (
     <li className={classNames('list-group-item', styles.eventLog)}>
         <div className="d-flex align-items-center justify-content-between">
-            <Typography.Code>{node.name}</Typography.Code>
+            <Code>{node.name}</Code>
             <div>
                 <Timestamp date={node.timestamp} />
             </div>

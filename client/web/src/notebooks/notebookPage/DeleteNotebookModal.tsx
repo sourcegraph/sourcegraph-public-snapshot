@@ -6,7 +6,7 @@ import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useEventObservable, Modal, Button, Alert, Typography, Text } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useEventObservable, Modal, Button, Alert, H3, Text } from '@sourcegraph/wildcard'
 
 import { deleteNotebook as _deleteNotebook } from '../backend'
 
@@ -55,9 +55,9 @@ export const DeleteNotebookModal: React.FunctionComponent<React.PropsWithChildre
 
     return (
         <Modal isOpen={isOpen} position="center" onDismiss={toggleDeleteModal} aria-labelledby={deleteLabelId}>
-            <Typography.H3 className="text-danger" id={deleteLabelId}>
+            <H3 className="text-danger" id={deleteLabelId}>
                 Delete the notebook?
-            </Typography.H3>
+            </H3>
 
             <Text>
                 <strong>This action cannot be undone.</strong>

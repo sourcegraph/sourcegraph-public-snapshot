@@ -32,7 +32,10 @@ import {
     CardBody,
     Card,
     Icon,
-    Typography,
+    Code,
+    H1,
+    H3,
+    H4,
     Text,
 } from '@sourcegraph/wildcard'
 
@@ -114,7 +117,7 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
 }) => (
     <>
         <div className="d-flex align-items-center justify-content-between mb-2">
-            <Typography.H3 className={styles.workspaceName}>
+            <H3 className={styles.workspaceName}>
                 <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />{' '}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace'
                     ? workspace.repository.name
@@ -124,7 +127,7 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                         <Icon role="img" aria-hidden={true} as={ExternalLinkIcon} />
                     </Link>
                 )}
-            </Typography.H3>
+            </H3>
             <Button className="p-0 ml-2" onClick={deselectWorkspace} variant="icon">
                 <VisuallyHidden>Deselect Workspace</VisuallyHidden>
                 <Icon role="img" aria-hidden={true} as={CloseIcon} />
@@ -176,10 +179,10 @@ const HiddenWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<Hi
 }) => (
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
-        <Typography.H1 className="text-center text-muted mt-5">
+        <H1 className="text-center text-muted mt-5">
             <Icon role="img" aria-hidden={true} as={EyeOffOutlineIcon} />
             <VisuallyHidden>Hidden Workspace</VisuallyHidden>
-        </Typography.H1>
+        </H1>
         <Text alignment="center">This workspace is hidden due to permissions.</Text>
         <Text alignment="center">Contact the owner of this batch change for more information.</Text>
     </>
@@ -286,13 +289,13 @@ const IgnoredWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<I
 }) => (
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
-        <Typography.H1 className="text-center text-muted mt-5">
+        <H1 className="text-center text-muted mt-5">
             <Icon role="img" aria-hidden={true} as={LinkVariantRemoveIcon} />
             <VisuallyHidden>Ignored Workspace</VisuallyHidden>
-        </Typography.H1>
+        </H1>
         <Text alignment="center">
-            This workspace has been skipped because a <Typography.Code>.batchignore</Typography.Code> file is present in
-            the workspace repository.
+            This workspace has been skipped because a <Code>.batchignore</Code> file is present in the workspace
+            repository.
         </Text>
         <Text alignment="center">Enable the execution option to "allow ignored" to override.</Text>
     </>
@@ -307,10 +310,10 @@ const UnsupportedWorkspaceDetails: React.FunctionComponent<
 > = ({ workspace, deselectWorkspace }) => (
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
-        <Typography.H1 className="text-center text-muted mt-5">
+        <H1 className="text-center text-muted mt-5">
             <Icon role="img" aria-hidden={true} as={LinkVariantRemoveIcon} />
             <VisuallyHidden>Unsupported Workspace</VisuallyHidden>
-        </Typography.H1>
+        </H1>
         <Text alignment="center">This workspace has been skipped because it is from an unsupported codehost.</Text>
         <Text alignment="center">Enable the execution option to "allow unsupported" to override.</Text>
     </>
@@ -357,7 +360,7 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
         return (
             <Card>
                 <CardBody>
-                    <Typography.H4>Changeset in a hidden repo</Typography.H4>
+                    <H4>Changeset in a hidden repo</H4>
                 </CardBody>
             </Card>
         )
@@ -373,14 +376,14 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
             title={
                 <div className="d-flex justify-content-between">
                     <div>
-                        <Typography.H4 className="mb-0 d-inline-block mr-2">
-                            <Typography.H3 className={styles.result}>Result</Typography.H3>
+                        <H4 className="mb-0 d-inline-block mr-2">
+                            <H3 className={styles.result}>Result</H3>
                             {node.description.published !== null && (
                                 <Badge className="text-uppercase">
                                     {publishBadgeLabel(node.description.published)}
                                 </Badge>
                             )}{' '}
-                        </Typography.H4>
+                        </H4>
                         <span className="text-muted">
                             <Icon role="img" aria-hidden={true} as={SourceBranchIcon} /> {node.description.headRef}
                         </span>
@@ -394,14 +397,14 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
         >
             <Card className={classNames('mt-2', styles.resultCard)}>
                 <CardBody>
-                    <Typography.H3>Changeset template</Typography.H3>
-                    <Typography.H4>{node.description.title}</Typography.H4>
+                    <H3>Changeset template</H3>
+                    <H4>{node.description.title}</H4>
                     <Text className="mb-0">{node.description.body}</Text>
                     <Text>
                         <strong>Published:</strong> <PublishedValue published={node.description.published} />
                     </Text>
                     <Collapsible
-                        title={<Typography.H3 className="mb-0">Changes</Typography.H3>}
+                        title={<H3 className="mb-0">Changes</H3>}
                         titleClassName="flex-grow-1"
                         defaultExpanded={true}
                     >
@@ -485,7 +488,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                 <>
                     <div className={classNames(styles.stepHeader, step.skipped && 'text-muted')}>
                         <StepStateIcon step={step} />
-                        <Typography.H3 className={styles.stepNumber}>Step {step.number}</Typography.H3>
+                        <H3 className={styles.stepNumber}>Step {step.number}</H3>
                         <span className={classNames('text-monospace text-muted', styles.stepCommand)}>{step.run}</span>
                     </div>
                     {step.diffStat && (
@@ -552,13 +555,13 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                 <TabPanel className="pt-2" key="command-container">
                                     {step.ifCondition !== null && (
                                         <>
-                                            <Typography.H4>If condition</Typography.H4>
+                                            <H4>If condition</H4>
                                             <LogOutput text={step.ifCondition} className="mb-2" />
                                         </>
                                     )}
-                                    <Typography.H4>Command</Typography.H4>
+                                    <H4>Command</H4>
                                     <LogOutput text={step.run} className="mb-2" />
-                                    <Typography.H4>Container</Typography.H4>
+                                    <H4>Container</H4>
                                     <Text className="text-monospace mb-0">{step.container}</Text>
                                 </TabPanel>
                             </TabPanels>
