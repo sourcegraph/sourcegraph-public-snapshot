@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { gql, useMutation } from '@apollo/client'
 import { noop } from 'lodash'
 
-import { Alert, Input, Link, ProductStatusBadge, Typography } from '@sourcegraph/wildcard'
+import { Alert, Input, Link, ProductStatusBadge, Label } from '@sourcegraph/wildcard'
 
 import { SendTestSlackWebhookResult, SendTestSlackWebhookVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
@@ -140,7 +140,7 @@ export const SlackWebhookAction: React.FunctionComponent<React.PropsWithChildren
                 </Link>
             </Alert>
             <div className="form-group">
-                <Typography.Label htmlFor="code-monitor-slack-webhook-url">Webhook URL</Typography.Label>
+                <Label htmlFor="code-monitor-slack-webhook-url">Webhook URL</Label>
                 <Input
                     id="code-monitor-slack-webhook-url"
                     type="url"

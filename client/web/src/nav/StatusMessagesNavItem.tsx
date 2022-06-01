@@ -19,17 +19,7 @@ import {
     CloudSyncIconRefresh,
     CloudCheckIconRefresh,
 } from '@sourcegraph/shared/src/components/icons'
-import {
-    Button,
-    Link,
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-    Position,
-    Icon,
-    Typography,
-    Text,
-} from '@sourcegraph/wildcard'
+import { Button, Link, Popover, PopoverContent, PopoverTrigger, Position, Icon, H4, Text } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import { CircleDashedIcon } from '../components/CircleDashedIcon'
@@ -145,10 +135,10 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<React.PropsWithChildre
 
     return (
         <div key={props.message} className={styles.entry}>
-            <Typography.H4 className="d-flex align-items-center mb-0">
+            <H4 className="d-flex align-items-center mb-0">
                 {entryIcon(props.entryType)}
                 {props.title ? props.title : 'Your repositories'}
-            </Typography.H4>
+            </H4>
             {props.entryType === 'not-active' ? (
                 <div className={classNames('status-messages-nav-item__entry-card border-0', styles.cardInactive)}>
                     <Text className={classNames('text-muted', styles.message)}>{props.message}</Text>

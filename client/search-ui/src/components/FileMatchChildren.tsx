@@ -25,7 +25,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
-import { Link, Typography } from '@sourcegraph/wildcard'
+import { Link, Code } from '@sourcegraph/wildcard'
 
 import { LastSyncedIcon } from './LastSyncedIcon'
 
@@ -287,10 +287,10 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     {...openInNewTabProps}
                 >
                     <SymbolIcon kind={symbol.kind} className="mr-1" />
-                    <Typography.Code>
+                    <Code>
                         {symbol.name}{' '}
                         {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
-                    </Typography.Code>
+                    </Code>
                 </Link>
             ))}
 
