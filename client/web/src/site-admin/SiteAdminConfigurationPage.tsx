@@ -472,10 +472,51 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         )
     }
 
-    private onSave = (value: string, onSaveCallback: ((value: string) => void) | null): void => {
-        this.onSaveCallback = onSaveCallback
+    private onSave = async (value: string): Promise<string> => {
         eventLogger.log('SiteConfigurationSaved')
-        this.remoteUpdates.next(value)
+        const newContents = value
+
+        this.setState({ saving: true, error: undefined })
+
+        const lastConfiguration = this.state.site?.configuration
+        const lastConfigurationID = lastConfiguration?.id || 0
+
+        await updateSiteConfiguration(lastConfigurationID, newContents)
+            .toPromise<boolean>()
+            .catch(error => {
+                console.error(error)
+                this.setState({ saving: false, error })
+            })
+            .then(() => {
+                const oldContents = lastConfiguration?.effectiveContents || ''
+                const oldConfiguration = jsonc.parse(oldContents) as SiteConfiguration
+                const newConfiguration = jsonc.parse(newContents) as SiteConfiguration
+
+                // Flipping these feature flags require a reload for the
+                // UI to be rendered correctly in the navbar and the sidebar.
+                const keys: (keyof SiteConfiguration)[] = ['batchChanges.enabled', 'codeIntelAutoIndexing.enabled']
+
+                if (!keys.every(key => Boolean(oldConfiguration?.[key]) === Boolean(newConfiguration?.[key]))) {
+                    window.location.reload()
+                }
+
+                this.setState({ saving: false })
+            })
+
+        return new Promise<string>((resolve, reject) => {
+            resolve(
+                fetchSite()
+                    .toPromise()
+                    .then(site => {
+                        this.setState({
+                            site,
+                            error: undefined,
+                            loading: false,
+                        })
+                        return site.configuration.effectiveContents
+                    })
+            )
+        })
     }
 
     private reloadSite = (): void => {
