@@ -2,6 +2,7 @@ package loki
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -133,11 +134,22 @@ func (c *Client) PushStreams(ctx context.Context, streams []*Stream) error {
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, c.lokiURL.String()+pushEndpoint, bytes.NewBuffer(body))
+
+	buf := bytes.NewBuffer(nil)
+	zipWriter := gzip.NewWriter(buf)
+	if _, err := zipWriter.Write(body); err != nil {
+		return err
+	}
+	zipWriter.Close()
+
+	req, err := http.NewRequest(http.MethodPost, c.lokiURL.String()+pushEndpoint, buf)
 	if err != nil {
 		return err
 	}
+
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Encoding", "gzip")
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
