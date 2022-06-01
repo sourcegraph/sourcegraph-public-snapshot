@@ -72,6 +72,7 @@ const CodeInsightSearchExample: FunctionComponent<CodeInsightSearchExampleProps>
         <InsightCard className={className} onMouseEnter={trackMouseEnter} onMouseLeave={trackMouseLeave}>
             <InsightCardHeader
                 title={content.title}
+                insightId="#"
                 subtitle={
                     <CodeInsightsQueryBlock
                         as={SyntaxHighlightedSearchQuery}
@@ -150,6 +151,7 @@ const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProp
         <InsightCard className={className} onMouseEnter={trackMouseEnter} onMouseLeave={trackMouseLeave}>
             <InsightCardHeader
                 title={content.title}
+                insightId="#"
                 subtitle={
                     <CodeInsightsQueryBlock
                         as={SyntaxHighlightedSearchQuery}

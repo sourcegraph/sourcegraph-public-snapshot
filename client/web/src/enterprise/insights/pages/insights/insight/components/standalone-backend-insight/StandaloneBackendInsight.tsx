@@ -152,7 +152,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                 onMouseEnter={trackMouseEnter}
                 onMouseLeave={trackMouseLeave}
             >
-                <InsightCardHeader title={insight.title}>
+                <InsightCardHeader title={insight.title} insightId={insight.id}>
                     <StandaloneInsightContextMenu
                         insight={insight}
                         zeroYAxisMin={zeroYAxisMin}

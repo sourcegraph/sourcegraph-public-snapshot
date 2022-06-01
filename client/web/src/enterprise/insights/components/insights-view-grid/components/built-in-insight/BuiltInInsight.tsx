@@ -73,7 +73,7 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
             onMouseEnter={trackMouseEnter}
             onMouseLeave={trackMouseLeave}
         >
-            <InsightCardHeader title={insight.title}>
+            <InsightCardHeader title={insight.title} insightId={insight.id}>
                 {isVisible && (
                     <InsightContextMenu
                         insight={insight}

@@ -24,6 +24,7 @@ const InsightCard = forwardRef((props, reference) => {
 
 export interface InsightCardTitleProps {
     title: string
+    insightId: string
     subtitle?: ReactNode
 
     /**
@@ -34,13 +35,14 @@ export interface InsightCardTitleProps {
 }
 
 const InsightCardHeader = forwardRef((props, reference) => {
-    const { as: Component = 'header', title, subtitle, className, children, ...attributes } = props
+    const { as: Component = 'header', title, insightId, subtitle, className, children, ...attributes } = props
+    const shareableUrl = `${window.location.origin}/insights/insight/${insightId}`
 
     return (
         <Component {...attributes} ref={reference} className={classNames(styles.header, className)}>
             <div className={styles.headerContent}>
                 <H4 as={H2} title={title} className={styles.title}>
-                    {title}
+                    <a href={shareableUrl}>{title}</a>
                 </H4>
 
                 {children && (

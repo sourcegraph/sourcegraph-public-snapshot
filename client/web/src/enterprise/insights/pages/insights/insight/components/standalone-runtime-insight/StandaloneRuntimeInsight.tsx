@@ -57,7 +57,7 @@ export function StandaloneRuntimeInsight(props: StandaloneRuntimeInsightProps): 
             onMouseEnter={trackMouseEnter}
             onMouseLeave={trackMouseLeave}
         >
-            <InsightCardHeader title={insight.title}>
+            <InsightCardHeader title={insight.title} insightId={insight.id}>
                 <StandaloneInsightContextMenu
                     insight={insight}
                     zeroYAxisMin={zeroYAxisMin}

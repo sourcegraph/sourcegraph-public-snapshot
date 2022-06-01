@@ -150,7 +150,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
             onMouseEnter={trackMouseEnter}
             onMouseLeave={trackMouseLeave}
         >
-            <InsightCardHeader title={insight.title}>
+            <InsightCardHeader title={insight.title} insightId={insight.id}>
                 {isVisible && (
                     <>
                         <DrillDownFiltersPopover
