@@ -13,6 +13,8 @@ import (
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 
+	"github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -122,24 +124,39 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret) (string,
 		return value.Value, nil
 	}
 
-	if secret.Provider != "gcloud" {
+	// Get secret from provider
+	var err error
+	switch secret.Provider {
+
+	case ExternalProviderGCloud:
+		client, err := s.getSecretmanagerClient(ctx)
+		if err != nil {
+			return "", err
+		}
+		var result *secretmanagerpb.AccessSecretVersionResponse
+		result, err = client.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
+			Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", secret.Project, secret.Name),
+		})
+		if err == nil {
+			value.Value = string(result.Payload.Data)
+		}
+
+	case ExternalProvider1Pass:
+		value.Value, err = run.Cmd(ctx, "op item get", run.Arg(secret.Name),
+			"--vault", run.Arg(secret.Project),
+			"--field", run.Arg(secret.Field)).
+			Run().String()
+
+	default:
 		return "", errors.Newf("Unknown secrets provider %q", secret.Provider)
 	}
 
-	client, err := s.getSecretmanagerClient(ctx)
 	if err != nil {
-		return "", err
-	}
-	result, err := client.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
-		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", secret.Project, secret.Name),
-	})
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to access secret %q from %q", secret.Name, secret.Project)
+		return "", errors.Wrapf(err, "%s: failed to access secret %q from %q", secret.Provider, secret.Name, secret.Project)
 	}
 
 	// cache value, but don't save - TBD if we want to persist these secrets
 	value.Fetched = time.Now()
-	value.Value = string(result.Payload.Data)
 	s.Put(secret.id(), &value)
 
 	return value.Value, nil
