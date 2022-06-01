@@ -1,4 +1,3 @@
-// import React from 'react' // import react
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 /* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
@@ -555,8 +554,10 @@ export function streamComputeQuery(query: string): Observable<string> {
             method: 'POST',
             onmessage(event) {
                 observer.next(event.data)
-            }
-        }).then(() => observer.complete(), error => observer.error(error))
+            },
+        }).then(
+            () => observer.complete(),
+            error => observer.error(error)
+        )
     })
 }
-
