@@ -21,6 +21,7 @@ import (
 // specifices how long ago a repo must be deleted before it is purged.
 func RunRepositoryPurgeWorker(ctx context.Context, db database.DB, ttl time.Duration) {
 	log := log15.Root().New("worker", "repo-purge")
+	limiter := rate.NewLimiter(10, 1)
 
 	// Temporary escape hatch if this feature proves to be dangerous
 	if disabled, _ := strconv.ParseBool(os.Getenv("DISABLE_REPO_PURGE")); disabled {
@@ -36,22 +37,15 @@ func RunRepositoryPurgeWorker(ctx context.Context, db database.DB, ttl time.Dura
 		now := time.Now()
 		if isSaturdayNight(now) {
 			// Set some safe default limits
-			limiter := rate.NewLimiter(10, 1)
-			purged, err := purge(ctx, db, log, database.IteratePurgableReposOptions{
+			if err := purge(ctx, db, log, database.IteratePurgableReposOptions{
 				Limit:         5000,
 				Limiter:       limiter,
 				DeletedBefore: now.Add(-ttl),
-			})
-			if err != nil {
+			}); err != nil {
 				log.Error("failed to run repository clone purge", "error", err)
-				// Backoff on error
-				randSleep(1*time.Minute, 10*time.Second)
-			}
-			if purged == 0 {
-				// Nothing left to purge and no errors, we're done
-				return
 			}
 		}
+		randSleep(10*time.Minute, time.Minute)
 	}
 }
 
@@ -66,7 +60,7 @@ func PurgeOldestRepos(db database.DB, limit int, perSecond float64) error {
 	go func() {
 		limiter := rate.NewLimiter(rate.Limit(perSecond), 1)
 		// Use a background routine so that we don't time out based on the http context.
-		if _, err := purge(context.Background(), db, log, database.IteratePurgableReposOptions{
+		if err := purge(context.Background(), db, log, database.IteratePurgableReposOptions{
 			Limit:   limit,
 			Limiter: limiter,
 		}); err != nil {
@@ -77,7 +71,7 @@ func PurgeOldestRepos(db database.DB, limit int, perSecond float64) error {
 }
 
 // purge purges repos, returning the number of repos that were successfully purged
-func purge(ctx context.Context, db database.DB, log log15.Logger, options database.IteratePurgableReposOptions) (int, error) {
+func purge(ctx context.Context, db database.DB, log log15.Logger, options database.IteratePurgableReposOptions) error {
 	start := time.Now()
 	gitserverClient := gitserver.NewClient(db)
 	var (
@@ -111,7 +105,7 @@ func purge(ctx context.Context, db database.DB, log log15.Logger, options databa
 		statusLogger = log.Warn
 	}
 	statusLogger("repository purge finished", "total", total, "removed", success, "failed", failed, "duration", time.Since(start))
-	return success, errors.Wrap(err, "iterating purgeable repos")
+	return errors.Wrap(err, "iterating purgeable repos")
 }
 
 func isSaturdayNight(t time.Time) bool {
