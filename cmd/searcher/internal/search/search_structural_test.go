@@ -547,3 +547,121 @@ func TestBuildQuery(t *testing.T) {
 		}
 	})
 }
+
+func Test_chunkRanges(t *testing.T) {
+	cases := []struct {
+		ranges         []protocol.Range
+		mergeThreshold int
+		output         []rangeChunk
+	}{{
+		// Single range
+		ranges: []protocol.Range{{
+			Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
+			End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
+		}},
+		mergeThreshold: 0,
+		output: []rangeChunk{{
+			minLoc: protocol.Location{Offset: 0, Line: 0, Column: 0},
+			maxLoc: protocol.Location{Offset: 20, Line: 1, Column: 10},
+			ranges: []protocol.Range{{
+				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
+			}},
+		}},
+	}, {
+		// Overlapping ranges
+		ranges: []protocol.Range{{
+			Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
+			End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
+		}, {
+			Start: protocol.Location{Offset: 5, Line: 0, Column: 5},
+			End:   protocol.Location{Offset: 25, Line: 1, Column: 15},
+		}},
+		mergeThreshold: 0,
+		output: []rangeChunk{{
+			minLoc: protocol.Location{Offset: 0, Line: 0, Column: 0},
+			maxLoc: protocol.Location{Offset: 25, Line: 1, Column: 15},
+			ranges: []protocol.Range{{
+				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
+			}, {
+				Start: protocol.Location{Offset: 5, Line: 0, Column: 5},
+				End:   protocol.Location{Offset: 25, Line: 1, Column: 15},
+			}},
+		}},
+	}, {
+		// Non-overlapping ranges, but share a line
+		ranges: []protocol.Range{{
+			Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
+			End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
+		}, {
+			Start: protocol.Location{Offset: 25, Line: 1, Column: 15},
+			End:   protocol.Location{Offset: 35, Line: 2, Column: 5},
+		}},
+		mergeThreshold: 0,
+		output: []rangeChunk{{
+			minLoc: protocol.Location{Offset: 0, Line: 0, Column: 0},
+			maxLoc: protocol.Location{Offset: 35, Line: 2, Column: 5},
+			ranges: []protocol.Range{{
+				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
+			}, {
+				Start: protocol.Location{Offset: 25, Line: 1, Column: 15},
+				End:   protocol.Location{Offset: 35, Line: 2, Column: 5},
+			}},
+		}},
+	}, {
+		// Ranges on adjacent lines, but not merged because of low merge threshold
+		ranges: []protocol.Range{{
+			Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
+			End:   protocol.Location{Offset: 10, Line: 0, Column: 10},
+		}, {
+			Start: protocol.Location{Offset: 11, Line: 1, Column: 0},
+			End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
+		}},
+		mergeThreshold: 0,
+		output: []rangeChunk{{
+			minLoc: protocol.Location{Offset: 0, Line: 0, Column: 0},
+			maxLoc: protocol.Location{Offset: 10, Line: 0, Column: 10},
+			ranges: []protocol.Range{{
+				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Location{Offset: 10, Line: 0, Column: 10},
+			}},
+		}, {
+			minLoc: protocol.Location{Offset: 11, Line: 1, Column: 0},
+			maxLoc: protocol.Location{Offset: 20, Line: 1, Column: 9},
+			ranges: []protocol.Range{{
+				Start: protocol.Location{Offset: 11, Line: 1, Column: 0},
+				End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
+			}},
+		}},
+	}, {
+		// Ranges on adjacent lines, merged because of high merge threshold
+		ranges: []protocol.Range{{
+			Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
+			End:   protocol.Location{Offset: 10, Line: 0, Column: 10},
+		}, {
+			Start: protocol.Location{Offset: 11, Line: 1, Column: 0},
+			End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
+		}},
+		mergeThreshold: 1,
+		output: []rangeChunk{{
+			minLoc: protocol.Location{Offset: 0, Line: 0, Column: 0},
+			maxLoc: protocol.Location{Offset: 20, Line: 1, Column: 9},
+			ranges: []protocol.Range{{
+				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Location{Offset: 10, Line: 0, Column: 10},
+			}, {
+				Start: protocol.Location{Offset: 11, Line: 1, Column: 0},
+				End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
+			}},
+		}},
+	}}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			got := chunkRanges(tc.ranges, tc.mergeThreshold)
+			require.Equal(t, tc.output, got)
+		})
+	}
+}
