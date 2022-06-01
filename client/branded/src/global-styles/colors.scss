@@ -171,6 +171,13 @@ $theme-colors: (
     --modal-bg: #{rgba($gray-04, 0.5)};
 }
 
+.theme-light.high-contrast {
+    --border-color: var(--gray-09);
+    --border-color-2: var(--gray-08);
+    --border-active-color: #4393e7;
+    --border-primary-color: #0f59aa;
+}
+
 .theme-dark {
     // Affects default browser styles.
     color-scheme: dark;
@@ -229,6 +236,9 @@ $theme-colors: (
     --marketing-gradient: linear-gradient(90.64deg, rgba(108, 8, 223, 0.5) 3.11%, rgba(0, 165, 213, 0.5) 83.64%);
     --marketing-gradient-25: linear-gradient(90.64deg, rgba(108, 8, 223, 0.25) 3.11%, rgba(0, 165, 213, 0.25) 83.64%);
     --modal-bg: #{rgba($gray-08, 0.5)};
+}
+
+.theme-dark .high-contrast {
 }
 
 // Additional colors global colors.

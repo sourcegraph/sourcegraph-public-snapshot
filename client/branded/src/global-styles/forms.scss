@@ -23,6 +23,11 @@
     --form-check-input-margin-y: 0.2rem;
 }
 
+.theme-light.high-contrast {
+    --input-color: var(--gray-04);
+    --input-border-color: var(--gray-08);
+}
+
 .theme-dark {
     --input-bg: var(--gray-10);
     --input-disabled-bg: var(--gray-08);
