@@ -18,7 +18,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Typography, Text, useObservable } from '@sourcegraph/wildcard'
+import { Button, H2, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -175,7 +175,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
     return (
         <>
             <section className={classNames('test-tree-entries mb-3', styles.section)}>
-                <Typography.H2>Files and directories</Typography.H2>
+                <H2>Files and directories</H2>
                 <TreeEntriesSection
                     parentPath={filePath}
                     entries={tree.entries}
@@ -186,7 +186,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
             <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
                 {items => (
                     <section className={styles.section}>
-                        <Typography.H2>Actions</Typography.H2>
+                        <H2>Actions</H2>
                         {items.map(item => (
                             <Button
                                 {...props}
@@ -202,7 +202,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
             </ActionsContainer>
 
             <div className={styles.section}>
-                <Typography.H2>Changes</Typography.H2>
+                <H2>Changes</H2>
                 <FilteredConnection<
                     GitCommitFields,
                     Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement'>

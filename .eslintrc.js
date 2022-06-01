@@ -114,27 +114,27 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
           },
           {
             element: 'h1',
-            message: 'Use the <Typography.H1 /> component from @sourcegraph/wildcard instead.',
+            message: 'Use the <H1 /> component from @sourcegraph/wildcard instead.',
           },
           {
             element: 'h2',
-            message: 'Use the <Typography.H2 /> component from @sourcegraph/wildcard instead.',
+            message: 'Use the <H2 /> component from @sourcegraph/wildcard instead.',
           },
           {
             element: 'h3',
-            message: 'Use the <Typography.H3 /> component from @sourcegraph/wildcard instead.',
+            message: 'Use the <H3 /> component from @sourcegraph/wildcard instead.',
           },
           {
             element: 'h4',
-            message: 'Use the <Typography.H4 /> component from @sourcegraph/wildcard instead.',
+            message: 'Use the <H4 /> component from @sourcegraph/wildcard instead.',
           },
           {
             element: 'h5',
-            message: 'Use the <Typography.H5 /> component from @sourcegraph/wildcard instead.',
+            message: 'Use the <H5 /> component from @sourcegraph/wildcard instead.',
           },
           {
             element: 'h6',
-            message: 'Use the <Typography.H6 /> component from @sourcegraph/wildcard instead.',
+            message: 'Use the <H6 /> component from @sourcegraph/wildcard instead.',
           },
           {
             element: 'p',
@@ -143,11 +143,11 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
           },
           {
             element: 'code',
-            message: 'Use the <Typography.Code /> component from @sourcegraph/wildcard instead.',
+            message: 'Use the <Code /> component from @sourcegraph/wildcard instead.',
           },
           {
             element: 'label',
-            message: 'Use the <Typography.Label /> component from @sourcegraph/wildcard instead.',
+            message: 'Use the <Label /> component from @sourcegraph/wildcard instead.',
           },
         ],
       },

@@ -13,7 +13,7 @@ import { parse as _parseVersion, SemVer } from 'semver'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Alert, Icon, Code, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
@@ -130,7 +130,7 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
             ) : (
                 <>
                     <PageTitle title="Out of band migrations - Admin" />
-                    <Typography.H2>Out-of-band migrations</Typography.H2>
+                    <H2>Out-of-band migrations</H2>
 
                     <Text>
                         Out-of-band migrations run in the background of the Sourcegraph instance convert data from an
@@ -285,7 +285,7 @@ const MigrationNode: React.FunctionComponent<React.PropsWithChildren<MigrationNo
 
         <div className={classNames('d-flex flex-column', styles.information)}>
             <div>
-                <Typography.H3>{node.description}</Typography.H3>
+                <H3>{node.description}</H3>
 
                 <Text className="m-0">
                     <span className="text-muted">Team</span> <strong>{node.team}</strong>{' '}
@@ -366,7 +366,7 @@ const MigrationNode: React.FunctionComponent<React.PropsWithChildren<MigrationNo
                                 </div>
 
                                 <span className={classNames('py-1 pl-2', styles.nodeGridCode)}>
-                                    <Typography.Code>{error.message}</Typography.Code>
+                                    <Code>{error.message}</Code>
                                 </span>
                             </React.Fragment>
                         ))}

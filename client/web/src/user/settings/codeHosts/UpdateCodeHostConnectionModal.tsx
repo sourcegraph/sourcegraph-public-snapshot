@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { Button, Modal, Link, Alert, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, Alert, Label, H3, Text } from '@sourcegraph/wildcard'
 
 import { updateExternalService } from '../../../components/externalServices/backend'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -78,9 +78,9 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<
     return (
         <Modal aria-labelledby={`heading--update-${serviceName}-code-host`} onDismiss={onDidCancel}>
             <div className="web-content">
-                <Typography.H3 id={`heading--update-${serviceName}-code-host`} className="mb-4">
+                <H3 id={`heading--update-${serviceName}-code-host`} className="mb-4">
                     Update {serviceName} connection
-                </Typography.H3>
+                </H3>
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">
                         <Alert variant="info" role="alert">
@@ -98,7 +98,7 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<
                         {didAckMachineUserHint ? (
                             <>
                                 {' '}
-                                <Typography.Label htmlFor="code-host-token">Access token</Typography.Label>
+                                <Label htmlFor="code-host-token">Access token</Label>
                                 <div className="position-relative">
                                     <input
                                         id="code-host-token"

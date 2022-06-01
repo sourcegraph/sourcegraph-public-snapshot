@@ -7,7 +7,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl, getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 // eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Link, Typography, useIsTruncated } from '@sourcegraph/wildcard'
+import { Link, Code, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 import { ResultContainer } from './ResultContainer'
@@ -54,7 +54,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
             </span>
             <span className={styles.spacer} />
             <Link to={getCommitMatchUrl(result)}>
-                <Typography.Code className={styles.commitOid}>{result.oid.slice(0, 7)}</Typography.Code>{' '}
+                <Code className={styles.commitOid}>{result.oid.slice(0, 7)}</Code>{' '}
                 <Timestamp date={result.authorDate} noAbout={true} strict={true} />
             </Link>
             {result.repoStars && <div className={styles.divider} />}

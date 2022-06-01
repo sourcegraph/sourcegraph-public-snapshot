@@ -19,7 +19,8 @@ import {
     Link,
     Alert,
     Icon,
-    Typography,
+    Code,
+    Label,
     Text,
 } from '@sourcegraph/wildcard'
 
@@ -72,7 +73,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
         if (this.props.repo.mirrorInfo.cloneInProgress) {
             title = 'Cloning in progress...'
             description =
-                <Typography.Code>{this.props.repo.mirrorInfo.cloneProgress}</Typography.Code> ||
+                <Code>{this.props.repo.mirrorInfo.cloneProgress}</Code> ||
                 'This repository is currently being cloned from its remote repository.'
             buttonLabel = (
                 <span>
@@ -235,7 +236,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                                     <Text>The remote repository is unreachable. Logs follow.</Text>
                                     <div>
                                         <pre className={styles.log}>
-                                            <Typography.Code>{this.state.result.error}</Typography.Code>
+                                            <Code>{this.state.result.error}</Code>
                                         </pre>
                                     </div>
                                 </Alert>
@@ -313,12 +314,12 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                     {this.state.loading && <LoadingSpinner />}
                     {this.state.error && <ErrorAlert error={this.state.error} />}
                     <div className="form-group">
-                        <Typography.Label>
+                        <Label>
                             Remote repository URL{' '}
                             <small className="text-info">
                                 <Icon role="img" as={LockIcon} aria-hidden={true} /> Only visible to site admins
                             </small>
-                        </Typography.Label>
+                        </Label>
                         <input
                             className="form-control"
                             value={this.props.repo.mirrorInfo.remoteURL || '(unknown)'}
@@ -356,15 +357,15 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                                     repository is not reachable.
                                 </li>
                                 <li className={styles.step}>
-                                    <Typography.Code weight="bold">
+                                    <Code weight="bold">
                                         No ECDSA host key is known ... Host key verification failed?
-                                    </Typography.Code>{' '}
+                                    </Code>{' '}
                                     See{' '}
                                     <Link to="/help/admin/repo/auth#ssh-authentication-config-keys-known-hosts">
                                         SSH repository authentication documentation
                                     </Link>{' '}
-                                    for how to provide an SSH <Typography.Code>known_hosts</Typography.Code> file with
-                                    the remote host's SSH host key.
+                                    for how to provide an SSH <Code>known_hosts</Code> file with the remote host's SSH
+                                    host key.
                                 </li>
                                 <li className={styles.step}>
                                     Consult{' '}

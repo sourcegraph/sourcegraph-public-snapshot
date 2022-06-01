@@ -80,7 +80,7 @@ import {
     toURIWithPath,
     parseQueryAndHash,
 } from '@sourcegraph/shared/src/util/url'
-import { Typography, useObservable } from '@sourcegraph/wildcard'
+import { Code, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
@@ -699,7 +699,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     return (
         <>
             <div className={classNames(props.className, styles.blob)} ref={nextBlobElement}>
-                <Typography.Code
+                <Code
                     className={classNames('test-blob', styles.blobCode, props.wrapCode && styles.blobCodeWrapped)}
                     ref={nextCodeViewElement}
                     dangerouslySetInnerHTML={{

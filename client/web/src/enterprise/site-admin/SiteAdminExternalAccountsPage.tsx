@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Button, Link, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Link, H2, Text } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -59,7 +59,7 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
             <div className="user-settings-external-accounts-page">
                 <PageTitle title="External accounts" />
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Typography.H2 className="mb-0">External user accounts</Typography.H2>
+                    <H2 className="mb-0">External user accounts</H2>
                     <Button to="/site-admin/auth/providers" variant="secondary" as={Link}>
                         View auth providers
                     </Button>

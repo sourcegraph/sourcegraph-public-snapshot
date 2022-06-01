@@ -5,7 +5,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Button, Grid, Typography, Text } from '../..'
+import { Button, Grid, Text, H1, H2, Code } from '../..'
 
 import { TooltipController } from './TooltipController'
 
@@ -56,8 +56,8 @@ Basic.parameters = {
 
 export const Positions: Story = () => (
     <>
-        <Typography.H1>Tooltip</Typography.H1>
-        <Typography.H2>Positions</Typography.H2>
+        <H1>Tooltip</H1>
+        <H2>Positions</H2>
 
         <Grid columnCount={4}>
             <div>
@@ -82,7 +82,7 @@ export const Positions: Story = () => (
             </div>
         </Grid>
 
-        <Typography.H2>Max width</Typography.H2>
+        <H2>Max width</H2>
         <Grid columnCount={1}>
             <div>
                 <Button
@@ -160,9 +160,9 @@ const ForceUpdateTooltip = () => {
 
     return (
         <>
-            <Typography.H2>
-                Force update tooltip with <Typography.Code>TooltipController.forceUpdate()</Typography.Code>
-            </Typography.H2>
+            <H2>
+                Force update tooltip with <Code>TooltipController.forceUpdate()</Code>
+            </H2>
             <Text>
                 <Button variant="primary" onClick={onClick} data-tooltip={copied ? 'Copied!' : 'Click to copy'}>
                     Button
