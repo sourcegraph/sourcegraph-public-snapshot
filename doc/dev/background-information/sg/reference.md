@@ -1,5 +1,3 @@
-asdfasdf 
-
 # sg reference
 
 sg - The Sourcegraph developer tool!
