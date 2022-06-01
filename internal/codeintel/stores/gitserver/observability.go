@@ -43,6 +43,11 @@ func newOperations(observationContext *observation.Context) *operations {
 				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					return observation.EmitForNone
 				}
+
+				if gitdomain.IsCloneInProgress(err) {
+					return observation.EmitForDefault ^ observation.EmitForLogs
+				}
+
 				return observation.EmitForDefault
 			},
 		})
