@@ -35,6 +35,29 @@ func TestConvertMatches(t *testing.T) {
 			}},
 		}, {
 			input: HunkMatch{
+				Content:      "line1\nstart 的<-multibyte\nline3",
+				ContentStart: Location{Line: 1},
+				Ranges: Ranges{{
+					Start: Location{0, 1, 0},
+					End:   Location{32, 3, 5},
+				}},
+			},
+			output: []*LineMatch{{
+				Preview:          "line1",
+				LineNumber:       1,
+				OffsetAndLengths: [][2]int32{{0, 5}},
+			}, {
+				Preview:    "start 的<-multibyte",
+				LineNumber: 2,
+				// 18 is rune length, not the byte length
+				OffsetAndLengths: [][2]int32{{0, 18}},
+			}, {
+				Preview:          "line3",
+				LineNumber:       3,
+				OffsetAndLengths: [][2]int32{{0, 5}},
+			}},
+		}, {
+			input: HunkMatch{
 				Content:      "line1",
 				ContentStart: Location{Line: 1},
 				Ranges: Ranges{{
