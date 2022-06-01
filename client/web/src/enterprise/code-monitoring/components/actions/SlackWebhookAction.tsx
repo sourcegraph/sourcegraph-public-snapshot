@@ -128,7 +128,7 @@ export const SlackWebhookAction: React.FunctionComponent<React.PropsWithChildren
             onTest={onSendTestMessage}
             _testStartOpen={_testStartOpen}
         >
-            <Alert variant="info" className="mt-4">
+            <Alert aria-live="off" variant="info" className="mt-4">
                 Go to{' '}
                 <Link to="https://api.slack.com/apps" target="_blank" rel="noopener">
                     Slack

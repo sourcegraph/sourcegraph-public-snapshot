@@ -33,7 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const (
@@ -166,21 +165,21 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		span.SetTag("limitHit", sender.LimitHit())
 		span.Finish()
 		s.Log.Debug("search request",
-			sglog.String("repo", string(p.Repo)),
-			sglog.String("commit", string(p.Commit)),
-			sglog.String("pattern", p.Pattern),
-			sglog.Bool("isRegExp", p.IsRegExp),
-			sglog.Bool("isStructuralPat", p.IsStructuralPat),
-			sglog.Strings("languages", p.Languages),
-			sglog.Bool("isWordMatch", p.IsWordMatch),
-			sglog.Bool("isCaseSensitive", p.IsCaseSensitive),
-			sglog.Bool("patternMatchesContent", p.PatternMatchesContent),
-			sglog.Bool("patternMatchesPath", p.PatternMatchesPath),
-			sglog.Int("matches", sender.SentCount()),
-			sglog.String("code", code),
-			sglog.Duration("duration", time.Since(start)),
-			sglog.Strings("indexerEndpoints", p.IndexerEndpoints),
-			sglog.Error(err))
+			log.String("repo", string(p.Repo)),
+			log.String("commit", string(p.Commit)),
+			log.String("pattern", p.Pattern),
+			log.Bool("isRegExp", p.IsRegExp),
+			log.Bool("isStructuralPat", p.IsStructuralPat),
+			log.Strings("languages", p.Languages),
+			log.Bool("isWordMatch", p.IsWordMatch),
+			log.Bool("isCaseSensitive", p.IsCaseSensitive),
+			log.Bool("patternMatchesContent", p.PatternMatchesContent),
+			log.Bool("patternMatchesPath", p.PatternMatchesPath),
+			log.Int("matches", sender.SentCount()),
+			log.String("code", code),
+			log.Duration("duration", time.Since(start)),
+			log.Strings("indexerEndpoints", p.IndexerEndpoints),
+			log.Error(err))
 	}(time.Now())
 
 	if p.IsStructuralPat && p.Indexed {
