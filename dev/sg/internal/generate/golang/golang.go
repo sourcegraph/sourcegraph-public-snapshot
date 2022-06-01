@@ -124,10 +124,14 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 		return &generate.Report{Output: sb.String(), Err: errors.Wrap(err, "go mod tidy")}
 	}
 
-	return &generate.Report{
-		Output:   sb.String(),
-		Duration: time.Since(start),
-	}
+	return &generate.Report{Output: sb.String(), Err: errors.Wrap(err, "fake error: go generate")}
+	/*
+		// Run goimports -w
+		return &generate.Report{
+			Output:   sb.String(),
+			Duration: time.Since(start),
+		}
+	*/
 }
 
 func runGoGenerate(ctx context.Context, pkgPaths []string, progressBar bool, verbosity OutputVerbosityType, out io.Writer) (err error) {
