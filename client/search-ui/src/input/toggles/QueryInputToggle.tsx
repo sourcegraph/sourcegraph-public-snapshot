@@ -73,7 +73,12 @@ export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<T
     const isActive = props.isActive && !disabledRule
 
     const interactiveProps = interactive
-        ? { tabIndex: 0, 'data-tooltip': tooltipValue, onClick: onCheckboxToggled }
+        ? {
+              tabIndex: 0,
+              'aria-label': `${props.title} toggle`,
+              'data-tooltip': tooltipValue,
+              onClick: onCheckboxToggled,
+          }
         : { tabIndex: -1, 'aria-hidden': true, 'data-tooltip': tooltipValue }
 
     return (
@@ -93,7 +98,6 @@ export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<T
             variant="icon"
             aria-disabled={!!disabledRule}
             aria-checked={isActive}
-            aria-label={interactive ? `${props.title} toggle` : undefined}
             {...interactiveProps}
         >
             <Icon role="img" aria-hidden={true} as={props.icon} />

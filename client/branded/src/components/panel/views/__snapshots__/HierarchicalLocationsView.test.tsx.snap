@@ -52,7 +52,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               class="header"
             >
               <svg
-                aria-label="Result type content"
+                aria-label="content result"
                 class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
@@ -304,7 +304,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               class="header"
             >
               <svg
-                aria-label="Result type content"
+                aria-label="content result"
                 class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
@@ -512,7 +512,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               class="header"
             >
               <svg
-                aria-label="Result type content"
+                aria-label="content result"
                 class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"

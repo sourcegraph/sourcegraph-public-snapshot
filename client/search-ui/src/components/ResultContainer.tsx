@@ -165,7 +165,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                     role="img"
                     className="flex-shrink-0"
                     as={icon}
-                    aria-label={resultType ? `Result type ${resultType}` : undefined}
+                    aria-label={resultType ? `${resultType} result` : undefined}
                 />
                 <div className={classNames('mx-1', styles.headerDivider)} />
                 <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0" />
@@ -211,7 +211,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                 )}
                 {formattedRepositoryStarCount && (
                     <>
-                        <SearchResultStar aria-label={`${formattedRepositoryStarCount} stars`} />
+                        <SearchResultStar aria-label={`${repoStars} stars`} />
                         <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
                     </>
                 )}
