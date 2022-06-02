@@ -128,7 +128,7 @@ func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser)
 			NextSyncAt: u.nextSyncAt,
 			NoPerms:    u.noPerms,
 		})
-		s.logger.Debug("PermsSyncer.queue.enqueued", log.Int("userID", u.userID), log.Bool("updated", updated))
+		s.logger.Debug("PermsSyncer.queue.enqueued", log.Int32("userID", u.userID), log.Bool("updated", updated))
 	}
 }
 
@@ -141,7 +141,7 @@ func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) 
 	if numberOfRepos == 0 {
 		return
 	} else if s.isDisabled() {
-		log15.Warn("PermsSyncer.ScheduleRepos.disabled", "repoIDs", repoIDs)
+		s.logger.Warn("PermsSyncer.ScheduleRepos.disabled", log.Int("len(repoIDs)", len(repoIDs)))
 		return
 	}
 
@@ -163,7 +163,7 @@ func (s *PermsSyncer) scheduleRepos(ctx context.Context, repos ...scheduledRepo)
 	for _, r := range repos {
 		select {
 		case <-ctx.Done():
-			log15.Debug("PermsSyncer.scheduleRepos.canceled")
+			s.logger.Debug("PermsSyncer.scheduleRepos.canceled")
 			return
 		default:
 		}
@@ -175,7 +175,7 @@ func (s *PermsSyncer) scheduleRepos(ctx context.Context, repos ...scheduledRepo)
 			NextSyncAt: r.nextSyncAt,
 			NoPerms:    r.noPerms,
 		})
-		log15.Debug("PermsSyncer.queue.enqueued", "repoID", r.repoID, "updated", updated)
+		s.logger.Debug("PermsSyncer.queue.enqueued", log.Int32("repoID", int32(r.repoID)), log.Bool("updated", updated))
 	}
 }
 
@@ -256,6 +256,8 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 		return nil
 	}
 
+	logger := s.logger.Scoped("PermSyncer.maybeRefreshGitLabOAuthTokenFromAccount", "").With(log.Int32("externalAccountID", acct.ID))
+
 	var oauthConfig *oauth2.Config
 	for _, authProvider := range conf.SiteConfig().AuthProviders {
 		if authProvider.Gitlab == nil ||
@@ -266,9 +268,7 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 		break
 	}
 	if oauthConfig == nil {
-		log15.Warn("PermsSyncer.maybeRefreshGitLabOAuthTokenFromAccount, external account has no auth.provider",
-			"externalAccountID", acct.ID,
-		)
+		logger.Warn("external account has no auth.provider")
 		return nil
 	}
 
