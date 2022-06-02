@@ -133,7 +133,7 @@ func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, o
 		return nil, err
 	}
 
-	projectAccessMap := map[string]gerrit.ProjectAccessInfo{} // TODO: potentially store this on the Provider?
+	projectAccessMap := map[string]gerrit.ProjectAccessInfo{} // TODO: potentially store this on the Provider for use across multiple users
 	// Fetch all projects (in batches?) and determine if the user has access to each
 	for {
 		// TODO: pagination (how many projects should we list at a time?)
@@ -148,7 +148,7 @@ func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, o
 		if err != nil {
 			return nil, errors.Wrap(err, "getting project access")
 		}
-		// Based on the project access information determine if the user has access to this project/repo
+		// Based on the project access information determine if the user has access to these projects/repos
 		repoAccess, err := p.interpretProjectAccess(ctx, resp, groups, projectAccessMap)
 		if err != nil {
 			return perms, err
