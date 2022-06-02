@@ -2,6 +2,8 @@
 package linters
 
 import (
+	"github.com/Masterminds/semver"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 )
 
@@ -12,62 +14,70 @@ var Targets = []lint.Target{
 	{
 		Name: "urls",
 		Help: "Check for broken urls in the codebase",
-		Linters: []lint.Runner{
-			lint.RunScript("Broken urls", "dev/check/broken-urls.bash"),
+		Linters: []lint.Linter{
+			lint.ScriptCheck("Broken urls", "dev/check/broken-urls.bash"),
 		},
 	},
 	{
 		Name: "go",
 		Help: "Check go code for linting errors, forbidden imports, generated files, etc",
-		Linters: []lint.Runner{
+		Linters: []lint.Linter{
 			goFmt,
-			lintGoGenerate,
-			goLint(),
+			&goGenerateLinter{},
+			lint.FuncCheck(goLint()),
 			goDBConnImport,
 			goEnterpriseImport,
 			noLocalHost,
-			lintGoDirectives,
-			lintLoggingLibraries(),
-			goModGuards(),
-			lintSGExit(),
+			lint.FuncCheck(lintGoDirectives),
+			newLoggingLibraryLinter(),
+			&goModVersionsLinter{
+				maxVersions: map[string]*semver.Version{
+					// Any version past this version is not yet released in any version of Alertmanager,
+					// and causes incompatibility in prom-wrapper.
+					//
+					// https://github.com/sourcegraph/zoekt/pull/330#issuecomment-1116857568
+					"github.com/prometheus/common": semver.MustParse("v0.32.1"),
+				},
+			},
+			lint.FuncCheck(lintSGExit()),
 		},
 	},
 	{
 		Name: "docs",
 		Help: "Documentation checks",
-		Linters: []lint.Runner{
-			lint.RunScript("Docsite lint", "dev/docsite.sh check"),
+		Linters: []lint.Linter{
+			lint.ScriptCheck("Docsite lint", "dev/docsite.sh check"),
 		},
 	},
 	{
 		Name: "dockerfiles",
 		Help: "Check Dockerfiles for Sourcegraph best practices",
-		Linters: []lint.Runner{
-			hadolint(),
-			customDockerfileLinters(),
+		Linters: []lint.Linter{
+			lint.FuncCheck(hadolint()),
+			lint.FuncCheck(customDockerfileLinters()),
 		},
 	},
 	{
 		Name: "client",
 		Help: "Check client code for linting errors, forbidden imports, etc",
-		Linters: []lint.Runner{
+		Linters: []lint.Linter{
 			tsEnterpriseImport,
 			inlineTemplates,
-			lint.RunScript("Yarn duplicate", "dev/check/yarn-deduplicate.sh"),
-			checkUnversionedDocsLinks(),
+			lint.ScriptCheck("Yarn duplicate", "dev/check/yarn-deduplicate.sh"),
+			lint.FuncCheck(checkUnversionedDocsLinks()),
 		},
 	},
 	{
 		Name: "svg",
 		Help: "Check svg assets",
-		Linters: []lint.Runner{
-			checkSVGCompression(),
+		Linters: []lint.Linter{
+			lint.FuncCheck(checkSVGCompression()),
 		},
 	},
 	{
 		Name: "shell",
 		Help: "Check shell code for linting errors, formatting, etc",
-		Linters: []lint.Runner{
+		Linters: []lint.Linter{
 			shFmt,
 			shellCheck,
 			bashSyntax,

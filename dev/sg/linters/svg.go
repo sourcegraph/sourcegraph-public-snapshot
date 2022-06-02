@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func checkSVGCompression() lint.Runner {
+func checkSVGCompression() lint.CheckFunc {
 	const header = "SVG Compression"
 
 	return func(ctx context.Context, s *repo.State) *lint.Report {

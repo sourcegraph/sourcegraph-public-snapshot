@@ -25,6 +25,14 @@ import (
 
 var lintGenerateAnnotations bool
 
+var (
+	lintFix = &cli.BoolFlag{
+		Name:    "fix",
+		Aliases: []string{"f"},
+		Usage:   "Fix linters that can automatically be fixed",
+	}
+)
+
 var lintCommand = &cli.Command{
 	Name:        "lint",
 	ArgsUsage:   "[targets...]",
@@ -48,6 +56,7 @@ sg lint --help
 `,
 	Category: CategoryDev,
 	Flags: []cli.Flag{
+		lintFix,
 		&cli.BoolFlag{
 			Name:        "annotations",
 			Usage:       "Write helpful output to annotations directory",
@@ -63,40 +72,50 @@ sg lint --help
 		return nil
 	},
 	Action: func(cmd *cli.Context) error {
-		var fns []lint.Runner
+		var ls []lint.Linter
 		targets := cmd.Args().Slice()
 
 		if len(targets) == 0 {
 			// If no args provided, run all
-			for _, c := range linters.Targets {
-				fns = append(fns, c.Linters...)
-				targets = append(targets, c.Name)
+			for _, t := range linters.Targets {
+				ls = append(ls, t.Linters...)
+				targets = append(targets, t.Name)
 			}
 		} else {
 			// Otherwise run requested set
-			allLintTargetsMap := make(map[string][]lint.Runner, len(linters.Targets))
+			allLintTargetsMap := make(map[string][]lint.Linter, len(linters.Targets))
 			for _, c := range linters.Targets {
 				allLintTargetsMap[c.Name] = c.Linters
 			}
 			for _, t := range targets {
-				runners, ok := allLintTargetsMap[t]
+				targetLinters, ok := allLintTargetsMap[t]
 				if !ok {
 					std.Out.WriteFailuref("unrecognized target %q provided", t)
 					return flag.ErrHelp
 				}
-				fns = append(fns, runners...)
+				ls = append(ls, targetLinters...)
 			}
 		}
 
-		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
-		return runCheckScriptsAndReport(cmd.Context, cmd.App.Writer, fns...)
+		fix := lintFix.Get(cmd)
+		if fix {
+			std.Out.WriteNoticef("Running checks and attempting to fix issues from targets: %s", strings.Join(targets, ", "))
+		} else {
+			std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
+		}
+		return runCheckScriptsAndReport(cmd.Context, cmd.App.Writer, fix, ls...)
 	},
 	Subcommands: lintTargets(linters.Targets).Commands(),
 }
 
+type checkResult struct {
+	fixable bool
+	*lint.Report
+}
+
 // runCheckScriptsAndReport concurrently runs all fns and report as each check finishes. Returns an error
 // if any of the fns fails.
-func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Runner) error {
+func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fix bool, lns ...lint.Linter) error {
 	_, err := root.RepositoryRoot()
 	if err != nil {
 		return err
@@ -113,10 +132,10 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Ru
 
 	// Spawn a goroutine for each check and increment count to report completion.
 	var count int64
-	total := len(fns)
+	total := len(lns)
 	pending := out.Pending(output.Styledf(output.StylePending, "Running linters (done: 0/%d)", total))
 	var wg sync.WaitGroup
-	reportsCh := make(chan *lint.Report)
+	resultsCh := make(chan *checkResult)
 	wg.Add(total)
 
 	// We use a single start time for the sake of simplicity.
@@ -126,36 +145,61 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Ru
 	// want to allow linters to take any longer.
 	linterTimeout := 5 * time.Minute
 	runnerCtx, cancelRunners := context.WithTimeout(ctx, linterTimeout)
-	for _, fn := range fns {
-		go func(fn lint.Runner) {
-			reportsCh <- fn(runnerCtx, repoState)
+	for _, linter := range lns {
+		go func(ln lint.Linter) {
+			var res checkResult
+
+			if fx, fixable := lint.Fixable(ln); fixable {
+				var report *lint.Report
+				if fix {
+					report = fx.Fix(runnerCtx, repoState)
+				} else {
+					report = fx.Check(runnerCtx, repoState)
+				}
+				res = checkResult{fixable: true, Report: report}
+			} else {
+				res = checkResult{
+					fixable: false,
+					Report:  ln.Check(runnerCtx, repoState),
+				}
+			}
+
+			resultsCh <- &res
 			wg.Done()
-		}(fn)
+		}(linter)
 	}
 	go func() {
 		wg.Wait()
-		close(reportsCh)
+		close(resultsCh)
 		cancelRunners()
 	}()
 
 	// consume check reports
 	var hasErr bool
 	var messages []string
-	for report := range reportsCh {
+	var someErrorsAreFixable bool
+	for result := range resultsCh {
 		count++
-		printLintReport(pending, start, report)
+		printLintReport(pending, start, result.Report)
 		pending.Updatef("Running linters (done: %d/%d)", count, total)
-		if report.Err != nil {
-			messages = append(messages, report.Header)
+		if result.Err != nil {
+			messages = append(messages, result.Header)
 			hasErr = true
+			// indicate if error is fixable
+			if result.fixable {
+				someErrorsAreFixable = true
+			}
 		}
 
 		// Log analytics for each linter
 		const eventName = "lint_runner"
-		labels := []string{report.Header}
+		labels := []string{result.Header}
+		if fix {
+			labels = append(labels, "fix")
+		}
 		if runnerCtx.Err() == context.DeadlineExceeded {
 			analytics.LogEvent(ctx, eventName, labels, start, "deadline exceeded")
-		} else if report.Err != nil {
+		} else if result.Err != nil {
 			analytics.LogEvent(ctx, eventName, labels, start, "failed")
 		} else {
 			analytics.LogEvent(ctx, eventName, labels, start, "succeeded")
@@ -163,6 +207,16 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Ru
 	}
 
 	pending.Complete(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Done running linters."))
+
+	// indicate results might be fixable!
+	if !fix && someErrorsAreFixable {
+		suggestion := "One or more of the failed linters are fixable - try 'sg lint --fix'."
+		out.WriteSuggestionf(suggestion)
+
+		if lintGenerateAnnotations {
+			writeAnnotation("Some linter issues are fixable", suggestion, true)
+		}
+	}
 
 	// return the final error, if any
 	if hasErr {
@@ -178,15 +232,7 @@ func printLintReport(pending output.Pending, start time.Time, report *lint.Repor
 		pending.Verbose(report.Summary())
 
 		if lintGenerateAnnotations {
-			repoRoot, err := root.RepositoryRoot()
-			if err != nil {
-				return // do nothing
-			}
-			annotationPath := filepath.Join(repoRoot, "annotations")
-			os.MkdirAll(annotationPath, os.ModePerm)
-			if err := os.WriteFile(filepath.Join(annotationPath, report.Header), []byte(report.Summary()+"\n"), os.ModePerm); err != nil {
-				return // do nothing
-			}
+			writeAnnotation(report.Header, report.Summary(), false)
 		}
 		return
 	}
@@ -212,7 +258,7 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 					return flag.ErrHelp
 				}
 				std.Out.WriteNoticef("Running checks from target: %s", c.Name)
-				return runCheckScriptsAndReport(cmd.Context, cmd.App.Writer, c.Linters...)
+				return runCheckScriptsAndReport(cmd.Context, cmd.App.Writer, lintFix.Get(cmd), c.Linters...)
 			},
 			// Completions to chain multiple commands
 			BashComplete: completeOptions(func() (options []string) {
@@ -224,4 +270,18 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 		})
 	}
 	return cmds
+}
+
+func writeAnnotation(name string, content string, markdown bool) {
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		return // do nothing
+	}
+	annotationPath := filepath.Join(repoRoot, "annotations")
+	os.MkdirAll(annotationPath, os.ModePerm)
+	file := filepath.Join(annotationPath, name)
+	if markdown {
+		file += ".md"
+	}
+	_ = os.WriteFile(file, []byte(content+"\n"), os.ModePerm)
 }

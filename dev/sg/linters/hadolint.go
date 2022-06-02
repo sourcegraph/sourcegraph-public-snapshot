@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func hadolint() lint.Runner {
+func hadolint() lint.CheckFunc {
 	const header = "Hadolint"
 	const hadolintVersion = "v2.10.0"
 	hadolintBinary := fmt.Sprintf("./.bin/hadolint-%s", hadolintVersion)

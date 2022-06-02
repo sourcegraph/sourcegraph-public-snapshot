@@ -10,10 +10,10 @@ import (
 )
 
 func TestLibLogLinter(t *testing.T) {
-	lint := lintLoggingLibraries()
+	linter := newLoggingLibraryLinter()
 
 	t.Run("no false positives", func(t *testing.T) {
-		report := lint(context.Background(), repo.NewMockState(repo.Diff{
+		report := linter.Check(context.Background(), repo.NewMockState(repo.Diff{
 			"cmd/foobar/command.go": []repo.DiffHunk{
 				{
 					AddedLines: []string{
@@ -27,7 +27,7 @@ func TestLibLogLinter(t *testing.T) {
 	})
 
 	t.Run("catch imports", func(t *testing.T) {
-		report := lint(context.Background(), repo.NewMockState(repo.Diff{
+		report := linter.Check(context.Background(), repo.NewMockState(repo.Diff{
 			"cmd/foobar/command.go": []repo.DiffHunk{
 				{
 					AddedLines: []string{

@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/gobwas/glob"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/run"
 
@@ -21,16 +22,16 @@ type State struct {
 	// MergeBase is the common ancestor between Ref and main.
 	MergeBase string
 
-	// mockDiff can be injected for testing with NewMockState()
-	mockDiff Diff
+	diff Diff
 }
 
 // GetState parses the git state of the root repository.
 func GetState(ctx context.Context) (*State, error) {
-	dirty, err := root.Run(run.Cmd(ctx, "git diff --name-only")).Lines()
+	dirtyFiles, err := root.Run(run.Cmd(ctx, "git diff --name-only")).Lines()
 	if err != nil {
 		return nil, err
 	}
+	dirty := len(dirtyFiles) > 0
 	mergeBase, err := sgrun.TrimResult(sgrun.GitCmd("merge-base", "main", "HEAD"))
 	if err != nil {
 		return nil, err
@@ -40,14 +41,33 @@ func GetState(ctx context.Context) (*State, error) {
 		return nil, err
 	}
 
-	return &State{Dirty: len(dirty) > 0, Ref: ref, MergeBase: mergeBase}, nil
+	// Compare with common ancestor by default
+	target := mergeBase
+	if !dirty && ref == mergeBase {
+		// Compare previous commit, if we are already at merge base and in a clean workdir
+		target = "@^"
+	}
+
+	// Parse entire diff beforehand
+	diffOutput, err := sgrun.TrimResult(sgrun.GitCmd("diff", target))
+	if err != nil {
+		return nil, err
+	}
+	diff, err := parseDiff(diffOutput)
+	if err != nil {
+		return nil, err
+	}
+
+	return &State{Dirty: dirty, Ref: ref, MergeBase: mergeBase, diff: diff}, nil
 }
 
 // NewMockState returns a state that returns the given mocks.
 func NewMockState(mockDiff Diff) *State {
-	return &State{mockDiff: mockDiff}
+	return &State{diff: mockDiff}
 }
 
+// Diff represents changes against an inferred base reference (in general, 'main' for
+// branches, previous commit if already on 'main'). It is a map of filenames to diff hunks.
 type Diff map[string][]DiffHunk
 
 // IterateHunks calls cb over each hunk in this diff, collects all errors encountered, and
@@ -72,23 +92,21 @@ type DiffHunk struct {
 }
 
 // GetDiff retrieves a parsed diff from the workspace, filtered by the given path glob.
-func (s *State) GetDiff(glob string) (Diff, error) {
-	if s.mockDiff != nil {
-		return s.mockDiff, nil
-	}
-
-	// Compare with common ancestor by default
-	target := s.MergeBase
-	if !s.Dirty && s.Ref == s.MergeBase {
-		// Compare previous commit, if we are already at merge base and in a clean workdir
-		target = "@^"
-	}
-
-	diffOutput, err := sgrun.TrimResult(sgrun.GitCmd("diff", target, "--", glob))
+//
+// See https://pkg.go.dev/github.com/gobwas/glob#Compile for glob syntax reference.
+func (s *State) GetDiff(pattern string) (Diff, error) {
+	matcher, err := glob.Compile(pattern)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "invalid pattern %q", pattern)
 	}
-	return parseDiff(diffOutput)
+
+	diff := make(Diff)
+	for f, hunks := range s.diff {
+		if matcher.Match(f) {
+			diff[f] = hunks
+		}
+	}
+	return diff, nil
 }
 
 func parseDiff(diffOutput string) (map[string][]DiffHunk, error) {

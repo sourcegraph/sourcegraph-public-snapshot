@@ -14,7 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
+// goGenerateLinter is a fixable linter for go generate.
+type goGenerateLinter struct{}
+
+var _ lint.FixableLinter = &goGenerateLinter{}
+
+func (l *goGenerateLinter) Check(ctx context.Context, state *repo.State) *lint.Report {
 	const header = "Go generate check"
 
 	// Do not run in dirty state, because the dirty check we do later will be inaccurate.
@@ -26,12 +31,17 @@ func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
 		}
 	}
 
-	report := golang.Generate(ctx, nil, false, golang.QuietOutput)
-	if report.Err != nil {
-		return &lint.Report{
-			Header: header,
-			Err:    report.Err,
-		}
+	// Since we are in a clean state, we can (and should) safely clean up the workspace
+	// after the check is done. Discard errors because this is more or less an optional
+	// step.
+	defer func() {
+		root.Run(run.Cmd(ctx, "git add .")).Wait()
+		root.Run(run.Cmd(ctx, "git reset HEAD --hard")).Wait()
+	}()
+
+	generateReport := l.runGenerate(ctx, header)
+	if generateReport.Err != nil {
+		return generateReport
 	}
 
 	r := lint.Report{
@@ -59,4 +69,18 @@ func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
 	}
 
 	return &r
+}
+
+func (g *goGenerateLinter) Fix(ctx context.Context, state *repo.State) *lint.Report {
+	return g.runGenerate(ctx, "Go generate fix")
+}
+
+func (g *goGenerateLinter) runGenerate(ctx context.Context, header string) *lint.Report {
+	// TODO - maybe we can do partial generates based on diffs!
+	report := golang.Generate(ctx, nil, false, golang.QuietOutput)
+	return &lint.Report{
+		Header: header,
+		Output: report.Output,
+		Err:    report.Err,
+	}
 }

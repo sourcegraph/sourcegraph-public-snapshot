@@ -13,7 +13,7 @@ import (
 )
 
 // customDockerfileLinters runs custom Sourcegraph Dockerfile linters
-func customDockerfileLinters() lint.Runner {
+func customDockerfileLinters() lint.CheckFunc {
 	return func(ctx context.Context, _ *repo.State) *lint.Report {
 		var combinedErrors error
 		for _, dir := range []string{

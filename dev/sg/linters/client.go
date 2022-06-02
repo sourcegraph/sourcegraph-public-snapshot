@@ -10,10 +10,10 @@ import (
 )
 
 var (
-	inlineTemplates = lint.RunScript("Inline templates", "dev/check/template-inlines.sh")
+	inlineTemplates = lint.ScriptCheck("Inline templates", "dev/check/template-inlines.sh")
 )
 
-func checkUnversionedDocsLinks() lint.Runner {
+func checkUnversionedDocsLinks() lint.CheckFunc {
 	const header = "Literal unversioned docs links"
 
 	return func(ctx context.Context, s *repo.State) *lint.Report {

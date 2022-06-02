@@ -4,15 +4,43 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 )
 
-// Runner is a linter runner. It can make programmatic checks, call out to a bash script,
+// Target denotes a set of linter tasks that can be run by `sg lint`
+type Target struct {
+	Name string
+	Help string
+
+	// Linters can be linters that only support checks, or linters that support
+	// automatically fixing issues (FixableLinter).
+	Linters []Linter
+}
+
+// Linter is a linter runner. It can make programmatic checks, call out to a bash script,
 // or anything you want, and should return a report with helpful feedback for the user to
 // act upon.
 //
-// Runners can be tested by providing a mock state with repo.NewMockState().
-type Runner func(context.Context, *repo.State) *Report
+// Linter can be tested by providing a mock state with repo.NewMockState().
+type Linter interface {
+	Check(context.Context, *repo.State) *Report
+}
+
+// FixableLinter is a linter runner that can also fix lint issues automatically.
+type FixableLinter interface {
+	Linter
+
+	// Fix, if implemented, should modify the workspace such that linter issues are all
+	// fixed, and return an error if not all issues are fixed.
+	//
+	// Note that repo.State only denotes the initial state of the repository.
+	Fix(context.Context, *repo.State) *Report
+}
+
+// Fixable returns a FixableLinter if the given Linter is fixable.
+func Fixable(l Linter) (FixableLinter, bool) {
+	fx, ok := l.(FixableLinter)
+	return fx, ok
+}
 
 // Report describes the result of a linter runner.
 type Report struct {
@@ -31,23 +59,4 @@ func (r *Report) Summary() string {
 		return r.Err.Error()
 	}
 	return r.Output
-}
-
-// Target denotes a linter task that can be run by `sg lint`
-type Target struct {
-	Name    string
-	Help    string
-	Linters []Runner
-}
-
-// RunScript runs the given script from the root of sourcegraph/sourcegraph.
-func RunScript(header string, script string) Runner {
-	return Runner(func(ctx context.Context, state *repo.State) *Report {
-		out, err := run.BashInRoot(ctx, script, nil)
-		return &Report{
-			Header: header,
-			Output: out,
-			Err:    err,
-		}
-	})
 }

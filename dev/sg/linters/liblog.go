@@ -9,12 +9,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// lintLoggingLibraries enforces that only usages of lib/log are added
-func lintLoggingLibraries() lint.Runner {
-	const header = "Logging library linter"
+// loggingLibraryLinter enforces that only usages of lib/log are added
+type loggingLibraryLinter struct {
+	bannedImports []string
+	allowedFiles  []string
+}
 
-	var (
-		bannedImports = []string{
+func newLoggingLibraryLinter() lint.Linter {
+	return &loggingLibraryLinter{
+		bannedImports: []string{
 			// No standard log library
 			`"log"`,
 			// No log15 - we only catch import changes for now, checking for 'log15.' is
@@ -23,58 +26,59 @@ func lintLoggingLibraries() lint.Runner {
 			// No zap - we re-rexport everything via lib/log
 			`"go.uber.org/zap"`,
 			`"go.uber.org/zap/zapcore"`,
-		}
-
-		allowedFiles = []string{
+		},
+		allowedFiles: []string{
 			// Banned imports will match on the linter here
 			"dev/sg/linters/liblog.go",
 			// We re-export things here
 			"lib/log",
 			// We allow one usage of a direct zap import here
 			"internal/observation/fields.go",
-		}
-	)
-
-	// checkHunk returns an error if a banned library is used
-	checkHunk := func(file string, hunk repo.DiffHunk) error {
-		for _, allowed := range allowedFiles {
-			if strings.HasPrefix(file, allowed) {
-				return nil
-			}
-		}
-
-		for _, l := range hunk.AddedLines {
-			for _, banned := range bannedImports {
-				if strings.TrimSpace(l) == banned {
-					return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/sourcegraph/lib/log" instead`,
-						banned)
-				}
-			}
-		}
-		return nil
+		},
 	}
+}
 
-	return func(ctx context.Context, state *repo.State) *lint.Report {
-		diffs, err := state.GetDiff("**/*.go")
-		if err != nil {
-			return &lint.Report{
-				Header: header,
-				Err:    err,
-			}
-		}
+func (l *loggingLibraryLinter) Check(ctx context.Context, state *repo.State) *lint.Report {
+	const header = "Logging library linter"
 
-		errs := diffs.IterateHunks(checkHunk)
-
+	diffs, err := state.GetDiff("**/*.go")
+	if err != nil {
 		return &lint.Report{
 			Header: header,
-			Output: func() string {
-				if errs != nil {
-					return strings.TrimSpace(errs.Error()) +
-						"\n\nLearn more about logging and why some libraries are banned: https://docs.sourcegraph.com/dev/how-to/add_logging"
-				}
-				return ""
-			}(),
-			Err: errs,
+			Err:    err,
 		}
 	}
+
+	errs := diffs.IterateHunks(l.checkHunk)
+
+	return &lint.Report{
+		Header: header,
+		Output: func() string {
+			if errs != nil {
+				return strings.TrimSpace(errs.Error()) +
+					"\n\nLearn more about logging and why some libraries are banned: https://docs.sourcegraph.com/dev/how-to/add_logging"
+			}
+			return ""
+		}(),
+		Err: errs,
+	}
+}
+
+// checkHunk returns an error if a banned library is used
+func (l *loggingLibraryLinter) checkHunk(file string, hunk repo.DiffHunk) error {
+	for _, allowed := range l.allowedFiles {
+		if strings.HasPrefix(file, allowed) {
+			return nil
+		}
+	}
+
+	for _, line := range hunk.AddedLines {
+		for _, banned := range l.bannedImports {
+			if strings.TrimSpace(line) == banned {
+				return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/sourcegraph/lib/log" instead`,
+					banned)
+			}
+		}
+	}
+	return nil
 }

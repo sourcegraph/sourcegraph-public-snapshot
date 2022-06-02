@@ -15,11 +15,11 @@ import (
 )
 
 var (
-	goFmt          = lint.RunScript("Go format", "dev/check/gofmt.sh")
-	goDBConnImport = lint.RunScript("Go pkg/database/dbconn", "dev/check/go-dbconn-import.sh")
+	goFmt          = lint.ScriptCheck("Go format", "dev/check/gofmt.sh")
+	goDBConnImport = lint.ScriptCheck("Go pkg/database/dbconn", "dev/check/go-dbconn-import.sh")
 )
 
-func goLint() lint.Runner {
+func goLint() lint.CheckFunc {
 	return func(ctx context.Context, _ *repo.State) *lint.Report {
 		var dst bytes.Buffer
 		err := root.Run(run.Bash(ctx, "dev/check/go-lint.sh")).
@@ -40,7 +40,7 @@ func goLint() lint.Runner {
 	}
 }
 
-func lintSGExit() lint.Runner {
+func lintSGExit() lint.CheckFunc {
 	const header = "Lint dev/sg exit signals"
 
 	return func(ctx context.Context, s *repo.State) *lint.Report {
