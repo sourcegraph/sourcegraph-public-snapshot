@@ -32,6 +32,7 @@ const (
 	SearchTypeRegex SearchType = iota
 	SearchTypeLiteralDefault
 	SearchTypeStructural
+	SearchTypeLucky
 )
 
 func (s SearchType) String() string {
@@ -42,6 +43,8 @@ func (s SearchType) String() string {
 		return "literal"
 	case SearchTypeStructural:
 		return "structural"
+	case SearchTypeLucky:
+		return "lucky"
 	default:
 		return fmt.Sprintf("unknown{%d}", s)
 	}

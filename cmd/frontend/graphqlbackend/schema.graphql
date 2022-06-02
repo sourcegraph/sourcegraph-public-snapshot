@@ -1852,6 +1852,7 @@ enum SearchPatternType {
     literal
     regexp
     structural
+    lucky
 }
 
 """
