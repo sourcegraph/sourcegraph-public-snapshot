@@ -80,6 +80,18 @@ func TestSplitIntoChunks(t *testing.T) {
 			t.Errorf("incorrect chunk content for 0 idx. Got %s wanted %s", string(result[0]), "12345")
 		}
 	})
+
+	t.Run("chunk sizes", func(t *testing.T) {
+		line := randstring.NewLen(1337)
+
+		results := splitIntoChunks([]byte(line), 1024)
+
+		for i, r := range results {
+			if len(r) > 1024 {
+				t.Errorf("incorrect sized chunk found at %d with size %d", i, len(r))
+			}
+		}
+	})
 }
 
 func TestNewStreamFromJobLogs(t *testing.T) {

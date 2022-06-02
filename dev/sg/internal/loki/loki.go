@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/grafana/regexp"
 
@@ -112,16 +113,23 @@ func NewStreamFromJobLogs(log *bk.JobLogs) (*Stream, error) {
 			previousTimestamp = ts
 		}
 
-		// An entry cannot be larger than maxEntrySize i(65536) in bytes so if it is, we split into chunks
-		// of maxEntrySize bytes.
-		// To ensure that each chunked entry doesn't clash with a previous entry in Loki we increment
-		// the nanoseconds of the entry for each chunked entry.
-		if len(line) > maxEntrySize {
-			chunkedEntries, err := chunkEntry(values[len(values)-1], maxEntrySize)
+		// Check that the current entry is not larger than maxEntrySize (65536) in bytes.
+		// If it is, we take the entry split into chunks of maxEntrySize bytes.
+		//
+		// To ensure that each chunked entry doesn't clash with a previous entry in Loki, the nanoseconds of
+		// each entry is incremented by 1 for each chunked entry.
+		//
+		// Note that we operate on the entry in values and not line, since if two entries timestamps are similar, their
+		// content get concatenated
+		lastValue := values[len(values)-1]
+		if len(lastValue[1]) >= maxEntrySize {
+			chunkedEntries, err := chunkEntry(lastValue, maxEntrySize)
 			if err != nil {
-				return nil, errors.Newf("failed to split entry into chunks: %w")
+				return nil, errors.Newf("failed to split value entry into chunks: %w")
 			}
-			values = append(values, chunkedEntries...)
+
+			values[len(values)-1] = chunkedEntries[0]
+			values = append(values, chunkedEntries[1:]...)
 			previousTimestamp = values[len(values)-1][0]
 		}
 
@@ -187,7 +195,9 @@ func NewLokiClient(lokiURL *url.URL) *Client {
 }
 
 func (c *Client) PushStreams(ctx context.Context, streams []*Stream) error {
-	body, err := json.Marshal(&jsonPushBody{Streams: streams})
+	data := &jsonPushBody{Streams: streams}
+	body, err := json.Marshal(data)
+	time.Sleep(1 * time.Second)
 	if err != nil {
 		return err
 	}
