@@ -1,5 +1,6 @@
 package sub.subsub;
 
+//         vv C1 ref
 import sub.C1;
 
 class C4 extends C1 {
