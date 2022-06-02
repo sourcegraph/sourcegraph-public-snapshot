@@ -149,7 +149,9 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	externalServices.ListFunc.SetDefaultReturn([]*types.ExternalService{extService}, nil)
 
 	userEmails := database.NewMockUserEmailsStore()
+
 	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
@@ -165,7 +167,6 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
 	perms := edb.NewMockPermsStore()
-	perms.ListExternalAccountsFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
 		wantIDs := []int32{1, 2, 3, 4, 5}
 		assert.Equal(t, wantIDs, p.GenerateSortedIDsSlice())
@@ -243,6 +244,7 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 
 	userEmails := database.NewMockUserEmailsStore()
 	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
@@ -257,7 +259,6 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 	reposStore.ExternalServiceStoreFunc.SetDefaultReturn(externalServices)
 
 	perms := edb.NewMockPermsStore()
-	perms.ListExternalAccountsFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
 		assert.Equal(t, int32(1), p.UserID)
 		assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
@@ -333,7 +334,9 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 
 	externalServices := database.NewMockExternalServiceStore()
 	userEmails := database.NewMockUserEmailsStore()
+
 	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
@@ -345,7 +348,6 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	reposStore := repos.NewMockStore()
 
 	perms := edb.NewMockPermsStore()
-	perms.ListExternalAccountsFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 	perms.UserIsMemberOfOrgHasCodeHostConnectionFunc.SetDefaultReturn(true, nil)
 
 	s := NewPermsSyncer(db, reposStore, perms, timeutil.Now, nil)
@@ -428,7 +430,9 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 
 	externalServices := database.NewMockExternalServiceStore()
 	userEmails := database.NewMockUserEmailsStore()
+
 	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
@@ -443,7 +447,6 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	reposStore.ExternalServiceStoreFunc.SetDefaultReturn(externalServices)
 
 	perms := edb.NewMockPermsStore()
-	perms.ListExternalAccountsFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 	perms.UserIsMemberOfOrgHasCodeHostConnectionFunc.SetDefaultReturn(true, nil)
 
 	s := NewPermsSyncer(db, reposStore, perms, timeutil.Now, nil)
@@ -495,7 +498,10 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 
 	externalServices := database.NewMockExternalServiceStore()
 	userEmails := database.NewMockUserEmailsStore()
+
 	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
+
 	subRepoPerms := database.NewMockSubRepoPermsStore()
 
 	db := database.NewMockDB()
@@ -512,7 +518,6 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	reposStore.ExternalServiceStoreFunc.SetDefaultReturn(externalServices)
 
 	perms := edb.NewMockPermsStore()
-	perms.ListExternalAccountsFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 	perms.UserIsMemberOfOrgHasCodeHostConnectionFunc.SetDefaultReturn(true, nil)
 
 	s := NewPermsSyncer(db, reposStore, perms, timeutil.Now, nil)
