@@ -2,9 +2,9 @@ import { createContext, MutableRefObject } from 'react'
 
 import { noop } from 'lodash'
 
-import { PopoverOpenEvent } from './Popover'
+import { PopoverOpenEvent } from '../Popover'
 
-export interface PopoverContextData {
+export interface PopoverInternalContextData {
     isOpen: boolean
     targetElement: HTMLElement | null
     tailElement: SVGGElement | null
@@ -14,7 +14,7 @@ export interface PopoverContextData {
     setTailElement: (element: SVGGElement | null) => void
 }
 
-const DEFAULT_CONTEXT_VALUE: PopoverContextData = {
+const DEFAULT_CONTEXT_VALUE: PopoverInternalContextData = {
     isOpen: false,
     targetElement: null,
     tailElement: null,
@@ -23,4 +23,4 @@ const DEFAULT_CONTEXT_VALUE: PopoverContextData = {
     setTailElement: noop,
 }
 
-export const PopoverContext = createContext<PopoverContextData>(DEFAULT_CONTEXT_VALUE)
+export const PopoverContext = createContext<PopoverInternalContextData>(DEFAULT_CONTEXT_VALUE)
