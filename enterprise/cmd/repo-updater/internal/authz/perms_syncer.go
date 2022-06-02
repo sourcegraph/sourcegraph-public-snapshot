@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -94,7 +93,7 @@ func (s *PermsSyncer) ScheduleUsers(ctx context.Context, opts authz.FetchPermsOp
 	if len(userIDs) == 0 {
 		return
 	} else if s.isDisabled() {
-		log15.Warn("PermsSyncer.ScheduleUsers.disabled", "userIDs", userIDs)
+		s.logger.Warn("PermsSyncer.ScheduleUsers.disabled", log.Int32s("userIDs", userIDs))
 		return
 	}
 
@@ -116,7 +115,7 @@ func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser)
 	for _, u := range users {
 		select {
 		case <-ctx.Done():
-			log15.Debug("PermsSyncer.scheduleUsers.canceled")
+			s.logger.Debug("PermsSyncer.scheduleUsers.canceled")
 			return
 		default:
 		}
@@ -129,7 +128,7 @@ func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser)
 			NextSyncAt: u.nextSyncAt,
 			NoPerms:    u.noPerms,
 		})
-		log15.Debug("PermsSyncer.queue.enqueued", "userID", u.userID, "updated", updated)
+		s.logger.Debug("PermsSyncer.queue.enqueued", log.Int("userID", u.userID), log.Bool("updated", updated))
 	}
 }
 
