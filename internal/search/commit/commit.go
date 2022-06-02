@@ -9,7 +9,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -18,21 +17,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SearchJob struct {
 	Query                gitprotocol.Node
 	RepoOpts             search.RepoOptions
 	Diff                 bool
-	HasTimeFilter        bool
 	Limit                int
 	CodeMonitorID        *int64
 	IncludeModifiedFiles bool
@@ -55,16 +51,6 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 
 	if err := j.ExpandUsernames(ctx, clients.DB); err != nil {
 		return nil, err
-	}
-
-	opts := j.RepoOpts
-	if opts.Limit == 0 {
-		opts.Limit = reposLimit(j.HasTimeFilter)
-	}
-
-	resultType := "commit"
-	if j.Diff {
-		resultType = "diff"
 	}
 
 	searchRepoRev := func(repoRev *search.RepositoryRevisions) error {
@@ -109,16 +95,12 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 	}
 
 	bounded := goroutine.NewBounded(8)
-	repos := searchrepos.Resolver{DB: clients.DB, Opts: opts}
+	repos := searchrepos.Resolver{DB: clients.DB, Opts: j.RepoOpts}
 	err = repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
-		if page.Next != nil {
-			return newReposLimitError(opts.Limit, j.HasTimeFilter, resultType)
-		}
 		for _, repoRev := range page.RepoRevs {
 			repoRev := repoRev
 			if ctx.Err() != nil {
-				// Don't keep spinning up goroutines if context has been canceled,
-				// but make sure we still clean up any running goroutines.
+				// Don't keep spinning up goroutines if context has been canceled
 				return ctx.Err()
 			}
 			bounded.Go(func() error {
@@ -146,7 +128,6 @@ func (j *SearchJob) Tags() []log.Field {
 		trace.Stringer("query", j.Query),
 		trace.Stringer("repoOpts", &j.RepoOpts),
 		log.Bool("diff", j.Diff),
-		log.Bool("hasTimeFilter", j.HasTimeFilter),
 		log.Int("limit", j.Limit),
 		log.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
 	}
@@ -378,37 +359,4 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 		MessagePreview: messagePreview,
 		ModifiedFiles:  in.ModifiedFiles,
 	}
-}
-
-func newReposLimitError(limit int, hasTimeFilter bool, resultType string) error {
-	if hasTimeFilter {
-		return &TimeLimitError{ResultType: resultType, Max: limit}
-	}
-	return &RepoLimitError{ResultType: resultType, Max: limit}
-}
-
-func reposLimit(hasTimeFilter bool) int {
-	searchLimits := limits.SearchLimits(conf.Get())
-	if hasTimeFilter {
-		return searchLimits.CommitDiffWithTimeFilterMaxRepos
-	}
-	return searchLimits.CommitDiffMaxRepos
-}
-
-type DiffCommitError struct {
-	ResultType string
-	Max        int
-}
-
-type (
-	RepoLimitError DiffCommitError
-	TimeLimitError DiffCommitError
-)
-
-func (*RepoLimitError) Error() string {
-	return "repo limit error"
-}
-
-func (*TimeLimitError) Error() string {
-	return "time limit error"
 }

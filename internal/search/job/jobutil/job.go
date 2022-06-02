@@ -126,7 +126,6 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				Query:                commit.QueryToGitQuery(b, diff),
 				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
-				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
 			})
