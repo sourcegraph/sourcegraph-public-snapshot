@@ -2,6 +2,7 @@ package search
 
 import (
 	"archive/zip"
+	"bytes"
 	"context"
 	"io"
 	"os"
