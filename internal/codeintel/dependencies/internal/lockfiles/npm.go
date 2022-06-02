@@ -3,6 +3,7 @@ package lockfiles
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 
@@ -68,6 +69,9 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, err er
 		name string
 		skip bool
 		errs errors.MultiError
+
+		current             *reposource.NpmDependency
+		parsingDependencies bool
 	)
 
 	/* yarn.lock
@@ -83,6 +87,9 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, err er
 	  languageName: node
 	  linkType: hard
 	*/
+
+	var dependencies = map[*reposource.NpmDependency][]string{}
+	var byName = map[string]*reposource.NpmDependency{}
 
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
@@ -106,6 +113,8 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, err er
 				errs = errors.Append(errs, err)
 			} else {
 				deps = append(deps, dep)
+				byName[name] = dep
+				current = dep
 				name = ""
 			}
 			continue
@@ -116,6 +125,8 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, err er
 		}
 
 		if line[:1] != " " && line[:1] != "#" { // e.g. "asap@npm:~2.0.6":
+			parsingDependencies = false
+
 			var packagename, protocol string
 			if packagename, protocol, err = parsePackageLocator(line); err != nil {
 				continue
@@ -124,8 +135,32 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, err er
 				continue
 			}
 			name = packagename
+			current = nil
+		}
+
+		if line == "  dependencies:" {
+			parsingDependencies = true
+		}
+
+		if line[:4] == "    " && parsingDependencies {
+			elems := strings.Split(line[4:], " ")
+			name := elems[0]
+
+			packagename, protocol, err := parsePackageLocator(line)
+			fmt.Printf("name=%q, packagename=%q, protocl=%q, err=%+v\n", name, packagename, protocol, err)
+
+			if deps, ok := dependencies[current]; !ok {
+				dependencies[current] = []string{name}
+			} else {
+				dependencies[current] = append(deps, name)
+			}
 		}
 	}
+
+	for pkg, dependencies := range dependencies {
+		fmt.Printf("pkg: %s, dependencies: %#v\n", pkg.RepoName(), dependencies)
+	}
+
 	return deps, errs
 }
 
