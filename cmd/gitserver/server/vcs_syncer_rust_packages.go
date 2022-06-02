@@ -60,7 +60,7 @@ func (s *rustDependencySource) Get(ctx context.Context, name, version string) (r
 
 	// Check if crate exists or not. Crates returns a struct detailing the errors if it cannot be found.
 	metaURL := fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s", dep.PackageSyntax(), dep.PackageVersion())
-	resp, err := s.client.Download(ctx, metaURL)
+	resp, err := s.client.Get(ctx, metaURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "get")
 	}
@@ -86,9 +86,9 @@ func (s *rustDependencySource) Get(ctx context.Context, name, version string) (r
 func (s *rustDependencySource) Download(ctx context.Context, dir string, dep reposource.PackageDependency) error {
 	packageURL := fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s/%s", dep.PackageSyntax(), dep.PackageVersion(), "download")
 
-	pkg, err := s.client.Download(ctx, packageURL)
+	pkg, err := s.client.Get(ctx, packageURL)
 	if err != nil {
-		return errors.Wrap(err, "download")
+		return errors.Wrapf(err, "error downloading crate with URL '%s'", packageURL)
 	}
 
 	// TODO: we could add `.sourcegraph/repo.json` here with more information,

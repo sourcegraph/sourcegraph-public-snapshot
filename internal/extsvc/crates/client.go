@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Client struct {
@@ -39,7 +38,7 @@ func NewClient(urn string, cli httpcli.Doer) *Client {
 // 	}, nil
 // }
 
-func (c *Client) Download(ctx context.Context, url string) ([]byte, error) {
+func (c *Client) Get(ctx context.Context, url string) ([]byte, error) {
 	if err := c.limiter.Wait(ctx); err != nil {
 		return nil, err
 	}
@@ -51,12 +50,11 @@ func (c *Client) Download(ctx context.Context, url string) ([]byte, error) {
 
 	b, err := c.do(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "crates")
+		return nil, err
 	}
 	return b, nil
 }
 
-// TODO: This is just copied from the python one? {{{
 type Error struct {
 	path    string
 	code    int
@@ -116,5 +114,3 @@ func (c *Client) do(req *http.Request) ([]byte, error) {
 
 	return bs, nil
 }
-
-// }}}

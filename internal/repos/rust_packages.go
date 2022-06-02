@@ -2,6 +2,9 @@ package repos
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -40,11 +43,25 @@ type rustPackagesSource struct {
 var _ dependenciesSource = &rustPackagesSource{}
 
 func (s *rustPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
-	// _, err := s.client.Version(ctx, name, version)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	return reposource.NewRustDependency(name, version), nil
+	dep := reposource.NewRustDependency(name, version)
+	// Check if crate exists or not. Crates returns a struct detailing the errors if it cannot be found.
+	metaURL := fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s", dep.PackageSyntax(), dep.PackageVersion())
+	resp, err := s.client.Get(ctx, metaURL)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch crate metadata for %s with URL %s", dep.PackageManagerSyntax(), metaURL)
+	}
+
+	// Example Error Message: {"errors":[{"detail":"not found"}]}
+	var errorSlice cratesError
+	if err := json.Unmarshal(resp, &errorSlice); err != nil {
+		return nil, errors.Wrapf(err, "error unmarshalling crates API json '%s'", string(resp))
+	}
+
+	if len(errorSlice.Errors) > 0 {
+		return nil, &errorSlice
+	}
+
+	return dep, nil
 }
 
 func (rustPackagesSource) ParseDependency(dep string) (reposource.PackageDependency, error) {
@@ -53,4 +70,19 @@ func (rustPackagesSource) ParseDependency(dep string) (reposource.PackageDepende
 
 func (rustPackagesSource) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
 	return reposource.ParseRustDependencyFromRepoName(repoName)
+}
+
+type cratesError struct {
+	Errors []struct {
+		Detail string `json:"detail"`
+	} `json:"errors"`
+}
+
+func (e *cratesError) Error() string {
+	details := make([]string, 0, len(e.Errors))
+	for _, detail := range e.Errors {
+		details = append(details, detail.Detail)
+	}
+
+	return "crates error(s): " + strings.Join(details, ", ")
 }
