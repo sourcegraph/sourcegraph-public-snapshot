@@ -161,7 +161,7 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	defer func() {
 		// We want to set the gauge only when wrong shard clean-up is enabled
 		if wrongShardReposDeleteLimit > 0 {
-			wrongShardReposDeletedTotal.Add(float64(wrongShardReposDeleted))
+			wrongShardReposDeletedCounter.Add(float64(wrongShardReposDeleted))
 		}
 	}()
 
