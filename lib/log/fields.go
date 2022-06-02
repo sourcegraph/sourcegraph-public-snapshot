@@ -1,6 +1,7 @@
 package log
 
 import (
+	"fmt"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -54,9 +55,25 @@ func shouldRedact(p privacy.Privacy) bool {
 	return p < privacy.Unknown
 }
 
+func fnv1a(s string, maxBytes int) uint32 {
+	// See https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function#FNV_hash_parameters
+	hash := uint64(0x811c9dc5)
+	for i := 0; i < maxBytes; i++ {
+		hash = (hash ^ uint64(s[i])) * 0x01000193
+	}
+	return uint32(hash)
+}
+
+func redact(s string) string {
+	if len(s) > 32 {
+		return fmt.Sprintf("<redacted:hash=%x,len=%d,hashPrefixLen=32>", fnv1a(s, 32), len(s))
+	}
+	return fmt.Sprintf("<redacted:hash=%x,len=%d>")
+}
+
 func Text(key string, t privacy.Text) Field {
 	if shouldRedact(t.Privacy()) {
-		return zap.String(key, "<redacted>")
+		return zap.String(key, redact(t.GetDataUnchecked()))
 	}
 	return zap.String(key, t.GetDataUnchecked())
 }
@@ -65,7 +82,7 @@ func Texts(key string, ts []privacy.Text) Field {
 	out := make([]string, 0, len(ts))
 	for _, t := range ts {
 		if shouldRedact(t.Privacy()) {
-			out = append(out, "<redacted>")
+			out = append(out, redact(t.GetDataUnchecked()))
 		} else {
 			out = append(out, t.GetDataUnchecked())
 		}
@@ -84,8 +101,8 @@ func Strings(key string, values []string, p privacy.Privacy) Field {
 		return zap.Strings(key, values)
 	}
 	out := make([]string, 0, len(values))
-	for i := 0; i < len(values); i++ {
-		out = append(out, "<redacted>")
+	for _, s := range values {
+		out = append(out, redact(s))
 	}
 	return zap.Strings(key, out)
 }
