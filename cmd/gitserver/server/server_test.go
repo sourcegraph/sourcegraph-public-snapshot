@@ -813,7 +813,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 		RepoID:        dbRepo.ID,
 		ShardID:       "",
 		CloneStatus:   types.CloneStatusNotCloned,
-		RepoSizeBytes: 0,
+		RepoSizeBytes: size,
 		LastError:     "",
 	}
 	fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
