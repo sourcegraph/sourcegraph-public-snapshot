@@ -517,7 +517,8 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.RustPackagesConnection:
-		limit = rate.Limit(57600.0 / 3600.0) // 16/second same as default in rust-packages.schema.json
+		// 1 request per second is default policy for crates.io
+		limit = rate.Limit(1)
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
