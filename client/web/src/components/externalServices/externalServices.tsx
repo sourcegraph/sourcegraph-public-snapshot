@@ -1388,7 +1388,7 @@ const RUST_PACKAGES = {
             <ol>
                 <li>
                     In the configuration below, set <Field>dependencies</Field> to the list of packages that you want to
-                    manually add. For example, <Typography.Code>"tokio@18.0.0"</Typography.Code>.
+                    manually add. For example, <Code>"tokio@18.0.0"</Code>.
                 </li>
             </ol>
             <Text>⚠️ Rust package repositories are visible by all users of the Sourcegraph instance.</Text>
