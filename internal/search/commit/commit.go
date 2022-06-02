@@ -30,7 +30,6 @@ type SearchJob struct {
 	RepoOpts             search.RepoOptions
 	Diff                 bool
 	Limit                int
-	CodeMonitorID        *int64
 	IncludeModifiedFiles bool
 
 	// CodeMonitorSearchWrapper, if set, will wrap the commit search with extra logic specific to code monitors.
