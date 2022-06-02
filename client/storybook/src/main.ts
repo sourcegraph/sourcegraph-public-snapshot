@@ -21,6 +21,7 @@ import {
     getBabelLoader,
     getBasicCSSLoader,
     getStatoscopePlugin,
+    STATIC_ASSETS_PATH,
 } from '@sourcegraph/build-config'
 
 import { ensureDllBundleIsReady } from './dllPlugin'
@@ -65,6 +66,7 @@ const getDllScriptTag = (): string => {
 }
 
 const config = {
+    staticDirs: [path.resolve(__dirname, '../assets'), STATIC_ASSETS_PATH],
     stories: getStoriesGlob(),
     addons: [
         '@storybook/addon-knobs',
@@ -77,6 +79,10 @@ const config = {
 
     core: {
         builder: 'webpack5',
+        options: {
+            lazyCompilation: true,
+            fsCache: true,
+        },
     },
 
     features: {

@@ -1,7 +1,7 @@
 import path from 'path'
 
-export const ROOT_PATH = path.resolve(__dirname, '../../../../')
-export const STATIC_ASSETS_PATH = path.resolve(ROOT_PATH, 'ui/assets')
+import { ROOT_PATH, STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
+
 export const STATIC_INDEX_PATH = path.resolve(STATIC_ASSETS_PATH, 'index.html')
 export const STATIC_ASSETS_URL = '/.assets/'
 export const DEV_SERVER_LISTEN_ADDR = { host: 'localhost', port: 3080 } as const
