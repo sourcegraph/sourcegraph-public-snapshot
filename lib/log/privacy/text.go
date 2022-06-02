@@ -5,6 +5,12 @@ package privacy
 //
 // It acts as an "immutable" container; instead of allowing ad-hoc
 // modification, methods return new Text values.
+//
+// NOTE: A String() method is deliberately omitted as accessing
+// the underlying string data directly makes it easy to accidentally
+// "launder" a Private Text into a Public Text. For common operations,
+// using MapData or Combine should be sufficient. If you _really_ need
+// direct access to the string data, use GetDataUnchecked.
 type Text struct {
 	data    string
 	privacy Privacy
