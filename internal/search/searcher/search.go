@@ -44,6 +44,8 @@ type TextSearchJob struct {
 	// repository if this field is true. Another example is we set this field
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
+
+	Features search.Features
 }
 
 // Run calls the searcher service on a set of repositories.
@@ -109,7 +111,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.LogFields(log.String("repo", string(repoRev.Repo.Name)), log.Error(err), log.Bool("timeout", errcode.IsTimeout(err)), log.Bool("temporary", errcode.IsTemporary(err)))
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
@@ -156,7 +158,7 @@ var MockSearchFilesInRepo func(
 	stream streaming.Sender,
 ) (limitHit bool, err error)
 
-func searchFilesInRepo(
+func (s *TextSearchJob) searchFilesInRepo(
 	ctx context.Context,
 	db database.DB,
 	searcherURLs *endpoint.Map,
@@ -189,8 +191,9 @@ func searchFilesInRepo(
 		return false, err
 	}
 
+	// Structural and hybrid search both speak to zoekt so need the endpoints.
 	var indexerEndpoints []string
-	if info.IsStructuralPat {
+	if info.IsStructuralPat || s.Features.HybridSearch {
 		indexerEndpoints, err = search.Indexers().Map.Endpoints()
 		if err != nil {
 			return false, err
@@ -204,7 +207,7 @@ func searchFilesInRepo(
 		})
 	}
 
-	return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, indexerEndpoints, onMatches)
+	return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, indexerEndpoints, s.Features, onMatches)
 }
 
 // newToMatches returns a closure that converts []*protocol.FileMatch to []result.Match.
@@ -341,8 +344,10 @@ func repoHasFilesWithNamesMatching(
 				foundMatches = true
 			}
 		}
+		// TODO(keegancsmith) we should be passing in more state here like
+		// indexer endpoints and features.
 		p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-		_, err := Search(ctx, searcherURLs, repo.Name, repo.ID, "", commit, false, &p, fetchTimeout, []string{}, onMatches)
+		_, err := Search(ctx, searcherURLs, repo.Name, repo.ID, "", commit, false, &p, fetchTimeout, []string{}, search.Features{}, onMatches)
 		if err != nil {
 			return false, err
 		}
