@@ -21,7 +21,7 @@ import (
 
 const pushEndpoint = "/loki/api/v1/push"
 
-const maxEntrySize = 65536
+const maxEntrySize = math.MaxUint16
 
 // To point at a custom instance, e.g. one on Grafana Cloud, refer to:
 // https://grafana.com/orgs/sourcegraph/hosted-logs/85581#sending-logs
@@ -120,12 +120,12 @@ func NewStreamFromJobLogs(log *bk.JobLogs) (*Stream, error) {
 		// each entry is incremented by 1 for each chunked entry.
 		//
 		// Note that we operate on the entry in values and not line, since if two entries timestamps are similar, their
-		// content get concatenated
+		// content get concatenated.
 		lastValue := values[len(values)-1]
 		if len(lastValue[1]) >= maxEntrySize {
 			chunkedEntries, err := chunkEntry(lastValue, maxEntrySize)
 			if err != nil {
-				return nil, errors.Newf("failed to split value entry into chunks: %w")
+				return nil, errors.Wrapf(err, "failed to split value entry into chunks")
 			}
 
 			values[len(values)-1] = chunkedEntries[0]
@@ -147,6 +147,7 @@ func chunkEntry(entry [2]string, chunkSize int) ([][2]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	// TODO(burmudar): Use runes instead since with bytes we might split on a UTF-8 char
 	chunks := splitIntoChunks([]byte(entry[1]), chunkSize)
 
 	results := make([][2]string, len(chunks))
@@ -195,9 +196,7 @@ func NewLokiClient(lokiURL *url.URL) *Client {
 }
 
 func (c *Client) PushStreams(ctx context.Context, streams []*Stream) error {
-	data := &jsonPushBody{Streams: streams}
-	body, err := json.Marshal(data)
-	time.Sleep(1 * time.Second)
+	body, err := json.Marshal(&jsonPushBody{Streams: streams})
 	if err != nil {
 		return err
 	}
