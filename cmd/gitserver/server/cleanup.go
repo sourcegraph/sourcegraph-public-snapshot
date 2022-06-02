@@ -137,7 +137,10 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	janitorRunning.Set(1)
 	defer janitorRunning.Set(0)
 	cleanupLogger := s.Logger.Scoped("cleanup", "cleanup operation")
-
+	gitServerAddressSet := map[string]struct{}{}
+	for _, server := range gitServerAddrs {
+		gitServerAddressSet[server] = struct{}{}
+	}
 	bCtx, bCancel := s.serverContext()
 	defer bCancel()
 
@@ -169,16 +172,19 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		repoToSize[name] = size
 
 		// Record the number and disk usage used of repos that should
-		// not belong on this instance. This is in preparation to a job that
-		// will actually remove these repos.
+		// not belong on this instance and remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
 		addr := addrForKey(name, gitServerAddrs)
 		if !s.hostnameMatch(addr) {
 			wrongShardRepoCount++
 			wrongShardRepoSize += size
 			if wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
+				if _, ok := gitServerAddressSet[s.Hostname]; !ok {
+					s.Logger.Warn("current shard is not included in the list of known gitserver shards, skipping", log.String("dir", string(dir)), log.String("current-shard", addr), log.Strings("all-shards", gitServerAddrs))
+					return false, nil
+				}
 				s.Logger.Info("removing repo cloned on the wrong shard", log.String("dir", string(dir)), log.String("target-shard", addr), log.String("current-shard", s.Hostname), log.Int64("size-bytes", size))
 				if err := s.removeRepoDirectory(dir); err != nil {
-					return true, err
+					return false, err
 				}
 				wrongShardReposDeleted++
 			}
