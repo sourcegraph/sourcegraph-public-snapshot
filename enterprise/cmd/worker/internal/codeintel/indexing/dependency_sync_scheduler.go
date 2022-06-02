@@ -135,7 +135,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 		logger.Info("syncing external services",
 			log.Int("upload", job.UploadID),
 			log.Int("numExtSvc", len(externalServices)),
-			log.Texts("schemaKinds", privacy.NewTexts(kindsArray, privacy.Unknown)),
+			log.Strings("schemaKinds", kindsArray, privacy.Unknown),
 			log.Int("newRepos", newDependencyReposInserted),
 			log.Int("existingInserts", oldDependencyReposInserted))
 

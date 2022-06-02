@@ -317,7 +317,7 @@ func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 
 		headerFields := make([]log.Field, 0, len(req.Header))
 		for k, v := range req.Header {
-			headerFields = append(headerFields, log.Texts(k, privacy.NewTexts(v, privacy.Unknown)))
+			headerFields = append(headerFields, log.Strings(k, v, privacy.Unknown))
 		}
 		l.log.Info("HTTP request",
 			log.String("method", req.Method, privacy.Unknown),
@@ -343,7 +343,7 @@ func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 
 		headerFields := make([]log.Field, 0, len(resp.Header))
 		for k, v := range resp.Header {
-			headerFields = append(headerFields, log.Texts(k, privacy.NewTexts(v, privacy.Unknown)))
+			headerFields = append(headerFields, log.Strings(k, v, privacy.Unknown))
 		}
 		l.log.Info("HTTP response",
 			log.String("method", req.Method, privacy.Unknown),

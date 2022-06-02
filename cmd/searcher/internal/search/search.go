@@ -171,7 +171,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 			log.String("pattern", p.Pattern, privacy.Unknown),
 			log.Bool("isRegExp", p.IsRegExp),
 			log.Bool("isStructuralPat", p.IsStructuralPat),
-			log.Texts("languages", privacy.NewTexts(p.Languages, privacy.Unknown)),
+			log.Strings("languages", p.Languages, privacy.Unknown),
 			log.Bool("isWordMatch", p.IsWordMatch),
 			log.Bool("isCaseSensitive", p.IsCaseSensitive),
 			log.Bool("patternMatchesContent", p.PatternMatchesContent),
@@ -179,7 +179,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 			log.Int("matches", sender.SentCount()),
 			log.String("code", code, privacy.Unknown),
 			log.Duration("duration", time.Since(start)),
-			log.Texts("indexerEndpoints", privacy.NewTexts(p.IndexerEndpoints, privacy.Unknown)),
+			log.Strings("indexerEndpoints", p.IndexerEndpoints, privacy.Unknown),
 			log.Error(err))
 	}(time.Now())
 
