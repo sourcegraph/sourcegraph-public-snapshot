@@ -47,7 +47,7 @@ func TestRegistryExtensions_validNames(t *testing.T) {
 
 	s := Extensions(db)
 
-	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,7 +121,7 @@ func TestRegistryExtensions(t *testing.T) {
 		}
 	}
 
-	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -353,7 +353,7 @@ func TestRegistryExtensions_ListCount(t *testing.T) {
 		}
 	}
 
-	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -424,7 +424,7 @@ func TestFeaturedExtensions(t *testing.T) {
 	releases := Releases(db)
 	s := &extensionStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 
-	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}

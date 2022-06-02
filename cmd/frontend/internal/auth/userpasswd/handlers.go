@@ -158,7 +158,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 		}
 	}
 
-	usr, err := database.Users(db).Create(r.Context(), newUserData)
+	usr, err := db.Users().Create(r.Context(), newUserData)
 	if err != nil {
 		var (
 			message    string

@@ -2976,7 +2976,7 @@ func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*tes
 		//  1. Is not a member of any organization
 		//  2. Is a member of an organization without a code host connection
 		//  3. Is a member of an organization with a code host connection
-		users := database.Users(db)
+		users := db.Users()
 		alice, err := users.Create(ctx,
 			database.NewUser{
 				Email:           "alice@example.com",
