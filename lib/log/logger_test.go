@@ -6,10 +6,10 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/privacy"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/globallogger"
 	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 func TestLogger(t *testing.T) {
@@ -30,7 +30,7 @@ func TestLogger(t *testing.T) {
 
 	logger = logger.WithTrace(log.TraceContext{TraceID: "1234abcde"})
 	logger.Info("goodbye", log.String("world", "hello", privacy.Unknown)) // 2
-	logger.Warn("another message")                       // 3
+	logger.Warn("another message")                                        // 3
 
 	logger.Error("object of fields", // 4
 		log.Object("object",
