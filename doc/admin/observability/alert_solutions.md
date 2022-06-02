@@ -1768,11 +1768,15 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod {{CONTAINER_NAME}}` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p {{CONTAINER_NAME}}`.
+	- Determine if the pod was OOM killed using `kubectl describe pod (pgsql|codeintel-db|codeinsights)` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p (pgsql|codeintel-db|codeinsights)`.
+	- Check if there is any OOMKILL event using the provisioning panels
+	- Check kernel logs using `dmesg` for OOMKILL events on worker nodes
 - **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' {{CONTAINER_NAME}}` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the {{CONTAINER_NAME}} container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs {{CONTAINER_NAME}}` (note this will include logs from the previous and currently running container).
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' (pgsql|codeintel-db|codeinsights)` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs (pgsql|codeintel-db|codeinsights)` (note this will include logs from the previous and currently running container).
+	- Check if there is any OOMKILL event using the provisioning panels
+	- Check kernel logs using `dmesg` for OOMKILL events
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-postgres-up).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
