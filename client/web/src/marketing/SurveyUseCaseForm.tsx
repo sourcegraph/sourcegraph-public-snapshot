@@ -4,43 +4,41 @@ import classNames from 'classnames'
 
 import { FlexTextArea, Typography, TextArea } from '@sourcegraph/wildcard'
 
+import { SurveyUseCase } from '../graphql-operations'
+
 import { SurveyUseCaseCheckbox } from './SurveyUseCaseCheckbox'
 
 import styles from './SurveyUseCaseForm.module.scss'
 
 export const OPTIONS = [
     {
-        id: 'understandCodebase',
+        id: SurveyUseCase.UNDERSTAND_NEW_CODE,
         labelValue: 'Understand a new codebase',
     },
     {
-        id: 'fixSecurityVulnerability',
+        id: SurveyUseCase.FIX_SECURITY_VULNERABILITIES,
         labelValue: 'Fix security vulnerabilities',
     },
     {
-        id: 'reuseCode',
+        id: SurveyUseCase.REUSE_CODE,
         labelValue: 'Reuse code',
     },
     {
-        id: 'respondToIncidents',
+        id: SurveyUseCase.RESPOND_TO_INCIDENTS,
         labelValue: 'Respond to incidents',
     },
     {
-        id: 'ImproveCodeQuality',
+        id: SurveyUseCase.IMPROVE_CODE_QUALITY,
         labelValue: 'Improve code quality',
-    },
-    {
-        id: 'other',
-        labelValue: 'Other',
     },
 ]
 
 interface SurveyUseCaseFormProps {
-    onChangeUseCases: (useCases: string[]) => void
+    onChangeUseCases: (useCases: SurveyUseCase[]) => void
     onChangeOtherUseCase: (others: string) => void
     onChangeMoreShareInfo: (moreInfo: string) => void
     formLabelClassName?: string
-    moreSharedInfo: string
+    additionalInformation: string
     otherUseCase: string
     className?: string
     title: string
@@ -51,14 +49,15 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
     onChangeOtherUseCase,
     onChangeUseCases,
     formLabelClassName,
-    moreSharedInfo,
+    additionalInformation,
     otherUseCase,
     className,
     title,
 }) => {
-    const [useCases, setUseCases] = useState<string[]>([])
+    const [useCases, setUseCases] = useState<SurveyUseCase[]>([])
+    const [showOtherInput, setShowOtherInput] = useState<boolean>(false)
 
-    const handleSelectUseCase = (value: string): void => {
+    const handleSelectUseCase = (value: SurveyUseCase): void => {
         if (useCases.includes(value)) {
             setUseCases(current => current.filter(instance => instance !== value))
             return
@@ -87,8 +86,16 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                         aria-labelledby="usecase-group"
                     />
                 ))}
+                <SurveyUseCaseCheckbox
+                    onChange={() => setShowOtherInput(!showOtherInput)}
+                    key="other"
+                    id="other"
+                    checked={showOtherInput}
+                    label="other"
+                    aria-labelledby="usecase-group"
+                />
             </div>
-            {useCases.includes('other') && (
+            {showOtherInput && (
                 <FlexTextArea
                     containerClassName="mt-3"
                     label={
@@ -107,7 +114,7 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                 size="small"
                 name="more"
                 onChange={event => onChangeMoreShareInfo(event.target.value)}
-                value={moreSharedInfo}
+                value={additionalInformation}
                 label={
                     <span className={classNames(styles.textareaLabel, formLabelClassName)}>
                         Anything else you would like to share with us?

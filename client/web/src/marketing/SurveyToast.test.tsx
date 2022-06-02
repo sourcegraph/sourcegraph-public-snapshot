@@ -10,7 +10,9 @@ import {
     TemporarySettingsStorage,
 } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
+import { submitSurveyMock } from './SurveyPage.mocks'
 import { SurveyToast } from './SurveyToast'
 import { OPTIONS } from './SurveyUseCaseForm'
 
@@ -37,10 +39,13 @@ describe('SurveyToast', () => {
 
     const renderwithTemporarySettings = (settings: TemporarySettings) => {
         settingsStorage.setSettingsBackend(new InMemoryMockSettingsBackend(settings))
+
         return renderWithBrandedContext(
-            <TemporarySettingsContext.Provider value={settingsStorage}>
-                <SurveyToast />
-            </TemporarySettingsContext.Provider>
+            <MockedTestProvider mocks={[submitSurveyMock]}>
+                <TemporarySettingsContext.Provider value={settingsStorage}>
+                    <SurveyToast />
+                </TemporarySettingsContext.Provider>
+            </MockedTestProvider>
         )
     }
 
@@ -125,6 +130,10 @@ describe('SurveyToast', () => {
     })
 
     describe('toast has been temporarily dismissed by the user', () => {
+        beforeEach(() => {
+            renderResult = renderwithTemporarySettings({ 'user.daysActiveCount': 33 })
+        })
+
         describe('on day 3', () => {
             beforeEach(() => {
                 renderResult = renderwithTemporarySettings({
@@ -144,7 +153,6 @@ describe('SurveyToast', () => {
                     'npsSurvey.hasTemporarilyDismissed': true,
                     'user.daysActiveCount': 30,
                 })
-                renderResult = renderWithBrandedContext(<SurveyToast />)
             })
 
             it('the user is not surveyed but toast dismissal is set to false', async () => {
@@ -205,7 +213,7 @@ describe('SurveyToast', () => {
             expect(renderResult.getByLabelText('Anything else you would like to share with us?')).toBeVisible()
         })
         it('Should allow user to provide arbitrary use case', () => {
-            const otherUseCaseElement = renderResult.getByLabelText('Other')
+            const otherUseCaseElement = renderResult.getByLabelText('other')
             fireEvent.click(otherUseCaseElement)
 
             expect(renderResult.getByLabelText('What else are you using sourcegraph to do?')).toBeVisible()

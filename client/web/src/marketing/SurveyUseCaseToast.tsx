@@ -1,6 +1,8 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { Button } from '@sourcegraph/wildcard'
+
+import { SurveyUseCase } from '../graphql-operations'
 
 import { SurveyUseCaseForm } from './SurveyUseCaseForm'
 import { Toast } from './Toast'
@@ -8,28 +10,36 @@ import { Toast } from './Toast'
 import styles from './SurveyUseCaseToast.module.scss'
 
 interface FormStateType {
-    moreSharedInfo: string
+    additionalInformation: string
     otherUseCase: string
-    useCases: string[]
+    useCases: SurveyUseCase[]
 }
 
 interface SurveyUseCaseFormToast {
     onDismiss: () => void
-    handleDone: (props: FormStateType) => void
+    onDone: () => void
+    onChange: (props: FormStateType) => void
 }
 
-export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToast> = ({ onDismiss, handleDone }) => {
-    const [useCases, setUseCases] = useState<string[]>([])
+export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToast> = ({
+    onDismiss,
+    onDone,
+    onChange,
+}) => {
+    const [useCases, setUseCases] = useState<SurveyUseCase[]>([])
     const [otherUseCase, setOtherUseCase] = useState<string>('')
-    const [moreSharedInfo, setMoreSharedInfo] = useState<string>('')
+    const [additionalInformation, setAdditionalInformation] = useState<string>('')
 
-    const handleSubmit = (): void => {
-        handleDone({
+    const handleSubmit = (): void => onDone()
+
+    useEffect(() => {
+        onChange({
             useCases,
             otherUseCase,
-            moreSharedInfo,
+            additionalInformation,
         })
-    }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [useCases, otherUseCase, additionalInformation])
 
     return (
         <Toast
@@ -41,8 +51,8 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToast>
                     onChangeUseCases={value => setUseCases(value)}
                     otherUseCase={otherUseCase}
                     onChangeOtherUseCase={others => setOtherUseCase(others)}
-                    moreSharedInfo={moreSharedInfo}
-                    onChangeMoreShareInfo={moreInfo => setMoreSharedInfo(moreInfo)}
+                    additionalInformation={additionalInformation}
+                    onChangeMoreShareInfo={moreInfo => setAdditionalInformation(moreInfo)}
                 />
             }
             footer={

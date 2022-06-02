@@ -1,12 +1,23 @@
 import React, { useEffect, useState } from 'react'
 
+import { gql, useMutation } from '@apollo/client'
+
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 
+import { SubmitSurveyResult, SubmitSurveyVariables, SurveyUseCase } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { SurveySuccess } from './SurveySuccess'
 import { SurveyUseCaseToast } from './SurveyUseCaseToast'
 import { SurveyUserRatingForm } from './SurveyUserRatingForm'
+
+const SUBMIT_SURVEY = gql`
+    mutation SubmitSurvey($input: SurveySubmissionInput!) {
+        submitSurvey(input: $input) {
+            alwaysNil
+        }
+    }
+`
 
 interface SurveyToastProps {
     /**
@@ -17,8 +28,8 @@ interface SurveyToastProps {
 
 interface UserFeedbackProps {
     score: number
-    useCases: string[]
-    moreSharedInfo: string
+    useCases: SurveyUseCase[]
+    additionalInformation: string
     otherUseCase: string
 }
 
@@ -26,11 +37,6 @@ enum ToastSteps {
     rate = 1,
     useCase = 2,
     thankYou = 3,
-}
-
-const handleSubmit = (): void => {
-    // TODO: Send <userFeedback> to backend
-    // Moved out of component score temporarily.
 }
 
 export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<SurveyToastProps>> = ({ forceVisible }) => {
@@ -54,8 +60,20 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
         score: -1,
         useCases: [],
         otherUseCase: '',
-        moreSharedInfo: '',
+        additionalInformation: '',
     })
+
+    const [submitSurvey] = useMutation<SubmitSurveyResult, SubmitSurveyVariables>(SUBMIT_SURVEY)
+
+    const handleSubmit = async (): void => {
+        await submitSurvey({
+            variables: {
+                input: {
+                    ...userFeedback,
+                },
+            },
+        })
+    }
 
     const handleContinue = (): void => {
         if (userFeedback.score !== -1) {
@@ -90,8 +108,7 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
     }, [loadingTemporarySettings, daysActiveCount, setTemporarilyDismissed])
 
     const onDismiss = (): void => {
-        if (activeStep === ToastSteps.useCase) {
-            // TODO: Send userFeedback to backend.
+        if (userFeedback.score !== -1 && activeStep !== ToastSteps.thankYou) {
             handleSubmit()
         }
 
@@ -110,10 +127,12 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
         case ToastSteps.useCase:
             return (
                 <SurveyUseCaseToast
-                    handleDone={formState => {
-                        setUserFeedback(current => ({ ...current, ...formState }))
+                    onDone={() => {
                         handleSubmit()
                         handleContinue()
+                    }}
+                    onChange={formState => {
+                        setUserFeedback(current => ({ ...current, ...formState }))
                     }}
                     onDismiss={onDismiss}
                 />

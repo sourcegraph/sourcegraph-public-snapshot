@@ -7,7 +7,7 @@ import { useMutation, gql } from '@sourcegraph/http-client'
 import { Button, LoadingSpinner, Typography, Text, Input } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { SubmitSurveyResult, SubmitSurveyVariables } from '../graphql-operations'
+import { SubmitSurveyResult, SubmitSurveyVariables, SurveyUseCase } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { SurveyRatingRadio } from './SurveyRatingRadio'
@@ -43,9 +43,9 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
     const history = useHistory<SurveyFormLocationState>()
     const [email, setEmail] = useState('')
     const [validationError, setValidationError] = useState<Error | null>(null)
-    const [_useCases, setUseCases] = useState<string[]>([])
+    const [useCases, setUseCases] = useState<SurveyUseCase[]>([])
     const [otherUseCase, setOtherUseCase] = useState<string>('')
-    const [moreSharedInfo, setMoreSharedInfo] = useState<string>('')
+    const [additionalInformation, setAdditionalInformation] = useState<string>('')
 
     const [submitSurvey, response] = useMutation<SubmitSurveyResult, SubmitSurveyVariables>(SUBMIT_SURVEY, {
         onCompleted: () => {
@@ -54,7 +54,7 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
                 state: {
                     // Mutation is only submitted when score is defined
                     score: score!,
-                    feedback: moreSharedInfo,
+                    feedback: additionalInformation,
                 },
             })
         },
@@ -81,15 +81,11 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
         await submitSurvey({
             variables: {
                 input: {
-                    score,
                     email,
-                    reason: moreSharedInfo,
-                    better: otherUseCase,
-
-                    // // TODO: Update api to recieve params
-                    // useCases,
-                    // otherUseCase
-                    // moreSharedInfo
+                    score,
+                    useCases,
+                    otherUseCase,
+                    additionalInformation,
                 },
             },
         })
@@ -123,8 +119,8 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
                 onChangeUseCases={value => setUseCases(value)}
                 otherUseCase={otherUseCase}
                 onChangeOtherUseCase={others => setOtherUseCase(others)}
-                moreSharedInfo={moreSharedInfo}
-                onChangeMoreShareInfo={moreInfo => setMoreSharedInfo(moreInfo)}
+                additionalInformation={additionalInformation}
+                onChangeMoreShareInfo={moreInfo => setAdditionalInformation(moreInfo)}
             />
             <div className="form-group">
                 <Button display="block" variant="primary" type="submit" disabled={response.loading}>
