@@ -881,6 +881,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true, CloneFromShard: req.CloneFromShard})
 		if err != nil {
 			s.Logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
+			s.setLastErrorNonFatal(ctx, req.Repo, err)
 			resp.Error = err.Error()
 		}
 	} else {
