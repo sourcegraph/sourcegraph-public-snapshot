@@ -11,10 +11,11 @@ import styles from './StandaloneInsightDashboardPills.module.scss'
 
 interface StandaloneInsightDashboardPillsProps extends HTMLAttributes<HTMLDivElement> {
     dashboards: InsightDashboardReference[]
+    insightId: string
 }
 
 export const StandaloneInsightDashboardPills: FunctionComponent<StandaloneInsightDashboardPillsProps> = props => {
-    const { dashboards, className, ...attributes } = props
+    const { dashboards, insightId, className, ...attributes } = props
 
     return (
         <div {...attributes} className={classNames(className, styles.list)}>
@@ -26,10 +27,12 @@ export const StandaloneInsightDashboardPills: FunctionComponent<StandaloneInsigh
                 <Button
                     key={dashboard.id}
                     as={Link}
-                    to={`/insights/dashboards/${dashboard.id}`}
+                    to={`/insights/dashboards/${dashboard.id}?focused=${insightId}`}
                     variant="secondary"
                     outline={true}
                     size="sm"
+                    target="_blank"
+                    rel="noopener"
                     className={styles.pill}
                 >
                     <Icon as={ViewDashboardIcon} />

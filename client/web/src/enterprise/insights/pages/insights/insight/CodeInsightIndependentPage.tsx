@@ -41,7 +41,11 @@ export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependen
                 actions={<CodeInsightIndependentPageActions insight={insight} />}
             />
 
-            <StandaloneInsightDashboardPills dashboards={insight.dashboards} className={styles.dashboards} />
+            <StandaloneInsightDashboardPills
+                dashboards={insight.dashboards}
+                insightId={insight.id}
+                className={styles.dashboards}
+            />
 
             <div className={styles.content}>
                 <SmartStandaloneInsight insight={insight} telemetryService={telemetryService} />
