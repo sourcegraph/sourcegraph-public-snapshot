@@ -37,7 +37,7 @@ func ParseRustDependency(dependency string) (*RustDependency, error) {
 func ParseRustDependencyFromRepoName(name string) (*RustDependency, error) {
 	dependency := strings.TrimPrefix(name, "crates/")
 	if len(dependency) == len(name) {
-		return nil, errors.New("invalid Rust dependency repo name, missing crates/ prefix")
+		return nil, errors.Newf("invalid Rust dependency repo name, missing crates/ prefix '%s'", name)
 	}
 	return ParseRustDependency(dependency)
 }

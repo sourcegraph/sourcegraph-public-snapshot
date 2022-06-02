@@ -75,7 +75,7 @@ func inferRustRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, 
 
 	rustPkg, err := reposource.ParseRustDependency(pkg.Name)
 	if err != nil {
-		log15.Error("invalid rust package name in database", "error", err)
+		log15.Error("invalid rust package name in database", "error", err, "pkg", pkg.Name)
 		return "", "", false
 	}
 
