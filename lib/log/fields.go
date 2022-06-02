@@ -64,6 +64,8 @@ func fnv1a(s string, maxBytes int) uint32 {
 	return uint32(hash)
 }
 
+// redact renders a hash of string to aid in debugging, rather than render '<redacted>' everywhere.
+// It does not have any uniqueness or security guarantees.
 func redact(s string) string {
 	if len(s) > 32 {
 		return fmt.Sprintf("<redacted:hash=%x,len=%d,hashPrefixLen=32>", fnv1a(s, 32), len(s))
