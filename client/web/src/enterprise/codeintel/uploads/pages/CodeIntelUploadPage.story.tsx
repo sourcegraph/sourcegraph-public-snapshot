@@ -339,12 +339,48 @@ WithAuditLogs.args = {
                 {
                     logTimestamp: '2020-06-15T12:20:30+00:00',
                     uploadDeletedAt: null,
-                    reason: null,
+                    reason: 'because I feel like it, and it was a Wednesday evening',
                     changedColumns: [
                         {
                             column: 'state',
                             old: 'UPLOADING',
                             new: 'PROCESSING',
+                        },
+                    ],
+                    operation: AuditLogOperation.MODIFY,
+                },
+                {
+                    logTimestamp: '2020-06-16T12.00.30+00:00',
+                    uploadDeletedAt: null,
+                    reason: null,
+                    changedColumns: [
+                        {
+                            column: 'banana',
+                            old: 'hello',
+                            new: 'goodbye and good riddance',
+                        },
+                    ],
+                    operation: AuditLogOperation.MODIFY,
+                },
+                {
+                    logTimestamp: '2020-12-16T12.00.30+00:00',
+                    uploadDeletedAt: null,
+                    reason: null,
+                    changedColumns: [
+                        {
+                            column: 'sample_text',
+                            old: null,
+                            new: 'Lorem ipsum dolor sit amet.',
+                        },
+                        {
+                            column: 'ipsum',
+                            old: 'that last one was quite something',
+                            new: 'that last one was truncated before publishing',
+                        },
+                        {
+                            column: 'lorem',
+                            old: '500',
+                            new: '501',
                         },
                     ],
                     operation: AuditLogOperation.MODIFY,
