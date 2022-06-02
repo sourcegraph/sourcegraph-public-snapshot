@@ -15,9 +15,9 @@ func Worker() *monitoring.Dashboard {
 		Name  string
 		Owner monitoring.ObservableOwner
 	}{
-		{Name: "codeintel-janitor", Owner: monitoring.ObservableOwnerCodeIntel},
-		{Name: "codeintel-commitgraph", Owner: monitoring.ObservableOwnerCodeIntel},
-		{Name: "codeintel-auto-indexing", Owner: monitoring.ObservableOwnerCodeIntel},
+		{Name: "codeintel-upload-janitor", Owner: monitoring.ObservableOwnerCodeIntel},
+		{Name: "codeintel-commitgraph-updater", Owner: monitoring.ObservableOwnerCodeIntel},
+		{Name: "codeintel-autoindexing-scheduler", Owner: monitoring.ObservableOwnerCodeIntel},
 	}
 
 	var activeJobObservables []monitoring.Observable

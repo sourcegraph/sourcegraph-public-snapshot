@@ -431,7 +431,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 				multi = errors.Append(multi, err)
 			}
 		}
-		return multi
+		return nil
 	})
 	if multi != nil {
 		log15.Error("historical_enqueuer.buildFrames - multierror", "err", multi)
