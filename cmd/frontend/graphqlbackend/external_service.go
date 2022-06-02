@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -112,7 +111,6 @@ func (r *externalServiceResolver) WebhookURL() (*string, error) {
 		}
 		u, err := extsvc.WebhookURL(r.externalService.Kind, r.externalService.ID, parsed, conf.ExternalURL())
 		if err != nil {
-			fmt.Printf("Err building webhook URL: %s\n", err)
 			r.webhookErr = errors.Wrap(err, "building webhook URL")
 		}
 		// If no webhook URL can be built for the kind, we bail out and don't throw an error.
@@ -142,9 +140,7 @@ func (r *externalServiceResolver) WebhookURL() (*string, error) {
 		}
 	})
 	if r.webhookURL == "" {
-		fmt.Printf("WEBHOOK URL EMPTY: %s\n", r.webhookErr)
-		return nil, nil
-		//return nil, r.webhookErr
+		return nil, r.webhookErr
 	}
 	return &r.webhookURL, r.webhookErr
 }
