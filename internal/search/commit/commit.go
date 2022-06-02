@@ -67,30 +67,10 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		resultType = "diff"
 	}
 
-	var repoRevs []*search.RepositoryRevisions
-	repos := searchrepos.Resolver{DB: clients.DB, Opts: opts}
-	err = repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
-		if repoRevs = page.RepoRevs; page.Next != nil {
-			return newReposLimitError(opts.Limit, j.HasTimeFilter, resultType)
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	bounded := goroutine.NewBounded(8)
-	for _, repoRev := range repoRevs {
-		repoRev := repoRev // we close over repoRev in onMatches
-		if ctx.Err() != nil {
-			// Don't keep spinning up goroutines if context has been canceled,
-			// but make sure we still clean up any running goroutines.
-			return nil, errors.Append(ctx.Err(), bounded.Wait())
-		}
-
+	searchRepoRev := func(repoRev *search.RepositoryRevisions) error {
 		// Skip the repo if no revisions were resolved for it
 		if len(repoRev.Revs) == 0 {
-			continue
+			return nil
 		}
 
 		args := &protocol.SearchRequest{
@@ -122,11 +102,34 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 			return err
 		}
 
+		if j.CodeMonitorSearchWrapper != nil {
+			return j.CodeMonitorSearchWrapper(ctx, clients.DB, clients.Gitserver, args, repoRev.Repo.ID, doSearch)
+		}
+		return doSearch(args)
+	}
+
+	var repoRevs []*search.RepositoryRevisions
+	repos := searchrepos.Resolver{DB: clients.DB, Opts: opts}
+	err = repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
+		if repoRevs = page.RepoRevs; page.Next != nil {
+			return newReposLimitError(opts.Limit, j.HasTimeFilter, resultType)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	bounded := goroutine.NewBounded(8)
+	for _, repoRev := range repoRevs {
+		repoRev := repoRev // we close over repoRev in onMatches
+		if ctx.Err() != nil {
+			// Don't keep spinning up goroutines if context has been canceled,
+			// but make sure we still clean up any running goroutines.
+			return nil, errors.Append(ctx.Err(), bounded.Wait())
+		}
 		bounded.Go(func() error {
-			if j.CodeMonitorSearchWrapper != nil {
-				return j.CodeMonitorSearchWrapper(ctx, clients.DB, clients.Gitserver, args, repoRev.Repo.ID, doSearch)
-			}
-			return doSearch(args)
+			return searchRepoRev(repoRev)
 		})
 	}
 
