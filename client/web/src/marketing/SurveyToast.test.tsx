@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'
-import { cleanup, fireEvent } from '@testing-library/react'
+import { cleanup, fireEvent, waitFor } from '@testing-library/react'
 import { take } from 'rxjs/operators'
 
 import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
@@ -12,7 +12,7 @@ import {
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { submitSurveyMock } from './SurveyPage.mocks'
+import { mockVariables, submitSurveyMock } from './SurveyPage.mocks'
 import { SurveyToast } from './SurveyToast'
 import { OPTIONS } from './SurveyUseCaseForm'
 
@@ -219,12 +219,30 @@ describe('SurveyToast', () => {
             expect(renderResult.getByLabelText('What else are you using sourcegraph to do?')).toBeVisible()
         })
 
-        it('Should show some gratitude after usecase submission', () => {
+        it('Should show some gratitude after usecase submission', async () => {
+            const reasonInput = renderResult.getByLabelText('Anything else you would like to share with us?')
+            expect(reasonInput).toBeVisible()
+            fireEvent.change(reasonInput, { target: { value: mockVariables.additionalInformation } })
+
+            const respondToIncidentCheck = renderResult.getByLabelText('Respond to incidents')
+            expect(respondToIncidentCheck).toBeVisible()
+            fireEvent.click(respondToIncidentCheck)
+
+            const otherUseCaseCheckbox = renderResult.getByLabelText('other')
+            fireEvent.click(otherUseCaseCheckbox)
+
+            const otherUseCaseInput = renderResult.getByLabelText('What else are you using sourcegraph to do?')
+            expect(otherUseCaseInput).toBeVisible()
+
+            fireEvent.change(otherUseCaseInput, { target: { value: mockVariables.otherUseCase } })
+
             const doneButton = renderResult.getByRole('button', { name: 'Done' })
             expect(doneButton).toBeVisible()
             fireEvent.click(doneButton)
 
-            expect(renderResult.getByText('Thank you for your feedback!')).toBeVisible()
+            await waitFor(() => {
+                expect(renderResult.getByText('Thank you for your feedback!')).toBeVisible()
+            })
         })
     })
 })

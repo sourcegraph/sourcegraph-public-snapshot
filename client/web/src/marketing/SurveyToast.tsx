@@ -70,6 +70,7 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
             variables: {
                 input: {
                     ...userFeedback,
+                    email: '',
                 },
             },
         })
