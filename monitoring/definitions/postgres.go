@@ -84,6 +84,8 @@ func Postgres() *monitoring.Dashboard {
 								- **Docker Compose:**
 									- Determine if the pod was OOM killed using 'docker inspect -f \'{{json .State}}\' %[1]s' (look for '"OOMKilled":true') and, if so, consider increasing the memory limit of the %[1]s container in 'docker-compose.yml'.
 									- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'docker logs %[1]s' (note this will include logs from the previous and currently running container).
+									- Check if there is any OOMKILL event using the provisioning panels
+									- Check kernel logs using `dmesg` for OOMKILL events
 							`, "{{CONTAINER_NAME}}", containerName),
 							Interpretation: "A non-zero value indicates the database is online.",
 						},
