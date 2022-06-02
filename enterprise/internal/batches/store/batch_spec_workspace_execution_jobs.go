@@ -209,11 +209,19 @@ func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecution
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	return sqlf.Sprintf(
+	q := sqlf.Sprintf(
 		getBatchSpecWorkspaceExecutionJobsQueryFmtstr,
 		sqlf.Join(BatchSpecWorkspaceExecutionJobColumns.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
+
+	// fmt.Println("")
+	// fmt.Printf("Query: %s", q.Query(sqlf.PostgresBindVar))
+	// fmt.Println("")
+	// fmt.Printf("Args :%v", q.Args())
+	// fmt.Println("")
+
+	return q
 }
 
 // ListBatchSpecWorkspaceExecutionJobsOpts captures the query options needed for
