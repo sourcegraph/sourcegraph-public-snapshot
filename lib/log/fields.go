@@ -23,6 +23,8 @@ var (
 	Int = zap.Int
 	// Ints constructs a field that carries a slice of integers.
 	Ints = zap.Ints
+	// Int32s constructs a field that carries a slice of 32 bit integers.
+	Int32s = zap.Int32s
 	// Int64 constructs a field with the given key and value.
 	Int64 = zap.Int64
 
