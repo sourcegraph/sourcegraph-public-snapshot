@@ -55,15 +55,7 @@ func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.D
 type GetProjectAccessResponse map[string]ProjectAccessInfo
 
 func (c *Client) GetProjectAccess(ctx context.Context, projects ...string) (GetProjectAccessResponse, error) {
-	urlPath := "a/access/?"
-	// TODO: move this url formation piece somewhere else.
-	for i, proj := range projects {
-		urlPath += fmt.Sprintf("project=%s", proj)
-		if i != len(projects)-1 {
-			urlPath += "&"
-		}
-	}
-	fmt.Printf("URL: %s\n", urlPath)
+	urlPath := buildProjectAccessURLPath(projects...)
 
 	reqAllAccounts, err := http.NewRequest("GET", urlPath, nil)
 
@@ -75,6 +67,17 @@ func (c *Client) GetProjectAccess(ctx context.Context, projects ...string) (GetP
 		return respProjAccess, err
 	}
 	return respProjAccess, nil
+}
+
+func buildProjectAccessURLPath(projects ...string) string {
+	urlPath := "a/access/?"
+	for i, proj := range projects {
+		urlPath += fmt.Sprintf("project=%s", proj)
+		if i != len(projects)-1 {
+			urlPath += "&"
+		}
+	}
+	return urlPath
 }
 
 type GetAccountGroupsResponse []GroupInfo
@@ -98,13 +101,13 @@ type ListAccountsResponse []Account
 
 func (c *Client) ListAccountsByEmail(ctx context.Context, email string) (ListAccountsResponse, error) {
 	qsAccounts := make(url.Values)
-	qsAccounts.Set("q", fmt.Sprintf("email:%s", email)) // TODO: what query should we run?
+	qsAccounts.Set("q", fmt.Sprintf("email:%s", email))
 	return c.listAccounts(ctx, qsAccounts)
 }
 
 func (c *Client) ListAccountsByUsername(ctx context.Context, username string) (ListAccountsResponse, error) {
 	qsAccounts := make(url.Values)
-	qsAccounts.Set("q", fmt.Sprintf("username:%s", username)) // TODO: what query should we run?
+	qsAccounts.Set("q", fmt.Sprintf("username:%s", username))
 	return c.listAccounts(ctx, qsAccounts)
 }
 
