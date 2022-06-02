@@ -10,10 +10,16 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// worker encapsulate the process of sending events to Sentry.
-// The internal implementation used a buffered approach that batches sending events. The default batch size is
-// 30, so for the first iteration, it's good enough approach. We may want to reconsider if we observe events
-// being dropped because the batch is full.
+const (
+	// flushDelay defines the brief window in which log messages are still accepted
+	// before flushing.
+	flushDelay = 500 * time.Millisecond
+	// sentryTimeout defines how much time Sentry has to send the events.
+	sentryTimeout = 5 * time.Second
+)
+
+// worker encapsulate the process of sending events to Sentry by asynchronously
+// consuming Cores, turning them into capturable, annotated errors.
 //
 // See https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/getsentry/sentry-go%24+file:%5Etransport%5C.go+defaultBufferSize&patternType=literal for more details.
 type worker struct {
@@ -25,17 +31,10 @@ type worker struct {
 	timeout chan struct{}
 	// done stops the worker from accepting new cores when written into.
 	done chan struct{}
-	// batch stores cores for processing, leveraging the ability of the Sentry client to send batched reports.
-	batch batch
 }
 
 type sentryHub struct {
 	hub *sentry.Hub
-	sync.Mutex
-}
-
-type batch struct {
-	batch []*Core
 	sync.Mutex
 }
 
@@ -45,47 +44,32 @@ func (w *worker) setHub(hub *sentry.Hub) {
 	w.hub.hub = hub
 }
 
-// accept consumes incoming cores and accumulates them into a batch.
-func (w *worker) accept() {
+// start kicks off the consuming go routine.
+func (w *worker) start() {
+	go w.consume()
+}
+
+// consume consumes incoming cores and turn them into reportable errors.
+func (w *worker) consume() {
+	ticker := time.NewTicker(flushDelay)
+	defer ticker.Stop()
 	for {
 		select {
 		case c := <-w.C:
-			// As the select statement picks randomly when two cases are ready, we need
-			// to manually ensure we're always consuming first.
-			w.batch.Lock()
-			// Incorrect
-			// w.out.Add(1)
-			w.batch.batch = append(w.batch.batch, c)
-			w.batch.Unlock()
-		case <-w.done:
-			return
-		}
-	}
-}
-
-// process periodically send out the batch.
-func (w *worker) process() {
-	ticker := time.Tick(10 * time.Millisecond)
-	for {
-		select {
-		case <-ticker:
-			w.batch.Lock()
-			for _, c := range w.batch.batch {
-				w.work(c)
+			w.work(c)
+		case <-ticker.C:
+			// We only check if we're closing periodically, to make sure we have
+			// consumed the last few events that were sent.
+			select {
+			case <-w.done:
+				return
+			default:
 			}
-			w.batch.batch = w.batch.batch[:0] // reuse the same slice.
-			w.batch.Unlock()
 		}
 	}
 }
 
-// start kicks off goroutines that the worker requires.
-func (w *worker) start() {
-	// Increment the wait group to ensure we are never closing before the first input.
-	go w.accept()
-	go w.process()
-}
-
+// work splits a core into multiple errors and capture them.
 func (w *worker) work(c *Core) {
 	for _, err := range c.errs {
 		ec := errorContext{baseContext: c.base}
@@ -96,37 +80,19 @@ func (w *worker) work(c *Core) {
 
 // Flush blocks for a couple seconds at most, trying to flush all accumulated errors.
 //
-// It tries to accept all errors that are queued for two seconds then blocks any further events
-// to be queued until the Sentry buffer empties or reaches a five second timeout.
+// It will keep consuming events based for a duration defined by flushDelay and
+// then tells Sentry to flush for a max duration of sentryTimeout.
 func (w *worker) Flush() error {
-	// w.out.Done()
-	// Wait until we have collected all errors and then stop accepting new errors.
 	w.done <- struct{}{}
-
-	ticker := time.NewTicker(time.Millisecond)
-	timeout := time.After(2 * time.Second)
-	for {
-		select {
-		case <-ticker.C:
-			w.batch.Lock()
-			if len(w.batch.batch) == 0 {
-				w.batch.Unlock()
-				w.flush()
-				return nil
-			}
-			w.batch.Unlock()
-		case <-timeout:
-			w.flush()
-			return nil
-		}
-	}
+	w.flush()
+	return nil
 }
 
 func (w *worker) flush() {
 	// Flush Sentry
-	w.hub.hub.Flush(5 * time.Second)
+	w.hub.hub.Flush(sentryTimeout)
 	// Start accepting new errors again.
-	go w.accept()
+	go w.consume()
 }
 
 // capture submits an ErrorContext to Sentry.
@@ -195,20 +161,4 @@ func (w *worker) capture(errCtx errorContext) {
 		scope.SetLevel(level)
 		w.hub.hub.CaptureEvent(event)
 	})
-}
-
-// waitTimeout implements a mechanism to wait on a sync.WaitGroup, but avoid blocking
-// forever by also returning a timeout.
-func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
-	c := make(chan struct{})
-	go func() {
-		defer close(c)
-		wg.Wait()
-	}()
-	select {
-	case <-c:
-		return false // completed normally
-	case <-time.After(timeout):
-		return true // timed out
-	}
 }
