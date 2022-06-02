@@ -288,6 +288,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 					PatternInfo:     patternInfo,
 					Indexed:         false,
 					UseFullDeadline: useFullDeadline,
+					Features:        features,
 				}
 
 				addJob(&repoPagerJob{
@@ -333,6 +334,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 			searcherArgs := &search.SearcherParameters{
 				PatternInfo:     patternInfo,
 				UseFullDeadline: useFullDeadline,
+				Features:        features,
 			}
 
 			addJob(&structural.SearchJob{
@@ -788,6 +790,7 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 
 	return search.Features{
 		ContentBasedLangFilters: flags.GetBoolOr("search-content-based-lang-detection", false),
+		HybridSearch:            flags.GetBoolOr("search-hybrid", false),
 	}
 }
 

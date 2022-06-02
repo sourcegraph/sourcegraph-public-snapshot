@@ -92,8 +92,6 @@ interface State {
     /** Recently invoked actions, which should be sorted first in the list. */
     recentActions: string[] | null
 
-    autoFocus?: boolean
-
     settingsCascade?: SettingsCascadeOrError
 }
 
@@ -167,12 +165,6 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
         this.subscriptions.add(
             this.props.platformContext.settings.subscribe(settingsCascade => this.setState({ settingsCascade }))
         )
-
-        // Only focus input after it has been rendered in the DOM
-        // Workaround for Firefox and Safari where preventScroll isn't compatible
-        setTimeout(() => {
-            this.setState({ autoFocus: true })
-        })
     }
 
     public componentDidUpdate(_previousProps: CommandListProps, previousState: State): void {
@@ -217,11 +209,11 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                         </Label>
                         <Input
                             id="command-list-input"
-                            ref={input => input && this.state.autoFocus && input.focus({ preventScroll: true })}
                             inputClassName={this.props.inputClassName}
                             value={this.state.input}
                             placeholder="Run Sourcegraph action..."
                             spellCheck={false}
+                            autoFocus={true}
                             autoCorrect="off"
                             autoComplete="off"
                             onChange={this.onInputChange}

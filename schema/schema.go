@@ -830,6 +830,8 @@ type GitHubWebhook struct {
 type GitLabAuthProvider struct {
 	// AllowGroups description: Restricts new logins to members of these GitLab groups. Existing sessions won't be invalidated. Make sure to inform the full path for groups or subgroups instead of their names. Leave empty or unset for no group restrictions.
 	AllowGroups []string `json:"allowGroups,omitempty"`
+	// AllowSignup description: Allows new visitors to sign up for accounts via GitLab authentication. If false, users signing in via GitLab must have an existing Sourcegraph account, which will be linked to their GitLab identity after sign-in.
+	AllowSignup *bool `json:"allowSignup,omitempty"`
 	// ApiScope description: The OAuth API scope that should be used
 	ApiScope string `json:"apiScope,omitempty"`
 	// ClientID description: The Client ID of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance).

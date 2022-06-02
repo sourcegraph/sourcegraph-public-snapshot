@@ -787,7 +787,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	s := makeTestServer(ctx, t, reposDir, remote, db)
 
-	// We need some of the side effects here
+	// We need the side effects here
 	_ = s.Handler()
 
 	rr := httptest.NewRecorder()
@@ -800,7 +800,11 @@ func TestHandleRepoUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// This will perform an initial clone
+	// Confirm that failing to clone the repo stores the error
+	oldRemoveURLFunc := s.GetRemoteURLFunc
+	s.GetRemoteURLFunc = func(ctx context.Context, name api.RepoName) (string, error) {
+		return "https://invalid.example.com/", nil
+	}
 	req := httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
@@ -808,15 +812,46 @@ func TestHandleRepoUpdate(t *testing.T) {
 	want := &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
 		ShardID:       "",
-		CloneStatus:   types.CloneStatusCloned,
+		CloneStatus:   types.CloneStatusNotCloned,
 		RepoSizeBytes: size,
+		LastError:     "",
 	}
 	fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt")
+	// We don't care exactly what the error is here
+	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "LastError")
+	// But we do care that it exists
+	if fromDB.LastError == "" {
+		t.Errorf("Expected an error when trying to clone from an invalid URL")
+	}
+
+	// We don't expect an error
+	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// This will perform an initial clone
+	s.GetRemoteURLFunc = oldRemoveURLFunc
+	req = httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
+	s.handleRepoUpdate(rr, req)
+
+	size = dirSize(s.dir(repoName).Path("."))
+	want = &types.GitserverRepo{
+		RepoID:        dbRepo.ID,
+		ShardID:       "",
+		CloneStatus:   types.CloneStatusCloned,
+		RepoSizeBytes: size,
+		LastError:     "",
+	}
+	fromDB, err = db.GitserverRepos().GetByID(ctx, dbRepo.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmpIgnored = cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt")
 
 	// We don't expect an error
 	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {

@@ -138,6 +138,10 @@ func run(logger log.Logger) error {
 			ObservationContext: observationContext,
 			DB:                 db,
 		},
+		GitOutput: func(ctx context.Context, repo api.RepoName, args ...string) ([]byte, error) {
+			c := git.GitCommand(repo, args...)
+			return c.Output(ctx)
+		},
 		Log: logger,
 	}
 	service.Store.Start()

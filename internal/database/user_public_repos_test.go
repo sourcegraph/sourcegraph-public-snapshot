@@ -13,9 +13,9 @@ func TestUserPublicRepos_Set(t *testing.T) {
 	t.Parallel()
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
-	u := Users(db)
+	u := db.Users()
 	r := db.Repos()
-	upr := UserPublicRepos(db)
+	upr := db.UserPublicRepos()
 
 	user, err := u.Create(ctx, NewUser{
 		Username: "u",
@@ -63,9 +63,9 @@ func TestUserPublicRepos_SetUserRepos(t *testing.T) {
 	t.Parallel()
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
-	u := Users(db)
+	u := db.Users()
 	r := db.Repos()
-	upr := UserPublicRepos(db)
+	upr := db.UserPublicRepos()
 
 	user, err := u.Create(ctx, NewUser{
 		Username: "u",
