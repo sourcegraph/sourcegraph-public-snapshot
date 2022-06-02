@@ -31,3 +31,5 @@ Enzyme,Hold,Frontend,TRUE,
 Elastic,Adopt,Tooling,TRUE,
 Trivy,Adopt,Tooling,TRUE,
 HackerOne,Adopt,Tooling,FALSE,
+Executors,Adopt,Backend,TRUE,
+stretchr/testify,Trial,Backend,TRUE,"mostly using for better assertions at this point"
