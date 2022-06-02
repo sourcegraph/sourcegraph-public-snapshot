@@ -11,7 +11,7 @@ WITH tenant_queues AS (
     GROUP BY spec.user_id
 ),
 -- We are creating this materialized CTE because PostgreSQL doesn't allow `FOR UPDATE` on window functions,
--- the materialied CTE trickes postgres into thinking the window function isn't part of the main query.
+-- the materialised CTE tricks postgres into thinking the window function isn't part of the main query.
 materialized_queue_candidates AS MATERIALIZED (
     SELECT
         spec.id AS spec_id,
