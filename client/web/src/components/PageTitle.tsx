@@ -16,7 +16,7 @@ const getBrandName = (): string => {
 
 let titleSet = false
 
-export const PageTitle: React.FunctionComponent<PageTitleProps> = ({ title }) => {
+export const PageTitle: React.FunctionComponent<React.PropsWithChildren<PageTitleProps>> = ({ title }) => {
     useEffect(() => {
         if (titleSet) {
             console.error('more than one PageTitle used at the same time')

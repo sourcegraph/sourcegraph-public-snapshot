@@ -18,9 +18,9 @@ const { add } = storiesOf('web/batches/batch-spec/execute/ActionsMenu', module).
 
 add('executing', () => (
     <WebStory>
-        {props => (
+        {() => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={EXECUTING_BATCH_SPEC}>
-                <ActionsMenu {...props} />
+                <ActionsMenu />
             </BatchSpecContextProvider>
         )}
     </WebStory>
@@ -28,9 +28,9 @@ add('executing', () => (
 
 add('failed', () => (
     <WebStory>
-        {props => (
+        {() => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={FAILED_BATCH_SPEC}>
-                <ActionsMenu {...props} />
+                <ActionsMenu />
             </BatchSpecContextProvider>
         )}
     </WebStory>
@@ -38,9 +38,9 @@ add('failed', () => (
 
 add('completed', () => (
     <WebStory>
-        {props => (
+        {() => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={COMPLETED_BATCH_SPEC}>
-                <ActionsMenu {...props} />
+                <ActionsMenu />
             </BatchSpecContextProvider>
         )}
     </WebStory>
@@ -48,9 +48,9 @@ add('completed', () => (
 
 add('completed with errors', () => (
     <WebStory>
-        {props => (
+        {() => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={COMPLETED_WITH_ERRORS_BATCH_SPEC}>
-                <ActionsMenu {...props} />
+                <ActionsMenu />
             </BatchSpecContextProvider>
         )}
     </WebStory>

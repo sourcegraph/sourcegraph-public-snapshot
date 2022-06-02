@@ -88,8 +88,9 @@ const queryCommit = memoizeObservable(
                 }
                 if (!data.node.commit) {
                     // Filter out any revision not found errors, they usually come in multiples when searching for a commit, we want to replace all of them with 1 "Commit not found" error
+                    // TODO: Figuring why should we use `errors` here since it is `undefined` in this place
                     const errorsWithoutRevisionError = errors?.filter(
-                        error => !error.message.includes('revision not found')
+                        (error: { message: string | string[] }) => !error.message.includes('revision not found')
                     )
 
                     const revisionErrorsFiltered =

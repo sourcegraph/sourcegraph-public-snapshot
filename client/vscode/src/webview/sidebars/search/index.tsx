@@ -5,7 +5,7 @@ import React, { useMemo, useState } from 'react'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
-import { render } from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -119,12 +119,13 @@ const Main: React.FC<React.PropsWithChildren<unknown>> = () => {
     )
 }
 
-render(
+const root = createRoot(document.querySelector('#root')!)
+
+root.render(
     <ShortcutProvider>
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
             <Main />
             <Tooltip key={1} className="sourcegraph-tooltip" />
         </WildcardThemeContext.Provider>
-    </ShortcutProvider>,
-    document.querySelector('#root')
+    </ShortcutProvider>
 )

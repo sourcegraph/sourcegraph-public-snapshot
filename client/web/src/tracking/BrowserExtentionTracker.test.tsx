@@ -1,7 +1,7 @@
 import React from 'react'
 
-import { act, cleanup, render } from '@testing-library/react'
-import { renderHook, cleanup as hookCleanup } from '@testing-library/react-hooks'
+import { act, cleanup, render, renderHook, waitFor } from '@testing-library/react'
+import { cleanup as hookCleanup } from '@testing-library/react-hooks/pure'
 import { MemoryRouter } from 'react-router-dom'
 
 import { BrowserExtensionTracker, useIsBrowserExtensionActiveUser } from './BrowserExtensionTracker'
@@ -81,10 +81,11 @@ describe('useIsBrowserExtensionActiveUser', () => {
     })
 
     test('Returns falsy', async () => {
-        const { result, waitForNextUpdate } = renderHook(() => useIsBrowserExtensionActiveUser())
+        const { result } = renderHook(() => useIsBrowserExtensionActiveUser())
         expect(result.current).toBeUndefined()
-        await waitForNextUpdate()
-        expect(result.current).toBeFalsy()
+        await waitFor(() => {
+            expect(result.current).toBeFalsy()
+        })
     })
 
     test('Returns truthy if "localStorage" item exist', () => {
@@ -98,12 +99,11 @@ describe('useIsBrowserExtensionActiveUser', () => {
             selector === `#${BROWSER_EXTENSION_MARKER_ELEMENT}` ? (document.createElement('div') as Element) : null
         )
 
-        const { result, waitForNextUpdate } = renderHook(() => useIsBrowserExtensionActiveUser())
+        const { result } = renderHook(() => useIsBrowserExtensionActiveUser())
         expect(result.current).toBeUndefined()
-
-        await waitForNextUpdate()
-
-        expect(result.current).toBeTruthy()
+        await waitFor(() => {
+            expect(result.current).toBeTruthy()
+        })
 
         jest.resetAllMocks()
     })

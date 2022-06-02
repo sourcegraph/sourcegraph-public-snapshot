@@ -453,7 +453,7 @@ const FeatureFlagOverrideItem: FunctionComponent<
     const nsValue = orgID > 0 ? orgID : userID
 
     const onError = useCallback(
-        error => {
+        (error: Error) => {
             setError(error)
         },
         [setError]

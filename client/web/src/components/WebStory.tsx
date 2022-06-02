@@ -13,11 +13,11 @@ import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrum
 
 import webStyles from '../SourcegraphWebApp.scss'
 
-export interface WebStoryProps extends MemoryRouterProps, Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
+export interface WebStoryProps
+    extends Omit<MemoryRouterProps, 'children'>,
+        Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
     children: React.FunctionComponent<
-        React.PropsWithChildren<
-            ThemeProps & BreadcrumbSetters & BreadcrumbsProps & TelemetryProps & RouteComponentProps<any>
-        >
+        ThemeProps & BreadcrumbSetters & BreadcrumbsProps & TelemetryProps & RouteComponentProps<any>
     >
 }
 
@@ -25,7 +25,7 @@ export interface WebStoryProps extends MemoryRouterProps, Pick<MockedStoryProvid
  * Wrapper component for webapp Storybook stories that provides light theme and react-router props.
  * Takes a render function as children that gets called with the props.
  */
-export const WebStory: React.FunctionComponent<React.PropsWithChildren<WebStoryProps>> = ({
+export const WebStory: React.FunctionComponent<WebStoryProps> = ({
     children,
     mocks,
     useStrictMocking,

@@ -163,20 +163,30 @@ exports[`ActionItem run command 2`] = `
 
 exports[`ActionItem run command with error 1`] = `
 <DocumentFragment>
-  <a
-    aria-label="d"
-    class="test-action-item"
-    data-tooltip="d"
-    href=""
-    role="button"
-    tabindex="0"
+  <div
+    class="container"
   >
-    <img
-      alt="d"
-      src="u"
+    <div
+      class="disabledTooltip"
+      data-tooltip="d"
+      tabindex="0"
     />
-     g: t 
-  </a>
+    <a
+      aria-label="d"
+      class="test-action-item disabled"
+      data-tooltip="d"
+      disabled=""
+      href=""
+      role="button"
+      tabindex="-1"
+    >
+      <img
+        alt="d"
+        src="u"
+      />
+       g: t 
+    </a>
+  </div>
 </DocumentFragment>
 `;
 
@@ -238,20 +248,38 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
 <DocumentFragment>
-  <a
-    aria-label="d"
-    class="test-action-item"
-    data-tooltip="d"
-    href=""
-    role="button"
-    tabindex="0"
+  <div
+    class="container"
   >
-    <img
-      alt="d"
-      src="u"
+    <div
+      class="disabledTooltip"
+      data-tooltip="d"
+      tabindex="0"
     />
-     g: t 
-  </a>
+    <a
+      aria-label="d"
+      class="test-action-item actionItemLoading disabled"
+      data-tooltip="d"
+      disabled=""
+      href=""
+      role="button"
+      tabindex="-1"
+    >
+      <img
+        alt="d"
+        src="u"
+      />
+       g: t 
+      <div
+        class="loader"
+        data-testid="action-item-spinner"
+      >
+        <div
+          class="loadingSpinner"
+        />
+      </div>
+    </a>
+  </div>
 </DocumentFragment>
 `;
 

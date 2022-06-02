@@ -546,6 +546,7 @@ describe('Batches', () => {
     describe('Create batch changes', () => {
         it('is styled correctly', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes/create')
+            await driver.page.waitForSelector('[data-testid="batch-spec-yaml-file"]')
             await percySnapshotWithVariants(driver.page, 'Create batch change')
             await accessibilityAudit(driver.page)
         })

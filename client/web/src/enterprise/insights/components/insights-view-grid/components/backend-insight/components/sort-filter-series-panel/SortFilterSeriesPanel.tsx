@@ -114,7 +114,12 @@ interface ToggleButtonProps {
     onClick: (value: SeriesSortOptionsInput) => void
 }
 
-const ToggleButton: React.FunctionComponent<ToggleButtonProps> = ({ selected, value, children, onClick }) => (
+const ToggleButton: React.FunctionComponent<React.PropsWithChildren<ToggleButtonProps>> = ({
+    selected,
+    value,
+    children,
+    onClick,
+}) => (
     <Button variant="secondary" size="sm" className={getClasses(selected, value)} onClick={() => onClick(value)}>
         {children}
     </Button>

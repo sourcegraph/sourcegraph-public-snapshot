@@ -60,7 +60,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
         setRenderDeleted(true)
     }, [])
 
-    let path: React.ReactFragment
+    let path: React.ReactNode
     if (node.newPath && (node.newPath === node.oldPath || !node.oldPath)) {
         path = <span title={node.newPath}>{node.newPath}</span>
     } else if (node.newPath && node.oldPath && node.newPath !== node.oldPath) {
@@ -77,7 +77,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
         path = <span title={node.oldPath!}>{node.oldPath}</span>
     }
 
-    let stat: React.ReactFragment
+    let stat: React.ReactNode
     // If one of the files was binary, display file size change instead of DiffStat.
     if (node.oldFile?.binary || node.newFile?.binary) {
         const sizeChange = (node.newFile?.byteSize ?? 0) - (node.oldFile?.byteSize ?? 0)

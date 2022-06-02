@@ -44,7 +44,7 @@ const FeatureFlagsLocalOverrideAgent = React.memo(() => {
     return null
 })
 
-export const FeatureFlagsProvider: React.FunctionComponent<FeatureFlagsProviderProps> = ({
+export const FeatureFlagsProvider: React.FunctionComponent<React.PropsWithChildren<FeatureFlagsProviderProps>> = ({
     isLocalOverrideEnabled = true,
     children,
 }) => {
@@ -71,10 +71,9 @@ interface MockedFeatureFlagsProviderProps {
  *              <ComponentUsingFeatureFlag />
  *         </MockedFeatureFlagsProvider>)
  */
-export const MockedFeatureFlagsProvider: React.FunctionComponent<MockedFeatureFlagsProviderProps> = ({
-    overrides,
-    children,
-}) => {
+export const MockedFeatureFlagsProvider: React.FunctionComponent<
+    React.PropsWithChildren<MockedFeatureFlagsProviderProps>
+> = ({ overrides, children }) => {
     const client = useMemo(() => new MockFeatureFlagClient(overrides), [overrides])
     return <FeatureFlagsContext.Provider value={{ client }}>{children}</FeatureFlagsContext.Provider>
 }

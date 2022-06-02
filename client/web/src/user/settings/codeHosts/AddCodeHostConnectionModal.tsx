@@ -36,7 +36,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<
         onDidCancel: () => void
         onDidError: (error: ErrorLike) => void
 
-        hintFragment?: React.ReactFragment
+        hintFragment?: React.ReactNode
     }>
 > = ({ ownerID, serviceName, serviceKind, hintFragment, onDidAdd, onDidCancel, onDidError }) => {
     const [token, setToken] = useState<string>('')

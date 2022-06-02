@@ -1,7 +1,7 @@
 import assert from 'assert'
 
+import { render } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
-import ReactDOM from 'react-dom'
 import * as sinon from 'sinon'
 
 import { Link } from '@sourcegraph/wildcard'
@@ -15,17 +15,14 @@ describe('createLinkClickHandler', () => {
         const history = createMemoryHistory({ initialEntries: [] })
         expect(history).toHaveLength(0)
 
-        const root = document.createElement('div')
-        document.body.append(root)
-        ReactDOM.render(
+        const { container } = render(
             // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
             <div onClick={createLinkClickHandler(history)}>
                 <Link to="https://sourcegraph.test/else/where">Test</Link>
-            </div>,
-            root
+            </div>
         )
 
-        const anchor = root.querySelector('a')
+        const anchor = container.querySelector('a')
         assert(anchor)
 
         const spy = sinon.spy((_event: MouseEvent) => undefined)
@@ -45,17 +42,14 @@ describe('createLinkClickHandler', () => {
         const history = createMemoryHistory({ initialEntries: [] })
         expect(history).toHaveLength(0)
 
-        const root = document.createElement('div')
-        document.body.append(root)
-        ReactDOM.render(
+        const { container } = render(
             // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
             <div onClick={createLinkClickHandler(history)}>
                 <Link to="https://github.com/some/where">Test</Link>
-            </div>,
-            root
+            </div>
         )
 
-        const anchor = root.querySelector('a')
+        const anchor = container.querySelector('a')
         assert(anchor)
 
         const spy = sinon.spy((_event: MouseEvent) => undefined)

@@ -39,7 +39,7 @@ interface Props extends ActionsProps, TelemetryProps {
 }
 
 /** Displays the actions in a container, with a wrapper and/or empty element. */
-export const ActionsContainer: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+export const ActionsContainer: React.FunctionComponent<Props> = props => {
     const { scope, extraContext, returnInactiveMenuItems, extensionsController, menu, empty } = props
 
     const contributions = useObservable(

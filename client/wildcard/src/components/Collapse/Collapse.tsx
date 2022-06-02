@@ -29,7 +29,7 @@ const DEFAULT_CONTEXT_VALUE: CollapseContextData = {
 
 const CollapseContext = createContext<CollapseContextData>(DEFAULT_CONTEXT_VALUE)
 
-export const Collapse: React.FunctionComponent<React.PropsWithChildren<CollapseProps>> = React.memo(props => {
+export const Collapse: React.FunctionComponent<CollapseProps> = React.memo(props => {
     const { children, isOpen, openByDefault, onOpenChange = noop } = props
     const [isInternalOpen, setInternalOpen] = useState<boolean>(Boolean(openByDefault))
     const isControlled = isOpen !== undefined
@@ -38,7 +38,7 @@ export const Collapse: React.FunctionComponent<React.PropsWithChildren<CollapseP
     const collapseContent = ChildrenComponent ? <ChildrenComponent isOpen={isCollapseOpen} /> : children
 
     const setOpen = useCallback(
-        opened => {
+        (opened: boolean) => {
             if (!isControlled) {
                 setInternalOpen(opened)
                 return
