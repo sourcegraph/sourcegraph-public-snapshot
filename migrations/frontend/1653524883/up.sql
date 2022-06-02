@@ -2,8 +2,6 @@ CREATE OR REPLACE VIEW batch_spec_workspace_execution_queue AS
 WITH tenant_queues AS (
     SELECT
         spec.user_id,
-        COUNT(1) FILTER (WHERE exec.state = 'queued') AS queue_length,
-        COUNT(1) FILTER (WHERE exec.state = 'processing') AS current_concurrency,
         MAX(exec.started_at) AS latest_dequeue
     FROM batch_spec_workspace_execution_jobs AS exec
     JOIN batch_spec_workspaces AS workspace ON workspace.id = exec.batch_spec_workspace_id
@@ -24,8 +22,6 @@ materialized_queue_candidates AS MATERIALIZED (
     JOIN batch_specs spec ON spec.id = workspace.batch_spec_id
     JOIN tenant_queues queue ON queue.user_id = spec.user_id
     WHERE
-        queue.current_concurrency < 4
-            AND
         exec.state = 'queued'
     ORDER BY
         -- Round-robin let tenants dequeue jobs

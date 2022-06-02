@@ -20,7 +20,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 	for i := 0; i < cap(jobs); i++ {
 		job := &btypes.BatchSpecWorkspaceExecutionJob{
 			BatchSpecWorkspaceID: int64(i + 456),
-			PlaceInQueue:         int64(i + 1),
 		}
 
 		jobs = append(jobs, job)
@@ -50,7 +49,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 	})
 
 	t.Run("Get", func(t *testing.T) {
-		t.Skip("for some reason")
 		t.Run("GetByID", func(t *testing.T) {
 			for i, job := range jobs {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
@@ -69,25 +67,11 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 		t.Run("GetByBatchSpecWorkspaceID", func(t *testing.T) {
 			for i, job := range jobs {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					// q := sqlf.Sprintf(
-					// 	`SELECT id, place_in_queue FROM batch_spec_workspace_execution_queue`,
-					// )
-
-					// var d interface{}
-					// s.query(context.Background(), q, func(sc dbutil.Scanner) (err error) {
-					// 	sc.Scan(&d)
-					// 	return nil
-					// 	// return ScanBatchSpecWorkspaceExecutionJob(&c, sc)
-					// })
-
-					// fmt.Printf("Result: %v\n", d)
 
 					have, err := s.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{BatchSpecWorkspaceID: job.BatchSpecWorkspaceID})
 					if err != nil {
 						t.Fatal(err)
 					}
-
-					fmt.Printf("%v - %d == %d\n\n", job, job.PlaceInQueue, have.PlaceInQueue)
 
 					if diff := cmp.Diff(have, job); diff != "" {
 						t.Fatal(diff)
@@ -109,7 +93,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 	})
 
 	t.Run("List", func(t *testing.T) {
-		// t.Skip("for some reason again")
 		for i, job := range jobs {
 			job.WorkerHostname = fmt.Sprintf("worker-hostname-%d", i)
 			switch i {
