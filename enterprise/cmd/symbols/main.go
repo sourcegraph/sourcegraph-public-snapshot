@@ -187,7 +187,7 @@ func (g Gitserver) ArchiveEach(repo string, commit string, paths []string, onFil
 	}
 
 	args := search.SymbolsParameters{Repo: api.RepoName(repo), CommitID: api.CommitID(commit)}
-	parseRequestOrErrors := g.repositoryFetcher.FetchRepositoryArchive(context.TODO(), args, paths)
+	parseRequestOrErrors := g.repositoryFetcher.FetchRepositoryArchive(context.TODO(), args.Repo, args.CommitID, paths)
 	defer func() {
 		// Ensure the channel is drained
 		for range parseRequestOrErrors {

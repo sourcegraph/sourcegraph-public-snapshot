@@ -37,7 +37,7 @@ func TestRepositoryFetcher(t *testing.T) {
 
 	t.Run("all paths", func(t *testing.T) {
 		paths := []string(nil)
-		ch := repositoryFetcher.FetchRepositoryArchive(context.Background(), args, paths)
+		ch := repositoryFetcher.FetchRepositoryArchive(context.Background(), args.Repo, args.CommitID, paths)
 		parseRequests := consumeParseRequests(t, ch)
 
 		expectedParseRequests := validParseRequests
@@ -48,7 +48,7 @@ func TestRepositoryFetcher(t *testing.T) {
 
 	t.Run("selected paths", func(t *testing.T) {
 		paths := []string{"a.txt", "b.txt", "c.txt"}
-		ch := repositoryFetcher.FetchRepositoryArchive(context.Background(), args, paths)
+		ch := repositoryFetcher.FetchRepositoryArchive(context.Background(), args.Repo, args.CommitID, paths)
 		parseRequests := consumeParseRequests(t, ch)
 
 		expectedParseRequests := map[string]string{
