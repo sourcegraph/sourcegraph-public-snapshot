@@ -55,11 +55,13 @@ func handleSearchWith(searchFunc types.SearchFunc) func(w http.ResponseWriter, r
 			}
 
 			log15.Error("Symbol search failed", "args", args, "error", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			if err := json.NewEncoder(w).Encode(search.SymbolsResponse{Err: err.Error()}); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
 			return
 		}
 
-		if err := json.NewEncoder(w).Encode(result); err != nil {
+		if err := json.NewEncoder(w).Encode(search.SymbolsResponse{Symbols: result}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}

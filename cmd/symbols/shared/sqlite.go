@@ -61,7 +61,7 @@ func SetupSqlite(observationContext *observation.Context, gitserverClient gitser
 	parser := parser.NewParser(parserPool, repositoryFetcher, config.RequestBufferSize, config.NumCtagsProcesses, observationContext)
 	databaseWriter := writer.NewDatabaseWriter(config.CacheDir, gitserverClient, parser, semaphore.NewWeighted(int64(config.MaxConcurrentlyIndexing)))
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
-	searchFunc := api.MakeSqliteSearchFunc(observability.NewOperations(observationContext), cachedDatabaseWriter)
+	searchFunc := api.MakeSqliteSearchFunc(observability.NewOperations(observationContext), cachedDatabaseWriter, gitserverClient)
 
 	evictionInterval := time.Second * 10
 	cacheSizeBytes := int64(config.CacheSizeMB) * 1000 * 1000
