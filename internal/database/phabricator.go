@@ -5,13 +5,12 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -26,6 +25,9 @@ type PhabricatorStore interface {
 }
 
 type phabricatorStore struct {
+	// logger is a standardized, strongly-typed, and structured logging interface
+	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
+	logger log.Logger
 	*basestore.Store
 }
 
@@ -160,7 +162,7 @@ func (p *phabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*t
 			case *schema.PhabricatorConnection:
 				conn = c
 			default:
-				log15.Error("phabricator.GetByName", "error", errors.Errorf("want *schema.PhabricatorConnection but got %T", cfg))
+				p.logger.Error("phabricator.GetByName", log.Error(errors.Errorf("want *schema.PhabricatorConnection but got %T", cfg)))
 				continue
 			}
 

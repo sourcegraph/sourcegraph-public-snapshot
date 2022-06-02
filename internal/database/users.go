@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/inconshreveable/log15"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -31,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // User hooks
@@ -87,6 +87,9 @@ type UserStore interface {
 }
 
 type userStore struct {
+	// logger is a standardized, strongly-typed, and structured logging interface
+	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
+	logger log.Logger
 	*basestore.Store
 }
 
@@ -362,7 +365,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 		// Ensure the user (all users, actually) is joined to the orgs specified in auth.userOrgMap.
 		orgs, errs := orgsForAllUsersToJoin(conf.Get().AuthUserOrgMap)
 		for _, err := range errs {
-			log15.Warn(err.Error())
+			u.logger.Warn("Error ensuring user is joined to orgs", log.Error(err))
 		}
 		if err := OrgMembersWith(u).CreateMembershipInOrgsForAllUsers(ctx, orgs); err != nil {
 			return nil, err

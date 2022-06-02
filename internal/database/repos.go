@@ -12,7 +12,6 @@ import (
 	"time"
 
 	regexpsyntax "github.com/grafana/regexp/syntax"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
@@ -39,6 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type RepoNotFoundErr struct {
@@ -413,6 +413,8 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 	var metadata json.RawMessage
 	var blocked dbutil.NullJSONRawMessage
 
+	logger := log.Scoped("scanRepo", "scan the repo")
+
 	err = rows.Scan(
 		&r.ID,
 		&r.Name,
@@ -466,7 +468,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 
 	typ, ok := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
 	if !ok {
-		log15.Warn("scanRepo - failed to parse service type", "r.ExternalRepo.ServiceType", r.ExternalRepo.ServiceType)
+		logger.Warn("failed to parse service type", log.String("r.ExternalRepo.ServiceType", r.ExternalRepo.ServiceType))
 		return nil
 	}
 	switch typ {
@@ -501,7 +503,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 	case extsvc.TypePythonPackages:
 		r.Metadata = &struct{}{}
 	default:
-		log15.Warn("scanRepo - unknown service type", "type", typ)
+		logger.Warn("unknown service type", log.String("type", typ))
 		return nil
 	}
 

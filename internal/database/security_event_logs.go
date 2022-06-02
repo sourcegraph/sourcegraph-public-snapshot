@@ -5,14 +5,13 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type SecurityEventName string
@@ -66,6 +65,9 @@ type SecurityEventLogsStore interface {
 }
 
 type securityEventLogsStore struct {
+	// logger is a standardized, strongly-typed, and structured logging interface
+	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
+	logger log.Logger
 	*basestore.Store
 }
 
@@ -108,7 +110,7 @@ func (s *securityEventLogsStore) LogEvent(ctx context.Context, e *SecurityEvent)
 
 	if err := s.Insert(ctx, e); err != nil {
 		j, _ := json.Marshal(e)
-		log15.Error(string(e.Name), "event", string(j), "traceID", trace.ID(ctx), "error", err)
+		s.logger.Error(string(e.Name), log.String("event", string(j)), log.String("traceID", trace.ID(ctx)), log.Error(err))
 		// We want to capture in sentry as it includes a stack trace which will allow us
 		// to track down the root cause.
 		sentry.CaptureError(err, map[string]string{})

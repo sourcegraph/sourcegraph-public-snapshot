@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -29,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -138,6 +138,7 @@ type ExternalServiceStore interface {
 // The enterprise code registers additional validators at run-time and sets the
 // global instance in stores.go
 type externalServiceStore struct {
+	logger log.Logger
 	*basestore.Store
 
 	key encryption.Key
@@ -902,7 +903,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			// Legacy configurations might not be valid JSON; in that case, they
 			// also can't have webhooks, so we'll just log the issue and move
 			// on.
-			log15.Warn("cannot parse external service configuration as JSON", "err", err, "id", id)
+			e.logger.Warn("cannot parse external service configuration as JSON", log.Error(err), log.Int64("id", id))
 			hasWebhooks = false
 		}
 		update.Config = &newSvc.Config
@@ -1400,7 +1401,7 @@ func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawC
 	} else {
 		// Legacy configurations might not be valid JSON; in that case, they
 		// also can't have webhooks, so we'll just log the issue and move on.
-		log15.Warn("cannot parse external service configuration as JSON", "err", err, "id", es.ID)
+		e.logger.Warn("cannot parse external service configuration as JSON", log.Error(err), log.Int64("id", es.ID))
 	}
 	es.HasWebhooks = &hasWebhooks
 

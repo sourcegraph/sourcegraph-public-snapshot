@@ -6,12 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type Runner struct {
@@ -33,6 +32,9 @@ func NewRunnerWithSchemas(storeFactories map[string]StoreFactory, schemas []*sch
 }
 
 type schemaContext struct {
+	// logger is a standardized, strongly-typed, and structured logging interface
+	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
+	logger               log.Logger
 	schema               *schemas.Schema
 	store                Store
 	initialSchemaVersion schemaVersion
@@ -89,6 +91,7 @@ func (r *Runner) forEachSchema(ctx context.Context, schemaNames []string, visito
 			defer wg.Done()
 
 			errorCh <- visitor(ctx, schemaContext{
+				logger:               log.Scoped("schemaContext", "schema context"),
 				schema:               schemaMap[schemaName],
 				store:                storeMap[schemaName],
 				initialSchemaVersion: versionMap[schemaName],
@@ -343,7 +346,7 @@ func validateSchemaState(
 			}
 
 			if byState.failed[0].ID == definition.ID {
-				log15.Warn("Attempting to re-try migration that previously failed")
+				schemaContext.logger.Warn("Attempting to re-try migration that previously failed")
 				return false, nil
 			}
 		}

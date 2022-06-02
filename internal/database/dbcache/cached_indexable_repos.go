@@ -6,11 +6,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // indexableReposMaxAge is how long we cache the list of indexable repos. The list
@@ -38,6 +37,7 @@ var globalReposCache = reposCache{}
 
 func NewIndexableReposLister(store database.RepoStore) *IndexableReposLister {
 	return &IndexableReposLister{
+		logger:     log.Scoped("NewIndexableReposLister", "List indexable repos"),
 		store:      store,
 		reposCache: &globalReposCache,
 	}
@@ -52,7 +52,10 @@ type reposCache struct {
 // IndexableReposLister holds the list of indexable repos which are cached for
 // indexableReposMaxAge.
 type IndexableReposLister struct {
-	store database.RepoStore
+	// logger is a standardized, strongly-typed, and structured logging interface
+	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
+	logger log.Logger
+	store  database.RepoStore
 	*reposCache
 }
 
@@ -95,7 +98,7 @@ func (s *IndexableReposLister) list(ctx context.Context, onlyPublic bool) (resul
 
 		_, err := s.refreshCache(newCtx, onlyPublic)
 		if err != nil {
-			log15.Error("Refreshing indexable repos cache", "error", err)
+			s.logger.Error("Refreshing indexable repos cache", log.Error(err))
 		}
 	}()
 	return repos, nil
