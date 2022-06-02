@@ -546,7 +546,7 @@ var (
 		Name: "src_gitserver_repo_wrong_shard_bytes",
 		Help: "Size (in bytes) of repos that are on disk on the wrong shard",
 	})
-	wrongShardReposDeletedTotal = promauto.NewCounter(prometheus.CounterOpts{
+	wrongShardReposDeletedCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repo_wrong_shard_deleted",
 		Help: "The number of repos that are on the wrong shard that we deleted",
 	})
