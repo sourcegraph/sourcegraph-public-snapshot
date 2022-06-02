@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { FlexTextArea, Typography, TextArea } from '@sourcegraph/wildcard'
+import { FlexTextArea, H4, TextArea } from '@sourcegraph/wildcard'
 
 import { SurveyUseCase } from '../graphql-operations'
 
@@ -72,9 +72,9 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
 
     return (
         <div className={classNames('mb-2', className)}>
-            <Typography.H4 id="usecase-group" className={classNames('d-flex', styles.title, formLabelClassName)}>
+            <H4 id="usecase-group" className={classNames('d-flex', styles.title, formLabelClassName)}>
                 {title}
-            </Typography.H4>
+            </H4>
             <div className={styles.checkWrap}>
                 {OPTIONS.map(({ id, labelValue }) => (
                     <SurveyUseCaseCheckbox

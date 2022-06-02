@@ -17,7 +17,7 @@ interface FormStateType {
 
 interface SurveyUseCaseFormToast {
     onDismiss: () => void
-    onDone: () => void
+    onDone: () => Promise<void>
     onChange: (props: FormStateType) => void
 }
 
@@ -30,7 +30,7 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToast>
     const [otherUseCase, setOtherUseCase] = useState<string>('')
     const [additionalInformation, setAdditionalInformation] = useState<string>('')
 
-    const handleSubmit = (): void => onDone()
+    const handleSubmit = (): Promise<void> => onDone()
 
     useEffect(() => {
         onChange({

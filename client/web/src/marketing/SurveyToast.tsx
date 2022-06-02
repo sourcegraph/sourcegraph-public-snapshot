@@ -65,7 +65,7 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
 
     const [submitSurvey] = useMutation<SubmitSurveyResult, SubmitSurveyVariables>(SUBMIT_SURVEY)
 
-    const handleSubmit = async (): void => {
+    const handleSubmit = async (): Promise<void> => {
         await submitSurvey({
             variables: {
                 input: {
@@ -109,6 +109,7 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
 
     const onDismiss = (): void => {
         if (userFeedback.score !== -1 && activeStep !== ToastSteps.thankYou) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             handleSubmit()
         }
 
@@ -119,6 +120,11 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
         }
     }
 
+    const handleUseCaseDone = async (): Promise<void> => {
+        await handleSubmit()
+        handleContinue()
+    }
+
     if (!visible) {
         return null
     }
@@ -127,10 +133,7 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
         case ToastSteps.useCase:
             return (
                 <SurveyUseCaseToast
-                    onDone={() => {
-                        handleSubmit()
-                        handleContinue()
-                    }}
+                    onDone={handleUseCaseDone}
                     onChange={formState => {
                         setUserFeedback(current => ({ ...current, ...formState }))
                     }}
