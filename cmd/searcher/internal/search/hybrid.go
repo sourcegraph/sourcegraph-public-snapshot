@@ -6,6 +6,7 @@ import (
 	"regexp/syntax"
 	"sort"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
@@ -111,33 +112,50 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 	if err != nil {
 		return false, err
 	}
+
 	for _, fm := range res.Files {
 		// Unexpected commit searched, signal to retry.
 		if fm.Version != string(indexed) {
 			return false, nil
 		}
 
-		var lineMatches []protocol.LineMatch
-		var matchCount int
-		for _, lm := range fm.LineMatches {
-			var offs [][2]int
-			for _, lf := range lm.LineFragments {
-				offs = append(offs, [2]int{lf.LineOffset, lf.MatchLength})
+		cms := make([]protocol.ChunkMatch, 0, len(fm.LineMatches))
+		for _, l := range fm.LineMatches {
+			if l.FileName {
+				continue
 			}
-			lineMatches = append(lineMatches, protocol.LineMatch{
-				Preview:          string(lm.Line),
-				LineNumber:       lm.LineNumber - 1,
-				OffsetAndLengths: offs,
-			})
-			matchCount += len(offs)
-			if len(offs) == 0 {
-				matchCount++
+
+			for _, m := range l.LineFragments {
+				runeOffset := utf8.RuneCount(l.Line[:m.LineOffset])
+				runeLength := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
+
+				cms = append(cms, protocol.ChunkMatch{
+					Content: string(l.Line),
+					// zoekt line numbers are 1-based rather than 0-based so subtract 1
+					ContentStart: protocol.Location{
+						Offset: int32(l.LineStart),
+						Line:   int32(l.LineNumber - 1),
+						Column: 0,
+					},
+					Ranges: []protocol.Range{{
+						Start: protocol.Location{
+							Offset: int32(m.Offset),
+							Line:   int32(l.LineNumber - 1),
+							Column: int32(runeOffset),
+						},
+						End: protocol.Location{
+							Offset: int32(m.Offset) + int32(m.MatchLength),
+							Line:   int32(l.LineNumber - 1),
+							Column: int32(runeOffset + runeLength),
+						},
+					}},
+				})
 			}
 		}
+
 		sender.Send(protocol.FileMatch{
-			Path:        fm.FileName,
-			LineMatches: lineMatches,
-			MatchCount:  matchCount,
+			Path:         fm.FileName,
+			ChunkMatches: cms,
 		})
 	}
 
