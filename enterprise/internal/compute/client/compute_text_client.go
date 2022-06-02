@@ -4,33 +4,20 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	stdhttp "net/http"
-	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// NewComputeStreamRequest returns an http.Request against the streaming API for query.
-func NewComputeStreamRequest(baseURL string, query string) (*stdhttp.Request, error) {
-	u := baseURL + "/compute/stream?q=" + url.QueryEscape(query)
-	req, err := stdhttp.NewRequest("GET", u, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Accept", "text/event-stream")
-	return req, nil
-}
-
-type ComputeMatchContextStreamDecoder struct {
-	OnResult  func(results []compute.MatchContext)
+type ComputeTextStreamDecoder struct {
+	OnResult  func(results []compute.Text)
 	OnAlert   func(*http.EventAlert)
 	OnError   func(*http.EventError)
 	OnUnknown func(event, data []byte)
 }
 
-func (rr ComputeMatchContextStreamDecoder) ReadAll(r io.Reader) error {
+func (rr ComputeTextStreamDecoder) ReadAll(r io.Reader) error {
 	dec := http.NewDecoder(r)
 
 	for dec.Scan() {
@@ -41,9 +28,9 @@ func (rr ComputeMatchContextStreamDecoder) ReadAll(r io.Reader) error {
 			if rr.OnResult == nil {
 				continue
 			}
-			var d []compute.MatchContext
+			var d []compute.Text
 			if err := json.Unmarshal(data, &d); err != nil {
-				return errors.Errorf("failed to decode compute match context payload: %w", err)
+				return errors.Errorf("failed to decode compute compute text payload: %w", err)
 			}
 			rr.OnResult(d)
 		} else if bytes.Equal(event, []byte("alert")) {

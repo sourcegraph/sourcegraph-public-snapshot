@@ -69,7 +69,7 @@ func ComputeMatchContextStream(ctx context.Context, query string, decoder client
 		span.Finish()
 	}()
 
-	req, err := client.NewMatchContextRequest(internalapi.Client.URL+"/.internal", query)
+	req, err := client.NewComputeStreamRequest(internalapi.Client.URL+"/.internal", query)
 	if err != nil {
 		return err
 	}
