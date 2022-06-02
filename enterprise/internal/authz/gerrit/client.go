@@ -13,7 +13,7 @@ type client interface {
 
 var _ client = (*ClientAdapter)(nil)
 
-// ClientAdapter is an adapter for GitHub API client.
+// ClientAdapter is an adapter for Gerrit API client.
 type ClientAdapter struct {
 	*gerrit.Client
 }
