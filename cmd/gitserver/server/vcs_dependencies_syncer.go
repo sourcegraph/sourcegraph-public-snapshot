@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 // vcsDependenciesSyncer implements the VCSSyncer interface for dependency repos
@@ -108,9 +109,9 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 		if d, err := s.source.Get(ctx, depName, version); err != nil {
 			if errcode.IsNotFound(err) {
 				s.logger.Warn("skipping missing dependency",
-					log.String("dep", depName),
-					log.String("version", version),
-					log.String("type", s.typ),
+					log.String("dep", depName, privacy.Unknown),
+					log.String("version", version, privacy.Unknown),
+					log.String("type", s.typ, privacy.Unknown),
 				)
 			} else {
 				errs = errors.Append(errs, err)
@@ -178,7 +179,7 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 			if _, err := runCommandInDirectory(ctx, cmd, string(dir), s.placeholder); err != nil {
 				s.logger.Error("failed to delete git tag",
 					log.Error(err),
-					log.String("tag", tag),
+					log.String("tag", tag, privacy.Unknown),
 				)
 				continue
 			}
@@ -254,7 +255,7 @@ func (s *vcsDependenciesSyncer) versions(ctx context.Context, packageName string
 	for _, d := range s.configDeps {
 		dep, err := s.source.ParseDependency(d)
 		if err != nil {
-			s.logger.Warn("skipping malformed dependency", log.String("dep", d), log.Error(err))
+			s.logger.Warn("skipping malformed dependency", log.String("dep", d, privacy.Unknown), log.Error(err))
 			continue
 		}
 

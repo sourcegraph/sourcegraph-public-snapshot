@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 var (
@@ -83,7 +84,7 @@ func IsAllowedGitCmd(logger log.Logger, args []string) bool {
 	allowedArgs, ok := gitCmdAllowlist[cmd]
 	if !ok {
 		// Command not allowed
-		logger.Warn("command not allowed", log.String("cmd", cmd))
+		logger.Warn("command not allowed", log.String("cmd", cmd, privacy.Unknown))
 		return false
 	}
 	for _, arg := range args[1:] {
@@ -108,7 +109,7 @@ func IsAllowedGitCmd(logger log.Logger, args []string) bool {
 			}
 
 			if !isAllowedGitArg(allowedArgs, arg) {
-				logger.Warn("IsAllowedGitCmd.isAllowedGitArgcmd", log.String("cmd", cmd), log.String("arg", arg))
+				logger.Warn("IsAllowedGitCmd.isAllowedGitArgcmd", log.String("cmd", cmd, privacy.Unknown), log.String("arg", arg, privacy.Unknown))
 				return false
 			}
 		}

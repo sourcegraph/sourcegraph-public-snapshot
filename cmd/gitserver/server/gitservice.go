@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 var gitServiceMaxEgressBytesPerSecond = func() int64 {
@@ -74,9 +75,9 @@ func (s *Server) gitServiceHandler() *gitservice.Handler {
 				metricServiceDuration.WithLabelValues(svc, errLabel).Observe(time.Since(start).Seconds())
 
 				logger := s.Logger.With(
-					log.String("svc", svc),
-					log.String("repo", repo),
-					log.String("protocol", protocol),
+					log.String("svc", svc, privacy.Unknown),
+					log.String("repo", repo, privacy.Unknown),
+					log.String("protocol", protocol, privacy.Unknown),
 					log.Duration("duration", time.Since(start)),
 				)
 

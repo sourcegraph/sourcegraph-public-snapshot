@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 //go:embed sg_maintenance.sh
@@ -193,7 +194,9 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 			return false, nil
 		}
 
-		s.Logger.Info("removing corrupt repo", log.String("repo", string(dir)), log.String("reason", reason))
+		s.Logger.Info("removing corrupt repo",
+			log.String("repo", string(dir), privacy.Unknown),
+			log.String("reason", reason, privacy.Unknown))
 		if err := s.removeRepoDirectory(dir); err != nil {
 			return true, err
 		}
@@ -264,9 +267,9 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		// name is the relative path to ReposDir, but without the .git suffix.
 		repo := s.name(dir)
 		subCleanupLogger := cleanupLogger.With(
-			log.String("repo", string(repo)),
+			log.String("repo", string(repo), privacy.Unknown),
 			log.Time("cloned", recloneTime),
-			log.String("reason", reason),
+			log.String("reason", reason, privacy.Unknown),
 		)
 
 		subCleanupLogger.Info("re-cloning expired repo")
@@ -404,7 +407,10 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 			start := time.Now()
 			done, err := cfn.Do(gitDir)
 			if err != nil {
-				cleanupLogger.Error("error running cleanup command", log.String("name", cfn.Name), log.String("repo", string(gitDir)), log.Error(err))
+				cleanupLogger.Error("error running cleanup command",
+					log.String("name", cfn.Name, privacy.Unknown),
+					log.String("repo", string(gitDir), privacy.Unknown),
+					log.Error(err))
 			}
 			jobTimer.WithLabelValues(strconv.FormatBool(err == nil), cfn.Name).Observe(time.Since(start).Seconds())
 			if done {
@@ -594,7 +600,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 		G := float64(1024 * 1024 * 1024)
 
 		logger.Warn("removed least recently used repo",
-			log.String("repo", string(d)),
+			log.String("repo", string(d), privacy.Unknown),
 			log.Duration("how old", time.Since(dirModTimes[d])),
 			log.Float64("free space in GiB", float64(actualFreeBytes)/G),
 			log.Float64("actual percent of disk space free", float64(actualFreeBytes)/float64(diskSizeBytes)*100.0),
@@ -711,7 +717,7 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 			break
 		}
 		if err != nil {
-			s.Logger.Warn("failed to stat parent directory", log.String("dir", current), log.Error(err))
+			s.Logger.Warn("failed to stat parent directory", log.String("dir", current, privacy.Unknown), log.Error(err))
 			return nil
 		}
 		if os.SameFile(rootInfo, info) {
@@ -728,7 +734,7 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 	// Delete the atomically renamed dir. We do this last since if it fails we
 	// will rely on a janitor job to clean up for us.
 	if err := os.RemoveAll(filepath.Join(tmp, "repo")); err != nil {
-		s.Logger.Warn("failed to cleanup after removing dir", log.String("dir", dir), log.Error(err))
+		s.Logger.Warn("failed to cleanup after removing dir", log.String("dir", dir, privacy.Unknown), log.Error(err))
 	}
 
 	return nil
@@ -805,7 +811,7 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 			}
 			go func(path string) {
 				if err := os.RemoveAll(path); err != nil {
-					logger.Error("failed to remove old temporary directory", log.String("path", path), log.Error(err))
+					logger.Error("failed to remove old temporary directory", log.String("path", path, privacy.Unknown), log.Error(err))
 				}
 			}(filepath.Join(s.ReposDir, f.Name()))
 		}
@@ -882,9 +888,9 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 	if !maybeCorruptStderrRe.MatchString(stderr) {
 		return
 	}
-	logger := log.Scoped("checkMaybeCorruptRepo", "check if repo is corrupt").With(log.String("repo", string(repo)))
+	logger := log.Scoped("checkMaybeCorruptRepo", "check if repo is corrupt").With(log.String("repo", string(repo), privacy.Unknown))
 
-	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption", log.String("stderr", stderr))
+	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption", log.String("stderr", stderr, privacy.Unknown))
 
 	// We set a flag in the config for the cleanup janitor job to fix. The janitor
 	// runs every minute.
@@ -1003,9 +1009,9 @@ func sgMaintenance(logger log.Logger, dir GitDir) (err error) {
 	b, err := cmd.CombinedOutput()
 	if err != nil {
 		if err := writeSGMLog(dir, b); err != nil {
-			logger.Debug("sg maintenance failed to write log file", log.String("file", dir.Path(sgmLog)), log.Error(err))
+			logger.Debug("sg maintenance failed to write log file", log.String("file", dir.Path(sgmLog), privacy.Unknown), log.Error(err))
 		}
-		logger.Debug("sg maintenance", log.String("dir", string(dir)), log.String("out", string(b)))
+		logger.Debug("sg maintenance", log.String("dir", string(dir), privacy.Unknown), log.String("out", string(b), privacy.Unknown))
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to run sg maintenance")
 	}
 	// Remove the log file after a successful run.
@@ -1241,7 +1247,7 @@ func removeFileOlderThan(path string, maxAge time.Duration) error {
 
 	logger := log.Scoped("removeFileOlderThan", "removes path if its mtime is older than maxAge.")
 
-	logger.Debug("removing stale lock file", log.String("path", path), log.Duration("age", age))
+	logger.Debug("removing stale lock file", log.String("path", path, privacy.Unknown), log.Duration("age", age))
 	err = os.Remove(path)
 	if err != nil && !os.IsNotExist(err) {
 		return err

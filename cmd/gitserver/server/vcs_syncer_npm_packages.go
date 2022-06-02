@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -100,7 +101,7 @@ func decompressTgz(tgz io.Reader, destination string) error {
 			const sizeLimit = 15 * 1024 * 1024
 
 			slogger := logger.With(
-				log.String("path", file.Name()),
+				log.String("path", file.Name(), privacy.Unknown),
 				log.Int64("size", size),
 				log.Int("limit", sizeLimit),
 			)

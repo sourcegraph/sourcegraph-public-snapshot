@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 var patchID uint64
@@ -69,7 +70,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	if err != nil {
-		s.Logger.Error("Failed to get remote URL", log.String("ref", ref), log.Error(err))
+		s.Logger.Error("Failed to get remote URL", log.String("ref", ref, privacy.Unknown), log.Error(err))
 		resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))
 		return http.StatusInternalServerError, resp
 	}
@@ -104,10 +105,10 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		out, err := runWith(ctx, cmd, true, nil)
 
 		logger := s.Logger.With(
-			log.String("prefix", prefix),
-			log.String("command", argsToString(cmd.Args)),
+			log.String("prefix", prefix, privacy.Unknown),
+			log.String("command", argsToString(cmd.Args), privacy.Unknown),
 			log.Duration("duration", time.Since(t)),
-			log.String("output", string(out)),
+			log.String("output", string(out), privacy.Unknown),
 		)
 
 		if err != nil {
@@ -122,7 +123,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	if req.UniqueRef {
 		refs, err := repoRemoteRefs(ctx, remoteURL, ref)
 		if err != nil {
-			s.Logger.Error("Failed to get remote refs", log.String("ref", ref), log.Error(err))
+			s.Logger.Error("Failed to get remote refs", log.String("ref", ref, privacy.Unknown), log.Error(err))
 			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteRefs"))
 			return http.StatusInternalServerError, resp
 		}
@@ -164,9 +165,9 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 	if out, err := run(cmd, "basing staging on base rev"); err != nil {
 		s.Logger.Error("Failed to base the temporary repo on the base revision.",
-			log.String("ref", ref),
-			log.String("base", string(req.BaseCommit)),
-			log.String("output", string(out)),
+			log.String("ref", ref, privacy.Unknown),
+			log.String("base", string(req.BaseCommit), privacy.Unknown),
+			log.String("output", string(out), privacy.Unknown),
 		)
 		return http.StatusInternalServerError, resp
 	}
@@ -178,7 +179,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	cmd.Stdin = strings.NewReader(req.Patch)
 
 	if out, err := run(cmd, "applying patch"); err != nil {
-		s.Logger.Error("Failed to apply patch.", log.String("ref", ref), log.String("output", string(out)))
+		s.Logger.Error("Failed to apply patch.", log.String("ref", ref, privacy.Unknown), log.String("output", string(out), privacy.Unknown))
 		return http.StatusInternalServerError, resp
 	}
 
@@ -217,7 +218,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}...)
 
 	if out, err := run(cmd, "committing patch"); err != nil {
-		s.Logger.Error("Failed to commit patch.", log.String("ref", ref), log.String("output", string(out)))
+		s.Logger.Error("Failed to commit patch.", log.String("ref", ref, privacy.Unknown), log.String("output", string(out), privacy.Unknown))
 		return http.StatusInternalServerError, resp
 	}
 
@@ -291,7 +292,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		}
 
 		if out, err = run(cmd, "pushing ref"); err != nil {
-			s.Logger.Error("Failed to push", log.String("ref", ref), log.String("commit", cmtHash), log.String("output", string(out)))
+			s.Logger.Error("Failed to push", log.String("ref", ref, privacy.Unknown), log.String("commit", cmtHash, privacy.Unknown), log.String("output", string(out), privacy.Unknown))
 			return http.StatusInternalServerError, resp
 		}
 	}
@@ -302,7 +303,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	cmd.Dir = repoGitDir
 
 	if out, err = run(cmd, "creating ref"); err != nil {
-		s.Logger.Error("Failed to create ref for commit.", log.String("ref", ref), log.String("commit", cmtHash), log.String("output", string(out)))
+		s.Logger.Error("Failed to create ref for commit.", log.String("ref", ref, privacy.Unknown), log.String("commit", cmtHash, privacy.Unknown), log.String("output", string(out), privacy.Unknown))
 		return http.StatusInternalServerError, resp
 	}
 
@@ -313,7 +314,7 @@ func cleanUpTmpRepo(path string) {
 	err := os.RemoveAll(path)
 	logger := log.Scoped("cleanUpTmpRepo", "cleans up temp Repo")
 	if err != nil {
-		logger.Warn("unable to clean up tmp repo", log.String("path", path), log.Error(err))
+		logger.Warn("unable to clean up tmp repo", log.String("path", path, privacy.Unknown), log.Error(err))
 	}
 }
 

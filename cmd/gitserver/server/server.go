@@ -58,6 +58,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 // tempDirName is the name used for the temporary directory under ReposDir.
@@ -506,7 +507,7 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 
 			err := s.doClone(ctx, job.repo, job.dir, job.syncer, job.lock, job.remoteURL, job.options)
 			if err != nil {
-				s.Logger.Error("failed to clone repo", log.String("repo", string(job.repo)), log.Error(err))
+				s.Logger.Error("failed to clone repo", log.String("repo", string(job.repo), privacy.Unknown), log.Error(err))
 			}
 
 			s.setLastErrorNonFatal(ctx, job.repo, err)
@@ -880,7 +881,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		// the implementation details of cloneRepo.
 		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true, CloneFromShard: req.CloneFromShard})
 		if err != nil {
-			s.Logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
+			s.Logger.Warn("error cloning repo", log.String("repo", string(req.Repo), privacy.Unknown), log.Error(err))
 			resp.Error = err.Error()
 		}
 	} else {
@@ -906,7 +907,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 			resp.LastChanged = &lastChanged
 		}
 		if statusErr != nil {
-			s.Logger.Error("failed to get status of repo", log.String("repo", string(req.Repo)), log.Error(statusErr))
+			s.Logger.Error("failed to get status of repo", log.String("repo", string(req.Repo), privacy.Unknown), log.Error(statusErr))
 			// report this error in-band, but still produce a valid response with the
 			// other information.
 			resp.Error = statusErr.Error()
@@ -942,7 +943,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 
 	if repo == "" || format == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		s.Logger.Error("gitserver.archive", log.String("error", "empty repo or format"))
+		s.Logger.Error("gitserver.archive", log.String("error", "empty repo or format", privacy.Unknown))
 		return
 	}
 
@@ -1081,7 +1082,7 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, match
 
 		cloneProgress, err := s.cloneRepo(ctx, args.Repo, nil)
 		if err != nil {
-			s.Logger.Debug("error starting repo clone", log.String("repo", string(args.Repo)), log.Error(err))
+			s.Logger.Debug("error starting repo clone", log.String("repo", string(args.Repo), privacy.Unknown), log.Error(err))
 			return false, &gitdomain.RepoNotExistError{
 				Repo:            args.Repo,
 				CloneInProgress: false,
@@ -1368,7 +1369,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	if !gitdomain.IsAllowedGitCmd(s.Logger, req.Args) {
 		blockedCommandExecutedCounter.Inc()
 
-		s.Logger.Warn("exec: bad command", log.String("RemoteAddr", r.RemoteAddr), log.Strings("req.Args", req.Args))
+		s.Logger.Warn("exec: bad command", log.String("RemoteAddr", r.RemoteAddr, privacy.Unknown), log.Strings("req.Args", req.Args, privacy.Unknown))
 
 		// Temporary feature flag to disable this feature in case their are any regressions.
 		if conf.ExperimentalFeatures().EnableGitServerCommandExecFilter {
@@ -1505,7 +1506,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 		cloneProgress, err := s.cloneRepo(ctx, req.Repo, nil)
 		if err != nil {
-			s.Logger.Debug("error starting repo clone", log.String("repo", string(req.Repo)), log.Error(err))
+			s.Logger.Debug("error starting repo clone", log.String("repo", string(req.Repo), privacy.Unknown), log.Error(err))
 			status = "repo-not-found"
 			w.WriteHeader(http.StatusNotFound)
 			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
@@ -2012,7 +2013,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 	// see issue #7322: skip LFS content in repositories with Git LFS configured
 	cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
-	s.Logger.Info("cloning repo", log.String("repo", string(repo)), log.String("tmp", tmpPath), log.String("dst", dstPath))
+	s.Logger.Info("cloning repo", log.String("repo", string(repo), privacy.Unknown), log.String("tmp", tmpPath, privacy.Unknown), log.String("dst", dstPath, privacy.Unknown))
 
 	pr, pw := io.Pipe()
 	defer pw.Close()
@@ -2030,7 +2031,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	removeBadRefs(ctx, tmp)
 
 	if err := setHEAD(ctx, tmp, syncer, repo, remoteURL); err != nil {
-		s.Logger.Error("Failed to ensure HEAD exists", log.String("repo", string(repo)), log.Error(err))
+		s.Logger.Error("Failed to ensure HEAD exists", log.String("repo", string(repo), privacy.Unknown), log.Error(err))
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
 
@@ -2066,15 +2067,15 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	// Successfully updated, best-effort updating of db fetch state based on
 	// disk state.
 	if err := s.setLastFetched(ctx, repo); err != nil {
-		s.Logger.Warn("failed setting last fetch in DB", log.String("repo", string(repo)), log.Error(err))
+		s.Logger.Warn("failed setting last fetch in DB", log.String("repo", string(repo), privacy.Unknown), log.Error(err))
 	}
 
 	// Successfully updated, best-effort calculation of the repo size.
 	if err := s.setRepoSize(ctx, repo); err != nil {
-		s.Logger.Warn("failed setting repo size", log.String("repo", string(repo)), log.Error(err))
+		s.Logger.Warn("failed setting repo size", log.String("repo", string(repo), privacy.Unknown), log.Error(err))
 	}
 
-	s.Logger.Info("repo cloned", log.String("repo", string(repo)))
+	s.Logger.Info("repo cloned", log.String("repo", string(repo), privacy.Unknown))
 	repoClonedCounter.Inc()
 
 	return nil
@@ -2090,9 +2091,9 @@ func readCloneProgress(redactor *urlRedactor, lock *RepositoryLock, pr io.Reader
 	if conf.Get().CloneProgressLog {
 		logFile, err = os.CreateTemp("", "")
 		if err != nil {
-			logger.Warn("failed to create temporary clone log file", log.Error(err), log.String("repo", string(repo)))
+			logger.Warn("failed to create temporary clone log file", log.Error(err), log.String("repo", string(repo), privacy.Unknown))
 		} else {
-			logger.Info("logging clone output", log.String("file", logFile.Name()), log.String("repo", string(repo)))
+			logger.Info("logging clone output", log.String("file", logFile.Name(), privacy.Unknown), log.String("repo", string(repo), privacy.Unknown))
 			defer logFile.Close()
 		}
 	}
@@ -2280,7 +2281,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 	defer span.Finish()
 
 	if msg, ok := isPaused(filepath.Join(s.ReposDir, string(protocol.NormalizeRepo(repo)))); ok {
-		s.Logger.Warn("doRepoUpdate paused", log.String("repo", string(repo)), log.String("reason", msg))
+		s.Logger.Warn("doRepoUpdate paused", log.String("repo", string(repo), privacy.Unknown), log.String("reason", msg, privacy.Unknown))
 		return nil
 	}
 
@@ -2379,14 +2380,14 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 
 	err = syncer.Fetch(ctx, remoteURL, dir)
 	if err != nil {
-		s.Logger.Error("Failed to fetch", log.String("repo", string(repo)), log.Error(err))
+		s.Logger.Error("Failed to fetch", log.String("repo", string(repo), privacy.Unknown), log.Error(err))
 		return errors.Wrap(err, "failed to fetch")
 	}
 
 	removeBadRefs(ctx, dir)
 
 	if err := setHEAD(ctx, dir, syncer, repo, remoteURL); err != nil {
-		s.Logger.Error("Failed to ensure HEAD exists", log.String("repo", string(repo)), log.Error(err))
+		s.Logger.Error("Failed to ensure HEAD exists", log.String("repo", string(repo), privacy.Unknown), log.Error(err))
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
 
@@ -2396,18 +2397,18 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 
 	// Update the last-changed stamp.
 	if err := setLastChanged(dir); err != nil {
-		s.Logger.Warn("Failed to update last changed time", log.String("repo", string(repo)), log.Error(err))
+		s.Logger.Warn("Failed to update last changed time", log.String("repo", string(repo), privacy.Unknown), log.Error(err))
 	}
 
 	// Successfully updated, best-effort updating of db fetch state based on
 	// disk state.
 	if err := s.setLastFetched(ctx, repo); err != nil {
-		s.Logger.Warn("failed setting last fetch in DB", log.String("repo", string(repo)), log.Error(err))
+		s.Logger.Warn("failed setting last fetch in DB", log.String("repo", string(repo), privacy.Unknown), log.Error(err))
 	}
 
 	// Successfully updated, best-effort calculation of the repo size.
 	if err := s.setRepoSize(ctx, repo); err != nil {
-		s.Logger.Warn("failed setting repo size", log.String("repo", string(repo)), log.Error(err))
+		s.Logger.Warn("failed setting repo size", log.String("repo", string(repo), privacy.Unknown), log.Error(err))
 	}
 
 	return nil
@@ -2482,7 +2483,7 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 	dir.Set(cmd)
 	output, err := runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
-		logger.Error("Failed to fetch remote info", log.String("repo", string(repo)), log.Error(err), log.String("output", string(output)))
+		logger.Error("Failed to fetch remote info", log.String("repo", string(repo), privacy.Unknown), log.Error(err), log.String("output", string(output), privacy.Unknown))
 		return errors.Wrap(err, "failed to fetch remote info")
 	}
 
@@ -2503,7 +2504,7 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 		dir.Set(cmd)
 		list, err := cmd.Output()
 		if err != nil {
-			logger.Error("Failed to list branches", log.String("repo", string(repo)), log.Error(err), log.String("output", string(output)))
+			logger.Error("Failed to list branches", log.String("repo", string(repo), privacy.Unknown), log.Error(err), log.String("output", string(output), privacy.Unknown))
 			return errors.Wrap(err, "failed to list branches")
 		}
 		lines := strings.Split(string(list), "\n")
@@ -2517,7 +2518,7 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 	cmd = exec.CommandContext(ctx, "git", "symbolic-ref", "HEAD", "refs/heads/"+headBranch)
 	dir.Set(cmd)
 	if output, err := cmd.CombinedOutput(); err != nil {
-		logger.Error("Failed to set HEAD", log.String("repo", string(repo)), log.Error(err), log.String("output", string(output)))
+		logger.Error("Failed to set HEAD", log.String("repo", string(repo), privacy.Unknown), log.Error(err), log.String("output", string(output), privacy.Unknown))
 		return errors.Wrap(err, "Failed to set HEAD")
 	}
 
@@ -2590,7 +2591,7 @@ func computeLatestCommitTimestamp(dir GitDir) time.Time {
 	// If we don't have a more specific stamp, we'll return the current time,
 	// and possibly an error.
 	if err != nil {
-		logger.Warn("computeLatestCommitTimestamp: failed to execute, defaulting to time.Now", log.String("repo", string(dir)), log.Error(err))
+		logger.Warn("computeLatestCommitTimestamp: failed to execute, defaulting to time.Now", log.String("repo", string(dir), privacy.Unknown), log.Error(err))
 		return now
 	}
 
@@ -2604,7 +2605,7 @@ func computeLatestCommitTimestamp(dir GitDir) time.Time {
 	// 1521316105 ff03fac223b7f16627b301e03bf604e7808989be
 	epoch, err := strconv.ParseInt(string(words[0]), 10, 64)
 	if err != nil {
-		logger.Warn("computeLatestCommitTimestamp: ignoring corrupted timestamp, defaulting to time.Now", log.String("repo", string(dir)), log.String("timestamp", string(words[0])))
+		logger.Warn("computeLatestCommitTimestamp: ignoring corrupted timestamp, defaulting to time.Now", log.String("repo", string(dir), privacy.Unknown), log.String("timestamp", string(words[0]), privacy.Unknown))
 		return now
 	}
 	stamp := time.Unix(epoch, 0)
@@ -2662,7 +2663,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 	// Revision not found, update before returning.
 	err := s.doRepoUpdate(ctx, repo)
 	if err != nil {
-		s.Logger.Warn("failed to perform background repo update", log.Error(err), log.String("repo", string(repo)), log.String("rev", rev))
+		s.Logger.Warn("failed to perform background repo update", log.Error(err), log.String("repo", string(repo), privacy.Unknown), log.String("rev", rev, privacy.Unknown))
 	}
 	return true
 }

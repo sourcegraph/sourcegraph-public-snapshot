@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 // GitDir is an absolute path to a GIT_DIR.
@@ -401,7 +402,7 @@ func newFlushingResponseWriter(w http.ResponseWriter) *flushingResponseWriter {
 	logger := log.Scoped("newFlushingResponseWriter", "creates a new flushing response writer")
 	if flusher == nil {
 		logUnflushableResponseWriterOnce.Do(func() {
-			logger.Warn("Unable to flush HTTP response bodies. Diff search performance and completeness will be affected.", log.String("type", reflect.TypeOf(w).String()))
+			logger.Warn("Unable to flush HTTP response bodies. Diff search performance and completeness will be affected.", log.String("type", reflect.TypeOf(w).String(), privacy.Unknown))
 		})
 		return nil
 	}
@@ -541,7 +542,7 @@ func mapToLoggerField(m map[string]any) []log.Field {
 
 	for i, v := range m {
 
-		LogFields = append(LogFields, log.String(i, fmt.Sprint(v)))
+		LogFields = append(LogFields, log.String(i, fmt.Sprint(v), privacy.Unknown))
 	}
 
 	return LogFields
@@ -576,7 +577,7 @@ func bestEffortWalk(root string, walkFn func(path string, info fs.FileInfo) erro
 		}
 
 		if msg, ok := isPaused(path); ok {
-			logger.Warn("bestEffortWalk paused", log.String("dir", path), log.String("reason", msg))
+			logger.Warn("bestEffortWalk paused", log.String("dir", path, privacy.Unknown), log.String("reason", msg, privacy.Unknown))
 			return filepath.SkipDir
 		}
 

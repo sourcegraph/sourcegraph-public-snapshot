@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 
 	"golang.org/x/sync/errgroup"
 
@@ -199,7 +200,7 @@ func tryInterpretErrorWithStderr(ctx context.Context, err error, stderr string, 
 		// Ignore no commits error error
 		return nil
 	}
-	logger.Warn("git search command exited with non-zero status code", log.String("stderr", stderr))
+	logger.Warn("git search command exited with non-zero status code", log.String("stderr", stderr, privacy.Unknown))
 	return err
 }
 

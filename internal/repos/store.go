@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 type Store interface {
@@ -440,11 +441,11 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	)
 	logger := trace.Logger(ctx, s.Logger).With(
 		log.Int("externalServiceID", int(svc.ID)),
-		log.String("Name", string(r.Name)),
+		log.String("Name", string(r.Name), privacy.Unknown),
 		log.Object("ExternalRepo",
-			log.String("ID", r.ExternalRepo.ID),
-			log.String("ServiceID", r.ExternalRepo.ServiceID),
-			log.String("ServiceType", r.ExternalRepo.ServiceType),
+			log.String("ID", r.ExternalRepo.ID, privacy.Unknown),
+			log.String("ServiceID", r.ExternalRepo.ServiceID, privacy.Unknown),
+			log.String("ServiceType", r.ExternalRepo.ServiceType, privacy.Unknown),
 		),
 	)
 
@@ -554,11 +555,11 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	)
 	logger := trace.Logger(ctx, s.Logger).With(
 		log.Int("externalServiceID", int(svc.ID)),
-		log.String("Name", string(r.Name)),
+		log.String("Name", string(r.Name), privacy.Unknown),
 		log.Object("ExternalRepo",
-			log.String("ID", r.ExternalRepo.ID),
-			log.String("ServiceID", r.ExternalRepo.ServiceID),
-			log.String("ServiceType", r.ExternalRepo.ServiceType),
+			log.String("ID", r.ExternalRepo.ID, privacy.Unknown),
+			log.String("ServiceID", r.ExternalRepo.ServiceID, privacy.Unknown),
+			log.String("ServiceType", r.ExternalRepo.ServiceType, privacy.Unknown),
 		),
 	)
 
