@@ -1,7 +1,8 @@
 import { useLayoutEffect, useState } from 'react'
 
-import isChromatic from 'chromatic/isChromatic'
 import { useDarkMode as useRegularDarkMode } from 'storybook-dark-mode'
+
+import { isChromatic } from '../utils/isChromatic'
 
 import { useChromaticDarkMode } from './useChromaticTheme'
 

@@ -114,6 +114,7 @@ const config = {
             new DefinePlugin({
                 NODE_ENV: JSON.stringify(config.mode),
                 'process.env.NODE_ENV': JSON.stringify(config.mode),
+                'process.env.CHROMATIC': JSON.stringify(ENVIRONMENT_CONFIG.CHROMATIC),
             }),
             getProvidePlugin()
         )
