@@ -3,7 +3,6 @@ package server
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/fs"
 
@@ -60,24 +59,8 @@ func (s *rustDependencySource) Get(ctx context.Context, name, version string) (r
 
 	// Check if crate exists or not. Crates returns a struct detailing the errors if it cannot be found.
 	metaURL := fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s", dep.PackageSyntax(), dep.PackageVersion())
-	resp, err := s.client.Get(ctx, metaURL)
-	if err != nil {
-		return nil, errors.Wrap(err, "get")
-	}
-
-	// Example Error Message: {"errors":[{"detail":"not found"}]}
-	var errorSlice struct {
-		Errors []struct {
-			Detail string `json:"detail"`
-		} `json:"errors"`
-	}
-
-	if err := json.Unmarshal(resp, &errorSlice); err != nil {
-		return nil, errors.Wrap(err, "json-unmarshal")
-	}
-
-	if len(errorSlice.Errors) > 0 {
-		return nil, errors.New("invalid repository")
+	if _, err := s.client.Get(ctx, metaURL); err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch crate metadata for %s with URL %s", dep.PackageManagerSyntax(), metaURL)
 	}
 
 	return dep, nil
