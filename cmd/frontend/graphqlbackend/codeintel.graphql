@@ -1095,7 +1095,7 @@ type LSIFUploadAuditLog {
     """
     A list of changed columns in the format {"column": "<colname>", "new": "<newval>", "old": "<oldval>"}
     """
-    changedColumns: [JSONValue!]!
+    changedColumns: [AuditLogColumnChange!]!
 
     """
     The ID of the upload.
@@ -1126,6 +1126,26 @@ type LSIFUploadAuditLog {
     The operation denoted by this log.
     """
     operation: AuditLogOperation!
+}
+
+"""
+Represents a state transition of a single column.
+"""
+type AuditLogColumnChange {
+    """
+    The column that is changing.
+    """
+    column: String!
+
+    """
+    The previous value of the column.
+    """
+    old: String
+
+    """
+    The new value of the column
+    """
+    new: String
 }
 
 """

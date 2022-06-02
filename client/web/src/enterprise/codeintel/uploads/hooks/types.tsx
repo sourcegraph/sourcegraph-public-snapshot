@@ -4,7 +4,11 @@ export const lsifUploadAuditLogsFieldsFragment = gql`
     fragment LsifUploadsAuditLogsFields on LSIFUploadAuditLog {
         logTimestamp
         reason
-        changedColumns
+        changedColumns {
+            column
+            old
+            new
+        }
         operation
     }
 `

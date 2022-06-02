@@ -127,7 +127,7 @@ type LSIFUploadsAuditLogsResolver interface {
 	LogTimestamp() DateTime
 	UploadDeletedAt() *DateTime
 	Reason() *string
-	ChangedColumns() []JSONValue
+	ChangedColumns() []AuditLogColumnChange
 	UploadID() graphql.ID
 	InputCommit() string
 	InputRoot() string
@@ -135,6 +135,12 @@ type LSIFUploadsAuditLogsResolver interface {
 	UploadedAt() DateTime
 	Operation() string
 	// AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
+}
+
+type AuditLogColumnChange interface {
+	Column() string
+	Old() *string
+	New() *string
 }
 
 type LSIFIndexesQueryArgs struct {

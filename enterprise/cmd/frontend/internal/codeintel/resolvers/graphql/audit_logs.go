@@ -9,14 +9,30 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 )
 
+type auditLogColumnChangeResolver struct {
+	columnTransition map[string]*string
+}
+
+func (r *auditLogColumnChangeResolver) Column() string {
+	return *r.columnTransition["column"]
+}
+
+func (r *auditLogColumnChangeResolver) Old() *string {
+	return r.columnTransition["old"]
+}
+
+func (r *auditLogColumnChangeResolver) New() *string {
+	return r.columnTransition["new"]
+}
+
 type lsifUploadsAuditLogResolver struct {
 	log dbstore.UploadLog
 }
 
 func (r *lsifUploadsAuditLogResolver) Reason() *string { return r.log.Reason }
-func (r *lsifUploadsAuditLogResolver) ChangedColumns() (values []gql.JSONValue) {
+func (r *lsifUploadsAuditLogResolver) ChangedColumns() (values []gql.AuditLogColumnChange) {
 	for _, transition := range r.log.TransitionColumns {
-		values = append(values, gql.JSONValue{Value: transition})
+		values = append(values, &auditLogColumnChangeResolver{transition})
 	}
 	return
 }

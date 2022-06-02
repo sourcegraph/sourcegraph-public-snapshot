@@ -13,12 +13,6 @@ export interface UploadAuditLogTimelineProps {
     logs: LsifUploadsAuditLogsFields[]
 }
 
-interface stateChange {
-    column: string
-    old?: string
-    new?: string
-}
-
 export const UploadAuditLogTimeline: FunctionComponent<React.PropsWithChildren<UploadAuditLogTimelineProps>> = ({
     logs,
 }) => {
@@ -49,19 +43,13 @@ export const UploadAuditLogTimeline: FunctionComponent<React.PropsWithChildren<U
                             // eslint-disable-next-line react/no-array-index-key
                             <tr key={index}>
                                 <td className="mr-2">
-                                    <pre className={classNames('mb-0 position-relative')}>
-                                        {(change as stateChange).column}
-                                    </pre>
+                                    <pre className={classNames('mb-0 position-relative')}>{change.column}</pre>
                                 </td>
                                 <td className="mr-2">
-                                    <pre className={classNames('mb-0 position-relative')}>
-                                        {(change as stateChange).old || 'NULL'}
-                                    </pre>
+                                    <pre className={classNames('mb-0 position-relative')}>{change.old || 'NULL'}</pre>
                                 </td>
                                 <td className="mr-2">
-                                    <pre className={classNames('mb-0 position-relative')}>
-                                        {(change as stateChange).new || 'NULL'}
-                                    </pre>
+                                    <pre className={classNames('mb-0 position-relative')}>{change.new || 'NULL'}</pre>
                                 </td>
                             </tr>
                         ))}
@@ -83,9 +71,7 @@ function stageText(log: LsifUploadsAuditLogsFields): ReactNode {
     return (
         <>
             Altered columns:{' '}
-            {formatReactNodeList(
-                (log.changedColumns as stateChange[]).map(change => <Code key={change.column}>{change.column}</Code>)
-            )}
+            {formatReactNodeList(log.changedColumns.map(change => <Code key={change.column}>{change.column}</Code>))}
         </>
     )
 }
