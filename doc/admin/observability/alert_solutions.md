@@ -68,7 +68,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> frontend: 2%+ hard timeout search responses every 5m for 15m0s
-- <span class="badge badge-critical">critical</span> frontend: 5%+ hard timeout search responses every 5m for 15m0s
 
 **Possible solutions**
 
@@ -77,8 +76,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_hard_timeout_search_responses",
-  "critical_frontend_hard_timeout_search_responses"
+  "warning_frontend_hard_timeout_search_responses"
 ]
 ```
 
@@ -93,7 +91,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> frontend: 2%+ hard error search responses every 5m for 15m0s
-- <span class="badge badge-critical">critical</span> frontend: 5%+ hard error search responses every 5m for 15m0s
 
 **Possible solutions**
 
@@ -102,8 +99,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_hard_error_search_responses",
-  "critical_frontend_hard_error_search_responses"
+  "warning_frontend_hard_error_search_responses"
 ]
 ```
 
@@ -273,7 +269,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> frontend: 2%+ hard timeout search code-intel responses every 5m for 15m0s
-- <span class="badge badge-critical">critical</span> frontend: 5%+ hard timeout search code-intel responses every 5m for 15m0s
 
 **Possible solutions**
 
@@ -282,8 +277,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_hard_timeout_search_codeintel_responses",
-  "critical_frontend_hard_timeout_search_codeintel_responses"
+  "warning_frontend_hard_timeout_search_codeintel_responses"
 ]
 ```
 
@@ -298,7 +292,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> frontend: 2%+ hard error search code-intel responses every 5m for 15m0s
-- <span class="badge badge-critical">critical</span> frontend: 5%+ hard error search code-intel responses every 5m for 15m0s
 
 **Possible solutions**
 
@@ -307,8 +300,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_hard_error_search_codeintel_responses",
-  "critical_frontend_hard_error_search_codeintel_responses"
+  "warning_frontend_hard_error_search_codeintel_responses"
 ]
 ```
 
@@ -424,7 +416,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> frontend: 2%+ hard error search API responses every 5m for 15m0s
-- <span class="badge badge-critical">critical</span> frontend: 5%+ hard error search API responses every 5m for 15m0s
 
 **Possible solutions**
 
@@ -433,8 +424,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_hard_error_search_api_responses",
-  "critical_frontend_hard_error_search_api_responses"
+  "warning_frontend_hard_error_search_api_responses"
 ]
 ```
 
@@ -939,6 +929,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Determine if the pod was OOM killed using `kubectl describe pod (frontend|sourcegraph-frontend)` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p (frontend|sourcegraph-frontend)`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1407,6 +1399,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Determine if the pod was OOM killed using `kubectl describe pod gitserver` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p gitserver`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1676,6 +1670,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Determine if the pod was OOM killed using `kubectl describe pod github-proxy` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p github-proxy`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1745,7 +1741,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> postgres: 0.3s+ maximum transaction durations for 5m0s
-- <span class="badge badge-critical">critical</span> postgres: 0.5s+ maximum transaction durations for 10m0s
 
 **Possible solutions**
 
@@ -1754,8 +1749,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_postgres_transaction_durations",
-  "critical_postgres_transaction_durations"
+  "warning_postgres_transaction_durations"
 ]
 ```
 
@@ -1773,6 +1767,16 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod (pgsql|codeintel-db|codeinsights)` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p (pgsql|codeintel-db|codeinsights)`.
+	- Check if there is any OOMKILL event using the provisioning panels
+	- Check kernel logs using `dmesg` for OOMKILL events on worker nodes
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' (pgsql|codeintel-db|codeinsights)` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs (pgsql|codeintel-db|codeinsights)` (note this will include logs from the previous and currently running container).
+	- Check if there is any OOMKILL event using the provisioning panels
+	- Check kernel logs using `dmesg` for OOMKILL events
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-postgres-up).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1993,6 +1997,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Determine if the pod was OOM killed using `kubectl describe pod (pgsql|codeintel-db|codeinsights)` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p (pgsql|codeintel-db|codeinsights)`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -2320,6 +2326,8 @@ count being required for the volume of uploads.
 
 **Possible solutions**
 
+- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-worker` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-worker`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#precise-code-intel-worker-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -2641,6 +2649,8 @@ count being required for the volume of uploads.
 
 **Possible solutions**
 
+- Determine if the pod was OOM killed using `kubectl describe pod redis-cache` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p redis-cache`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#redis-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -2664,6 +2674,8 @@ count being required for the volume of uploads.
 
 **Possible solutions**
 
+- Determine if the pod was OOM killed using `kubectl describe pod redis-store` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p redis-store`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#redis-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -3101,6 +3113,8 @@ an underprovisioned main postgres instance.
 
 **Possible solutions**
 
+- Determine if the pod was OOM killed using `kubectl describe pod worker` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p worker`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -4166,6 +4180,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Determine if the pod was OOM killed using `kubectl describe pod repo-updater` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p repo-updater`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -4513,6 +4529,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Determine if the pod was OOM killed using `kubectl describe pod searcher` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p searcher`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -4787,6 +4805,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Determine if the pod was OOM killed using `kubectl describe pod symbols` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p symbols`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -4985,6 +5005,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Determine if the pod was OOM killed using `kubectl describe pod syntect-server` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p syntect-server`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#syntect-server-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -5005,7 +5027,6 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> zoekt: 15s+ average resolve revision duration over 5m
-- <span class="badge badge-critical">critical</span> zoekt: 30s+ average resolve revision duration over 5m
 
 **Possible solutions**
 
@@ -5014,8 +5035,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt_average_resolve_revision_duration",
-  "critical_zoekt_average_resolve_revision_duration"
+  "warning_zoekt_average_resolve_revision_duration"
 ]
 ```
 
@@ -5434,6 +5454,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Determine if the pod was OOM killed using `kubectl describe pod indexed-search` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p indexed-search`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -5856,6 +5878,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Determine if the pod was OOM killed using `kubectl describe pod prometheus` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p prometheus`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 

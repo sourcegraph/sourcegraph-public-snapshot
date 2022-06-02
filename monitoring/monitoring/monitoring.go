@@ -703,21 +703,33 @@ type Observable struct {
 	// would not want an alert to fire if no data was present, so this will not need to be set.
 	DataMustExist bool
 
-	// Warning and Critical alert definitions.
-	// Consider adding at least a Warning or Critical alert to each Observable to make it
-	// easy to identify when the target of this metric is misbehaving. If no alerts are
-	// provided, NoAlert must be set and Interpretation must be provided.
-	Warning, Critical *ObservableAlertDefinition
+	// Warning alerts indicate that something *could* be wrong with Sourcegraph. We
+	// suggest checking in on these periodically, or using a notification channel that
+	// will not bother anyone if it is spammed.
+	//
+	// Learn more about how alerting is used: https://docs.sourcegraph.com/admin/observability/alerting
+	Warning *ObservableAlertDefinition
 
-	// NoAlerts must be set by Observables that do not have any alerts.
-	// This ensures the omission of alerts is intentional. If set to true, an Interpretation
-	// must be provided in place of PossibleSolutions.
+	// Critical alerts indicate that something is definitively wrong with Sourcegraph,
+	// in a way that is very likely to be noticeable to users. We suggest using a
+	// high-visibility notification channel, such as paging, for these alerts.
+	//
+	// Learn more about how alerting is used: https://docs.sourcegraph.com/admin/observability/alerting
+	Critical *ObservableAlertDefinition
+
+	// NoAlerts must be set by Observables that do not have any alerts. This ensures the
+	// omission of alerts is intentional. If set to true, an Interpretation must be
+	// provided in place of PossibleSolutions.
+	//
+	// Consider adding at least a Warning or Critical alert to each Observable to make it
+	// easy to identify when the target of this metric is misbehaving.
 	NoAlert bool
 
 	// PossibleSolutions is Markdown describing possible solutions in the event that the
-	// alert is firing. This field not required if no alerts are attached to this Observable.
-	// If there is no clear potential resolution or there is no alert configured, "none"
-	// must be explicitly stated.
+	// alert is firing. This field is not required if no alerts are attached to this
+	// Observable. If there is no clear potential resolution or there is no alert
+	// configured, "none" must be explicitly stated. If a Critical alert is defined,
+	// providing "none" is not allowed.
 	//
 	// Use the Interpretation field for additional guidance on understanding this Observable
 	// that isn't directly related to solving it.
@@ -823,10 +835,19 @@ func (o Observable) validate() error {
 				return errors.Errorf("%s Alert: %w", alertLevel, err)
 			}
 		}
+
 		// PossibleSolutions must be provided and valid
 		if o.PossibleSolutions == "" {
 			return errors.Errorf(`PossibleSolutions must list solutions or an explicit "none"`)
-		} else if o.PossibleSolutions != "none" {
+		}
+
+		// If a critical alert is set, PossibleSolutiosn must be provided. Empty case
+		if !o.Critical.isEmpty() && o.PossibleSolutions == "none" {
+			return errors.Newf(`PossibleSolutions must be provided if a critical alert is set`)
+		}
+
+		// Check if provided PossibleSolutiosn is valid
+		if o.PossibleSolutions != "none" {
 			if solutions, err := toMarkdown(o.PossibleSolutions, true); err != nil {
 				return errors.Errorf("PossibleSolutions cannot be converted to Markdown: %w", err)
 			} else if l := strings.ToLower(solutions); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {

@@ -1,6 +1,7 @@
 package definitions
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -55,7 +56,6 @@ func Postgres() *monitoring.Dashboard {
 						Query:             `sum by (job) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin"}) OR sum by (job) (pg_stat_activity_max_tx_duration{job="codeinsights-db", datname!~"template.*|cloudsqladmin"})`,
 						Panel:             monitoring.Panel().LegendFormat("{{datname}}").Unit(monitoring.Seconds),
 						Warning:           monitoring.Alert().GreaterOrEqual(0.3).For(5 * time.Minute),
-						Critical:          monitoring.Alert().GreaterOrEqual(0.5).For(10 * time.Minute),
 						PossibleSolutions: "none",
 					},
 				},
@@ -67,15 +67,27 @@ func Postgres() *monitoring.Dashboard {
 				Rows: []monitoring.Row{
 					{
 						monitoring.Observable{
-							Name:              "postgres_up",
-							Description:       "database availability",
-							Owner:             monitoring.ObservableOwnerDevOps,
-							DataMustExist:     false, // not deployed on docker-compose
-							Query:             "pg_up",
-							Panel:             monitoring.Panel().LegendFormat("{{app}}"),
-							Critical:          monitoring.Alert().LessOrEqual(0).For(5 * time.Minute),
-							PossibleSolutions: "none",
-							Interpretation:    "A non-zero value indicates the database is online.",
+							Name:          "postgres_up",
+							Description:   "database availability",
+							Owner:         monitoring.ObservableOwnerDevOps,
+							DataMustExist: false, // not deployed on docker-compose
+							Query:         "pg_up",
+							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
+							Critical:      monitoring.Alert().LessOrEqual(0).For(5 * time.Minute),
+							// Similar to ContainerMissing solutions
+							PossibleSolutions: fmt.Sprintf(`
+								- **Kubernetes:**
+									- Determine if the pod was OOM killed using 'kubectl describe pod %[1]s' (look for 'OOMKilled: true') and, if so, consider increasing the memory limit in the relevant 'Deployment.yaml'.
+									- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'kubectl logs -p %[1]s'.
+									- Check if there is any OOMKILL event using the provisioning panels
+									- Check kernel logs using 'dmesg' for OOMKILL events on worker nodes
+								- **Docker Compose:**
+									- Determine if the pod was OOM killed using 'docker inspect -f \'{{json .State}}\' %[1]s' (look for '"OOMKilled":true') and, if so, consider increasing the memory limit of the %[1]s container in 'docker-compose.yml'.
+									- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'docker logs %[1]s' (note this will include logs from the previous and currently running container).
+									- Check if there is any OOMKILL event using the provisioning panels
+									- Check kernel logs using 'dmesg' for OOMKILL events
+							`, containerName),
+							Interpretation: "A non-zero value indicates the database is online.",
 						},
 						monitoring.Observable{
 							Name:          "invalid_indexes",
