@@ -17860,10 +17860,10 @@ marked@1.0.0:
   resolved "https://registry.npmjs.org/marked/-/marked-1.0.0.tgz#d35784245a04871e5988a491e28867362e941693"
   integrity sha512-Wo+L1pWTVibfrSr+TTtMuiMfNzmZWiOPeO7rZsQUY5bgsxpHesBEcIWJloWVTFnrMXnf/TL30eTFSGJddmQAng==
 
-marked@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.npmjs.org/marked/-/marked-4.0.0.tgz#fd4ff16f6b99fbe6beb729f2077ea717d0ec4edb"
-  integrity sha512-K3C1JvtiXuXVLoxDQEJP4NMLBuThlTkthgUOCzqLghIpHfis1DIZZfPI3o4UgfFpQ0d+JvTql2h+szR9jQ1p1w==
+marked@4.0.16:
+  version "4.0.16"
+  resolved "https://registry.npmjs.org/marked/-/marked-4.0.16.tgz#9ec18fc1a723032eb28666100344d9428cf7a264"
+  integrity sha512-wahonIQ5Jnyatt2fn8KqF/nIqZM8mh3oRu2+l5EANGMhu6RFjiSG52QNE2eWzFMI94HqYSgN184NurgNG6CztA==
 
 marky@^1.2.0:
   version "1.2.2"
