@@ -53,8 +53,8 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 	// Explicitly disable retries.
 	MaxNumRetries: 0,
 
-	// This view ranks different jobs in a workspace in round-robin fashion
-	// so as to ensure fairness when dequeuing from a workspace.
+	// This view ranks jobs from different users in a round-robin fashion
+	// so that no single user can clog the queue.
 	ViewName: "batch_spec_workspace_execution_queue batch_spec_workspace_execution_jobs",
 }
 
