@@ -297,9 +297,7 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 			{
 				name:          "1password",
 				onlyTeammates: true,
-				check: check.Combine(
-					check.InPath("op"),
-					check.CommandOutputContains("op account list", "team-sourcegraph.1password.com")),
+				check:         check1password(),
 				// Convoluted directions from https://developer.1password.com/docs/cli/get-started/#install
 				instructionsCommands: `
 curl -sS https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg
