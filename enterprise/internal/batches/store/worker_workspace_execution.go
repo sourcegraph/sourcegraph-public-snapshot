@@ -47,7 +47,7 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 	},
 	// This needs to be kept in sync with the placeInQueue fragment in the batch
 	// spec execution jobs store.
-	OrderByExpression: sqlf.Sprintf("batch_spec_workspace_execution_jobs.created_at, batch_spec_workspace_execution_jobs.id"),
+	OrderByExpression: sqlf.Sprintf("batch_spec_workspace_execution_jobs.place_in_queue"),
 	StalledMaxAge:     batchSpecWorkspaceExecutionJobStalledJobMaximumAge,
 	MaxNumResets:      batchSpecWorkspaceExecutionJobMaximumNumResets,
 	// Explicitly disable retries.

@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -314,6 +315,64 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 	_, err = db.AccessTokens().GetByID(ctx, tokenID)
 	if err != database.ErrAccessTokenNotFound {
 		t.Fatalf("access token was not deleted")
+	}
+}
+
+func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin(t *testing.T) {
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+
+	user := ct.CreateTestUser(t, db, true)
+	user2 := ct.CreateTestUser(t, db, true)
+	user3 := ct.CreateTestUser(t, db, true)
+
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
+
+	s := New(db, &observation.TestContext, nil)
+	workerStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
+
+	// We create multiple jobs for each user because this test ensures jobs are dequeued in a round-robin fashion.
+	// that said, per round, no user should have more than one job in queue.
+	setupBatchSpecAssociation(ctx, s, t, user, repo)  // iD: 1, user: 1
+	setupBatchSpecAssociation(ctx, s, t, user, repo)  // id: 2, user: 1
+	setupBatchSpecAssociation(ctx, s, t, user2, repo) // iD: 3, user: 2
+	setupBatchSpecAssociation(ctx, s, t, user2, repo) // iD: 4, user: 2
+	setupBatchSpecAssociation(ctx, s, t, user3, repo) // iD: 5, user: 3
+	setupBatchSpecAssociation(ctx, s, t, user3, repo) // iD: 6, user: 3
+
+	want := []int{3, 1, 4, 5, 2, 6}
+	have := []int{}
+
+	for {
+		r, found, _ := workerStore.Dequeue(ctx, "test-worker-1", nil)
+		if !found {
+			break
+		}
+		have = append(have, r.RecordID())
+	}
+
+	if diff := cmp.Diff(want, have); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func setupBatchSpecAssociation(ctx context.Context, s *Store, t *testing.T, user *types.User, repo *types.Repo) {
+	// Setup all the associations for user ID 1's batch spec
+	batchSpec := &btypes.BatchSpec{UserID: user.ID, NamespaceUserID: user.ID, RawSpec: "horse", Spec: &batcheslib.BatchSpec{
+		ChangesetTemplate: &batcheslib.ChangesetTemplate{},
+	}}
+	if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
+		t.Fatal(err)
+	}
+
+	workspace := &btypes.BatchSpecWorkspace{BatchSpecID: batchSpec.ID, RepoID: repo.ID}
+	if err := s.CreateBatchSpecWorkspace(ctx, workspace); err != nil {
+		t.Fatal(err)
+	}
+
+	job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: workspace.ID}
+	if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
+		t.Fatal(err)
 	}
 }
 
