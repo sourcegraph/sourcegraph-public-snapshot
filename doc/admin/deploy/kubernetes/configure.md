@@ -34,7 +34,7 @@ of your deployment environment.
 We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference repository](./index.md#reference-repository) to track your configuration changes in Git.
 **This will make upgrades far easier** and is a good practice not just for Sourcegraph, but for any Kubernetes application.
 
-    > WARNING: Forks of public repos are also public. If you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository you should rather duplicate the reference repository and make your copy private.
+    > WARNING: Forks of public repos are also public. If you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository you should duplicate the reference repository and make your copy private.
 
     <span class="virtual-br"></span>
 
@@ -44,7 +44,7 @@ We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference re
   
   [Create a public fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository.
 
-  Alternatively, create a [private duplicate](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository#mirroring-a-repository) of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository. as follows:
+  Alternatively, create a [private duplicate](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository#mirroring-a-repository) of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository as follows:
 
   Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example `<you/private-repository>` in GitHub, then bare clone the reference repository. 
 
