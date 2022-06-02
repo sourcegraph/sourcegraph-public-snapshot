@@ -67,7 +67,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 		t.Run("GetByBatchSpecWorkspaceID", func(t *testing.T) {
 			for i, job := range jobs {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-
 					have, err := s.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{BatchSpecWorkspaceID: job.BatchSpecWorkspaceID})
 					if err != nil {
 						t.Fatal(err)
