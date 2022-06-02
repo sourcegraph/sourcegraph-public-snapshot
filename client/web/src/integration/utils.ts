@@ -2,11 +2,11 @@ import { Page } from 'puppeteer'
 
 import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { Settings, SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { readEnvironmentBoolean } from '@sourcegraph/shared/src/testing/utils'
 
 import { WebGraphQlOperations } from '../graphql-operations'
-import { Settings, SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 
 const CODE_HIGHLIGHTING_QUERIES: Partial<
     keyof (WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations)
@@ -267,9 +267,8 @@ export function enableEditor(editor: Editor): Partial<Settings> {
 /**
  * Returns an object for accessing editor related information at `rootSelector`.
  */
-export const createEditorAPI = (driver: Driver, editor: Editor, rootSelector: string): EditorAPI => {
-    return editors[editor](driver, rootSelector)
-}
+export const createEditorAPI = (driver: Driver, editor: Editor, rootSelector: string): EditorAPI =>
+    editors[editor](driver, rootSelector)
 
 /**
  * Helper function for abstracting away testing different search query input
@@ -283,6 +282,8 @@ export const withSearchQueryInput = (callback: (editorName: Editor, rootSelector
         ['codemirror6', '[data-test-id="codemirror-query-input"]'],
     ]
     for (const [editor, selector] of editorNames) {
+        // This callback is supposed to be called multiple times
+        // eslint-disable-next-line callback-return
         callback(editor, selector)
     }
 }

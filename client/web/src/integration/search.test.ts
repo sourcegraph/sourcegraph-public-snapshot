@@ -129,7 +129,7 @@ describe('Search', () => {
         })
     })
 
-    describe(`Filter completion`, () => {
+    describe('Filter completion', () => {
         withSearchQueryInput((editorName, editorSelector) => {
             test(`Completing a negated filter should insert the filter with - prefix (${editorName})`, async () => {
                 const editor = createEditorAPI(driver, editorName, editorSelector)
@@ -144,7 +144,7 @@ describe('Search', () => {
                 await editor.replace('-file')
                 await editor.selectSuggestion('-file')
                 expect(await editor.getValue()).toStrictEqual('-file:')
-                await percySnapshotWithVariants(driver.page, 'Search home page')
+                await percySnapshotWithVariants(driver.page, `Search home page (${editorName})`)
                 await accessibilityAudit(driver.page)
             })
         })
