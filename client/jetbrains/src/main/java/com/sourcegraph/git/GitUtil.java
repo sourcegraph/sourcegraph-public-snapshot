@@ -31,7 +31,7 @@ public class GitUtil {
             branchName = defaultBranchNameSetting != null ? defaultBranchNameSetting : getCurrentBranchName(repoRootPath);
             // If there’s no default branch name setting and the current branch doesn’t exist on the remote, use the default branch.
             if (!doesRemoteBranchExist(branchName, repoRootPath) && defaultBranchNameSetting == null) {
-                branchName = "master"; // TODO: Make this dynamic!
+                branchName = "main"; // TODO: Make this dynamic!
             }
 
             remoteUrl = getConfiguredRemoteUrl(repoRootPath);
