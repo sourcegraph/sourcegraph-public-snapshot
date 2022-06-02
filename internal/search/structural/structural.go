@@ -2,6 +2,7 @@ package structural
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
@@ -95,6 +96,7 @@ func streamStructuralSearch(ctx context.Context, clients job.RuntimeClients, arg
 
 		jobs = append(jobs, &searchRepos{clients: clients, args: searcherArgs, stream: stream, repoSet: repoSet})
 	}
+	fmt.Printf("running structural search jobs\n")
 	return runJobs(ctx, jobs)
 }
 
@@ -119,6 +121,7 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 
 	// For structural search with default limits we retry if we get no results.
 	agg := streaming.NewAggregatingStream()
+	fmt.Printf("calling streamStructuralSearch()\n")
 	err := streamStructuralSearch(ctx, clients, args, repos, agg)
 
 	event := agg.SearchEvent

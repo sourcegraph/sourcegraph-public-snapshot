@@ -6,13 +6,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/inconshreveable/log15"
 	"io"
 	"os/exec"
 	"strconv"
 	"strings"
 	"syscall"
-
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -59,6 +58,8 @@ func rawArgs(args Args) (rawArgs []string) {
 	}
 
 	switch i := args.Input.(type) {
+	case Tar:
+		rawArgs = append(rawArgs, "-tar", string(i))
 	case ZipPath:
 		rawArgs = append(rawArgs, "-zip", string(i))
 	case DirPath:
@@ -73,7 +74,7 @@ func rawArgs(args Args) (rawArgs []string) {
 	return rawArgs
 }
 
-func waitForCompletion(cmd *exec.Cmd, stdout, stderr io.ReadCloser, w io.Writer) (err error) {
+func waitForCompletion(cmd *exec.Cmd, stdin io.WriteCloser, tarBytes []byte, stdout, stderr io.ReadCloser, w io.Writer) (err error) {
 	// Read stderr in goroutine so we don't potentially block reading stdout
 	stderrMsgC := make(chan []byte, 1)
 	go func() {
@@ -82,6 +83,10 @@ func waitForCompletion(cmd *exec.Cmd, stdout, stderr io.ReadCloser, w io.Writer)
 		close(stderrMsgC)
 	}()
 
+	go func() {
+		defer stdin.Close()
+		stdin.Write(tarBytes)
+	}()
 	_, err = io.Copy(w, stdout)
 	if err != nil {
 		log15.Error("failed to copy comby output to writer", "error", err.Error())
@@ -115,7 +120,7 @@ func kill(pid int) {
 	_ = syscall.Kill(-pid, syscall.SIGKILL)
 }
 
-func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
+func PipeTo(ctx context.Context, args Args, tar []byte, w io.Writer) (err error) {
 	if !Exists() {
 		log15.Error("comby is not installed (it could not be found on the PATH)")
 		return errors.New("comby is not installed")
@@ -135,6 +140,11 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 		cmd.Stdin = bytes.NewReader(content)
 	}
 
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		log15.Error("could not connect to comby command stdin", "error", err.Error())
+		return errors.Wrap(err, "failed to connect to comby command stdin")
+	}
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log15.Error("could not connect to comby command stdout", "error", err.Error())
@@ -153,7 +163,7 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 
 	errorC := make(chan error, 1)
 	go func() {
-		errorC <- waitForCompletion(cmd, stdout, stderr, w)
+		errorC <- waitForCompletion(cmd, stdin, tar, stdout, stderr, w)
 	}()
 
 	select {
@@ -175,8 +185,14 @@ type unmarshaller func([]byte) Result
 
 func toFileMatch(b []byte) Result {
 	var m *FileMatch
-	if err := json.Unmarshal(b, &m); err != nil {
-		log15.Warn("comby error: skipping unmarshaling error", "err", err.Error())
+	err := json.Unmarshal(b, &m)
+	if err == io.EOF {
+		log15.Info("reached EOF")
+		return nil
+	}
+	if err != nil {
+		log15.Info("bytes: " + string(b))
+		log15.Warn("toFileMatch() comby error: skipping unmarshaling error", "err", err.Error())
 		return nil
 	}
 	return m
@@ -195,11 +211,11 @@ func toOutput(b []byte) Result {
 	return &Output{Value: b}
 }
 
-func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Result, err error) {
+func Run(ctx context.Context, args Args, tar []byte, unmarshal unmarshaller) (results []Result, err error) {
 	b := new(bytes.Buffer)
 	w := bufio.NewWriter(b)
 
-	err = PipeTo(ctx, args, w)
+	err = PipeTo(ctx, args, tar, w)
 	if err != nil {
 		return nil, err
 	}
@@ -226,12 +242,12 @@ func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Resu
 }
 
 // Matches returns all matches in all files for which comby finds matches.
-func Matches(ctx context.Context, args Args) ([]*FileMatch, error) {
+func Matches(ctx context.Context, args Args, tar []byte) ([]*FileMatch, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Matches")
 	defer span.Finish()
 
 	args.ResultKind = MatchOnly
-	results, err := Run(ctx, args, toFileMatch)
+	results, err := Run(ctx, args, tar, toFileMatch)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +263,7 @@ func Replacements(ctx context.Context, args Args) ([]*FileReplacement, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Replacements")
 	defer span.Finish()
 
-	results, err := Run(ctx, args, toFileReplacement)
+	results, err := Run(ctx, args, nil, toFileReplacement)
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +280,7 @@ func Outputs(ctx context.Context, args Args) (string, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Outputs")
 	defer span.Finish()
 
-	results, err := Run(ctx, args, toOutput)
+	results, err := Run(ctx, args, nil, toOutput)
 	if err != nil {
 		return "", err
 	}

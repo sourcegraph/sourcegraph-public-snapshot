@@ -4,10 +4,12 @@ type Input interface {
 	input()
 }
 
+type Tar []byte
 type ZipPath string
 type DirPath string
 type FileContent []byte
 
+func (Tar) input()         {}
 func (ZipPath) input()     {}
 func (DirPath) input()     {}
 func (FileContent) input() {}

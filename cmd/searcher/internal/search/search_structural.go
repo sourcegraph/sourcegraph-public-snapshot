@@ -1,12 +1,11 @@
 package search
 
 import (
-	"archive/zip"
+	"archive/tar"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -27,23 +26,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.FileMatch, error) {
-	file, err := zipReader.Open(combyMatch.URI)
-	if err != nil {
-		return protocol.FileMatch{}, err
-	}
-	defer file.Close()
-
-	fileBuf, err := io.ReadAll(file)
-	if err != nil {
-		return protocol.FileMatch{}, err
-	}
-
+func toFileMatch(tarBytes []byte, combyMatch *comby.FileMatch) (protocol.FileMatch, error) {
 	// Convert comby matches to ranges
 	ranges := make([]protocol.Range, 0, len(combyMatch.Matches))
 	for _, r := range combyMatch.Matches {
 		// trust, but verify
-		if r.Range.Start.Offset > len(fileBuf) || r.Range.End.Offset > len(fileBuf) {
+		if r.Range.Start.Offset > len(tarBytes) || r.Range.End.Offset > len(tarBytes) {
 			return protocol.FileMatch{}, errors.New("comby match range does not fit in file")
 		}
 
@@ -63,7 +51,7 @@ func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.F
 	}
 
 	chunks := chunkRanges(ranges, 0)
-	chunkMatches := chunksToMatches(fileBuf, chunks)
+	chunkMatches := chunksToMatches(tarBytes, chunks)
 	return protocol.FileMatch{
 		Path:         combyMatch.URI,
 		ChunkMatches: chunkMatches,
@@ -268,12 +256,12 @@ func filteredStructuralSearch(ctx context.Context, zipPath string, zf *zipFile, 
 		matchedPaths = append(matchedPaths, fm.Path)
 	}
 
-	var extensionHint string
-	if len(matchedPaths) > 0 {
-		extensionHint = filepath.Ext(matchedPaths[0])
-	}
+	//var extensionHint string
+	//if len(matchedPaths) > 0 {
+	//	extensionHint = filepath.Ext(matchedPaths[0])
+	//}
 
-	return structuralSearch(ctx, zipPath, subset(matchedPaths), extensionHint, p.Pattern, p.CombyRule, p.Languages, repo, sender)
+	return nil
 }
 
 // toMatcher returns the matcher that parameterizes structural search. It
@@ -310,7 +298,7 @@ type subset []string
 
 var all universalSet = struct{}{}
 
-func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) (err error) {
+func structuralSearch(ctx context.Context, tarBytes []byte, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) (err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "StructuralSearch")
 	span.SetTag("repo", repo)
 	defer func() {
@@ -332,8 +320,9 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 	}
 	span.LogFields(otlog.Int("paths", len(filePatterns)))
 
-	args := comby.Args{
-		Input:         comby.ZipPath(zipPath),
+	var args comby.Args
+	args = comby.Args{
+		Input:         comby.Tar{},
 		Matcher:       matcher,
 		MatchTemplate: pattern,
 		ResultKind:    comby.MatchOnly,
@@ -342,31 +331,45 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 		NumWorkers:    numWorkers,
 	}
 
-	combyMatches, err := comby.Matches(ctx, args)
+	combyMatches, err := comby.Matches(ctx, args, tarBytes)
 	if err != nil {
 		return err
 	}
 
-	zipReader, err := zip.OpenReader(zipPath)
-	if err != nil {
-		return err
-	}
-	defer zipReader.Close()
-
+	fmt.Printf("numCombyMatches: %v\n", len(combyMatches))
+	tr := tar.NewReader(bytes.NewBuffer(tarBytes))
 	for _, combyMatch := range combyMatches {
+		// Get the next file from tarball
+		_, err := tr.Next()
+		if err == io.EOF {
+			continue
+		}
+		if err != nil {
+			continue
+		}
+
+		// Read the file contents into b
+		var b bytes.Buffer
+		_, err = io.Copy(&b, tr)
+		if err != nil {
+			continue
+		}
+
 		if ctx.Err() != nil {
 			return nil
 		}
-		fm, err := toFileMatch(&zipReader.Reader, combyMatch)
+		fm, err := toFileMatch(b.Bytes(), combyMatch)
 		if err != nil {
 			return err
 		}
 		sender.Send(fm)
 	}
+
 	return nil
 }
 
 func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
+	fmt.Printf("structuralSearchWithZoekt() called\n")
 	patternInfo := &search.TextPatternInfo{
 		Pattern:                      p.Pattern,
 		IsNegated:                    p.IsNegated,
@@ -388,33 +391,12 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender 
 		p.Branch = "HEAD"
 	}
 	branchRepos := []zoektquery.BranchRepos{{Branch: p.Branch, Repos: roaring.BitmapOf(uint32(p.RepoID))}}
-	zoektMatches, _, _, err := zoektSearch(ctx, patternInfo, branchRepos, time.Since, p.IndexerEndpoints, nil)
+	err = zoektSearch(ctx, patternInfo, branchRepos, time.Since, p.IndexerEndpoints, nil, p.Repo, sender)
 	if err != nil {
 		return err
 	}
 
-	if len(zoektMatches) == 0 {
-		return nil
-	}
-
-	zipFile, err := os.CreateTemp("", "*.zip")
-	if err != nil {
-		return err
-	}
-	defer zipFile.Close()
-	defer os.Remove(zipFile.Name())
-
-	if err = writeZip(ctx, zipFile, zoektMatches); err != nil {
-		return err
-	}
-
-	var extensionHint string
-	if len(zoektMatches) > 0 {
-		filename := zoektMatches[0].FileName
-		extensionHint = filepath.Ext(filename)
-	}
-
-	return structuralSearch(ctx, zipFile.Name(), all, extensionHint, p.Pattern, p.CombyRule, p.Languages, p.Repo, sender)
+	return nil
 }
 
 var metricRequestTotalStructuralSearch = promauto.NewCounterVec(prometheus.CounterOpts{

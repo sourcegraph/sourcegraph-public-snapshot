@@ -39,6 +39,8 @@ func (args Args) String() string {
 	}
 
 	switch i := args.Input.(type) {
+	case Tar:
+		s = append(s, "-tar", string(i))
 	case ZipPath:
 		s = append(s, "-zip", string(i))
 	case DirPath:
