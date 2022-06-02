@@ -93,7 +93,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
         {
             variables: { id: insight.id, filters: filterInput, seriesDisplayOptions: displayInput },
             fetchPolicy: 'cache-and-network',
-            pollInterval: 3000,
+            pollInterval: insight.repositories.length === 0 ? 5000 : 750,
             skip: !wasVisble,
             onCompleted: data => {
                 const parsedData = createBackendInsightData(insight, data.insightViews.nodes[0])
