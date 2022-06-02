@@ -66,7 +66,7 @@ export type Request =
     | ClearPreviewRequest
     | IndicateFinishedLoadingRequest
 
-export async function getConfig(): Promise<PluginConfig> {
+export async function getConfigAlwaysFullfil(): Promise<PluginConfig> {
     try {
         return (await callJava({ action: 'getConfig' })) as PluginConfig
     } catch (error) {
@@ -79,8 +79,16 @@ export async function getConfig(): Promise<PluginConfig> {
     }
 }
 
-export async function getTheme(): Promise<Theme> {
-    return (await callJava({ action: 'getTheme' })) as Theme
+export async function getThemeAlwaysFullfil(): Promise<Theme> {
+    try {
+        return (await callJava({ action: 'getTheme' })) as Theme
+    } catch (error) {
+        console.error(`Failed to get theme: ${(error as Error).message}`)
+        return {
+            isDarkTheme: true,
+            intelliJTheme: {},
+        }
+    }
 }
 
 export async function indicateFinishedLoading(): Promise<void> {
@@ -115,7 +123,7 @@ export async function onOpen(match: SearchMatch, lineMatchIndexOrSymbolIndex?: n
     }
 }
 
-export async function loadLastSearch(): Promise<Search | null> {
+export async function loadLastSearchAlwaysFullfil(): Promise<Search | null> {
     try {
         return (await callJava({ action: 'loadLastSearch' })) as Search
     } catch (error) {

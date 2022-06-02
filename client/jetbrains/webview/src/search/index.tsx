@@ -8,10 +8,10 @@ import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
 
 import { App } from './App'
 import {
-    getConfig,
-    getTheme,
+    getConfigAlwaysFullfil,
+    getThemeAlwaysFullfil,
     indicateFinishedLoading,
-    loadLastSearch,
+    loadLastSearchAlwaysFullfil,
     onOpen,
     onPreviewChange,
     onPreviewClear,
@@ -29,9 +29,9 @@ let initialAuthenticatedUser: AuthenticatedUser | null
 
 window.initializeSourcegraph = async () => {
     const [theme, config, lastSearch, authenticatedUser] = await Promise.allSettled([
-        getTheme(),
-        getConfig(),
-        loadLastSearch(),
+        getThemeAlwaysFullfil(),
+        getConfigAlwaysFullfil(),
+        loadLastSearchAlwaysFullfil(),
         getAuthenticatedUser(instanceURL, accessToken),
     ])
 
@@ -82,12 +82,12 @@ function applyTheme(theme: Theme): void {
     isDarkTheme = theme.isDarkTheme
 
     // Find the name of properties here: https://plugins.jetbrains.com/docs/intellij/themes-metadata.html#key-naming-scheme
-    const intellijTheme = theme.intelliJTheme
+    const intelliJTheme = theme.intelliJTheme
     const root = document.querySelector(':root') as HTMLElement
 
     // Button color (test)
-    root.style.setProperty('--button-color', intellijTheme['Button.default.startBackground'])
-    root.style.setProperty('--primary', intellijTheme['Button.default.startBackground'])
+    root.style.setProperty('--button-color', intelliJTheme['Button.default.startBackground'])
+    root.style.setProperty('--primary', intelliJTheme['Button.default.startBackground'])
 }
 
 function applyLastSearch(lastSearch: Search | null): void {
