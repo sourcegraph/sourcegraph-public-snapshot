@@ -101,14 +101,26 @@ func TestNonLocalDefinition(t *testing.T) {
 	cwd, err := os.Getwd()
 	fatalIfErrorLabel(t, err, "getting cwd")
 
-	symbolToKindToAnnotations := groupBySymbolAndKind(annotations)
+	solo := ""
+	for _, a := range annotations {
+		for _, tag := range a.tags {
+			if tag == "solo" {
+				solo = a.symbol
+			}
+		}
+	}
+
+	symbolToTagToAnnotations := groupBySymbolAndTag(annotations)
 	symbols := []string{}
-	for symbol := range symbolToKindToAnnotations {
+	for symbol := range symbolToTagToAnnotations {
 		symbols = append(symbols, symbol)
 	}
 	sort.Strings(symbols)
 	for _, symbol := range symbols {
-		m := symbolToKindToAnnotations[symbol]
+		if solo != "" && symbol != solo {
+			continue
+		}
+		m := symbolToTagToAnnotations[symbol]
 		var wantAnn *annotation
 		for _, ann := range m["def"] {
 			if wantAnn != nil {
@@ -154,7 +166,7 @@ func TestNonLocalDefinition(t *testing.T) {
 	}
 }
 
-func groupBySymbolAndKind(annotations []annotation) map[string]map[string][]annotation {
+func groupBySymbolAndTag(annotations []annotation) map[string]map[string][]annotation {
 	grouped := map[string]map[string][]annotation{}
 
 	for _, a := range annotations {
@@ -162,11 +174,9 @@ func groupBySymbolAndKind(annotations []annotation) map[string]map[string][]anno
 			grouped[a.symbol] = map[string][]annotation{}
 		}
 
-		if _, ok := grouped[a.symbol][a.kind]; !ok {
-			grouped[a.symbol][a.kind] = []annotation{}
+		for _, tag := range a.tags {
+			grouped[a.symbol][tag] = append(grouped[a.symbol][tag], a)
 		}
-
-		grouped[a.symbol][a.kind] = append(grouped[a.symbol][a.kind], a)
 	}
 
 	return grouped
