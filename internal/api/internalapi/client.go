@@ -91,15 +91,6 @@ func (c *internalClient) ExternalURL(ctx context.Context) (string, error) {
 }
 
 // TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func (c *internalClient) CanSendEmail(ctx context.Context) (canSendEmail bool, err error) {
-	err = c.postInternal(ctx, "can-send-email", nil, &canSendEmail)
-	if err != nil {
-		return false, err
-	}
-	return canSendEmail, nil
-}
-
-// TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
 func (c *internalClient) SendEmail(ctx context.Context, message txtypes.Message) error {
 	return c.postInternal(ctx, "send-email", &message, nil)
 }
