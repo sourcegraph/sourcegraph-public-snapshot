@@ -39,6 +39,7 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 		}
 		children = append(children, child)
 	}
+	children = NewFeelingLuckyJob(inputs, plan)
 	return NewAlertJob(inputs, NewOrJob(children...)), nil
 }
 
