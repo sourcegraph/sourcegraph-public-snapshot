@@ -50,8 +50,12 @@ var (
 	Namespace = zap.Namespace
 )
 
+func shouldRedact(p privacy.Privacy) bool {
+	return p <= privacy.Unknown
+}
+
 func Text(key string, t privacy.Text) Field {
-	if t.Privacy() <= privacy.Unknown {
+	if shouldRedact(t.Privacy()) {
 		return zap.String(key, "<redacted>")
 	}
 	return zap.String(key, t.GetDataUnchecked())
@@ -60,7 +64,7 @@ func Text(key string, t privacy.Text) Field {
 func Texts(key string, ts []privacy.Text) Field {
 	out := make([]string, 0, len(ts))
 	for _, t := range ts {
-		if t.Privacy() <= privacy.Unknown {
+		if shouldRedact(t.Privacy()) {
 			out = append(out, "<redacted>")
 		} else {
 			out = append(out, t.GetDataUnchecked())
@@ -69,23 +73,21 @@ func Texts(key string, ts []privacy.Text) Field {
 	return zap.Strings(key, out)
 }
 
-type UseFuncTextInstead struct{ _ struct{} }
-type UseFuncTextsInstead struct{ _ struct{} }
-
-// String is a function that should not be implemented. It's presence would increase
-// the risk of accidentally log user-private data, making it visible to a site-admin.
-//
-// Use Text instead.
-func String(key string, nope UseFuncTextInstead) Field {
-	panic("Impossible to call!")
+// String is a convenient wrapper around Text.
+func String(key string, value string, p privacy.Privacy) Field {
+	return Text(key, privacy.NewText(value, p))
 }
 
-// String is a function that should not be implemented. It's presence would increase
-// the risk of accidentally log user-private data, making it visible to a site-admin.
-//
-// Use Texts instead.
-func Strings(key string, nope UseFuncTextsInstead) Field {
-	panic("Impossible to call!")
+// Strings constructs a field with multiple strings with the same privacy level.
+func Strings(key string, values []string, p privacy.Privacy) Field {
+	if !shouldRedact(p) {
+		return zap.Strings(key, values)
+	}
+	out := make([]string, 0, len(values))
+	for i := 0; i < len(values); i++ {
+		out = append(out, "<redacted>")
+	}
+	return zap.Strings(key, out)
 }
 
 // Object constructs a field that places all the given fields within the given key's
