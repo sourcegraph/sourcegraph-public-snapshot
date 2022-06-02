@@ -921,7 +921,6 @@ interface LocationLine {
 
 export const getLineContent = (location: Location): LocationLine => {
     const range = location.range
-    console.log(location)
     if (range !== undefined) {
         const line = location.lines[range.start.line]
 
