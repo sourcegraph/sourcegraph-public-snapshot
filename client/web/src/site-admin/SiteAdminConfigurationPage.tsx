@@ -226,7 +226,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     }
 
     private remoteRefreshes = new Subject<void>()
-    private remoteUpdates = new Subject<string>()
     private siteReloads = new Subject<void>()
     private subscriptions = new Subscription()
 
