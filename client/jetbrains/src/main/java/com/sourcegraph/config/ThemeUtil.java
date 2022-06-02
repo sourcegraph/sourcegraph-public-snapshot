@@ -2,11 +2,18 @@ package com.sourcegraph.config;
 
 import com.google.gson.JsonObject;
 import com.intellij.lang.java.JavaLanguage;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.EditorFactory;
+import com.intellij.openapi.editor.EditorKind;
 import com.intellij.openapi.editor.colors.EditorColorPalette;
 import com.intellij.openapi.editor.colors.EditorColorPaletteFactory;
+import com.intellij.openapi.editor.colors.EditorColorsScheme;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
-import com.intellij.openapi.editor.colors.ex.DefaultColorSchemesManager;
-import com.intellij.openapi.editor.colors.impl.DefaultColorsScheme;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.testFramework.LightVirtualFile;
 import com.intellij.util.ui.UIUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -16,14 +23,13 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import javax.swing.plaf.ColorUIResource;
 import java.awt.*;
-import java.util.List;
 import java.util.*;
 
 public class ThemeUtil {
     private static final Logger logger = LoggerFactory.getLogger(ThemeUtil.class);
 
     @NotNull
-    public static JsonObject getCurrentThemeAsJson() {
+    public static JsonObject getCurrentThemeAsJson(Project project) {
         JsonObject intelliJTheme = new JsonObject();
         UIDefaults defaults = UIManager.getDefaults();
         Enumeration<Object> keysEnumeration = defaults.keys();
@@ -39,24 +45,28 @@ public class ThemeUtil {
             }
         }
 
-
-        // Find the currently active color scheme based on the current look and feel name
-        LookAndFeel lookAndFeel = UIManager.getLookAndFeel();
-        List<DefaultColorsScheme> schemeList = DefaultColorSchemesManager.getInstance().getAllSchemes();
-        DefaultColorsScheme currentColorScheme = DefaultColorSchemesManager.getInstance().getFirstScheme();
-        for (DefaultColorsScheme scheme : schemeList) {
-            if (scheme.getName().equals(lookAndFeel.getName())) {
-                currentColorScheme = scheme;
-            }
-        }
-
         JsonObject syntaxTheme = new JsonObject();
-        EditorColorPalette palette = EditorColorPaletteFactory.getInstance().getPalette(currentColorScheme, JavaLanguage.INSTANCE);
-        for (Map.Entry<Color, Collection<TextAttributesKey>> entry : palette.withForegroundColors().getEntries()) {
-            Color color = entry.getKey();
-            for (TextAttributesKey key : entry.getValue()) {
-                recursivelyAddToAllAttributeKeys(syntaxTheme, getHexString(color), key);
-            }
+        try {
+            ApplicationManager.getApplication().invokeAndWait(() -> {
+                EditorFactory editorFactory = EditorFactory.getInstance();
+                VirtualFile virtualFile = new LightVirtualFile("dummy.java", "");
+                Document document = editorFactory.createDocument("");
+                document.setReadOnly(true);
+                Editor editor = editorFactory.createEditor(document, project, virtualFile, true, EditorKind.MAIN_EDITOR);
+                EditorColorsScheme colorScheme = editor.getColorsScheme();
+
+                EditorColorPalette palette = EditorColorPaletteFactory.getInstance().getPalette(colorScheme, JavaLanguage.INSTANCE);
+                for (Map.Entry<Color, Collection<TextAttributesKey>> entry : palette.withForegroundColors().getEntries()) {
+                    Color color = entry.getKey();
+                    for (TextAttributesKey key : entry.getValue()) {
+                        recursivelyAddToAllAttributeKeys(syntaxTheme, getHexString(color), key);
+                    }
+                }
+
+                EditorFactory.getInstance().releaseEditor(editor);
+            });
+        } catch (Exception e) {
+            System.out.println(e);
         }
 
         JsonObject theme = new JsonObject();
