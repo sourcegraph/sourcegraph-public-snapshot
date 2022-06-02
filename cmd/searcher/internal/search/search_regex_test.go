@@ -471,6 +471,7 @@ func Test_locsToRanges(t *testing.T) {
 		locs   [][]int
 		ranges []protocol.Range
 	}{{
+		// simple multimatch
 		buf:  "0.2.4.6.8.",
 		locs: [][]int{{0, 2}, {4, 8}},
 		ranges: []protocol.Range{{
@@ -481,6 +482,7 @@ func Test_locsToRanges(t *testing.T) {
 			End:   protocol.Location{8, 0, 8},
 		}},
 	}, {
+		// multibyte match
 		buf:  "0.2.🔧.8.",
 		locs: [][]int{{2, 8}},
 		ranges: []protocol.Range{{
@@ -488,6 +490,7 @@ func Test_locsToRanges(t *testing.T) {
 			End:   protocol.Location{8, 0, 5},
 		}},
 	}, {
+		// match crosses newlines and ends on a newline
 		buf:  "0.2.4.6.\n9.11.14.17",
 		locs: [][]int{{2, 9}},
 		ranges: []protocol.Range{{
@@ -495,6 +498,15 @@ func Test_locsToRanges(t *testing.T) {
 			End:   protocol.Location{9, 1, 0},
 		}},
 	}, {
+		// match starts on a newline
+		buf:  "0.2.4.6.\n9.11.14.17",
+		locs: [][]int{{8, 11}},
+		ranges: []protocol.Range{{
+			Start: protocol.Location{8, 0, 8},
+			End:   protocol.Location{11, 1, 2},
+		}},
+	}, {
+		// match crosses a few lines and has multibyte chars
 		buf:  "0.2.🔧.9.\n12.15.18.\n22.25.28.",
 		locs: [][]int{{0, 25}},
 		ranges: []protocol.Range{{
