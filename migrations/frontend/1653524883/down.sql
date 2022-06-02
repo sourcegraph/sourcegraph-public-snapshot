@@ -1,1 +1,1 @@
-DROP VIEW batch_spec_workspace_execution_queue;
+DROP VIEW IF EXISTS batch_spec_workspace_execution_queue;
