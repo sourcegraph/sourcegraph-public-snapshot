@@ -1,4 +1,8 @@
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useMemo } from 'react'
+
+import { of } from 'rxjs'
+
+import { useObservableWithStatus } from '@sourcegraph/wildcard'
 
 import { FeatureFlagName } from './featureFlags'
 import { FeatureFlagsContext } from './FeatureFlagsProvider'
@@ -7,39 +11,23 @@ type FetchStatus = 'loading' | 'finished' | 'error'
 
 /**
  * Returns an evaluated feature flag for the current user
+ *
+ * @returns [flagValue, fetchStatus, error]
  */
-export function useFeatureFlag(flagName: FeatureFlagName): [boolean, FetchStatus, Error | null] {
+export function useFeatureFlag(flagName: FeatureFlagName): [boolean, FetchStatus, any] {
     const { client } = useContext(FeatureFlagsContext)
-    const [value, setValue] = useState<boolean>(false)
-    const [status, setStatus] = useState<FetchStatus>('loading')
-    const [error, setError] = useState<Error | null>(null)
+    const [value = false, observableStatus, error] = useObservableWithStatus(
+        useMemo(() => client?.get(flagName) ?? of(false), [client, flagName])
+    )
+    const status: FetchStatus = useMemo(
+        () =>
+            ['completed', 'next'].includes(observableStatus)
+                ? 'finished'
+                : observableStatus === 'error'
+                ? 'error'
+                : 'loading',
+        [observableStatus]
+    )
 
-    useEffect(() => {
-        let isMounted = true
-        if (!client) {
-            console.warn(
-                '[useFeatureFlag]: No FeatureFlagClient is configured. All feature flags will default to "false" value.'
-            )
-            return
-        }
-
-        const cleanup = client.on(flagName, (value, error) => {
-            if (!isMounted) {
-                return
-            }
-            if (error) {
-                setError(error)
-                setStatus('error')
-                return
-            }
-            setStatus('finished')
-            setValue(value)
-        })
-
-        return () => {
-            isMounted = false
-            cleanup()
-        }
-    })
     return [value, status, error]
 }
