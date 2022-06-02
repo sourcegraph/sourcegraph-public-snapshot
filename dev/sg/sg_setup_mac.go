@@ -292,11 +292,13 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 			{
 				name:          "1password",
 				onlyTeammates: true,
+				check: check.Combine(
+					check.InPath("op"),
+					check.CommandOutputContains("op account list", "team-sourcegraph.1password.com")),
 				instructionsCommands: `
 brew install --cask 1password/tap/1password-cli
 eval $(op account add --address team-sourcegraph.1password.com --signin)
 `,
-				check: check1password,
 			},
 		},
 	},
