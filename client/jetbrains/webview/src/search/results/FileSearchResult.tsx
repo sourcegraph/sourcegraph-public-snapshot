@@ -8,7 +8,7 @@ import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sour
 import { displayRepoName, splitPath } from '@sourcegraph/shared/src/components/RepoLink'
 import { ContentMatch, getFileMatchUrl, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
-import { Icon, Link, Code, useIsTruncated } from '@sourcegraph/wildcard'
+import { Code, Icon, Link, Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { TrimmedCodeLineWithHighlights } from './TrimmedCodeLineWithHighlights'
 import { getResultId } from './utils'
@@ -156,20 +156,17 @@ const RepoFileLinkWithoutTabStop: React.FunctionComponent<React.PropsWithChildre
     const [titleReference, truncated, checkTruncation] = useIsTruncated()
 
     return (
-        <div
-            ref={titleReference}
-            onMouseEnter={checkTruncation}
-            className={classNames(className)}
-            data-tooltip={truncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}
-        >
-            <Link tabIndex={-1} to={repoURL}>
-                {repoDisplayName || displayRepoName(repoName)}
-            </Link>{' '}
-            ›{' '}
-            <Link tabIndex={-1} to={appendSubtreeQueryParameter(fileURL)}>
-                {fileBase ? `${fileBase}/` : null}
-                <strong>{fileName}</strong>
-            </Link>
-        </div>
+        <Tooltip content={truncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}>
+            <div ref={titleReference} onMouseEnter={checkTruncation} className={classNames(className)}>
+                <Link tabIndex={-1} to={repoURL}>
+                    {repoDisplayName || displayRepoName(repoName)}
+                </Link>{' '}
+                ›{' '}
+                <Link tabIndex={-1} to={appendSubtreeQueryParameter(fileURL)}>
+                    {fileBase ? `${fileBase}/` : null}
+                    <strong>{fileName}</strong>
+                </Link>
+            </div>
+        </Tooltip>
     )
 }

@@ -13,6 +13,8 @@ import org.cef.browser.CefBrowser;
 import org.cef.handler.CefKeyboardHandler;
 import org.cef.misc.BoolRef;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -23,6 +25,7 @@ public class SourcegraphWindow implements Disposable {
     private final Project project;
     private final FindPopupPanel mainPanel;
     private JBPopup popup;
+    private static final Logger logger = LoggerFactory.getLogger(SourcegraphWindow.class);
 
     public SourcegraphWindow(@NotNull Project project) {
         this.project = project;
@@ -95,6 +98,11 @@ public class SourcegraphWindow implements Disposable {
     }
 
     private void registerJBCefClientKeyListeners() {
+        if (mainPanel.getBrowser() == null) {
+            logger.error("Browser panel is null");
+            return;
+        }
+
         mainPanel.getBrowser().getJBCefClient().addKeyboardHandler(new CefKeyboardHandler() {
             @Override
             public boolean onPreKeyEvent(CefBrowser browser, CefKeyEvent event, BoolRef is_keyboard_shortcut) {
@@ -110,13 +118,21 @@ public class SourcegraphWindow implements Disposable {
 
     private boolean handleKeyPress(int keyCode, int modifiers) {
         if (keyCode == KeyEvent.VK_ESCAPE && modifiers == 0) {
-            ApplicationManager.getApplication().invokeLater(() -> hidePopup());
+            ApplicationManager.getApplication().invokeLater(this::hidePopup);
             return true;
         }
 
         if (keyCode == KeyEvent.VK_ENTER && (modifiers & ALT_DOWN_MASK) == ALT_DOWN_MASK) {
-            ApplicationManager.getApplication().invokeLater(() -> mainPanel.getPreviewPanel().openInEditor());
-            return true;
+            if (mainPanel.getPreviewPanel() != null) {
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    try {
+                        mainPanel.getPreviewPanel().openInEditorOrBrowser();
+                    } catch (Exception e) {
+                        logger.error("Error opening file in editor", e);
+                    }
+                });
+                return true;
+            }
         }
 
         return false;

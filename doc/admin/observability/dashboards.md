@@ -7934,11 +7934,11 @@ Query: `sum by (job_name) (src_worker_jobs{job="worker"})`
 
 <br />
 
-#### worker: worker_job_codeintel-janitor_count
+#### worker: worker_job_codeintel-upload-janitor_count
 
-<p class="subtitle">Number of worker instances running the codeintel-janitor job</p>
+<p class="subtitle">Number of worker instances running the codeintel-upload-janitor job</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-worker-job-codeintel-janitor-count) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#worker-worker-job-codeintel-upload-janitor-count) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100010` on your Sourcegraph instance.
 
@@ -7947,17 +7947,17 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100010` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-janitor"})`
+Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-upload-janitor"})`
 
 </details>
 
 <br />
 
-#### worker: worker_job_codeintel-commitgraph_count
+#### worker: worker_job_codeintel-commitgraph-updater_count
 
-<p class="subtitle">Number of worker instances running the codeintel-commitgraph job</p>
+<p class="subtitle">Number of worker instances running the codeintel-commitgraph-updater job</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-worker-job-codeintel-commitgraph-count) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#worker-worker-job-codeintel-commitgraph-updater-count) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100011` on your Sourcegraph instance.
 
@@ -7966,17 +7966,17 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100011` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-commitgraph"})`
+Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-commitgraph-updater"})`
 
 </details>
 
 <br />
 
-#### worker: worker_job_codeintel-auto-indexing_count
+#### worker: worker_job_codeintel-autoindexing-scheduler_count
 
-<p class="subtitle">Number of worker instances running the codeintel-auto-indexing job</p>
+<p class="subtitle">Number of worker instances running the codeintel-autoindexing-scheduler job</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-worker-job-codeintel-auto-indexing-count) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#worker-worker-job-codeintel-autoindexing-scheduler-count) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100012` on your Sourcegraph instance.
 
@@ -7985,7 +7985,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100012` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-auto-indexing"})`
+Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-autoindexing-scheduler"})`
 
 </details>
 
