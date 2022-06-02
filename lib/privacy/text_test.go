@@ -49,3 +49,33 @@ func TestUnmarshal(t *testing.T) {
 		}
 	}
 }
+
+func TestIncreasePrivacy(t *testing.T) {
+	testCases := []struct {
+		before Privacy
+		after  Privacy
+		panics bool
+	}{
+		{Private, Private, false},
+		{Private, Unknown, true},
+		{Private, Public, true},
+		{Unknown, Private, false},
+		{Unknown, Unknown, false},
+		{Unknown, Public, true},
+		{Public, Private, false},
+		{Public, Unknown, false},
+		{Public, Public, false},
+	}
+	for _, testCase := range testCases {
+		if testCase.panics {
+			require.Panics(t, func() {
+				NewText("", testCase.before).IncreasePrivacy(testCase.after)
+			})
+		} else {
+			require.NotPanics(t, func() {
+				require.Equal(t, testCase.before.Combine(testCase.after),
+					NewText("", testCase.before).IncreasePrivacy(testCase.after).Privacy())
+			})
+		}
+	}
+}
