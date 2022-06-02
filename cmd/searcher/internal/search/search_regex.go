@@ -235,32 +235,6 @@ func locsToRanges(buf []byte, locs [][]int) []protocol.Range {
 	return ranges
 }
 
-func rangesToChunkMatches(buf []byte, chunks []rangeChunk) []protocol.ChunkMatch {
-	chunkMatches := make([]protocol.ChunkMatch, 0, len(chunks))
-	for _, chunk := range chunks {
-		firstLineStart := int32(0)
-		if off := bytes.LastIndexByte(buf[:chunk.cover.Start.Offset], '\n'); off >= 0 {
-			firstLineStart = int32(off) + 1
-		}
-
-		lastLineEnd := int32(len(buf))
-		if off := bytes.IndexByte(buf[chunk.cover.End.Offset:], '\n'); off >= 0 {
-			lastLineEnd = chunk.cover.End.Offset + int32(off)
-		}
-
-		chunkMatches = append(chunkMatches, protocol.ChunkMatch{
-			Content: string(buf[firstLineStart:lastLineEnd]),
-			ContentStart: protocol.Location{
-				Offset: firstLineStart,
-				Line:   chunk.cover.Start.Line,
-				Column: 0,
-			},
-			Ranges: chunk.ranges,
-		})
-	}
-	return chunkMatches
-}
-
 // FindZip is a convenience function to run Find on f.
 func (rg *readerGrep) FindZip(zf *zipFile, f *srcFile, limit int) (protocol.FileMatch, error) {
 	cms, err := rg.Find(zf, f, limit)

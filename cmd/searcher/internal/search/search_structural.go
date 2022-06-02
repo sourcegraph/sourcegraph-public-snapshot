@@ -128,6 +128,32 @@ func chunkRanges(ranges []protocol.Range, interChunkLines int) []rangeChunk {
 	return chunks
 }
 
+func rangesToChunkMatches(buf []byte, chunks []rangeChunk) []protocol.ChunkMatch {
+	chunkMatches := make([]protocol.ChunkMatch, 0, len(chunks))
+	for _, chunk := range chunks {
+		firstLineStart := int32(0)
+		if off := bytes.LastIndexByte(buf[:chunk.cover.Start.Offset], '\n'); off >= 0 {
+			firstLineStart = int32(off) + 1
+		}
+
+		lastLineEnd := int32(len(buf))
+		if off := bytes.IndexByte(buf[chunk.cover.End.Offset:], '\n'); off >= 0 {
+			lastLineEnd = chunk.cover.End.Offset + int32(off)
+		}
+
+		chunkMatches = append(chunkMatches, protocol.ChunkMatch{
+			Content: string(buf[firstLineStart:lastLineEnd]),
+			ContentStart: protocol.Location{
+				Offset: firstLineStart,
+				Line:   chunk.cover.Start.Line,
+				Column: 0,
+			},
+			Ranges: chunk.ranges,
+		})
+	}
+	return chunkMatches
+}
+
 var isValidMatcher = lazyregexp.New(`\.(s|sh|bib|c|cs|css|dart|clj|elm|erl|ex|f|fsx|go|html|hs|java|js|json|jl|kt|tex|lisp|nim|md|ml|org|pas|php|py|re|rb|rs|rst|scala|sql|swift|tex|txt|ts)$`)
 
 func extensionToMatcher(extension string) string {
