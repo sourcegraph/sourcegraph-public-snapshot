@@ -176,13 +176,8 @@ func (p Provider) interpretProjectAccess(ctx context.Context,
 
 	repoAccessMap := make(map[string]bool, len(accessResp))
 	for name, access := range accessResp {
-		// If applicable, fetch inherited access information from the api or the projectAccessMap
-		inheritedAccess, err := p.getInheritedAccess(ctx, access.InheritsFrom, projectAccessMap)
-		if err != nil {
-			return repoAccessMap, err
-		}
 		// Determine if user has access to this project and add it to the repoAccessMap if they do
-		if hasAccess, err := userHasAccess(groups, name, access.Groups, inheritedAccess); hasAccess {
+		if hasAccess, err := p.userHasAccess(ctx, name, access, groups, projectAccessMap, 0); hasAccess {
 			repoAccessMap[name] = true
 		} else if err != nil {
 			return repoAccessMap, err
@@ -192,17 +187,32 @@ func (p Provider) interpretProjectAccess(ctx context.Context,
 }
 
 // userHasAccess checks if this user has access to the project based on if it is a member of a group which has access to the project, or if it inherits permissions from a project
-// which grants permissions to a group the user has access to.
-func userHasAccess(accountGroups gerrit.GetAccountGroupsResponse, projectName string, projectAccessGroups map[string]gerrit.GroupInfo, inheritedAccess *gerrit.ProjectAccessInfo) (bool, error) {
-	if len(projectAccessGroups) != 0 {
+// which grants permissions to a group the user has access to. Since the project can inherit access from another project which also has
+// inherited access, this function contains recursion.
+func (p Provider) userHasAccess(ctx context.Context, projectName string,
+	access gerrit.ProjectAccessInfo,
+	accountGroups gerrit.GetAccountGroupsResponse,
+	projectAccessMap map[string]gerrit.ProjectAccessInfo, counter int) (bool, error) {
+	if counter > 10 { // TODO: how do we want to safeguard around this?
+		return false, errors.New("no more than 10 levels of inherited access supported.")
+	}
+	counter++
+	// If applicable, fetch inherited access information from the api or the projectAccessMap
+	inheritedAccess, err := p.getInheritedAccess(ctx, access.InheritsFrom, projectAccessMap)
+	if err != nil {
+		return false, err
+	}
+	// Determine if user has access to this project and add it to the repoAccessMap if they do
+	if len(access.Groups) != 0 {
 		// Check if one of the groups for this user has access to this project
-		if checkGroupAccess(accountGroups, projectName, projectAccessGroups) {
+		if checkGroupAccess(accountGroups, projectName, access.Groups) {
 			return true, nil
 		}
 	}
 	if inheritedAccess != nil {
 		if !inheritedAccess.InheritsFrom.IsEmpty() {
-			return false, errors.New("Unsupported permissions format: inherited project permissions cannot also inherit from another project.")
+			// Need to recurse here and call this function using the inherited access information
+			return p.userHasAccess(ctx, access.InheritsFrom.Name, *inheritedAccess, accountGroups, projectAccessMap, counter)
 		}
 		if checkGroupAccess(accountGroups, projectName, inheritedAccess.Groups) {
 			return true, nil
