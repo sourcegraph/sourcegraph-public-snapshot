@@ -1,5 +1,11 @@
 package privacy
 
+import (
+	"encoding/json"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
+
 // Text is a helper type for tracking strings which may potentially
 // be logged and/or contain user-private or org-private information.
 //
@@ -39,6 +45,44 @@ func (t Text) GetDataUnchecked() string {
 
 func (t Text) Privacy() Privacy {
 	return t.privacy
+}
+
+type TextJSON struct {
+	Data    string `json:"data"`
+	Privacy string `json:"privacy"`
+}
+
+func (t Text) MarshalJSON() ([]byte, error) {
+	var privacy string
+	switch t.Privacy() {
+	case Private:
+		privacy = "private"
+	case Public:
+		privacy = "public"
+	default:
+		privacy = "unknown"
+	}
+	return json.Marshal(&TextJSON{t.GetDataUnchecked(), privacy})
+}
+
+func (t *Text) UnmarshalJSON(data []byte) error {
+	var tj TextJSON
+	if err := json.Unmarshal(data, &tj); err != nil {
+		return err
+	}
+	var privacy Privacy
+	switch tj.Privacy {
+	case "public":
+		privacy = Public
+	case "private":
+		privacy = Private
+	case "unknown":
+		privacy = Unknown
+	default:
+		return errors.Newf("error: unrecognized privacy level %s", tj.Privacy)
+	}
+	*t = NewText(tj.Data, privacy)
+	return nil
 }
 
 // MapText performs a textual transformation on the underlying data,
