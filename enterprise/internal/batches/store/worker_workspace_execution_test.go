@@ -333,12 +333,12 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin(t *testing.T)
 
 	// We create multiple jobs for each user because this test ensures jobs are dequeued in a round-robin fashion.
 	// that said, per round, no user should have more than one job in queue.
-	setupBatchSpecAssociation(ctx, s, t, user, repo)  // iD: 1, user: 1
-	setupBatchSpecAssociation(ctx, s, t, user, repo)  // id: 2, user: 1
-	setupBatchSpecAssociation(ctx, s, t, user2, repo) // iD: 3, user: 2
-	setupBatchSpecAssociation(ctx, s, t, user2, repo) // iD: 4, user: 2
-	setupBatchSpecAssociation(ctx, s, t, user3, repo) // iD: 5, user: 3
-	setupBatchSpecAssociation(ctx, s, t, user3, repo) // iD: 6, user: 3
+	setupBatchSpecAssociation(ctx, s, t, user, repo)  // Job_ID: 1, User_ID: 1
+	setupBatchSpecAssociation(ctx, s, t, user, repo)  // Job_ID: 2, User_ID: 1
+	setupBatchSpecAssociation(ctx, s, t, user2, repo) // Job_ID: 3, User_ID: 2
+	setupBatchSpecAssociation(ctx, s, t, user2, repo) // Job_ID: 4, User_ID: 2
+	setupBatchSpecAssociation(ctx, s, t, user3, repo) // Job_ID: 5, User_ID: 3
+	setupBatchSpecAssociation(ctx, s, t, user3, repo) // Job_ID: 6, User_ID: 3
 
 	want := []int{3, 1, 4, 5, 2, 6}
 	have := []int{}
