@@ -14,6 +14,7 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/grafana/regexp/syntax"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -333,7 +334,7 @@ func TestMaxMatches(t *testing.T) {
 
 	totalMatches := 0
 	for _, match := range fileMatches {
-		totalMatches += match.MatchCount
+		totalMatches += match.MatchCount()
 	}
 
 	if totalMatches != maxMatches {
@@ -444,12 +445,7 @@ func TestRegexSearch(t *testing.T) {
 				patternMatchesContent: true,
 				limit:                 5,
 			},
-			wantFm: []protocol.FileMatch{
-				{
-					Path:       "a.go",
-					MatchCount: 1,
-				},
-			},
+			wantFm: []protocol.FileMatch{{Path: "a.go"}},
 		},
 	}
 	for _, tt := range tests {
@@ -465,6 +461,64 @@ func TestRegexSearch(t *testing.T) {
 			if gotLimitHit != tt.wantLimitHit {
 				t.Errorf("regexSearch() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
 			}
+		})
+	}
+}
+
+func Test_locsToRanges(t *testing.T) {
+	cases := []struct {
+		buf    string
+		locs   [][]int
+		ranges []protocol.Range
+	}{{
+		// simple multimatch
+		buf:  "0.2.4.6.8.",
+		locs: [][]int{{0, 2}, {4, 8}},
+		ranges: []protocol.Range{{
+			Start: protocol.Location{0, 0, 0},
+			End:   protocol.Location{2, 0, 2},
+		}, {
+			Start: protocol.Location{4, 0, 4},
+			End:   protocol.Location{8, 0, 8},
+		}},
+	}, {
+		// multibyte match
+		buf:  "0.2.🔧.8.",
+		locs: [][]int{{2, 8}},
+		ranges: []protocol.Range{{
+			Start: protocol.Location{2, 0, 2},
+			End:   protocol.Location{8, 0, 5},
+		}},
+	}, {
+		// match crosses newlines and ends on a newline
+		buf:  "0.2.4.6.\n9.11.14.17",
+		locs: [][]int{{2, 9}},
+		ranges: []protocol.Range{{
+			Start: protocol.Location{2, 0, 2},
+			End:   protocol.Location{9, 1, 0},
+		}},
+	}, {
+		// match starts on a newline
+		buf:  "0.2.4.6.\n9.11.14.17",
+		locs: [][]int{{8, 11}},
+		ranges: []protocol.Range{{
+			Start: protocol.Location{8, 0, 8},
+			End:   protocol.Location{11, 1, 2},
+		}},
+	}, {
+		// match crosses a few lines and has multibyte chars
+		buf:  "0.2.🔧.9.\n12.15.18.\n22.25.28.",
+		locs: [][]int{{0, 25}},
+		ranges: []protocol.Range{{
+			Start: protocol.Location{0, 0, 0},
+			End:   protocol.Location{25, 2, 3},
+		}},
+	}}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			got := locsToRanges([]byte(tc.buf), tc.locs)
+			require.Equal(t, tc.ranges, got)
 		})
 	}
 }

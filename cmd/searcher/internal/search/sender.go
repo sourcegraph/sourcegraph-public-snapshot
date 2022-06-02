@@ -34,10 +34,11 @@ func newLimitedStreamCollector(ctx context.Context, limit int) (context.Context,
 
 func (m *limitedStreamCollector) Send(match protocol.FileMatch) {
 	m.mux.Lock()
-	if match.MatchCount <= m.remaining {
+	matchCount := match.MatchCount()
+	if matchCount <= m.remaining {
 		m.collected = append(m.collected, match)
-		m.remaining -= match.MatchCount
-		m.sentCount += match.MatchCount
+		m.remaining -= matchCount
+		m.sentCount += matchCount
 		m.mux.Unlock()
 		return
 	}
@@ -45,21 +46,22 @@ func (m *limitedStreamCollector) Send(match protocol.FileMatch) {
 	m.limitHit = true
 	m.cancel()
 
-	// Can't truncate a path match
-	if len(match.LineMatches) == 0 {
+	if len(match.ChunkMatches) == 0 {
+		// Can't truncate a path match
 		m.mux.Unlock()
 		return
 	}
 
-	// NOTE: this isn't strictly correct for structural search matches
-	// since a single match can be multiple lines. However, by the time we
-	// convert a structural search to a protocol.FileMatch, we lose the
-	// information required to properly limit. However, multiline matches
-	// are also not limited correctly in the frontend, so doing it correctly
-	// here won't fix that.
-	match.LineMatches = match.LineMatches[:m.remaining]
+	for i, cm := range match.ChunkMatches {
+		if l := len(cm.Ranges); l >= m.remaining {
+			match.ChunkMatches[i].Ranges = cm.Ranges[:m.remaining]
+			match.ChunkMatches = match.ChunkMatches[:i+1]
+			break
+		} else {
+			m.remaining -= l
+		}
+	}
 	match.LimitHit = true
-	match.MatchCount = m.remaining
 	m.sentCount += m.remaining
 	m.remaining = 0
 	m.collected = append(m.collected, match)
@@ -113,9 +115,10 @@ func newLimitedStream(ctx context.Context, limit int, cb func(protocol.FileMatch
 
 func (m *limitedStream) Send(match protocol.FileMatch) {
 	m.mux.Lock()
-	if match.MatchCount <= m.remaining {
-		m.remaining -= match.MatchCount
-		m.sentCount += match.MatchCount
+	matchCount := match.MatchCount()
+	if matchCount <= m.remaining {
+		m.remaining -= matchCount
+		m.sentCount += matchCount
 		m.cb(match)
 		m.mux.Unlock()
 		return
@@ -125,20 +128,21 @@ func (m *limitedStream) Send(match protocol.FileMatch) {
 	m.cancel()
 
 	// Can't truncate a path match
-	if len(match.LineMatches) == 0 {
+	if len(match.ChunkMatches) == 0 {
 		m.mux.Unlock()
 		return
 	}
 
-	// NOTE: this isn't strictly correct for structural search matches
-	// since a single match can be multiple lines. However, by the time we
-	// convert a structural search to a protocol.FileMatch, we lose the
-	// information required to properly limit. However, multiline matches
-	// are also not limited correctly in the frontend, so doing it correctly
-	// here won't fix that.
-	match.LineMatches = match.LineMatches[:m.remaining]
+	for i, cm := range match.ChunkMatches {
+		if l := len(cm.Ranges); l >= m.remaining {
+			match.ChunkMatches[i].Ranges = cm.Ranges[:m.remaining]
+			match.ChunkMatches = match.ChunkMatches[:i+1]
+			break
+		} else {
+			m.remaining -= l
+		}
+	}
 	match.LimitHit = true
-	match.MatchCount = m.remaining
 	m.sentCount += m.remaining
 	m.remaining = 0
 	m.cb(match)
