@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
+// BenchmarkWithSentry-10           2253642              5205 ns/op            9841 B/op         87 allocs/op
 func BenchmarkWithSentry(b *testing.B) {
 	logger, _, _ := newTestLogger(b)
 
@@ -19,6 +20,7 @@ func BenchmarkWithSentry(b *testing.B) {
 	}
 }
 
+// BenchmarkWithoutSentry-10        2656189              4537 ns/op            6334 B/op         44 allocs/op
 func BenchmarkWithoutSentry(b *testing.B) {
 	logger, _ := logtest.Captured(b)
 	err := errors.New("foobar")
