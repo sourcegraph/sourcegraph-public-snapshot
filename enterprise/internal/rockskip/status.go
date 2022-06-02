@@ -3,6 +3,7 @@ package rockskip
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -95,7 +96,26 @@ func (s *Service) HandleStatus(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "This is the symbols service status page.")
 	fmt.Fprintln(w, "")
 
-	fmt.Fprintf(w, "Number of repositories: %d\n", repositoryCount)
+	if os.Getenv("ROCKSKIP_REPOS") == "" {
+		fmt.Fprintln(w, "⚠️ Rockskip is not enabled for any repositories. Remember to set the ROCKSKIP_REPOS environment variable and restart the symbols service.")
+		fmt.Fprintln(w, "")
+	} else {
+		fmt.Fprintln(w, "Rockskip is enabled for these repositories:")
+		for _, repo := range strings.Split(os.Getenv("ROCKSKIP_REPOS"), ",") {
+			fmt.Fprintln(w, "  "+repo)
+		}
+		fmt.Fprintln(w, "")
+
+		if repositoryCount == 0 {
+			fmt.Fprintln(w, "⚠️ None of the enabled repositories have been indexed yet!")
+			fmt.Fprintln(w, "⚠️ Open the symbols sidebar on a repository with Rockskip enabled to trigger indexing.")
+			fmt.Fprintln(w, "⚠️ Check the logs for errors if requests fail or if there are no in-flight requests below.")
+			fmt.Fprintln(w, "⚠️ Docs: https://docs.sourcegraph.com/code_intelligence/explanations/rockskip")
+			fmt.Fprintln(w, "")
+		}
+	}
+
+	fmt.Fprintf(w, "Number of rows in rockskip_repos: %d\n", repositoryCount)
 	fmt.Fprintf(w, "Size of symbols table: %s\n", symbolsSize)
 	fmt.Fprintln(w, "")
 
