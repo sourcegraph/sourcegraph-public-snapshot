@@ -3,7 +3,7 @@ import * as React from 'react'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 
-import { Button, CardTitle, CardBody, Card, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, CardTitle, CardBody, Card, Icon, H3 } from '@sourcegraph/wildcard'
 
 import styles from './Toast.module.scss'
 
@@ -28,7 +28,7 @@ export const Toast: React.FunctionComponent<React.PropsWithChildren<ToastProps>>
             </div>
             {props.title && (
                 <CardTitle as="header" className="d-flex align-items-center mb-1">
-                    <Typography.H3 className="mb-0">{props.title}</Typography.H3>
+                    <H3 className="mb-0">{props.title}</H3>
                 </CardTitle>
             )}
             {props.subtitle}

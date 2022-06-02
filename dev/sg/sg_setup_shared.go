@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -104,4 +106,22 @@ var dependencyGcloud = &dependency{
 	}),
 	onlyTeammates:       true,
 	instructionsComment: "NOTE: You can ignore this if you're not a Sourcegraph teammate.",
+}
+
+func check1password(ctx context.Context) error {
+	accounts, err := run.Cmd(ctx, "op account list").Run().Lines()
+	if err != nil {
+		return err
+	}
+	var found bool
+	for _, account := range accounts {
+		if strings.Contains(account, "team-sourcegraph.1password.com") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return errors.New("No sourcegraph account detected")
+	}
+	return nil
 }

@@ -2677,28 +2677,28 @@ count being required for the volume of uploads.
 
 <br />
 
-## worker: worker_job_codeintel-janitor_count
+## worker: worker_job_codeintel-upload-janitor_count
 
-<p class="subtitle">number of worker instances running the codeintel-janitor job</p>
+<p class="subtitle">number of worker instances running the codeintel-upload-janitor job</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> worker: less than 1 number of worker instances running the codeintel-janitor job for 1m0s
-- <span class="badge badge-critical">critical</span> worker: less than 1 number of worker instances running the codeintel-janitor job for 5m0s
+- <span class="badge badge-warning">warning</span> worker: less than 1 number of worker instances running the codeintel-upload-janitor job for 1m0s
+- <span class="badge badge-critical">critical</span> worker: less than 1 number of worker instances running the codeintel-upload-janitor job for 5m0s
 
 **Possible solutions**
 
 - Ensure your instance defines a worker container such that:
-	- `WORKER_JOB_ALLOWLIST` contains "codeintel-janitor" (or "all"), and
-	- `WORKER_JOB_BLOCKLIST` does not contain "codeintel-janitor"
+	- `WORKER_JOB_ALLOWLIST` contains "codeintel-upload-janitor" (or "all"), and
+	- `WORKER_JOB_BLOCKLIST` does not contain "codeintel-upload-janitor"
 - Ensure that such a container is not failing to start or stay active
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-worker-job-codeintel-janitor-count).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-worker-job-codeintel-upload-janitor-count).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_worker_worker_job_codeintel-janitor_count",
-  "critical_worker_worker_job_codeintel-janitor_count"
+  "warning_worker_worker_job_codeintel-upload-janitor_count",
+  "critical_worker_worker_job_codeintel-upload-janitor_count"
 ]
 ```
 
@@ -2706,28 +2706,28 @@ count being required for the volume of uploads.
 
 <br />
 
-## worker: worker_job_codeintel-commitgraph_count
+## worker: worker_job_codeintel-commitgraph-updater_count
 
-<p class="subtitle">number of worker instances running the codeintel-commitgraph job</p>
+<p class="subtitle">number of worker instances running the codeintel-commitgraph-updater job</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> worker: less than 1 number of worker instances running the codeintel-commitgraph job for 1m0s
-- <span class="badge badge-critical">critical</span> worker: less than 1 number of worker instances running the codeintel-commitgraph job for 5m0s
+- <span class="badge badge-warning">warning</span> worker: less than 1 number of worker instances running the codeintel-commitgraph-updater job for 1m0s
+- <span class="badge badge-critical">critical</span> worker: less than 1 number of worker instances running the codeintel-commitgraph-updater job for 5m0s
 
 **Possible solutions**
 
 - Ensure your instance defines a worker container such that:
-	- `WORKER_JOB_ALLOWLIST` contains "codeintel-commitgraph" (or "all"), and
-	- `WORKER_JOB_BLOCKLIST` does not contain "codeintel-commitgraph"
+	- `WORKER_JOB_ALLOWLIST` contains "codeintel-commitgraph-updater" (or "all"), and
+	- `WORKER_JOB_BLOCKLIST` does not contain "codeintel-commitgraph-updater"
 - Ensure that such a container is not failing to start or stay active
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-worker-job-codeintel-commitgraph-count).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-worker-job-codeintel-commitgraph-updater-count).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_worker_worker_job_codeintel-commitgraph_count",
-  "critical_worker_worker_job_codeintel-commitgraph_count"
+  "warning_worker_worker_job_codeintel-commitgraph-updater_count",
+  "critical_worker_worker_job_codeintel-commitgraph-updater_count"
 ]
 ```
 
@@ -2735,28 +2735,28 @@ count being required for the volume of uploads.
 
 <br />
 
-## worker: worker_job_codeintel-auto-indexing_count
+## worker: worker_job_codeintel-autoindexing-scheduler_count
 
-<p class="subtitle">number of worker instances running the codeintel-auto-indexing job</p>
+<p class="subtitle">number of worker instances running the codeintel-autoindexing-scheduler job</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> worker: less than 1 number of worker instances running the codeintel-auto-indexing job for 1m0s
-- <span class="badge badge-critical">critical</span> worker: less than 1 number of worker instances running the codeintel-auto-indexing job for 5m0s
+- <span class="badge badge-warning">warning</span> worker: less than 1 number of worker instances running the codeintel-autoindexing-scheduler job for 1m0s
+- <span class="badge badge-critical">critical</span> worker: less than 1 number of worker instances running the codeintel-autoindexing-scheduler job for 5m0s
 
 **Possible solutions**
 
 - Ensure your instance defines a worker container such that:
-	- `WORKER_JOB_ALLOWLIST` contains "codeintel-auto-indexing" (or "all"), and
-	- `WORKER_JOB_BLOCKLIST` does not contain "codeintel-auto-indexing"
+	- `WORKER_JOB_ALLOWLIST` contains "codeintel-autoindexing-scheduler" (or "all"), and
+	- `WORKER_JOB_BLOCKLIST` does not contain "codeintel-autoindexing-scheduler"
 - Ensure that such a container is not failing to start or stay active
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-worker-job-codeintel-auto-indexing-count).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-worker-job-codeintel-autoindexing-scheduler-count).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_worker_worker_job_codeintel-auto-indexing_count",
-  "critical_worker_worker_job_codeintel-auto-indexing_count"
+  "warning_worker_worker_job_codeintel-autoindexing-scheduler_count",
+  "critical_worker_worker_job_codeintel-autoindexing-scheduler_count"
 ]
 ```
 

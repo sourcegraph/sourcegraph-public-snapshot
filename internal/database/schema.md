@@ -930,6 +930,33 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 
 **src_cli_version**: The version of src-cli used by the executor.
 
+# Table "public.explicit_permissions_bitbucket_projects_jobs"
+```
+       Column        |           Type           | Collation | Nullable |                                 Default                                  
+---------------------+--------------------------+-----------+----------+--------------------------------------------------------------------------
+ id                  | integer                  |           | not null | nextval('explicit_permissions_bitbucket_projects_jobs_id_seq'::regclass)
+ state               | text                     |           |          | 'queued'::text
+ failure_message     | text                     |           |          | 
+ queued_at           | timestamp with time zone |           |          | now()
+ started_at          | timestamp with time zone |           |          | 
+ finished_at         | timestamp with time zone |           |          | 
+ process_after       | timestamp with time zone |           |          | 
+ num_resets          | integer                  |           | not null | 0
+ num_failures        | integer                  |           | not null | 0
+ last_heartbeat_at   | timestamp with time zone |           |          | 
+ execution_logs      | json[]                   |           |          | 
+ worker_hostname     | text                     |           | not null | ''::text
+ project_key         | text                     |           | not null | 
+ external_service_id | integer                  |           | not null | 
+ permissions         | json[]                   |           |          | 
+ unrestricted        | boolean                  |           | not null | false
+Indexes:
+    "explicit_permissions_bitbucket_projects_jobs_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "explicit_permissions_bitbucket_projects_jobs_check" CHECK (permissions IS NOT NULL AND unrestricted IS FALSE OR permissions IS NULL AND unrestricted IS TRUE)
+
+```
+
 # Table "public.external_service_repos"
 ```
        Column        |           Type           | Collation | Nullable |         Default         

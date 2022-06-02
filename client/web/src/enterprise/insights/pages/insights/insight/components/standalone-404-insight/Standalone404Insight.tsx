@@ -1,6 +1,6 @@
 import { FunctionComponent } from 'react'
 
-import { Button, Link, Typography } from '@sourcegraph/wildcard'
+import { Button, Link, H2, Text } from '@sourcegraph/wildcard'
 
 import styles from './Standalone404Insight.module.scss'
 
@@ -8,8 +8,8 @@ export const Standalone404Insight: FunctionComponent = () => (
     <div className={styles.container}>
         <GraphicInsightChart className={styles.chart} />
 
-        <Typography.H2 className="mb-3">Insight not found</Typography.H2>
-        <Typography.Text>Insight may not exist or you may not have permission to view it.</Typography.Text>
+        <H2 className="mb-3">Insight not found</H2>
+        <Text>Insight may not exist or you may not have permission to view it.</Text>
 
         <Button as={Link} to="/insights/dashboards/all" variant="primary" className={styles.redirectButton}>
             Go to 'All insights'

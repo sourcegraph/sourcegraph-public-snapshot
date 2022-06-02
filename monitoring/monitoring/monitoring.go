@@ -60,17 +60,19 @@ func (c *Dashboard) validate() error {
 	if c.Description != withPeriod(c.Description) || c.Description != upperFirst(c.Description) {
 		return errors.Errorf("Description must be sentence starting with an uppercase letter and ending with period; found \"%s\"", c.Description)
 	}
+
+	var errs error
 	for i, v := range c.Variables {
 		if err := v.validate(); err != nil {
-			return errors.Errorf("Variable %d %q: %v", i, c.Name, err)
+			errs = errors.Append(errs, errors.Errorf("Variable %d %q: %v", i, c.Name, err))
 		}
 	}
 	for i, g := range c.Groups {
 		if err := g.validate(); err != nil {
-			return errors.Errorf("Group %d %q: %v", i, g.Title, err)
+			errs = errors.Append(errs, errors.Errorf("Group %d %q: %v", i, g.Title, err))
 		}
 	}
-	return nil
+	return errs
 }
 
 // noAlertsDefined indicates if a dashboard no alerts defined.
@@ -541,12 +543,13 @@ func (g Group) validate() error {
 	if g.Title != upperFirst(g.Title) || g.Title == withPeriod(g.Title) {
 		return errors.Errorf("Title must start with an uppercase letter and not end with a period; found \"%s\"", g.Title)
 	}
+	var errs error
 	for i, r := range g.Rows {
 		if err := r.validate(); err != nil {
-			return errors.Errorf("Row %d: %v", i, err)
+			errs = errors.Append(errs, errors.Errorf("Row %d: %v", i, err))
 		}
 	}
-	return nil
+	return errs
 }
 
 // Row of observable metrics.
@@ -558,12 +561,14 @@ func (r Row) validate() error {
 	if len(r) < 1 || len(r) > 4 {
 		return errors.Errorf("row must have 1 to 4 observables only, found %v", len(r))
 	}
+
+	var errs error
 	for i, o := range r {
 		if err := o.validate(); err != nil {
-			return errors.Errorf("Observable %d %q: %v", i, o.Name, err)
+			errs = errors.Append(errs, errors.Errorf("Observable %d %q: %v", i, o.Name, err))
 		}
 	}
-	return nil
+	return errs
 }
 
 // ObservableOwner denotes a team that owns an Observable. The current teams are described in

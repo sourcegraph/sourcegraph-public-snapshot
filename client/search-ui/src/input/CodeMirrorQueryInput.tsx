@@ -78,6 +78,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     preventNewLine = true,
     placeholder,
     editorOptions,
+    ariaLabel = 'Search query',
 }) => {
     const value = preventNewLine ? queryState.query.replace(replacePattern, '') : queryState.query
     // We use both, state and a ref, for the editor instance because we need to
@@ -114,6 +115,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
 
     const extensions = useMemo(() => {
         const extensions: Extension[] = [
+            EditorView.contentAttributes.of({ 'aria-label': ariaLabel }),
             EditorView.updateListener.of((update: ViewUpdate) => {
                 if (update.docChanged) {
                     onChange({
@@ -154,6 +156,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         }
         return extensions
     }, [
+        ariaLabel,
         autocompletion,
         onBlur,
         onChange,

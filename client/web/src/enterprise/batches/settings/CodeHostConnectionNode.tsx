@@ -4,12 +4,20 @@ import classNames from 'classnames'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 
-import { Badge, Button, Icon, Typography } from '@sourcegraph/wildcard'
+import { useLazyQuery } from '@sourcegraph/http-client'
+import { Badge, Button, Icon, H3 } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import { BatchChangesCodeHostFields, Scalars } from '../../../graphql-operations'
+import {
+    BatchChangesCodeHostFields,
+    CheckBatchChangesCredentialResult,
+    CheckBatchChangesCredentialVariables,
+    Scalars,
+} from '../../../graphql-operations'
 
 import { AddCredentialModal } from './AddCredentialModal'
+import { CHECK_BATCH_CHANGES_CREDENTIAL } from './backend'
+import { CheckButton } from './CheckButton'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 import { ViewCredentialModal } from './ViewCredentialModal'
 
@@ -31,12 +39,20 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
     const ExternalServiceIcon = defaultExternalServices[node.externalServiceKind].icon
     const codeHostDisplayName = defaultExternalServices[node.externalServiceKind].defaultDisplayName
 
+    const [checkCred, { data: checkCredData, loading: checkCredLoading, error: checkCredError }] = useLazyQuery<
+        CheckBatchChangesCredentialResult,
+        CheckBatchChangesCredentialVariables
+    >(CHECK_BATCH_CHANGES_CREDENTIAL, {})
+
     const buttonReference = useRef<HTMLButtonElement | null>(null)
 
     const [openModal, setOpenModal] = useState<OpenModal | undefined>()
     const onClickAdd = useCallback(() => {
         setOpenModal('add')
     }, [])
+    const onClickCheck = useCallback<React.MouseEventHandler>(async () => {
+        await checkCred({ variables: { id: node?.credential?.id ?? '' } })
+    }, [node, checkCred])
     const onClickRemove = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()
         setOpenModal('delete')
@@ -64,6 +80,11 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
             : ''
     }`
 
+    // At the moment, log the error since it is not being displayed on the page.
+    if (checkCredError) {
+        console.log(checkCredError.message)
+    }
+
     return (
         <>
             <li
@@ -78,7 +99,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                         'd-flex justify-content-between align-items-center flex-wrap mb-0'
                     )}
                 >
-                    <Typography.H3 className="text-nowrap mb-0" aria-label={headingAriaLabel}>
+                    <H3 className="text-nowrap mb-0" aria-label={headingAriaLabel}>
                         {isEnabled && (
                             <Icon
                                 role="img"
@@ -110,10 +131,17 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                                 Global token
                             </Badge>
                         )}
-                    </Typography.H3>
-                    <div className="mb-0 d-flex justify-content-end flex-grow-1">
+                    </H3>
+                    <div className="mb-0 d-flex justify-content-end flex-grow-1 align-items-baseline">
                         {isEnabled ? (
                             <>
+                                <CheckButton
+                                    label={`Check credentials for ${codeHostDisplayName}`}
+                                    onClick={onClickCheck}
+                                    loading={checkCredLoading}
+                                    successMessage={checkCredData ? 'Credential is valid' : undefined}
+                                    failedMessage={checkCredError ? 'Credential is not authorized' : undefined}
+                                />
                                 <Button
                                     className="text-danger text-nowrap test-code-host-connection-node-btn-remove"
                                     onClick={onClickRemove}

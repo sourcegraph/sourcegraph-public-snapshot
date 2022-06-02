@@ -6,8 +6,8 @@ import { Observable } from 'rxjs'
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { isMacPlatform } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
+import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import {
     KeyboardShortcutsProps,
@@ -211,7 +211,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 keyboardShortcuts={props.keyboardShortcuts}
             />
             <GlobalAlerts authenticatedUser={props.authenticatedUser} settingsCascade={props.settingsCascade} />
-            {!isSiteInit && <SurveyToast />}
+            {!isSiteInit && <SurveyToast forceVisible={true} />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}

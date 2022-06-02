@@ -44,6 +44,8 @@ type TextSearchJob struct {
 	// repository if this field is true. Another example is we set this field
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
+
+	Features search.Features
 }
 
 // Run calls the searcher service on a set of repositories.
@@ -109,7 +111,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.LogFields(log.String("repo", string(repoRev.Repo.Name)), log.Error(err), log.Bool("timeout", errcode.IsTimeout(err)), log.Bool("temporary", errcode.IsTemporary(err)))
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
@@ -156,7 +158,7 @@ var MockSearchFilesInRepo func(
 	stream streaming.Sender,
 ) (limitHit bool, err error)
 
-func searchFilesInRepo(
+func (s *TextSearchJob) searchFilesInRepo(
 	ctx context.Context,
 	db database.DB,
 	searcherURLs *endpoint.Map,
@@ -189,8 +191,9 @@ func searchFilesInRepo(
 		return false, err
 	}
 
+	// Structural and hybrid search both speak to zoekt so need the endpoints.
 	var indexerEndpoints []string
-	if info.IsStructuralPat {
+	if info.IsStructuralPat || s.Features.HybridSearch {
 		indexerEndpoints, err = search.Indexers().Map.Endpoints()
 		if err != nil {
 			return false, err
@@ -204,7 +207,7 @@ func searchFilesInRepo(
 		})
 	}
 
-	return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, indexerEndpoints, onMatches)
+	return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, indexerEndpoints, s.Features, onMatches)
 }
 
 // newToMatches returns a closure that converts []*protocol.FileMatch to []result.Match.
@@ -222,7 +225,7 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 	return func(searcherMatches []*protocol.FileMatch) []result.Match {
 		matches := make([]result.Match, 0, len(searcherMatches))
 		for _, fm := range searcherMatches {
-			hunkMatches := make(result.HunkMatches, 0, len(fm.LineMatches))
+			chunkMatches := make(result.ChunkMatches, 0, len(fm.LineMatches))
 
 			for _, lm := range fm.LineMatches {
 				ranges := make(result.Ranges, 0, len(lm.OffsetAndLengths))
@@ -241,7 +244,7 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 						},
 					})
 				}
-				hunkMatches = append(hunkMatches, result.HunkMatch{
+				chunkMatches = append(chunkMatches, result.ChunkMatch{
 					Content: lm.Preview,
 					ContentStart: result.Location{
 						Offset: lm.LineOffset,
@@ -252,26 +255,31 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 				})
 			}
 
-			for _, mm := range fm.MultilineMatches {
-				hunkMatches = append(hunkMatches, result.HunkMatch{
-					Content: mm.Preview,
-					ContentStart: result.Location{
-						Offset: int(mm.Start.Offset) - runeOffsetToByteOffset(mm.Preview, int(mm.Start.Column)),
-						Line:   int(mm.Start.Line),
-						Column: 0,
-					},
-					Ranges: result.Ranges{{
+			for _, cm := range fm.ChunkMatches {
+				ranges := make(result.Ranges, 0, len(cm.Ranges))
+				for _, rr := range cm.Ranges {
+					ranges = append(ranges, result.Range{
 						Start: result.Location{
-							Offset: int(mm.Start.Offset),
-							Line:   int(mm.Start.Line),
-							Column: int(mm.Start.Column),
+							Offset: int(rr.Start.Offset),
+							Line:   int(rr.Start.Line),
+							Column: int(rr.Start.Column),
 						},
 						End: result.Location{
-							Offset: int(mm.End.Offset),
-							Line:   int(mm.End.Line),
-							Column: int(mm.End.Column),
+							Offset: int(rr.End.Offset),
+							Line:   int(rr.End.Line),
+							Column: int(rr.End.Column),
 						},
-					}},
+					})
+				}
+
+				chunkMatches = append(chunkMatches, result.ChunkMatch{
+					Content: cm.Content,
+					ContentStart: result.Location{
+						Offset: int(cm.ContentStart.Offset),
+						Line:   int(cm.ContentStart.Line),
+						Column: 0,
+					},
+					Ranges: ranges,
 				})
 			}
 
@@ -282,8 +290,8 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 					CommitID: commit,
 					InputRev: rev,
 				},
-				HunkMatches: hunkMatches,
-				LimitHit:    fm.LimitHit,
+				ChunkMatches: chunkMatches,
+				LimitHit:     fm.LimitHit,
 			})
 		}
 		return matches
@@ -336,8 +344,10 @@ func repoHasFilesWithNamesMatching(
 				foundMatches = true
 			}
 		}
+		// TODO(keegancsmith) we should be passing in more state here like
+		// indexer endpoints and features.
 		p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-		_, err := Search(ctx, searcherURLs, repo.Name, repo.ID, "", commit, false, &p, fetchTimeout, []string{}, onMatches)
+		_, err := Search(ctx, searcherURLs, repo.Name, repo.ID, "", commit, false, &p, fetchTimeout, []string{}, search.Features{}, onMatches)
 		if err != nil {
 			return false, err
 		}

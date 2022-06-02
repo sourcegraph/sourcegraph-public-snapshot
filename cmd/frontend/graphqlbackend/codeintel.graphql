@@ -1113,6 +1113,11 @@ type LSIFIndex implements Node {
     inputCommit: String!
 
     """
+    The tags, if any, associated with this commit.
+    """
+    tags: [String!]!
+
+    """
     The original root supplied at index schedule time.
     """
     inputRoot: String!
