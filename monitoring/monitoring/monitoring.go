@@ -703,15 +703,26 @@ type Observable struct {
 	// would not want an alert to fire if no data was present, so this will not need to be set.
 	DataMustExist bool
 
-	// Warning and Critical alert definitions.
-	// Consider adding at least a Warning or Critical alert to each Observable to make it
-	// easy to identify when the target of this metric is misbehaving. If no alerts are
-	// provided, NoAlert must be set and Interpretation must be provided.
-	Warning, Critical *ObservableAlertDefinition
+	// Warning alerts indicate that something *could* be wrong with Sourcegraph. We
+	// suggest checking in on these periodically, or using a notification channel that
+	// will not bother anyone if it is spammed.
+	//
+	// Learn more about how alerting is used: https://docs.sourcegraph.com/admin/observability/alerting
+	Warning *ObservableAlertDefinition
 
-	// NoAlerts must be set by Observables that do not have any alerts.
-	// This ensures the omission of alerts is intentional. If set to true, an Interpretation
-	// must be provided in place of PossibleSolutions.
+	// Critical alerts indicate that something is definitively wrong with Sourcegraph,
+	// in a way that is very likely to be noticeable to users. We suggest using a
+	// high-visibility notification channel, such as paging, for these alerts.
+	//
+	// Learn more about how alerting is used: https://docs.sourcegraph.com/admin/observability/alerting
+	Critical *ObservableAlertDefinition
+
+	// NoAlerts must be set by Observables that do not have any alerts. This ensures the
+	// omission of alerts is intentional. If set to true, an Interpretation must be
+	// provided in place of PossibleSolutions.
+	//
+	// Consider adding at least a Warning or Critical alert to each Observable to make it
+	// easy to identify when the target of this metric is misbehaving.
 	NoAlert bool
 
 	// PossibleSolutions is Markdown describing possible solutions in the event that the
