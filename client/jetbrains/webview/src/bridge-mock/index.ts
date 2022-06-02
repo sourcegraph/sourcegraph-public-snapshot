@@ -147,7 +147,7 @@ iframeNode.addEventListener('load', () => {
 })
 
 // Detect dark or light mode preference
-if (location.href.includes('dark')) {
+if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
     isDarkTheme = true
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     document.body.parentElement!.className = 'dark'
