@@ -4,14 +4,19 @@ import com.google.gson.JsonObject;
 import com.intellij.util.ui.UIUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
+import javax.swing.plaf.ColorUIResource;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 
 public class ThemeUtil {
+    private static final Logger logger = LoggerFactory.getLogger(ThemeUtil.class);
+
     @NotNull
     public static JsonObject getCurrentThemeAsJson() {
         JsonObject intelliJTheme = new JsonObject();
@@ -22,11 +27,11 @@ public class ThemeUtil {
         for (Object key : keysList) {
             try {
                 Object value = UIManager.get(key);
-                if (value.getClass().getName().equals("javax.swing.plaf.ColorUIResource")) {
+                if (value instanceof ColorUIResource) {
                     intelliJTheme.addProperty(key.toString(), getHexString(UIManager.getColor(key)));
                 }
             } catch (Exception e) {
-                System.out.println(e);
+                logger.error(e.getMessage());
             }
         }
 
