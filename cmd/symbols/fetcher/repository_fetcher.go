@@ -8,13 +8,13 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RepositoryFetcher interface {
-	FetchRepositoryArchive(ctx context.Context, args types.SearchArgs, paths []string) <-chan parseRequestOrError
+	FetchRepositoryArchive(ctx context.Context, args search.SymbolsParameters, paths []string) <-chan parseRequestOrError
 }
 
 type repositoryFetcher struct {
@@ -43,7 +43,7 @@ func NewRepositoryFetcher(gitserverClient gitserver.GitserverClient, maxTotalPat
 	}
 }
 
-func (f *repositoryFetcher) FetchRepositoryArchive(ctx context.Context, args types.SearchArgs, paths []string) <-chan parseRequestOrError {
+func (f *repositoryFetcher) FetchRepositoryArchive(ctx context.Context, args search.SymbolsParameters, paths []string) <-chan parseRequestOrError {
 	requestCh := make(chan parseRequestOrError)
 
 	go func() {
@@ -59,7 +59,7 @@ func (f *repositoryFetcher) FetchRepositoryArchive(ctx context.Context, args typ
 	return requestCh
 }
 
-func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args types.SearchArgs, paths []string, callback func(request ParseRequest)) (err error) {
+func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args search.SymbolsParameters, paths []string, callback func(request ParseRequest)) (err error) {
 	ctx, trace, endObservation := f.operations.fetchRepositoryArchive.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(args.Repo)),
 		log.String("commitID", string(args.CommitID)),
