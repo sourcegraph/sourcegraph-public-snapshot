@@ -133,6 +133,9 @@ type SearcherParameters struct {
 	// repository if this field is true. Another example is we set this field
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
+
+	// Features are feature flags that can affect behaviour of searcher.
+	Features Features
 }
 
 // TextPatternInfo is the struct used by vscode pass on search queries. Keep it in

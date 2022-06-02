@@ -334,6 +334,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 			searcherArgs := &search.SearcherParameters{
 				PatternInfo:     patternInfo,
 				UseFullDeadline: useFullDeadline,
+				Features:        features,
 			}
 
 			addJob(&structural.SearchJob{
