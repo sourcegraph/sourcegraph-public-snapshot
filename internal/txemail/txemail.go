@@ -76,17 +76,48 @@ func render(message Message) (*email.Email, error) {
 	return &m, nil
 }
 
+type loginAuth struct {
+	username, password string
+}
+
+// SMTP AUTH LOGIN Auth Handler
+func LoginAuth(username, password string) smtp.Auth {
+	return &loginAuth{username, password}
+}
+
+func (*loginAuth) Start(_ *smtp.ServerInfo) (string, []byte, error) {
+	return "LOGIN", []byte{}, nil
+}
+
+func (a *loginAuth) Next(fromServer []byte, more bool) ([]byte, error) {
+	if more {
+		switch string(fromServer) {
+		case "Username:":
+			return []byte(a.username), nil
+		case "Password:":
+			return []byte(a.password), nil
+		default:
+			return nil, fmt.Errorf("unknown fromServer: %s", string(fromServer))
+		}
+	}
+	return nil, nil
+}
+
 // Send sends a transactional email.
 //
 // Callers that do not live in the frontend should call internalapi.Client.SendEmail
 // instead. TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func Send(ctx context.Context, message Message) error {
+func Send(ctx context.Context, message Message) (err error) {
 	if MockSend != nil {
 		return MockSend(ctx, message)
 	}
 	if disableSilently {
 		return nil
 	}
+
+	defer func() {
+		emailSendCounter.WithLabelValues(strconv.FormatBool(err == nil)).Inc()
+	}()
 
 	conf := conf.Get()
 	if conf.EmailAddress == "" {
@@ -98,9 +129,12 @@ func Send(ctx context.Context, message Message) error {
 
 	m, err := render(message)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "render")
 	}
-	m.From = conf.EmailAddress
+	raw, err := m.Bytes()
+	if err != nil {
+		return errors.Wrap(err, "get bytes")
+	}
 
 	// Disable Mandrill features, because they make the emails look sketchy.
 	if conf.EmailSmtp.Host == "smtp.mandrillapp.com" {
@@ -114,6 +148,36 @@ func Send(ctx context.Context, message Message) error {
 		m.Headers["X-MC-ViewContentLink"] = []string{"false"}
 	}
 
+	fmt.Println(1111, net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)))
+	client, err := smtp.Dial(net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)))
+	if err != nil {
+		return errors.Wrap(err, "new SMTP client")
+	}
+	defer func() { _ = client.Close() }()
+
+	heloHostname := conf.EmailSmtp.Domain
+	if heloHostname == "" {
+		heloHostname = "localhost"
+	}
+	fmt.Println("heloHostname", heloHostname)
+	err = client.Hello(heloHostname)
+	if err != nil {
+		return errors.Wrap(err, "send HELO")
+	}
+
+	// Use TLS if available
+	if ok, _ := client.Extension("STARTTLS"); ok {
+		err = client.StartTLS(
+			&tls.Config{
+				InsecureSkipVerify: conf.EmailSmtp.NoVerifyTLS,
+				ServerName:         conf.EmailSmtp.Host,
+			},
+		)
+		if err != nil {
+			return errors.Wrap(err, "send STARTTLS")
+		}
+	}
+
 	var smtpAuth smtp.Auth
 	switch conf.EmailSmtp.Authentication {
 	case "none": // nothing to do
@@ -121,27 +185,44 @@ func Send(ctx context.Context, message Message) error {
 		smtpAuth = smtp.PlainAuth("", conf.EmailSmtp.Username, conf.EmailSmtp.Password, conf.EmailSmtp.Host)
 	case "CRAM-MD5":
 		smtpAuth = smtp.CRAMMD5Auth(conf.EmailSmtp.Username, conf.EmailSmtp.Password)
+	case "LOGIN":
+		smtpAuth = LoginAuth(conf.EmailSmtp.Username, conf.EmailSmtp.Password)
+		fmt.Println(2222)
 	default:
 		return errors.Errorf("invalid SMTP authentication type %q", conf.EmailSmtp.Authentication)
 	}
 
-	if conf.EmailSmtp.NoVerifyTLS {
-		err = m.SendWithStartTLS(
-			net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)),
-			smtpAuth,
-			&tls.Config{
-				InsecureSkipVerify: true,
-			},
-		)
-	} else {
-		err = m.Send(
-			net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)),
-			smtpAuth,
-		)
+	if smtpAuth != nil {
+		if ok, _ := client.Extension("AUTH"); ok {
+			if err = client.Auth(smtpAuth); err != nil {
+				return errors.Wrap(err, "auth")
+			}
+		}
 	}
-	emailSendCounter.WithLabelValues(strconv.FormatBool(err == nil)).Inc()
-	return err
 
+	err = client.Mail(conf.EmailAddress)
+	if err != nil {
+		return errors.Wrap(err, "send MAIL")
+	}
+
+	w, err := client.Data()
+	if err != nil {
+		return errors.Wrap(err, "send DATA")
+	}
+	defer func() { _ = w.Close() }()
+
+	_, err = w.Write(raw)
+	if err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	err = client.Quit()
+	if err != nil {
+		return errors.Wrap(err, "send QUIT")
+	}
+
+	fmt.Println("worked")
+	return nil
 }
 
 // MockSend is used in tests to mock the Send func.
