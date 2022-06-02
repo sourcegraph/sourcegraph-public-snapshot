@@ -12,6 +12,7 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+
         "homePanelsComputeSuggestions": {
           "type": "boolean",
           "default": false,
