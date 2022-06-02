@@ -8,9 +8,9 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import GitIcon from 'mdi-react/GitIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
 import LanguageGoIcon from 'mdi-react/LanguageGoIcon'
-import LanguageRustIcon from 'mdi-react/LanguageRustIcon'
 import LanguageJavaIcon from 'mdi-react/LanguageJavaIcon'
 import LanguagePythonIcon from 'mdi-react/LanguagePythonIcon'
+import LanguageRustIcon from 'mdi-react/LanguageRustIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
@@ -1378,7 +1378,7 @@ const RUST_PACKAGES = {
     kind: ExternalServiceKind.RUSTPACKAGES,
     title: 'Rust Dependencies',
     icon: LanguageRustIcon,
-    jsonSchema: rustPackagesJSON ,
+    jsonSchema: rustPackagesJSON,
     defaultDisplayName: 'Rust Dependencies',
     defaultConfig: `{
   "dependencies": []
@@ -1392,7 +1392,7 @@ const RUST_PACKAGES = {
                 </li>
             </ol>
             <Text>⚠️ Rust package repositories are visible by all users of the Sourcegraph instance.</Text>
-            <Text>⚠️ It is only possible to register one  Rust packages code host per Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one Rust packages code host per Sourcegraph instance.</Text>
         </div>
     ),
     editorActions: [],
