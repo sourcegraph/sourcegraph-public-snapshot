@@ -1,6 +1,12 @@
 package com.sourcegraph.config;
 
 import com.google.gson.JsonObject;
+import com.intellij.lang.java.JavaLanguage;
+import com.intellij.openapi.editor.colors.EditorColorPalette;
+import com.intellij.openapi.editor.colors.EditorColorPaletteFactory;
+import com.intellij.openapi.editor.colors.TextAttributesKey;
+import com.intellij.openapi.editor.colors.ex.DefaultColorSchemesManager;
+import com.intellij.openapi.editor.colors.impl.DefaultColorsScheme;
 import com.intellij.util.ui.UIUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,9 +16,8 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import javax.swing.plaf.ColorUIResource;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
+import java.util.List;
+import java.util.*;
 
 public class ThemeUtil {
     private static final Logger logger = LoggerFactory.getLogger(ThemeUtil.class);
@@ -20,7 +25,6 @@ public class ThemeUtil {
     @NotNull
     public static JsonObject getCurrentThemeAsJson() {
         JsonObject intelliJTheme = new JsonObject();
-
         UIDefaults defaults = UIManager.getDefaults();
         Enumeration<Object> keysEnumeration = defaults.keys();
         ArrayList<Object> keysList = Collections.list(keysEnumeration);
@@ -35,9 +39,30 @@ public class ThemeUtil {
             }
         }
 
+
+        // Find the currently active color scheme based on the current look and feel name
+        LookAndFeel lookAndFeel = UIManager.getLookAndFeel();
+        List<DefaultColorsScheme> schemeList = DefaultColorSchemesManager.getInstance().getAllSchemes();
+        DefaultColorsScheme currentColorScheme = DefaultColorSchemesManager.getInstance().getFirstScheme();
+        for (DefaultColorsScheme scheme : schemeList) {
+            if (scheme.getName().equals(lookAndFeel.getName())) {
+                currentColorScheme = scheme;
+            }
+        }
+
+        JsonObject syntaxTheme = new JsonObject();
+        EditorColorPalette palette = EditorColorPaletteFactory.getInstance().getPalette(currentColorScheme, JavaLanguage.INSTANCE);
+        for (Map.Entry<Color, Collection<TextAttributesKey>> entry : palette.withForegroundColors().getEntries()) {
+            Color color = entry.getKey();
+            for (TextAttributesKey key : entry.getValue()) {
+                recursivelyAddToAllAttributeKeys(syntaxTheme, getHexString(color), key);
+            }
+        }
+
         JsonObject theme = new JsonObject();
         theme.addProperty("isDarkTheme", isDarkTheme());
         theme.add("intelliJTheme", intelliJTheme);
+        theme.add("syntaxTheme", syntaxTheme);
         return theme;
     }
 
@@ -65,5 +90,13 @@ public class ThemeUtil {
      */
     private static int getBrightnessFromColor(@NotNull Color color) {
         return (int) Math.sqrt(color.getRed() * color.getRed() * .299 + color.getGreen() * color.getGreen() * .587 + color.getBlue() * color.getBlue() * .114);
+    }
+
+    private static void recursivelyAddToAllAttributeKeys(JsonObject object, String value, TextAttributesKey key) {
+        if (key == null) {
+            return;
+        }
+        object.addProperty(key.getExternalName(), value);
+        recursivelyAddToAllAttributeKeys(object, value, key.getFallbackAttributeKey());
     }
 }

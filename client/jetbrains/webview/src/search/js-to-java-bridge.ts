@@ -85,8 +85,9 @@ export async function getThemeAlwaysFullfil(): Promise<Theme> {
     } catch (error) {
         console.error(`Failed to get theme: ${(error as Error).message}`)
         return {
-            isDarkTheme: true,
+            isDarkTheme: false,
             intelliJTheme: {},
+            syntaxTheme: {},
         }
     }
 }

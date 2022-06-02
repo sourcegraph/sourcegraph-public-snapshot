@@ -58,9 +58,7 @@ function handleRequest(
         }
 
         case 'getTheme': {
-            const theme: Theme = isDarkTheme
-                ? { isDarkTheme: true, intelliJTheme: dark }
-                : { isDarkTheme: false, intelliJTheme: light }
+            const theme: Theme = isDarkTheme ? dark : light
             onSuccessCallback(JSON.stringify(theme))
             break
         }
