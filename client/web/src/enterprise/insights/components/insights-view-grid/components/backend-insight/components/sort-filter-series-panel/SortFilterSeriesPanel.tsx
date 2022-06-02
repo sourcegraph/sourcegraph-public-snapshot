@@ -88,7 +88,7 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                             value={{ mode: SeriesSortMode.DATE_ADDED, direction: SeriesSortDirection.DESC }}
                             onClick={handleToggle}
                         >
-                            Latest
+                            Newest
                         </ToggleButton>
                         <ToggleButton
                             selected={selectedOption}
