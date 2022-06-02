@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 func TestExport(t *testing.T) {

@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 type key int
@@ -234,15 +234,15 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 		if m.Duration >= minDuration || m.Code >= minCode {
 			fields := make([]log.Field, 0, 20)
 			fields = append(fields,
-				log.String("route_name",routeName, privacy.Unknown),
-				log.String("method",r.Method, privacy.Unknown),
-				log.String("url",truncate(r.URL.String(), 100), privacy.Unknown),
+				log.String("route_name", routeName, privacy.Unknown),
+				log.String("method", r.Method, privacy.Unknown),
+				log.String("url", truncate(r.URL.String(), 100), privacy.Unknown),
 				log.Int("code", m.Code),
 				log.Duration("duration", m.Duration),
 			)
 
 			if v := r.Header.Get("X-Forwarded-For"); v != "" {
-				fields = append(fields, log.String("x_forwarded_for",v, privacy.Unknown))
+				fields = append(fields, log.String("x_forwarded_for", v, privacy.Unknown))
 			}
 
 			if userID != 0 {

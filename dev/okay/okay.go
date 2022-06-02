@@ -14,7 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 var okayhqAPIEndpoint = "https://app.okayhq.com/api/events/v1"
@@ -62,7 +62,7 @@ func (c *Client) post(event *customEvent) error {
 
 	if c.token == "" {
 		// If the token is empty, just log the events
-		c.logger.Debug("pretending to send event", log.String("event",string(b), privacy.Unknown))
+		c.logger.Debug("pretending to send event", log.String("event", string(b), privacy.Unknown))
 		return nil
 	}
 

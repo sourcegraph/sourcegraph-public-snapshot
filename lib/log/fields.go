@@ -5,7 +5,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
-	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 // A Field is a marshaling operation used to add a key-value pair to a logger's context.

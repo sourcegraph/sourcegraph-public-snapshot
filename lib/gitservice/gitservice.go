@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 var uploadPackArgs = []string{

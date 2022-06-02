@@ -29,7 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 // PageInfo contains the paging information based on the Redux conventions.
@@ -1541,8 +1541,8 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auth aut
 	defer resp.Body.Close()
 
 	logger.Debug("doRequest",
-		log.String("status",resp.Status, privacy.Unknown),
-		log.String("x-ratelimit-remaining",resp.Header.Get("x-ratelimit-remaining"), privacy.Unknown))
+		log.String("status", resp.Status, privacy.Unknown),
+		log.String("x-ratelimit-remaining", resp.Header.Get("x-ratelimit-remaining"), privacy.Unknown))
 
 	// For 401 responses we receive a remaining limit of 0. This will cause the next
 	// call to block for up to an hour because it believes we have run out of tokens.

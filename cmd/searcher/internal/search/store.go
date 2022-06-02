@@ -31,7 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 // maxFileSize is the limit on file size in bytes. Only files smaller
@@ -188,7 +188,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 			}
 		}
 		if err != nil {
-			s.Log.Error("failed to fetch archive", log.String("repo",string(repo), privacy.Unknown), log.String("commit",string(commit), privacy.Unknown), log.Duration("duration", time.Since(start)), log.Error(err))
+			s.Log.Error("failed to fetch archive", log.String("repo", string(repo), privacy.Unknown), log.String("commit", string(commit), privacy.Unknown), log.Duration("duration", time.Since(start)), log.Error(err))
 		}
 		resC <- result{path, err, cacheHit}
 	}()

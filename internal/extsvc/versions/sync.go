@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 const syncInterval = 24 * time.Hour
@@ -95,14 +95,14 @@ func loadVersions(ctx context.Context, logger log.Logger, store database.Externa
 		versionSrc, ok := src.(repos.VersionSource)
 		if !ok {
 			logger.Debug("external service source does not implement VersionSource interface",
-				log.String("kind",svc.Kind, privacy.Unknown))
+				log.String("kind", svc.Kind, privacy.Unknown))
 			continue
 		}
 
 		v, err := versionSrc.Version(ctx)
 		if err != nil {
 			logger.Warn("failed to fetch version of code host",
-				log.String("version",v, privacy.Unknown),
+				log.String("version", v, privacy.Unknown),
 				log.Error(err))
 			continue
 		}

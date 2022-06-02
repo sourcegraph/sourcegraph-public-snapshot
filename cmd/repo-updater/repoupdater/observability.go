@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 // HandlerMetrics encapsulates the Prometheus metrics of an http.Handler.
@@ -90,8 +90,8 @@ func (h *observedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.logger.Debug(
 			"http.request",
 			log.Object("request",
-				log.String("method",r.Method, privacy.Unknown),
-				log.String("route",r.URL.Path, privacy.Unknown),
+				log.String("method", r.Method, privacy.Unknown),
+				log.String("route", r.URL.Path, privacy.Unknown),
 				log.Int("code", rr.code),
 				log.Duration("duration", took),
 			),

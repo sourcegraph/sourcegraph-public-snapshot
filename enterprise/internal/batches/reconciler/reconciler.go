@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 type GitserverClient interface {
@@ -80,7 +80,7 @@ func (r *Reconciler) process(ctx context.Context, logger log.Logger, tx *store.S
 		return err
 	}
 
-	logger.Info("Reconciler processing changeset", log.Int64("changeset", ch.ID), log.String("operations",fmt.Sprintf("%+v", plan.Ops), privacy.Unknown))
+	logger.Info("Reconciler processing changeset", log.Int64("changeset", ch.ID), log.String("operations", fmt.Sprintf("%+v", plan.Ops), privacy.Unknown))
 
 	return executePlan(
 		ctx,

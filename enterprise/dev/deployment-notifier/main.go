@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 type Flags struct {
@@ -245,7 +245,7 @@ func reportDeployTrace(report *DeploymentReport, token string, dryRun bool) (str
 	if err != nil {
 		logger.Warn("failed to generate buildTraceURL", log.Error(err))
 	} else {
-		logger.Info("generated trace", log.String("trace",traceURL, privacy.Unknown))
+		logger.Info("generated trace", log.String("trace", traceURL, privacy.Unknown))
 	}
 	return traceURL, nil
 }

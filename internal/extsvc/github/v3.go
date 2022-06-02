@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 // V3Client is a caching GitHub API client for GitHub's REST API v3.
@@ -112,8 +112,8 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 
 	return &V3Client{
 		log: logger.With(
-			log.String("urn",urn, privacy.Unknown),
-			log.String("resource",resource, privacy.Unknown),
+			log.String("urn", urn, privacy.Unknown),
+			log.String("resource", resource, privacy.Unknown),
 		),
 		urn:              urn,
 		apiURL:           apiURL,

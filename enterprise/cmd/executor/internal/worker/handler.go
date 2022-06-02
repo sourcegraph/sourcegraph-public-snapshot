@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/privacy"
+	"github.com/sourcegraph/sourcegraph/lib/privacy"
 )
 
 type handler struct {
@@ -66,8 +66,8 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	job := record.(executor.Job)
 	logger = logger.With(
 		log.Int("jobID", job.ID),
-		log.String("repositoryName",job.RepositoryName, privacy.Unknown),
-		log.String("commit",job.Commit, privacy.Unknown))
+		log.String("repositoryName", job.RepositoryName, privacy.Unknown),
+		log.String("commit", job.Commit, privacy.Unknown))
 
 	start := time.Now()
 	defer func() {
