@@ -39,9 +39,6 @@ const getStoriesGlob = (): string[] => {
         return [path.resolve(ROOT_PATH, ENVIRONMENT_CONFIG.STORIES_GLOB)]
     }
 
-    // Stories in `Chromatic.story.tsx` are guarded by the `isChromatic()` check. It will result in noop in all other environments.
-    const chromaticStoriesGlob = path.resolve(ROOT_PATH, 'client/storybook/src/chromatic-story/Chromatic.story.tsx')
-
     // Due to an issue with constant recompiling (https://github.com/storybookjs/storybook/issues/14342)
     // we need to make the globs more specific (`(web|shared..)` also doesn't work). Once the above issue
     // is fixed, this can be removed and watched for `client/**/*.story.tsx` again.
@@ -50,7 +47,7 @@ const getStoriesGlob = (): string[] => {
         path.resolve(ROOT_PATH, `client/${packageDirectory}/src/**/*.story.tsx`)
     )
 
-    return [...storiesGlobs, chromaticStoriesGlob]
+    return [...storiesGlobs]
 }
 
 const getDllScriptTag = (): string => {
