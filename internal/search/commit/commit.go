@@ -108,29 +108,27 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return doSearch(args)
 	}
 
-	var repoRevs []*search.RepositoryRevisions
+	bounded := goroutine.NewBounded(8)
 	repos := searchrepos.Resolver{DB: clients.DB, Opts: opts}
 	err = repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
-		if repoRevs = page.RepoRevs; page.Next != nil {
+		if page.Next != nil {
 			return newReposLimitError(opts.Limit, j.HasTimeFilter, resultType)
+		}
+		for _, repoRev := range page.RepoRevs {
+			repoRev := repoRev
+			if ctx.Err() != nil {
+				// Don't keep spinning up goroutines if context has been canceled,
+				// but make sure we still clean up any running goroutines.
+				return ctx.Err()
+			}
+			bounded.Go(func() error {
+				return searchRepoRev(repoRev)
+			})
 		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
-	}
-
-	bounded := goroutine.NewBounded(8)
-	for _, repoRev := range repoRevs {
-		repoRev := repoRev // we close over repoRev in onMatches
-		if ctx.Err() != nil {
-			// Don't keep spinning up goroutines if context has been canceled,
-			// but make sure we still clean up any running goroutines.
-			return nil, errors.Append(ctx.Err(), bounded.Wait())
-		}
-		bounded.Go(func() error {
-			return searchRepoRev(repoRev)
-		})
 	}
 
 	return nil, bounded.Wait()
