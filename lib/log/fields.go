@@ -1,7 +1,6 @@
 package log
 
 import (
-	"fmt"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -50,28 +49,6 @@ var (
 	// third-party libraries.
 	Namespace = zap.Namespace
 )
-
-func shouldRedact(p privacy.Privacy) bool {
-	return p < privacy.Unknown
-}
-
-func fnv1a(s string, maxBytes int) uint32 {
-	// See https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function#FNV_hash_parameters
-	hash := uint64(0x811c9dc5)
-	for i := 0; i < maxBytes; i++ {
-		hash = (hash ^ uint64(s[i])) * 0x01000193
-	}
-	return uint32(hash)
-}
-
-// redact renders a hash of string to aid in debugging, rather than render '<redacted>' everywhere.
-// It does not have any uniqueness or security guarantees.
-func redact(s string) string {
-	if len(s) > 32 {
-		return fmt.Sprintf("<redacted:hash=%x,len=%d,hashPrefixLen=32>", fnv1a(s, 32), len(s))
-	}
-	return fmt.Sprintf("<redacted:hash=%x,len=%d>")
-}
 
 func Text(key string, t privacy.Text) Field {
 	if shouldRedact(t.Privacy()) {
