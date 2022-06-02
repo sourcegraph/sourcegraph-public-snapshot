@@ -333,7 +333,7 @@ func TestMaxMatches(t *testing.T) {
 
 	totalMatches := 0
 	for _, match := range fileMatches {
-		totalMatches += match.MatchCount
+		totalMatches += match.MatchCount()
 	}
 
 	if totalMatches != maxMatches {
@@ -444,12 +444,7 @@ func TestRegexSearch(t *testing.T) {
 				patternMatchesContent: true,
 				limit:                 5,
 			},
-			wantFm: []protocol.FileMatch{
-				{
-					Path:       "a.go",
-					MatchCount: 1,
-				},
-			},
+			wantFm: []protocol.FileMatch{{Path: "a.go"}},
 		},
 	}
 	for _, tt := range tests {
