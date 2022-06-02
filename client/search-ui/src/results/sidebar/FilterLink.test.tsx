@@ -58,7 +58,7 @@ describe('FilterLink', () => {
         expect(renderWithBrandedContext(<>{links}</>).asFragment()).toMatchSnapshot()
     })
 
-    it('should have show icons for repos on cloud', async () => {
+    it('should have show icons for repos on cloud', () => {
         const filters: Filter[] = [repoFilter1, langFilter1, repoFilter2, langFilter2, fileFilter]
         const onFilterChosen = sinon.stub()
 
@@ -66,8 +66,8 @@ describe('FilterLink', () => {
         expect(links).toHaveLength(2)
 
         const { asFragment } = renderWithBrandedContext(<>{links}</>)
-        expect(await screen.findByLabelText('github.com')).toBeInTheDocument()
-        expect(await screen.findByLabelText('gitlab.com')).toBeInTheDocument()
+        expect(screen.getByLabelText('github.com')).toBeInTheDocument()
+        expect(screen.getByLabelText('gitlab.com')).toBeInTheDocument()
         expect(asFragment()).toMatchSnapshot()
     })
 
