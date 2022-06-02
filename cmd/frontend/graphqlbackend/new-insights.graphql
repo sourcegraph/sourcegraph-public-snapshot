@@ -10,21 +10,22 @@ extend type Query {
 
 
 type NewInsightConnection {
-    nodes: [NewInsight!]!
+    nodes: [BaseInsight!]!
     totalCount: Int!
     pageInfo: PageInfo!
 }
 
-union NewInsight = SeriesLikeInsight | CategoricalLikeInsight
-
 # ---------- Base Insight types ----------- #
 interface BaseInsight {
     id: ID!
+    # title and all other shared across all insight fields
     title: String!
     isFrozen: Boolean!
-    defaultFilters: NewInsightFilters
-    appliedFilters: NewInsightFilters!
+    filters: NewInsightFilters
     dashboards(id: ID, first: Int, after: String): InsightsDashboardConnection
+
+    # Insight-define information
+    configuration: BaseInsightConfiguration!
 }
 
 type NewInsightFilters {
@@ -33,14 +34,39 @@ type NewInsightFilters {
     searchContexts: SearchContextConnection
 }
 
-# --------- Series-like insight types -------------- #
-type SeriesLikeInsight implements BaseInsight & Node {
-    id: ID!
-    title: String!
-    isFrozen: Boolean!
-    defaultFilters: NewInsightFilters
-    appliedFilters: NewInsightFilters!
-    dashboards(id: ID, first: Int, after: String): InsightsDashboardConnection
+union BaseInsightConfiguration =
+    SearchBasedInsightConfiguration |
+    CaptureGroupInsightConfiguration |
+    LangStatsInsightConfiguration
+
+# --------- Insight configurations  ------------ #
+type SearchBasedInsightConfiguration {
+    # All important to the edit UI (insight configurations) for Search-Based
+    # insight fields are contained inside of series.
+    series: [NewInsightSeries!]!
+}
+
+type CaptureGroupInsightConfiguration {
+    # In Capture Group insight there is no a performant way to get
+    # insight configuration from series because series here are generated
+    # so we have to extract vital settings from the series.
+    query: String!
+    repositories: [String!]!
+    timeScope: InsightTimeScope!
+    series: [NewInsightSeries!]!
+}
+
+type LangStatsInsightConfiguration {
+    # Since Lang Stats insight as any other insights doesn't have series
+    # we provide setting data on the top level.
+    repositories: [String!]!
+    otherThreshold: Float!
+    chartType: CategoricalLikeChartTYpe
+    data: [NewInsightCategoricalDatum!]!
+}
+
+# --------- Series-like data types -------------- #
+type SeriesLikeInsightData {
     series: [NewInsightSeries!]!
 }
 
@@ -52,9 +78,22 @@ type NewInsightSeries implements Node {
     chartType: SeriesLikeChartType
     repositoryScope: InsightRepositoryScope!
     timeScope: InsightTimeScope!
+    # this is true when series generated on the backend in query time
+    # Capture group insight case
     isGenerated: Boolean!
     status: NewInsightSeriesStatus
     points(from: DateTime, to: DateTime): [NewInsightDataPoint!]!
+}
+
+type NewInsightSeriesVisualSettings {
+    color: String!
+    pattern: String
+    chartType: SeriesLikeChartType
+    border: String!
+    # ... any other visual settings here, as we found out chart type
+    # doesn't change set of settings for the series, the only that can
+    # change visual settings is data shape and for all series data shape
+    # is series-like (thought time)
 }
 
 enum SeriesLikeChartType {
@@ -75,19 +114,7 @@ type NewInsightSeriesStatus {
     backfillQueuedAt: DateTime
 }
 
-# ----------- Categorical like insight ------------ #
-type CategoricalLikeInsight implements BaseInsight & Node {
-    id: ID!
-    title: String!
-    isFrozen: Boolean!
-    defaultFilters: NewInsightFilters
-    appliedFilters: NewInsightFilters!
-    dashboards(id: ID, first: Int, after: String): InsightsDashboardConnection
-    data: [NewInsightCategoricalDatum!]!
-    otherThreshold: Float!
-    chartType: CategoricalLikeChartTYpe
-}
-
+# ----------- Categorical like data ------------ #
 type NewInsightCategoricalDatum {
     value: Float!
     title: String!
@@ -105,13 +132,13 @@ enum CategoricalLikeChartTYpe {
 
 # ----------- Insight mutations ------------- #
 extend type Mutation {
-    createSearchInsight(input: SearchInsightInput): SeriesLikeInsight
-    createCaptureGroupInsight(input: CaptureGroupInsightInput): SeriesLikeInsight
-    createLangStatsInsight(input: LangStatsInsightInput): CategoricalLikeInsight
+    createSearchInsight(input: SearchInsightInput): BaseInsight
+    createCaptureGroupInsight(input: CaptureGroupInsightInput): BaseInsight
+    createLangStatsInsight(input: LangStatsInsightInput): BaseInsight
 
-    updateSearchBasedInsight(input: SearchInsightInput): SeriesLikeInsight
-    updateCaptureGroupInsight(input: CaptureGroupInsightInput): SeriesLikeInsight
-    updateLangStatsInsight(input: LangStatsInsightInput): CategoricalLikeInsight
+    updateSearchBasedInsight(input: SearchInsightInput): BaseInsight
+    updateCaptureGroupInsight(input: CaptureGroupInsightInput): BaseInsight
+    updateLangStatsInsight(input: LangStatsInsightInput): BaseInsight
 
     deleteInsight(id: ID!): EmptyResponse!
 }
@@ -134,12 +161,6 @@ input SearchInsightSeriesInput {
     timeScope: TimeScopeInput!
 }
 
-input NewInsightViewFiltersInput {
-    includeRepoRegex: String
-    excludeRepoRegex: String
-    searchContexts: [ID!]
-}
-
 # ----------- Capture group insight input types ---------- #
 input CaptureGroupInsightInput {
     title: String!
@@ -158,4 +179,11 @@ input LangStatsInsightInput {
     chartType: CategoricalLikeChartTYpe
     repositoryScope: RepositoryScopeInput!
     dashboards: [ID!]
+    filters: NewInsightViewFiltersInput!
+}
+
+input NewInsightViewFiltersInput {
+    includeRepoRegex: String
+    excludeRepoRegex: String
+    searchContexts: [ID!]
 }
