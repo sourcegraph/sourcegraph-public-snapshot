@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (result.Symbols, error) {
+func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ result.Symbols, err error) {
 	repo := string(args.Repo)
 	commitHash := string(args.CommitID)
 
@@ -30,6 +30,26 @@ func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (re
 		defer threadStatus.Tasklog.Print()
 	}
 	defer threadStatus.End()
+
+	if args.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(args.Timeout)*time.Second)
+		defer cancel()
+		defer func() {
+			if ctx.Err() == nil || !errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				return
+			}
+
+			err = errors.Newf("Processing symbols with [Rockskip](https://docs.sourcegraph.com/code_intelligence/explanations/rockskip) is taking a while, try again later.")
+			for _, status := range s.status.threadIdToThreadStatus {
+				fmt.Println(status.Name, fmt.Sprintf("indexing %s", args.Repo))
+				if strings.HasPrefix(status.Name, fmt.Sprintf("indexing %s", args.Repo)) {
+					err = errors.Newf("[Rockskip](https://docs.sourcegraph.com/code_intelligence/explanations/rockskip) is currently processing symbols. Estimated completion: %s.", status.Remaining())
+				}
+			}
+			return
+		}()
+	}
 
 	// Acquire a read lock on the repo.
 	locked, releaseRLock, err := tryRLock(ctx, s.db, threadStatus, repo)
