@@ -13,7 +13,7 @@ func TestExport(t *testing.T) {
 	logger, exportLogs := Captured(t)
 	assert.NotNil(t, logger)
 
-	logger.Info("hello world", log.Text("key", privacy.NewText( "value", privacy.Unknown)))
+	logger.Info("hello world", log.String("key", "value", privacy.Unknown))
 
 	logs := exportLogs()
 	assert.Len(t, logs, 1)

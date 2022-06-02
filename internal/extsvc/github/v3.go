@@ -112,8 +112,8 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 
 	return &V3Client{
 		log: logger.With(
-			log.Text("urn", privacy.NewText(urn, privacy.Unknown)),
-			log.Text("resource", privacy.NewText(resource, privacy.Unknown)),
+			log.String("urn",urn, privacy.Unknown),
+			log.String("resource",resource, privacy.Unknown),
 		),
 		urn:              urn,
 		apiURL:           apiURL,

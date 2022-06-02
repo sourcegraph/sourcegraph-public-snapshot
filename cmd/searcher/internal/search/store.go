@@ -188,7 +188,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 			}
 		}
 		if err != nil {
-			s.Log.Error("failed to fetch archive", log.Text("repo", privacy.NewText(string(repo), privacy.Unknown)), log.Text("commit", privacy.NewText(string(commit), privacy.Unknown)), log.Duration("duration", time.Since(start)), log.Error(err))
+			s.Log.Error("failed to fetch archive", log.String("repo",string(repo), privacy.Unknown), log.String("commit",string(commit), privacy.Unknown), log.Duration("duration", time.Since(start)), log.Error(err))
 		}
 		resC <- result{path, err, cacheHit}
 	}()

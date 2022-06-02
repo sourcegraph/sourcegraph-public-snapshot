@@ -149,9 +149,9 @@ func (t *requestCounterMiddleware) RoundTrip(r *http.Request) (resp *http.Respon
 
 	t.meter.duration.WithLabelValues(category, code, r.URL.Host).Observe(d.Seconds())
 	t.meter.log.Debug("request.trace",
-		log.Text("host", privacy.NewText(r.URL.Host, privacy.Unknown)),
-		log.Text("path", privacy.NewText(r.URL.Path, privacy.Unknown)),
-		log.Text("code", privacy.NewText(code, privacy.Unknown)),
+		log.String("host",r.URL.Host, privacy.Unknown),
+		log.String("path",r.URL.Path, privacy.Unknown),
+		log.String("code",code, privacy.Unknown),
 		log.Duration("duration", d))
 	return
 }

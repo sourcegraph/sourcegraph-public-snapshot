@@ -310,7 +310,7 @@ func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 		preview, req.Body, err = previewAndDuplicateReader(req.Body)
 		if err != nil {
 			l.log.Error("Unexpected error in OAuth2 debug log",
-				log.Text("operation", privacy.NewText("reading request body", privacy.Unknown)),
+				log.String("operation","reading request body", privacy.Unknown),
 				log.Error(err))
 			return nil, errors.Wrap(err, "Unexpected error in OAuth2 debug log, reading request body")
 		}
@@ -320,10 +320,10 @@ func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 			headerFields = append(headerFields, log.Texts(k, privacy.NewTexts(v, privacy.Unknown)))
 		}
 		l.log.Info("HTTP request",
-			log.Text("method", privacy.NewText(req.Method, privacy.Unknown)),
-			log.Text("url", privacy.NewText(req.URL.String(), privacy.Unknown)),
+			log.String("method",req.Method, privacy.Unknown),
+			log.String("url",req.URL.String(), privacy.Unknown),
 			log.Object("header", headerFields...),
-			log.Text("body", privacy.NewText(preview, privacy.Unknown)))
+			log.String("body",preview, privacy.Unknown))
 	}
 
 	resp, err := l.underlying.RoundTrip(req)
@@ -337,7 +337,7 @@ func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 		var preview string
 		preview, resp.Body, err = previewAndDuplicateReader(resp.Body)
 		if err != nil {
-			l.log.Error("Unexpected error in OAuth2 debug log", log.Text("operation", privacy.NewText("reading response body", privacy.Unknown)), log.Error(err))
+			l.log.Error("Unexpected error in OAuth2 debug log", log.String("operation","reading response body", privacy.Unknown), log.Error(err))
 			return nil, errors.Wrap(err, "Unexpected error in OAuth2 debug log, reading response body")
 		}
 
@@ -346,10 +346,10 @@ func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 			headerFields = append(headerFields, log.Texts(k, privacy.NewTexts(v, privacy.Unknown)))
 		}
 		l.log.Info("HTTP response",
-			log.Text("method", privacy.NewText(req.Method, privacy.Unknown)),
-			log.Text("url", privacy.NewText(req.URL.String(), privacy.Unknown)),
+			log.String("method",req.Method, privacy.Unknown),
+			log.String("url",req.URL.String(), privacy.Unknown),
 			log.Object("header", headerFields...),
-			log.Text("body", privacy.NewText(preview, privacy.Unknown)))
+			log.String("body",preview, privacy.Unknown))
 
 		return resp, err
 	}

@@ -100,7 +100,7 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 	if options.Metrics.logger == nil {
 		options.Metrics.logger = log.Scoped("worker."+options.Name, "a worker process for "+options.WorkerHostname)
 	}
-	options.Metrics.logger = options.Metrics.logger.With(log.Text("name", privacy.NewText(options.Name, privacy.Unknown)))
+	options.Metrics.logger = options.Metrics.logger.With(log.String("name",options.Name, privacy.Unknown))
 
 	dequeueContext, cancel := context.WithCancel(ctx)
 
@@ -190,7 +190,7 @@ loop:
 			}
 
 			w.options.Metrics.logger.Error("Failed to dequeue and handle record",
-				log.Text("name", privacy.NewText(w.options.Name, privacy.Unknown)),
+				log.String("name",w.options.Name, privacy.Unknown),
 				log.Error(err))
 		}
 
@@ -218,7 +218,7 @@ loop:
 		}
 	}
 
-	w.options.Metrics.logger.Info("Shutting down dequeue loop", log.Text("reason", privacy.NewText(reason, privacy.Unknown)))
+	w.options.Metrics.logger.Info("Shutting down dequeue loop", log.String("reason",reason, privacy.Unknown))
 	w.wg.Wait()
 }
 

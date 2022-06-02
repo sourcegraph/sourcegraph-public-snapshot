@@ -105,7 +105,7 @@ func main() {
 		host = "127.0.0.1"
 	}
 	addr := net.JoinHostPort(host, port)
-	logger.Info("github-proxy: listening", log.Text("addr", privacy.NewText(addr, privacy.Unknown)))
+	logger.Info("github-proxy: listening", log.String("addr",addr, privacy.Unknown))
 	s := http.Server{
 		ReadTimeout:  60 * time.Second,
 		WriteTimeout: 10 * time.Minute,
@@ -234,7 +234,7 @@ func (p *githubProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(resp.Body)
 	p.logger.Warn("proxy error",
 		log.Int("status", resp.StatusCode),
-		log.Text("body", privacy.NewText(string(b), privacy.Unknown)),
+		log.String("body",string(b), privacy.Unknown),
 		log.NamedError("bodyErr", err))
 	_, _ = io.Copy(w, bytes.NewReader(b))
 }

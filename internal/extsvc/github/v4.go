@@ -349,8 +349,8 @@ func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Vers
 	v, err := v3Client.GetVersion(ctx)
 	if err != nil {
 		c.log.Warn("Failed to fetch GitHub enterprise version",
-			log.Text("method", privacy.NewText("fetchGitHubVersion", privacy.Unknown)),
-			log.Text("apiURL", privacy.NewText(c.apiURL.String(), privacy.Unknown)),
+			log.String("method","fetchGitHubVersion", privacy.Unknown),
+			log.String("apiURL",c.apiURL.String(), privacy.Unknown),
 			log.Error(err),
 		)
 		return allMatchingSemver
@@ -702,8 +702,8 @@ func (c *V4Client) RecentCommitters(ctx context.Context, params *RecentCommitter
 
 func graphQLErrorField(err graphqlError) log.Field {
 	return log.Object("err",
-		log.Text("message", privacy.NewText(err.Message, privacy.Unknown)),
-		log.Text("type", privacy.NewText(err.Type, privacy.Unknown)),
-		log.Text("path", privacy.NewText(fmt.Sprintf("%+v", err.Path), privacy.Unknown)),
-		log.Text("locations", privacy.NewText(fmt.Sprintf("%+v", err.Locations), privacy.Unknown)))
+		log.String("message",err.Message, privacy.Unknown),
+		log.String("type",err.Type, privacy.Unknown),
+		log.String("path",fmt.Sprintf("%+v", err.Path), privacy.Unknown),
+		log.String("locations",fmt.Sprintf("%+v", err.Locations), privacy.Unknown))
 }

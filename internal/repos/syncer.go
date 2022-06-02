@@ -260,7 +260,7 @@ func (d Diff) Len() int {
 // The "background" boolean flag indicates that we should run this
 // sync in the background vs block and call s.syncRepo synchronously.
 func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background bool) (repo *types.Repo, err error) {
-	logger := s.Logger.With(log.Text("name", privacy.NewText(string(name), privacy.Unknown)), log.Bool("background", background))
+	logger := s.Logger.With(log.String("name",string(name), privacy.Unknown), log.Bool("background", background))
 	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", string(name))
 	defer tr.Finish()
 
@@ -370,8 +370,8 @@ func (s *Syncer) syncRepo(
 				if err2 != nil {
 					s.Logger.Error(
 						"SyncRepo failed to delete",
-						log.Object("svc", log.Text("name", privacy.NewText(svc.DisplayName, privacy.Unknown)), log.Int64("id", svc.ID)),
-						log.Text("repo", privacy.NewText(string(name), privacy.Unknown)),
+						log.Object("svc", log.String("name",svc.DisplayName, privacy.Unknown), log.Int64("id", svc.ID)),
+						log.String("repo",string(name), privacy.Unknown),
 						log.NamedError("cause", err),
 						log.Error(err2),
 					)
@@ -560,7 +560,7 @@ func (s *Syncer) SyncExternalService(
 			errcode.IsAccountSuspended(err)
 	}
 
-	logger = s.Logger.With(log.Object("svc", log.Text("name", privacy.NewText(svc.DisplayName, privacy.Unknown)), log.Int64("id", svc.ID)))
+	logger = s.Logger.With(log.Object("svc", log.String("name",svc.DisplayName, privacy.Unknown), log.Int64("id", svc.ID)))
 	// Insert or update repos as they are sourced. Keep track of what was seen
 	// so we can remove anything else at the end.
 	for res := range results {
@@ -585,7 +585,7 @@ func (s *Syncer) SyncExternalService(
 
 		var diff Diff
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
-			logger.Error("failed to sync, skipping", log.Text("repo", privacy.NewText(string(sourced.Name), privacy.Unknown)), log.Error(err))
+			logger.Error("failed to sync, skipping", log.String("repo",string(sourced.Name), privacy.Unknown), log.Error(err))
 			errs = errors.Append(errs, err)
 
 			// Stop syncing this external service as soon as we know repository limits for user or

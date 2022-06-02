@@ -245,7 +245,7 @@ func reportDeployTrace(report *DeploymentReport, token string, dryRun bool) (str
 	if err != nil {
 		logger.Warn("failed to generate buildTraceURL", log.Error(err))
 	} else {
-		logger.Info("generated trace", log.Text("trace", privacy.NewText(traceURL, privacy.Unknown)))
+		logger.Info("generated trace", log.String("trace",traceURL, privacy.Unknown))
 	}
 	return traceURL, nil
 }

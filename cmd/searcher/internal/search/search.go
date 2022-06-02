@@ -166,9 +166,9 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		span.SetTag("limitHit", sender.LimitHit())
 		span.Finish()
 		s.Log.Debug("search request",
-			log.Text("repo", privacy.NewText(string(p.Repo), privacy.Unknown)),
-			log.Text("commit", privacy.NewText(string(p.Commit), privacy.Unknown)),
-			log.Text("pattern", privacy.NewText(p.Pattern, privacy.Unknown)),
+			log.String("repo",string(p.Repo), privacy.Unknown),
+			log.String("commit",string(p.Commit), privacy.Unknown),
+			log.String("pattern",p.Pattern, privacy.Unknown),
 			log.Bool("isRegExp", p.IsRegExp),
 			log.Bool("isStructuralPat", p.IsStructuralPat),
 			log.Texts("languages", privacy.NewTexts(p.Languages, privacy.Unknown)),
@@ -177,7 +177,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 			log.Bool("patternMatchesContent", p.PatternMatchesContent),
 			log.Bool("patternMatchesPath", p.PatternMatchesPath),
 			log.Int("matches", sender.SentCount()),
-			log.Text("code", privacy.NewText(code, privacy.Unknown)),
+			log.String("code",code, privacy.Unknown),
 			log.Duration("duration", time.Since(start)),
 			log.Texts("indexerEndpoints", privacy.NewTexts(p.IndexerEndpoints, privacy.Unknown)),
 			log.Error(err))

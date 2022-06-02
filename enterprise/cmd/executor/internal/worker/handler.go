@@ -66,8 +66,8 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	job := record.(executor.Job)
 	logger = logger.With(
 		log.Int("jobID", job.ID),
-		log.Text("repositoryName", privacy.NewText(job.RepositoryName, privacy.Unknown)),
-		log.Text("commit", privacy.NewText(job.Commit, privacy.Unknown)))
+		log.String("repositoryName",job.RepositoryName, privacy.Unknown),
+		log.String("commit",job.Commit, privacy.Unknown))
 
 	start := time.Now()
 	defer func() {

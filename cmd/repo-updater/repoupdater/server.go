@@ -76,7 +76,7 @@ func (s *Server) respond(w http.ResponseWriter, code int, v any) {
 	switch val := v.(type) {
 	case error:
 		if val != nil {
-			s.Logger.Error("response value error", log.Text("err", privacy.NewText(val.Error(), privacy.Unknown)))
+			s.Logger.Error("response value error", log.String("err",val.Error(), privacy.Unknown))
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(code)
 			fmt.Fprintf(w, "%v", val)
@@ -124,7 +124,7 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s.Logger.Error("repoLookup failed",
-			log.Object("repo", log.Text("name", privacy.NewText(string(args.Repo), privacy.Unknown)),
+			log.Object("repo", log.String("name",string(args.Repo), privacy.Unknown),
 				log.Bool("update", args.Update),
 			),
 			log.Error(err))
@@ -146,7 +146,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 	}
 	result, status, err := s.enqueueRepoUpdate(r.Context(), &req)
 	if err != nil {
-		s.Logger.Error("enqueueRepoUpdate failed", log.Text("req", privacy.NewText(fmt.Sprint(req), privacy.Unknown)), log.Error(err))
+		s.Logger.Error("enqueueRepoUpdate failed", log.String("req",fmt.Sprint(req), privacy.Unknown), log.Error(err))
 		s.respond(w, status, err)
 		return
 	}
@@ -156,7 +156,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) (resp *protocol.RepoUpdateResponse, httpStatus int, err error) {
 	tr, ctx := trace.New(ctx, "enqueueRepoUpdate", req.String())
 	defer func() {
-		s.Logger.Debug("enqueueRepoUpdate", log.Object("http", log.Int("status", httpStatus), log.Text("resp", privacy.NewText(fmt.Sprint(resp), privacy.Unknown)), log.Error(err)))
+		s.Logger.Debug("enqueueRepoUpdate", log.Object("http", log.Int("status", httpStatus), log.String("resp",fmt.Sprint(resp), privacy.Unknown), log.Error(err)))
 		if resp != nil {
 			tr.LogFields(
 				otlog.Int32("resp.id", int32(resp.ID)),
@@ -197,7 +197,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	logger := s.Logger.With(log.Object("ExternalService",
-		log.Int64("id", req.ExternalService.ID), log.Text("kind", privacy.NewText(req.ExternalService.Kind, privacy.Unknown))),
+		log.Int64("id", req.ExternalService.ID), log.String("kind",req.ExternalService.Kind, privacy.Unknown)),
 	)
 
 	var sourcer repos.Sourcer
@@ -309,7 +309,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 
 	tr, ctx := trace.New(ctx, "repoLookup", args.String())
 	defer func() {
-		s.Logger.Debug("repoLookup", log.Text("result", privacy.NewText(fmt.Sprint(result), privacy.Unknown)), log.Error(err))
+		s.Logger.Debug("repoLookup", log.String("result",fmt.Sprint(result), privacy.Unknown), log.Error(err))
 		if result != nil {
 			tr.LazyPrintf("result: %s", result)
 		}

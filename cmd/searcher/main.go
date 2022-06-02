@@ -177,7 +177,7 @@ func run(logger log.Logger) error {
 
 	// Listen
 	g.Go(func() error {
-		logger.Info("listening", log.Text("addr", privacy.NewText(server.Addr, privacy.Unknown)))
+		logger.Info("listening", log.String("addr",server.Addr, privacy.Unknown))
 		if err := server.ListenAndServe(); err != http.ErrServerClosed {
 			return err
 		}

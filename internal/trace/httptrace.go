@@ -234,15 +234,15 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 		if m.Duration >= minDuration || m.Code >= minCode {
 			fields := make([]log.Field, 0, 20)
 			fields = append(fields,
-				log.Text("route_name", privacy.NewText(routeName, privacy.Unknown)),
-				log.Text("method", privacy.NewText(r.Method, privacy.Unknown)),
-				log.Text("url", privacy.NewText(truncate(r.URL.String(), 100), privacy.Unknown)),
+				log.String("route_name",routeName, privacy.Unknown),
+				log.String("method",r.Method, privacy.Unknown),
+				log.String("url",truncate(r.URL.String(), 100), privacy.Unknown),
 				log.Int("code", m.Code),
 				log.Duration("duration", m.Duration),
 			)
 
 			if v := r.Header.Get("X-Forwarded-For"); v != "" {
-				fields = append(fields, log.Text("x_forwarded_for", privacy.NewText(v, privacy.Unknown)))
+				fields = append(fields, log.String("x_forwarded_for",v, privacy.Unknown))
 			}
 
 			if userID != 0 {

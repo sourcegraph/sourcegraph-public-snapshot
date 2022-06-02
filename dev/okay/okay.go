@@ -62,7 +62,7 @@ func (c *Client) post(event *customEvent) error {
 
 	if c.token == "" {
 		// If the token is empty, just log the events
-		c.logger.Debug("pretending to send event", log.Text("event", privacy.NewText(string(b), privacy.Unknown)))
+		c.logger.Debug("pretending to send event", log.String("event",string(b), privacy.Unknown))
 		return nil
 	}
 

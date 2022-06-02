@@ -1541,8 +1541,8 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auth aut
 	defer resp.Body.Close()
 
 	logger.Debug("doRequest",
-		log.Text("status", privacy.NewText(resp.Status, privacy.Unknown)),
-		log.Text("x-ratelimit-remaining", privacy.NewText(resp.Header.Get("x-ratelimit-remaining"), privacy.Unknown)))
+		log.String("status",resp.Status, privacy.Unknown),
+		log.String("x-ratelimit-remaining",resp.Header.Get("x-ratelimit-remaining"), privacy.Unknown))
 
 	// For 401 responses we receive a remaining limit of 0. This will cause the next
 	// call to block for up to an hour because it believes we have run out of tokens.

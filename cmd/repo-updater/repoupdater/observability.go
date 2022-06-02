@@ -90,8 +90,8 @@ func (h *observedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.logger.Debug(
 			"http.request",
 			log.Object("request",
-				log.Text("method", privacy.NewText(r.Method, privacy.Unknown)),
-				log.Text("route", privacy.NewText(r.URL.Path, privacy.Unknown)),
+				log.String("method",r.Method, privacy.Unknown),
+				log.String("route",r.URL.Path, privacy.Unknown),
 				log.Int("code", rr.code),
 				log.Duration("duration", took),
 			),

@@ -212,7 +212,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	addr := net.JoinHostPort(host, port)
-	logger.Info("listening", log.Text("addr", privacy.NewText(addr, privacy.Unknown)))
+	logger.Info("listening", log.String("addr",addr, privacy.Unknown))
 
 	var handler http.Handler
 	{
