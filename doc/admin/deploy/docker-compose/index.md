@@ -41,7 +41,7 @@ The followng sections cover the process to [create a fork or private duplicate](
 
 Alternatively, create a [private duplicate](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository#mirroring-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) [reference repository](#reference-repository) as follows:
 
-Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example <you/private-repository> in GitHub, then bare clone the reference repository. 
+Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example `<you/private-repository>` in GitHub, then bare clone the reference repository. 
 
   ```bash
   git clone --bare https://github.com/sourcegraph/deploy-sourcegraph-docker/
