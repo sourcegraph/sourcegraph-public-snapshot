@@ -249,7 +249,7 @@ func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *zipFile, limit in
 	ctx, cancel, sender := newLimitedStreamCollector(ctx, limit)
 	defer cancel()
 	err := regexSearch(ctx, rg, zf, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender)
-	return sender.Collected(), sender.LimitHit(), err
+	return sender.collected, sender.LimitHit(), err
 }
 
 // regexSearch concurrently searches files in zr looking for matches using rg.
