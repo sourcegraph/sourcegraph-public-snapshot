@@ -221,7 +221,7 @@ func serveUsersGetByUsername(db database.DB) func(http.ResponseWriter, *http.Req
 		if err != nil {
 			return errors.Wrap(err, "Decode")
 		}
-		user, err := database.Users(db).GetByUsername(r.Context(), username)
+		user, err := db.Users().GetByUsername(r.Context(), username)
 		if err != nil {
 			return errors.Wrap(err, "Users.GetByUsername")
 		}

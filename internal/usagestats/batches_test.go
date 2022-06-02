@@ -59,13 +59,13 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	}
 
 	// Create a user.
-	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "test"})
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "test"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Create another user.
-	user2, err := database.Users(db).Create(ctx, database.NewUser{Username: "test-2"})
+	user2, err := db.Users().Create(ctx, database.NewUser{Username: "test-2"})
 	if err != nil {
 		t.Fatal(err)
 	}

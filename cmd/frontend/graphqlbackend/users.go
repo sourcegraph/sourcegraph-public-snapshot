@@ -72,12 +72,12 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 			return
 		}
 
-		r.users, err = database.Users(r.db).List(ctx, &r.opt)
+		r.users, err = r.db.Users().List(ctx, &r.opt)
 		if err != nil {
 			r.err = err
 			return
 		}
-		r.totalCount, r.err = database.Users(r.db).Count(ctx, &r.opt)
+		r.totalCount, r.err = r.db.Users().Count(ctx, &r.opt)
 	})
 	return r.users, r.totalCount, r.err
 }
