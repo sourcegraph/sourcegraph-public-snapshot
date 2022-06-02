@@ -96,7 +96,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
             editorReference.current = editor
             onEditorCreated?.(editor)
         },
-        [editorReference, onEditorCreated, ariaLabel]
+        [editorReference, onEditorCreated]
     )
 
     const autocompletion = useMemo(
