@@ -95,8 +95,10 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 	}
 
 	bounded := goroutine.NewBounded(8)
+	defer func() { err = errors.Append(err, bounded.Wait()) }()
+
 	repos := searchrepos.Resolver{DB: clients.DB, Opts: j.RepoOpts}
-	err = repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
+	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
 		for _, repoRev := range page.RepoRevs {
 			repoRev := repoRev
 			if ctx.Err() != nil {
@@ -109,11 +111,6 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		}
 		return nil
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	return nil, bounded.Wait()
 }
 
 func (j SearchJob) Name() string {
