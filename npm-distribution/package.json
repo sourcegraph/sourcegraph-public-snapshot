@@ -20,7 +20,7 @@
     "tar": "^6.1.11"
   },
   "devDependencies": {
-    "@types/tar": "^6.1.1"
+    "@types/tar": "6.1.1"
   },
   "private": false
 }
