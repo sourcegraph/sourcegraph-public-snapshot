@@ -19,7 +19,7 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
-## 3.40.3
+## 3.40.4
 
 ### Added
 

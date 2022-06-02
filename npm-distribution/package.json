@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/src",
-  "version": "3.40.3",
+  "version": "3.40.4",
   "description": "Sourcegraph CLI",
   "repository": "git@github.com:sourcegraph/src-cli.git",
   "author": "Code Intelligence at Sourcegraph",
