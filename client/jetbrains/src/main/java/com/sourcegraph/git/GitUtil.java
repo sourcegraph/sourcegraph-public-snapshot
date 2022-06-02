@@ -27,11 +27,10 @@ public class GitUtil {
             // Determine file path, relative to repository root.
             relativePath = filePath.substring(repoRootPath.length() + 1);
 
-            // TODO: It’d make more sense to default to the current branch if it exists on the remote, and only fall back to the default branch if it doesn’t.
-            branchName = defaultBranchNameSetting != null ? defaultBranchNameSetting : getCurrentBranchName(repoRootPath);
-            // If there’s no default branch name setting and the current branch doesn’t exist on the remote, use the default branch.
-            if (!doesRemoteBranchExist(branchName, repoRootPath) && defaultBranchNameSetting == null) {
-                branchName = "main"; // TODO: Make this dynamic!
+            // If the current branch doesn’t exist on the remote, use the default branch.
+            branchName = getCurrentBranchName(repoRootPath);
+            if (!doesRemoteBranchExist(branchName, repoRootPath)) {
+                branchName = defaultBranchNameSetting != null ? defaultBranchNameSetting : "main";
             }
 
             remoteUrl = getConfiguredRemoteUrl(repoRootPath);
