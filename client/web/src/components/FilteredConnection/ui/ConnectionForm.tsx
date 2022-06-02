@@ -100,7 +100,7 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
                 )}
                 {!hideSearch && (
                     <Input
-                        className={inputClassName}
+                        className={classNames(inputClassName, 'w-100')}
                         type="search"
                         placeholder={inputPlaceholder}
                         name="query"

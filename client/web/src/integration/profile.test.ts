@@ -61,7 +61,7 @@ describe('User profile page', () => {
         await accessibilityAudit(driver.page)
         await driver.page.waitForSelector('[data-testid="user-profile-form-fields"]')
         await driver.replaceText({
-            selector: '.test-UserProfileFormFields__displayName',
+            selector: '[data-testid="test-UserProfileFormFields__displayName"]',
             newText: 'Test2',
             selectMethod: 'selectall',
         })

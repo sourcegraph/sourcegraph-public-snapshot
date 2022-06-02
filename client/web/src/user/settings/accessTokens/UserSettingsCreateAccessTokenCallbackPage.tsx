@@ -169,10 +169,11 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
                             <Label htmlFor="user-settings-create-access-token-page__note">Token description</Label>
                             <input
                                 type="text"
-                                className="form-control test-create-access-token-description"
+                                className="form-control"
                                 id="user-settings-create-access-token-page__note"
                                 placeholder={note}
                                 disabled={true}
+                                data-testid="test-create-access-token-description"
                             />
                         </div>
                         <div className="form-group mb-0">
