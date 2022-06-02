@@ -195,7 +195,7 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
 
     private monacoRef = (monacoValue: typeof _monaco | null): void => {
         this.monaco = monacoValue
-        if (this.monaco && MonacoSettingsEditor._result) {
+        if (this.monaco) {
             this.subscriptions.add(
                 disposableToFunc(
                     this.monaco.editor.onDidCreateEditor(editor => {

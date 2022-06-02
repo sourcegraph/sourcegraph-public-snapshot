@@ -860,7 +860,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                             {group.locations.map(reference => {
                                 const className = isActiveLocation(reference) ? styles.locationActive : ''
 
-                                const locationLine = getPrePostLineContent(reference)
+                                const locationLine = getLineContent(reference)
                                 const lineWithHighlightedToken = locationLine.prePostToken ? (
                                     <>
                                         {locationLine.prePostToken.pre === '' ? (
@@ -869,7 +869,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                             <Code>{locationLine.prePostToken.pre}</Code>
                                         )}
                                         <mark className="p-0 selection-highlight sourcegraph-document-highlight">
-                                            <Code>{searchToken}</Code>
+                                            <Code>{locationLine.prePostToken.token}</Code>
                                         </mark>
                                         {locationLine.prePostToken.post === '' ? (
                                             <></>
@@ -915,12 +915,13 @@ const CollapsibleLocationGroup: React.FunctionComponent<
 }
 
 interface LocationLine {
-    prePostToken?: { pre: string; post: string }
+    prePostToken?: { pre: string; token: string; post: string }
     line?: string
 }
 
-const getPrePostLineContent = (location: Location): LocationLine => {
+export const getLineContent = (location: Location): LocationLine => {
     const range = location.range
+    console.log(location)
     if (range !== undefined) {
         const line = location.lines[range.start.line]
 
@@ -928,13 +929,18 @@ const getPrePostLineContent = (location: Location): LocationLine => {
             return {
                 prePostToken: {
                     pre: line.slice(0, range.start.character).trimStart(),
+                    token: line.slice(range.start.character, range.end.character),
                     post: line.slice(range.end.character),
                 },
                 line: line.trimStart(),
             }
         }
         return {
-            prePostToken: { pre: line.slice(0, range.start.character).trim(), post: '' },
+            prePostToken: {
+                pre: line.slice(0, range.start.character).trimStart(),
+                token: line.slice(range.start.character),
+                post: '',
+            },
             line: line.trimStart(),
         }
     }

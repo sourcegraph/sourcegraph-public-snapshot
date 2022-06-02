@@ -1,6 +1,7 @@
 package gitserver
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/hex"
@@ -25,7 +26,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/go-diff/diff"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -1235,4 +1235,44 @@ func (c *ClientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a,
 		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
 	}
 	return api.CommitID(bytes.TrimSpace(out)), nil
+}
+
+// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
+func (c *ClientImplementor) RevList(repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	command := c.GitCommand(api.RepoName(repo), RevListArgs(commit)...)
+	command.DisableTimeout()
+	stdout, err := command.StdoutReader(ctx)
+	if err != nil {
+		return err
+	}
+	defer stdout.Close()
+
+	return c.RevListEach(stdout, onCommit)
+}
+
+func RevListArgs(givenCommit string) []string {
+	return []string{"rev-list", "--first-parent", givenCommit}
+}
+
+func (c *ClientImplementor) RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	reader := bufio.NewReader(stdout)
+
+	for {
+		commit, err := reader.ReadString('\n')
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+		commit = commit[:len(commit)-1] // Drop the trailing newline
+		shouldContinue, err := onCommit(commit)
+		if !shouldContinue {
+			return err
+		}
+	}
+
+	return nil
 }

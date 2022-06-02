@@ -1,6 +1,5 @@
 import { ReactElement, useMemo, useState, SVGProps, CSSProperties } from 'react'
 
-import { curveLinear } from '@visx/curve'
 import { Group } from '@visx/group'
 import { scaleTime, scaleLinear } from '@visx/scale'
 import { LinePath } from '@visx/shape'
@@ -176,7 +175,6 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                                 x={data => xScale(data.x)}
                                 y={data => yScale(getDatumValue(data))}
                                 stroke={line.color}
-                                curve={curveLinear}
                                 strokeLinecap="round"
                                 strokeWidth={2}
                             />
