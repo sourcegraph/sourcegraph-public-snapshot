@@ -2,8 +2,6 @@
 cd "$(dirname "${BASH_SOURCE[0]}")"
 set -ex
 
-echo "FOOBAR"
-
 docker build --no-cache -t "${IMAGE:-"sourcegraph/cadvisor"}" . \
   --progress=plain \
   --build-arg COMMIT_SHA \
