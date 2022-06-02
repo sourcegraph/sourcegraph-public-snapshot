@@ -37,7 +37,7 @@ func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
 	defer authz.SetProviders(true, nil)
 
-	s := NewPermsSyncer(nil, nil, nil, nil, nil)
+	s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, nil)
 	s.ScheduleUsers(context.Background(), authz.FetchPermsOptions{}, 1)
 
 	expHeap := []*syncRequest{

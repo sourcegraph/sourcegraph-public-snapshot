@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -48,6 +49,8 @@ var scheduleReposCounter = promauto.NewCounter(prometheus.CounterOpts{
 type PermsSyncer struct {
 	// The priority queue to maintain the permissions syncing requests.
 	queue *requestQueue
+	// The logger to use when logging messages and errors
+	logger log.Logger
 	// The generic database handle.
 	db database.DB
 	// The database interface for any repos and external services operations.
@@ -64,6 +67,7 @@ type PermsSyncer struct {
 
 // NewPermsSyncer returns a new permissions syncing manager.
 func NewPermsSyncer(
+	logger log.Logger,
 	db database.DB,
 	reposStore repos.Store,
 	permsStore edb.PermsStore,
@@ -72,6 +76,7 @@ func NewPermsSyncer(
 ) *PermsSyncer {
 	return &PermsSyncer{
 		queue:               newRequestQueue(),
+		logger:              logger,
 		db:                  db,
 		reposStore:          reposStore,
 		permsStore:          permsStore,

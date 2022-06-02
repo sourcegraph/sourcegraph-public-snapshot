@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {
@@ -36,6 +37,7 @@ func main() {
 }
 
 func enterpriseInit(
+	logger sglog.Logger,
 	db ossDB.DB,
 	repoStore repos.Store,
 	keyring keyring.Ring,
@@ -56,7 +58,7 @@ func enterpriseInit(
 	}
 
 	permsStore := edb.Perms(db, timeutil.Now)
-	permsSyncer := authz.NewPermsSyncer(db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
+	permsSyncer := authz.NewPermsSyncer(logger.Scoped("perm-syncer", "permissions syncer"), db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
 	debugDumpers = append(debugDumpers, permsSyncer)
 	if server != nil {
