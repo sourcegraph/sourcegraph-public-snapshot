@@ -307,7 +307,7 @@
     "postcss-focus-visible": "^5.0.0",
     "postcss-loader": "^6.1.1",
     "postcss-modules": "^4.2.2",
-    "prettier": "^2.2.1",
+    "prettier": "2.2.1",
     "process": "^0.11.10",
     "protoc-gen-ts": "0.8.1",
     "puppeteer": "^13.5.1",
@@ -477,6 +477,7 @@
     "history": "4.5.1",
     "cssnano": "4.1.10",
     "webpack": "5",
-    "tslib": "2.1.0"
+    "tslib": "2.1.0",
+    "prettier": "2.2.1"
   }
 }
