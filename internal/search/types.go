@@ -133,6 +133,9 @@ type SearcherParameters struct {
 	// repository if this field is true. Another example is we set this field
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
+
+	// Features are feature flags that can affect behaviour of searcher.
+	Features Features
 }
 
 // TextPatternInfo is the struct used by vscode pass on search queries. Keep it in
@@ -233,6 +236,11 @@ type Features struct {
 	// the content of the file, rather than just file name patterns. This is
 	// currently just supported by Zoekt.
 	ContentBasedLangFilters bool
+
+	// HybridSearch when true will consult the Zoekt index when running
+	// unindexed searches. Searcher (unindexed search) will the only search
+	// what has changed since the indexed commit.
+	HybridSearch bool
 }
 
 type RepoOptions struct {
