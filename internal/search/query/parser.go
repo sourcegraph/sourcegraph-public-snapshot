@@ -834,7 +834,7 @@ func (p *parser) ParsePattern(label labels) Pattern {
 		value, advance = ScanAnyPattern(p.buf[p.pos:])
 	}
 	if isSet(p.heuristics, allowDanglingParens) {
-		label.set(HeuristicDanglingParens)
+		label.Set(HeuristicDanglingParens)
 	}
 	p.pos += advance
 	return newPattern(value, label, newRange(start, p.pos))
@@ -915,7 +915,7 @@ loop:
 			if isSet(p.heuristics, parensAsPatterns) {
 				if value, advance, ok := ScanBalancedPattern(p.buf[p.pos:]); ok {
 					if label.IsSet(Literal) {
-						label.set(HeuristicParensAsPatterns)
+						label.Set(HeuristicParensAsPatterns)
 					}
 					pattern := newPattern(value, label, newRange(p.pos, p.pos+advance))
 					p.pos += advance

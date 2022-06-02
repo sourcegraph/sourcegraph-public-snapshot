@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -44,8 +45,20 @@ func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	var maxAlerter search.MaxAlerter
 	var errs errors.MultiError
 
+	dedup := result.NewDeduper()
+	dedupeStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
+		for _, match := range event.Results {
+			seen := dedup.Seen(match)
+			if seen {
+				continue
+			}
+			dedup.Add(match)
+			stream.Send(event)
+		}
+	})
+
 	for _, child := range s.children {
-		alert, err := child.Run(ctx, clients, stream)
+		alert, err := child.Run(ctx, clients, dedupeStream)
 		if ctx.Err() != nil {
 			// Cancellation or Deadline hit implies it's time to stop running jobs.
 			return maxAlerter.Alert, errs
@@ -53,6 +66,7 @@ func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, str
 		maxAlerter.Add(alert)
 		errs = errors.Append(errs, err)
 	}
+
 	return maxAlerter.Alert, errs
 }
 

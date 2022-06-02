@@ -17,15 +17,15 @@ func SubstituteAliases(searchType SearchType) func(nodes []Node) []Node {
 		return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 			if field == "content" {
 				if searchType == SearchTypeRegex {
-					annotation.Labels.set(Regexp)
+					annotation.Labels.Set(Regexp)
 				} else {
-					annotation.Labels.set(Literal)
+					annotation.Labels.Set(Literal)
 				}
-				annotation.Labels.set(IsAlias)
+				annotation.Labels.Set(IsAlias)
 				return Pattern{Value: value, Negated: negated, Annotation: annotation}
 			}
 			if canonical, ok := aliases[field]; ok {
-				annotation.Labels.set(IsAlias)
+				annotation.Labels.Set(IsAlias)
 				field = canonical
 			}
 			return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
@@ -763,8 +763,8 @@ func ConcatRevFilters(b Basic) Basic {
 // a postprocessing step to keep the parser lean.
 func labelStructural(nodes []Node) []Node {
 	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
-		annotation.Labels.unset(Literal)
-		annotation.Labels.set(Structural)
+		annotation.Labels.Unset(Literal)
+		annotation.Labels.Set(Structural)
 		return Pattern{
 			Value:      value,
 			Negated:    negated,
