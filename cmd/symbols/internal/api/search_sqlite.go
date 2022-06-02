@@ -15,13 +15,14 @@ import (
 	sharedobservability "github.com/sourcegraph/sourcegraph/cmd/symbols/observability"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 const searchTimeout = 60 * time.Second
 
 func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedDatabaseWriter writer.CachedDatabaseWriter) types.SearchFunc {
-	return func(ctx context.Context, args types.SearchArgs) (results []result.Symbol, err error) {
+	return func(ctx context.Context, args search.SymbolsParameters) (results []result.Symbol, err error) {
 		ctx, trace, endObservation := operations.Search.With(ctx, &err, observation.Args{LogFields: []log.Field{
 			log.String("repo", string(args.Repo)),
 			log.String("commitID", string(args.CommitID)),
