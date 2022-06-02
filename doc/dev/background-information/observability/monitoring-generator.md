@@ -19,7 +19,7 @@ Its purpose is to help enable a [cohesive observability experience for site admi
 The generator automatically creates documentation from monitoring definitions that customers and engineers can reference.
 These include:
 
-- [Alert solutions reference](https://docs.sourcegraph.com/admin/observability/alert_solutions)
+- [Alert solutions reference](https://docs.sourcegraph.com/admin/observability/alerts)
 - [Dashboards reference](https://docs.sourcegraph.com/admin/observability/dashboards)
 
 Links to generated documentation can be provided in our other generated integrations - for example, [Slack alerts](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) will provide a link to the appropriate alert solutions entry, and [Grafana panels](#grafana-integration) will link to the appropriate dashboards reference entry.
