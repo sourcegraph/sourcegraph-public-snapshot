@@ -124,7 +124,7 @@ func main() {
 	}
 
 	gitserver := server.Server{
-		Logger:             log.Scoped("Server", "a gitserver server"),
+		Logger:             logger,
 		ReposDir:           reposDir,
 		DesiredPercentFree: wantPctFree2,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {

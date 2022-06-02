@@ -141,20 +141,20 @@ func TestWithSelect(t *testing.T) {
 		return SearchEvent{
 			Results: []result.Match{
 				&result.FileMatch{
-					File:        result.File{Path: "pokeman/charmandar"},
-					HunkMatches: result.HunkMatches{{Ranges: make(result.Ranges, 1)}},
+					File:         result.File{Path: "pokeman/charmandar"},
+					ChunkMatches: result.ChunkMatches{{Ranges: make(result.Ranges, 1)}},
 				},
 				&result.FileMatch{
-					File:        result.File{Path: "pokeman/charmandar"},
-					HunkMatches: result.HunkMatches{{Ranges: make(result.Ranges, 1)}},
+					File:         result.File{Path: "pokeman/charmandar"},
+					ChunkMatches: result.ChunkMatches{{Ranges: make(result.Ranges, 1)}},
 				},
 				&result.FileMatch{
-					File:        result.File{Path: "pokeman/bulbosaur"},
-					HunkMatches: result.HunkMatches{{Ranges: make(result.Ranges, 1)}},
+					File:         result.File{Path: "pokeman/bulbosaur"},
+					ChunkMatches: result.ChunkMatches{{Ranges: make(result.Ranges, 1)}},
 				},
 				&result.FileMatch{
-					File:        result.File{Path: "digiman/ummm"},
-					HunkMatches: result.HunkMatches{{Ranges: make(result.Ranges, 1)}},
+					File:         result.File{Path: "digiman/ummm"},
+					ChunkMatches: result.ChunkMatches{{Ranges: make(result.Ranges, 1)}},
 				},
 			},
 		}
@@ -172,12 +172,12 @@ func TestWithSelect(t *testing.T) {
 	autogold.Want("dedupe paths for select:file.directory", `[
   {
     "Path": "pokeman/",
-    "HunkMatches": null,
+    "ChunkMatches": null,
     "LimitHit": false
   },
   {
     "Path": "digiman/",
-    "HunkMatches": null,
+    "ChunkMatches": null,
     "LimitHit": false
   }
 ]`).Equal(t, test("file.directory"))
@@ -185,17 +185,17 @@ func TestWithSelect(t *testing.T) {
 	autogold.Want("dedupe paths select:file", `[
   {
     "Path": "pokeman/charmandar",
-    "HunkMatches": null,
+    "ChunkMatches": null,
     "LimitHit": false
   },
   {
     "Path": "pokeman/bulbosaur",
-    "HunkMatches": null,
+    "ChunkMatches": null,
     "LimitHit": false
   },
   {
     "Path": "digiman/ummm",
-    "HunkMatches": null,
+    "ChunkMatches": null,
     "LimitHit": false
   }
 ]`).Equal(t, test("file"))
@@ -203,7 +203,7 @@ func TestWithSelect(t *testing.T) {
 	autogold.Want("don't dedupe file matches for select:content", `[
   {
     "Path": "pokeman/charmandar",
-    "HunkMatches": [
+    "ChunkMatches": [
       {
         "Content": "",
         "ContentStart": [
@@ -253,7 +253,7 @@ func TestWithSelect(t *testing.T) {
   },
   {
     "Path": "pokeman/charmandar",
-    "HunkMatches": [
+    "ChunkMatches": [
       {
         "Content": "",
         "ContentStart": [
@@ -281,7 +281,7 @@ func TestWithSelect(t *testing.T) {
   },
   {
     "Path": "pokeman/bulbosaur",
-    "HunkMatches": [
+    "ChunkMatches": [
       {
         "Content": "",
         "ContentStart": [
@@ -309,7 +309,7 @@ func TestWithSelect(t *testing.T) {
   },
   {
     "Path": "digiman/ummm",
-    "HunkMatches": [
+    "ChunkMatches": [
       {
         "Content": "",
         "ContentStart": [

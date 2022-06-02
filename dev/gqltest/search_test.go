@@ -717,7 +717,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 				zeroResult: true,
 				wantAlert: &gqltestutil.SearchAlert{
 					Title:       "No results",
-					Description: "It looks like you may have meant to run a structural search, but it is not toggled.",
+					Description: "It looks like you're trying to run a structural search, but it is not enabled using the patterntype keyword or UI toggle.",
 					ProposedQueries: []gqltestutil.ProposedQuery{
 						{
 							Description: "Activate structural search",
@@ -732,7 +732,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 				zeroResult: true,
 				wantAlert: &gqltestutil.SearchAlert{
 					Title:       "No results",
-					Description: "It looks like you may have meant to run a structural search, but it is not toggled.",
+					Description: "It looks like you're trying to run a structural search, but it is not enabled using the patterntype keyword or UI toggle.",
 					ProposedQueries: []gqltestutil.ProposedQuery{
 						{
 							Description: "Activate structural search",

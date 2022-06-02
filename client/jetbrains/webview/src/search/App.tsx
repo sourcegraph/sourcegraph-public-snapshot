@@ -16,15 +16,14 @@ import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
     aggregateStreamingSearch,
     LATEST_VERSION,
-    SearchMatch,
     Progress,
+    SearchMatch,
     StreamingResultsState,
 } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-// Add root Tooltip for JetBrains
-import { useObservable, WildcardThemeContext, DeprecatedTooltip } from '@sourcegraph/wildcard'
+import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
@@ -41,9 +40,9 @@ interface Props {
     instanceURL: string
     isGlobbingEnabled: boolean
     accessToken: string | null
-    onPreviewChange: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => void
-    onPreviewClear: () => void
-    onOpen: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => void
+    onPreviewChange: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => Promise<void>
+    onPreviewClear: () => Promise<void>
+    onOpen: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => Promise<void>
     initialSearch: Search | null
     initialAuthenticatedUser: AuthenticatedUser | null
 }
@@ -202,7 +201,6 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
-            <DeprecatedTooltip />
             {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
             <div className={styles.root} onMouseDown={preventAll}>
                 <div className={styles.searchBoxContainer}>
