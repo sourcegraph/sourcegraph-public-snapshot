@@ -395,7 +395,7 @@ func (r *searchContextResolver) Repositories(ctx context.Context) ([]graphqlback
 		return []graphqlbackend.SearchContextRepositoryRevisionsResolver{}, nil
 	}
 
-	repoRevs, err := database.SearchContexts(r.db).GetSearchContextRepositoryRevisions(ctx, r.sc.ID)
+	repoRevs, err := r.db.SearchContexts().GetSearchContextRepositoryRevisions(ctx, r.sc.ID)
 	if err != nil {
 		return nil, err
 	}

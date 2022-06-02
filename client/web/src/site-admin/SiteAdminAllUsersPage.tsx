@@ -13,7 +13,7 @@ import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Link, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, H2, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { CopyableText } from '../components/CopyableText'
@@ -417,7 +417,7 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
             <div className="site-admin-all-users-page">
                 <PageTitle title="Users - Admin" />
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Typography.H2 className="mb-0">Users</Typography.H2>
+                    <H2 className="mb-0">Users</H2>
                     <div>
                         <Button to="/site-admin/users/new" variant="primary" as={Link}>
                             <Icon role="img" as={AddIcon} aria-hidden={true} /> Create user account

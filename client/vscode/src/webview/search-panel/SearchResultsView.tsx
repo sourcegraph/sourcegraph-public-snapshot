@@ -13,7 +13,7 @@ import {
 import { IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import {

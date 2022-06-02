@@ -1,6 +1,7 @@
 package gitserver
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/hex"
@@ -25,7 +26,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/go-diff/diff"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -156,7 +156,7 @@ func (c *ClientImplementor) execReader(ctx context.Context, repo api.RepoName, a
 	span.SetTag("args", args)
 	defer span.Finish()
 
-	if !gitdomain.IsAllowedGitCmd(args) {
+	if !gitdomain.IsAllowedGitCmd(c.logger, args) {
 		return nil, errors.Errorf("command failed: %v is not a allowed git command", args)
 	}
 	cmd := c.GitCommand(repo, args...)
@@ -1156,7 +1156,7 @@ func (c *ClientImplementor) GetDefaultBranchShort(ctx context.Context, repo api.
 	return c.getDefaultBranch(ctx, repo, true)
 }
 
-// GetDefaultBranch returns the name of the default branch and the commit it's
+// getDefaultBranch returns the name of the default branch and the commit it's
 // currently at from the given repository.
 //
 // If the repository is empty or currently being cloned, empty values and no
@@ -1206,7 +1206,7 @@ func (c *ClientImplementor) execSafe(ctx context.Context, repo api.RepoName, par
 		return nil, nil, 0, errors.New("at least one argument required")
 	}
 
-	if !gitdomain.IsAllowedGitCmd(params) {
+	if !gitdomain.IsAllowedGitCmd(c.logger, params) {
 		return nil, nil, 0, errors.Errorf("command failed: %q is not a allowed git command", params)
 	}
 
@@ -1217,4 +1217,62 @@ func (c *ClientImplementor) execSafe(ctx context.Context, repo api.RepoName, par
 		err = nil // the error must just indicate that the exit code was nonzero
 	}
 	return stdout, stderr, exitCode, err
+}
+
+// MergeBase returns the merge base commit for the specified commits.
+func (c *ClientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+	if Mocks.MergeBase != nil {
+		return Mocks.MergeBase(repo, a, b)
+	}
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: MergeBase")
+	span.SetTag("A", a)
+	span.SetTag("B", b)
+	defer span.Finish()
+
+	cmd := c.GitCommand(repo, "merge-base", "--", string(a), string(b))
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+	}
+	return api.CommitID(bytes.TrimSpace(out)), nil
+}
+
+// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
+func (c *ClientImplementor) RevList(repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	command := c.GitCommand(api.RepoName(repo), RevListArgs(commit)...)
+	command.DisableTimeout()
+	stdout, err := command.StdoutReader(ctx)
+	if err != nil {
+		return err
+	}
+	defer stdout.Close()
+
+	return c.RevListEach(stdout, onCommit)
+}
+
+func RevListArgs(givenCommit string) []string {
+	return []string{"rev-list", "--first-parent", givenCommit}
+}
+
+func (c *ClientImplementor) RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	reader := bufio.NewReader(stdout)
+
+	for {
+		commit, err := reader.ReadString('\n')
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+		commit = commit[:len(commit)-1] // Drop the trailing newline
+		shouldContinue, err := onCommit(commit)
+		if !shouldContinue {
+			return err
+		}
+	}
+
+	return nil
 }

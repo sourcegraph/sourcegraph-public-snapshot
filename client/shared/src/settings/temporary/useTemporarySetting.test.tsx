@@ -185,4 +185,33 @@ describe('useTemporarySetting', () => {
 
         expect(updateCount).toBe(1)
     })
+
+    it('should always provides latest previousValue', () => {
+        const settingsBackend = new InMemoryMockSettingsBackend({
+            'search.collapsedSidebarSections': { filters: true, reference: true },
+        })
+        const settingsStorage = new TemporarySettingsStorage(mockClient, false)
+        settingsStorage.setSettingsBackend(settingsBackend)
+
+        const { result } = renderHook(() => useTemporarySetting('search.collapsedSidebarSections'), {
+            wrapper: ({ children }) => (
+                <TemporarySettingsContext.Provider value={settingsStorage}>
+                    {children}
+                </TemporarySettingsContext.Provider>
+            ),
+        })
+
+        expect(result.current[0]).toEqual({ filters: true, reference: true })
+        actHook(() => {
+            result.current[1](previousValue => ({
+                ...previousValue,
+                filters: false,
+            }))
+            result.current[1](previousValue => ({
+                ...previousValue,
+                reference: false,
+            }))
+        })
+        expect(result.current[0]).toEqual({ filters: false, reference: false })
+    })
 })

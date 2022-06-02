@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -178,7 +177,7 @@ func (g Gitserver) LogReverseEach(repo string, db database.DB, commit string, n 
 }
 
 func (g Gitserver) RevListEach(repo string, db database.DB, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	return git.RevList(repo, db, commit, onCommit)
+	return gitserver.NewClient(db).RevList(repo, commit, onCommit)
 }
 
 func (g Gitserver) ArchiveEach(repo string, commit string, paths []string, onFile func(path string, contents []byte) error) error {

@@ -7,7 +7,7 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Typography } from '..'
+import { H2 } from '..'
 import { Button } from '../Button'
 import { Input } from '../Form'
 import { Icon } from '../Icon'
@@ -36,7 +36,7 @@ export const Simple: Story = () => {
 
     return (
         <div>
-            <Typography.H2 className="my-3">Controlled collapse</Typography.H2>
+            <H2 className="my-3">Controlled collapse</H2>
             <Collapse isOpen={isOpened} onOpenChange={handleOpenChange}>
                 <CollapseHeader as={Button} outline={true} focusLocked={true} variant="secondary" className="w-50">
                     Collapsable
@@ -52,7 +52,7 @@ export const Simple: Story = () => {
                 </CollapsePanel>
             </Collapse>
 
-            <Typography.H2 className="my-3">Uncontrolled collapse</Typography.H2>
+            <H2 className="my-3">Uncontrolled collapse</H2>
             <Collapse>
                 {({ isOpen }) => (
                     <>
@@ -78,7 +78,7 @@ export const Simple: Story = () => {
                 )}
             </Collapse>
 
-            <Typography.H2 className="my-3">Open by default collapse</Typography.H2>
+            <H2 className="my-3">Open by default collapse</H2>
             <Collapse openByDefault={true}>
                 {({ isOpen }) => (
                     <>

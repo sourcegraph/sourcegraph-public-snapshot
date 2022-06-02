@@ -8,7 +8,7 @@ import { ContributableMenu } from '@sourcegraph/client-api'
 import { asError, ErrorLike, isErrorLike, hasProperty } from '@sourcegraph/common'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Typography, Text } from '@sourcegraph/wildcard'
+import { H3, Code, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -38,9 +38,9 @@ const ContributionsTable: React.FunctionComponent<
             (group, index) =>
                 (group.error || group.rows.length > 0) && (
                     <React.Fragment key={index}>
-                        <Typography.H3>
+                        <H3>
                             {group.title} ({group.rows.length})
-                        </Typography.H3>
+                        </H3>
                         {group.error && <ErrorAlert className="mt-1" error={group.error} />}
                         <table className="table mb-5">
                             <thead>
@@ -79,7 +79,7 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
             for (const [name, schema] of Object.entries(manifest.contributes.configuration.properties)) {
                 settingsGroup.rows.push([
                     // eslint-disable-next-line react/jsx-key
-                    <Typography.Code>{name}</Typography.Code>,
+                    <Code>{name}</Code>,
                     typeof schema === 'object' &&
                     schema !== null &&
                     hasProperty('description')(schema) &&
@@ -122,7 +122,7 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
                 }`
                 actionsGroup.rows.push([
                     // eslint-disable-next-line react/jsx-key
-                    <Typography.Code>{action.id}</Typography.Code>,
+                    <Code>{action.id}</Code>,
                     description.includes('${') ? (
                         <>
                             Evaluated at runtime: <small className="text-monospace">{description}</small>
@@ -131,9 +131,9 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
                         description
                     ),
                     menus.map((menu, index) => (
-                        <Typography.Code key={index} className="mr-1 border p-1">
+                        <Code key={index} className="mr-1 border p-1">
                             {menu}
-                        </Typography.Code>
+                        </Code>
                     )),
                 ])
             }

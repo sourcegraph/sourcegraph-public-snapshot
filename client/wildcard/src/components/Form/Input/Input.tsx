@@ -5,7 +5,7 @@ import { useMergeRefs } from 'use-callback-ref'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
-import { Typography } from '../..'
+import { Label } from '../..'
 import { useAutoFocus } from '../../../hooks/useAutoFocus'
 import { ForwardReferenceComponent } from '../../../types'
 
@@ -66,7 +66,10 @@ export const Input = forwardRef((props, reference) => {
     const messageClassName = 'form-text font-weight-normal mt-2'
     const inputWithMessage = (
         <>
-            <LoaderInput className={classNames('d-flex', !label && className)} loading={status === InputStatus.loading}>
+            <LoaderInput
+                className={classNames('loader-input', styles.loaderInput, !label && className)}
+                loading={status === InputStatus.loading}
+            >
                 <Component
                     disabled={disabled}
                     type={type}
@@ -100,10 +103,10 @@ export const Input = forwardRef((props, reference) => {
 
     if (label) {
         return (
-            <Typography.Label className={classNames('w-100', className)}>
+            <Label className={classNames('w-100', className)}>
                 {label && <div className="mb-2">{variant === 'regular' ? label : <small>{label}</small>}</div>}
                 {inputWithMessage}
-            </Typography.Label>
+            </Label>
         )
     }
 

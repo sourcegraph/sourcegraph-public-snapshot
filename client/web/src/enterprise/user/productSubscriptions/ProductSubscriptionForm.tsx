@@ -11,7 +11,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, useEventObservable, Link, Typography } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useEventObservable, Link, H3, H4 } from '@sourcegraph/wildcard'
 
 import { StripeWrapper } from '../../dotcom/billing/StripeWrapper'
 import { ProductPlanFormControl } from '../../dotcom/productPlans/ProductPlanFormControl'
@@ -205,11 +205,11 @@ const _ProductSubscriptionForm: React.FunctionComponent<React.PropsWithChildren<
                 <div className="row">
                     <div className="col-md-6">
                         <ProductSubscriptionUserCountFormControl value={userCount} onChange={setUserCount} />
-                        <Typography.H4 className="mt-2 mb-0">Plan</Typography.H4>
+                        <H4 className="mt-2 mb-0">Plan</H4>
                         <ProductPlanFormControl value={billingPlanID} onChange={setBillingPlanID} />
                     </div>
                     <div className="col-md-6 mt-3 mt-md-0">
-                        <Typography.H3 className="mt-2 mb-0">Billing</Typography.H3>
+                        <H3 className="mt-2 mb-0">Billing</H3>
                         <NewProductSubscriptionPaymentSection
                             productSubscription={productSubscriptionInput}
                             accountID={accountID}

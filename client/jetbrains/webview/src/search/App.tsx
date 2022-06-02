@@ -13,7 +13,13 @@ import {
 import { SearchBox } from '@sourcegraph/search-ui'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { aggregateStreamingSearch, LATEST_VERSION, SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import {
+    aggregateStreamingSearch,
+    LATEST_VERSION,
+    Progress,
+    SearchMatch,
+    StreamingResultsState,
+} from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -24,6 +30,7 @@ import { initializeSourcegraphSettings } from '../sourcegraphSettings'
 
 import { saveLastSearch } from './js-to-java-bridge'
 import { SearchResultList } from './results/SearchResultList'
+import { StatusBar } from './StatusBar'
 import { Search } from './types'
 
 import styles from './App.module.scss'
@@ -33,9 +40,9 @@ interface Props {
     instanceURL: string
     isGlobbingEnabled: boolean
     accessToken: string | null
-    onPreviewChange: (match: SearchMatch, lineMatchIndex?: number) => void
-    onPreviewClear: () => void
-    onOpen: (match: SearchMatch, lineMatchIndex?: number) => void
+    onPreviewChange: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => Promise<void>
+    onPreviewClear: () => Promise<void>
+    onOpen: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => Promise<void>
     initialSearch: Search | null
     initialAuthenticatedUser: AuthenticatedUser | null
 }
@@ -98,6 +105,8 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     }
 
     const [matches, setMatches] = useState<SearchMatch[]>([])
+    const [progress, setProgress] = useState<Progress>({ durationMs: 0, matchCount: 0, skipped: [] })
+    const [progressState, setProgressState] = useState<StreamingResultsState | null>(null)
     const [lastSearch, setLastSearch] = useState<Search>(
         initialSearch ?? {
             query: '',
@@ -156,6 +165,8 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                 }
             ).subscribe(searchResults => {
                 setMatches(searchResults.results)
+                setProgress(searchResults.progress)
+                setProgressState(searchResults.state)
             })
             setMatches([])
             setLastSearch(current => ({
@@ -195,7 +206,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                 <div className={styles.searchBoxContainer}>
                     {/* eslint-disable-next-line react/forbid-elements */}
                     <form
-                        className="d-flex my-2"
+                        className="d-flex m-0"
                         onSubmit={event => {
                             event.preventDefault()
                             onSubmit()
@@ -237,7 +248,9 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                         />
                     </form>
                 </div>
-                <div>Auth state: {authState}</div>
+
+                <StatusBar progress={progress} progressState={progressState} authState={authState} />
+
                 {/* We reset the search result list whenever a new search is initiated using key={getStableKeyForLastSearch(lastSearch)} */}
                 <SearchResultList
                     matches={matches}

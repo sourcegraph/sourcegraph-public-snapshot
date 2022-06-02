@@ -200,9 +200,9 @@ export function massageIndexerSupportMetadata(data: UseCodeIntelStatusPayload): 
     }
 }
 
-function groupBy<V, K>(values: V[], keyFn: (value: V) => K): Map<K, V[]> {
+function groupBy<V, K>(values: V[], keyFunc: (value: V) => K): Map<K, V[]> {
     return values.reduce(
-        (map, value) => map.set(keyFn(value), (map.get(keyFn(value)) || []).concat([value])),
+        (map, value) => map.set(keyFunc(value), (map.get(keyFunc(value)) || []).concat([value])),
         new Map<K, V[]>()
     )
 }

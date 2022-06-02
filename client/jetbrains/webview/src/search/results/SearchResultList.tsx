@@ -4,10 +4,11 @@ import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { CommitSearchResult } from './CommitSearchResult'
 import { FileSearchResult } from './FileSearchResult'
+import { PathSearchResult } from './PathSearchResult'
 import { RepoSearchResult } from './RepoSearchResult'
 import {
     getFirstResultId,
-    getLineMatchIndexForContentMatch,
+    getLineMatchIndexOrSymbolIndexForFileResult,
     getMatchId,
     getMatchIdForResult,
     getSearchResultElement,
@@ -17,9 +18,9 @@ import {
 import styles from './SearchResultList.module.scss'
 
 interface Props {
-    onPreviewChange: (match: SearchMatch, lineMatchIndex?: number) => void
-    onPreviewClear: () => void
-    onOpen: (result: SearchMatch, lineMatchIndex?: number) => void
+    onPreviewChange: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => Promise<void>
+    onPreviewClear: () => Promise<void>
+    onOpen: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => Promise<void>
     matches: SearchMatch[]
 }
 
@@ -35,7 +36,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
     const matchIdToMatchMap = useMemo((): Map<string, SearchMatch> => {
         const map = new Map<string, SearchMatch>()
         for (const match of matches) {
-            if (['content', 'commit', 'repo'].includes(match.type)) {
+            if (['commit', 'content', 'path', 'repo', 'symbol'].includes(match.type)) {
                 map.set(getMatchId(match), match)
             }
         }
@@ -51,11 +52,19 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                 if (match) {
                     onPreviewChange(
                         match,
-                        match.type === 'content' ? getLineMatchIndexForContentMatch(resultId) : undefined
+                        match.type === 'content' || match.type === 'symbol'
+                            ? getLineMatchIndexOrSymbolIndexForFileResult(resultId)
+                            : undefined
                     )
+                        .then(() => {})
+                        .catch(() => {})
+                } else {
+                    console.log(`No match found for result id: ${resultId}`)
                 }
             } else {
                 onPreviewClear()
+                    .then(() => {})
+                    .catch(() => {})
             }
             setSelectedResultId(resultId)
         },
@@ -101,8 +110,12 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                 if (match) {
                     onOpen(
                         match,
-                        match.type === 'content' ? getLineMatchIndexForContentMatch(selectedResultId) : undefined
+                        match.type === 'content' || match.type === 'symbol'
+                            ? getLineMatchIndexOrSymbolIndexForFileResult(selectedResultId)
+                            : undefined
                     )
+                        .then(() => {})
+                        .catch(() => {})
                 }
                 return
             }
@@ -161,6 +174,15 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 selectResult={selectResult}
                             />
                         )
+                    case 'symbol':
+                        return (
+                            <FileSearchResult
+                                key={`${match.repository}-${match.path}`}
+                                match={match}
+                                selectedResult={selectedResultId}
+                                selectResult={selectResult}
+                            />
+                        )
                     case 'repo':
                         return (
                             <RepoSearchResult
@@ -170,8 +192,18 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 selectResult={selectResult}
                             />
                         )
-                    // TODO: Add more types
+                    case 'path':
+                        return (
+                            <PathSearchResult
+                                key={`${match.repository}-${match.path}`}
+                                match={match}
+                                selectedResult={selectedResultId}
+                                selectResult={selectResult}
+                            />
+                        )
                     default:
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-ignore This is here in preparation for future match types
                         console.log('Unknown search result type:', match.type)
                         return null
                 }

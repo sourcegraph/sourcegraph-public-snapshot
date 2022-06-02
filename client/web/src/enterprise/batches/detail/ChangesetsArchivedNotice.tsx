@@ -43,7 +43,7 @@ export const ChangesetsArchivedNotice: React.FunctionComponent<
         <DismissibleAlert variant="info" partialStorageKey={`changesets-archived-by-${archivedBy}`}>
             <div className="d-flex align-items-center">
                 <div className="d-none d-md-block">
-                    <Icon className="icon mr-2" as={ArchiveIcon} />
+                    <Icon role="img" aria-hidden={true} className="icon mr-2" as={ArchiveIcon} />
                 </div>
                 <div className="flex-grow-1">
                     {archivedCount} {pluralize('changeset', archivedCount)} {pluralize('has', archivedCount, 'have')}{' '}

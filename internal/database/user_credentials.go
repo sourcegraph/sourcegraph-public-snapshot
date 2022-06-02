@@ -9,7 +9,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -120,14 +119,6 @@ type UserCredentialsStore interface {
 type userCredentialsStore struct {
 	*basestore.Store
 	key encryption.Key
-}
-
-// UserCredentials instantiates and returns a new UserCredentialsStore with prepared statements.
-func UserCredentials(db dbutil.DB, key encryption.Key) UserCredentialsStore {
-	return &userCredentialsStore{
-		Store: basestore.NewWithDB(db, sql.TxOptions{}),
-		key:   key,
-	}
 }
 
 // UserCredentialsWith instantiates and returns a new UserCredentialsStore using the other store handle.

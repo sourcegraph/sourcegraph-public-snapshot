@@ -34,7 +34,7 @@ export const Branch: React.FunctionComponent<React.PropsWithChildren<BranchProps
             name
         ) : (
             <>
-                <Icon className="mr-1" as={SourceForkIcon} />
+                <Icon role="img" aria-hidden={true} className="mr-1" as={SourceForkIcon} />
                 <BranchNamespace target={forkTarget} />
                 {name}
             </>
@@ -70,13 +70,11 @@ const BranchNamespace: React.FunctionComponent<React.PropsWithChildren<BranchNam
     }
 
     if (target.pushUser) {
+        const iconLabel =
+            'This branch will be pushed to a user fork. If you have configured a credential for yourself in the Batch Changes settings, this will be a fork in your code host account; otherwise the fork will be in the code host account associated with the site credential used to open changesets.'
         return (
             <>
-                <Icon
-                    data-tooltip="This branch will be pushed to a user fork. If you have configured a credential for yourself in the Batch Changes settings, this will be a fork in your code host account; otherwise the fork will be in the code host account associated with the site credential used to open changesets."
-                    as={AccountQuestionIcon}
-                />
-                :
+                <Icon role="img" aria-label={iconLabel} data-tooltip={iconLabel} as={AccountQuestionIcon} />:
             </>
         )
     }

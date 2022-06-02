@@ -61,7 +61,7 @@ export const queryPolicies = (
     }: GQL.ICodeIntelligenceConfigurationPoliciesOnQueryArguments,
     client: ApolloClient<object>
 ): Observable<PolicyConnection> => {
-    const vars: CodeIntelligenceConfigurationPoliciesVariables = {
+    const variables: CodeIntelligenceConfigurationPoliciesVariables = {
         repository: repository ?? null,
         query: query ?? null,
         forDataRetention: forDataRetention ?? null,
@@ -73,7 +73,7 @@ export const queryPolicies = (
     return from(
         client.query<CodeIntelligenceConfigurationPoliciesResult>({
             query: getDocumentNode(POLICIES_CONFIGURATION),
-            variables: vars,
+            variables,
         })
     ).pipe(
         map(({ data }) => data),
