@@ -2,7 +2,6 @@ package search
 
 import (
 	"archive/zip"
-	"bytes"
 	"context"
 	"io"
 	"os"
@@ -62,33 +61,8 @@ func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.F
 		})
 	}
 
-	// Chunk the ranges and use them to populate ChunkMatches
 	chunks := chunkRanges(ranges, 0)
-	chunkMatches := make([]protocol.ChunkMatch, 0, len(chunks))
-	for _, chunk := range chunks {
-		// Find the beginning of the line the chunk starts on
-		firstLineStart := int32(0)
-		if off := bytes.LastIndexByte(fileBuf[:chunk.cover.Start.Offset], '\n'); off >= 0 {
-			firstLineStart = int32(off) + 1
-		}
-
-		// Find the end of the line the chunk ends on
-		lastLineEnd := int32(len(fileBuf))
-		if off := bytes.IndexByte(fileBuf[chunk.cover.End.Offset:], '\n'); off >= 0 {
-			lastLineEnd = chunk.cover.End.Offset + int32(off)
-		}
-
-		chunkMatches = append(chunkMatches, protocol.ChunkMatch{
-			Content: string(fileBuf[firstLineStart:lastLineEnd]),
-			ContentStart: protocol.Location{
-				Offset: firstLineStart,
-				Line:   chunk.cover.Start.Line,
-				Column: 0,
-			},
-			Ranges: chunk.ranges,
-		})
-	}
-
+	chunkMatches := rangesToChunkMatches(fileBuf, chunks)
 	return protocol.FileMatch{
 		Path:         combyMatch.URI,
 		ChunkMatches: chunkMatches,
