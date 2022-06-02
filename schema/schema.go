@@ -1737,7 +1737,7 @@ type SettingsExperimentalFeatures struct {
 	ShowComputeComponent *bool `json:"showComputeComponent,omitempty"`
 	// ShowEnterpriseHomePanels description: Enabled the homepage panels in the Enterprise homepage
 	ShowEnterpriseHomePanels *bool `json:"showEnterpriseHomePanels,omitempty"`
-	// ShowGitBlameInSeparateColumn description: Show git blame in a separte column in the blob view.
+	// ShowGitBlameInSeparateColumn description: Show git blame in a separate column in the blob view.
 	ShowGitBlameInSeparateColumn *bool `json:"showGitBlameInSeparateColumn,omitempty"`
 	// ShowMultilineSearchConsole description: Enables the multiline search console at search/console
 	ShowMultilineSearchConsole *bool `json:"showMultilineSearchConsole,omitempty"`
