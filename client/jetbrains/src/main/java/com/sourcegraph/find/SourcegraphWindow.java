@@ -7,7 +7,6 @@ import com.intellij.openapi.ui.popup.ActiveIcon;
 import com.intellij.openapi.ui.popup.ComponentPopupBuilder;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
-import com.intellij.openapi.util.Disposer;
 import com.sourcegraph.Icons;
 import org.cef.browser.CefBrowser;
 import org.cef.handler.CefKeyboardHandler;
@@ -32,8 +31,6 @@ public class SourcegraphWindow implements Disposable {
 
         // Create main panel
         mainPanel = new FindPopupPanel(project);
-
-        Disposer.register(project, this);
     }
 
     synchronized public void showPopup() {
@@ -144,5 +141,7 @@ public class SourcegraphWindow implements Disposable {
         if (popup != null) {
             popup.dispose();
         }
+
+        mainPanel.dispose();
     }
 }

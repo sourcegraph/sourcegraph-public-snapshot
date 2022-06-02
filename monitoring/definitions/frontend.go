@@ -93,7 +93,6 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `(sum(increase(src_graphql_search_response{status="timeout",source="browser",request_name!="CodeIntelSearch"}[5m])) + sum(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="browser",request_name!="CodeIntelSearch"}[5m]))) / sum(increase(src_graphql_search_response{source="browser",request_name!="CodeIntelSearch"}[5m])) * 100`,
 
 							Warning:           monitoring.Alert().GreaterOrEqual(2).For(15 * time.Minute),
-							Critical:          monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("hard timeout").Unit(monitoring.Percentage),
 							Owner:             monitoring.ObservableOwnerSearch,
 							PossibleSolutions: "none",
@@ -104,7 +103,6 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `sum by (status)(increase(src_graphql_search_response{status=~"error",source="browser",request_name!="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",request_name!="CodeIntelSearch"}[5m])) * 100`,
 
 							Warning:           monitoring.Alert().GreaterOrEqual(2).For(15 * time.Minute),
-							Critical:          monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("{{status}}").Unit(monitoring.Percentage),
 							Owner:             monitoring.ObservableOwnerSearch,
 							PossibleSolutions: "none",
@@ -211,7 +209,6 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `(sum(increase(src_graphql_search_response{status="timeout",source="browser",request_name="CodeIntelSearch"}[5m])) + sum(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="browser",request_name="CodeIntelSearch"}[5m]))) / sum(increase(src_graphql_search_response{source="browser",request_name="CodeIntelSearch"}[5m])) * 100`,
 
 							Warning:           monitoring.Alert().GreaterOrEqual(2).For(15 * time.Minute),
-							Critical:          monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("hard timeout").Unit(monitoring.Percentage),
 							Owner:             monitoring.ObservableOwnerSearch,
 							PossibleSolutions: "none",
@@ -222,7 +219,6 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `sum by (status)(increase(src_graphql_search_response{status=~"error",source="browser",request_name="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",request_name="CodeIntelSearch"}[5m])) * 100`,
 
 							Warning:           monitoring.Alert().GreaterOrEqual(2).For(15 * time.Minute),
-							Critical:          monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("hard error").Unit(monitoring.Percentage),
 							Owner:             monitoring.ObservableOwnerSearch,
 							PossibleSolutions: "none",
@@ -295,7 +291,6 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `sum by (status)(increase(src_graphql_search_response{status=~"error",source="other"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="other"}[5m]))`,
 
 							Warning:           monitoring.Alert().GreaterOrEqual(2).For(15 * time.Minute),
-							Critical:          monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("{{status}}").Unit(monitoring.Percentage),
 							Owner:             monitoring.ObservableOwnerSearch,
 							PossibleSolutions: "none",

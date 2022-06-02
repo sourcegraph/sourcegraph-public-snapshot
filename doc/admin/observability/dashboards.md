@@ -56,7 +56,7 @@ Query: `histogram_quantile(0.90, sum by (le)(rate(src_search_streaming_latency_s
 
 <p class="subtitle">Hard timeout search responses every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-hard-timeout-search-responses) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-hard-timeout-search-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100010` on your Sourcegraph instance.
 
@@ -75,7 +75,7 @@ Query: `(sum(increase(src_graphql_search_response{status="timeout",source="brows
 
 <p class="subtitle">Hard error search responses every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-hard-error-search-responses) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-hard-error-search-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100011` on your Sourcegraph instance.
 
@@ -212,7 +212,7 @@ Query: `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_buck
 
 <p class="subtitle">Hard timeout search code-intel responses every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-hard-timeout-search-codeintel-responses) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-hard-timeout-search-codeintel-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100110` on your Sourcegraph instance.
 
@@ -231,7 +231,7 @@ Query: `(sum(increase(src_graphql_search_response{status="timeout",source="brows
 
 <p class="subtitle">Hard error search code-intel responses every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-hard-error-search-codeintel-responses) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-hard-error-search-codeintel-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100111` on your Sourcegraph instance.
 
@@ -328,7 +328,7 @@ Query: `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_buck
 
 <p class="subtitle">Hard error search API responses every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-hard-error-search-api-responses) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-hard-error-search-api-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100210` on your Sourcegraph instance.
 
@@ -6012,7 +6012,7 @@ Query: `sum(pg_stat_activity_count) by (job) / (sum(pg_settings_max_connections)
 
 <p class="subtitle">Maximum transaction durations</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-transaction-durations) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#postgres-transaction-durations) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100002` on your Sourcegraph instance.
 
@@ -14746,7 +14746,7 @@ Query: `sum by (instance) (increase(index_num_stopped_tracking_total{instance=~`
 
 <p class="subtitle">Average resolve revision duration over 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-average-resolve-revision-duration) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-average-resolve-revision-duration) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100020` on your Sourcegraph instance.
 

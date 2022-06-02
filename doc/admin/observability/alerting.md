@@ -6,7 +6,7 @@ Alerts can be configured to notify site admins when there is something wrong or 
 
 Alerts fall in one of two severity levels:
 
-- <span class="badge badge-critical">critical</span>: something is _definitively_ wrong with Sourcegraph. We suggest using a high-visibility notification channel for these alerts.
+- <span class="badge badge-critical">critical</span>: something is _definitively_ wrong with Sourcegraph, in a way that is very likely to be noticeable to users. We suggest using a high-visibility notification channel for these alerts.
   - **Examples:** Database inaccessible, running out of disk space, running out of memory.
   - **Suggested action:** Page a site administrator to investigate.
 - <span class="badge badge-warning">warning</span>: something _could_ be wrong with Sourcegraph. We suggest checking in on these periodically, or using a notification channel that will not bother anyone if it is spammed. Over time, as warning alerts become stable and reliable across many Sourcegraph deployments, they will also be promoted to critical alerts in an update by Sourcegraph.

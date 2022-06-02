@@ -132,7 +132,6 @@ func Zoekt() *monitoring.Dashboard {
 							Description:       "average resolve revision duration over 5m",
 							Query:             `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
 							Warning:           monitoring.Alert().GreaterOrEqual(15),
-							Critical:          monitoring.Alert().GreaterOrEqual(30),
 							Panel:             monitoring.Panel().LegendFormat("{{duration}}").Unit(monitoring.Seconds),
 							Owner:             monitoring.ObservableOwnerSearchCore,
 							PossibleSolutions: "none",
