@@ -94,7 +94,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return doSearch(args)
 	}
 
-	bounded := goroutine.NewBounded(8)
+	bounded := goroutine.NewBounded(4)
 	defer func() { err = errors.Append(err, bounded.Wait()) }()
 
 	repos := searchrepos.Resolver{DB: clients.DB, Opts: j.RepoOpts}
