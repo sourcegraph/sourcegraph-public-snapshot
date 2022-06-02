@@ -19,6 +19,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.40.3
+
+### Added
+
+- It's now possible to install src-cli via `npm install -g @sourcegraph/src`. [sourcegraph/src-cli#760](https://github.com/sourcegraph/src-cli/pull/760)
+
 ## 3.40.2
 
 ### Changed
