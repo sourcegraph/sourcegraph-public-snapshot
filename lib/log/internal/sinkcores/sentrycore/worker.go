@@ -85,7 +85,7 @@ func (w *worker) start() {
 
 func (w *worker) work(c *Core) {
 	for _, err := range c.errs {
-		ec := ErrorContext{baseContext: c.base}
+		ec := errorContext{baseContext: c.base}
 		ec.Error = err
 		w.capture(ec)
 	}
@@ -125,7 +125,7 @@ func (w *worker) Flush() error {
 }
 
 // capture submits an ErrorContext to Sentry.
-func (w *worker) capture(errCtx ErrorContext) {
+func (w *worker) capture(errCtx errorContext) {
 	if w.hub.hub == nil {
 		return
 	}

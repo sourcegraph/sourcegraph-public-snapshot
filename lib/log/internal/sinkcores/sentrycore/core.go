@@ -52,8 +52,8 @@ func (b *baseContext) clone() *baseContext {
 	return &c
 }
 
-// ErrorContext is an error and its associated context that is accumulated during the core lifetime.
-type ErrorContext struct {
+// errorContext is an error and its associated context that is accumulated during the core lifetime.
+type errorContext struct {
 	baseContext
 	Error error
 }
