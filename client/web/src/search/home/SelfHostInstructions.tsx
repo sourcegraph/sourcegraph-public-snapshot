@@ -7,7 +7,7 @@ import DownloadIcon from 'mdi-react/DownloadIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Code, H2 } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../components/MarketingBlock'
 
@@ -17,7 +17,7 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
     telemetryService,
 }) => {
     const dockerCommand =
-        'docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.40.0'
+        'docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.40.1'
 
     const copyTooltip = 'Copy command'
     const copyCompletedTooltip = 'Copied!'
@@ -42,7 +42,7 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
     return (
         <div className={styles.wrapper}>
             <div className={styles.column}>
-                <Typography.H2>
+                <H2>
                     <Icon
                         role="img"
                         aria-hidden={true}
@@ -50,7 +50,7 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
                         as={DownloadIcon}
                     />{' '}
                     Self-hosted deployment
-                </Typography.H2>
+                </H2>
                 <ul className={styles.featureList}>
                     <li>Free for up to 10 users</li>
                     <li>Supports additional (and local) code hosts</li>
@@ -83,7 +83,7 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
                     >
                         <Icon role="img" aria-hidden={true} as={ContentCopyIcon} />
                     </Button>
-                    <Typography.Code className={styles.codeBlock}>{dockerCommand}</Typography.Code>
+                    <Code className={styles.codeBlock}>{dockerCommand}</Code>
                 </MarketingBlock>
                 <div className="d-flex justify-content-between">
                     <Link

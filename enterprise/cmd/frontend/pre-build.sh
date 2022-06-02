@@ -35,4 +35,4 @@ echo "--- (enterprise) build browser and web concurrently"
 parallel_run ::: build_browser build_web
 
 echo "--- (enterprise) generate"
-./enterprise/dev/generate.sh
+go run ./dev/sg generate

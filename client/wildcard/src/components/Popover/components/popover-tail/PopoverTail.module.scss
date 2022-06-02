@@ -1,0 +1,49 @@
+.tail {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
+
+    &-triangle-path {
+        fill: var(--dropdown-bg);
+        stroke: var(--dropdown-border-color);
+        stroke-width: 12;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+    }
+
+    /*
+     Shift tail in order to compensate border width of the popover content element
+
+     Example for the tail "right" position
+                   Border                        Border
+            ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+            ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+        Content▒▒▒▒░░▓                 Content▒▒▒▓░
+            ▒▒▒▒▒▒▒░░▓▓  Tail             ▒▒▒▒▒▒▒▓▓  Tail
+            ▒▒▒▒▒▒▒░░▓▓▓                  ▒▒▒▒▒▒▒▓▓▓
+            ▒▒▒▒▒▒▒░░▓▓▓▓      ───────▶   ▒▒▒▒▒▒▒▓▓▓▓
+            ▒▒▒▒▒▒▒░░▓▓▓                  ▒▒▒▒▒▒▒▓▓▓
+            ▒▒▒▒▒▒▒░░▓▓                   ▒▒▒▒▒▒▒▓▓
+            ▒▒▒▒▒▒▒░░▓                    ▒▒▒▒▒▒▒▓░
+            ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+            ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+            ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+     */
+
+    &[data-side='top'] {
+        top: -1px;
+    }
+
+    &[data-side='left'] {
+        left: -1px;
+    }
+
+    &[data-side='right'] {
+        left: 1px;
+    }
+
+    &[data-side='bottom'] {
+        top: 1px;
+    }
+}

@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button, Typography } from '@sourcegraph/wildcard'
+import { Link, Button, H2 } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../components/time/Timestamp'
 import { RepoBatchChange } from '../../../graphql-operations'
@@ -65,7 +65,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
             <span className={styles.nodeSeparator} />
             <div className={styles.nodeFullWidth}>
                 <div className="mt-1 mb-2 d-md-flex d-block align-items-baseline">
-                    <Typography.H2 className="m-0 d-md-inline-block d-block">
+                    <H2 className="m-0 d-md-inline-block d-block">
                         <div className="d-md-inline-block d-block">
                             <Link
                                 className="text-muted test-batches-namespace-link"
@@ -85,7 +85,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
                         >
                             {node.name}
                         </Link>
-                    </Typography.H2>
+                    </H2>
                     <small className="text-muted d-sm-block">
                         created <Timestamp date={node.createdAt} now={now} />
                     </small>

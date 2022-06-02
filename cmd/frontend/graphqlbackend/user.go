@@ -115,7 +115,7 @@ func (r *UserResolver) Email(ctx context.Context) (string, error) {
 		}
 	}
 
-	email, _, err := database.UserEmails(r.db).GetPrimaryEmail(ctx, r.user.ID)
+	email, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, r.user.ID)
 	if err != nil && !errcode.IsNotFound(err) {
 		return "", err
 	}

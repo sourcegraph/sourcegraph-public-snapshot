@@ -14,9 +14,9 @@ export const StatusCode: React.FunctionComponent<React.PropsWithChildren<Props>>
     <span>
         <span className={classNames('mr-1')}>
             {code < 400 ? (
-                <Icon className="text-success" as={CheckIcon} />
+                <Icon role="img" className="text-success" as={CheckIcon} aria-hidden={true} />
             ) : (
-                <Icon className="text-danger" as={AlertCircleIcon} />
+                <Icon role="img" className="text-danger" as={AlertCircleIcon} aria-hidden={true} />
             )}
         </span>
         {code}

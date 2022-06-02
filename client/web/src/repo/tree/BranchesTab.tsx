@@ -90,7 +90,7 @@ export const RepositoryBranchesAllTab: React.FunctionComponent<React.PropsWithCh
         <div>
             <PageTitle title="All branches" />
             <FilteredConnection<GitRefFields>
-                className=""
+                inputClassName="w-100"
                 listClassName="list-group list-group-flush"
                 noun="branch"
                 pluralNoun="branches"
@@ -167,7 +167,7 @@ export const RepositoryBranchesOverviewTab: React.FunctionComponent<React.PropsW
                                         className="list-group-item list-group-item-action py-2 d-flex"
                                     >
                                         View more branches
-                                        <Icon as={ChevronRightIcon} />
+                                        <Icon role="img" as={ChevronRightIcon} aria-hidden={true} />
                                     </Button>
                                 )}
                             </div>

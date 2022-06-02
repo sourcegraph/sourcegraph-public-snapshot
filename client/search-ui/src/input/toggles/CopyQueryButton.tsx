@@ -8,7 +8,7 @@ import { Observable, merge, of } from 'rxjs'
 import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { Button, Icon, TooltipController, useEventObservable } from '@sourcegraph/wildcard'
+import { Button, Icon, DeprecatedTooltipController, useEventObservable } from '@sourcegraph/wildcard'
 
 interface Props {
     fullQuery: string
@@ -36,7 +36,7 @@ export const CopyQueryButton: React.FunctionComponent<React.PropsWithChildren<Pr
                 clicks.pipe(
                     tap(copyFullQuery),
                     switchMapTo(merge(of(true), of(false).pipe(delay(2000)))),
-                    tap(() => TooltipController.forceUpdate()),
+                    tap(() => DeprecatedTooltipController.forceUpdate()),
                     startWith(false)
                 ),
             [copyFullQuery]

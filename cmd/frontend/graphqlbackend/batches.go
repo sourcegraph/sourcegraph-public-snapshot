@@ -286,6 +286,8 @@ type BatchChangesResolver interface {
 	BatchSpecs(cx context.Context, args *ListBatchSpecArgs) (BatchSpecConnectionResolver, error)
 	AvailableBulkOperations(ctx context.Context, args *AvailableBulkOperationsArgs) ([]string, error)
 
+	CheckBatchChangesCredential(ctx context.Context, args *CheckBatchChangesCredentialArgs) (*EmptyResponse, error)
+
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
@@ -582,6 +584,10 @@ type ListBatchSpecArgs struct {
 type AvailableBulkOperationsArgs struct {
 	BatchChange graphql.ID
 	Changesets  []graphql.ID
+}
+
+type CheckBatchChangesCredentialArgs struct {
+	BatchChangesCredential graphql.ID
 }
 
 type ListWorkspacesArgs struct {

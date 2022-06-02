@@ -53,55 +53,67 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
           <form
             class=""
           >
-            <div
-              class="form-group d-flex flex-column align-content-start"
+            <label
+              class="label w-100 form-group"
             >
-              <label
-                class="label align-self-start"
-                for="username-or-email"
+              <div
+                class="mb-2"
               >
-                Username or email
-              </label>
-              <input
-                autocapitalize="off"
-                autocomplete="username"
-                class="form-control"
-                id="username-or-email"
-                required=""
-                type="text"
-                value=""
-              />
-            </div>
-            <div
-              class="form-group d-flex flex-column align-content-start position-relative"
-            >
-              <label
-                class="label align-self-start"
-                for="password"
-              >
-                Password
-              </label>
-              <input
-                autocomplete="current-password"
-                class="form-control"
-                id="password"
-                name="password"
-                placeholder=" "
-                required=""
-                type="password"
-                value=""
-              />
-              <small
-                class="form-text text-muted align-self-end position-absolute"
-              >
-                <a
-                  class="anchorLink"
-                  href="/password-reset"
+                <p
+                  class="alignLeft"
                 >
-                  Forgot password?
-                </a>
-              </small>
-            </div>
+                  Username or email
+                </p>
+              </div>
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  autocapitalize="off"
+                  autocomplete="username"
+                  class="form-control with-invalid-icon"
+                  id="username-or-email"
+                  required=""
+                  type="text"
+                  value=""
+                />
+              </div>
+            </label>
+            <label
+              class="label w-100 form-group"
+            >
+              <div
+                class="mb-2"
+              >
+                <div
+                  class="d-flex justify-content-between"
+                >
+                  <span>
+                    Password
+                  </span>
+                  <a
+                    class="anchorLink"
+                    href="/password-reset"
+                  >
+                    Forgot password?
+                  </a>
+                </div>
+              </div>
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  autocomplete="current-password"
+                  class="form-control with-invalid-icon"
+                  id="password"
+                  name="password"
+                  placeholder=" "
+                  required=""
+                  type="password"
+                  value=""
+                />
+              </div>
+            </label>
             <div
               class="form-group"
             >
@@ -213,55 +225,67 @@ exports[`SignInPage renders sign in page (server) 1`] = `
           <form
             class=""
           >
-            <div
-              class="form-group d-flex flex-column align-content-start"
+            <label
+              class="label w-100 form-group"
             >
-              <label
-                class="label align-self-start"
-                for="username-or-email"
+              <div
+                class="mb-2"
               >
-                Username or email
-              </label>
-              <input
-                autocapitalize="off"
-                autocomplete="username"
-                class="form-control"
-                id="username-or-email"
-                required=""
-                type="text"
-                value=""
-              />
-            </div>
-            <div
-              class="form-group d-flex flex-column align-content-start position-relative"
-            >
-              <label
-                class="label align-self-start"
-                for="password"
-              >
-                Password
-              </label>
-              <input
-                autocomplete="current-password"
-                class="form-control"
-                id="password"
-                name="password"
-                placeholder=" "
-                required=""
-                type="password"
-                value=""
-              />
-              <small
-                class="form-text text-muted align-self-end position-absolute"
-              >
-                <a
-                  class="anchorLink"
-                  href="/password-reset"
+                <p
+                  class="alignLeft"
                 >
-                  Forgot password?
-                </a>
-              </small>
-            </div>
+                  Username or email
+                </p>
+              </div>
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  autocapitalize="off"
+                  autocomplete="username"
+                  class="form-control with-invalid-icon"
+                  id="username-or-email"
+                  required=""
+                  type="text"
+                  value=""
+                />
+              </div>
+            </label>
+            <label
+              class="label w-100 form-group"
+            >
+              <div
+                class="mb-2"
+              >
+                <div
+                  class="d-flex justify-content-between"
+                >
+                  <span>
+                    Password
+                  </span>
+                  <a
+                    class="anchorLink"
+                    href="/password-reset"
+                  >
+                    Forgot password?
+                  </a>
+                </div>
+              </div>
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  autocomplete="current-password"
+                  class="form-control with-invalid-icon"
+                  id="password"
+                  name="password"
+                  placeholder=" "
+                  required=""
+                  type="password"
+                  value=""
+                />
+              </div>
+            </label>
             <div
               class="form-group"
             >

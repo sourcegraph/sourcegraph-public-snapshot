@@ -543,7 +543,7 @@ func fetchTimeoutForCI(t *testing.T) string {
 func toString(m []protocol.FileMatch) string {
 	buf := new(bytes.Buffer)
 	for _, f := range m {
-		if len(f.LineMatches) == 0 && len(f.MultilineMatches) == 0 {
+		if len(f.LineMatches) == 0 && len(f.ChunkMatches) == 0 {
 			buf.WriteString(f.Path)
 			buf.WriteByte('\n')
 		}
@@ -555,15 +555,16 @@ func toString(m []protocol.FileMatch) string {
 			buf.WriteString(l.Preview)
 			buf.WriteByte('\n')
 		}
-		for _, l := range f.MultilineMatches {
-			buf.WriteString(f.Path)
-			buf.WriteByte(':')
-			buf.WriteString(strconv.Itoa(int(l.Start.Line) + 1))
-			buf.WriteByte(':')
-			buf.WriteString(l.Preview)
-			buf.WriteByte('\n')
+		for _, cm := range f.ChunkMatches {
+			for _, rr := range cm.Ranges {
+				buf.WriteString(f.Path)
+				buf.WriteByte(':')
+				buf.WriteString(strconv.Itoa(int(rr.Start.Line) + 1))
+				buf.WriteByte(':')
+				buf.WriteString(cm.Content)
+				buf.WriteByte('\n')
+			}
 		}
-
 	}
 	return buf.String()
 }

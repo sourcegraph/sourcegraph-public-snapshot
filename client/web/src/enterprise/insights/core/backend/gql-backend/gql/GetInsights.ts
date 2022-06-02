@@ -40,6 +40,20 @@ const INSIGHT_VIEW_SERIES_FRAGMENT = gql`
 export const INSIGHT_VIEW_FRAGMENT = gql`
     fragment InsightViewNode on InsightView {
         id
+        defaultSeriesDisplayOptions {
+            limit
+            sortOptions {
+                mode
+                direction
+            }
+        }
+        appliedSeriesDisplayOptions {
+            limit
+            sortOptions {
+                mode
+                direction
+            }
+        }
         isFrozen
         appliedFilters {
             includeRepoRegex

@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Button, Modal, Link, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, Code, Label, Text, Input } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
@@ -33,27 +33,24 @@ const HELP_TEXT_LINK_URL = 'https://docs.sourcegraph.com/batch_changes/quickstar
 const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.GITHUB]: (
         <span>
-            with the <Typography.Code>repo</Typography.Code>, <Typography.Code>read:org</Typography.Code>,{' '}
-            <Typography.Code>user:email</Typography.Code>, <Typography.Code>read:discussion</Typography.Code>, and{' '}
-            <Typography.Code>workflow</Typography.Code> scopes.
+            with the <Code>repo</Code>, <Code>read:org</Code>, <Code>user:email</Code>, <Code>read:discussion</Code>,
+            and <Code>workflow</Code> scopes.
         </span>
     ),
     [ExternalServiceKind.GITLAB]: (
         <span>
-            with <Typography.Code>api</Typography.Code>, <Typography.Code>read_repository</Typography.Code>, and{' '}
-            <Typography.Code>write_repository</Typography.Code> scopes.
+            with <Code>api</Code>, <Code>read_repository</Code>, and <Code>write_repository</Code> scopes.
         </span>
     ),
     [ExternalServiceKind.BITBUCKETSERVER]: (
         <span>
-            with <Typography.Code>write</Typography.Code> permissions on the project and repository level.
+            with <Code>write</Code> permissions on the project and repository level.
         </span>
     ),
     [ExternalServiceKind.BITBUCKETCLOUD]: (
         <span>
-            with <Typography.Code>account:read</Typography.Code>, <Typography.Code>repo:write</Typography.Code>,{' '}
-            <Typography.Code>pr:write</Typography.Code>, and <Typography.Code>pipeline:read</Typography.Code>{' '}
-            permissions.
+            with <Code>account:read</Code>, <Code>repo:write</Code>, <Code>pr:write</Code>, and{' '}
+            <Code>pipeline:read</Code> permissions.
         </span>
     ),
 
@@ -182,13 +179,12 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                             <div className="form-group">
                                 {requiresUsername && (
                                     <>
-                                        <Typography.Label htmlFor="username">Username</Typography.Label>
+                                        <Label htmlFor="username">Username</Label>
                                         <input
                                             id="username"
                                             name="username"
-                                            type="text"
                                             autoComplete="off"
-                                            className="form-control mb-2"
+                                            className="mb-2"
                                             required={true}
                                             spellCheck="false"
                                             minLength={1}
@@ -197,13 +193,13 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                                         />
                                     </>
                                 )}
-                                <Typography.Label htmlFor="token">{patLabel}</Typography.Label>
-                                <input
+                                <Label htmlFor="token">{patLabel}</Label>
+                                <Input
                                     id="token"
                                     name="token"
                                     type="password"
                                     autoComplete="off"
-                                    className="form-control test-add-credential-modal-input"
+                                    data-testid="test-add-credential-modal-input"
                                     required={true}
                                     spellCheck="false"
                                     minLength={1}

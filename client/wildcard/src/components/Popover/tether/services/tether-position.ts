@@ -62,7 +62,7 @@ export function getPositionState(layout: TetherLayout, position: Position): Teth
     // Extend the target element by marker size element  for correctness of calculations below
     const targetElement = getTargetElement(
         getTargetElement(overflowedTarget, targetPadding, position),
-        marker,
+        rotatedMarker,
         position
     )
 

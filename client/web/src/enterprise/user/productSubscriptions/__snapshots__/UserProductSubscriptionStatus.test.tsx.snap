@@ -50,7 +50,9 @@ exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
           type="button"
         >
           <keyicon
+            aria-hidden="true"
             class="iconInline"
+            role="img"
           />
            Reveal license key
         </button>
@@ -116,7 +118,9 @@ exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
           type="button"
         >
           <keyicon
+            aria-hidden="true"
             class="iconInline"
+            role="img"
           />
            Hide license key
         </button>
@@ -143,7 +147,9 @@ exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
           class="mt-2 d-flex align-items-center"
         >
           <informationicon
+            aria-hidden="true"
             class="iconInline mr-1"
+            role="img"
           />
            
           <span>

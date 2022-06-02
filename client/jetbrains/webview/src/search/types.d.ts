@@ -1,9 +1,11 @@
-import type { Request } from './jsToJavaBridgeUtil'
+import type { SearchPatternType } from '@sourcegraph/search'
+
+import type { Request } from './js-to-java-bridge'
 
 /* Add global functions to global window object */
 declare global {
     interface Window {
-        initializeSourcegraph: () => void
+        initializeSourcegraph: () => Promise<void>
         callJava: (request: Request) => Promise<object>
     }
 }

@@ -1,4 +1,5 @@
 import { storiesOf } from '@storybook/react'
+import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -86,12 +87,18 @@ add('list', () => (
     </WebStory>
 ))
 
+const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
+
 add('with workspace selected', () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={MOCKS}>
                 <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={mockFullBatchSpec()}>
-                    <ExecutionWorkspaces {...props} selectedWorkspaceID="spec1234" />
+                    <ExecutionWorkspaces
+                        {...props}
+                        selectedWorkspaceID="spec1234"
+                        queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                    />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}

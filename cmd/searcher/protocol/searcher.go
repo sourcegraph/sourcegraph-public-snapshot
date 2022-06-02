@@ -52,6 +52,11 @@ type Request struct {
 	// Whether the revision to be searched is indexed or unindexed. This matters for
 	// structural search because it will query Zoekt for indexed structural search.
 	Indexed bool
+
+	// FeatHybrid is a feature flag which enables hybrid search. Hybrid search
+	// will only search what has changed since Zoekt has indexed as well as
+	// including Zoekt results.
+	FeatHybrid bool `json:"feat_hybrid,omitempty"`
 }
 
 // PatternInfo describes a search request on a repo. Most of the fields
@@ -194,8 +199,8 @@ type Response struct {
 type FileMatch struct {
 	Path string
 
-	MultilineMatches []MultilineMatch
-	LineMatches      []LineMatch
+	ChunkMatches []ChunkMatch
+	LineMatches  []LineMatch
 
 	// MatchCount is the number of matches.  Different from len(LineMatches), as multiple
 	// lines may correspond to one logical match when doing a structural search
@@ -257,4 +262,23 @@ func (m MultilineMatch) MatchedContent() string {
 		}
 	}
 	return string(runePreview[m.Start.Column : lastLineStart+int(m.End.Column)])
+}
+
+type ChunkMatch struct {
+	Content      string
+	ContentStart Location
+	Ranges       []Range
+}
+
+func (cm ChunkMatch) MatchedContent() []string {
+	res := make([]string, 0, len(cm.Ranges))
+	for _, rr := range cm.Ranges {
+		res = append(res, cm.Content[rr.Start.Offset-cm.ContentStart.Offset:rr.End.Offset-cm.ContentStart.Offset])
+	}
+	return res
+}
+
+type Range struct {
+	Start Location
+	End   Location
 }

@@ -8,7 +8,7 @@ import { Observable } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, Button, Link, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon, H2, Text } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -44,14 +44,14 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                         className="ml-2 text-muted"
                         data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
                     >
-                        <Icon as={CloudOutlineIcon} /> Not yet cloned
+                        <Icon role="img" as={CloudOutlineIcon} aria-hidden={true} /> Not yet cloned
                     </small>
                 )}
             </div>
             <div className="repository-node__actions">
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
                     <Button to={node.url} variant="secondary" size="sm" as={Link}>
-                        <Icon as={CloudDownloadIcon} /> Clone now
+                        <Icon role="img" as={CloudDownloadIcon} aria-hidden={true} /> Clone now
                     </Button>
                 )}{' '}
                 {
@@ -62,7 +62,7 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                         size="sm"
                         as={Link}
                     >
-                        <Icon as={SettingsIcon} /> Settings
+                        <Icon role="img" as={SettingsIcon} aria-hidden={true} /> Settings
                     </Button>
                 }{' '}
             </div>
@@ -151,7 +151,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                     statuses are displayed below.
                 </Alert>
             )}
-            <Typography.H2>Repositories</Typography.H2>
+            <H2>Repositories</H2>
             <Text>
                 Repositories are synced from connected{' '}
                 <Link to="/site-admin/external-services" data-testid="test-repositories-code-host-connections-link">

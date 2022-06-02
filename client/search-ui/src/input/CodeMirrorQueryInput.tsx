@@ -78,6 +78,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     preventNewLine = true,
     placeholder,
     editorOptions,
+    ariaLabel = 'Search query',
 }) => {
     const value = preventNewLine ? queryState.query.replace(replacePattern, '') : queryState.query
     // We use both, state and a ref, for the editor instance because we need to
@@ -91,11 +92,17 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
 
     const editorCreated = useCallback(
         (editor: EditorView) => {
+            // `role` set to fix accessibility issues
+            // https://github.com/sourcegraph/sourcegraph/issues/34733
+            editor.contentDOM.setAttribute('role', 'textbox')
+            // `aria-label` to fix accessibility audit
+            editor.contentDOM.setAttribute('aria-label', ariaLabel)
+
             setEditor(editor)
             editorReference.current = editor
             onEditorCreated?.(editor)
         },
-        [editorReference, onEditorCreated]
+        [editorReference, onEditorCreated, ariaLabel]
     )
 
     const autocompletion = useMemo(

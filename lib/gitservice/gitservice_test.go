@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 // numTestCommits determines the number of files/commits/tags to create for
@@ -33,6 +34,7 @@ func TestHandler(t *testing.T) {
 	}
 
 	ts := httptest.NewServer(&gitservice.Handler{
+		Logger: logtest.Scoped(t),
 		Dir: func(s string) string {
 			return filepath.Join(root, s, ".git")
 		},

@@ -40,7 +40,7 @@ export const addStory = (options: AddStoryOptions): void => {
         {
             // The default `applyDecorators` implementation accepts `decorators` as a second arg and applies them to the `storyFn`.
             // Our `storyFn` already has all the decorators applied, so we just return it.
-            applyDecorators: storyFn => storyFn,
+            applyDecorators: storyFunc => storyFunc,
         }
     )
 }

@@ -56,7 +56,12 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<
 const ExcludeButton: React.FunctionComponent<React.PropsWithChildren<{ handleExclude: () => void }>> = ({
     handleExclude,
 }) => (
-    <Button className="p-0 my-0 mx-2" data-tooltip="Omit this repository from batch spec file" onClick={handleExclude}>
-        <Icon as={CloseIcon} />
+    <Button
+        aria-label="Omit this repository from batch spec file"
+        className="p-0 my-0 mx-2"
+        data-tooltip="Omit this repository from batch spec file"
+        onClick={handleExclude}
+    >
+        <Icon role="img" aria-hidden={true} as={CloseIcon} />
     </Button>
 )

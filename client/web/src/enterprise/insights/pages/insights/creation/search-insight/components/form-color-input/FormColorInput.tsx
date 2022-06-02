@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { startCase } from 'lodash'
 import { noop } from 'rxjs'
 
-import { Typography } from '@sourcegraph/wildcard'
+import { Label } from '@sourcegraph/wildcard'
 
 import { DATA_SERIES_COLORS } from '../../constants'
 
@@ -35,13 +35,14 @@ export const FormColorInput: React.FunctionComponent<React.PropsWithChildren<For
 
             <div>
                 {COLORS_KEYS.map(key => (
-                    <Typography.Label
+                    <Label
                         key={key}
                         /* eslint-disable-next-line react/forbid-dom-props */
                         style={{ color: DATA_SERIES_COLORS[key] }}
                         title={startCase(key.toLocaleLowerCase())}
                         className={styles.formColorPickerColorBlock}
                     >
+                        {/* eslint-disable-next-line react/forbid-elements */}
                         <input
                             type="radio"
                             name={name}
@@ -53,7 +54,7 @@ export const FormColorInput: React.FunctionComponent<React.PropsWithChildren<For
                         />
 
                         <span className={styles.formColorPickerRadioControl} />
-                    </Typography.Label>
+                    </Label>
                 ))}
             </div>
         </fieldset>
