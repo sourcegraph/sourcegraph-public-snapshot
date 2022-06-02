@@ -79,10 +79,14 @@ Hello world example in go`, typeFile},
 
 	pattern := protocol.PatternInfo{Pattern: "world"}
 	wantRaw := `
-added.md:1:hello world I am added
-changed.go:6:	fmt.Println("Hello world")
-unchanged.md:1:# Hello World
-unchanged.md:3:Hello world example in go
+added.md:1:1:
+hello world I am added
+changed.go:6:6:
+	fmt.Println("Hello world")
+unchanged.md:1:1:
+# Hello World
+unchanged.md:3:3:
+Hello world example in go
 `
 
 	s := newStore(t, files)
