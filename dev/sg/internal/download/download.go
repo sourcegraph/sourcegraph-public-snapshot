@@ -116,7 +116,15 @@ func safeRename(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	out, err := os.Create(dst)
+	inStat, err := in.Stat()
+	perm := inStat.Mode() & os.ModePerm
+	if err != nil {
+		return err
+	}
+	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
+	if err != nil {
+		return err
+	}
 	if err != nil {
 		closeErr := in.Close()
 		return errors.Append(err, closeErr)
