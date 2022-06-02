@@ -21,7 +21,10 @@ type Provider struct {
 }
 
 func NewProvider(conn *types.GerritConnection) (*Provider, error) {
-	baseURL, _ := url.Parse(conn.Url)
+	baseURL, err := url.Parse(conn.Url)
+	if err != nil {
+		return nil, err
+	}
 	gClient, err := gerrit.NewClient(conn.URN, conn.GerritConnection, nil)
 	if err != nil {
 		return nil, err
@@ -79,7 +82,6 @@ func (p Provider) buildExtsvcAccount(acct gerrit.Account, user *types.User, emai
 		return nil, errors.Wrap(err, "marshaling account data")
 	}
 	return &extsvc.Account{
-		ID:     acct.ID, // TODO: do we need this?
 		UserID: user.ID,
 		AccountSpec: extsvc.AccountSpec{
 			ServiceType: p.codeHost.ServiceType,
