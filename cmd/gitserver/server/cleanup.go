@@ -176,7 +176,7 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 			wrongShardRepoCount++
 			wrongShardRepoSize += size
 			if wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
-				s.Logger.Info("removing repo cloned on the wrong shard", log.String("repo", string(dir)), log.String("target-shard", addr), log.String("current-shard", s.Hostname), log.Int64("size-bytes", size))
+				s.Logger.Info("removing repo cloned on the wrong shard", log.String("dir", string(dir)), log.String("target-shard", addr), log.String("current-shard", s.Hostname), log.Int64("size-bytes", size))
 				if err := s.removeRepoDirectory(dir); err != nil {
 					return true, err
 				}
