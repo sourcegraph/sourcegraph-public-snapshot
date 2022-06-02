@@ -51,7 +51,7 @@ var (
 )
 
 func shouldRedact(p privacy.Privacy) bool {
-	return p <= privacy.Unknown
+	return p < privacy.Unknown
 }
 
 func Text(key string, t privacy.Text) Field {
