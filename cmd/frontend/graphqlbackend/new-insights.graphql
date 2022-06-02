@@ -39,14 +39,27 @@ union BaseInsightConfiguration =
     CaptureGroupInsightConfiguration |
     LangStatsInsightConfiguration
 
+# These two (SeriesLikeInsight and CategoricalLikeInsight) are
+# kind of synthetic interfaces that we introduce in order to
+# simplify data querying in consumers.
+#
+# See client/web/src/enterprise/insights/new-insights-gql-examples.ts
+interface SeriesLikeInsight {
+    series: [NewInsightSeries!]!
+}
+
+interface CategoricalLikeInsight {
+    data: [NewInsightCategoricalDatum!]!
+}
+
 # --------- Insight configurations  ------------ #
-type SearchBasedInsightConfiguration {
+type SearchBasedInsightConfiguration implements SeriesLikeInsight {
     # All important to the edit UI (insight configurations) for Search-Based
     # insight fields are contained inside of series.
     series: [NewInsightSeries!]!
 }
 
-type CaptureGroupInsightConfiguration {
+type CaptureGroupInsightConfiguration implements SeriesLikeInsight {
     # In Capture Group insight there is no a performant way to get
     # insight configuration from series because series here are generated
     # so we have to extract vital settings from the series.
@@ -56,7 +69,7 @@ type CaptureGroupInsightConfiguration {
     series: [NewInsightSeries!]!
 }
 
-type LangStatsInsightConfiguration {
+type LangStatsInsightConfiguration implements CategoricalLikeInsight {
     # Since Lang Stats insight as any other insights doesn't have series
     # we provide setting data on the top level.
     repositories: [String!]!
@@ -73,9 +86,9 @@ type SeriesLikeInsightData {
 type NewInsightSeries implements Node {
     id: ID!
     title: String!
-    color: String!
     query: String!
-    chartType: SeriesLikeChartType
+
+    visualSettings: NewInsightSeriesVisualSettings!
     repositoryScope: InsightRepositoryScope!
     timeScope: InsightTimeScope!
     # this is true when series generated on the backend in query time
