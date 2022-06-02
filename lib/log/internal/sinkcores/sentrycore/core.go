@@ -77,6 +77,7 @@ func NewCore(hub *sentry.Hub) *Core {
 		C:    make(chan *Core, 512),
 		done: make(chan struct{}),
 	}
+	// w.out.Add(1)
 	w.start()
 	return &Core{w: w}
 }

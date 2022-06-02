@@ -21,12 +21,12 @@ type worker struct {
 	hub sentryHub
 	// C is the channel used to pass errors and their associated context to the go routine sending out events.
 	C chan *Core
+	// timeout tells the worker to wait wfpewfp
+	timeout chan struct{}
 	// done stops the worker from accepting new cores when written into.
 	done chan struct{}
 	// batch stores cores for processing, leveraging the ability of the Sentry client to send batched reports.
 	batch batch
-	// out tracks the outgoing cores count, i.e those which have to be sent out.
-	out sync.WaitGroup
 }
 
 type sentryHub struct {
@@ -50,9 +50,12 @@ func (w *worker) accept() {
 	for {
 		select {
 		case c := <-w.C:
+			// As the select statement picks randomly when two cases are ready, we need
+			// to manually ensure we're always consuming first.
 			w.batch.Lock()
+			// Incorrect
+			// w.out.Add(1)
 			w.batch.batch = append(w.batch.batch, c)
-			w.out.Add(1)
 			w.batch.Unlock()
 		case <-w.done:
 			return
@@ -69,7 +72,6 @@ func (w *worker) process() {
 			w.batch.Lock()
 			for _, c := range w.batch.batch {
 				w.work(c)
-				w.out.Done()
 			}
 			w.batch.batch = w.batch.batch[:0] // reuse the same slice.
 			w.batch.Unlock()
@@ -79,6 +81,7 @@ func (w *worker) process() {
 
 // start kicks off goroutines that the worker requires.
 func (w *worker) start() {
+	// Increment the wait group to ensure we are never closing before the first input.
 	go w.accept()
 	go w.process()
 }
@@ -91,37 +94,39 @@ func (w *worker) work(c *Core) {
 	}
 }
 
-// waitTimeout implements a mechanism to wait on a sync.WaitGroup, but avoid blocking
-// forever by also returning a timeout.
-func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
-	c := make(chan struct{})
-	go func() {
-		defer close(c)
-		wg.Wait()
-	}()
-	select {
-	case <-c:
-		return false // completed normally
-	case <-time.After(timeout):
-		return true // timed out
-	}
-}
-
 // Flush blocks for a couple seconds at most, trying to flush all accumulated errors.
 //
 // It tries to accept all errors that are queued for two seconds then blocks any further events
 // to be queued until the Sentry buffer empties or reaches a five second timeout.
 func (w *worker) Flush() error {
+	// w.out.Done()
 	// Wait until we have collected all errors and then stop accepting new errors.
-	// waitTimeout(&w.in, 2*time.Second)
 	w.done <- struct{}{}
-	// Wait until we have processed all errors
-	w.out.Wait()
-	// Make sure Sentry has flushed everything.
+
+	ticker := time.NewTicker(time.Millisecond)
+	timeout := time.After(2 * time.Second)
+	for {
+		select {
+		case <-ticker.C:
+			w.batch.Lock()
+			if len(w.batch.batch) == 0 {
+				w.batch.Unlock()
+				w.flush()
+				return nil
+			}
+			w.batch.Unlock()
+		case <-timeout:
+			w.flush()
+			return nil
+		}
+	}
+}
+
+func (w *worker) flush() {
+	// Flush Sentry
 	w.hub.hub.Flush(5 * time.Second)
 	// Start accepting new errors again.
 	go w.accept()
-	return nil
 }
 
 // capture submits an ErrorContext to Sentry.
@@ -190,4 +195,20 @@ func (w *worker) capture(errCtx errorContext) {
 		scope.SetLevel(level)
 		w.hub.hub.CaptureEvent(event)
 	})
+}
+
+// waitTimeout implements a mechanism to wait on a sync.WaitGroup, but avoid blocking
+// forever by also returning a timeout.
+func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
+	c := make(chan struct{})
+	go func() {
+		defer close(c)
+		wg.Wait()
+	}()
+	select {
+	case <-c:
+		return false // completed normally
+	case <-time.After(timeout):
+		return true // timed out
+	}
 }
