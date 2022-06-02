@@ -1,6 +1,7 @@
 import React, { forwardRef, ReactNode } from 'react'
 
 import * as H from 'history'
+import { noop } from 'lodash'
 import { MdiReactIconProps } from 'mdi-react'
 
 import { ForwardReferenceComponent, Position } from '../..'
@@ -88,7 +89,7 @@ const NavMenuItem = forwardRef(({ content, prefixIcon, suffixIcon, onSelect, to,
     }
 
     return (
-        <MenuText as={itemAs || MenuItem} {...rest}>
+        <MenuText as={itemAs || MenuItem} {...rest} onSelect={noop}>
             {contentWithIcon}
         </MenuText>
     )
