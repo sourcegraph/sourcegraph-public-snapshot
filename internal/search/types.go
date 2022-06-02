@@ -62,6 +62,9 @@ type SymbolsParameters struct {
 
 	// First indicates that only the first n symbols should be returned.
 	First int
+
+	// Timeout in seconds.
+	Timeout int
 }
 
 // GlobalSearchMode designates code paths which optimize performance for global

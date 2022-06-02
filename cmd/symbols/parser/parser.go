@@ -62,7 +62,7 @@ func (p *parser) Parse(ctx context.Context, args search.SymbolsParameters, paths
 	// run on defer of a background routine, which indicates when the returned
 	// symbols channel is closed.
 
-	parseRequestOrErrors := p.repositoryFetcher.FetchRepositoryArchive(ctx, args, paths)
+	parseRequestOrErrors := p.repositoryFetcher.FetchRepositoryArchive(ctx, args.Repo, args.CommitID, paths)
 	if err != nil {
 		endObservation(1, observation.Args{})
 		return nil, errors.Wrap(err, "repositoryFetcher.FetchRepositoryArchive")
