@@ -83,6 +83,10 @@ var sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "-1", "the maximum n
 // SRC_ENABLE_SG_MAINTENANCE.
 var enableSGMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "true", "Use sg maintenance during janitorial cleanup phases"))
 
+// The limit of repos cloned on the wrong shard to delete in one janitor run.
+// Default of -1 to disable deletes.
+var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "-1", "the maximum number of repos not assigned to this shard we delete in one run"))
+
 var (
 	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_removed",
@@ -150,7 +154,15 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		wrongShardReposSizeTotalBytes.Set(float64(wrongShardRepoSize))
 	}()
 
-	computeStats := func(dir GitDir) (done bool, err error) {
+	var wrongShardReposDeleted int64
+	defer func() {
+		// We want to set the gauge only when wrong shard clean-up is enabled
+		if wrongShardReposDeleteLimit > 0 {
+			wrongShardReposDeletedTotal.Set(float64(wrongShardRepoCount))
+		}
+	}()
+
+	maybeDeleteWrongShardRepos := func(dir GitDir) (done bool, err error) {
 		size := dirSize(dir.Path("."))
 		stats.GitDirBytes += size
 		name := s.name(dir)
@@ -163,8 +175,14 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		if !s.hostnameMatch(addr) {
 			wrongShardRepoCount++
 			wrongShardRepoSize += size
+			if wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
+				s.Logger.Info("removing repo cloned on the wrong shard", log.String("repo", string(dir)), log.String("target-shard", addr), log.String("current-shard", s.Hostname), log.Int64("size-bytes", size))
+				if err := s.removeRepoDirectory(dir); err != nil {
+					return true, err
+				}
+				wrongShardReposDeleted++
+			}
 		}
-
 		return false, nil
 	}
 
@@ -342,7 +360,7 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	}
 	cleanups := []cleanupFn{
 		// Compute the amount of space used by the repo
-		{"compute statistics", computeStats},
+		{"compute stats and delete wrong shard repos", maybeDeleteWrongShardRepos},
 		// Do some sanity checks on the repository.
 		{"maybe remove corrupt", maybeRemoveCorrupt},
 		// If git is interrupted it can leave lock files lying around. It does not clean
