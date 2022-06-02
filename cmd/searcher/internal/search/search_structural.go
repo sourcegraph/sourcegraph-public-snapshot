@@ -62,7 +62,7 @@ func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.F
 	}
 
 	chunks := chunkRanges(ranges, 0)
-	chunkMatches := rangesToChunkMatches(fileBuf, chunks)
+	chunkMatches := chunksToMatches(fileBuf, chunks)
 	return protocol.FileMatch{
 		Path:         combyMatch.URI,
 		ChunkMatches: chunkMatches,
@@ -128,7 +128,7 @@ func chunkRanges(ranges []protocol.Range, interChunkLines int) []rangeChunk {
 	return chunks
 }
 
-func rangesToChunkMatches(buf []byte, chunks []rangeChunk) []protocol.ChunkMatch {
+func chunksToMatches(buf []byte, chunks []rangeChunk) []protocol.ChunkMatch {
 	chunkMatches := make([]protocol.ChunkMatch, 0, len(chunks))
 	for _, chunk := range chunks {
 		firstLineStart := int32(0)
