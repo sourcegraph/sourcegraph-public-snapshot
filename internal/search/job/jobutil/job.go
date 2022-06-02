@@ -229,12 +229,12 @@ func orderSearcherJob(j job.Job) job.Job {
 			if pager, ok := current.(*repoPagerJob); ok {
 				if _, ok := pager.child.(*zoekt.RepoSubsetTextSearchJob); ok && !seenZoektRepoSearch {
 					seenZoektRepoSearch = true
-					return NewSequentialJob(current, pagedSearcherJob)
+					return NewSequentialJob(false, current, pagedSearcherJob)
 				}
 			}
 			if _, ok := current.(*zoekt.GlobalTextSearchJob); ok && !seenZoektGlobalSearch {
 				seenZoektGlobalSearch = true
-				return NewSequentialJob(current, pagedSearcherJob)
+				return NewSequentialJob(false, current, pagedSearcherJob)
 			}
 			return current
 		},
