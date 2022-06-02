@@ -186,15 +186,16 @@ func TestConcurrentLogging(t *testing.T) {
 	t.Run("2 goroutines, 50 msg each", func(t *testing.T) {
 		logger, tr, _sync := newTestLogger(t)
 		var wg sync.WaitGroup
-		wg.Add(2)
+		wg.Add(10)
 		f := func() {
-			for i := 0; i < 50; i++ {
+			for i := 0; i < 10; i++ {
 				logger.With(log.Error(e)).Warn("msg")
 			}
 			wg.Done()
 		}
-		go f()
-		go f()
+		for i := 0; i < 10; i++ {
+			go f()
+		}
 		wg.Wait()
 		_sync()
 		assert.Len(t, tr.Events(), 100)

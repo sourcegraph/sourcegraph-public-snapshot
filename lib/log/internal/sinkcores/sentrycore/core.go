@@ -30,6 +30,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 )
 
+const (
+	// bufferSize defines how large is the buffer accumulating cores.
+	bufferSize = 512
+)
+
 // baseContext contains the data surrounding an error, that is shared by all errors attached to the current core.
 type baseContext struct {
 	Key     string
@@ -74,7 +79,7 @@ var _ zapcore.Core = &Core{}
 func NewCore(hub *sentry.Hub) *Core {
 	w := &worker{
 		hub:  sentryHub{hub: hub.Clone()}, // Avoid accidental side effects if the hub is modified elsewhere.
-		C:    make(chan *Core, 512),
+		C:    make(chan *Core, bufferSize),
 		done: make(chan struct{}),
 	}
 	w.start()
