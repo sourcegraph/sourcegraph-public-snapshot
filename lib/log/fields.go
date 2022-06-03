@@ -52,7 +52,8 @@ var (
 
 // Text constructs a Field with a given key and value. The string data in the text value
 // is redacted depending on the privacy level.
-func Text(key string, t privacy.Text) Field {
+func Text[T privacy.AsText](key string, value T) Field {
+	t := value.AsText()
 	if shouldRedact(t.Privacy()) {
 		return zap.String(key, redact(t.GetDataUnchecked()))
 	}

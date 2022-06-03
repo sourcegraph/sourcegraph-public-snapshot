@@ -21,14 +21,20 @@ type RepoID int32
 //
 // Previously, this was called RepoURI.
 type RepoName struct {
-	privacy.Text
+	Value privacy.Text
 }
 
 // RepoHashedName is the hashed name of a repo
 type RepoHashedName string
 
+func (r RepoName) AsText() privacy.Text {
+	return r.Value
+}
+
+var _ privacy.AsText = RepoName{}
+
 func (r RepoName) Equal(o RepoName) bool {
-	return strings.EqualFold(r.Text.GetDataUnchecked(), o.Text.GetDataUnchecked())
+	return strings.EqualFold(r.Value.GetDataUnchecked(), o.Value.GetDataUnchecked())
 }
 
 var deletedRegex = lazyregexp.New("DELETED-[0-9]+\\.[0-9]+-")
@@ -37,7 +43,7 @@ var deletedRegex = lazyregexp.New("DELETED-[0-9]+\\.[0-9]+-")
 // change its name in the database, this function extracts the original repo
 // name.
 func UndeletedRepoName(name RepoName) RepoName {
-	return RepoName{name.Text.MapData(func(s string) string {
+	return RepoName{name.Value.MapData(func(s string) string {
 		return deletedRegex.ReplaceAllString(s, "")
 	})}
 }
@@ -65,7 +71,7 @@ type RepoCommit struct {
 
 func (rc RepoCommit) LogFields() []log.Field {
 	return []log.Field{
-		log.String("repo", rc.Repo.Text.GetDataUnchecked()),
+		log.String("repo", rc.Repo.Value.GetDataUnchecked()),
 		log.String("commitID", string(rc.CommitID)),
 	}
 }

@@ -22,6 +22,12 @@ type Text struct {
 	privacy Privacy
 }
 
+func (t Text) AsText() Text {
+	return t
+}
+
+var _ AsText = Text{}
+
 func NewText(data string, privacy Privacy) Text {
 	return Text{data, privacy}
 }
@@ -103,4 +109,15 @@ func (t Text) IncreasePrivacy(newPrivacy Privacy) Text {
 		panic("error: Attempted to make value more public using IncreasePrivacy")
 	}
 	return NewText(t.data, newPrivacy)
+}
+
+// AsText represents types that are in 1-1 correspondence with Text.
+//
+// This interface is intended for reducing verbosity when logging Text values.
+//
+//   🙁 log.Text(key, privacy.Text(data)) // cast required for type Data privacy.Text
+//   😐 log.Text(key, data.Value) // field projection required for type Data { Value privacy.Text }
+//   😃 log.Text(key, data) // after implementing AsText for Data
+type AsText interface {
+	AsText() Text
 }

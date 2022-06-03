@@ -267,7 +267,7 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		// name is the relative path to ReposDir, but without the .git suffix.
 		repo := s.name(dir)
 		subCleanupLogger := cleanupLogger.With(
-			log.Text("repo", repo.Text),
+			log.Text("repo", repo),
 			log.Time("cloned", recloneTime),
 			log.String("reason", reason, privacy.Unknown),
 		)
