@@ -110,6 +110,7 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                         onChange={createInputChangeHandler('description')}
                         className={classNames('form-group', styles.label)}
                         label="Description"
+                        autoFocus={true}
                     />
                     <Input
                         id="saved-search-form-input-query"
