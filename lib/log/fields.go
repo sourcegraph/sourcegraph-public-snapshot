@@ -50,6 +50,8 @@ var (
 	Namespace = zap.Namespace
 )
 
+// Text constructs a Field with a given key and value. The string data in the text value
+// is redacted depending on the privacy level.
 func Text(key string, t privacy.Text) Field {
 	if shouldRedact(t.Privacy()) {
 		return zap.String(key, redact(t.GetDataUnchecked()))
@@ -57,6 +59,8 @@ func Text(key string, t privacy.Text) Field {
 	return zap.String(key, t.GetDataUnchecked())
 }
 
+// Text constructs a Field with a given key and value. The string data in the text values
+// is redacted depending on the privacy level.
 func Texts(key string, ts []privacy.Text) Field {
 	out := make([]string, 0, len(ts))
 	for _, t := range ts {
@@ -74,7 +78,7 @@ func String(key string, value string, p privacy.Privacy) Field {
 	return Text(key, privacy.NewText(value, p))
 }
 
-// Strings constructs a field with multiple strings with the same privacy level.
+// Strings constructs a Field with multiple strings with the same privacy level.
 func Strings(key string, values []string, p privacy.Privacy) Field {
 	if !shouldRedact(p) {
 		return zap.Strings(key, values)
