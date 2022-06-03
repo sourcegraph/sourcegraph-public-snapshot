@@ -845,7 +845,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                             </Link>
                             <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
                                 ({group.locations.length}{' '}
-                                {pluralize('occurrence', group.locations.length, 'occurences')})
+                                {pluralize('occurrence', group.locations.length, 'occurrences')})
                             </span>
                         </span>
                         <Badge small={true} variant="secondary" className="ml-4">
