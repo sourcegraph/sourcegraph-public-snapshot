@@ -3,7 +3,7 @@ import React, { useCallback } from 'react'
 import classNames from 'classnames'
 
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Label } from '@sourcegraph/wildcard'
+import { Input, Label } from '@sourcegraph/wildcard'
 
 import { USER_DISPLAY_NAME_MAX_LENGTH } from '../..'
 import { UsernameInput } from '../../../auth/SignInSignUpCommon'
@@ -57,34 +57,31 @@ export const UserProfileFormFields: React.FunctionComponent<React.PropsWithChild
                     nor begin with a hyphen.
                 </small>
             </div>
-            <div className="form-group">
-                <Label htmlFor="UserProfileFormFields__displayName">Display name</Label>
-                <input
-                    id="UserProfileFormFields__displayName"
-                    type="text"
-                    className="form-control test-UserProfileFormFields__displayName"
-                    value={value.displayName || ''}
-                    onChange={onDisplayNameChange}
+            <Input
+                id="UserProfileFormFields__displayName"
+                data-testid="test-UserProfileFormFields__displayName"
+                value={value.displayName || ''}
+                onChange={onDisplayNameChange}
+                disabled={disabled}
+                spellCheck={false}
+                placeholder="Display name"
+                maxLength={USER_DISPLAY_NAME_MAX_LENGTH}
+                className="form-group"
+                label="Display name"
+            />
+
+            <div className="d-flex align-items-center">
+                <Input
+                    id="UserProfileFormFields__avatarURL"
+                    type="url"
+                    value={value.avatarURL || ''}
+                    onChange={onAvatarURLChange}
                     disabled={disabled}
                     spellCheck={false}
-                    placeholder="Display name"
-                    maxLength={USER_DISPLAY_NAME_MAX_LENGTH}
+                    placeholder="URL to avatar photo"
+                    className="form-group w-100"
+                    label="Avatar URL"
                 />
-            </div>
-            <div className="d-flex align-items-center">
-                <div className="form-group w-100">
-                    <Label htmlFor="UserProfileFormFields__avatarURL">Avatar URL</Label>
-                    <input
-                        id="UserProfileFormFields__avatarURL"
-                        type="url"
-                        className="form-control test-UserProfileFormFields__avatarURL"
-                        value={value.avatarURL || ''}
-                        onChange={onAvatarURLChange}
-                        disabled={disabled}
-                        spellCheck={false}
-                        placeholder="URL to avatar photo"
-                    />
-                </div>
                 {value.avatarURL && <UserAvatar user={value} className={classNames('ml-2', styles.avatar)} />}
             </div>
         </div>

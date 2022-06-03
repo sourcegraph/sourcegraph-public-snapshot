@@ -268,6 +268,7 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
                                             <FilteredConnection
                                                 listComponent="div"
                                                 listClassName={classNames(styles.grid, 'mb-3')}
+                                                inputClassName="w-auto"
                                                 noun="dependency"
                                                 pluralNoun="dependencies"
                                                 nodeComponent={DependencyOrDependentNode}
@@ -294,6 +295,7 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
                                             <FilteredConnection
                                                 listComponent="div"
                                                 listClassName={classNames(styles.grid, 'mb-3')}
+                                                inputClassName="w-auto"
                                                 noun="dependent"
                                                 pluralNoun="dependents"
                                                 nodeComponent={DependencyOrDependentNode}
@@ -339,6 +341,7 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
                                     <FilteredConnection
                                         listComponent="div"
                                         listClassName={classNames(styles.grid, 'mb-3')}
+                                        inputClassName="w-auto"
                                         noun="match"
                                         pluralNoun="matches"
                                         nodeComponent={RetentionMatchNode}
