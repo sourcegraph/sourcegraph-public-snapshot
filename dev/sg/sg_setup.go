@@ -64,6 +64,8 @@ func setupExec(ctx context.Context, args []string) error {
 	_, err = root.RepositoryRoot()
 	inRepo := err == nil
 
+	// TODO create runner from checks
+
 	failed := []int{}
 	all := []int{}
 	skipped := []int{}
@@ -422,8 +424,8 @@ func (d *dependency) Update(ctx context.Context) {
 
 type dependencyCategory struct {
 	name               string
-	dependencies       []*dependency
-	requiresRepository bool
+	dependencies       []*dependency // checks
+	requiresRepository bool          // enabler
 
 	// autoFixingDependencies are only accounted for it the user asks to fix the category.
 	// Otherwise, they'll never be checked nor print an error, because the only thing that
