@@ -76,9 +76,10 @@ func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[stri
 func SearchOpts(ctx context.Context, k int, fileMatchLimit int32, selector filter.SelectPath) zoekt.SearchOptions {
 	shouldTrace, spanContext := getSpanContext(ctx)
 	searchOpts := zoekt.SearchOptions{
-		Trace:       shouldTrace,
-		SpanContext: spanContext,
-		MaxWallTime: defaultTimeout,
+		Trace:        shouldTrace,
+		SpanContext:  spanContext,
+		MaxWallTime:  defaultTimeout,
+		ChunkMatches: true,
 	}
 
 	if userProbablyWantsToWaitLonger := fileMatchLimit > limits.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
