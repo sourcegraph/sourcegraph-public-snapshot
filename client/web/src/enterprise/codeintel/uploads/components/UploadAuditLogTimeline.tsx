@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import DatabaseEditIcon from 'mdi-react/DatabaseEditIcon'
 import DatabasePlusIcon from 'mdi-react/DatabasePlusIcon'
 
-import { Code, Container } from '@sourcegraph/wildcard'
+import { Container } from '@sourcegraph/wildcard'
 
 import { Timeline } from '../../../../components/Timeline'
 import { AuditLogOperation, LsifUploadsAuditLogsFields } from '../../../../graphql-operations'
@@ -43,13 +43,13 @@ export const UploadAuditLogTimeline: FunctionComponent<React.PropsWithChildren<U
                             // eslint-disable-next-line react/no-array-index-key
                             <tr key={index}>
                                 <td className="mr-2">
-                                    <pre className={classNames('mb-0 position-relative')}>{change.column}</pre>
+                                    <span className={classNames('mb-0 position-relative')}>{change.column}</span>
                                 </td>
                                 <td className="mr-2">
-                                    <pre className={classNames('mb-0 position-relative')}>{change.old || 'NULL'}</pre>
+                                    <span className={classNames('mb-0 position-relative')}>{change.old || 'NULL'}</span>
                                 </td>
                                 <td className="mr-2">
-                                    <pre className={classNames('mb-0 position-relative')}>{change.new || 'NULL'}</pre>
+                                    <span className={classNames('mb-0 position-relative')}>{change.new || 'NULL'}</span>
                                 </td>
                             </tr>
                         ))}
@@ -71,7 +71,7 @@ function stageText(log: LsifUploadsAuditLogsFields): ReactNode {
     return (
         <>
             Altered columns:{' '}
-            {formatReactNodeList(log.changedColumns.map(change => <Code key={change.column}>{change.column}</Code>))}
+            {formatReactNodeList(log.changedColumns.map(change => <span key={change.column}>{change.column}</span>))}
         </>
     )
 }
