@@ -64,7 +64,6 @@ func (l *goGenerateLinter) Check(ctx context.Context, state *repo.State) *lint.R
 			reportOut.Writef("Failed to pretty print diff: %s, dumping output instead:", err.Error())
 			reportOut.Write(diffOutput)
 		}
-		reportOut.WriteSuggestionf("To fix this, run 'sg generate'.")
 		r.Output = sb.String()
 	}
 
