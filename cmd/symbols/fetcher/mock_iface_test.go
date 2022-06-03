@@ -19,6 +19,9 @@ type MockGitserverClient struct {
 	// FetchTarFunc is an instance of a mock function object controlling the
 	// behavior of the method FetchTar.
 	FetchTarFunc *GitserverClientFetchTarFunc
+	// GetRepoSizeFunc is an instance of a mock function object controlling
+	// the behavior of the method GetRepoSize.
+	GetRepoSizeFunc *GitserverClientGetRepoSizeFunc
 	// GitDiffFunc is an instance of a mock function object controlling the
 	// behavior of the method GitDiff.
 	GitDiffFunc *GitserverClientGitDiffFunc
@@ -31,6 +34,11 @@ func NewMockGitserverClient() *MockGitserverClient {
 	return &MockGitserverClient{
 		FetchTarFunc: &GitserverClientFetchTarFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, []string) (r0 io.ReadCloser, r1 error) {
+				return
+			},
+		},
+		GetRepoSizeFunc: &GitserverClientGetRepoSizeFunc{
+			defaultHook: func(context.Context, api.RepoName) (r0 int64, r1 error) {
 				return
 			},
 		},
@@ -51,6 +59,11 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.FetchTar")
 			},
 		},
+		GetRepoSizeFunc: &GitserverClientGetRepoSizeFunc{
+			defaultHook: func(context.Context, api.RepoName) (int64, error) {
+				panic("unexpected invocation of MockGitserverClient.GetRepoSize")
+			},
+		},
 		GitDiffFunc: &GitserverClientGitDiffFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (gitserver.Changes, error) {
 				panic("unexpected invocation of MockGitserverClient.GitDiff")
@@ -66,6 +79,9 @@ func NewMockGitserverClientFrom(i gitserver.GitserverClient) *MockGitserverClien
 	return &MockGitserverClient{
 		FetchTarFunc: &GitserverClientFetchTarFunc{
 			defaultHook: i.FetchTar,
+		},
+		GetRepoSizeFunc: &GitserverClientGetRepoSizeFunc{
+			defaultHook: i.GetRepoSize,
 		},
 		GitDiffFunc: &GitserverClientGitDiffFunc{
 			defaultHook: i.GitDiff,
@@ -184,6 +200,114 @@ func (c GitserverClientFetchTarFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientFetchTarFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverClientGetRepoSizeFunc describes the behavior when the
+// GetRepoSize method of the parent MockGitserverClient instance is invoked.
+type GitserverClientGetRepoSizeFunc struct {
+	defaultHook func(context.Context, api.RepoName) (int64, error)
+	hooks       []func(context.Context, api.RepoName) (int64, error)
+	history     []GitserverClientGetRepoSizeFuncCall
+	mutex       sync.Mutex
+}
+
+// GetRepoSize delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverClient) GetRepoSize(v0 context.Context, v1 api.RepoName) (int64, error) {
+	r0, r1 := m.GetRepoSizeFunc.nextHook()(v0, v1)
+	m.GetRepoSizeFunc.appendCall(GitserverClientGetRepoSizeFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetRepoSize method
+// of the parent MockGitserverClient instance is invoked and the hook queue
+// is empty.
+func (f *GitserverClientGetRepoSizeFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (int64, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetRepoSize method of the parent MockGitserverClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitserverClientGetRepoSizeFunc) PushHook(hook func(context.Context, api.RepoName) (int64, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverClientGetRepoSizeFunc) SetDefaultReturn(r0 int64, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (int64, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverClientGetRepoSizeFunc) PushReturn(r0 int64, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName) (int64, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverClientGetRepoSizeFunc) nextHook() func(context.Context, api.RepoName) (int64, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientGetRepoSizeFunc) appendCall(r0 GitserverClientGetRepoSizeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverClientGetRepoSizeFuncCall objects
+// describing the invocations of this function.
+func (f *GitserverClientGetRepoSizeFunc) History() []GitserverClientGetRepoSizeFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientGetRepoSizeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientGetRepoSizeFuncCall is an object that describes an
+// invocation of method GetRepoSize on an instance of MockGitserverClient.
+type GitserverClientGetRepoSizeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int64
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientGetRepoSizeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientGetRepoSizeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

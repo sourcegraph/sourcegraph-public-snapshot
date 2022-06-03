@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -48,7 +49,7 @@ func main() {
 				return nil, nil, nil, "", err
 			}
 
-			searchFunc := func(ctx context.Context, args types.SearchArgs) (results result.Symbols, err error) {
+			searchFunc := func(ctx context.Context, args search.SymbolsParameters) (results result.Symbols, err error) {
 				if sliceContains(repos, string(args.Repo)) {
 					return rockskipSearchFunc(ctx, args)
 				} else {
@@ -185,8 +186,8 @@ func (g Gitserver) ArchiveEach(repo string, commit string, paths []string, onFil
 		return nil
 	}
 
-	args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit)}
-	parseRequestOrErrors := g.repositoryFetcher.FetchRepositoryArchive(context.TODO(), args, paths)
+	args := search.SymbolsParameters{Repo: api.RepoName(repo), CommitID: api.CommitID(commit)}
+	parseRequestOrErrors := g.repositoryFetcher.FetchRepositoryArchive(context.TODO(), args.Repo, args.CommitID, paths)
 	defer func() {
 		// Ensure the channel is drained
 		for range parseRequestOrErrors {
