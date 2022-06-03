@@ -10,6 +10,8 @@ import { ContentMatch, getFileMatchUrl, SymbolMatch } from '@sourcegraph/shared/
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { Code, Icon, Link, Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
 
+import { SearchResultHeader } from './SearchResultHeader'
+import { SelectableSearchResult } from './SelectableSearchResult'
 import { TrimmedCodeLineWithHighlights } from './TrimmedCodeLineWithHighlights'
 import { getResultId } from './utils'
 
@@ -26,29 +28,20 @@ function getResultElementsForContentMatch(
     selectResult: (resultId: string) => void,
     selectedResult: string | null
 ): JSX.Element[] {
-    return match.lineMatches.map(line => {
-        const resultId = getResultId(match, line)
-        const onClick = (): void => selectResult(resultId)
-
-        return (
-            // The below element's accessibility is handled via a document level event listener.
-            //
-            // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
-            <div
-                id={`search-result-list-item-${resultId}`}
-                className={classNames(styles.line, {
-                    [styles.lineActive]: resultId === selectedResult,
-                })}
-                onClick={onClick}
-                key={resultId}
-            >
-                <div className={styles.lineCode}>
-                    <TrimmedCodeLineWithHighlights line={line} />
-                </div>
-                <div className={classNames(styles.lineLineNumber, 'text-muted')}>{line.lineNumber + 1}</div>
+    return match.lineMatches.map(line => (
+        <SelectableSearchResult
+            key={getResultId(match, line)}
+            lineMatchOrSymbolName={line}
+            match={match}
+            selectedResult={selectedResult}
+            selectResult={selectResult}
+        >
+            <div className={styles.lineCode}>
+                <TrimmedCodeLineWithHighlights line={line} />
             </div>
-        )
-    })
+            <div className={classNames(styles.lineLineNumber, 'text-muted')}>{line.lineNumber + 1}</div>
+        </SelectableSearchResult>
+    ))
 }
 
 function getResultElementsForSymbolMatch(
@@ -56,32 +49,22 @@ function getResultElementsForSymbolMatch(
     selectResult: (resultId: string) => void,
     selectedResult: string | null
 ): JSX.Element[] {
-    return match.symbols.map(symbol => {
-        const resultId = getResultId(match, symbol.name)
-        const onClick = (): void => selectResult(resultId)
-
-        return (
-            // The below element's accessibility is handled via a document level event listener.
-            //
-            // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
-            <div
-                id={`search-result-list-item-${resultId}`}
-                className={classNames(styles.line, {
-                    [styles.lineActive]: resultId === selectedResult,
-                })}
-                onClick={onClick}
-                key={resultId}
-            >
-                <div>
-                    <SymbolIcon kind={symbol.kind} className="mr-1" />
-                    <Code>
-                        {symbol.name}{' '}
-                        {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
-                    </Code>
-                </div>
+    return match.symbols.map(symbol => (
+        <SelectableSearchResult
+            key={getResultId(match, symbol.name)}
+            lineMatchOrSymbolName={symbol.name}
+            match={match}
+            selectedResult={selectedResult}
+            selectResult={selectResult}
+        >
+            <div>
+                <SymbolIcon kind={symbol.kind} className="mr-1" />
+                <Code>
+                    {symbol.name} {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
+                </Code>
             </div>
-        )
-    })
+        </SelectableSearchResult>
+    ))
 }
 
 export const FileSearchResult: React.FunctionComponent<Props> = ({ match, selectedResult, selectResult }: Props) => {
@@ -95,7 +78,7 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({ match, select
     const formattedRepositoryStarCount = formatRepositoryStarCount(match.repoStars)
 
     const title = (
-        <div className={styles.header}>
+        <SearchResultHeader>
             <div className={classNames(styles.headerTitle)} data-testid="result-container-header">
                 <Icon role="img" aria-label="File" className="flex-shrink-0" as={FileDocumentIcon} />
                 <div className={classNames('mx-1', styles.headerDivider)} />
@@ -115,7 +98,7 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({ match, select
                     {formattedRepositoryStarCount}
                 </>
             )}
-        </div>
+        </SearchResultHeader>
     )
 
     return (
