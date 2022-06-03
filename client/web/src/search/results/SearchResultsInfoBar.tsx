@@ -223,7 +223,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     props.enableCodeInsights
                 ),
             ].filter((button): button is CreateAction => button !== null),
-        [props.authenticatedUser, props.enableCodeInsights, props.patternType, props.query, props.batchChangesExecutionEnabled]
+        [
+            props.authenticatedUser,
+            props.enableCodeInsights,
+            props.patternType,
+            props.query,
+            props.batchChangesExecutionEnabled,
+        ]
     )
 
     // The create code monitor action is separated from the rest of the actions, because we use the
