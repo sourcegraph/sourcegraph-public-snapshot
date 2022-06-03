@@ -128,14 +128,13 @@ func Zoekt() *monitoring.Dashboard {
 					},
 					{
 						{
-							Name:              "average_resolve_revision_duration",
-							Description:       "average resolve revision duration over 5m",
-							Query:             `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(15),
-							Critical:          monitoring.Alert().GreaterOrEqual(30),
-							Panel:             monitoring.Panel().LegendFormat("{{duration}}").Unit(monitoring.Seconds),
-							Owner:             monitoring.ObservableOwnerSearchCore,
-							PossibleSolutions: "none",
+							Name:        "average_resolve_revision_duration",
+							Description: "average resolve revision duration over 5m",
+							Query:       `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
+							Warning:     monitoring.Alert().GreaterOrEqual(15),
+							Panel:       monitoring.Panel().LegendFormat("{{duration}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							NextSteps:   "none",
 						},
 						{
 							Name:        "get_index_options_error_increase",
@@ -151,7 +150,7 @@ func Zoekt() *monitoring.Dashboard {
 							Critical: monitoring.Alert().GreaterOrEqual(100).For(35 * time.Minute),
 							Panel:    monitoring.Panel().Min(0),
 							Owner:    monitoring.ObservableOwnerSearchCore,
-							PossibleSolutions: `
+							NextSteps: `
 								- View error rates on gitserver and frontend to identify root cause.
 								- Rollback frontend/gitserver deployment if due to a bad code change.
 								- View error logs for 'getIndexOptions' via net/trace debug interface. For example click on a 'indexed-search-indexer-' on https://sourcegraph.com/-/debug/. Then click on Traces. Replace sourcegraph.com with your instance address.
@@ -174,13 +173,13 @@ func Zoekt() *monitoring.Dashboard {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:              "indexed_search_request_errors",
-							Description:       "indexed search request errors every 5m by code",
-							Query:             `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,
-							Warning:           monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
-							Panel:             monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
-							Owner:             monitoring.ObservableOwnerSearchCore,
-							PossibleSolutions: "none",
+							Name:        "indexed_search_request_errors",
+							Description: "indexed search request errors every 5m by code",
+							Query:       `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,
+							Warning:     monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
+							Panel:       monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							NextSteps:   "none",
 						},
 					},
 				},

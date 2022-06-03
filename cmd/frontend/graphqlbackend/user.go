@@ -357,7 +357,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	NewPassword string
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the authenticated user can change their password.
-	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -365,7 +365,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 		return nil, errors.New("no authenticated user")
 	}
 
-	if err := database.Users(r.db).UpdatePassword(ctx, user.ID, args.OldPassword, args.NewPassword); err != nil {
+	if err := r.db.Users().UpdatePassword(ctx, user.ID, args.OldPassword, args.NewPassword); err != nil {
 		return nil, err
 	}
 
@@ -381,7 +381,7 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	NewPassword string
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the authenticated user can create their password.
-	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -389,7 +389,7 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 		return nil, errors.New("no authenticated user")
 	}
 
-	if err := database.Users(r.db).CreatePassword(ctx, user.ID, args.NewPassword); err != nil {
+	if err := r.db.Users().CreatePassword(ctx, user.ID, args.NewPassword); err != nil {
 		return nil, err
 	}
 
@@ -410,7 +410,7 @@ func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *struct{ UserI
 			return nil, err
 		}
 	} else {
-		user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
+		user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -428,7 +428,7 @@ func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *struct{ UserI
 		TosAccepted: &tosAccepted,
 	}
 
-	if err := database.Users(r.db).Update(ctx, affectedUserID, update); err != nil {
+	if err := r.db.Users().Update(ctx, affectedUserID, update); err != nil {
 		return nil, err
 	}
 
@@ -436,7 +436,7 @@ func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *struct{ UserI
 }
 
 func (r *schemaResolver) SetSearchable(ctx context.Context, args *struct{ Searchable bool }) (*EmptyResponse, error) {
-	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -449,7 +449,7 @@ func (r *schemaResolver) SetSearchable(ctx context.Context, args *struct{ Search
 		Searchable: &searchable,
 	}
 
-	if err := database.Users(r.db).Update(ctx, user.ID, update); err != nil {
+	if err := r.db.Users().Update(ctx, user.ID, update); err != nil {
 		return nil, err
 	}
 
@@ -574,7 +574,7 @@ func (r *UserResolver) PublicRepositories(ctx context.Context) ([]*RepositoryRes
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
-	repos, err := database.UserPublicRepos(r.db).ListByUser(ctx, r.user.ID)
+	repos, err := r.db.UserPublicRepos().ListByUser(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}

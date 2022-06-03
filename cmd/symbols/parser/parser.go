@@ -11,14 +11,14 @@ import (
 	"github.com/sourcegraph/go-ctags"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Parser interface {
-	Parse(ctx context.Context, args types.SearchArgs, paths []string) (<-chan SymbolOrError, error)
+	Parse(ctx context.Context, args search.SymbolsParameters, paths []string) (<-chan SymbolOrError, error)
 }
 
 type SymbolOrError struct {
@@ -50,7 +50,7 @@ func NewParser(
 	}
 }
 
-func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []string) (_ <-chan SymbolOrError, err error) {
+func (p *parser) Parse(ctx context.Context, args search.SymbolsParameters, paths []string) (_ <-chan SymbolOrError, err error) {
 	ctx, _, endObservation := p.operations.parse.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(args.Repo)),
 		log.String("commitID", string(args.CommitID)),
@@ -62,7 +62,7 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 	// run on defer of a background routine, which indicates when the returned
 	// symbols channel is closed.
 
-	parseRequestOrErrors := p.repositoryFetcher.FetchRepositoryArchive(ctx, args, paths)
+	parseRequestOrErrors := p.repositoryFetcher.FetchRepositoryArchive(ctx, args.Repo, args.CommitID, paths)
 	if err != nil {
 		endObservation(1, observation.Args{})
 		return nil, errors.Wrap(err, "repositoryFetcher.FetchRepositoryArchive")

@@ -5,14 +5,14 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type CachedDatabaseWriter interface {
-	GetOrCreateDatabaseFile(ctx context.Context, args types.SearchArgs) (string, error)
+	GetOrCreateDatabaseFile(ctx context.Context, args search.SymbolsParameters) (string, error)
 }
 
 type cachedDatabaseWriter struct {
@@ -32,7 +32,7 @@ func NewCachedDatabaseWriter(databaseWriter DatabaseWriter, cache diskcache.Stor
 // likely incompatible symbols service. Increment this when you change the database schema.
 const symbolsDBVersion = 5
 
-func (w *cachedDatabaseWriter) GetOrCreateDatabaseFile(ctx context.Context, args types.SearchArgs) (string, error) {
+func (w *cachedDatabaseWriter) GetOrCreateDatabaseFile(ctx context.Context, args search.SymbolsParameters) (string, error) {
 	// set to noop parse originally, this will be overridden if the fetcher func below is called
 	observability.SetParseAmount(ctx, observability.CachedParse)
 	cacheFile, err := w.cache.OpenWithPath(ctx, repoCommitKey(args.Repo, args.CommitID), func(fetcherCtx context.Context, tempDBFile string) error {
