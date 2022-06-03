@@ -13,7 +13,7 @@ public class JavaToJSBridge {
     private final JBCefBrowserBase browser;
     private final Logger logger = Logger.getInstance(JavaToJSBridge.class);
     private final JBCefJSQuery query;
-    Function<String, JBCefJSQuery.Response> handler = null;
+    private Function<String, JBCefJSQuery.Response> handler = null;
     private boolean isQueryRunning = false;
 
     public JavaToJSBridge(JBCefBrowserBase browser) {
