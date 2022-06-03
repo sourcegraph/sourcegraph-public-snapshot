@@ -121,6 +121,7 @@ tinygradient 1.1.5
 		npm/supports-color:
 			npm/has-flag
 	npm/tinygradient:
+		npm/types/tinycolor2
 		npm/tinycolor2
 `
 

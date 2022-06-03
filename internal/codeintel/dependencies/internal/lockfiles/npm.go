@@ -88,7 +88,6 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, graph 
 	  linkType: hard
 	*/
 
-	// var dependencies = map[*reposource.NpmDependency][]string{}
 	var byName = map[string]*reposource.NpmDependency{}
 	var dependencyNames = map[*reposource.NpmDependency][]string{}
 
@@ -144,13 +143,15 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, graph 
 		}
 
 		if line[:4] == "    " && parsingDependencies {
-			elems := strings.Split(line[4:], " ")
-			name := elems[0]
+			var dependencyname string
+			if dependencyname, _, err = parsePackageDependency(line); err != nil {
+				continue
+			}
 
 			if deps, ok := dependencyNames[current]; !ok {
-				dependencyNames[current] = []string{name}
+				dependencyNames[current] = []string{dependencyname}
 			} else {
-				dependencyNames[current] = append(deps, name)
+				dependencyNames[current] = append(deps, dependencyname)
 			}
 		}
 	}
@@ -189,8 +190,9 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, graph 
 }
 
 var (
-	yarnLocatorRegexp = lazyregexp.New(`"?(?P<package>.+?)@(?:(?P<protocol>.+?):)?.+`)
-	yarnVersionRegexp = lazyregexp.New(`\s+"?version:?"?\s+"?(?P<version>[^"]+)"?`)
+	yarnLocatorRegexp    = lazyregexp.New(`"?(?P<package>.+?)@(?:(?P<protocol>.+?):)?.+`)
+	yarnDependencyRegexp = lazyregexp.New(`\s{4}"?(?P<package>.+?)"?\s"?(?P<version>[^"]+)"?`)
+	yarnVersionRegexp    = lazyregexp.New(`\s+"?version:?"?\s+"?(?P<version>[^"]+)"?`)
 )
 
 func parsePackageLocator(target string) (packagename, protocol string, err error) {
@@ -204,6 +206,22 @@ func parsePackageLocator(target string) (packagename, protocol string, err error
 			packagename = capture[i]
 		case "protocol":
 			protocol = capture[i]
+		}
+	}
+	return
+}
+
+func parsePackageDependency(target string) (dependencyname, version string, err error) {
+	capture := yarnDependencyRegexp.FindStringSubmatch(target)
+	if len(capture) < 2 {
+		return "", "", errors.New("not package format")
+	}
+	for i, group := range yarnLocatorRegexp.SubexpNames() {
+		switch group {
+		case "package":
+			dependencyname = capture[i]
+		case "version":
+			version = capture[i]
 		}
 	}
 	return
