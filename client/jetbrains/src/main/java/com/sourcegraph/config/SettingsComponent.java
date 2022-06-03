@@ -25,7 +25,7 @@ public class SettingsComponent {
         sourcegraphUrlTextField = new JBTextField();
         //noinspection DialogTitleCapitalization
         sourcegraphUrlTextField.getEmptyText().setText("https://sourcegraph.example.com");
-        sourcegraphUrlTextField.setToolTipText("If your company has your own Sourcegraph instance, set its URL here.\nThe default is “https://sourcegraph.com”.");
+        sourcegraphUrlTextField.setToolTipText("If your company has your own Sourcegraph instance, set its URL here.\nThe default is \"https://sourcegraph.com\".");
 
         JBLabel accessTokenLabel = new JBLabel("Access token:");
         accessTokenTextField = new JBTextField();
@@ -36,13 +36,17 @@ public class SettingsComponent {
         defaultBranchNameTextField = new JBTextField();
         //noinspection DialogTitleCapitalization
         defaultBranchNameTextField.getEmptyText().setText("main");
-        defaultBranchNameTextField.setToolTipText("Usually “main” or “master”, but can be any branch name");
+        defaultBranchNameTextField.setToolTipText("Usually \"main\" or \"master\", but can be any branch name");
 
         JBLabel remoteUrlReplacementsLabel = new JBLabel("Remote URL replacements:");
         remoteUrlReplacementsTextField = new JBTextField();
         //noinspection DialogTitleCapitalization
         remoteUrlReplacementsTextField.getEmptyText().setText("search1, replacement1, search2, replacement2, ...");
-        remoteUrlReplacementsTextField.setToolTipText("You can replace specified strings in your repo’s remote URL.\nThe format is “search1, replacement1, search2, replacement2, ...”.\nUse any number of search/replacement pairs.\nPairs will be replaced going from left to right.\nThe whitespace before and after the commas doesn’t matter.");
+        remoteUrlReplacementsTextField.setToolTipText("You can replace specified strings in your repo's remote URL.\n" +
+            "The format is \"search1, replacement1, search2, replacement2, ...\".\n" +
+            "Use any number of search/replacement pairs.\n" +
+            "Pairs will be replaced going from left to right.\n" +
+            "The whitespace before and after the commas doesn't matter.");
 
         globbingCheckBox = new JBCheckBox("Enable globbing");
 
