@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -241,8 +240,6 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	}
 
 	var (
-		rErr *commit.RepoLimitError
-		tErr *commit.TimeLimitError
 		mErr *searchrepos.MissingRepoRevsError
 		oErr *errOverRepoLimit
 	)
@@ -298,24 +295,6 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 			Title:          "Structural search needs more memory",
 			Description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
 			Priority:       4,
-		}, nil
-	}
-
-	if errors.As(err, &rErr) {
-		return &search.Alert{
-			PrometheusType: "exceeded_diff_commit_search_limit",
-			Title:          fmt.Sprintf("Too many matching repositories for %s search to handle", rErr.ResultType),
-			Description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`, strings.Title(rErr.ResultType), rErr.Max),
-			Priority:       2,
-		}, nil
-	}
-
-	if errors.As(err, &tErr) {
-		return &search.Alert{
-			PrometheusType: "exceeded_diff_commit_with_time_search_limit",
-			Title:          fmt.Sprintf("Too many matching repositories for %s search to handle", tErr.ResultType),
-			Description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search.`, strings.Title(tErr.ResultType), tErr.Max),
-			Priority:       1,
 		}, nil
 	}
 
