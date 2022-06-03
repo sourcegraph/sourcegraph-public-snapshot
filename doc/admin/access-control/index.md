@@ -177,4 +177,4 @@ Depending on the type of authentication you decided to use (see here more detail
         "allowSignup": false
       }
     ]
-  ````
+  ```
