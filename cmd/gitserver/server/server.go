@@ -548,6 +548,10 @@ var (
 		Name: "src_gitserver_repo_wrong_shard_bytes",
 		Help: "Size (in bytes) of repos that are on disk on the wrong shard",
 	})
+	wrongShardReposDeletedCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_repo_wrong_shard_deleted",
+		Help: "The number of repos on the wrong shard that we deleted",
+	})
 )
 
 func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batchSize, perSecond int, fullSync bool) error {
