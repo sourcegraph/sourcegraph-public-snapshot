@@ -61,15 +61,15 @@ func main() {
 	env.HandleHelpFlag()
 	logging.Init()
 
-	syncLogs, updateSinks := log.InitWithSinks(log.Resource{
+	cb := log.InitWithSinks(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	}, log.NewSentrySink())
 
-	defer syncLogs()
+	defer cb.Sync()
 	conf.Init()
-	conf.Watch(updateSinks(conf.GetSinks))
+	conf.Watch(cb.Update(conf.GetSinks))
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
