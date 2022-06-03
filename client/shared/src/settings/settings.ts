@@ -32,7 +32,7 @@ export interface Settings {
             enabled: boolean
             forNerds?: boolean
         }
-        showGitBlameInSeparateColumn?: boolean
+        enableExtensionsDecorationsColumnView?: boolean
     }
     [key: string]: any
 

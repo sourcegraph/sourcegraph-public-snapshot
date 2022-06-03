@@ -317,8 +317,8 @@
             "pointer": true
           }
         },
-        "showGitBlameInSeparateColumn": {
-          "description": "Show git blame in a separate column in the blob view.",
+        "enableExtensionsDecorationsColumnView": {
+          "description": "If extension supports column view show its decorations in a separate column in the blob view.",
           "type": "boolean",
           "default": false,
           "!go": {

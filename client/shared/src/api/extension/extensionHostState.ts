@@ -62,10 +62,10 @@ export function createExtensionHostState(
         context: new BehaviorSubject<Context>({
             'clientApplication.isSourcegraph': initData.clientApplication === 'sourcegraph',
 
-            'experimentalFeatures.showGitBlameInSeparateColumn':
+            'experimentalFeatures.enableExtensionsDecorationsColumnView':
                 !isErrorLike(initData.initialSettings.final) &&
-                (initData.initialSettings.final as Settings).experimentalFeatures?.showGitBlameInSeparateColumn ===
-                    true,
+                (initData.initialSettings.final as Settings).experimentalFeatures
+                    ?.enableExtensionsDecorationsColumnView === true,
 
             // Arbitrary, undocumented versioning for extensions that need different behavior for different
             // Sourcegraph versions.

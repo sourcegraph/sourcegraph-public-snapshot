@@ -618,6 +618,10 @@ declare module 'sourcegraph' {
         dark?: ThemableDecorationAttachmentStyle
     }
 
+    interface TextDocumentDecorationTypeConfig {
+        display: 'inline' | 'column'
+    }
+
     /**
      * Represents a handle to a set of decorations.
      *
@@ -629,6 +633,8 @@ declare module 'sourcegraph' {
 
         /** An opaque identifier. */
         readonly key: string
+
+        readonly config: TextDocumentDecorationTypeConfig
     }
 
     /**

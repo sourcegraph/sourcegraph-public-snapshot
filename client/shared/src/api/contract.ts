@@ -110,7 +110,7 @@ export interface FlatExtensionHostAPI {
 
     getTextDecorations: (
         viewerId: ViewerId
-    ) => ProxySubscribable<[string | null, clientType.TextDocumentDecoration[]][]>
+    ) => ProxySubscribable<[sourcegraph.TextDocumentDecorationType, clientType.TextDocumentDecoration[]][]>
 
     /**
      * Add a viewer.

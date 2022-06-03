@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
-import { isEqual } from 'lodash'
+import { isEqual, sortBy } from 'lodash'
 import {
     BehaviorSubject,
     combineLatest,
@@ -31,6 +31,7 @@ import {
     throttleTime,
     withLatestFrom,
 } from 'rxjs/operators'
+import { TextDocumentDecorationType } from 'sourcegraph'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -85,6 +86,7 @@ import { Code, useObservable } from '@sourcegraph/wildcard'
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
+import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
 import { HoverThresholdProps } from '../RepoContainer'
 
 import { ColumnDecorator } from './ColumnDecorator'
@@ -288,7 +290,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     }, [blobInfo, nextBlobInfoChange, viewerUpdates])
 
     const [decorationsOrError, setDecorationsOrError] = useState<
-        [string | null, TextDocumentDecoration[]][] | Error | undefined
+        [TextDocumentDecorationType, TextDocumentDecoration[]][] | Error | undefined
     >()
 
     const popoverCloses = useMemo(() => new Subject<void>(), [])
@@ -616,32 +618,43 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         useMemo(() => haveInitialExtensionsLoaded(extensionsController.extHostAPI), [extensionsController.extHostAPI])
     )
 
-    const showGitBlameInSeparateColumn =
-        !isErrorLike(settingsCascade.final) &&
-        settingsCascade.final?.experimentalFeatures?.showGitBlameInSeparateColumn === true
+    const enableExtensionsDecorationsColumnView = enableExtensionsDecorationsColumnViewFromSettings(settingsCascade)
 
     // Memoize column and inline decorations to avoid clearing and setting decorations
     // in `ColumnDecorator`s or `LineDecorator`s on renders in which decorations haven't changed.
-    const decorations: { column: Map<string, DecorationMapByLine>; inline: DecorationMapByLine } = useMemo(() => {
+    const decorations: {
+        column: [TextDocumentDecorationType, DecorationMapByLine][]
+        inline: DecorationMapByLine
+    } = useMemo(() => {
         if (decorationsOrError && !isErrorLike(decorationsOrError)) {
             const { column, inline } = decorationsOrError.reduce(
-                (accumulator, [extensionID, items]) => {
-                    if (showGitBlameInSeparateColumn && extensionID === 'sourcegraph/git-extras') {
-                        accumulator.column.set(extensionID, groupDecorationsByLine(items))
+                (accumulator, [type, items]) => {
+                    if (enableExtensionsDecorationsColumnView && type.config.display === 'column') {
+                        const groupedByLine = groupDecorationsByLine(items)
+                        if (groupedByLine.size > 0) {
+                            accumulator.column.push([type, groupedByLine])
+                        }
                     } else {
                         accumulator.inline.push(...items)
                     }
 
                     return accumulator
                 },
-                { column: new Map<string, DecorationMapByLine>(), inline: [] as TextDocumentDecoration[] }
+                {
+                    column: [] as [TextDocumentDecorationType, DecorationMapByLine][],
+                    inline: [] as TextDocumentDecoration[],
+                }
             )
 
-            return { column, inline: groupDecorationsByLine(inline) }
+            return {
+                // if extension contributes with a few decoration types let them go one by one
+                column: sortBy(column, ([{ extensionID }]) => extensionID),
+                inline: groupDecorationsByLine(inline),
+            }
         }
 
-        return { column: new Map(), inline: new Map() }
-    }, [decorationsOrError, showGitBlameInSeparateColumn])
+        return { column: [], inline: new Map() }
+    }, [decorationsOrError, enableExtensionsDecorationsColumnView])
 
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
@@ -763,19 +776,15 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     />
                 )}
 
-                {iterate(decorations.column)
-                    .map(([extensionID, items]) =>
-                        items.size > 0 ? (
-                            <ColumnDecorator
-                                key={extensionID}
-                                isLightTheme={isLightTheme}
-                                extensionID={extensionID}
-                                decorations={items}
-                                codeViewElements={codeViewElements}
-                            />
-                        ) : null
-                    )
-                    .toArray()}
+                {decorations.column.map(([{ extensionID }, items]) => (
+                    <ColumnDecorator
+                        key={extensionID}
+                        isLightTheme={isLightTheme}
+                        extensionID={extensionID!}
+                        decorations={items}
+                        codeViewElements={codeViewElements}
+                    />
+                ))}
 
                 {iterate(decorations.inline)
                     .map(([line, items]) => {

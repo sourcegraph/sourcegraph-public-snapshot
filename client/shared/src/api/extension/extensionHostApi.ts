@@ -302,7 +302,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
         getTextDecorations: ({ viewerId }) => {
             const viewer = getViewer(viewerId)
             assertViewerType(viewer, 'CodeEditor')
-            return proxySubscribable(viewer.decorationsByExtension)
+            return proxySubscribable(viewer.decorationsByType)
         },
 
         addTextDocumentIfNotExists: textDocumentData => {

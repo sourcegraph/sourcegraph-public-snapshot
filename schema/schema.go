@@ -1711,6 +1711,8 @@ type SettingsExperimentalFeatures struct {
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
 	// Editor description: Specifies which (code) editor to use for query and text input
 	Editor *string `json:"editor,omitempty"`
+	// EnableExtensionsDecorationsColumnView description: If extension supports column view show its decorations in a separate column in the blob view.
+	EnableExtensionsDecorationsColumnView *bool `json:"enableExtensionsDecorationsColumnView,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
 	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
 	// EnableSearchStack description: REMOVED: This feature can now be enabled/disabled via the notepad button on the notebooks list page.
@@ -1741,8 +1743,6 @@ type SettingsExperimentalFeatures struct {
 	ShowComputeComponent *bool `json:"showComputeComponent,omitempty"`
 	// ShowEnterpriseHomePanels description: Enabled the homepage panels in the Enterprise homepage
 	ShowEnterpriseHomePanels *bool `json:"showEnterpriseHomePanels,omitempty"`
-	// ShowGitBlameInSeparateColumn description: Show git blame in a separate column in the blob view.
-	ShowGitBlameInSeparateColumn *bool `json:"showGitBlameInSeparateColumn,omitempty"`
 	// ShowMultilineSearchConsole description: Enables the multiline search console at search/console
 	ShowMultilineSearchConsole *bool `json:"showMultilineSearchConsole,omitempty"`
 	// ShowOnboardingTour description: Enables the onboarding tour.
