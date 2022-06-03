@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/grafana/regexp"
 
@@ -106,33 +105,34 @@ func NewStreamFromJobLogs(log *bk.JobLogs) (*Stream, error) {
 
 		ts := strings.Replace(tsMatches[0], "t=", "", 1)
 		if ts == previousTimestamp {
-			values[len(values)-1][1] = values[len(values)-1][1] + fmt.Sprintf("\n%s", line)
-		} else {
-			// buildkite timestamps are in ms, so convert to ns with a lot of zeros
-			values = append(values, [2]string{ts + "000000", line})
-			previousTimestamp = ts
-		}
-
-		// Check that the current entry is not larger than maxEntrySize (65536) in bytes.
-		// If it is, we take the entry split into chunks of maxEntrySize bytes.
-		//
-		// To ensure that each chunked entry doesn't clash with a previous entry in Loki, the nanoseconds of
-		// each entry is incremented by 1 for each chunked entry.
-		//
-		// Note that we operate on the entry in values and not line, since if two entries timestamps are similar, their
-		// content get concatenated.
-		lastValue := values[len(values)-1]
-		if len(lastValue[1]) >= maxEntrySize {
-			chunkedEntries, err := chunkEntry(lastValue, maxEntrySize)
+			value := values[len(values)-1]
+			value[1] = value[1] + fmt.Sprintf("\n%s", line)
+			// Check that the current entry is not larger than maxEntrySize (65536) in bytes.
+			// If it is, we take the entry split into chunks of maxEntrySize bytes.
+			//
+			// To ensure that each chunked entry doesn't clash with a previous entry in Loki, the nanoseconds of
+			// each entry is incremented by 1 for each chunked entry.
+			chunkedEntries, err := chunkEntry(value, maxEntrySize)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to split value entry into chunks")
 			}
 
+			// replace the value we split into chunks with the first chunk 0, then add the rest
 			values[len(values)-1] = chunkedEntries[0]
-			values = append(values, chunkedEntries[1:]...)
-			previousTimestamp = values[len(values)-1][0]
+			if len(chunkedEntries) > 1 {
+				values = append(values, chunkedEntries[1:]...)
+			}
+		} else {
+			// buildkite timestamps are in ms, so convert to ns with a lot of zeros
+			value := [2]string{ts + "000000", line}
+			chunkedEntries, err := chunkEntry(value, maxEntrySize)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to split value entry into chunks")
+			}
+			values = append(values, chunkedEntries...)
 		}
 
+		previousTimestamp = values[len(values)-1][0]
 	}
 
 	return &Stream{
@@ -142,6 +142,9 @@ func NewStreamFromJobLogs(log *bk.JobLogs) (*Stream, error) {
 }
 
 func chunkEntry(entry [2]string, chunkSize int) ([][2]string, error) {
+	if len(entry[1]) < chunkSize {
+		return [][2]string{entry}, nil
+	}
 	// the first item in an entry is the timestamp
 	epoch, err := strconv.ParseInt(entry[0], 10, 64)
 	if err != nil {
