@@ -235,11 +235,11 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fix bool, lns 
 		}
 	} else if fixableErrors > 0 {
 		// indicate some errors might be fixable!
-		suggestion := "One or more of the failed linters are fixable - try 'sg lint --fix'."
+		suggestion := "One or more of the failed linters can be fixed with `sg lint --fix`."
 		out.WriteSuggestionf(suggestion)
 
 		if lintGenerateAnnotations {
-			writeAnnotation("Some linter issues are fixable", suggestion, true)
+			writeAnnotation("Some linter issues are automatically fixable!", suggestion, true)
 		}
 	}
 
