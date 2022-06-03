@@ -8,7 +8,7 @@ import { animated, useSpring } from 'react-spring'
 import { Button, useLocalStorage, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../../../graphql-operations'
-import { insertFieldIntoLIbraryItem } from '../../yaml-util'
+import { insertFieldIntoLibraryItem } from '../../yaml-util'
 
 import combySample from './comby.batch.yaml'
 import goImportsSample from './go-imports.batch.yaml'
@@ -102,10 +102,10 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
     const updateLibraryItemFields = useCallback(
         (code: string, name: string): string => {
             let updatedCode: string
-            updatedCode = insertFieldIntoLIbraryItem(code, name, 'name')
+            updatedCode = insertFieldIntoLibraryItem(code, name, 'name')
 
             if (searchQuery) {
-                updatedCode = insertFieldIntoLIbraryItem(
+                updatedCode = insertFieldIntoLibraryItem(
                     updatedCode,
                     `- repositoriesMatchingQuery: ${searchQuery}\n\n`,
                     'on',

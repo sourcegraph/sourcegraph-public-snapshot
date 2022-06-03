@@ -82,7 +82,6 @@ export function getCodeMonitoringCreateAction(
 
 export function getBatchChangeCreateAction(
     query: string | undefined,
-    patternType: string,
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null,
     isServerSideBatchChangeEnabled: boolean | undefined
 ): CreateAction | null {
@@ -90,7 +89,7 @@ export function getBatchChangeCreateAction(
         return null
     }
     const searchParameters = new URLSearchParams(location.search)
-    searchParameters.set('trigger-query', `${query} patterntype:${patternType}`)
+    searchParameters.set('trigger-query', query)
     const url = `/batch-changes/create?${searchParameters.toString()}`
 
     return {

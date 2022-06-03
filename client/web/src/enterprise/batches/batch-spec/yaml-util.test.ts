@@ -1,4 +1,4 @@
-import { excludeRepo, haveMatchingWorkspaces, insertFieldIntoLIbraryItem } from './yaml-util'
+import { excludeRepo, haveMatchingWorkspaces, insertFieldIntoLibraryItem } from './yaml-util'
 
 const SPEC_WITH_ONE_REPOSITORY = `name: hello-world
 on:
@@ -303,38 +303,38 @@ describe('Batch spec yaml utils', () => {
         })
     })
 
-    describe('insertFieldIntoLIbraryItem', () => {
+    describe('insertFieldIntoLibraryItem', () => {
         it('should correctly overwrite the name in a given spec', () => {
             for (const spec of [SPEC_WITH_ONE_REPOSITORY, SPEC_WITH_IMPORT_AND_STEPS]) {
-                expect(insertFieldIntoLIbraryItem(spec, 'new-name', 'name')).toEqual(
+                expect(insertFieldIntoLibraryItem(spec, 'new-name', 'name')).toEqual(
                     spec.replace('hello-world', 'new-name')
                 )
             }
         })
         it('should correctly quote special names', () => {
             for (const newName of ['bad: colons', 'true', 'false', '1.23']) {
-                expect(insertFieldIntoLIbraryItem(SPEC_WITH_ONE_REPOSITORY, newName, 'name')).toEqual(
+                expect(insertFieldIntoLibraryItem(SPEC_WITH_ONE_REPOSITORY, newName, 'name')).toEqual(
                     SPEC_WITH_ONE_REPOSITORY.replace('hello-world', `"${newName}"`)
                 )
             }
         })
         it('should not quote edge-cases that do not need quoting', () => {
             for (const newName of ['"asdf"', "'asdf'", 'hello-"asdf"', 'zero', 'on', 'off', 'yes', 'no']) {
-                expect(insertFieldIntoLIbraryItem(SPEC_WITH_ONE_REPOSITORY, newName, 'name')).toEqual(
+                expect(insertFieldIntoLibraryItem(SPEC_WITH_ONE_REPOSITORY, newName, 'name')).toEqual(
                     SPEC_WITH_ONE_REPOSITORY.replace('hello-world', newName)
                 )
             }
         })
         it('should correctly overwrite the `on` field in a given spec', () => {
             for (const spec of [SPEC_WITH_ONE_REPOSITORY, SPEC_WITH_IMPORT_AND_STEPS]) {
-                expect(insertFieldIntoLIbraryItem(spec, '- repository: foo-bar\n', 'on', false)).toEqual(
+                expect(insertFieldIntoLibraryItem(spec, '- repository: foo-bar\n', 'on', false)).toEqual(
                     spec.replace('repo1', 'foo-bar')
                 )
             }
         })
         it('should not quote value when quotable flag is false', () => {
             for (const newName of ['bad: colons', 'true', 'false', '1.23']) {
-                expect(insertFieldIntoLIbraryItem(SPEC_WITH_ONE_REPOSITORY, newName, 'name', false)).toEqual(
+                expect(insertFieldIntoLibraryItem(SPEC_WITH_ONE_REPOSITORY, newName, 'name', false)).toEqual(
                     SPEC_WITH_ONE_REPOSITORY.replace('hello-world', newName)
                 )
             }

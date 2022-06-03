@@ -15,7 +15,7 @@ import {
     excludeRepo as excludeRepoFromYaml,
     hasOnOrImportChangesetsStatement,
     isMinimalBatchSpec,
-    insertFieldIntoLIbraryItem,
+    insertFieldIntoLibraryItem,
 } from './yaml-util'
 
 const ajv = new AJV()
@@ -71,10 +71,10 @@ export interface UseBatchSpecCodeResult {
 
 const updateBatchSpecFields = (originalInput: string, name: string, searchQuery?: string): string => {
     let result: string
-    result = insertFieldIntoLIbraryItem(originalInput, name, 'name')
+    result = insertFieldIntoLibraryItem(originalInput, name, 'name')
 
     if (searchQuery) {
-        result = insertFieldIntoLIbraryItem(result, `- repositoriesMatchingQuery: ${searchQuery}\n\n`, 'on', false)
+        result = insertFieldIntoLibraryItem(result, `- repositoriesMatchingQuery: ${searchQuery}\n\n`, 'on', false)
     }
 
     return result
