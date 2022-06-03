@@ -20,6 +20,7 @@ import (
 
 const pushEndpoint = "/loki/api/v1/push"
 
+// On Grafana cloud Loki rejects log entries that are longer that 65536 bytes.
 const maxEntrySize = math.MaxUint16
 
 // To point at a custom instance, e.g. one on Grafana Cloud, refer to:
