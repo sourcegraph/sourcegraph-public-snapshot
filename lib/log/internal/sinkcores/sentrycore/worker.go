@@ -56,7 +56,7 @@ func (w *worker) consume() {
 	for {
 		select {
 		case errC := <-w.C:
-			w.work(errC)
+			w.capture(errC)
 		case <-ticker.C:
 			// We only check if we're closing periodically, to make sure we have
 			// consumed the last few events that were sent.
@@ -67,15 +67,6 @@ func (w *worker) consume() {
 			}
 		}
 	}
-}
-
-// work splits a core into multiple errors and capture them.
-func (w *worker) work(errC *errorContext) {
-	// for _, err := range errC.errs {
-	// 	ec := errorContext{baseContext: errC.base}
-	// 	ec.Error = err
-	w.capture(errC)
-	// }
 }
 
 // Flush blocks for a couple seconds at most, trying to flush all accumulated errors.
