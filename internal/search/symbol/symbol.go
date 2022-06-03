@@ -146,8 +146,8 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 				continue
 			}
 
-			for i, r := range cm.Ranges {
-				si := cm.SymbolInfo[i]
+			for _, r := range cm.Ranges {
+				si := r.SymbolInfo
 				if si == nil {
 					continue
 				}

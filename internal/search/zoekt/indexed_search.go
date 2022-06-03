@@ -477,8 +477,8 @@ func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, 
 			continue
 		}
 
-		for i, r := range cm.Ranges {
-			si := cm.SymbolInfo[i]
+		for _, r := range cm.Ranges {
+			si := r.SymbolInfo
 			if si == nil {
 				continue
 			}
