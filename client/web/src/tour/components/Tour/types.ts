@@ -15,7 +15,8 @@ export enum TourLanguage {
  * Tour task
  */
 export interface TourTaskType {
-    title: string
+    title?: string
+    dataAttributes?: {}
     icon?: React.ReactNode
     steps: TourTaskStepType[]
     /**
@@ -29,7 +30,12 @@ export interface TourTaskStepType {
     label: string
     action:
         | {
-              type: 'video' | 'link' | 'new-tab-link'
+              type: 'video'
+              value: string | Record<TourLanguage, string>
+          }
+        | {
+              type: 'link' | 'new-tab-link'
+              variant?: 'button-primary'
               value: string | Record<TourLanguage, string>
           }
         | {
