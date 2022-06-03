@@ -298,9 +298,9 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 	next := &bitbucketserver.PageToken{Limit: 1000}
 	for next.HasMore() {
 		repos, page, err := s.client.LabeledRepos(ctx, next, label)
-		// if page == nil {
-		// 	break
-		// }
+		if page == nil {
+			break
+		}
 		if err != nil {
 			// If the instance doesn't have the label then no repos are
 			// labeled. Older versions of bitbucket do not support labels, so
