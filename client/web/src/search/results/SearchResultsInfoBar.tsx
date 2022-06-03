@@ -214,7 +214,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     const createActions = useMemo(
         () =>
             [
-                getBatchChangeCreateAction(props.query, props.query as string, props.authenticatedUser, props.batchChangesExecutionEnabled),
+                getBatchChangeCreateAction(
+                    props.query,
+                    props.query as string,
+                    props.authenticatedUser,
+                    props.batchChangesExecutionEnabled
+                ),
                 getSearchContextCreateAction(props.query, props.authenticatedUser),
                 getInsightsCreateAction(
                     props.query,
