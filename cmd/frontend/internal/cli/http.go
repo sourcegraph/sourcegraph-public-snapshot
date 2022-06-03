@@ -107,7 +107,7 @@ func newExternalHTTPHandler(
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = internalauth.ForbidAllRequestsMiddleware(h)
 	h = internalauth.OverrideAuthMiddleware(db, h)
-	h = tracepkg.HTTPMiddlewareWithSentrySink(logger, h, conf.DefaultClient())
+	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
 	h = ot.HTTPMiddleware(h)
 
 	return h
@@ -145,7 +145,7 @@ func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntel
 	h := http.Handler(internalMux)
 	h = gcontext.ClearHandler(h)
 	logger := log.Scoped("internal", "internal http handlers")
-	h = tracepkg.HTTPMiddlewareWithSentrySink(logger, h, conf.DefaultClient())
+	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
 	h = ot.HTTPMiddleware(h)
 	return h
 }

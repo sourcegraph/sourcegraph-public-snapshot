@@ -83,12 +83,15 @@ func main() {
 
 	conf.Init()
 	logging.Init()
-	syncLogs := log.Init(log.Resource{
+
+	syncLogs, updateSinks := log.InitWithSinks(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	})
+	}, log.NewSentrySink())
 	defer syncLogs()
+	conf.Watch(updateSinks(conf.GetSinks))
+
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
@@ -158,7 +161,7 @@ func main() {
 	// TODO: Why do we set server state as a side effect of creating our handler?
 	handler := gitserver.Handler()
 	handler = actor.HTTPMiddleware(handler)
-	handler = ot.HTTPMiddleware(trace.HTTPMiddleware(handler, conf.DefaultClient()))
+	handler = ot.HTTPMiddleware(trace.HTTPMiddleware(logger, handler, conf.DefaultClient()))
 
 	// Ready immediately
 	ready := make(chan struct{})

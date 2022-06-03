@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"runtime/debug"
 	"strconv"
 
 	"github.com/cockroachdb/redact"
@@ -115,30 +114,12 @@ func CapturePanic(err error, tags map[string]string) {
 	captureError(err, sentry.LevelFatal, tags)
 }
 
-// Recovery handler to wrap the stdlib net/http Mux.
+// Recover is a recovery handler to wrap the stdlib net/http Mux.
 // Example:
 //  mux := http.NewServeMux
 //  ...
 //	http.Handle("/", sentry.Recoverer(mux))
-func Recoverer(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if r := recover(); r != nil {
-				err := errors.Errorf("handler panic: %v", redact.Safe(r))
-				CapturePanic(err, nil)
-
-				log15.Error("recovered from panic", "error", err)
-				debug.PrintStack()
-
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-		}()
-
-		handler.ServeHTTP(w, r)
-	})
-}
-
-func RecovererWithSentrySink(logger log.Logger, handler http.Handler) http.Handler {
+func Recoverer(logger log.Logger, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if r := recover(); r != nil {
