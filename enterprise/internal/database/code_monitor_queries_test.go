@@ -33,8 +33,8 @@ func TestSetQueryTriggerNextRun(t *testing.T) {
 	require.Len(t, triggerJobs, 1)
 	triggerJobID := triggerJobs[0].ID
 
-	wantLatestResult := s.Now().Add(time.Minute)
-	wantNextRun := s.Now().Add(time.Hour)
+	wantLatestResult := s.Now().UTC().Add(time.Minute)
+	wantNextRun := s.Now().UTC().Add(time.Hour)
 
 	err = s.SetQueryTriggerNextRun(ctx, 1, wantNextRun, wantLatestResult)
 	require.NoError(t, err)
@@ -51,7 +51,7 @@ func TestSetQueryTriggerNextRun(t *testing.T) {
 		NextRun:      wantNextRun,
 		LatestResult: &wantLatestResult,
 		ChangedBy:    id,
-		ChangedAt:    s.Now(),
+		ChangedAt:    s.Now().UTC(),
 	}
 	require.Equal(t, want, got)
 }
@@ -71,7 +71,7 @@ func TestResetTriggerQueryTimestamps(t *testing.T) {
 		ID:           fixtures.query.ID,
 		Monitor:      fixtures.monitor.ID,
 		QueryString:  fixtures.query.QueryString,
-		NextRun:      s.Now(),
+		NextRun:      s.Now().UTC(),
 		LatestResult: nil,
 		CreatedBy:    fixtures.query.CreatedBy,
 		CreatedAt:    fixtures.query.CreatedAt,
