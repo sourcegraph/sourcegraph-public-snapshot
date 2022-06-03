@@ -368,7 +368,7 @@ WithAuditLogs.args = {
                     reason: null,
                     changedColumns: [
                         {
-                            column: 'sample_text',
+                            column: 'some_long_column_name',
                             old: null,
                             new: 'Lorem ipsum dolor sit amet.',
                         },
