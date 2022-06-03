@@ -14,7 +14,7 @@ export const withFeatureFlag = <P extends object>(
     function WithFeatureFlagHOC(props: P): React.ReactElement | null {
         const [value, status] = useFeatureFlag(flagName)
 
-        if (status !== 'finished') {
+        if (status !== 'loaded') {
             return null
         }
 
