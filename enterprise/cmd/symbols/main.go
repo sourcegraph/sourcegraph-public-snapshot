@@ -5,10 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"os"
 	"strings"
-
-	"github.com/sourcegraph/go-ctags"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
@@ -73,7 +70,7 @@ func SetupRockskip(observationContext *observation.Context, gitserverClient symb
 
 	db := mustInitializeCodeIntelDB()
 	git := NewGitserver(repositoryFetcher)
-	createParser := func() rockskip.ParseSymbolsFunc { return createParserWithConfig(config.Ctags) }
+	createParser := func() (rockskip.ParseSymbolsFunc, error) { return createParserWithConfig(config.Ctags) }
 	server, err := rockskip.NewService(db, git, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize)
 	if err != nil {
 		return nil, nil, nil, config.Ctags.Command, err
@@ -106,8 +103,11 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 	}
 }
 
-func createParserWithConfig(config types.CtagsConfig) rockskip.ParseSymbolsFunc {
-	parser := mustCreateCtagsParser(config)
+func createParserWithConfig(config types.CtagsConfig) (rockskip.ParseSymbolsFunc, error) {
+	parser, err := symbolsParser.SpawnCtags(config)
+	if err != nil {
+		return nil, err
+	}
 
 	return func(path string, bytes []byte) (symbols []rockskip.Symbol, err error) {
 		entries, err := parser.Parse(path, bytes)
@@ -126,27 +126,7 @@ func createParserWithConfig(config types.CtagsConfig) rockskip.ParseSymbolsFunc 
 		}
 
 		return symbols, nil
-	}
-}
-
-func mustCreateCtagsParser(ctagsConfig types.CtagsConfig) ctags.Parser {
-	options := ctags.Options{
-		Bin:                ctagsConfig.Command,
-		PatternLengthLimit: ctagsConfig.PatternLengthLimit,
-	}
-	if ctagsConfig.LogErrors {
-		options.Info = log.New(os.Stderr, "ctags: ", log.LstdFlags)
-	}
-	if ctagsConfig.DebugLogs {
-		options.Debug = log.New(os.Stderr, "DBUG ctags: ", log.LstdFlags)
-	}
-
-	parser, err := ctags.New(options)
-	if err != nil {
-		log.Fatalf("Failed to create new ctags parser: %s", err)
-	}
-
-	return symbolsParser.NewFilteringParser(parser, ctagsConfig.MaxFileSize, ctagsConfig.MaxSymbols)
+	}, nil
 }
 
 func mustInitializeCodeIntelDB() *sql.DB {
