@@ -339,8 +339,8 @@ func TestListRepos(t *testing.T) {
 		"?projectName=rgp-unavailable",
 		"none",
 		"all",
-		"?projectKey=SG",
-		"?projectKey=~KEEGAN",
+		// "?projectKey=SG",
+		// "?projectKey=~KEEGAN",
 	}
 
 	ctxWithTimeout, cancelFunction := context.WithTimeout(context.Background(), 5*time.Second)

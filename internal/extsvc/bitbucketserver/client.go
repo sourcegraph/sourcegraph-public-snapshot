@@ -808,24 +808,8 @@ func (c *Client) Repos(ctx context.Context, pageToken *PageToken, searchQueries 
 	}
 
 	var repos []*Repo
-
-	emptyPageToken := PageToken{
-		Size:          0,
-		Limit:         1000,
-		IsLastPage:    true,
-		Start:         0,
-		NextPageStart: 0,
-	}
-
-	if _, ok := qry["projectName"]; ok || len(qry) == 0 {
-		next, err := c.page(ctx, "rest/api/1.0/repos", qry, pageToken, &repos)
-		return repos, next, err
-	} else if projectKey, ok := qry["projectKey"]; ok {
-		next, err := c.page(ctx, "rest/api/1.0/projects/"+projectKey[0]+"/repos", nil, pageToken, &repos)
-		return repos, next, err
-	}
-	return repos, &emptyPageToken, err
-
+	next, err := c.page(ctx, "rest/api/1.0/repos", qry, pageToken, &repos)
+	return repos, next, err
 }
 
 func (c *Client) LabeledRepos(ctx context.Context, pageToken *PageToken, label string) ([]*Repo, *PageToken, error) {
