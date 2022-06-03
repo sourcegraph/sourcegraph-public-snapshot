@@ -318,7 +318,6 @@ func User(ctx context.Context, userID int32) {
 // Sentry.
 func SetRequestErrorCause(ctx context.Context, err error) {
 	if p, ok := ctx.Value(requestErrorCauseKey).(*error); ok {
-		println("are we here?", err)
 		*p = err
 	}
 }
