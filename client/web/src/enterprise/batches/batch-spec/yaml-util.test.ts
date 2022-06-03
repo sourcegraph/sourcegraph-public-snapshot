@@ -327,10 +327,9 @@ describe('Batch spec yaml utils', () => {
         })
         it('should correctly overwrite the `on` field in a given spec', () => {
             for (const spec of [SPEC_WITH_ONE_REPOSITORY, SPEC_WITH_IMPORT_AND_STEPS]) {
-                // expect(insertFieldIntoLIbraryItem(spec, '- repository: foo-bar\n', 'on', false)).toEqual(
-                //     spec.replace('repo1', 'foo-bar')
-                // )
-                expect(true).toEqual(true)
+                expect(insertFieldIntoLIbraryItem(spec, '- repository: foo-bar\n', 'on', false)).toEqual(
+                    spec.replace('repo1', 'foo-bar')
+                )
             }
         })
         it('should not quote value when quotable flag is false', () => {
