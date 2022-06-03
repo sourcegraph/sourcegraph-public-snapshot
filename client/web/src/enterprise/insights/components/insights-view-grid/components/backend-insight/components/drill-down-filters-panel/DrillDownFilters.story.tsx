@@ -60,4 +60,8 @@ export const DrillDownPopover: Story = () => {
     )
 }
 
-const log = (methodName: string) => (args: unknown): void => console.log(methodName, args)
+const log = (methodName: string) => {
+    return function (args: unknown) {
+        console.log(methodName, [...arguments])
+    }
+}

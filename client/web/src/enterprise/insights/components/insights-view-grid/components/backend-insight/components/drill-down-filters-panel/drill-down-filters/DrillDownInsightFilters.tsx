@@ -202,10 +202,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         open={isHorizontalMode || activeSection === FilterSection.SortFilter}
                         title="Sort & Limit"
                         preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
-                        hasActiveFilter={hasActiveSeriesDisplayOptions(
-                            seriesDisplayOptions,
-                            originalSeriesDisplayOptions
-                        )}
+                        hasActiveFilter={hasSeriesDisplayOptionsChanged}
                         withSeparators={!isHorizontalMode}
                         onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
                     >
@@ -324,7 +321,11 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         loading={formAPI.submitting}
                         label={getSubmitButtonText({ submitting: formAPI.submitting, hasAppliedFilters })}
                         type="submit"
-                        disabled={!formAPI.valid || formAPI.submitting || !hasFiltersChanged}
+                        disabled={
+                            !formAPI.valid ||
+                            formAPI.submitting ||
+                            (!hasFiltersChanged && !hasSeriesDisplayOptionsChanged)
+                        }
                         variant="secondary"
                         size="sm"
                         outline={true}
@@ -354,17 +355,6 @@ export function hasActiveFilters(filters: DrillDownFiltersFormValues): boolean {
 }
 
 const hasActiveUnaryFilter = (filter: string): boolean => filter.trim() !== ''
-
-const hasActiveSeriesDisplayOptions = (
-    seriesDisplayOptions: SeriesDisplayOptionsInput,
-    originalSeriesDisplayOptions: SeriesDisplayOptionsInput
-): boolean => {
-    return (
-        seriesDisplayOptions.limit !== originalSeriesDisplayOptions.limit ||
-        seriesDisplayOptions.sortOptions?.direction !== originalSeriesDisplayOptions.sortOptions?.direction ||
-        seriesDisplayOptions.sortOptions?.mode !== originalSeriesDisplayOptions.sortOptions?.mode
-    )
-}
 
 interface SubmitButtonTextProps {
     submitting: boolean
