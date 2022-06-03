@@ -636,11 +636,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
 
     const filterControls: JSX.Element = (
         <Form onSubmit={preventSubmit} className="w-100 d-inline-flex justify-content-between flex-row mt-3">
-            <div className="d-inline-flex flex-row mr-3 align-items-baseline">
+            <div className="d-inline-flex flex-row mr-3 align-items-baseline flex-1">
                 <Text className="text-xl-center text-nowrap mr-2">Code Host:</Text>
                 <Select
                     name="code-host"
                     aria-label="select code host type"
+                    className={styles.codeHostSelect}
                     onChange={event => setCodeHostFilter(event.target.value)}
                 >
                     <option key="all" value="" label="All" />
@@ -650,7 +651,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
                 </Select>
             </div>
             <FilterInput
-                className="form-control"
                 type="search"
                 placeholder="Filter repositories..."
                 name="query"
@@ -879,7 +879,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
                                 <Text className="text-muted">Public repositories on GitHub and GitLab</Text>
                                 <Checkbox
                                     id="add-public-repos"
-                                    className="mr-2 mt-2"
+                                    className="mr-2 mt-0"
+                                    wrapperClassName="d-flex align-items-center"
                                     label="Sync specific public repositories by URL"
                                     onChange={toggleTextArea}
                                     checked={publicRepoState.enabled}
