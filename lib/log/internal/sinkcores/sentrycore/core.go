@@ -97,7 +97,8 @@ func (c *Core) SetHub(hub *sentry.Hub) {
 }
 
 // clone returns a copy of the core, carrying all previously accumulated context, but that can be safely be
-// modified without affecting other core instances.
+// modified without affecting other core instances, with the exception of the worker reference which is always
+// the same across cores.
 func (c *Core) clone() *Core {
 	clo := Core{
 		w:    c.w,
