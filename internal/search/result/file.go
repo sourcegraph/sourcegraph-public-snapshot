@@ -211,7 +211,7 @@ func (h ChunkMatch) MatchedContent() []string {
 // LineMatch representation for clients without breaking backwards compatibility.
 func (h ChunkMatch) AsLineMatches() []*LineMatch {
 	lines := strings.Split(h.Content, "\n")
-	lineMatches := make([]*LineMatch, len(lines))
+	lineMatches := make([]*LineMatch, 0, len(lines))
 	for i, line := range lines {
 		lineNumber := h.ContentStart.Line + i
 		var offsetAndLengths [][2]int32
@@ -228,14 +228,19 @@ func (h ChunkMatch) AsLineMatches() []*LineMatch {
 						end = rr.End.Column
 					}
 
-					offsetAndLengths = append(offsetAndLengths, [2]int32{int32(start), int32(end - start)})
+					if start != end {
+						offsetAndLengths = append(offsetAndLengths, [2]int32{int32(start), int32(end - start)})
+					}
 				}
 			}
 		}
-		lineMatches[i] = &LineMatch{
-			Preview:          line,
-			LineNumber:       int32(lineNumber),
-			OffsetAndLengths: offsetAndLengths,
+
+		if len(offsetAndLengths) > 0 {
+			lineMatches = append(lineMatches, &LineMatch{
+				Preview:          line,
+				LineNumber:       int32(lineNumber),
+				OffsetAndLengths: offsetAndLengths,
+			})
 		}
 	}
 	return lineMatches
