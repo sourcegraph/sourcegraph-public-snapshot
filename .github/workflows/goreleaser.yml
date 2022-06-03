@@ -45,6 +45,10 @@ jobs:
         with:
           node-version: 16
           registry-url: 'https://registry.npmjs.org'
+      - run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+      - run: echo "Releasing version ${{ env.version }}""
+      - run: yarn version --no-git-tag-version --new-version "${{ env.VERSION }}"
+        working-directory: npm-distribution
       - run: npm publish --access public
         working-directory: npm-distribution
         env:
