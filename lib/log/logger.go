@@ -181,6 +181,22 @@ func (z *zapAdapter) AddCallerSkip(skip int) Logger {
 	}
 }
 
+func (z *zapAdapter) IncreaseLevel(scope string, description string, level Level) Logger {
+	z.AddCallerSkip(1).Debug("logger.IncreaseLevel",
+		Object("scope",
+			String("scope", createScope(z.fullScope, scope)),
+			String("description", description)),
+		String("level", string(level)))
+
+	opt := zap.IncreaseLevel(level.Parse())
+	return &zapAdapter{
+		Logger:     z.Logger.WithOptions(opt),
+		rootLogger: z.rootLogger.WithOptions(opt),
+		fullScope:  z.fullScope,
+		attributes: z.attributes,
+	}
+}
+
 // WithCore is an internal API used to allow packages like logtest to hook into
 // underlying zap logger's core.
 //
@@ -196,22 +212,6 @@ func (z *zapAdapter) WithCore(f func(c zapcore.Core) zapcore.Core) Logger {
 	return &zapAdapter{
 		Logger:     newLogger,
 		rootLogger: newRootLogger,
-		fullScope:  z.fullScope,
-		attributes: z.attributes,
-	}
-}
-
-func (z *zapAdapter) IncreaseLevel(scope string, description string, level Level) Logger {
-	z.AddCallerSkip(1).Debug("logger.IncreaseLevel",
-		Object("scope",
-			String("scope", createScope(z.fullScope, scope)),
-			String("description", description)),
-		String("level", string(level)))
-
-	opt := zap.IncreaseLevel(level.Parse())
-	return &zapAdapter{
-		Logger:     z.Logger.WithOptions(opt),
-		rootLogger: z.rootLogger.WithOptions(opt),
 		fullScope:  z.fullScope,
 		attributes: z.attributes,
 	}
