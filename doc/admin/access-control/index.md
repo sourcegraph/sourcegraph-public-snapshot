@@ -6,7 +6,7 @@ Depending on the type of authentication you decided to use (see here more detail
 
 ## GitHub filters
 
-**AllowSignup**
+**allowSignup**
 
   Allows new users to sing up to Sourcegraph via GitHub authentication (by clicking the "Continue with GitHub" button).
     
@@ -22,12 +22,12 @@ Depending on the type of authentication you decided to use (see here more detail
     }
   ````
 
-**AllowOrgs**
+**allowOrgs**
 
   Restricts logins to members of the listed organizations. If empty or unset, no restriction will be applied.
 
   If combined with `"allowSignup": true`, only membrers of the the allowed orgs can create their accounts in Sourcegraph via GitHub authentitcation.
-  When `"allowSignup": false`, an admin should first create the user account so the user can then sign in with GitHub.
+  When `"allowSignup": false`, an admin should first create the user account so the user can then sign in with GitHub if they belong to the allowed orgs.
 
   ````
     {
@@ -38,12 +38,11 @@ Depending on the type of authentication you decided to use (see here more detail
   ````
  
 
-**AllowOrgsMap**
+**allowOrgsMap**
 
   Restricts sign-ups and new logins to members of the listed teams or subteams that need to be mapped to their parent organization.
 
   If combined with `"allowSignup": true`, only membrers of the the allowed teams can create their accounts in Sourcegraph via GitHub authentitcation.
-
   When combined with `"allowSignup": false`, an admim should first create the user account so that the user can login with GitHub.
 
   Note that subteams inheritance is not supported — the name of child teams (subteams) should be informed so their members can be granted access to Sourcegraph.
@@ -68,22 +67,26 @@ Depending on the type of authentication you decided to use (see here more detail
 
 ## GitLab filters
 
-**AllowSignup**
+**allowSignup**
 
   Allows new users to create their accounts in Sourcegraph via GitLab authentication (by clicking the "Continue with GitLab" button).
   
-  When `false` or not set, sign-up will be blocked. In this case, new users can only sign in after an admin creates their account on Sourcegraph. The user account email should match their GitLab email.
+  When `false`, sign-up will be blocked. In this case, new users can only sign in after an admin creates their account on Sourcegraph. The user account email should match their GitLab email.
 
+  If combined with `"allowSignup": true`, only membrers of the the allowed groups/subgroups can create their accounts in Sourcegraph via GitLab authentitcation.
+  When combined with `"allowSignup": false`, an admim should first create the user account so that the user can login with GitLab.
+
+  *If not set, unlinke with GitHub, it allowSignup defaults to `true`*.
 
   ````
     {
       "type": "gitlab",
       ...
-      "allowSignup": true
+      "allowSignup": false
     }
   ````
 
-**AllowGroups**
+**allowGroups**
 
   Restricts new logins to members of the listed groups or subgroups. 
   
@@ -93,10 +96,10 @@ Depending on the type of authentication you decided to use (see here more detail
 
   When empty or unset, no restrictions will be applied.
 
+
+  If combined with `"allowSignup": false`, an admim should first create the user account so that the user can sign in with GitLab.
+
   If combined with `"allowSignup": true`, only membrers of the the allowed groups or subgroups can create their accounts in Sourcegraph via GitLab authentitcation.
-
-  When combined with `"allowSignup": false`, an admim should first create the user account so that the user can sign in with GitLab.
-
 
   ````
     {
@@ -111,7 +114,7 @@ Depending on the type of authentication you decided to use (see here more detail
 
 ## SAML filters 
 
-  **AllowSignup**
+**allowSignup**
 
   It works the same way as in GitHub or Github, allowing new users to creating their accounts via SAML authentication, or blocking the sign-up when set to `false`.
 
@@ -125,7 +128,7 @@ Depending on the type of authentication you decided to use (see here more detail
     }
   ````
 
-  **AllowGroups**
+**allowGroups**
 
   Restricts login to members of the allowed SAML groups.
 
@@ -144,7 +147,10 @@ Depending on the type of authentication you decided to use (see here more detail
   ````
 
 ## OpenID filter
-  The same as in the above auth providers. It allows new users to creating their accounts via OpenID, or blocks the sign-up when set to `false`.
+
+**allowSignup**
+
+  It allows new users to creating their accounts via OpenID, or blocks the sign-up when set to `false`.
 
   ````
     {
@@ -156,7 +162,7 @@ Depending on the type of authentication you decided to use (see here more detail
 
 ## Builtin filter
 
-  **AllowSignup**
+**allowSignup**
 
   If `true`, users will see the sign-up link under the login form and will have access to the sign-up page, where they can create their accounts without restriction.
 
