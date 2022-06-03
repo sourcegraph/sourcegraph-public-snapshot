@@ -660,6 +660,7 @@ const SideBlob: React.FunctionComponent<
             history={props.history}
             location={props.location}
             disableStatusBar={true}
+            disableDecorations={true}
             wrapCode={true}
             className={styles.sideBlobCode}
             blobInfo={{

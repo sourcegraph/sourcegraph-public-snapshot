@@ -113,6 +113,8 @@ export interface BlobProps
 
     // Experimental reference panel
     disableStatusBar: boolean
+    disableDecorations: boolean
+
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
     nav?: (url: string) => void
@@ -583,25 +585,29 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     useObservable(
         useMemo(
             () =>
-                viewerUpdates.pipe(
-                    switchMap(viewerData => {
-                        if (!viewerData) {
-                            return EMPTY
-                        }
+                props.disableDecorations
+                    ? of(undefined)
+                    : viewerUpdates.pipe(
+                          switchMap(viewerData => {
+                              if (!viewerData) {
+                                  return EMPTY
+                              }
 
-                        // Schedule decorations to be cleared when this viewer is removed.
-                        // We store decoration state independent of this observable since we want to clear decorations
-                        // immediately on viewer change. If we wait for the latest emission of decorations from the
-                        // extension host, decorations from the previous viewer will be visible for a noticeable amount of time
-                        // on the current viewer
-                        viewerData.subscriptions.add(() => setDecorationsOrError(undefined))
-                        return wrapRemoteObservable(viewerData.extensionHostAPI.getTextDecorations(viewerData.viewerId))
-                    }),
-                    catchError(error => [asError(error)]),
-                    tap(setDecorationsOrError),
-                    mapTo(undefined)
-                ),
-            [viewerUpdates]
+                              // Schedule decorations to be cleared when this viewer is removed.
+                              // We store decoration state independent of this observable since we want to clear decorations
+                              // immediately on viewer change. If we wait for the latest emission of decorations from the
+                              // extension host, decorations from the previous viewer will be visible for a noticeable amount of time
+                              // on the current viewer
+                              viewerData.subscriptions.add(() => setDecorationsOrError(undefined))
+                              return wrapRemoteObservable(
+                                  viewerData.extensionHostAPI.getTextDecorations(viewerData.viewerId)
+                              )
+                          }),
+                          catchError(error => [asError(error)]),
+                          tap(setDecorationsOrError),
+                          mapTo(undefined)
+                      ),
+            [props.disableDecorations, viewerUpdates]
         )
     )
 
@@ -611,8 +617,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     )
 
     const showGitBlameInSeparateColumn =
-        !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final?.experimentalFeatures?.showGitBlameInSeparateColumn === true
+        !isErrorLike(settingsCascade.final) &&
+        settingsCascade.final?.experimentalFeatures?.showGitBlameInSeparateColumn === true
 
     // Memoize column and inline decorations to avoid clearing and setting decorations
     // in `ColumnDecorator`s or `LineDecorator`s on renders in which decorations haven't changed.
