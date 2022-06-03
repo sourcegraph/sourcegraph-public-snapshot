@@ -91,9 +91,10 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 	}
 
 	if def.Range == nil {
+		hover := fmt.Sprintf("Directory %s", def.RepoCommitPath.Path)
 		return &types.SymbolInfo{
 			Definition: *def,
-			Hover:      nil,
+			Hover:      &hover,
 		}, nil
 	}
 
