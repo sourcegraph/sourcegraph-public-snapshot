@@ -39,7 +39,7 @@ func (*BaseMapper) MapNodes(mapper Mapper, nodes []Node) []Node {
 
 // Base mapper for Operators. Reduces operands if changed.
 func (*BaseMapper) MapOperator(mapper Mapper, kind operatorKind, operands []Node) []Node {
-	return newOperator(mapper.MapNodes(mapper, operands), kind)
+	return NewOperator(mapper.MapNodes(mapper, operands), kind)
 }
 
 // Base mapper for Parameters. It is the identity function.
@@ -63,7 +63,7 @@ type OperatorMapper struct {
 // MapOperator implements OperatorMapper by overriding the BaseMapper's value to
 // substitute a node computed by the callback. It reduces any substituted node.
 func (s *OperatorMapper) MapOperator(mapper Mapper, kind operatorKind, operands []Node) []Node {
-	return newOperator(s.callback(kind, operands), And)
+	return NewOperator(s.callback(kind, operands), And)
 }
 
 // ParameterMapper is a helper mapper that only maps parameters in a query. It
