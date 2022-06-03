@@ -33,3 +33,6 @@ Trivy,Adopt,Tooling,TRUE,
 HackerOne,Adopt,Tooling,FALSE,
 Executors,Adopt,Backend,TRUE,
 stretchr/testify,Trial,Backend,TRUE,"mostly using for better assertions at this point"
+Buildkite Analytics,Trial,Tooling,TRUE
+sourcegraph/run,Trial,Backend,TRUE,
+sourcegraph/lib/log,Adopt,Backend,TRUE, Standardized logging package
