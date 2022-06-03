@@ -11,7 +11,13 @@ import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 // eslint-disable-next-line no-restricted-imports
-import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext, Tooltip } from '@sourcegraph/wildcard'
+import {
+    AnchorLink,
+    setLinkComponent,
+    useObservable,
+    WildcardThemeContext,
+    DeprecatedTooltip,
+} from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI } from '../../../contract'
 import { createEndpointsForWebToNode } from '../../comlink/webviewEndpoint'
@@ -123,7 +129,7 @@ render(
     <ShortcutProvider>
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
             <Main />
-            <Tooltip key={1} className="sourcegraph-tooltip" />
+            <DeprecatedTooltip key={1} className="sourcegraph-tooltip" />
         </WildcardThemeContext.Provider>
     </ShortcutProvider>,
     document.querySelector('#root')

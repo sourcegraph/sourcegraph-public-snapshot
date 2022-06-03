@@ -100,6 +100,23 @@ export interface IntegrationTestOptions {
      * standard JSContext object for some particulars test.
      */
     customContext?: Partial<SourcegraphContext>
+
+    /**
+     * Function that intercepts GraphQL requests when called.
+     *
+     * If passed, the shared integration test context will not
+     * initialize the default operation-based GraphQL request mocking.
+     * Consequently, `IntegrationTestContext#overrideGraphQL` becomes a noop
+     * when this is defined.
+     *
+     * Example use case: using resolver-based GraphQL API mocking
+     * to test UI compatibility with older versions of the Sourcegraph
+     * API for the VS Code extension.
+     */
+    interceptGraphQL?: (
+        server: PollyServer,
+        onGraphQLRequest: (request: { operationName: string; variables: Record<string, any> }) => void
+    ) => void
 }
 
 const DISPOSE_ACTION_TIMEOUT = 5 * 1000
@@ -114,6 +131,7 @@ export const createSharedIntegrationTestContext = async <
     driver,
     currentTest,
     directory,
+    interceptGraphQL,
 }: IntegrationTestOptions): Promise<IntegrationTestContext<TGraphQlOperations, TGraphQlOperationNames>> => {
     await driver.newPage()
     const recordingsDirectory = path.join(directory, '__fixtures__', snakeCase(currentTest.fullTitle()))
@@ -205,45 +223,57 @@ export const createSharedIntegrationTestContext = async <
     }
     let graphQlOverrides: Partial<TGraphQlOperations> = {}
     const graphQlRequests = new Subject<GraphQLRequestEvent<TGraphQlOperationNames>>()
-    server.post(new URL('/.api/graphql', driver.sourcegraphBaseUrl).href).intercept((request, response) => {
-        response.setHeader('Access-Control-Allow-Origin', '*')
 
-        const operationName = new URL(request.absoluteUrl).search.slice(1) as TGraphQlOperationNames
-        const { variables, query } = request.jsonBody() as {
-            query: string
-            variables: Parameters<TGraphQlOperations[TGraphQlOperationNames]>[0]
-        }
-        graphQlRequests.next({ operationName, variables })
+    if (interceptGraphQL) {
+        interceptGraphQL(server, function onGraphQLRequest(request) {
+            const operationName = request.operationName as TGraphQlOperationNames
+            const variables = request.variables as Parameters<TGraphQlOperations[TGraphQlOperationNames]>[0]
+            graphQlRequests.next({ operationName, variables })
+        })
+    }
+    // If no custom GraphQL interception function was passed,
+    // initialize default operation-based mocking.
+    else {
+        server.post(new URL('/.api/graphql', driver.sourcegraphBaseUrl).href).intercept((request, response) => {
+            response.setHeader('Access-Control-Allow-Origin', '*')
 
-        const missingOverrideError = (): Error => {
-            const formattedQuery = prettier.format(query, { parser: 'graphql' }).trim()
-            const formattedVariables = util.inspect(variables)
-            const error = new Error(
-                `GraphQL query "${operationName}" has no configured mock response. Make sure the call to overrideGraphQL() includes a result for the "${operationName}" query:\n${formattedVariables} ⤵️\n${formattedQuery}`
-            )
-            return error
-        }
-        if (!graphQlOverrides || !keyExistsIn(operationName, graphQlOverrides)) {
-            throw missingOverrideError()
-        }
-        const handler = graphQlOverrides[operationName]
-        if (!handler) {
-            throw missingOverrideError()
-        }
+            const operationName = new URL(request.absoluteUrl).search.slice(1) as TGraphQlOperationNames
+            const { variables, query } = request.jsonBody() as {
+                query: string
+                variables: Parameters<TGraphQlOperations[TGraphQlOperationNames]>[0]
+            }
+            graphQlRequests.next({ operationName, variables })
 
-        try {
-            const result = handler(variables as any)
-            const graphQlResult: SuccessGraphQLResult<any> = { data: result, errors: undefined }
-            response.json(graphQlResult)
-        } catch (error) {
-            if (!(error instanceof IntegrationTestGraphQlError)) {
-                throw error
+            const missingOverrideError = (): Error => {
+                const formattedQuery = prettier.format(query, { parser: 'graphql' }).trim()
+                const formattedVariables = util.inspect(variables)
+                const error = new Error(
+                    `GraphQL query "${operationName}" has no configured mock response. Make sure the call to overrideGraphQL() includes a result for the "${operationName}" query:\n${formattedVariables} ⤵️\n${formattedQuery}`
+                )
+                return error
+            }
+            if (!graphQlOverrides || !keyExistsIn(operationName, graphQlOverrides)) {
+                throw missingOverrideError()
+            }
+            const handler = graphQlOverrides[operationName]
+            if (!handler) {
+                throw missingOverrideError()
             }
 
-            const graphQlError: ErrorGraphQLResult = { data: undefined, errors: error.errors }
-            response.json(graphQlError)
-        }
-    })
+            try {
+                const result = handler(variables as any)
+                const graphQlResult: SuccessGraphQLResult<any> = { data: result, errors: undefined }
+                response.json(graphQlResult)
+            } catch (error) {
+                if (!(error instanceof IntegrationTestGraphQlError)) {
+                    throw error
+                }
+
+                const graphQlError: ErrorGraphQLResult = { data: undefined, errors: error.errors }
+                response.json(graphQlError)
+            }
+        })
+    }
 
     // Handle preflight requests.
     server.options(new URL('/.api/graphql', driver.sourcegraphBaseUrl).href).intercept((request, response) => {

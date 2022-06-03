@@ -117,6 +117,7 @@
     "@graphql-codegen/typescript": "1.17.9",
     "@graphql-codegen/typescript-apollo-client-helpers": "^1.1.9",
     "@graphql-codegen/typescript-operations": "1.17.8",
+    "@graphql-tools/mock": "^8.6.11",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@jest/types": "^27.5.1",
     "@lhci/cli": "0.8.1",

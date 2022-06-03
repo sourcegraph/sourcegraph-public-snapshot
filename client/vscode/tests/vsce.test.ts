@@ -2,13 +2,16 @@ import { downloadAndUnzipVSCode } from '@vscode/test-electron'
 
 import { mixedSearchStreamEvents, highlightFileResult } from '@sourcegraph/search'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { IntegrationTestOptions } from '@sourcegraph/shared/src/testing/integration/context'
 import { setupExtensionMocking } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 
+import { createInterceptGraphQLForOldSchema, createSchemaWithMocks } from './backcompat/interceptGraphQl'
 import { createVSCodeIntegrationTestContext, VSCodeIntegrationTestContext } from './context'
 import { getVSCodeWebviewFrames } from './getWebview'
 import { launchVsCode, VSCodeTestDriver } from './launch'
 
 const sourcegraphBaseUrl = 'https://sourcegraph.com'
+const TEST_BACKCOMPAT = !!process.env.TEST_BACKCOMPAT
 
 describe('VS Code extension', () => {
     let vsCodeDriver: VSCodeTestDriver
@@ -21,12 +24,22 @@ describe('VS Code extension', () => {
     let testContext: VSCodeIntegrationTestContext
 
     beforeEach(async function () {
+        let interceptGraphQL: IntegrationTestOptions['interceptGraphQL']
+        if (TEST_BACKCOMPAT) {
+            interceptGraphQL = createInterceptGraphQLForOldSchema({
+                sourcegraphBaseUrl,
+                schemaWithMocks: await createSchemaWithMocks(),
+            })
+        }
+
         testContext = await createVSCodeIntegrationTestContext(
             {
                 currentTest: this.currentTest!,
                 directory: __dirname,
+                interceptGraphQL,
             },
-            vsCodeDriver.page
+            vsCodeDriver.page,
+            sourcegraphBaseUrl
         )
     })
 

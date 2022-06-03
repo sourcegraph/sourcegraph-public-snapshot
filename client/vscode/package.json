@@ -218,6 +218,7 @@
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "test": "ts-node ./tests/runTests.ts",
     "package": "ts-node ./scripts/package.ts",
+    "update-backcompat-schema": "ts-node ./tests/backcompat/fetchOldSchema.ts",
     "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
     "build": "yarn run version:check && yarn task:gulp webpack",
     "build:node": "NODE_ENV=production TARGET_TYPE=node yarn task:gulp webpack",
@@ -228,6 +229,7 @@
     "watch:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp watchWebpack",
     "watch:test": "NODE_ENV=development TARGET_TYPE=webworker IS_TEST=true yarn task:gulp watchWebpack",
     "test-integration": "TS_NODE_PROJECT=tests/tsconfig.json mocha --parallel=$CI --retries=2 ./tests/**/*.test.ts",
+    "test-integration:backcompat": "TEST_BACKCOMPAT=1 yarn test-integration",
     "version:check": "ts-node ./scripts/version-check.ts",
     "release": "ts-node ./scripts/release.ts"
   }

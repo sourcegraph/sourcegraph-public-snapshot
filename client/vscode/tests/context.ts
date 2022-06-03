@@ -27,7 +27,7 @@ export interface VSCodeIntegrationTestContext
 }
 
 export async function createVSCodeIntegrationTestContext(
-    { currentTest, directory }: Omit<IntegrationTestOptions, 'driver'>,
+    { currentTest, directory, interceptGraphQL }: Omit<IntegrationTestOptions, 'driver'>,
     vsCodeFrontendPage: puppeteer.Page,
     sourcegraphBaseUrl = 'https://sourcegraph.com'
 ): Promise<VSCodeIntegrationTestContext> {
@@ -40,9 +40,13 @@ export async function createVSCodeIntegrationTestContext(
         },
         currentTest,
         directory,
+        interceptGraphQL,
     })
 
-    sharedTestContext.overrideGraphQL(commonVSCodeGraphQlResults)
+    // Only override when testing against current, not old, schema.
+    if (!interceptGraphQL) {
+        sharedTestContext.overrideGraphQL(commonVSCodeGraphQlResults)
+    }
 
     let searchStreamEventOverrides: SearchEvent[] = []
 
