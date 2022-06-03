@@ -29,7 +29,7 @@ export const DeploymentOptions: FunctionComponent<IProps> = ({ history }) => (
         <div className={`${styles.root} ${styles.getStartedPage}`}>
             <div className="container-xl">
                 <div className="row">
-                    <section className="col-lg-6 px-4 py-5">
+                    <section className="col-lg-6 px-4 py-5 my-5">
                         <h1 className="font-bold">Self-Hosted</h1>
 
                         <p>
@@ -54,7 +54,7 @@ export const DeploymentOptions: FunctionComponent<IProps> = ({ history }) => (
                         </ButtonLink>
                     </section>
 
-                    <section className="col-lg-6 px-4 py-5">
+                    <section className="col-lg-6 px-4 py-5 my-5">
                         <h1 className="font-weight-bold">Cloud</h1>
 
                         <p>Sync your code from GitHub.com or GitLab.com. No technical setup is required.</p>
