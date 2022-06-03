@@ -130,7 +130,7 @@
     "@pollyjs/core": "^5.1.0",
     "@pollyjs/persister-fs": "^5.0.0",
     "@slack/web-api": "^5.10.0",
-    "@sourcegraph/eslint-config": "0.30.0",
+    "@sourcegraph/eslint-config": "0.31.0",
     "@sourcegraph/eslint-plugin-sourcegraph": "^1.0.5",
     "@sourcegraph/eslint-plugin-wildcard": "1.0.0",
     "@sourcegraph/prettierrc": "^3.0.3",
