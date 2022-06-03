@@ -148,6 +148,11 @@ type RepoCommitPathRange struct {
 	Range
 }
 
+type RepoCommitPathMaybeRange struct {
+	RepoCommitPath
+	*Range
+}
+
 type RepoCommitPathPoint struct {
 	RepoCommitPath
 	Point
@@ -180,8 +185,8 @@ func (r Range) String() string {
 }
 
 type SymbolInfo struct {
-	Definition RepoCommitPathRange `json:"definition"`
-	Hover      *string             `json:"hover,omitempty"`
+	Definition RepoCommitPathMaybeRange `json:"definition"`
+	Hover      *string                  `json:"hover,omitempty"`
 }
 
 func (s SymbolInfo) String() string {
@@ -189,5 +194,9 @@ func (s SymbolInfo) String() string {
 	if s.Hover != nil {
 		hover = *s.Hover
 	}
-	return fmt.Sprintf("SymbolInfo{Definition: %s, Hover: %q}", s.Definition, hover)
+	rnge := "<nil>"
+	if s.Definition.Range != nil {
+		rnge = s.Definition.Range.String()
+	}
+	return fmt.Sprintf("SymbolInfo{Definition: %s %s, Hover: %q}", s.Definition.RepoCommitPath, rnge, hover)
 }
