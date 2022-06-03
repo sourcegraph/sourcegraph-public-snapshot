@@ -130,9 +130,9 @@ func NewStreamFromJobLogs(log *bk.JobLogs) (*Stream, error) {
 				return nil, errors.Wrapf(err, "failed to split value entry into chunks")
 			}
 			values = append(values, chunkedEntries...)
+			previousTimestamp = ts
 		}
 
-		previousTimestamp = values[len(values)-1][0]
 	}
 
 	return &Stream{
