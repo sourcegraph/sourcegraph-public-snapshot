@@ -93,6 +93,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
 
     const [activeSection, setActiveSection] = useState<FilterSection | null>(FilterSection.RegularExpressions)
     const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(originalSeriesDisplayOptions)
+    const [seriesDisplayOptionsDirty, setSeriesDisplayOptionsDirty] = useState(false)
 
     const { ref, formAPI, handleSubmit, values } = useForm<DrillDownFiltersFormValues>({
         initialValues,
@@ -123,8 +124,8 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
 
     const currentRepositoriesFilters = { include: includeRegex.input.value, exclude: excludeRegex.input.value }
     const hasFiltersChanged = !isEqual(originalValues, values)
-    const hasAppliedFilters = hasActiveFilters(originalValues) && !hasFiltersChanged
     const hasSeriesDisplayOptionsChanged = !isEqual(originalSeriesDisplayOptions, seriesDisplayOptions)
+    const hasAppliedFilters = hasActiveFilters(originalValues) && !hasFiltersChanged && !hasSeriesDisplayOptionsChanged
 
     const handleCollapseState = (section: FilterSection, opened: boolean): void => {
         if (!opened) {
@@ -138,11 +139,13 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         contexts.input.onChange('')
         includeRegex.input.onChange('')
         excludeRegex.input.onChange('')
+        setSeriesDisplayOptionsDirty(false)
         setSeriesDisplayOptions(originalSeriesDisplayOptions)
         onSeriesDisplayOptionsChange(originalSeriesDisplayOptions)
     }
 
     const handleSeriesDisplayOptionsChange = (options: SeriesDisplayOptionsInputRequired): void => {
+        setSeriesDisplayOptionsDirty(true)
         setSeriesDisplayOptions(options)
         onSeriesDisplayOptionsChange(options)
     }
@@ -202,7 +205,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         open={isHorizontalMode || activeSection === FilterSection.SortFilter}
                         title="Sort & Limit"
                         preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
-                        hasActiveFilter={hasSeriesDisplayOptionsChanged}
+                        hasActiveFilter={true}
                         withSeparators={!isHorizontalMode}
                         onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
                     >

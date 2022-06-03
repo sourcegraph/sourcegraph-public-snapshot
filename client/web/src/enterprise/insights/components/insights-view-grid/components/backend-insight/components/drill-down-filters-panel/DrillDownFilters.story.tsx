@@ -15,7 +15,7 @@ export default defaultStory
 export const DrillDownPopover: Story = () => {
     const exampleReference = useRef(null)
     const initialFiltersValue: InsightFilters = {
-        excludeRepoRegexp: '',
+        excludeRepoRegexp: 'EXCLUDE',
         includeRepoRegexp: '',
         context: '',
     }
@@ -28,11 +28,7 @@ export const DrillDownPopover: Story = () => {
         step: {},
         isFrozen: false,
         query: '',
-        filters: {
-            excludeRepoRegexp: '',
-            includeRepoRegexp: '',
-            context: '',
-        },
+        filters: initialFiltersValue,
         dashboardReferenceCount: 0,
         dashboards: [],
     }
