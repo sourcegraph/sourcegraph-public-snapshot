@@ -20,6 +20,9 @@ type Target struct {
 // or anything you want, and should return a report with helpful feedback for the user to
 // act upon.
 //
+// To build a linter that can be fixed as well by 'sg lint -fix', you can implement the
+// FixableLinter interface.
+//
 // Linter can be tested by providing a mock state with repo.NewMockState().
 type Linter interface {
 	Check(context.Context, *repo.State) *Report
