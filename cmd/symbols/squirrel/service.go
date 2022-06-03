@@ -54,7 +54,7 @@ func (squirrel *SquirrelService) Close() {
 // symbolInfo finds the symbol at the given point in a file.
 func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.RepoCommitPathPoint) (*types.SymbolInfo, error) {
 	// First, find the definition.
-	var def *types.RepoCommitPathRange
+	var def *types.RepoCommitPathMaybeRange
 	{
 		// Parse the file and find the starting node.
 		root, err := squirrel.parse(ctx, point.RepoCommitPath)
@@ -77,9 +77,10 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 		if found == nil {
 			return nil, nil
 		}
-		def = &types.RepoCommitPathRange{
+		rnge := nodeToRange(found.Node)
+		def = &types.RepoCommitPathMaybeRange{
 			RepoCommitPath: found.RepoCommitPath,
-			Range:          nodeToRange(found.Node),
+			Range:          &rnge,
 		}
 	}
 

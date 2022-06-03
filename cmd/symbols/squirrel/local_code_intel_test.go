@@ -408,7 +408,7 @@ func collectAnnotations(repoCommitPath types.RepoCommitPath, contents string) []
 
 	// Annotation at the end of the line: < "x" x def
 	for i, line := range lines {
-		matchess := regexp.MustCompile(`([^<]+)< "([^"]+)" ([a-zA-Z0-9_.-]+) ([a-z,]+)`).FindAllStringSubmatch(line, -1)
+		matchess := regexp.MustCompile(`([^<]+)< "([^"]+)" ([a-zA-Z0-9_.-/]+) ([a-z,]+)`).FindAllStringSubmatch(line, -1)
 		if matchess == nil {
 			continue
 		}
@@ -438,7 +438,7 @@ nextSourceLine:
 				break nextSourceLine
 			}
 
-			matches := regexp.MustCompile(`([^^]*)\^+ ([a-zA-Z0-9_.-]+) ([a-z,]+)`).FindStringSubmatch(lines[annLine])
+			matches := regexp.MustCompile(`([^^]*)\^+ ([a-zA-Z0-9_.-/]+) ([a-z,]+)`).FindStringSubmatch(lines[annLine])
 			if matches == nil {
 				sourceLine = annLine
 				continue nextSourceLine
@@ -468,7 +468,7 @@ previousSourceLine:
 				break previousSourceLine
 			}
 
-			matches := regexp.MustCompile(`([^v]*)v+ ([a-zA-Z0-9_.-]+) ([a-z,]+)`).FindStringSubmatch(lines[annLine])
+			matches := regexp.MustCompile(`([^v]*)v+ ([a-zA-Z0-9_.-/]+) ([a-z,]+)`).FindStringSubmatch(lines[annLine])
 			if matches == nil {
 				sourceLine = annLine
 				continue previousSourceLine

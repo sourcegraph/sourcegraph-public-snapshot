@@ -121,6 +121,10 @@ func TestNonLocalDefinition(t *testing.T) {
 			continue
 		}
 		m := symbolToTagToAnnotations[symbol]
+		if m["def"] == nil {
+			// It's probably a path definition
+			continue
+		}
 		var wantAnn *annotation
 		for _, ann := range m["def"] {
 			if wantAnn != nil {
@@ -161,6 +165,32 @@ func TestNonLocalDefinition(t *testing.T) {
 				t.Errorf("wrong symbolInfo for %q\n", symbol)
 				t.Errorf("want: %s%s/%s:%d:%d\n", itermSource(filepath.Join(cwd, "test_repos", want.Repo, want.Path), want.Point.Row, "src"), want.Repo, want.Path, want.Point.Row, want.Point.Column)
 				t.Errorf("got : %s%s/%s:%d:%d\n", itermSource(filepath.Join(cwd, "test_repos", got.Repo, got.Path), got.Point.Row, "src"), got.Repo, got.Path, got.Point.Row, got.Point.Column)
+			}
+		}
+	}
+
+	// Also test path definitions
+	for _, a := range annotations {
+		for _, tag := range a.tags {
+			if tag == "path" {
+				squirrel.breadcrumbs = Breadcrumbs{}
+				gotSymbolInfo, err := squirrel.symbolInfo(context.Background(), a.repoCommitPathPoint)
+				fatalIfErrorLabel(t, err, "symbolInfo")
+
+				if gotSymbolInfo == nil {
+					squirrel.breadcrumbs.prettyPrint(squirrel.readFile)
+					t.Fatalf("no symbolInfo for path %s", a.symbol)
+				}
+
+				if gotSymbolInfo.Definition.Range != nil {
+					squirrel.breadcrumbs.prettyPrint(squirrel.readFile)
+					t.Fatalf("symbolInfo returned a range for %s", a.symbol)
+				}
+
+				if gotSymbolInfo.Definition.RepoCommitPath.Path != a.repoCommitPathPoint.Path {
+					squirrel.breadcrumbs.prettyPrint(squirrel.readFile)
+					t.Fatalf("expected path %s, got %s", a.repoCommitPathPoint.Path, gotSymbolInfo.Definition.RepoCommitPath.Path)
+				}
 			}
 		}
 	}
