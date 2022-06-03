@@ -76,7 +76,7 @@ update gitserver_repos set repo_size_bytes = 228 where repo_id = 3;
 		t.Fatalf("unexpected error while inserting test data: %s", err)
 	}
 
-	s.cleanupRepos()
+	s.cleanupRepos([]string{"gitserver-0"})
 
 	for i := 1; i <= 3; i++ {
 		repo, err := s.DB.GitserverRepos().GetByID(context.Background(), 1)
@@ -131,7 +131,7 @@ func TestCleanupInactive(t *testing.T) {
 		Logger: logtest.Scoped(t),
 	}
 	s.testSetup(t)
-	s.cleanupRepos()
+	s.cleanupRepos([]string{"gitserver-0"})
 
 	if _, err := os.Stat(repoA); os.IsNotExist(err) {
 		t.Error("expected repoA not to be removed")
@@ -195,7 +195,7 @@ func TestGitGCAuto(t *testing.T) {
 		Logger: logtest.Scoped(t),
 	}
 	s.testSetup(t)
-	s.cleanupRepos()
+	s.cleanupRepos([]string{"gitserver-0"})
 
 	// Verify that there are no more GC-able objects in the repository.
 	if !strings.Contains(countObjects(), "count: 0") {
@@ -315,7 +315,7 @@ func TestCleanupExpired(t *testing.T) {
 		},
 	}
 	s.testSetup(t)
-	s.cleanupRepos()
+	s.cleanupRepos([]string{"gitserver-0"})
 
 	// repos that shouldn't be re-cloned
 	if repoNewTime.Before(modTime(repoNew)) {
@@ -478,7 +478,7 @@ func TestCleanupOldLocks(t *testing.T) {
 
 	s := &Server{ReposDir: root, Logger: logtest.Scoped(t)}
 	s.testSetup(t)
-	s.cleanupRepos()
+	s.cleanupRepos([]string{"gitserver-0"})
 
 	isRemoved := func(path string) bool {
 		_, err := os.Stat(path)
@@ -1258,7 +1258,7 @@ update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 		t.Fatalf("unexpected error while inserting test data: %s", err)
 	}
 
-	s.cleanupRepos()
+	s.cleanupRepos([]string{"gitserver-0"})
 
 	for i := 1; i <= 3; i++ {
 		repo, err := s.DB.GitserverRepos().GetByID(context.Background(), 1)

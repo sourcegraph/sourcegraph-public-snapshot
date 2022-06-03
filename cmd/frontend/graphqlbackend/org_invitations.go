@@ -523,7 +523,7 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 		//
 		// There is no user invite quota for on-prem instances because we assume they can
 		// trust their users to not abuse invites.
-		if ok, err := database.Users(db).CheckAndDecrementInviteQuota(ctx, sender.ID); err != nil {
+		if ok, err := db.Users().CheckAndDecrementInviteQuota(ctx, sender.ID); err != nil {
 			return err
 		} else if !ok {
 			return errors.New("invite quota exceeded (contact support to increase the quota)")

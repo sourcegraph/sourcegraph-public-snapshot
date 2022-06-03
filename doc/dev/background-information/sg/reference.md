@@ -1,4 +1,4 @@
- 
+<!-- DO NOT EDIT: generated via: go generate ./dev/sg -->
 
 # sg reference
 
@@ -662,6 +662,22 @@ Flags:
 * `--skip-teardown`: Skip tearing down the database created to run all registered migrations
 * `-f="<value>"`: The output filepath
 
+### sg migration visualize
+
+Output a DOT visualization of the migration graph.
+
+Available schemas:
+
+* frontend
+* codeintel
+* codeinsights
+
+
+Flags:
+
+* `--db="<value>"`: The target database `schema` to modify (default: frontend)
+* `-f="<value>"`: The output filepath
+
 ## sg doctor
 
 Run checks to test whether system is in correct state to run Sourcegraph.
@@ -799,7 +815,7 @@ Manage analytics collected by sg.
 
 Make sg better by submitting all analytics stored locally!.
 
-Uses OKAYHQ_TOKEN, or fetches a token from gcloud.
+Uses OKAYHQ_TOKEN, or fetches a token from gcloud or 1password.
 
 Arguments: `[github username]`
 

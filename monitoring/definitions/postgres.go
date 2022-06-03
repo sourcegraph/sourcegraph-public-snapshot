@@ -1,6 +1,7 @@
 package definitions
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -25,14 +26,14 @@ func Postgres() *monitoring.Dashboard {
 				Title: "General",
 				Rows: []monitoring.Row{{
 					monitoring.Observable{
-						Name:              "connections",
-						Description:       "active connections",
-						Owner:             monitoring.ObservableOwnerDevOps,
-						DataMustExist:     false, // not deployed on docker-compose
-						Query:             `sum by (job) (pg_stat_activity_count{datname!~"template.*|postgres|cloudsqladmin"}) OR sum by (job) (pg_stat_activity_count{job="codeinsights-db", datname!~"template.*|cloudsqladmin"})`,
-						Panel:             monitoring.Panel().LegendFormat("{{datname}}"),
-						Warning:           monitoring.Alert().LessOrEqual(5).For(5 * time.Minute),
-						PossibleSolutions: "none",
+						Name:          "connections",
+						Description:   "active connections",
+						Owner:         monitoring.ObservableOwnerDevOps,
+						DataMustExist: false, // not deployed on docker-compose
+						Query:         `sum by (job) (pg_stat_activity_count{datname!~"template.*|postgres|cloudsqladmin"}) OR sum by (job) (pg_stat_activity_count{job="codeinsights-db", datname!~"template.*|cloudsqladmin"})`,
+						Panel:         monitoring.Panel().LegendFormat("{{datname}}"),
+						Warning:       monitoring.Alert().LessOrEqual(5).For(5 * time.Minute),
+						NextSteps:     "none",
 					},
 					monitoring.Observable{
 						Name:          "usage_connections_percentage",
@@ -43,20 +44,19 @@ func Postgres() *monitoring.Dashboard {
 						Panel:         monitoring.Panel().LegendFormat("{{job}}").Unit(monitoring.Percentage).Max(100).Min(0),
 						Warning:       monitoring.Alert().GreaterOrEqual(80).For(5 * time.Minute),
 						Critical:      monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
-						PossibleSolutions: `
+						NextSteps: `
 							- Consider increasing [max_connections](https://www.postgresql.org/docs/current/runtime-config-connection.html#GUC-MAX-CONNECTIONS) of the database instance, [learn more](https://docs.sourcegraph.com/admin/config/postgres-conf)
 						`,
 					},
 					monitoring.Observable{
-						Name:              "transaction_durations",
-						Description:       "maximum transaction durations",
-						Owner:             monitoring.ObservableOwnerDevOps,
-						DataMustExist:     false, // not deployed on docker-compose
-						Query:             `sum by (job) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin"}) OR sum by (job) (pg_stat_activity_max_tx_duration{job="codeinsights-db", datname!~"template.*|cloudsqladmin"})`,
-						Panel:             monitoring.Panel().LegendFormat("{{datname}}").Unit(monitoring.Seconds),
-						Warning:           monitoring.Alert().GreaterOrEqual(0.3).For(5 * time.Minute),
-						Critical:          monitoring.Alert().GreaterOrEqual(0.5).For(10 * time.Minute),
-						PossibleSolutions: "none",
+						Name:          "transaction_durations",
+						Description:   "maximum transaction durations",
+						Owner:         monitoring.ObservableOwnerDevOps,
+						DataMustExist: false, // not deployed on docker-compose
+						Query:         `sum by (job) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin"}) OR sum by (job) (pg_stat_activity_max_tx_duration{job="codeinsights-db", datname!~"template.*|cloudsqladmin"})`,
+						Panel:         monitoring.Panel().LegendFormat("{{datname}}").Unit(monitoring.Seconds),
+						Warning:       monitoring.Alert().GreaterOrEqual(0.3).For(5 * time.Minute),
+						NextSteps:     "none",
 					},
 				},
 				},
@@ -67,15 +67,27 @@ func Postgres() *monitoring.Dashboard {
 				Rows: []monitoring.Row{
 					{
 						monitoring.Observable{
-							Name:              "postgres_up",
-							Description:       "database availability",
-							Owner:             monitoring.ObservableOwnerDevOps,
-							DataMustExist:     false, // not deployed on docker-compose
-							Query:             "pg_up",
-							Panel:             monitoring.Panel().LegendFormat("{{app}}"),
-							Critical:          monitoring.Alert().LessOrEqual(0).For(5 * time.Minute),
-							PossibleSolutions: "none",
-							Interpretation:    "A non-zero value indicates the database is online.",
+							Name:          "postgres_up",
+							Description:   "database availability",
+							Owner:         monitoring.ObservableOwnerDevOps,
+							DataMustExist: false, // not deployed on docker-compose
+							Query:         "pg_up",
+							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
+							Critical:      monitoring.Alert().LessOrEqual(0).For(5 * time.Minute),
+							// Similar to ContainerMissing solutions
+							NextSteps: fmt.Sprintf(`
+								- **Kubernetes:**
+									- Determine if the pod was OOM killed using 'kubectl describe pod %[1]s' (look for 'OOMKilled: true') and, if so, consider increasing the memory limit in the relevant 'Deployment.yaml'.
+									- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'kubectl logs -p %[1]s'.
+									- Check if there is any OOMKILL event using the provisioning panels
+									- Check kernel logs using 'dmesg' for OOMKILL events on worker nodes
+								- **Docker Compose:**
+									- Determine if the pod was OOM killed using 'docker inspect -f \'{{json .State}}\' %[1]s' (look for '"OOMKilled":true') and, if so, consider increasing the memory limit of the %[1]s container in 'docker-compose.yml'.
+									- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'docker logs %[1]s' (note this will include logs from the previous and currently running container).
+									- Check if there is any OOMKILL event using the provisioning panels
+									- Check kernel logs using 'dmesg' for OOMKILL events
+							`, containerName),
+							Interpretation: "A non-zero value indicates the database is online.",
 						},
 						monitoring.Observable{
 							Name:          "invalid_indexes",
@@ -85,7 +97,7 @@ func Postgres() *monitoring.Dashboard {
 							Query:         "max by (relname)(pg_invalid_index_count)",
 							Panel:         monitoring.Panel().LegendFormat("{{relname}}"),
 							Critical:      monitoring.Alert().GreaterOrEqual(1).AggregateBy(monitoring.AggregatorSum),
-							PossibleSolutions: `
+							NextSteps: `
 								- Drop and re-create the invalid trigger - please contact Sourcegraph to supply the trigger definition.
 							`,
 							Interpretation: "A non-zero value indicates the that Postgres failed to build an index. Expect degraded performance until the index is manually rebuilt.",
@@ -101,7 +113,7 @@ func Postgres() *monitoring.Dashboard {
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
 							Warning:       monitoring.Alert().GreaterOrEqual(1).For(5 * time.Minute),
 
-							PossibleSolutions: `
+							NextSteps: `
 								- Ensure the Postgres exporter can access the Postgres database. Also, check the Postgres exporter logs for errors.
 							`,
 							Interpretation: "This value indicates issues retrieving metrics from postgres_exporter.",
@@ -115,7 +127,7 @@ func Postgres() *monitoring.Dashboard {
 							Panel:          monitoring.Panel().LegendFormat("{{app}}"),
 							Critical:       monitoring.Alert().GreaterOrEqual(1).For(5 * time.Minute),
 							Interpretation: "A 0 value indicates that no migration is in progress.",
-							PossibleSolutions: `
+							NextSteps: `
 								The database migration has been in progress for 5 or more minutes - please contact Sourcegraph if this persists.
 							`,
 						},

@@ -404,15 +404,15 @@ func TestFileMatch_Limit(t *testing.T) {
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
 			fileMatch := &result.FileMatch{
-				File:        result.File{},
-				HunkMatches: result.HunkMatches{{Ranges: make(result.Ranges, tt.numHunkRanges)}},
-				Symbols:     make([]*result.SymbolMatch, tt.numSymbolMatches),
-				LimitHit:    false,
+				File:         result.File{},
+				ChunkMatches: result.ChunkMatches{{Ranges: make(result.Ranges, tt.numHunkRanges)}},
+				Symbols:      make([]*result.SymbolMatch, tt.numSymbolMatches),
+				LimitHit:     false,
 			}
 
 			got := fileMatch.Limit(tt.limit)
 
-			require.Equal(t, tt.expNumHunkRanges, fileMatch.HunkMatches.MatchCount())
+			require.Equal(t, tt.expNumHunkRanges, fileMatch.ChunkMatches.MatchCount())
 			require.Equal(t, tt.expNumSymbolMatches, len(fileMatch.Symbols))
 			require.Equal(t, tt.expRemainingLimit, got)
 			require.Equal(t, tt.wantLimitHit, fileMatch.LimitHit)

@@ -30,7 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- A common source of searcher evictions on kubernetes when running large structural searches. [#34828](https://github.com/sourcegraph/sourcegraph/issues/34828)
 
 ### Removed
 

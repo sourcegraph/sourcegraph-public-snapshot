@@ -6,7 +6,7 @@ import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { VSCodeIcon } from '../components/CtaIcons'
@@ -116,14 +116,12 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
             <div className={classNames('d-flex', 'justify-content-center', 'mb-5', styles.leftOrRightContainer)}>
                 <div className={styles.leftOrRight}>
                     <BrandLogo isLightTheme={isLightTheme} variant="logo" className={styles.logo} />
-                    <Typography.H2
-                        className={classNames('d-flex', 'align-items-center', 'mb-3', 'mt-1', styles.pageHeading)}
-                    >
+                    <H2 className={classNames('d-flex', 'align-items-center', 'mb-3', 'mt-1', styles.pageHeading)}>
                         <div className={classNames(styles.iconCirlce, 'mr-3')}>
                             <VSCodeIcon />
                         </div>{' '}
                         <strong className="mr-1">Unlock the full potential of the Sourcegraph extension</strong>
-                    </Typography.H2>
+                    </H2>
                     With a Sourcegraph account, you can:
                     <ul className={styles.featureList}>
                         <li>Search all of your code from your code host, even without downloading it locally</li>
@@ -141,7 +139,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
                 </div>
                 <div className={classNames(styles.leftOrRight, styles.signUpWrapper)}>
                     {' '}
-                    <Typography.H2>Create a free account</Typography.H2>
+                    <H2>Create a free account</H2>
                     {renderAuthMethod()}
                     <small className="text-muted">
                         By registering, you agree to our{' '}

@@ -206,6 +206,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 
 	for _, job := range totalJobs {
 		// todo: fix this transactionality
+		job.Priority = int(priority.High)
 		err := s.enqueueQueryRunnerJob(ctx, job)
 		if err != nil {
 			return err
@@ -431,7 +432,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 				multi = errors.Append(multi, err)
 			}
 		}
-		return multi
+		return nil
 	})
 	if multi != nil {
 		log15.Error("historical_enqueuer.buildFrames - multierror", "err", multi)

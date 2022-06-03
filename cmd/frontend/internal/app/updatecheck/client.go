@@ -98,7 +98,7 @@ func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 
 func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return database.Users(db).Count(ctx, &database.UsersListOptions{})
+	return db.Users().Count(ctx, &database.UsersListOptions{})
 }
 
 func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {

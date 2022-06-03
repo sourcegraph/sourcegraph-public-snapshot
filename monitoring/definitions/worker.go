@@ -15,9 +15,9 @@ func Worker() *monitoring.Dashboard {
 		Name  string
 		Owner monitoring.ObservableOwner
 	}{
-		{Name: "codeintel-janitor", Owner: monitoring.ObservableOwnerCodeIntel},
-		{Name: "codeintel-commitgraph", Owner: monitoring.ObservableOwnerCodeIntel},
-		{Name: "codeintel-auto-indexing", Owner: monitoring.ObservableOwnerCodeIntel},
+		{Name: "codeintel-upload-janitor", Owner: monitoring.ObservableOwnerCodeIntel},
+		{Name: "codeintel-commitgraph-updater", Owner: monitoring.ObservableOwnerCodeIntel},
+		{Name: "codeintel-autoindexing-scheduler", Owner: monitoring.ObservableOwnerCodeIntel},
 	}
 
 	var activeJobObservables []monitoring.Observable
@@ -31,7 +31,7 @@ func Worker() *monitoring.Dashboard {
 			Warning:       monitoring.Alert().Less(1).For(1 * time.Minute),
 			Critical:      monitoring.Alert().Less(1).For(5 * time.Minute),
 			Owner:         job.Owner,
-			PossibleSolutions: fmt.Sprintf(`
+			NextSteps: fmt.Sprintf(`
 				- Ensure your instance defines a worker container such that:
 					- `+"`"+`WORKER_JOB_ALLOWLIST`+"`"+` contains "%[1]s" (or "all"), and
 					- `+"`"+`WORKER_JOB_BLOCKLIST`+"`"+` does not contain "%[1]s"
@@ -172,15 +172,15 @@ func Worker() *monitoring.Dashboard {
 				Title:  "Code Insights queue utilization",
 				Hidden: true,
 				Rows: []monitoring.Row{{monitoring.Observable{
-					Name:              "insights_queue_unutilized_size",
-					Description:       "insights queue size that is not utilized (not processing)",
-					Owner:             monitoring.ObservableOwnerCodeInsights,
-					Query:             "max(src_insights_search_queue_total{job=~\"^worker.*\"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~\"^worker.*\",op=\"Dequeue\"}[5m])) < 1",
-					DataMustExist:     false,
-					Warning:           monitoring.Alert().Greater(0.0).For(time.Minute * 30),
-					PossibleSolutions: "Verify code insights worker job has successfully started. Restart worker service and monitoring startup logs, looking for worker panics.",
-					Interpretation:    "Any value on this panel indicates code insights is not processing queries from its queue. This observable and alert only fire if there are records in the queue and there have been no dequeue attempts for 30 minutes.",
-					Panel:             monitoring.Panel().LegendFormat("count"),
+					Name:           "insights_queue_unutilized_size",
+					Description:    "insights queue size that is not utilized (not processing)",
+					Owner:          monitoring.ObservableOwnerCodeInsights,
+					Query:          "max(src_insights_search_queue_total{job=~\"^worker.*\"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~\"^worker.*\",op=\"Dequeue\"}[5m])) < 1",
+					DataMustExist:  false,
+					Warning:        monitoring.Alert().Greater(0.0).For(time.Minute * 30),
+					NextSteps:      "Verify code insights worker job has successfully started. Restart worker service and monitoring startup logs, looking for worker panics.",
+					Interpretation: "Any value on this panel indicates code insights is not processing queries from its queue. This observable and alert only fire if there are records in the queue and there have been no dequeue attempts for 30 minutes.",
+					Panel:          monitoring.Panel().LegendFormat("count"),
 				}}},
 			},
 

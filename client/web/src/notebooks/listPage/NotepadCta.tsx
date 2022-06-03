@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { ProductStatusBadge, Button, Typography, Text } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Button, H3, Text } from '@sourcegraph/wildcard'
 
 import { NotepadIcon } from '../../search/Notepad'
 import { ThemePreference } from '../../stores/themeState'
@@ -22,9 +22,9 @@ export const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<Notepad
 
     return (
         <div>
-            <Typography.H3 id={NOTEPAD_CTA_ID} className="d-inline-block">
+            <H3 id={NOTEPAD_CTA_ID} className="d-inline-block">
                 <NotepadIcon /> Enable notepad
-            </Typography.H3>{' '}
+            </H3>{' '}
             <ProductStatusBadge status="beta" />
             <div className="d-flex align-items-center">
                 <img

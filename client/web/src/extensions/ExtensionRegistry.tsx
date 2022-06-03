@@ -343,7 +343,8 @@ export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<
                             <Form onSubmit={preventDefault} className="form-inline">
                                 <div className="shadow flex-grow-1">
                                     <Input
-                                        inputClassName="w-100 test-extension-registry-input"
+                                        data-testid="test-extension-registry-input"
+                                        className="w-100"
                                         type="search"
                                         placeholder="Search extensions..."
                                         name="query"

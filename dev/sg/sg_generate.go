@@ -27,6 +27,7 @@ sg --verbose generate ... # Enable verbose output
 `,
 	Usage:       "Run code and docs generation tasks",
 	Description: "If no target is provided, all target are run with default arguments.",
+	Aliases:     []string{"gen"},
 	Category:    CategoryDev,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{

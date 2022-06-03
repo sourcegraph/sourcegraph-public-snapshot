@@ -146,7 +146,7 @@ func testNewOverrideRoundtrip(t *testing.T) {
 	t.Parallel()
 	db := NewDB(dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
-	users := Users(db)
+	users := db.Users()
 	ctx := actor.WithInternalActor(context.Background())
 
 	ff1, err := flagStore.CreateBool(ctx, "t", true)
@@ -195,7 +195,7 @@ func testListUserOverrides(t *testing.T) {
 	t.Parallel()
 	db := NewDB(dbtest.NewDB(t))
 	flagStore := &featureFlagStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-	users := Users(db)
+	users := db.Users()
 	ctx := actor.WithInternalActor(context.Background())
 
 	mkUser := func(name string) *types.User {
@@ -274,7 +274,7 @@ func testListOrgOverrides(t *testing.T) {
 	t.Parallel()
 	db := NewDB(dbtest.NewDB(t))
 	flagStore := &featureFlagStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-	users := Users(db)
+	users := db.Users()
 	orgs := db.Orgs()
 	orgMembers := db.OrgMembers()
 	ctx := actor.WithInternalActor(context.Background())
@@ -359,7 +359,7 @@ func testUserFlags(t *testing.T) {
 	t.Parallel()
 	db := NewDB(dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
-	users := Users(db)
+	users := db.Users()
 	orgs := db.Orgs()
 	orgMembers := db.OrgMembers()
 	ctx := actor.WithInternalActor(context.Background())

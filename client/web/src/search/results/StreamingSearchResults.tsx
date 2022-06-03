@@ -6,9 +6,13 @@ import { Observable } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
-import { SearchSidebar, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import {
+    SearchSidebar,
+    StreamingProgress,
+    StreamingSearchResultsList,
+    FetchFileParameters,
+} from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
