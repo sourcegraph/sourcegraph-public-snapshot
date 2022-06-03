@@ -46,7 +46,7 @@ public class ThemeUtil {
                 }
             }
         } catch (Exception e) {
-            logger.error(e.getMessage())
+            logger.error(e.getMessage());
         }
 
         JsonObject theme = new JsonObject();
