@@ -111,7 +111,6 @@ func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (Source, 
 
 // ExternalServices returns a singleton slice containing the external service.
 func (s BitbucketServerSource) ExternalServices() types.ExternalServices {
-	fmt.Println("Hi")
 	return types.ExternalServices{s.svc}
 }
 
@@ -226,7 +225,6 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 			}
 
 			projectKey, repoSlug := ps[0], ps[1]
-			fmt.Println("ProjectKey:", projectKey, ", RepoSlug:", repoSlug)
 			repo, err := s.client.Repo(ctx, projectKey, repoSlug)
 			if err != nil {
 				// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
@@ -259,6 +257,10 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 			for next.HasMore() {
 				repos, page, err := s.client.Repos(ctx, next, q)
 				// fmt.Println("Repos:", (*repos[0]).Name)
+				// fmt.Println("q:", q)
+				// for _, r := range repos {
+				// fmt.Println("REPO:", r)
+				// }
 				if err != nil {
 					ch <- batch{err: errors.Wrapf(err, "bitbucketserver.repositoryQuery: query=%q, page=%+v", q, next)}
 					break
@@ -277,7 +279,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 
 	seen := make(map[int]bool)
 	for r := range ch {
-		fmt.Println("Batch:", (r.repos[0].Name))
+		// fmt.Println("=== NEW BATCH ===")
 		if r.err != nil {
 			results <- SourceResult{Source: s, Err: r.err}
 			continue
@@ -285,6 +287,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 
 		for _, repo := range r.repos {
 			// fmt.Println("Repo:", repo.Name)
+			// fmt.Printf("Repo:%+v\n", repo)
 			// fmt.Println("Seen:", seen[repo.ID])
 			// fmt.Println("Excludes:", s.excludes(repo))
 			if !seen[repo.ID] && !s.excludes(repo) {
@@ -294,7 +297,6 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 			}
 		}
 	}
-	// fmt.Println(<-results)
 	fmt.Println("DONE WITH listAllRepos")
 }
 

@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -26,7 +27,6 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 	var repos []*bitbucketserver.Repo
-
 	if err := json.Unmarshal(b, &repos); err != nil {
 		t.Fatal(err)
 	}
@@ -225,42 +225,32 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 }
 
 func TestListRepos(t *testing.T) {
-	ctx := context.Background()
+	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var repos []bitbucketserver.Repo
+	if err := json.Unmarshal(b, &repos); err != nil {
+		t.Fatal(err)
+	}
 
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/rest/api/1.0/labels/archived/labeled", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("LABELED ENDPOINT HIT")
+		// fmt.Println("LABELED ENDPOINT HIT")
 	})
 
 	mux.HandleFunc("/rest/api/1.0/repos", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("REPOS ENDPOINT HIT")
-
-		jsonFile, err := os.Open("./testdata/bitbucketserver-repos-simple.golden")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer jsonFile.Close()
-
-		byteValue, err := ioutil.ReadAll(jsonFile)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		var repos []bitbucketserver.Repo
-		if err := json.Unmarshal(byteValue, &repos); err != nil {
-			t.Fatal(err)
-		}
+		// fmt.Println("REPOS ENDPOINT HIT")
 
 		projectName := r.URL.Query().Get("projectName")
-		fmt.Println("ProjectName:", projectName)
 		for _, repo := range repos {
-			repoName := repo.Name
-			if projectName == repoName {
-				fmt.Println("===== MATCH =====, Repo:", repo.Name)
+			repoProjectName := "/" + repo.Project.Key + "/" + repo.Slug
+			if projectName == repoProjectName {
+				// fmt.Println("===== MATCH =====, Repo:", repo.Name)
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-
 				json.NewEncoder(w).Encode(struct {
 					PageToken bitbucketserver.PageToken `json:"pageToken"`
 					Values    any                       `json:"values"`
@@ -274,14 +264,25 @@ func TestListRepos(t *testing.T) {
 					},
 					Values: []bitbucketserver.Repo{repo},
 				})
-
 			}
 		}
-
 	})
 
-	mux.HandleFunc("/rest/api/1.0/projects", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("PROJECTS ENDPOINT HIT")
+	mux.HandleFunc("/rest/api/1.0/projects/", func(w http.ResponseWriter, r *http.Request) {
+		// fmt.Println("PROJECTS ENDPOINT HIT")
+
+		pathArr := strings.Split(r.URL.Path, "/")
+		projectKey := pathArr[5]
+		repoSlug := pathArr[7]
+
+		for _, repo := range repos {
+			if repo.Project.Key == projectKey && repo.Slug == repoSlug {
+				// fmt.Println("==== MATCH ====, Repo:", repo.Name)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				json.NewEncoder(w).Encode(repo)
+			}
+		}
 	})
 
 	server := httptest.NewServer(mux)
@@ -302,13 +303,13 @@ func TestListRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// s.config.Repos = []string{
-	// 	"/SG/go-langserver",
-	// 	"/SG/python-langserver",
-	// 	"/SG/python-langserver/fork",
-	// 	"/~KEEGAN/rgp",
-	// 	"/~KEEGAN/rgp-unavailable",
-	// }
+	s.config.Repos = []string{
+		"SG/go-langserver",
+		"SG/python-langserver",
+		"SG/python-langserver/fork",
+		"~KEEGAN/rgp",
+		"~KEEGAN/rgp-unavailable",
+	}
 
 	s.config.RepositoryQuery = []string{
 		"?projectName=/SG/go-langserver",
@@ -316,13 +317,50 @@ func TestListRepos(t *testing.T) {
 		"?projectName=/SG/python-langserver-fork",
 		"?projectName=/~KEEGAN/rgp",
 		"?projectName=/~KEEGAN/rgp-unavailable",
-		// "",
+		"none",
+		// "all",
 	}
 
-	results := make(chan SourceResult)
-	s.ListRepos(ctx, results)
+	ctxWithTimeout, cancelFunction := context.WithTimeout(context.Background(), 5*time.Second)
+	fmt.Println(cancelFunction)
 
-	// fmt.Println("Results", <-results)
+	results := make(chan SourceResult, 5)
+	defer close(results)
+
+	s.ListRepos(ctxWithTimeout, results)
+
+	// go func() {
+	// 	fmt.Println("Printing", len(results), "results...")
+	// 	for res := range results {
+	// 		fmt.Printf("%+v\n", *(res.Repo))
+	// 	}
+	// }()
+
+	repoNameMap := map[string]struct{}{
+		"/SG/go-langserver":          {},
+		"/SG/python-langserver":      {},
+		"/SG/python-langserver-fork": {},
+		"/~KEEGAN/rgp":               {},
+		"/~KEEGAN/rgp-unavailable":   {},
+	}
+
+	for {
+		select {
+		case res := <-results:
+			repoNameArr := strings.Split(string(res.Repo.Name), "/")
+			repoName := "/" + repoNameArr[1] + "/" + repoNameArr[2]
+			fmt.Println("Repo:", repoName)
+			if _, ok := repoNameMap[repoName]; ok {
+				fmt.Println("Verified")
+			}
+		case <-ctxWithTimeout.Done():
+			fmt.Println("Timeout")
+			// cancelFunction()
+			t.Fatal(err)
+		default:
+			return
+		}
+	}
 
 }
 
