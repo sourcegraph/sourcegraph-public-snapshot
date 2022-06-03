@@ -52,8 +52,9 @@ export async function accessibilityAudit(page: Page, config: AccessibilityAuditC
         // https://github.com/microsoft/monaco-editor/issues/2448
         .exclude('.monaco-status')
         /*
-         * TODO (fkling): Design review on some CodeMirror query input features
-         * to choose a color that fulfill contrast requirements.
+         * TODO: Design review on some CodeMirror query input features to choose
+         * a color that fulfill contrast requirements:
+         * https://github.com/sourcegraph/sourcegraph/issues/36534
          */
         .exclude('.cm-content .cm-line')
         /*
