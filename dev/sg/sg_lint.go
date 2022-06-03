@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -33,11 +34,15 @@ var (
 	}
 )
 
+var helpFlagRegexp = regexp.MustCompile("-h|-help|--help")
+
 var lintCommand = &cli.Command{
-	Name:        "lint",
-	ArgsUsage:   "[targets...]",
-	Usage:       "Run all or specified linters on the codebase",
-	Description: `To run all checks, don't provide an argument. You can also provide multiple arguments to run linters for multiple targets.`,
+	Name:      "lint",
+	ArgsUsage: "[targets...]",
+	Usage:     "Run all or specified linters on the codebase",
+	Description: `To run all checks, don't provide an argument. You can also provide multiple arguments to run linters for multiple targets.
+
+Some targets have linters that can automatically be fixed, which can be enabled with 'sg lint -fix'.`,
 	UsageText: `
 # Run all possible checks
 sg lint
@@ -53,6 +58,9 @@ sg lint client
 
 # List all available check groups
 sg lint --help
+
+# Automatically fix issues from linters that support it
+sg lint -fix [targets...]
 `,
 	Category: CategoryDev,
 	Flags: []cli.Flag{
@@ -64,9 +72,11 @@ sg lint --help
 		},
 	},
 	Before: func(cmd *cli.Context) error {
-		// If more than 1 target is requested, hijack subcommands by setting it to nil
-		// so that the main lint command can handle it the run.
-		if cmd.Args().Len() > 1 {
+		// If more than 1 target is requested and there's no help flag present, hijack
+		// subcommands by setting it to nil so that the main lint command can handle it
+		// the run.
+		hasHelpFlag := helpFlagRegexp.MatchString(strings.Join(cmd.Args().Slice(), " "))
+		if cmd.Args().Len() > 1 && !hasHelpFlag {
 			cmd.App.Commands = nil
 		}
 		return nil
@@ -247,18 +257,32 @@ type lintTargets []lint.Target
 
 // Commands converts all lint targets to CLI commands
 func (lt lintTargets) Commands() (cmds []*cli.Command) {
-	for _, c := range lt {
-		c := c // local reference
+	for _, t := range lt {
+		target := t // local reference
+
+		var hasFixable bool
+		for _, l := range target.Linters {
+			if _, fixable := lint.Fixable(l); fixable {
+				hasFixable = true
+			}
+		}
+
+		var description string
+		if hasFixable {
+			description = fmt.Sprintf("\n\nThis target has linters that can be fixed with 'sg lint -fix %s'", target.Name)
+		}
+
 		cmds = append(cmds, &cli.Command{
-			Name:  c.Name,
-			Usage: c.Help,
+			Name:        target.Name,
+			Usage:       target.Help,
+			Description: description,
 			Action: func(cmd *cli.Context) error {
 				if cmd.NArg() > 0 {
 					std.Out.WriteFailuref("unrecognized argument %q provided", cmd.Args().First())
 					return flag.ErrHelp
 				}
-				std.Out.WriteNoticef("Running checks from target: %s", c.Name)
-				return runCheckScriptsAndReport(cmd.Context, cmd.App.Writer, lintFix.Get(cmd), c.Linters...)
+				std.Out.WriteNoticef("Running checks from target: %s", target.Name)
+				return runCheckScriptsAndReport(cmd.Context, cmd.App.Writer, lintFix.Get(cmd), target.Linters...)
 			},
 			// Completions to chain multiple commands
 			BashComplete: completeOptions(func() (options []string) {
