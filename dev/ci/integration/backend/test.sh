@@ -3,7 +3,7 @@
 # This script runs the backend integration tests against a running server.
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
-set -ex
+set -e
 
 URL="${1:-"http://localhost:7080"}"
 
