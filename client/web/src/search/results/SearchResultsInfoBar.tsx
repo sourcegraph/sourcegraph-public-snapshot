@@ -93,7 +93,7 @@ export interface SearchResultsInfoBarProps
     resultsFound: boolean
 
     /** Whether running batch changes server-side is enabled */
-    batchChangesExecutionEnabled: boolean
+    batchChangesExecutionEnabled?: boolean
 
     // Expand all feature
     allExpanded: boolean
@@ -214,7 +214,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     const createActions = useMemo(
         () =>
             [
-                getBatchChangeCreateAction(props.query, props.query as string, props.batchChangesExecutionEnabled),
+                getBatchChangeCreateAction(props.query, props.query as string, props.authenticatedUser, props.batchChangesExecutionEnabled),
                 getSearchContextCreateAction(props.query, props.authenticatedUser),
                 getInsightsCreateAction(
                     props.query,

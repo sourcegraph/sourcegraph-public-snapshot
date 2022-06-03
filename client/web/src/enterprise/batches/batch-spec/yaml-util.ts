@@ -383,8 +383,8 @@ export function quoteYAMLString(value: string): string {
 }
 
 /**
- * Replaces the "[field]" value of the provided `librarySpec` with the provided `[field]`. If
- * `librarySpec` or its "[field]" is not properly parsable, just returns the original
+ * Replaces the <key> value of the provided `librarySpec` with the provided `value`. If
+ * `librarySpec` or its <key> is not properly parsable, just returns the original
  * `librarySpec`.
  *
  * @param librarySpec the raw batch spec YAML example code from a library spec
@@ -404,7 +404,7 @@ export const insertFieldIntoLIbraryItem = (
         return librarySpec
     }
 
-    // Find the `YAMLMapping` node with the key "[field]".
+    // Find the `YAMLMapping` node with <key>..
     const fieldMapping = find(ast.mappings, mapping => mapping.key.value === key)
 
     if (!fieldMapping) {
@@ -413,7 +413,7 @@ export const insertFieldIntoLIbraryItem = (
 
     const finalValue = quotable ? quoteYAMLString(value) : value
 
-    // Stitch the new "name" value into the spec.
+    // Stitch the new <value> into the spec.
     return (
         librarySpec.slice(0, fieldMapping.value.startPosition) +
         finalValue +
