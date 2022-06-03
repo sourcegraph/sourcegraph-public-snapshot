@@ -147,7 +147,7 @@ func (c *Core) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	base.Message = entry.Message
 	base.Level = entry.Level
 
-	errs := make([]error, len(c.errs)+1)
+	errs := make([]error, len(c.errs))
 	copy(errs, c.errs)
 
 	for _, f := range fields {
