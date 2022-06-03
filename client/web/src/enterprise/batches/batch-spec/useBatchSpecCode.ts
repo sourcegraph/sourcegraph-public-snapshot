@@ -69,7 +69,7 @@ export interface UseBatchSpecCodeResult {
     excludeRepo: (repo: string, branch: string) => void
 }
 
-const updateSomethingSomething = (originalInput: string, name: string, searchQuery?: string): string => {
+const updateBatchSpecFields = (originalInput: string, name: string, searchQuery?: string): string => {
     let result: string;
     result = insertFieldIntoLIbraryItem(originalInput, name, 'name')
 
@@ -144,7 +144,7 @@ export const useBatchSpecCode = (originalInput: string, name: string, searchQuer
     const [code, setCode] = useState<string>(() =>
         // Start with the hello world sample code initially if the user hasn't written any
         // batch spec code yet, otherwise show the latest spec code.
-        isMinimalBatchSpec(originalInput) ? updateSomethingSomething(helloWorldSample, name, searchQuery) : originalInput
+        isMinimalBatchSpec(originalInput) ? updateBatchSpecFields(helloWorldSample, name, searchQuery) : originalInput
     )
     const debouncedCode = useDebounce(code, DEBOUNCE_AMOUNT)
 
