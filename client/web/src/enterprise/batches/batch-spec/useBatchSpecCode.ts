@@ -70,7 +70,7 @@ export interface UseBatchSpecCodeResult {
 }
 
 const updateBatchSpecFields = (originalInput: string, name: string, searchQuery?: string): string => {
-    let result: string;
+    let result: string
     result = insertFieldIntoLIbraryItem(originalInput, name, 'name')
 
     if (searchQuery) {

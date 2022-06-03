@@ -99,16 +99,24 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
     const parameters = new URLSearchParams(location.search)
     const searchQuery = parameters.get('q') ?? undefined
 
-    const updateLibraryItemFields = useCallback((code: string, name: string): string => {
-        let updatedCode: string
-        updatedCode = insertFieldIntoLIbraryItem(code, name, 'name')
+    const updateLibraryItemFields = useCallback(
+        (code: string, name: string): string => {
+            let updatedCode: string
+            updatedCode = insertFieldIntoLIbraryItem(code, name, 'name')
 
-        if (searchQuery) {
-            updatedCode = insertFieldIntoLIbraryItem(updatedCode, `- repositoriesMatchingQuery: ${searchQuery}\n\n`, 'on', false)
-        }
+            if (searchQuery) {
+                updatedCode = insertFieldIntoLIbraryItem(
+                    updatedCode,
+                    `- repositoriesMatchingQuery: ${searchQuery}\n\n`,
+                    'on',
+                    false
+                )
+            }
 
-        return updatedCode
-    }, [searchQuery])
+            return updatedCode
+        },
+        [searchQuery]
+    )
 
     const onConfirm = useCallback(() => {
         if (selectedItem && !('isReadOnly' in props && props.isReadOnly)) {

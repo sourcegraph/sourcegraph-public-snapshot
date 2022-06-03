@@ -392,7 +392,12 @@ export function quoteYAMLString(value: string): string {
  * @param key the name of the field in the spec to be updated
  * @param quotable indicates if the value can be quoted or not
  */
- export const insertFieldIntoLIbraryItem = (librarySpec: string, value: string, key: string, quotable: boolean = true): string => {
+export const insertFieldIntoLIbraryItem = (
+    librarySpec: string,
+    value: string,
+    key: string,
+    quotable: boolean = true
+): string => {
     const ast = load(librarySpec)
 
     if (!isYAMLMap(ast) || ast.errors.length > 0) {

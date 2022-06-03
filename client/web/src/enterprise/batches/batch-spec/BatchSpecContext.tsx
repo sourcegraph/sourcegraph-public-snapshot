@@ -116,7 +116,7 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
     refetchBatchChange,
     batchSpec,
     testState,
-    searchQuery
+    searchQuery,
 }: React.PropsWithChildren<BatchSpecContextProviderProps<BatchSpecFields>>): JSX.Element => {
     const { currentSpec } = batchChange
 

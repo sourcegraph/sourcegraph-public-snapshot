@@ -306,7 +306,9 @@ describe('Batch spec yaml utils', () => {
     describe('insertFieldIntoLIbraryItem', () => {
         it('should correctly overwrite the name in a given spec', () => {
             for (const spec of [SPEC_WITH_ONE_REPOSITORY, SPEC_WITH_IMPORT_AND_STEPS]) {
-                expect(insertFieldIntoLIbraryItem(spec, 'new-name', 'name')).toEqual(spec.replace('hello-world', 'new-name'))
+                expect(insertFieldIntoLIbraryItem(spec, 'new-name', 'name')).toEqual(
+                    spec.replace('hello-world', 'new-name')
+                )
             }
         })
         it('should correctly quote special names', () => {
@@ -325,7 +327,9 @@ describe('Batch spec yaml utils', () => {
         })
         it('should correctly overwrite the `on` field in a given spec', () => {
             for (const spec of [SPEC_WITH_ONE_REPOSITORY, SPEC_WITH_IMPORT_AND_STEPS]) {
-                expect(insertFieldIntoLIbraryItem(spec, '- repository: foo-bar', 'on', false)).toEqual(spec.replace('repo1', 'foo-bar'))
+                expect(insertFieldIntoLIbraryItem(spec, '- repository: foo-bar', 'on', false)).toEqual(
+                    spec.replace('repo1', 'foo-bar')
+                )
             }
         })
         it('should not quote value when quotable flag is false', () => {
