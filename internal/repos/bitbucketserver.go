@@ -241,7 +241,6 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 	}()
 
 	for _, q := range s.config.RepositoryQuery {
-		fmt.Println("QUERY:", q)
 		switch q {
 		case "none":
 			continue
@@ -256,11 +255,6 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 			next := &bitbucketserver.PageToken{Limit: 1000}
 			for next.HasMore() {
 				repos, page, err := s.client.Repos(ctx, next, q)
-				// fmt.Println("Repos:", (*repos[0]).Name)
-				// fmt.Println("q:", q)
-				// for _, r := range repos {
-				// fmt.Println("REPO:", r)
-				// }
 				if err != nil {
 					ch <- batch{err: errors.Wrapf(err, "bitbucketserver.repositoryQuery: query=%q, page=%+v", q, next)}
 					break
@@ -279,25 +273,24 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 
 	seen := make(map[int]bool)
 	for r := range ch {
-		// fmt.Println("=== NEW BATCH ===")
+		fmt.Println()
+		fmt.Println("======== NEW BATCH =======")
 		if r.err != nil {
 			results <- SourceResult{Source: s, Err: r.err}
 			continue
 		}
 
 		for _, repo := range r.repos {
-			// fmt.Println("Repo:", repo.Name)
-			// fmt.Printf("Repo:%+v\n", repo)
-			// fmt.Println("Seen:", seen[repo.ID])
-			// fmt.Println("Excludes:", s.excludes(repo))
+			fmt.Println("Repo:", repo.Name)
 			if !seen[repo.ID] && !s.excludes(repo) {
 				_, isArchived := archived[repo.ID]
 				results <- SourceResult{Source: s, Repo: s.makeRepo(repo, isArchived)}
 				seen[repo.ID] = true
 			}
 		}
+		fmt.Println("======== END BATCH =======")
+		fmt.Println()
 	}
-	fmt.Println("DONE WITH listAllRepos")
 }
 
 func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label string) (map[int]struct{}, error) {

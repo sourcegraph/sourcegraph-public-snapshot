@@ -235,6 +235,25 @@ func TestListRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	type Results struct {
+		*bitbucketserver.PageToken `json:"pageToken"`
+		Values                     any `json:"values"`
+	}
+
+	pageToken := bitbucketserver.PageToken{
+		Size:          1,
+		Limit:         1000,
+		IsLastPage:    true,
+		Start:         1,
+		NextPageStart: 1,
+	}
+
+	sendToWriter := func(w http.ResponseWriter, values any) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(values)
+	}
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/rest/api/1.0/labels/archived/labeled", func(w http.ResponseWriter, r *http.Request) {
@@ -242,45 +261,46 @@ func TestListRepos(t *testing.T) {
 	})
 
 	mux.HandleFunc("/rest/api/1.0/repos", func(w http.ResponseWriter, r *http.Request) {
-		// fmt.Println("REPOS ENDPOINT HIT")
-
 		projectName := r.URL.Query().Get("projectName")
-		for _, repo := range repos {
-			repoProjectName := "/" + repo.Project.Key + "/" + repo.Slug
-			if projectName == repoProjectName {
-				// fmt.Println("===== MATCH =====, Repo:", repo.Name)
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(struct {
-					PageToken bitbucketserver.PageToken `json:"pageToken"`
-					Values    any                       `json:"values"`
-				}{
-					PageToken: bitbucketserver.PageToken{
-						Size:          1,
-						Limit:         1000,
-						IsLastPage:    true,
-						Start:         1,
-						NextPageStart: 1,
-					},
-					Values: []bitbucketserver.Repo{repo},
-				})
+
+		if projectName == "" {
+			sendToWriter(w, Results{
+				PageToken: &pageToken,
+				Values:    repos,
+			})
+		} else {
+			for _, repo := range repos {
+				if projectName == repo.Name {
+					sendToWriter(w, Results{
+						PageToken: &pageToken,
+						Values:    []bitbucketserver.Repo{repo},
+					})
+				}
 			}
 		}
 	})
 
 	mux.HandleFunc("/rest/api/1.0/projects/", func(w http.ResponseWriter, r *http.Request) {
-		// fmt.Println("PROJECTS ENDPOINT HIT")
-
 		pathArr := strings.Split(r.URL.Path, "/")
 		projectKey := pathArr[5]
-		repoSlug := pathArr[7]
 
-		for _, repo := range repos {
-			if repo.Project.Key == projectKey && repo.Slug == repoSlug {
-				// fmt.Println("==== MATCH ====, Repo:", repo.Name)
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(repo)
+		if len(pathArr) <= 7 {
+			var values []bitbucketserver.Repo
+			for _, repo := range repos {
+				if repo.Project.Key == projectKey {
+					values = append(values, repo)
+				}
+			}
+			sendToWriter(w, Results{
+				PageToken: &pageToken,
+				Values:    values,
+			})
+		} else {
+			repoSlug := pathArr[7]
+			for _, repo := range repos {
+				if repo.Project.Key == projectKey && repo.Slug == repoSlug {
+					sendToWriter(w, repo)
+				}
 			}
 		}
 	})
@@ -306,25 +326,27 @@ func TestListRepos(t *testing.T) {
 	s.config.Repos = []string{
 		"SG/go-langserver",
 		"SG/python-langserver",
-		"SG/python-langserver/fork",
+		"SG/python-langserver-fork",
 		"~KEEGAN/rgp",
 		"~KEEGAN/rgp-unavailable",
 	}
 
 	s.config.RepositoryQuery = []string{
-		"?projectName=/SG/go-langserver",
-		"?projectName=/SG/python-langserver",
-		"?projectName=/SG/python-langserver-fork",
-		"?projectName=/~KEEGAN/rgp",
-		"?projectName=/~KEEGAN/rgp-unavailable",
+		"?projectName=go-langserver",
+		"?projectName=python-langserver",
+		"?projectName=python-langserver-fork",
+		"?projectName=rgp",
+		"?projectName=rgp-unavailable",
 		"none",
-		// "all",
+		"all",
+		"?projectKey=SG",
+		"?projectKey=~KEEGAN",
 	}
 
 	ctxWithTimeout, cancelFunction := context.WithTimeout(context.Background(), 5*time.Second)
 	fmt.Println(cancelFunction)
 
-	results := make(chan SourceResult, 5)
+	results := make(chan SourceResult, 20)
 	defer close(results)
 
 	s.ListRepos(ctxWithTimeout, results)
@@ -332,30 +354,30 @@ func TestListRepos(t *testing.T) {
 	// go func() {
 	// 	fmt.Println("Printing", len(results), "results...")
 	// 	for res := range results {
-	// 		fmt.Printf("%+v\n", *(res.Repo))
+	// 		fmt.Printf("%+v\n", (res.Repo))
 	// 	}
 	// }()
 
 	repoNameMap := map[string]struct{}{
-		"/SG/go-langserver":          {},
-		"/SG/python-langserver":      {},
-		"/SG/python-langserver-fork": {},
-		"/~KEEGAN/rgp":               {},
-		"/~KEEGAN/rgp-unavailable":   {},
+		"SG/go-langserver":          {},
+		"SG/python-langserver":      {},
+		"SG/python-langserver-fork": {},
+		"~KEEGAN/rgp":               {},
+		"~KEEGAN/rgp-unavailable":   {},
 	}
 
 	for {
 		select {
 		case res := <-results:
 			repoNameArr := strings.Split(string(res.Repo.Name), "/")
-			repoName := "/" + repoNameArr[1] + "/" + repoNameArr[2]
+			repoName := repoNameArr[1] + "/" + repoNameArr[2]
 			fmt.Println("Repo:", repoName)
 			if _, ok := repoNameMap[repoName]; ok {
 				fmt.Println("Verified")
 			}
 		case <-ctxWithTimeout.Done():
 			fmt.Println("Timeout")
-			// cancelFunction()
+			cancelFunction()
 			t.Fatal(err)
 		default:
 			return
