@@ -186,19 +186,26 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fix bool, lns 
 
 	// consume check reports
 	var hasErr bool
-	var messages []string
-	var someErrorsAreFixable bool
+	var failedLinters []string
+	var fixableErrors int
+	var fixableSuccess int
 	for result := range resultsCh {
 		count++
 		printLintReport(pending, start, result.Report)
 		pending.Updatef("Running linters (done: %d/%d)", count, total)
+
+		// Failed
 		if result.Err != nil {
-			messages = append(messages, result.Header)
+			failedLinters = append(failedLinters, result.Header)
 			hasErr = true
-			// indicate if error is fixable
 			if result.fixable {
-				someErrorsAreFixable = true
+				fixableErrors++
 			}
+		}
+
+		// Success!
+		if result.fixable {
+			fixableSuccess++
 		}
 
 		// Log analytics for each linter
@@ -218,8 +225,16 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fix bool, lns 
 
 	pending.Complete(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Done running linters."))
 
-	// indicate results might be fixable!
-	if !fix && someErrorsAreFixable {
+	// Fix success!
+	if fix {
+		if fixableSuccess > 0 {
+			out.WriteSuccessf("%d linters applied their fixes or had no changes to apply!", fixableSuccess)
+		}
+		if fixableErrors > 0 {
+			out.WriteWarningf("%d linters failed to automatically fix issues.", fixableErrors)
+		}
+	} else if fixableErrors > 0 {
+		// indicate some errors might be fixable!
 		suggestion := "One or more of the failed linters are fixable - try 'sg lint --fix'."
 		out.WriteSuggestionf(suggestion)
 
@@ -230,7 +245,7 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fix bool, lns 
 
 	// return the final error, if any
 	if hasErr {
-		return errors.Newf("failed linters: %s", strings.Join(messages, ", "))
+		return errors.Newf("failed linters: %s", strings.Join(failedLinters, ", "))
 	}
 	return nil
 }
