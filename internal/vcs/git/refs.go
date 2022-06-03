@@ -13,36 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// EnsureRefPrefix checks whether the ref is a full ref and contains the
-// "refs/heads" prefix (i.e. "refs/heads/master") or just an abbreviated ref
-// (i.e. "master") and adds the "refs/heads/" prefix if the latter is the case.
-func EnsureRefPrefix(ref string) string {
-	return "refs/heads/" + strings.TrimPrefix(ref, "refs/heads/")
-}
-
-// AbbreviateRef removes the "refs/heads/" prefix from a given ref. If the ref
-// doesn't have the prefix, it returns it unchanged.
-func AbbreviateRef(ref string) string {
-	return strings.TrimPrefix(ref, "refs/heads/")
-}
-
-// A Branch is a VCS branch.
-type Branch struct {
-	// Name is the name of this branch.
-	Name string `json:"Name,omitempty"`
-	// Head is the commit ID of this branch's head commit.
-	Head api.CommitID `json:"Head,omitempty"`
-	// Commit optionally contains commit information for this branch's head commit.
-	// It is populated if IncludeCommit option is set.
-	Commit *gitdomain.Commit `json:"Commit,omitempty"`
-	// Counts optionally contains the commit counts relative to specified branch.
-	Counts *BehindAhead `json:"Counts,omitempty"`
-}
 
 // BranchesOptions specifies options for the list of branches returned by
 // (Repository).Branches.
@@ -61,27 +34,6 @@ type BranchesOptions struct {
 	// contain a specific commit ID (if set).
 	ContainsCommit string `json:"ContainsCommit,omitempty" url:",omitempty"`
 }
-
-// BehindAhead is a set of behind/ahead counts.
-type BehindAhead struct {
-	Behind uint32 `json:"Behind,omitempty"`
-	Ahead  uint32 `json:"Ahead,omitempty"`
-}
-
-type Branches []*Branch
-
-func (p Branches) Len() int           { return len(p) }
-func (p Branches) Less(i, j int) bool { return p[i].Name < p[j].Name }
-func (p Branches) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-
-// ByAuthorDate sorts by author date. Requires full commit information to be included.
-type ByAuthorDate []*Branch
-
-func (p ByAuthorDate) Len() int { return len(p) }
-func (p ByAuthorDate) Less(i, j int) bool {
-	return p[i].Commit.Author.Date.Before(p[j].Commit.Author.Date)
-}
-func (p ByAuthorDate) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 
 // branchFilter is a filter for branch names.
 // If not empty, only contained branch names are allowed. If empty, all names are allowed.
@@ -106,7 +58,7 @@ func (f branchFilter) add(list []string) {
 }
 
 // ListBranches returns a list of all branches in the repository.
-func ListBranches(ctx context.Context, db database.DB, repo api.RepoName, opt BranchesOptions) ([]*Branch, error) {
+func ListBranches(ctx context.Context, db database.DB, repo api.RepoName, opt BranchesOptions) ([]*gitdomain.Branch, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Branches")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -132,14 +84,14 @@ func ListBranches(ctx context.Context, db database.DB, repo api.RepoName, opt Br
 		return nil, err
 	}
 
-	var branches []*Branch
+	var branches []*gitdomain.Branch
 	for _, ref := range refs {
 		name := strings.TrimPrefix(ref.Name, "refs/heads/")
 		if !f.allows(name) {
 			continue
 		}
 
-		branch := &Branch{Name: name, Head: ref.CommitID}
+		branch := &gitdomain.Branch{Name: name, Head: ref.CommitID}
 		if opt.IncludeCommit {
 			branch.Commit, err = getCommit(ctx, db, repo, ref.CommitID, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
 			if err != nil {
@@ -176,7 +128,7 @@ func branches(ctx context.Context, db database.DB, repo api.RepoName, args ...st
 
 // GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 // revspecs).
-func GetBehindAhead(ctx context.Context, db database.DB, repo api.RepoName, left, right string) (*BehindAhead, error) {
+func GetBehindAhead(ctx context.Context, db database.DB, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: BehindAhead")
 	defer span.Finish()
 
@@ -201,7 +153,7 @@ func GetBehindAhead(ctx context.Context, db database.DB, repo api.RepoName, left
 	if err != nil {
 		return nil, err
 	}
-	return &BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
+	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }
 
 type byteSlices [][]byte
@@ -211,19 +163,13 @@ func (p byteSlices) Less(i, j int) bool { return bytes.Compare(p[i], p[j]) < 0 }
 func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // ListRefs returns a list of all refs in the repository.
-func ListRefs(ctx context.Context, db database.DB, repo api.RepoName) ([]Ref, error) {
+func ListRefs(ctx context.Context, db database.DB, repo api.RepoName) ([]gitdomain.Ref, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ListRefs")
 	defer span.Finish()
 	return showRef(ctx, db, repo)
 }
 
-// Ref describes a Git ref.
-type Ref struct {
-	Name     string // the full name of the ref (e.g., "refs/heads/mybranch")
-	CommitID api.CommitID
-}
-
-func showRef(ctx context.Context, db database.DB, repo api.RepoName, args ...string) ([]Ref, error) {
+func showRef(ctx context.Context, db database.DB, repo api.RepoName, args ...string) ([]gitdomain.Ref, error) {
 	cmdArgs := append([]string{"show-ref"}, args...)
 	cmd := gitserver.NewClient(db).GitCommand(repo, cmdArgs...)
 	out, err := cmd.CombinedOutput(ctx)
@@ -242,23 +188,14 @@ func showRef(ctx context.Context, db database.DB, repo api.RepoName, args ...str
 	out = bytes.TrimSuffix(out, []byte("\n")) // remove trailing newline
 	lines := bytes.Split(out, []byte("\n"))
 	sort.Sort(byteSlices(lines)) // sort for consistency
-	refs := make([]Ref, len(lines))
+	refs := make([]gitdomain.Ref, len(lines))
 	for i, line := range lines {
 		if len(line) <= 41 {
 			return nil, errors.New("unexpectedly short (<=41 bytes) line in `git show-ref ...` output")
 		}
 		id := line[:40]
 		name := line[41:]
-		refs[i] = Ref{Name: string(name), CommitID: api.CommitID(id)}
+		refs[i] = gitdomain.Ref{Name: string(name), CommitID: api.CommitID(id)}
 	}
 	return refs, nil
-}
-
-var invalidBranch = lazyregexp.New(`\.\.|/\.|\.lock$|[\000-\037\177 ~^:?*[]+|^/|/$|//|\.$|@{|^@$|\\`)
-
-// ValidateBranchName returns false if the given string is not a valid branch name.
-// It follows the rules here: https://git-scm.com/docs/git-check-ref-format
-// NOTE: It does not require a slash as mentioned in point 2.
-func ValidateBranchName(branch string) bool {
-	return !(invalidBranch.MatchString(branch) || strings.EqualFold(branch, "head"))
 }
