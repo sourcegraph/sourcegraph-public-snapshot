@@ -636,12 +636,11 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
 
     const filterControls: JSX.Element = (
         <Form onSubmit={preventSubmit} className="w-100 d-inline-flex justify-content-between flex-row mt-3">
-            <div className="d-inline-flex flex-row mr-3 align-items-baseline flex-1">
+            <div className="d-inline-flex flex-row mr-3 align-items-baseline">
                 <Text className="text-xl-center text-nowrap mr-2">Code Host:</Text>
                 <Select
                     name="code-host"
                     aria-label="select code host type"
-                    className={styles.codeHostSelect}
                     onChange={event => setCodeHostFilter(event.target.value)}
                 >
                     <option key="all" value="" label="All" />
