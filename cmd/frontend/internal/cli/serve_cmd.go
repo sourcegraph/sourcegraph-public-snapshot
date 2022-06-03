@@ -132,7 +132,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		InstanceID: hostname.Get(),
 	}, sglog.NewSentrySink())
 	defer cb.Sync()
-	conf.Watch(cb.Update(conf.GetSinks))
+	conf.Watch(cb.Update(conf.GetLogSinks))
 
 	logger := sglog.Scoped("server", "the frontend server program")
 

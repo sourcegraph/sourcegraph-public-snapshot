@@ -2,7 +2,7 @@ package conf
 
 import "github.com/sourcegraph/sourcegraph/lib/log"
 
-func GetSinks() log.SinksConfig {
+func GetLogSinks() log.SinksConfig {
 	cfg := Get()
 
 	var sentry *log.SentrySink

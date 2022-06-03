@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	// bufferSize defines how large is the buffer accumulating cores.
+	// bufferSize defines how many errors the buffer can accumulate. After this limit, errors are discarded.
 	bufferSize = 512
 )
 
@@ -48,10 +48,6 @@ type baseContext struct {
 // clone safely copies a baseContext
 func (b *baseContext) clone() *baseContext {
 	c := *b
-	c.Key = b.Key
-	c.Scope = b.Scope
-	c.Level = b.Level
-	c.Message = b.Message
 	c.Fields = make([]zapcore.Field, len(b.Fields))
 	copy(c.Fields, b.Fields)
 	return &c
