@@ -328,7 +328,7 @@ describe('Batch spec yaml utils', () => {
                 expect(insertFieldIntoLIbraryItem(spec, '- repository: foo-bar', 'on', false)).toEqual(spec.replace('repo1', 'foo-bar'))
             }
         })
-        it('should correctly quote value when quotable flag is false', () => {
+        it('should not quote value when quotable flag is false', () => {
             for (const newName of ['bad: colons', 'true', 'false', '1.23']) {
                 expect(insertFieldIntoLIbraryItem(SPEC_WITH_ONE_REPOSITORY, newName, 'name', false)).toEqual(
                     SPEC_WITH_ONE_REPOSITORY.replace('hello-world', newName)
