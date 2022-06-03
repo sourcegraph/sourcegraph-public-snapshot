@@ -92,6 +92,9 @@ export interface SearchResultsInfoBarProps
     query?: string
     resultsFound: boolean
 
+    /** Whether running batch changes server-side is enabled */
+    batchChangesExecutionEnabled: boolean
+
     // Expand all feature
     allExpanded: boolean
     onExpandAllResultsToggle: () => void
@@ -211,7 +214,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     const createActions = useMemo(
         () =>
             [
-                getBatchChangeCreateAction(props.query, props.query as string, true),
+                getBatchChangeCreateAction(props.query, props.query as string, props.batchChangesExecutionEnabled),
                 getSearchContextCreateAction(props.query, props.authenticatedUser),
                 getInsightsCreateAction(
                     props.query,
@@ -220,7 +223,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     props.enableCodeInsights
                 ),
             ].filter((button): button is CreateAction => button !== null),
-        [props.authenticatedUser, props.enableCodeInsights, props.patternType, props.query]
+        [props.authenticatedUser, props.enableCodeInsights, props.patternType, props.query, props.batchChangesExecutionEnabled]
     )
 
     // The create code monitor action is separated from the rest of the actions, because we use the
