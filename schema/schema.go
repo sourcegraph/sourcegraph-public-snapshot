@@ -1530,9 +1530,13 @@ type RustRateLimit struct {
 type SAMLAuthProvider struct {
 	// AllowSignup description: Allows new visitors to sign up for accounts via SAML authentication. If false, users signing in via SAML must have an existing Sourcegraph account, which will be linked to their SAML identity after sign-in.
 	AllowSignup *bool `json:"allowSignup,omitempty"`
+	// AllowGroups description: Restrict login to members of these groups
+	AllowGroups []string `json:"allowGroups,omitempty"`
 	// ConfigID description: An identifier that can be used to reference this authentication provider in other parts of the config. For example, in configuration for a code host, you may want to designate this authentication provider as the identity provider for the code host.
 	ConfigID    string `json:"configID,omitempty"`
 	DisplayName string `json:"displayName,omitempty"`
+	// Name of the SAML assertion attribute that holds group membership for AllowGroups setting
+	GroupsAttributeName string `json:"groupsAttributeName,omitempty"`
 	// IdentityProviderMetadata description: The SAML Identity Provider metadata XML contents (for static configuration of the SAML Service Provider). The value of this field should be an XML document whose root element is `<EntityDescriptor>` or `<EntityDescriptors>`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	IdentityProviderMetadata string `json:"identityProviderMetadata,omitempty"`
 	// IdentityProviderMetadataURL description: The SAML Identity Provider metadata URL (for dynamic configuration of the SAML Service Provider).

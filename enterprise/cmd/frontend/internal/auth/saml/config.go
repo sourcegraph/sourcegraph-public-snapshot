@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"path"
@@ -74,17 +73,6 @@ func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 		if p.Saml != nil && c.SiteConfig().ExternalURL == "" && !loggedNeedsExternalURL {
 			problems = append(problems, conf.NewSiteProblem("saml auth provider requires `externalURL` to be set to the external URL of your site (example: https://sourcegraph.example.com)"))
 			loggedNeedsExternalURL = true
-		}
-	}
-
-	seen := map[schema.SAMLAuthProvider]int{}
-	for i, p := range c.SiteConfig().AuthProviders {
-		if p.Saml != nil {
-			if j, ok := seen[*p.Saml]; ok {
-				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("SAML auth provider at index %d is duplicate of index %d, ignoring", i, j)))
-			} else {
-				seen[*p.Saml] = i
-			}
 		}
 	}
 
