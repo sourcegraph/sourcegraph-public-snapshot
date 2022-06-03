@@ -17,15 +17,15 @@ func SubstituteAliases(searchType SearchType) func(nodes []Node) []Node {
 		return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 			if field == "content" {
 				if searchType == SearchTypeRegex {
-					annotation.Labels.set(Regexp)
+					annotation.Labels.Set(Regexp)
 				} else {
-					annotation.Labels.set(Literal)
+					annotation.Labels.Set(Literal)
 				}
-				annotation.Labels.set(IsAlias)
+				annotation.Labels.Set(IsAlias)
 				return Pattern{Value: value, Negated: negated, Annotation: annotation}
 			}
 			if canonical, ok := aliases[field]; ok {
-				annotation.Labels.set(IsAlias)
+				annotation.Labels.Set(IsAlias)
 				field = canonical
 			}
 			return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
@@ -424,7 +424,7 @@ func Hoist(nodes []Node) ([]Node, error) {
 		annotation.Labels |= HeuristicHoisted
 		return Pattern{Value: value, Negated: negated, Annotation: annotation}
 	})
-	return append(toNodes(scopeParameters), newOperator(pattern, expression.Kind)...), nil
+	return append(toNodes(scopeParameters), NewOperator(pattern, expression.Kind)...), nil
 }
 
 // partition partitions nodes into left and right groups. A node is put in the
@@ -501,7 +501,7 @@ func conjunction(left, right Basic) Basic {
 	} else if right.Pattern == nil {
 		pattern = left.Pattern
 	} else if left.Pattern != nil && right.Pattern != nil {
-		pattern = newOperator([]Node{left.Pattern, right.Pattern}, And)[0]
+		pattern = NewOperator([]Node{left.Pattern, right.Pattern}, And)[0]
 	}
 	return Basic{
 		// Deep copy parameters to avoid appending multiple times to the same backing array.
@@ -547,10 +547,10 @@ func substituteOrForRegexp(nodes []Node) []Node {
 				newNode = append(newNode, Pattern{Value: valueString})
 				if len(rest) > 0 {
 					rest = substituteOrForRegexp(rest)
-					newNode = newOperator(append(newNode, rest...), Or)
+					newNode = NewOperator(append(newNode, rest...), Or)
 				}
 			} else {
-				newNode = append(newNode, newOperator(substituteOrForRegexp(v.Operands), v.Kind)...)
+				newNode = append(newNode, NewOperator(substituteOrForRegexp(v.Operands), v.Kind)...)
 			}
 		case Parameter, Pattern:
 			newNode = append(newNode, node)
@@ -645,7 +645,7 @@ func substituteConcat(callback func([]Pattern) Pattern) func(nodes []Node) []Nod
 						newNode = append(newNode, callback(ps))
 					}
 				} else {
-					newNode = append(newNode, newOperator(substituteNodes(v.Operands), v.Kind)...)
+					newNode = append(newNode, NewOperator(substituteNodes(v.Operands), v.Kind)...)
 				}
 			}
 		}
@@ -763,8 +763,8 @@ func ConcatRevFilters(b Basic) Basic {
 // a postprocessing step to keep the parser lean.
 func labelStructural(nodes []Node) []Node {
 	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
-		annotation.Labels.unset(Literal)
-		annotation.Labels.set(Structural)
+		annotation.Labels.Unset(Literal)
+		annotation.Labels.Set(Structural)
 		return Pattern{
 			Value:      value,
 			Negated:    negated,
@@ -817,7 +817,7 @@ func AddRegexpField(q Q, field, pattern string) string {
 
 	if !modified {
 		// use newOperator to reduce And nodes when adding a parameter to the query toplevel.
-		q = newOperator(append(q, Parameter{Field: field, Value: pattern}), And)
+		q = NewOperator(append(q, Parameter{Field: field, Value: pattern}), And)
 	}
 	return StringHuman(q)
 }
