@@ -60,6 +60,10 @@ func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.Rep
 			resp.LastChanged = &lastChanged
 		}
 	}
+	gitRepo, err := s.DB.GitserverRepos().GetByName(ctx, repo)
+	if err == nil {
+		resp.Size = gitRepo.RepoSizeBytes
+	}
 	return &resp, nil
 }
 

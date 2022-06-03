@@ -24,7 +24,7 @@ var (
 			Panel:    monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
 			Owner:    owner,
 			// Solutions similar to the ContainerMissing solutions.
-			PossibleSolutions: fmt.Sprintf(`
+			NextSteps: fmt.Sprintf(`
 				- Determine if the pod was OOM killed using 'kubectl describe pod %[1]s' (look for 'OOMKilled: true') and, if so, consider increasing the memory limit in the relevant 'Deployment.yaml'.
 				- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'kubectl logs -p %[1]s'.
 			`, containerName),

@@ -1,9 +1,9 @@
-# Alert solutions
+# Alerts reference
 
 <!-- DO NOT EDIT: generated via: go generate ./monitoring -->
 
-This document contains possible solutions for when you find alerts are firing in Sourcegraph's monitoring.
-If your alert isn't mentioned here, or if the solution doesn't help, [contact us](mailto:support@sourcegraph.com) for assistance.
+This document contains a complete reference of all alerts in Sourcegraph's monitoring, and next steps for when you find alerts that are firing.
+If your alert isn't mentioned here, or if the next steps don't help, [contact us](mailto:support@sourcegraph.com) for assistance.
 
 To learn more about Sourcegraph's alerting and how to set up alerts, see [our alerting guide](https://docs.sourcegraph.com/admin/observability/alerting).
 
@@ -15,7 +15,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 20s+ 99th percentile successful search request duration over 5m
 
-**Possible solutions**
+**Next steps**
 
 - **Get details on the exact queries that are slow** by configuring `"observability.logSlowSearches": 20,` in the site configuration and looking for `frontend` warning logs prefixed with `slow search request` for additional details.
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
@@ -42,7 +42,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 15s+ 90th percentile successful search request duration over 5m
 
-**Possible solutions**
+**Next steps**
 
 - **Get details on the exact queries that are slow** by configuring `"observability.logSlowSearches": 15,` in the site configuration and looking for `frontend` warning logs prefixed with `slow search request` for additional details.
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
@@ -69,7 +69,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 2%+ hard timeout search responses every 5m for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-hard-timeout-search-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -92,7 +92,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 2%+ hard error search responses every 5m for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-hard-error-search-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -115,7 +115,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 5%+ partial timeout search responses every 5m for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-partial-timeout-search-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -138,7 +138,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 5%+ search alert user suggestions shown every 5m for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - This indicates your user`s are making syntax errors or similar user errors.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-search-alert-user-suggestions).
@@ -162,7 +162,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-critical">critical</span> frontend: 2s+ 90th percentile page load latency over all routes over 10m
 
-**Possible solutions**
+**Next steps**
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 - Explore the data returned by the query in the dashboard panel and filter by different labels to identify any patterns
@@ -188,7 +188,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-critical">critical</span> frontend: 5s+ 90th percentile blob load latency over 10m
 
-**Possible solutions**
+**Next steps**
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 - Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
@@ -214,7 +214,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 20s+ 99th percentile code-intel successful search request duration over 5m
 
-**Possible solutions**
+**Next steps**
 
 - **Get details on the exact queries that are slow** by configuring `"observability.logSlowSearches": 20,` in the site configuration and looking for `frontend` warning logs prefixed with `slow search request` for additional details.
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
@@ -242,7 +242,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 15s+ 90th percentile code-intel successful search request duration over 5m
 
-**Possible solutions**
+**Next steps**
 
 - **Get details on the exact queries that are slow** by configuring `"observability.logSlowSearches": 15,` in the site configuration and looking for `frontend` warning logs prefixed with `slow search request` for additional details.
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
@@ -270,7 +270,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 2%+ hard timeout search code-intel responses every 5m for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-hard-timeout-search-codeintel-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -293,7 +293,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 2%+ hard error search code-intel responses every 5m for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-hard-error-search-codeintel-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -316,7 +316,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 5%+ partial timeout search code-intel responses every 5m for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-partial-timeout-search-codeintel-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -339,7 +339,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 5%+ search code-intel alert user suggestions shown every 5m for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - This indicates a bug in Sourcegraph, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose).
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-search-codeintel-alert-user-suggestions).
@@ -363,7 +363,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 50s+ 99th percentile successful search API request duration over 5m
 
-**Possible solutions**
+**Next steps**
 
 - **Get details on the exact queries that are slow** by configuring `"observability.logSlowSearches": 20,` in the site configuration and looking for `frontend` warning logs prefixed with `slow search request` for additional details.
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
@@ -390,7 +390,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 40s+ 90th percentile successful search API request duration over 5m
 
-**Possible solutions**
+**Next steps**
 
 - **Get details on the exact queries that are slow** by configuring `"observability.logSlowSearches": 15,` in the site configuration and looking for `frontend` warning logs prefixed with `slow search request` for additional details.
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
@@ -417,7 +417,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 2%+ hard error search API responses every 5m for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-hard-error-search-api-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -440,7 +440,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 5%+ partial timeout search API responses every 5m for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-partial-timeout-search-api-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -463,7 +463,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 5%+ search API alert user suggestions shown every 5m
 
-**Possible solutions**
+**Next steps**
 
 - This indicates your user`s search API requests have syntax errors or a similar user error. Check the responses the API sends back for an explanation.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-search-api-alert-user-suggestions).
@@ -487,7 +487,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 5%+ internal indexed search error responses every 5m for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check the Zoekt Web Server dashboard for indications it might be unhealthy.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-internal-indexed-search-error-responses).
@@ -511,7 +511,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 5%+ internal unindexed search error responses every 5m for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check the Searcher dashboard for indications it might be unhealthy.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-internal-unindexed-search-error-responses).
@@ -535,7 +535,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 5%+ internal API error responses every 5m by route for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - May not be a substantial issue, check the `frontend` logs for potential causes.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-internalapi-error-responses).
@@ -559,7 +559,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 20s+ 99th percentile successful gitserver query duration over 5m
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-99th-percentile-gitserver-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -582,7 +582,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 5%+ gitserver error responses every 5m for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-gitserver-error-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -605,7 +605,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 1+ warning test alert metric
 
-**Possible solutions**
+**Next steps**
 
 - This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-observability-test-alert-warning).
@@ -629,7 +629,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-critical">critical</span> frontend: 1+ critical test alert metric
 
-**Possible solutions**
+**Next steps**
 
 - This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-observability-test-alert-critical).
@@ -654,7 +654,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - <span class="badge badge-warning">warning</span> frontend: 15000+ cryptographic requests to Cloud KMS every 1m for 5m0s
 - <span class="badge badge-critical">critical</span> frontend: 30000+ cryptographic requests to Cloud KMS every 1m for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - Revert recent commits that cause extensive listing from "external_services" and/or "user_external_accounts" tables.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-cloudkms-cryptographic-requests).
@@ -680,7 +680,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - <span class="badge badge-warning">warning</span> frontend: 0.05s+ mean blocked seconds per conn request for 10m0s
 - <span class="badge badge-critical">critical</span> frontend: 0.1s+ mean blocked seconds per conn request for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
 - Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
@@ -706,7 +706,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 99%+ container cpu usage total (1m average) across all cores by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
@@ -731,7 +731,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 99%+ container memory usage by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
@@ -756,7 +756,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the (frontend|sourcegraph-frontend) service.
 - **Docker Compose:** Consider increasing `cpus:` of the (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
@@ -781,7 +781,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the (frontend|sourcegraph-frontend) service.
 - **Docker Compose:** Consider increasing `memory:` of the (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
@@ -806,7 +806,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
@@ -831,7 +831,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 90%+ container memory usage (5m maximum) by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
@@ -856,7 +856,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 1+ container OOMKILL events total by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
@@ -881,7 +881,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 10000+ maximum active goroutines for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -904,7 +904,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> frontend: 2s+ maximum go garbage collection duration
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -927,7 +927,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-critical">critical</span> frontend: less than 90% percentage pods available for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - Determine if the pod was OOM killed using `kubectl describe pod (frontend|sourcegraph-frontend)` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
 - Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p (frontend|sourcegraph-frontend)`.
@@ -953,7 +953,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - <span class="badge badge-warning">warning</span> frontend: 5s+ mean successful sentinel search duration over 2h for 15m0s
 - <span class="badge badge-critical">critical</span> frontend: 8s+ mean successful sentinel search duration over 2h for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
@@ -981,7 +981,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - <span class="badge badge-warning">warning</span> frontend: 2s+ mean successful sentinel stream latency over 2h for 15m0s
 - <span class="badge badge-critical">critical</span> frontend: 3s+ mean successful sentinel stream latency over 2h for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
@@ -1009,7 +1009,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - <span class="badge badge-warning">warning</span> frontend: 5s+ 90th percentile successful sentinel search duration over 2h for 15m0s
 - <span class="badge badge-critical">critical</span> frontend: 10s+ 90th percentile successful sentinel search duration over 2h for 3h30m0s
 
-**Possible solutions**
+**Next steps**
 
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
@@ -1037,7 +1037,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - <span class="badge badge-warning">warning</span> frontend: 4s+ 90th percentile successful sentinel stream latency over 2h for 15m0s
 - <span class="badge badge-critical">critical</span> frontend: 6s+ 90th percentile successful sentinel stream latency over 2h for 3h30m0s
 
-**Possible solutions**
+**Next steps**
 
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
@@ -1065,7 +1065,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - <span class="badge badge-warning">warning</span> gitserver: less than 25% disk space remaining by instance
 - <span class="badge badge-critical">critical</span> gitserver: less than 15% disk space remaining by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-disk-space-remaining).
@@ -1091,7 +1091,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - <span class="badge badge-warning">warning</span> gitserver: 50+ git commands running on each gitserver instance for 2m0s
 - <span class="badge badge-critical">critical</span> gitserver: 100+ git commands running on each gitserver instance for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 - **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../deploy/docker-compose/migrate.md) which offers better scalability and resource isolation.
@@ -1118,7 +1118,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> gitserver: 25+ repository clone queue size
 
-**Possible solutions**
+**Next steps**
 
 - **If you just added several repositories**, the warning may be expected.
 - **Check which repositories need cloning**, by visiting e.g. https://sourcegraph.example.com/site-admin/repositories?filter=not-cloned
@@ -1143,7 +1143,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> gitserver: 25+ repository existence check queue size
 
-**Possible solutions**
+**Next steps**
 
 - **Check the code host status indicator for errors:** on the Sourcegraph app homepage, when signed in as an admin click the cloud icon in the top right corner of the page.
 - **Check if the issue continues to happen after 30 minutes**, it may be temporary.
@@ -1169,7 +1169,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> gitserver: 2%+ frontend-internal API error responses every 5m by route for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
 - **Kubernetes:**
@@ -1200,7 +1200,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - <span class="badge badge-warning">warning</span> gitserver: 0.05s+ mean blocked seconds per conn request for 10m0s
 - <span class="badge badge-critical">critical</span> gitserver: 0.1s+ mean blocked seconds per conn request for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
 - Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
@@ -1226,7 +1226,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> gitserver: 99%+ container cpu usage total (1m average) across all cores by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
@@ -1251,7 +1251,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> gitserver: 99%+ container memory usage by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
@@ -1276,7 +1276,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> gitserver: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the gitserver service.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
@@ -1301,7 +1301,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> gitserver: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
@@ -1326,7 +1326,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> gitserver: 1+ container OOMKILL events total by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
@@ -1351,7 +1351,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> gitserver: 10000+ maximum active goroutines for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#gitserver-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -1374,7 +1374,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> gitserver: 2s+ maximum go garbage collection duration
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -1397,7 +1397,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-critical">critical</span> gitserver: less than 90% percentage pods available for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - Determine if the pod was OOM killed using `kubectl describe pod gitserver` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
 - Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p gitserver`.
@@ -1422,7 +1422,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> github-proxy: 100+ number of requests waiting on the global mutex for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - 								- **Check github-proxy logs for network connection issues.
 								- **Check github status.
@@ -1447,7 +1447,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> github-proxy: 99%+ container cpu usage total (1m average) across all cores by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
@@ -1472,7 +1472,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> github-proxy: 99%+ container memory usage by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
@@ -1497,7 +1497,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> github-proxy: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the github-proxy service.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
@@ -1522,7 +1522,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> github-proxy: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the github-proxy service.
 - **Docker Compose:** Consider increasing `memory:` of the github-proxy container in `docker-compose.yml`.
@@ -1547,7 +1547,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> github-proxy: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
@@ -1572,7 +1572,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> github-proxy: 90%+ container memory usage (5m maximum) by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
@@ -1597,7 +1597,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> github-proxy: 1+ container OOMKILL events total by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
@@ -1622,7 +1622,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> github-proxy: 10000+ maximum active goroutines for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#github-proxy-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -1645,7 +1645,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> github-proxy: 2s+ maximum go garbage collection duration
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -1668,7 +1668,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-critical">critical</span> github-proxy: less than 90% percentage pods available for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - Determine if the pod was OOM killed using `kubectl describe pod github-proxy` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
 - Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p github-proxy`.
@@ -1693,7 +1693,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> postgres: less than 5 active connections for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-connections).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -1717,7 +1717,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - <span class="badge badge-warning">warning</span> postgres: 80%+ connection in use for 5m0s
 - <span class="badge badge-critical">critical</span> postgres: 100%+ connection in use for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - Consider increasing [max_connections](https://www.postgresql.org/docs/current/runtime-config-connection.html#GUC-MAX-CONNECTIONS) of the database instance, [learn more](https://docs.sourcegraph.com/admin/config/postgres-conf)
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-usage-connections-percentage).
@@ -1742,7 +1742,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> postgres: 0.3s+ maximum transaction durations for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-transaction-durations).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -1765,7 +1765,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-critical">critical</span> postgres: less than 0 database availability for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:**
 	- Determine if the pod was OOM killed using `kubectl describe pod (pgsql|codeintel-db|codeinsights)` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
@@ -1798,7 +1798,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-critical">critical</span> postgres: 1+ invalid indexes (unusable by the query planner)
 
-**Possible solutions**
+**Next steps**
 
 - Drop and re-create the invalid trigger - please contact Sourcegraph to supply the trigger definition.
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-invalid-indexes).
@@ -1822,7 +1822,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> postgres: 1+ errors scraping postgres exporter for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - Ensure the Postgres exporter can access the Postgres database. Also, check the Postgres exporter logs for errors.
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-pg-exporter-err).
@@ -1846,7 +1846,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-critical">critical</span> postgres: 1+ active schema migration for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - The database migration has been in progress for 5 or more minutes - please contact Sourcegraph if this persists.
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-migration-in-progress).
@@ -1870,7 +1870,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> postgres: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights) service.
 - **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
@@ -1895,7 +1895,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> postgres: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights) service.
 - **Docker Compose:** Consider increasing `memory:` of the (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
@@ -1920,7 +1920,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> postgres: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
@@ -1945,7 +1945,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> postgres: 90%+ container memory usage (5m maximum) by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
@@ -1970,7 +1970,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-warning">warning</span> postgres: 1+ container OOMKILL events total by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
@@ -1995,7 +1995,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-critical">critical</span> postgres: less than 90% percentage pods available for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - Determine if the pod was OOM killed using `kubectl describe pod (pgsql|codeintel-db|codeinsights)` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
 - Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p (pgsql|codeintel-db|codeinsights)`.
@@ -2020,7 +2020,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - <span class="badge badge-critical">critical</span> precise-code-intel-worker: 18000s+ unprocessed upload record queue longest time in queue
 
-**Possible solutions**
+**Next steps**
 
 - An alert here could be indicative of a few things: an upload surfacing a pathological performance characteristic,
 precise-code-intel-worker being underprovisioned for the required upload processing throughput, or a higher replica
@@ -2046,7 +2046,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> precise-code-intel-worker: 2%+ frontend-internal API error responses every 5m by route for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
 - **Kubernetes:**
@@ -2077,7 +2077,7 @@ count being required for the volume of uploads.
 - <span class="badge badge-warning">warning</span> precise-code-intel-worker: 0.05s+ mean blocked seconds per conn request for 10m0s
 - <span class="badge badge-critical">critical</span> precise-code-intel-worker: 0.1s+ mean blocked seconds per conn request for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
 - Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
@@ -2103,7 +2103,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> precise-code-intel-worker: 99%+ container cpu usage total (1m average) across all cores by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
@@ -2128,7 +2128,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> precise-code-intel-worker: 99%+ container memory usage by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
@@ -2153,7 +2153,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> precise-code-intel-worker: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the precise-code-intel-worker service.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
@@ -2178,7 +2178,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> precise-code-intel-worker: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the precise-code-intel-worker service.
 - **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-worker container in `docker-compose.yml`.
@@ -2203,7 +2203,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> precise-code-intel-worker: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
@@ -2228,7 +2228,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> precise-code-intel-worker: 90%+ container memory usage (5m maximum) by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
@@ -2253,7 +2253,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> precise-code-intel-worker: 1+ container OOMKILL events total by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
@@ -2278,7 +2278,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> precise-code-intel-worker: 10000+ maximum active goroutines for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#precise-code-intel-worker-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -2301,7 +2301,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> precise-code-intel-worker: 2s+ maximum go garbage collection duration
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#precise-code-intel-worker-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -2324,7 +2324,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-critical">critical</span> precise-code-intel-worker: less than 90% percentage pods available for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-worker` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
 - Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-worker`.
@@ -2349,7 +2349,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-critical">critical</span> redis: less than 1 redis-store availability for 10s
 
-**Possible solutions**
+**Next steps**
 
 - Ensure redis-store is running
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#redis-redis-store-up).
@@ -2373,7 +2373,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-critical">critical</span> redis: less than 1 redis-cache availability for 10s
 
-**Possible solutions**
+**Next steps**
 
 - Ensure redis-cache is running
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#redis-redis-cache-up).
@@ -2397,7 +2397,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> redis: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the redis-cache service.
 - **Docker Compose:** Consider increasing `cpus:` of the redis-cache container in `docker-compose.yml`.
@@ -2422,7 +2422,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> redis: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the redis-cache service.
 - **Docker Compose:** Consider increasing `memory:` of the redis-cache container in `docker-compose.yml`.
@@ -2447,7 +2447,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> redis: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the redis-cache container in `docker-compose.yml`.
@@ -2472,7 +2472,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> redis: 90%+ container memory usage (5m maximum) by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of redis-cache container in `docker-compose.yml`.
@@ -2497,7 +2497,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> redis: 1+ container OOMKILL events total by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of redis-cache container in `docker-compose.yml`.
@@ -2522,7 +2522,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> redis: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the redis-store service.
 - **Docker Compose:** Consider increasing `cpus:` of the redis-store container in `docker-compose.yml`.
@@ -2547,7 +2547,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> redis: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the redis-store service.
 - **Docker Compose:** Consider increasing `memory:` of the redis-store container in `docker-compose.yml`.
@@ -2572,7 +2572,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> redis: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the redis-store container in `docker-compose.yml`.
@@ -2597,7 +2597,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> redis: 90%+ container memory usage (5m maximum) by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of redis-store container in `docker-compose.yml`.
@@ -2622,7 +2622,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-warning">warning</span> redis: 1+ container OOMKILL events total by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of redis-store container in `docker-compose.yml`.
@@ -2647,7 +2647,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-critical">critical</span> redis: less than 90% percentage pods available for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - Determine if the pod was OOM killed using `kubectl describe pod redis-cache` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
 - Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p redis-cache`.
@@ -2672,7 +2672,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-critical">critical</span> redis: less than 90% percentage pods available for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - Determine if the pod was OOM killed using `kubectl describe pod redis-store` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
 - Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p redis-store`.
@@ -2698,7 +2698,7 @@ count being required for the volume of uploads.
 - <span class="badge badge-warning">warning</span> worker: less than 1 number of worker instances running the codeintel-upload-janitor job for 1m0s
 - <span class="badge badge-critical">critical</span> worker: less than 1 number of worker instances running the codeintel-upload-janitor job for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - Ensure your instance defines a worker container such that:
 	- `WORKER_JOB_ALLOWLIST` contains "codeintel-upload-janitor" (or "all"), and
@@ -2727,7 +2727,7 @@ count being required for the volume of uploads.
 - <span class="badge badge-warning">warning</span> worker: less than 1 number of worker instances running the codeintel-commitgraph-updater job for 1m0s
 - <span class="badge badge-critical">critical</span> worker: less than 1 number of worker instances running the codeintel-commitgraph-updater job for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - Ensure your instance defines a worker container such that:
 	- `WORKER_JOB_ALLOWLIST` contains "codeintel-commitgraph-updater" (or "all"), and
@@ -2756,7 +2756,7 @@ count being required for the volume of uploads.
 - <span class="badge badge-warning">warning</span> worker: less than 1 number of worker instances running the codeintel-autoindexing-scheduler job for 1m0s
 - <span class="badge badge-critical">critical</span> worker: less than 1 number of worker instances running the codeintel-autoindexing-scheduler job for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - Ensure your instance defines a worker container such that:
 	- `WORKER_JOB_ALLOWLIST` contains "codeintel-autoindexing-scheduler" (or "all"), and
@@ -2784,7 +2784,7 @@ count being required for the volume of uploads.
 
 - <span class="badge badge-critical">critical</span> worker: 3600s+ repository queue longest time in queue
 
-**Possible solutions**
+**Next steps**
 
 - An alert here is generally indicative of either underprovisioned worker instance(s) and/or
 an underprovisioned main postgres instance.
@@ -2809,7 +2809,7 @@ an underprovisioned main postgres instance.
 
 - <span class="badge badge-warning">warning</span> worker: 0+ insights queue size that is not utilized (not processing) for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - Verify code insights worker job has successfully started. Restart worker service and monitoring startup logs, looking for worker panics.
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#worker-insights-queue-unutilized-size).
@@ -2833,7 +2833,7 @@ an underprovisioned main postgres instance.
 
 - <span class="badge badge-warning">warning</span> worker: 2%+ frontend-internal API error responses every 5m by route for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
 - **Kubernetes:**
@@ -2864,7 +2864,7 @@ an underprovisioned main postgres instance.
 - <span class="badge badge-warning">warning</span> worker: 0.05s+ mean blocked seconds per conn request for 10m0s
 - <span class="badge badge-critical">critical</span> worker: 0.1s+ mean blocked seconds per conn request for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
 - Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
@@ -2890,7 +2890,7 @@ an underprovisioned main postgres instance.
 
 - <span class="badge badge-warning">warning</span> worker: 99%+ container cpu usage total (1m average) across all cores by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the worker container in `docker-compose.yml`.
@@ -2915,7 +2915,7 @@ an underprovisioned main postgres instance.
 
 - <span class="badge badge-warning">warning</span> worker: 99%+ container memory usage by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of worker container in `docker-compose.yml`.
@@ -2940,7 +2940,7 @@ an underprovisioned main postgres instance.
 
 - <span class="badge badge-warning">warning</span> worker: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the worker service.
 - **Docker Compose:** Consider increasing `cpus:` of the worker container in `docker-compose.yml`.
@@ -2965,7 +2965,7 @@ an underprovisioned main postgres instance.
 
 - <span class="badge badge-warning">warning</span> worker: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the worker service.
 - **Docker Compose:** Consider increasing `memory:` of the worker container in `docker-compose.yml`.
@@ -2990,7 +2990,7 @@ an underprovisioned main postgres instance.
 
 - <span class="badge badge-warning">warning</span> worker: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the worker container in `docker-compose.yml`.
@@ -3015,7 +3015,7 @@ an underprovisioned main postgres instance.
 
 - <span class="badge badge-warning">warning</span> worker: 90%+ container memory usage (5m maximum) by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of worker container in `docker-compose.yml`.
@@ -3040,7 +3040,7 @@ an underprovisioned main postgres instance.
 
 - <span class="badge badge-warning">warning</span> worker: 1+ container OOMKILL events total by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of worker container in `docker-compose.yml`.
@@ -3065,7 +3065,7 @@ an underprovisioned main postgres instance.
 
 - <span class="badge badge-warning">warning</span> worker: 10000+ maximum active goroutines for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#worker-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -3088,7 +3088,7 @@ an underprovisioned main postgres instance.
 
 - <span class="badge badge-warning">warning</span> worker: 2s+ maximum go garbage collection duration
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -3111,7 +3111,7 @@ an underprovisioned main postgres instance.
 
 - <span class="badge badge-critical">critical</span> worker: less than 90% percentage pods available for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - Determine if the pod was OOM killed using `kubectl describe pod worker` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
 - Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p worker`.
@@ -3136,7 +3136,7 @@ an underprovisioned main postgres instance.
 
 - <span class="badge badge-critical">critical</span> repo-updater: 32400s+ time since oldest sync for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - An alert here indicates that no code host connections have synced in at least 9h0m0s. This indicates that there could be a configuration issue
 with your code hosts connections or networking issues affecting communication with your code hosts.
@@ -3167,7 +3167,7 @@ with your code hosts connections or networking issues affecting communication wi
 - <span class="badge badge-warning">warning</span> repo-updater: 0.5+ site level external service sync error rate for 10m0s
 - <span class="badge badge-critical">critical</span> repo-updater: 1+ site level external service sync error rate for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - An alert here indicates errors syncing site level repo metadata with code hosts. This indicates that there could be a configuration issue
 with your code hosts connections or networking issues affecting communication with your code hosts.
@@ -3198,7 +3198,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: less than 0 repo metadata sync was started for 9h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check repo-updater logs for errors.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-syncer-sync-start).
@@ -3222,7 +3222,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 30s+ 95th repositories sync duration for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-syncer-sync-duration).
@@ -3246,7 +3246,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 30s+ 95th repositories source duration for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-source-duration).
@@ -3270,7 +3270,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: less than 0 repositories synced for 9h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check network connectivity to code hosts
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-syncer-synced-repos).
@@ -3294,7 +3294,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: less than 0 repositories sourced for 9h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check network connectivity to code hosts
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-sourced-repos).
@@ -3318,7 +3318,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-critical">critical</span> repo-updater: 720000+ total number of user added repos for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check for unusual spikes in user added repos. Each user is only allowed to add 2000 and we have a site wide limit of 800k.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-user-added-repos).
@@ -3342,7 +3342,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 0+ repositories purge failed for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check repo-updater`s connectivity with gitserver and gitserver logs
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-purge-failed).
@@ -3366,7 +3366,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: less than 0 repositories scheduled due to hitting a deadline for 9h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check repo-updater logs. This is expected to fire if there are no user added code hosts
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-sched-auto-fetch).
@@ -3390,7 +3390,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: less than 0 repositories managed by the scheduler for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check repo-updater logs. This is expected to fire if there are no user added code hosts
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-sched-known-repos).
@@ -3414,7 +3414,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-critical">critical</span> repo-updater: 0+ rate of growth of update queue length over 5 minutes for 2h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check repo-updater logs for indications that the queue is not being processed. The queue length should trend downwards over time as items are sent to GitServer
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-sched-update-queue-length).
@@ -3438,7 +3438,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: less than 0 scheduler loops for 9h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check repo-updater logs for errors. This is expected to fire if there are no user added code hosts
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-sched-loops).
@@ -3462,7 +3462,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 1+ repos that haven't been fetched in more than 8 hours for 25m0s
 
-**Possible solutions**
+**Next steps**
 
 - 							Check repo-updater logs for errors.
 							Check for rows in gitserver_repos where LastError is not an empty string.
@@ -3487,7 +3487,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-critical">critical</span> repo-updater: 1+ repositories schedule error rate for 25m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check repo-updater logs for errors
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-sched-error).
@@ -3511,7 +3511,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 259200s+ time gap between least and most up to date permissions for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-perms).
@@ -3535,7 +3535,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 100+ number of entities with stale permissions for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-stale-perms).
@@ -3559,7 +3559,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 100+ number of entities with no permissions for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
 - **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
@@ -3584,7 +3584,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 100+ number of entities with outdated permissions for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
 - **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
@@ -3609,7 +3609,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 30s+ 95th permissions sync duration for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-sync-duration).
@@ -3633,7 +3633,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 100+ permissions sync queued items for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
 - **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
@@ -3658,7 +3658,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-critical">critical</span> repo-updater: 1+ permissions sync error rate for 1m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check the network connectivity the Sourcegraph and the code host.
 - Check if API rate limit quota is exhausted on the code host.
@@ -3683,7 +3683,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-critical">critical</span> repo-updater: 20000+ the total number of external services for 1h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check for spikes in external services, could be abuse
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-src-repoupdater-external-services-total).
@@ -3707,7 +3707,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 20000+ the total number of user added external services for 1h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check for spikes in external services, could be abuse
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-src-repoupdater-user-external-services-total).
@@ -3731,7 +3731,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 100+ the total number of queued sync jobs for 1h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Check if jobs are failing to sync:** "SELECT * FROM external_service_sync_jobs WHERE state = `errored`";
 - **Increase the number of workers** using the `repoConcurrentExternalServiceSyncers` site config.
@@ -3756,7 +3756,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 100000+ the total number of completed sync jobs for 1h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check repo-updater logs. Jobs older than 1 day should have been removed.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-repoupdater-completed-sync-jobs-total).
@@ -3780,7 +3780,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 10%+ the percentage of external services that have failed their most recent sync for 1h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - Check repo-updater logs. Check code host connectivity
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-repoupdater-errored-sync-jobs-percentage).
@@ -3804,7 +3804,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-critical">critical</span> repo-updater: less than 250 remaining calls to GitHub graphql API before hitting the rate limit
 
-**Possible solutions**
+**Next steps**
 
 - Try restarting the pod to get a different public IP.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-github-graphql-rate-limit-remaining).
@@ -3828,7 +3828,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-critical">critical</span> repo-updater: less than 250 remaining calls to GitHub rest API before hitting the rate limit
 
-**Possible solutions**
+**Next steps**
 
 - Try restarting the pod to get a different public IP.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-github-rest-rate-limit-remaining).
@@ -3852,7 +3852,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-critical">critical</span> repo-updater: less than 5 remaining calls to GitHub search API before hitting the rate limit
 
-**Possible solutions**
+**Next steps**
 
 - Try restarting the pod to get a different public IP.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-github-search-rate-limit-remaining).
@@ -3876,7 +3876,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-critical">critical</span> repo-updater: less than 30 remaining calls to GitLab rest API before hitting the rate limit
 
-**Possible solutions**
+**Next steps**
 
 - Try restarting the pod to get a different public IP.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-gitlab-rest-rate-limit-remaining).
@@ -3900,7 +3900,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 2%+ frontend-internal API error responses every 5m by route for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
 - **Kubernetes:**
@@ -3931,7 +3931,7 @@ with your code hosts connections or networking issues affecting communication wi
 - <span class="badge badge-warning">warning</span> repo-updater: 0.05s+ mean blocked seconds per conn request for 10m0s
 - <span class="badge badge-critical">critical</span> repo-updater: 0.1s+ mean blocked seconds per conn request for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
 - Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
@@ -3957,7 +3957,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 99%+ container cpu usage total (1m average) across all cores by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
@@ -3982,7 +3982,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-critical">critical</span> repo-updater: 90%+ container memory usage by instance for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
@@ -4007,7 +4007,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the repo-updater service.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
@@ -4032,7 +4032,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the repo-updater service.
 - **Docker Compose:** Consider increasing `memory:` of the repo-updater container in `docker-compose.yml`.
@@ -4057,7 +4057,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
@@ -4082,7 +4082,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 90%+ container memory usage (5m maximum) by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
@@ -4107,7 +4107,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 1+ container OOMKILL events total by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
@@ -4132,7 +4132,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 10000+ maximum active goroutines for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#repo-updater-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -4155,7 +4155,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: 2s+ maximum go garbage collection duration
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -4178,7 +4178,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-critical">critical</span> repo-updater: less than 90% percentage pods available for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - Determine if the pod was OOM killed using `kubectl describe pod repo-updater` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
 - Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p repo-updater`.
@@ -4203,7 +4203,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> searcher: 5%+ unindexed search request errors every 5m by code for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-unindexed-search-request-errors).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -4226,7 +4226,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> searcher: 5+ requests per second over 10m
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-replica-traffic).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -4250,7 +4250,7 @@ with your code hosts connections or networking issues affecting communication wi
 - <span class="badge badge-warning">warning</span> searcher: 0.05s+ mean blocked seconds per conn request for 10m0s
 - <span class="badge badge-critical">critical</span> searcher: 0.1s+ mean blocked seconds per conn request for 15m0s
 
-**Possible solutions**
+**Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
 - Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
@@ -4276,7 +4276,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> searcher: 2%+ frontend-internal API error responses every 5m by route for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
 - **Kubernetes:**
@@ -4306,7 +4306,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> searcher: 99%+ container cpu usage total (1m average) across all cores by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
@@ -4331,7 +4331,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> searcher: 99%+ container memory usage by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
@@ -4356,7 +4356,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> searcher: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the searcher service.
 - **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
@@ -4381,7 +4381,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> searcher: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the searcher service.
 - **Docker Compose:** Consider increasing `memory:` of the searcher container in `docker-compose.yml`.
@@ -4406,7 +4406,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> searcher: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
@@ -4431,7 +4431,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> searcher: 90%+ container memory usage (5m maximum) by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
@@ -4456,7 +4456,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> searcher: 1+ container OOMKILL events total by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
@@ -4481,7 +4481,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> searcher: 10000+ maximum active goroutines for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#searcher-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -4504,7 +4504,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> searcher: 2s+ maximum go garbage collection duration
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -4527,7 +4527,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-critical">critical</span> searcher: less than 90% percentage pods available for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - Determine if the pod was OOM killed using `kubectl describe pod searcher` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
 - Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p searcher`.
@@ -4552,7 +4552,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> symbols: 2%+ frontend-internal API error responses every 5m by route for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
 - **Kubernetes:**
@@ -4582,7 +4582,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> symbols: 99%+ container cpu usage total (1m average) across all cores by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
@@ -4607,7 +4607,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> symbols: 99%+ container memory usage by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
@@ -4632,7 +4632,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> symbols: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the symbols service.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
@@ -4657,7 +4657,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> symbols: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the symbols service.
 - **Docker Compose:** Consider increasing `memory:` of the symbols container in `docker-compose.yml`.
@@ -4682,7 +4682,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> symbols: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
@@ -4707,7 +4707,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> symbols: 90%+ container memory usage (5m maximum) by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
@@ -4732,7 +4732,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> symbols: 1+ container OOMKILL events total by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
@@ -4757,7 +4757,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> symbols: 10000+ maximum active goroutines for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#symbols-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -4780,7 +4780,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> symbols: 2s+ maximum go garbage collection duration
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -4803,7 +4803,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-critical">critical</span> symbols: less than 90% percentage pods available for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - Determine if the pod was OOM killed using `kubectl describe pod symbols` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
 - Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p symbols`.
@@ -4828,7 +4828,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> syntect-server: 99%+ container cpu usage total (1m average) across all cores by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
@@ -4853,7 +4853,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> syntect-server: 99%+ container memory usage by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
@@ -4878,7 +4878,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> syntect-server: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the syntect-server service.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
@@ -4903,7 +4903,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> syntect-server: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the syntect-server service.
 - **Docker Compose:** Consider increasing `memory:` of the syntect-server container in `docker-compose.yml`.
@@ -4928,7 +4928,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> syntect-server: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
@@ -4953,7 +4953,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> syntect-server: 90%+ container memory usage (5m maximum) by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
@@ -4978,7 +4978,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> syntect-server: 1+ container OOMKILL events total by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
@@ -5003,7 +5003,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-critical">critical</span> syntect-server: less than 90% percentage pods available for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - Determine if the pod was OOM killed using `kubectl describe pod syntect-server` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
 - Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p syntect-server`.
@@ -5028,7 +5028,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> zoekt: 15s+ average resolve revision duration over 5m
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-average-resolve-revision-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -5052,7 +5052,7 @@ with your code hosts connections or networking issues affecting communication wi
 - <span class="badge badge-warning">warning</span> zoekt: 100+ the number of repositories we failed to get indexing options over 5m for 5m0s
 - <span class="badge badge-critical">critical</span> zoekt: 100+ the number of repositories we failed to get indexing options over 5m for 35m0s
 
-**Possible solutions**
+**Next steps**
 
 - View error rates on gitserver and frontend to identify root cause.
 - Rollback frontend/gitserver deployment if due to a bad code change.
@@ -5079,7 +5079,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> zoekt: 5%+ indexed search request errors every 5m by code for 5m0s
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexed-search-request-errors).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -5102,7 +5102,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> zoekt: 99%+ container cpu usage total (1m average) across all cores by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
@@ -5127,7 +5127,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> zoekt: 99%+ container memory usage by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
@@ -5152,7 +5152,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> zoekt: 99%+ container cpu usage total (1m average) across all cores by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
@@ -5177,7 +5177,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> zoekt: 99%+ container memory usage by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
@@ -5202,7 +5202,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> zoekt: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-indexserver service.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
@@ -5227,7 +5227,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> zoekt: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-indexserver service.
 - **Docker Compose:** Consider increasing `memory:` of the zoekt-indexserver container in `docker-compose.yml`.
@@ -5252,7 +5252,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> zoekt: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
@@ -5277,7 +5277,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> zoekt: 90%+ container memory usage (5m maximum) by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
@@ -5302,7 +5302,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> zoekt: 1+ container OOMKILL events total by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
@@ -5327,7 +5327,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> zoekt: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-webserver service.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
@@ -5352,7 +5352,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> zoekt: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-webserver service.
 - **Docker Compose:** Consider increasing `memory:` of the zoekt-webserver container in `docker-compose.yml`.
@@ -5377,7 +5377,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> zoekt: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
@@ -5402,7 +5402,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> zoekt: 90%+ container memory usage (5m maximum) by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
@@ -5427,7 +5427,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> zoekt: 1+ container OOMKILL events total by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
@@ -5452,7 +5452,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-critical">critical</span> zoekt: less than 90% percentage pods available for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - Determine if the pod was OOM killed using `kubectl describe pod indexed-search` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
 - Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p indexed-search`.
@@ -5477,7 +5477,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> prometheus: 30s+ average prometheus rule group evaluation duration over 10m by rule group
 
-**Possible solutions**
+**Next steps**
 
 - Check the Container monitoring (not available on server) panels and try increasing resources for Prometheus if necessary.
 - If the rule group taking a long time to evaluate belongs to `/sg_prometheus_addons`, try reducing the complexity of any custom Prometheus rules provided.
@@ -5503,7 +5503,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> prometheus: 0+ failed prometheus rule evaluations over 5m by rule group
 
-**Possible solutions**
+**Next steps**
 
 - Check Prometheus logs for messages related to rule group evaluation (generally with log field `component="rule manager"`).
 - If the rule group failing to evaluate belongs to `/sg_prometheus_addons`, ensure any custom Prometheus configuration provided is valid.
@@ -5529,7 +5529,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> prometheus: 1s+ alertmanager notification latency over 1m by integration
 
-**Possible solutions**
+**Next steps**
 
 - Check the Container monitoring (not available on server) panels and try increasing resources for Prometheus if necessary.
 - Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
@@ -5555,7 +5555,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> prometheus: 0+ failed alertmanager notifications over 1m by integration
 
-**Possible solutions**
+**Next steps**
 
 - Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
 - Check if the relevant alert integration service is experiencing downtime or issues.
@@ -5580,7 +5580,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> prometheus: less than 1 prometheus configuration reload status
 
-**Possible solutions**
+**Next steps**
 
 - Check Prometheus logs for messages related to configuration loading.
 - Ensure any [custom configuration you have provided Prometheus](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration) is valid.
@@ -5605,7 +5605,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> prometheus: less than 1 alertmanager configuration reload status
 
-**Possible solutions**
+**Next steps**
 
 - Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-alertmanager-config-status).
@@ -5629,7 +5629,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> prometheus: 0+ prometheus tsdb failures by operation over 1m by operation
 
-**Possible solutions**
+**Next steps**
 
 - Check Prometheus logs for messages related to the failing operation.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-prometheus-tsdb-op-failure).
@@ -5653,7 +5653,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> prometheus: 0+ prometheus scrapes that exceed the sample limit over 10m
 
-**Possible solutions**
+**Next steps**
 
 - Check Prometheus logs for messages related to target scrape failures.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-prometheus-target-sample-exceeded).
@@ -5677,7 +5677,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> prometheus: 0+ prometheus scrapes rejected due to duplicate timestamps over 10m
 
-**Possible solutions**
+**Next steps**
 
 - Check Prometheus logs for messages related to target scrape failures.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-prometheus-target-sample-duplicate).
@@ -5701,7 +5701,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> prometheus: 99%+ container cpu usage total (1m average) across all cores by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
@@ -5726,7 +5726,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> prometheus: 99%+ container memory usage by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
@@ -5751,7 +5751,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> prometheus: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the prometheus service.
 - **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
@@ -5776,7 +5776,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> prometheus: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the prometheus service.
 - **Docker Compose:** Consider increasing `memory:` of the prometheus container in `docker-compose.yml`.
@@ -5801,7 +5801,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> prometheus: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
@@ -5826,7 +5826,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> prometheus: 90%+ container memory usage (5m maximum) by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
@@ -5851,7 +5851,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> prometheus: 1+ container OOMKILL events total by instance
 
-**Possible solutions**
+**Next steps**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
@@ -5876,7 +5876,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-critical">critical</span> prometheus: less than 90% percentage pods available for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - Determine if the pod was OOM killed using `kubectl describe pod prometheus` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
 - Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p prometheus`.
@@ -5901,7 +5901,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> executor: 10000+ maximum active goroutines for 10m0s
 
-**Possible solutions**
+**Next steps**
 
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#executor-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -5924,7 +5924,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> executor: 2s+ maximum go garbage collection duration
 
-**Possible solutions**
+**Next steps**
 
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
@@ -5947,7 +5947,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-critical">critical</span> codeintel-uploads: 3600s+ repository queue longest time in queue
 
-**Possible solutions**
+**Next steps**
 
 - An alert here is generally indicative of either underprovisioned worker instance(s) and/or
 an underprovisioned main postgres instance.
