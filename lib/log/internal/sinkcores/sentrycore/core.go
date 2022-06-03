@@ -59,7 +59,7 @@ func (b *baseContext) clone() *baseContext {
 
 // errorContext is an error and its associated context that is accumulated during the core lifetime.
 type errorContext struct {
-	baseContext
+	*baseContext
 	Error error
 }
 
@@ -79,7 +79,7 @@ var _ zapcore.Core = &Core{}
 func NewCore(hub *sentry.Hub) *Core {
 	w := &worker{
 		hub:  sentryHub{hub: hub.Clone()}, // Avoid accidental side effects if the hub is modified elsewhere.
-		C:    make(chan *Core, bufferSize),
+		C:    make(chan *errorContext, bufferSize),
 		done: make(chan struct{}),
 	}
 	w.start()
@@ -140,29 +140,33 @@ func (c *Core) Check(e zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.Checked
 // Write will asynchronoulsy send out all errors and the fields that have been accumulated during the
 // lifetime of the core.
 func (c *Core) Write(entry zapcore.Entry, fields []zapcore.Field) error {
-	// Clone ourselves, so we don't affect other loggers
-	c = c.clone()
-	c.base.Scope = entry.LoggerName
-	c.base.Message = entry.Message
-	c.base.Level = entry.Level
+	// Clone the base context, so we don't affect other cores
+	base := c.base.clone()
+	base.Scope = entry.LoggerName
+	base.Message = entry.Message
+	base.Level = entry.Level
 
-	sentryFields := make([]zapcore.Field, 0, len(fields))
+	errs := make([]error, len(c.errs)+1)
+	copy(errs, c.errs)
+
 	for _, f := range fields {
 		if f.Type == zapcore.ErrorType {
 			if enc, ok := f.Interface.(*encoders.ErrorEncoder); ok {
 				// If we find one of our errors, we remove it from the fields so our error reports are not including
 				// their own error as an attribute, which would a useless repetition.
-				c.errs = append(c.errs, enc.Source)
+				errs = append(errs, enc.Source)
 				continue
 			}
 		}
-		sentryFields = append(sentryFields, f)
+		base.Fields = append(base.Fields, f)
 	}
-	c.base.Fields = append(sentryFields, c.base.Fields...)
 
-	select {
-	case c.w.C <- c:
-	default: // if we can't queue, just drop the errors.
+	for _, err := range errs {
+		errC := errorContext{baseContext: base, Error: err}
+		select {
+		case c.w.C <- &errC:
+		default: // if we can't queue, just drop the errors.
+		}
 	}
 	return nil
 }

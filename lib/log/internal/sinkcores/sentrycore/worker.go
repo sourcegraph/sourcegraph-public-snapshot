@@ -26,7 +26,7 @@ type worker struct {
 	// hub is an isolated Sentry context used to send out events to their API.
 	hub sentryHub
 	// C is the channel used to pass errors and their associated context to the go routine sending out events.
-	C chan *Core
+	C chan *errorContext
 	// timeout tells the worker to wait wfpewfp
 	timeout chan struct{}
 	// done stops the worker from accepting new cores when written into.
@@ -55,8 +55,8 @@ func (w *worker) consume() {
 	defer ticker.Stop()
 	for {
 		select {
-		case c := <-w.C:
-			w.work(c)
+		case errC := <-w.C:
+			w.work(errC)
 		case <-ticker.C:
 			// We only check if we're closing periodically, to make sure we have
 			// consumed the last few events that were sent.
@@ -70,12 +70,12 @@ func (w *worker) consume() {
 }
 
 // work splits a core into multiple errors and capture them.
-func (w *worker) work(c *Core) {
-	for _, err := range c.errs {
-		ec := errorContext{baseContext: c.base}
-		ec.Error = err
-		w.capture(ec)
-	}
+func (w *worker) work(errC *errorContext) {
+	// for _, err := range errC.errs {
+	// 	ec := errorContext{baseContext: errC.base}
+	// 	ec.Error = err
+	w.capture(errC)
+	// }
 }
 
 // Flush blocks for a couple seconds at most, trying to flush all accumulated errors.
@@ -96,7 +96,7 @@ func (w *worker) flush() {
 }
 
 // capture submits an ErrorContext to Sentry.
-func (w *worker) capture(errCtx errorContext) {
+func (w *worker) capture(errCtx *errorContext) {
 	if w.hub.hub == nil {
 		return
 	}
