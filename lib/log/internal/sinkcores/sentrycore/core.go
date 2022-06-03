@@ -118,6 +118,7 @@ func (c *Core) With(fields []zapcore.Field) zapcore.Core {
 	c = c.clone()
 	for _, f := range fields {
 		if f.Type == zapcore.ErrorType {
+			// Get original error, which we wrap on ErrorEncoder in log.Error
 			if enc, ok := f.Interface.(*encoders.ErrorEncoder); ok {
 				c.errs = append(c.errs, enc.Source)
 				continue
