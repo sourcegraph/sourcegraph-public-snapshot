@@ -2,6 +2,7 @@ package runner
 
 import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type Options struct {
@@ -56,10 +57,10 @@ func desugarOperation(schemaContext schemaContext, operation MigrationOperation)
 func desugarUpgrade(schemaContext schemaContext, operation MigrationOperation) MigrationOperation {
 	leafVersions := extractIDs(schemaContext.schema.Definitions.Leaves())
 
-	logger.Info(
+	schemaContext.logger.Info(
 		"Desugaring `upgrade` to `targeted up` operation",
-		"schema", operation.SchemaName,
-		"leafVersions", leafVersions,
+		log.String("schema", operation.SchemaName),
+		log.Ints("leafVersions", leafVersions),
 	)
 
 	return MigrationOperation{
@@ -105,10 +106,10 @@ func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (M
 		}
 	}
 
-	logger.Info(
+	schemaContext.logger.Info(
 		"Desugaring `revert` to `targeted down` operation",
-		"schema", operation.SchemaName,
-		"appliedLeafVersions", leafVersions,
+		log.String("schema", operation.SchemaName),
+		log.Ints("appliedLeafVersions", leafVersions),
 	)
 
 	switch len(leafVersions) {

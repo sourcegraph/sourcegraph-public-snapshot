@@ -3,22 +3,11 @@ package runner
 import (
 	"os"
 	"strings"
-
-	"github.com/inconshreveable/log15"
 )
 
-// logger is the log15 root logger declared at the package level so it can be
-// replaced with a no-op logger in unrelated tests that need to run migrations.
-var logger = log15.Root()
+func EnableLogging() {}
 
-func EnableLogging() {
-	logger = log15.Root()
-}
-
-func DisableLogging() {
-	logger = log15.New()
-	logger.SetHandler(log15.DiscardHandler())
-}
+func DisableLogging() {}
 
 // This package is INCREDIBLY noisy and imported by basically any package
 // that touches the database. We disable all logs during tests to save the noise
