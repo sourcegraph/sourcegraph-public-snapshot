@@ -472,6 +472,32 @@ func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, 
 		}
 	}
 
+	for _, cm := range file.ChunkMatches {
+		if cm.FileName {
+			continue
+		}
+
+		for i, r := range cm.Ranges {
+			si := cm.SymbolInfo[i]
+			if si == nil {
+				continue
+			}
+
+			symbols = append(symbols, result.NewSymbolMatch(
+				newFile,
+				r.Start.LineNumber,
+				-1,
+				si.Sym,
+				si.Kind,
+				si.Parent,
+				si.ParentKind,
+				file.Language,
+				string(cm.Content), // TODO will symbol matches always be one line?
+				false,
+			))
+		}
+	}
+
 	return symbols
 }
 
