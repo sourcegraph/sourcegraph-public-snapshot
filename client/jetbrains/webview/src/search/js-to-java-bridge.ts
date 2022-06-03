@@ -66,7 +66,7 @@ export type Request =
     | ClearPreviewRequest
     | IndicateFinishedLoadingRequest
 
-export async function getConfigAlwaysFullfil(): Promise<PluginConfig> {
+export async function getConfigAlwaysFulfill(): Promise<PluginConfig> {
     try {
         return (await callJava({ action: 'getConfig' })) as PluginConfig
     } catch (error) {
@@ -79,7 +79,7 @@ export async function getConfigAlwaysFullfil(): Promise<PluginConfig> {
     }
 }
 
-export async function getThemeAlwaysFullfil(): Promise<Theme> {
+export async function getThemeAlwaysFulfill(): Promise<Theme> {
     try {
         return (await callJava({ action: 'getTheme' })) as Theme
     } catch (error) {
@@ -124,7 +124,7 @@ export async function onOpen(match: SearchMatch, lineMatchIndexOrSymbolIndex?: n
     }
 }
 
-export async function loadLastSearchAlwaysFullfil(): Promise<Search | null> {
+export async function loadLastSearchAlwaysFulfill(): Promise<Search | null> {
     try {
         return (await callJava({ action: 'loadLastSearch' })) as Search
     } catch (error) {

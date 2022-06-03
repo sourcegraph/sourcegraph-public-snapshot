@@ -8,10 +8,10 @@ import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
 
 import { App } from './App'
 import {
-    getConfigAlwaysFullfil,
-    getThemeAlwaysFullfil,
+    getConfigAlwaysFulfill,
+    getThemeAlwaysFulfill,
     indicateFinishedLoading,
-    loadLastSearchAlwaysFullfil,
+    loadLastSearchAlwaysFulfill,
     onOpen,
     onPreviewChange,
     onPreviewClear,
@@ -29,9 +29,9 @@ let initialAuthenticatedUser: AuthenticatedUser | null
 
 window.initializeSourcegraph = async () => {
     const [theme, config, lastSearch, authenticatedUser] = await Promise.allSettled([
-        getThemeAlwaysFullfil(),
-        getConfigAlwaysFullfil(),
-        loadLastSearchAlwaysFullfil(),
+        getThemeAlwaysFulfill(),
+        getConfigAlwaysFulfill(),
+        loadLastSearchAlwaysFulfill(),
         getAuthenticatedUser(instanceURL, accessToken),
     ])
 
