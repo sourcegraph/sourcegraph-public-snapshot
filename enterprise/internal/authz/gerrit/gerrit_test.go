@@ -97,6 +97,53 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:          "user has access to repo which has multiple layers of inherited access",
+			expectedPerms: []extsvc.RepoID{"project-with-access"},
+			client: mockClient{
+				mockGetProjectAccess: func(ctx context.Context, projects ...string) (gerrit.GetProjectAccessResponse, error) {
+					if len(projects) == 1 {
+						// return the inherited project access
+						if projects[0] == "Maybe-Access" {
+							return gerrit.GetProjectAccessResponse{
+								"Maybe-Access": {
+									InheritsFrom: gerrit.Project{
+										ID: "All-Access",
+									},
+								},
+							}, nil
+						}
+						if projects[0] == "All-Access" {
+							return gerrit.GetProjectAccessResponse{
+								"All-Access": {
+									Groups: map[string]gerrit.GroupInfo{"group-with-access": {ID: "group-with-access"}},
+								},
+							}, nil
+						}
+						if projects[0] == "No-Access" {
+							return gerrit.GetProjectAccessResponse{
+								"No-Access": {
+									Groups: map[string]gerrit.GroupInfo{"group-without-access": {ID: "group-without-access"}},
+								},
+							}, nil
+						}
+						t.Errorf("unexpected project access request for project %s", projects[0])
+					}
+					return gerrit.GetProjectAccessResponse{
+						"project-with-access": {
+							InheritsFrom: gerrit.Project{
+								ID: "Maybe-Access",
+							},
+						},
+						"project-without-access": {
+							InheritsFrom: gerrit.Project{
+								ID: "No-Access",
+							},
+						},
+					}, nil
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
