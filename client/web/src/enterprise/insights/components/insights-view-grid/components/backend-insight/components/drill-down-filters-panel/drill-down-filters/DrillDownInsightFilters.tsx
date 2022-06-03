@@ -93,7 +93,6 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
 
     const [activeSection, setActiveSection] = useState<FilterSection | null>(FilterSection.RegularExpressions)
     const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(originalSeriesDisplayOptions)
-    const [seriesDisplayOptionsDirty, setSeriesDisplayOptionsDirty] = useState(false)
 
     const { ref, formAPI, handleSubmit, values } = useForm<DrillDownFiltersFormValues>({
         initialValues,
@@ -139,13 +138,11 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         contexts.input.onChange('')
         includeRegex.input.onChange('')
         excludeRegex.input.onChange('')
-        setSeriesDisplayOptionsDirty(false)
         setSeriesDisplayOptions(originalSeriesDisplayOptions)
         onSeriesDisplayOptionsChange(originalSeriesDisplayOptions)
     }
 
     const handleSeriesDisplayOptionsChange = (options: SeriesDisplayOptionsInputRequired): void => {
-        setSeriesDisplayOptionsDirty(true)
         setSeriesDisplayOptions(options)
         onSeriesDisplayOptionsChange(options)
     }
