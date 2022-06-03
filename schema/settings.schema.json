@@ -12,6 +12,12 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "homePanelsComputeSuggestions": {
+          "type": "boolean",
+          "default": false,
+          "deprecated": false,
+          "description": "Enable the home panels compute suggestions feature."
+        },
         "codeInsights": {
           "description": "Enables code insights on directory pages.",
           "type": "boolean",

@@ -161,7 +161,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		migrationContext.userId = int(userId)
 		migrationContext.orgIds = orgIds
 
-		userStore := database.Users(m.postgresDB)
+		userStore := m.postgresDB.Users()
 		user, err := userStore.GetByID(ctx, userId)
 		if err != nil {
 			// If the user doesn't exist, just mark the job complete.

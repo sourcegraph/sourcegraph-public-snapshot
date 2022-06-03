@@ -9,8 +9,8 @@ import (
 	"github.com/grafana/regexp/syntax"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -44,7 +44,7 @@ func scanSymbols(rows *sql.Rows, queryErr error) (symbols []result.Symbol, err e
 	return symbols, nil
 }
 
-func (s *store) Search(ctx context.Context, args types.SearchArgs) ([]result.Symbol, error) {
+func (s *store) Search(ctx context.Context, args search.SymbolsParameters) ([]result.Symbol, error) {
 	return scanSymbols(s.Query(ctx, sqlf.Sprintf(
 		`
 			SELECT
@@ -67,7 +67,7 @@ func (s *store) Search(ctx context.Context, args types.SearchArgs) ([]result.Sym
 	)))
 }
 
-func makeSearchConditions(args types.SearchArgs) []*sqlf.Query {
+func makeSearchConditions(args search.SymbolsParameters) []*sqlf.Query {
 	conditions := make([]*sqlf.Query, 0, 2+len(args.IncludePatterns))
 	conditions = append(conditions, makeSearchCondition("name", args.Query, args.IsCaseSensitive))
 	conditions = append(conditions, negate(makeSearchCondition("path", args.ExcludePattern, args.IsCaseSensitive)))

@@ -270,7 +270,7 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 // InvalidateSessionCurrentUser invalidates all sessions for the current user.
 func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request, db database.DB) error {
 	a := actor.FromContext(r.Context())
-	err := database.Users(db).InvalidateSessionsByID(r.Context(), a.UID)
+	err := db.Users().InvalidateSessionsByID(r.Context(), a.UID)
 	if err != nil {
 		return err
 	}
@@ -285,7 +285,7 @@ func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request, db dat
 // If an error occurs, it returns the error
 func InvalidateSessionsByID(ctx context.Context, db database.DB, id int32) error {
 	// Get the user from the request context
-	return database.Users(db).InvalidateSessionsByID(ctx, id)
+	return db.Users().InvalidateSessionsByID(ctx, id)
 }
 
 // CookieMiddleware is an http.Handler middleware that authenticates
