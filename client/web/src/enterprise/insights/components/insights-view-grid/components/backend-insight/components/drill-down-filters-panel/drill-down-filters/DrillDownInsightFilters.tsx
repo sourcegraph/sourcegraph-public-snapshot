@@ -202,7 +202,10 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         open={isHorizontalMode || activeSection === FilterSection.SortFilter}
                         title="Sort & Limit"
                         preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
-                        hasActiveFilter={false}
+                        hasActiveFilter={hasActiveSeriesDisplayOptions(
+                            seriesDisplayOptions,
+                            originalSeriesDisplayOptions
+                        )}
                         withSeparators={!isHorizontalMode}
                         onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
                     >
@@ -351,6 +354,17 @@ export function hasActiveFilters(filters: DrillDownFiltersFormValues): boolean {
 }
 
 const hasActiveUnaryFilter = (filter: string): boolean => filter.trim() !== ''
+
+const hasActiveSeriesDisplayOptions = (
+    seriesDisplayOptions: SeriesDisplayOptionsInput,
+    originalSeriesDisplayOptions: SeriesDisplayOptionsInput
+): boolean => {
+    return (
+        seriesDisplayOptions.limit !== originalSeriesDisplayOptions.limit ||
+        seriesDisplayOptions.sortOptions?.direction !== originalSeriesDisplayOptions.sortOptions?.direction ||
+        seriesDisplayOptions.sortOptions?.mode !== originalSeriesDisplayOptions.sortOptions?.mode
+    )
+}
 
 interface SubmitButtonTextProps {
     submitting: boolean
