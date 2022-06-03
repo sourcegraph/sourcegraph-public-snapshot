@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { useLocation } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -45,6 +46,7 @@ export const EditBatchSpecPage: React.FunctionComponent<React.PropsWithChildren<
     batchChange,
     ...props
 }) => {
+    const location = useLocation()
     const { data, error, loading, refetch } = useQuery<GetBatchChangeToEditResult, GetBatchChangeToEditVariables>(
         GET_BATCH_CHANGE_TO_EDIT,
         {
@@ -79,11 +81,15 @@ export const EditBatchSpecPage: React.FunctionComponent<React.PropsWithChildren<
     // batch spec has not yet been applied.
     const batchSpec = data.batchChange.batchSpecs.nodes[0] || data.batchChange.currentSpec
 
+    const parameters = new URLSearchParams(location.search)
+    const searchQuery = parameters.get('q') ?? undefined
+
     return (
         <BatchSpecContextProvider
             batchChange={data.batchChange}
             refetchBatchChange={refetchBatchChange}
             batchSpec={batchSpec}
+            searchQuery={searchQuery}
         >
             <EditBatchSpecPageContent {...props} />
         </BatchSpecContextProvider>

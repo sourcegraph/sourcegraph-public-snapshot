@@ -14,8 +14,8 @@ import helloWorldSample from './edit/library/hello-world.batch.yaml'
 import {
     excludeRepo as excludeRepoFromYaml,
     hasOnOrImportChangesetsStatement,
-    insertNameIntoLibraryItem,
     isMinimalBatchSpec,
+    insertFieldIntoLIbraryItem,
 } from './yaml-util'
 
 const ajv = new AJV()
@@ -69,6 +69,17 @@ export interface UseBatchSpecCodeResult {
     excludeRepo: (repo: string, branch: string) => void
 }
 
+const updateSomethingSomething = (originalInput: string, name: string, searchQuery?: string): string => {
+    let result: string;
+    result = insertFieldIntoLIbraryItem(originalInput, name, 'name')
+
+    if (searchQuery) {
+        result = insertFieldIntoLIbraryItem(result, `- repositoriesMatchingQuery: ${searchQuery}\n\n`, 'on', false)
+    }
+
+    return result
+}
+
 /**
  * Custom hook for edit page which packages up business logic and exposes an API for
  * managing the batch spec input YAML code that the user interacts with via the Monaco
@@ -77,7 +88,7 @@ export interface UseBatchSpecCodeResult {
  * @param originalInput The initial YAML code of the batch spec.
  * @param name The name of the batch change, which is used for validation.
  */
-export const useBatchSpecCode = (originalInput: string, name: string): UseBatchSpecCodeResult => {
+export const useBatchSpecCode = (originalInput: string, name: string, searchQuery?: string): UseBatchSpecCodeResult => {
     const validateFunction = useMemo(() => {
         const schemaID = `${batchSpecSchemaJSON.$id}/${name}`
 
@@ -133,7 +144,7 @@ export const useBatchSpecCode = (originalInput: string, name: string): UseBatchS
     const [code, setCode] = useState<string>(() =>
         // Start with the hello world sample code initially if the user hasn't written any
         // batch spec code yet, otherwise show the latest spec code.
-        isMinimalBatchSpec(originalInput) ? insertNameIntoLibraryItem(helloWorldSample, name) : originalInput
+        isMinimalBatchSpec(originalInput) ? updateSomethingSomething(helloWorldSample, name, searchQuery) : originalInput
     )
     const debouncedCode = useDebounce(code, DEBOUNCE_AMOUNT)
 

@@ -105,6 +105,7 @@ interface BatchSpecContextProviderProps<BatchSpecFields extends MinimalBatchSpec
     batchChange: EditBatchChangeFields
     refetchBatchChange?: () => Promise<unknown>
     batchSpec: BatchSpecFields
+    searchQuery?: string
     /** FOR TESTING ONLY */
     testState?: Partial<BatchSpecContextState<BatchSpecFields>>
 }
@@ -115,13 +116,14 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
     refetchBatchChange,
     batchSpec,
     testState,
+    searchQuery
 }: React.PropsWithChildren<BatchSpecContextProviderProps<BatchSpecFields>>): JSX.Element => {
     const { currentSpec } = batchChange
 
     // TODO: This should probably just be a field on GraphQL.
     const isBatchSpecApplied = useMemo(() => currentSpec.id === batchSpec.id, [currentSpec.id, batchSpec.id])
 
-    const editor = useBatchSpecCode(batchSpec.originalInput, batchChange.name)
+    const editor = useBatchSpecCode(batchSpec.originalInput, batchChange.name, searchQuery)
     const { handleCodeChange, isValid, isServerStale } = editor
 
     const [filters, setFilters] = useState<WorkspacePreviewFilters>()

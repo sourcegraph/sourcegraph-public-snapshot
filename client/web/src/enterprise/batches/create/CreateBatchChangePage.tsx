@@ -35,7 +35,7 @@ export const CreateBatchChangePage: React.FunctionComponent<React.PropsWithChild
     headingElement,
     ...props
 }) =>
-    isBatchChangesExecutionEnabled(settingsCascade) ? (
+     isBatchChangesExecutionEnabled(settingsCascade) ? (
         <NewBatchChangePageContent settingsCascade={settingsCascade} {...props} />
     ) : (
         <Page>

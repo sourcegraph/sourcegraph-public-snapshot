@@ -37,6 +37,7 @@ import {
     getCodeMonitoringCreateAction,
     getInsightsCreateAction,
     getSearchContextCreateAction,
+    getBatchChangeCreateAction,
     CreateAction,
 } from './createActions'
 import { CreateActionsMenu } from './CreateActionsMenu'
@@ -210,6 +211,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     const createActions = useMemo(
         () =>
             [
+                getBatchChangeCreateAction(props.query, props.query as string, true),
                 getSearchContextCreateAction(props.query, props.authenticatedUser),
                 getInsightsCreateAction(
                     props.query,

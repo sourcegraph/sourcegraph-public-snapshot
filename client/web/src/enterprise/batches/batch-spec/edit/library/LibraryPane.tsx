@@ -2,12 +2,13 @@ import React, { useState, useCallback } from 'react'
 
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
+import { useLocation } from 'react-router'
 import { animated, useSpring } from 'react-spring'
 
 import { Button, useLocalStorage, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../../../graphql-operations'
-import { insertNameIntoLibraryItem } from '../../yaml-util'
+import { insertFieldIntoLIbraryItem } from '../../yaml-util'
 
 import combySample from './comby.batch.yaml'
 import goImportsSample from './go-imports.batch.yaml'
@@ -94,13 +95,28 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
         [animateContainer, animateContent, animateHeader, setDefaultCollapsed]
     )
 
+    const location = useLocation()
+    const parameters = new URLSearchParams(location.search)
+    const searchQuery = parameters.get('q') ?? undefined
+
+    const updateLibraryItemFields = useCallback((code: string, name: string): string => {
+        let updatedCode: string
+        updatedCode = insertFieldIntoLIbraryItem(code, name, 'name')
+
+        if (searchQuery) {
+            updatedCode = insertFieldIntoLIbraryItem(updatedCode, `- repositoriesMatchingQuery: ${searchQuery}\n\n`, 'on', false)
+        }
+
+        return updatedCode
+    }, [searchQuery])
+
     const onConfirm = useCallback(() => {
         if (selectedItem && !('isReadOnly' in props && props.isReadOnly)) {
-            const codeWithName = insertNameIntoLibraryItem(selectedItem.code, name)
-            props.onReplaceItem(codeWithName)
+            const updatedCode = updateLibraryItemFields(selectedItem.code, name)
+            props.onReplaceItem(updatedCode)
             setSelectedItem(undefined)
         }
-    }, [name, selectedItem, props])
+    }, [name, selectedItem, props, updateLibraryItemFields])
 
     return (
         <>
