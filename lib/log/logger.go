@@ -61,6 +61,12 @@ type Logger interface {
 	// building wrappers around the Logger, supplying this Option prevents the Logger from
 	// always reporting the wrapper code as the caller.
 	AddCallerSkip(int) Logger
+	// IncreaseLevel creates a logger that only logs at or above the given level for the given
+	// scope. To disable all output, you can use LogLevelNone.
+	//
+	// IncreaseLevel is only allowed to increase the level the Logger was initialized at -
+	// it has no affect if the preset level is higher than the inidcated level.
+	IncreaseLevel(scope string, description string, level Level) Logger
 }
 
 // Scoped returns the global logger and sets it up with the given scope and OpenTelemetry
@@ -116,7 +122,7 @@ func (z *zapAdapter) Scoped(scope string, description string) Logger {
 	if z.fullScope == "" {
 		newFullScope = scope
 	} else {
-		newFullScope = fmt.Sprintf("%s.%s", z.fullScope, scope)
+		newFullScope = createScope(z.fullScope, scope)
 	}
 	scopedLogger := &zapAdapter{
 		// name -> scope in OT
@@ -175,6 +181,22 @@ func (z *zapAdapter) AddCallerSkip(skip int) Logger {
 	}
 }
 
+func (z *zapAdapter) IncreaseLevel(scope string, description string, level Level) Logger {
+	z.AddCallerSkip(1).Debug("logger.IncreaseLevel",
+		Object("scope",
+			String("scope", createScope(z.fullScope, scope)),
+			String("description", description)),
+		String("level", string(level)))
+
+	opt := zap.IncreaseLevel(level.Parse())
+	return &zapAdapter{
+		Logger:     z.Logger.WithOptions(opt),
+		rootLogger: z.rootLogger.WithOptions(opt),
+		fullScope:  z.fullScope,
+		attributes: z.attributes,
+	}
+}
+
 // WithCore is an internal API used to allow packages like logtest to hook into
 // underlying zap logger's core.
 //
@@ -193,4 +215,8 @@ func (z *zapAdapter) WithCore(f func(c zapcore.Core) zapcore.Core) Logger {
 		fullScope:  z.fullScope,
 		attributes: z.attributes,
 	}
+}
+
+func createScope(parent, child string) string {
+	return fmt.Sprintf("%s.%s", parent, child)
 }
