@@ -1151,7 +1151,7 @@ declare module 'sourcegraph' {
          * Use this to create a unique handle to a set of decorations, that can be applied to
          * text editors using {@link setDecorations}.
          */
-        export function createDecorationType(): TextDocumentDecorationType
+        export function createDecorationType(config?: TextDocumentDecorationType['config']): TextDocumentDecorationType
 
         /**
          * Creates a statusBarItemType that can be used to add a status bar item to
