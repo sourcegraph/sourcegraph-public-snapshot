@@ -83,7 +83,7 @@ tinygradient@^1.1.5:
 
 	r := strings.NewReader(yarnLockFile)
 
-	deps, err := parseYarnLockFile(r)
+	deps, graph, err := parseYarnLockFile(r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,8 @@ gradient-string 2.0.1
 has-flag 4.0.0
 supports-color 7.2.0
 tinycolor2 1.4.2
-tinygradient 1.1.5 `)
+tinygradient 1.1.5
+`)
 
 	buf := bytes.Buffer{}
 	for _, dep := range deps {
@@ -109,6 +110,24 @@ tinygradient 1.1.5 `)
 	got := buf.Bytes()
 
 	if d := cmp.Diff(want, got); d != "" {
+		t.Fatalf("+want,-got\n%s", d)
+	}
+
+	wantGraph := `npm/gradient-string:
+	npm/chalk:
+		npm/ansi-styles:
+			npm/color-convert:
+				npm/color-name
+		npm/supports-color:
+			npm/has-flag
+	npm/tinygradient:
+		npm/tinycolor2
+`
+
+	gotGraph := printGraph(graph)
+	fmt.Println(gotGraph)
+
+	if d := cmp.Diff(wantGraph, gotGraph); d != "" {
 		t.Fatalf("+want,-got\n%s", d)
 	}
 }
