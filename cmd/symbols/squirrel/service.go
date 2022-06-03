@@ -77,15 +77,24 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 		if found == nil {
 			return nil, nil
 		}
-		rnge := nodeToRange(found.Node)
 		def = &types.RepoCommitPathMaybeRange{
 			RepoCommitPath: found.RepoCommitPath,
-			Range:          &rnge,
+		}
+		if found.Node != nil {
+			rnge := nodeToRange(found.Node)
+			def.Range = &rnge
 		}
 	}
 
 	if def == nil {
 		return nil, nil
+	}
+
+	if def.Range == nil {
+		return &types.SymbolInfo{
+			Definition: *def,
+			Hover:      nil,
+		}, nil
 	}
 
 	// Then get the hover if it exists.

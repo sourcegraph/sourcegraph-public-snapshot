@@ -371,7 +371,11 @@ func (t *Tuple) String() string {
 func lazyNodeStringer(node **Node) func() fmt.Stringer {
 	return func() fmt.Stringer {
 		if node != nil && *node != nil {
-			return String(fmt.Sprintf("%s ...%s...", (*node).Type(), snippet(*node)))
+			if (*node).Node != nil {
+				return String(fmt.Sprintf("%s ...%s...", (*node).Type(), snippet(*node)))
+			} else {
+				return String(fmt.Sprintf("%s", (*node).RepoCommitPath.Path))
+			}
 		} else {
 			return String("<nil>")
 		}

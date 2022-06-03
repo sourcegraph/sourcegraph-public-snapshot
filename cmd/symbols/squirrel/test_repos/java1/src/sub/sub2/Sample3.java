@@ -1,5 +1,6 @@
 package sub.subsub;
 
+//     vvv src/sub path
 //         vv C1 ref
 import sub.C1;
 

@@ -6,6 +6,10 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	sitter "github.com/smacker/go-tree-sitter"
+
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node, err error) {
@@ -30,6 +34,48 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 
 			case "program":
 				return squirrel.getDefInImportsOrCurrentPackageJava(ctx, swapNode(node, cur), ident)
+
+			case "import_declaration":
+				program := cur.Parent()
+				if program == nil {
+					squirrel.breadcrumb(node, "getDefJava: expected parent for import_declaration")
+					return nil, nil
+				}
+				if program.Type() != "program" {
+					squirrel.breadcrumb(node, "getDefJava: expected parent of import_declaration to be program")
+				}
+				root, err := getProjectRoot(swapNode(node, program))
+				if err != nil {
+					return nil, err
+				}
+				allComponents, err := getPath(swapNode(node, cur))
+				if err != nil {
+					return nil, err
+				}
+				components, err := getPathUpTo(swapNode(node, cur), node.Node)
+				if err != nil {
+					return nil, err
+				}
+				if len(components) == len(allComponents) {
+					return squirrel.symbolSearchOne(
+						ctx,
+						node.RepoCommitPath.Repo,
+						node.RepoCommitPath.Commit,
+						[]string{fmt.Sprintf("^%s/%s", filepath.Join(root...), filepath.Join(components[:len(components)-1]...))},
+						ident,
+					)
+				}
+				dir := filepath.Join(append(root, components...)...)
+				return &Node{
+					RepoCommitPath: types.RepoCommitPath{
+						Repo:   node.RepoCommitPath.Repo,
+						Commit: node.RepoCommitPath.Commit,
+						Path:   dir,
+					},
+					Node:     nil,
+					Contents: node.Contents,
+					LangSpec: node.LangSpec,
+				}, nil
 
 			// Check for field access
 			case "field_access":
@@ -512,33 +558,10 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 func (squirrel *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context.Context, program Node, ident string) (ret *Node, err error) {
 	defer squirrel.onCall(program, &Tuple{String(program.Type()), String(ident)}, lazyNodeStringer(&ret))()
 
-	getPath := func(node Node) ([]string, error) {
-		query := `(identifier) @ident`
-		captures, err := allCaptures(query, node)
-		if err != nil {
-			return nil, err
-		}
-		sort.Slice(captures, func(i, j int) bool {
-			return captures[i].StartByte() < captures[j].StartByte()
-		})
-		components := []string{}
-		for _, capture := range captures {
-			components = append(components, capture.Content(capture.Contents))
-		}
-		return components, nil
-	}
-
 	// Determine project root
-	root := strings.Split(filepath.Dir(program.RepoCommitPath.Path), "/")
-	for _, pkgNode := range children(program.Node) {
-		if pkgNode.Type() != "package_declaration" {
-			continue
-		}
-		pkg, err := getPath(swapNode(program, pkgNode))
-		if err != nil {
-			return nil, err
-		}
-		root = root[:len(root)-len(pkg)]
+	root, err := getProjectRoot(program)
+	if err != nil {
+		return nil, err
 	}
 
 	// Collect imports
@@ -617,6 +640,56 @@ func (squirrel *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context
 	}
 
 	return nil, nil
+}
+
+func getProjectRoot(program Node) ([]string, error) {
+	root := strings.Split(filepath.Dir(program.RepoCommitPath.Path), "/")
+	for _, pkgNode := range children(program.Node) {
+		if pkgNode.Type() != "package_declaration" {
+			continue
+		}
+		pkg, err := getPath(swapNode(program, pkgNode))
+		if err != nil {
+			return nil, err
+		}
+		root = root[:len(root)-len(pkg)]
+	}
+	return root, nil
+}
+
+func getPath(node Node) ([]string, error) {
+	query := `(identifier) @ident`
+	captures, err := allCaptures(query, node)
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(captures, func(i, j int) bool {
+		return captures[i].StartByte() < captures[j].StartByte()
+	})
+	components := []string{}
+	for _, capture := range captures {
+		components = append(components, capture.Content(capture.Contents))
+	}
+	return components, nil
+}
+
+func getPathUpTo(node Node, component *sitter.Node) ([]string, error) {
+	query := `(identifier) @ident`
+	captures, err := allCaptures(query, node)
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(captures, func(i, j int) bool {
+		return captures[i].StartByte() < captures[j].StartByte()
+	})
+	components := []string{}
+	for _, capture := range captures {
+		components = append(components, capture.Content(capture.Contents))
+		if nodeId(capture.Node) == nodeId(component) {
+			break
+		}
+	}
+	return components, nil
 }
 
 func getSuperclassJava(declaration Node) *Node {
