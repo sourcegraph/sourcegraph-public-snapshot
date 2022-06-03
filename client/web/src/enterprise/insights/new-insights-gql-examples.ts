@@ -17,8 +17,8 @@ export const GET_INSIGHT_CONFIGURATIONS = gql`
                 isFrozen
                 filters
 
-                configuration {
-                    ... on SearchBasedInsightConfiguration {
+                data {
+                    ... on SearchBasedInsightInfo {
                         series {
                             id
                             title
@@ -28,8 +28,8 @@ export const GET_INSIGHT_CONFIGURATIONS = gql`
                         }
                     }
 
-                   # All other insight types don't have important
-                   # settings for the dashboard page mount
+                    # All other insight types don't have important
+                    # settings for the dashboard page mount
                 }
             }
         }
@@ -51,8 +51,8 @@ export const GET_INSIGHT_DATA = gql`
                 # Since we're carrying only about insight data here
                 # we use data separation here SeriesLikeInsight and
                 # CategoricalLikeInsight interfaces
-                configuration {
-                    ... on SeriesLikeInsight {
+                data {
+                    ... on SeriesLikeData {
                         series {
                             id
                             title
@@ -72,8 +72,8 @@ export const GET_INSIGHT_DATA = gql`
                         }
                     }
 
-                    ... on CategoricalLikeInsight {
-                        data {
+                    ... on CategoricalLikeData {
+                        categories {
                             value
                             title
                             color
@@ -109,8 +109,8 @@ export const GET_INSIGHT_EDIT_INFORMATION = gql`
                 # to separate them in a similar way in API for consumers
                 # As you can see there is no FE/consumer mapping here between
                 # insight series and its configuration
-                configuration {
-                    ... on SearchBasedInsightConfiguration {
+                data {
+                    ... on SearchBasedInsightInfo {
                         series {
                             id
                             title
@@ -126,13 +126,13 @@ export const GET_INSIGHT_EDIT_INFORMATION = gql`
                         }
                     }
 
-                    ... on CaptureGroupInsightConfiguration {
+                    ... on CaptureGroupInsightInfo {
                         query
                         repositories
                         timeScope
                     }
 
-                    ... on LangStatsInsightConfiguration {
+                    ... on LangStatsInsightInfo {
                         otherThreshold
                         repositories
                     }

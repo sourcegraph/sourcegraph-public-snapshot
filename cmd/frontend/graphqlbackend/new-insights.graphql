@@ -17,15 +17,15 @@ type NewInsightConnection {
 
 # ---------- Base Insight types ----------- #
 interface BaseInsight {
+    # id title and all other shared across all insights fields
     id: ID!
-    # title and all other shared across all insight fields
     title: String!
     isFrozen: Boolean!
     filters: NewInsightFilters
     dashboards(id: ID, first: Int, after: String): InsightsDashboardConnection
 
-    # Insight-define information
-    configuration: BaseInsightConfiguration!
+    # Specific info based on insight and data types
+    data: BaseInsightInfo!
 }
 
 type NewInsightFilters {
@@ -34,32 +34,38 @@ type NewInsightFilters {
     searchContexts: SearchContextConnection
 }
 
-union BaseInsightConfiguration =
-    SearchBasedInsightConfiguration |
-    CaptureGroupInsightConfiguration |
-    LangStatsInsightConfiguration
+union BaseInsightInfo =
+    SearchBasedInsightInfo |
+    CaptureGroupInsightInfo |
+    LangStatsInsightInfo
 
 # These two (SeriesLikeInsight and CategoricalLikeInsight) are
 # kind of synthetic interfaces that we introduce in order to
 # simplify data querying in consumers.
 #
 # See client/web/src/enterprise/insights/new-insights-gql-examples.ts
-interface SeriesLikeInsight {
+interface SeriesLikeData {
+    # Standard list of series (data that represent moving over time)
     series: [NewInsightSeries!]!
+
+    # Additional series API that provides snapshots for all series in
+    # a particular moment of time
+    seriesSlice(x: DateTime!): [NewInsightCategoricalDatum!]
 }
 
-interface CategoricalLikeInsight {
-    data: [NewInsightCategoricalDatum!]!
+interface CategoricalLikeData {
+    categories: [NewInsightCategoricalDatum!]!
 }
 
 # --------- Insight configurations  ------------ #
-type SearchBasedInsightConfiguration implements SeriesLikeInsight {
+type SearchBasedInsightInfo implements SeriesLikeData {
     # All important to the edit UI (insight configurations) for Search-Based
     # insight fields are contained inside of series.
     series: [NewInsightSeries!]!
+    seriesSlice(x: DateTime!): [NewInsightCategoricalDatum!]
 }
 
-type CaptureGroupInsightConfiguration implements SeriesLikeInsight {
+type CaptureGroupInsightInfo implements SeriesLikeData {
     # In Capture Group insight there is no a performant way to get
     # insight configuration from series because series here are generated
     # so we have to extract vital settings from the series.
@@ -67,15 +73,16 @@ type CaptureGroupInsightConfiguration implements SeriesLikeInsight {
     repositories: [String!]!
     timeScope: InsightTimeScope!
     series: [NewInsightSeries!]!
+    seriesSlice(x: DateTime!): [NewInsightCategoricalDatum!]
 }
 
-type LangStatsInsightConfiguration implements CategoricalLikeInsight {
+type LangStatsInsightInfo implements CategoricalLikeData {
     # Since Lang Stats insight as any other insights doesn't have series
     # we provide setting data on the top level.
     repositories: [String!]!
     otherThreshold: Float!
     chartType: CategoricalLikeChartTYpe
-    data: [NewInsightCategoricalDatum!]!
+    categories: [NewInsightCategoricalDatum!]!
 }
 
 # --------- Series-like data types -------------- #
@@ -87,7 +94,6 @@ type NewInsightSeries implements Node {
     id: ID!
     title: String!
     query: String!
-
     visualSettings: NewInsightSeriesVisualSettings!
     repositoryScope: InsightRepositoryScope!
     timeScope: InsightTimeScope!
