@@ -51,11 +51,11 @@ gcloud secrets versions access latest --secret=e2e-builder-sa-key --quiet --proj
 
 echo "--- packer build"
 # Copy files into workspace.
+cp .tool-versions "$OUTPUT"
 pushd ./enterprise/cmd/executor/vm-image 1>/dev/null
 cp executor.json "$OUTPUT"
 cp install.sh "$OUTPUT"
 cp -R ignite-ubuntu "$OUTPUT"
-cp .tool-versions "$OUTPUT"
 popd 1>/dev/null
 
 export NAME
