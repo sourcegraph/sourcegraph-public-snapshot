@@ -37,7 +37,7 @@ mkdir -p linux-amd64
 # Copy binary into new folder
 cp "$bin_name" linux-amd64/executor
 sha256sum linux-amd64/executor >>linux-amd64/executor_SHA256SUM
-cd ../../..
+cd ../../../..
 # Upload the new release folder
 echo "--- upload binary artifacts"
 gsutil cp -r artifacts/executor gs://sourcegraph-artifacts
@@ -52,7 +52,7 @@ echo "--- packer build"
 cp executor.json "$OUTPUT"
 cp install.sh "$OUTPUT"
 cp -R ignite-ubuntu "$OUTPUT"
-cp ../../../.tool-versions "$OUTPUT"
+cp ../../../../.tool-versions "$OUTPUT"
 
 export NAME
 NAME=executor-$(git log -n1 --pretty=format:%h)-${BUILDKITE_BUILD_NUMBER}
