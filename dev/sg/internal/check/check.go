@@ -14,9 +14,58 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type Check[Args any] struct {
+	Name        string
+	Description string
+
+	// Check must be implemented to execute the check. Should be run using RunCheck.
+	Check ActionFunc[Args]
+	// Fix can be implemented to fix issues with this check.
+	Fix ActionFunc[Args]
+	// Enabled can be implemented to indicate when this checker should be skipped.
+	Enabled EnableFunc[Args]
+
+	// checkErr preserves the state of the most recent check run.
+	checkErr error
+	checkRun bool
+}
+
+// RunCheck should be used to run a check and set its results onto the Check itself.
+func (c *Check[Args]) RunCheck(ctx context.Context, cio IO, args Args) error {
+	c.checkRun = true
+	c.checkErr = c.Check(ctx, cio, args)
+	return c.checkErr
+}
+
+// IsMet indicates if this check has been run, and if it has errored. RunCheck should be
+// called to update state.
+func (c *Check[Args]) IsMet() bool {
+	return c.checkRun && c.checkErr == nil
+}
+
+// Category is a set of checks.
+type Category[Args any] struct {
+	Name        string
+	Description string
+	Checks      []*Check[Args]
+
+	// Enabled can be implemented to indicate when this checker should be skipped.
+	Enabled EnableFunc[Args]
+}
+
+// HasFixable indicates if this category has any fixable checks.
+func (c *Category[Args]) HasFixable() bool {
+	for _, c := range c.Checks {
+		if c.Fix != nil {
+			return true
+		}
+	}
+	return false
+}
+
 type CheckFunc func(context.Context) error
 
-func InPath(cmd string) func(context.Context) error {
+func InPath(cmd string) CheckFunc {
 	return func(ctx context.Context) error {
 		hashCmd := fmt.Sprintf("hash %s 2>/dev/null", cmd)
 		_, err := usershell.CombinedExec(ctx, hashCmd)
@@ -27,7 +76,7 @@ func InPath(cmd string) func(context.Context) error {
 	}
 }
 
-func CommandExitCode(cmd string, exitCode int) func(context.Context) error {
+func CommandExitCode(cmd string, exitCode int) CheckFunc {
 	return func(ctx context.Context) error {
 		cmd := usershell.Cmd(ctx, cmd)
 		err := cmd.Run()
@@ -42,24 +91,7 @@ func CommandExitCode(cmd string, exitCode int) func(context.Context) error {
 	}
 }
 
-func Version(cmdName, haveVersion, versionConstraint string) error {
-	c, err := semver.NewConstraint(versionConstraint)
-	if err != nil {
-		return err
-	}
-
-	version, err := semver.NewVersion(haveVersion)
-	if err != nil {
-		return errors.Newf("cannot decode version in %q: %w", haveVersion, err)
-	}
-
-	if !c.Check(version) {
-		return errors.Newf("version %q from %q does not match constraint %q", haveVersion, cmdName, versionConstraint)
-	}
-	return nil
-}
-
-func CommandOutputContains(cmd, contains string) func(context.Context) error {
+func CommandOutputContains(cmd, contains string) CheckFunc {
 	return func(ctx context.Context) error {
 		out, _ := usershell.CombinedExec(ctx, cmd)
 		if !strings.Contains(string(out), contains) {
@@ -103,4 +135,21 @@ func HasUbuntuLibrary(name string) func(context.Context) error {
 		_, err := usershell.CombinedExec(ctx, fmt.Sprintf("dpkg -s %s", name))
 		return errors.Newf("dpkg: %w", err)
 	}
+}
+
+func Version(cmdName, haveVersion, versionConstraint string) error {
+	c, err := semver.NewConstraint(versionConstraint)
+	if err != nil {
+		return err
+	}
+
+	version, err := semver.NewVersion(haveVersion)
+	if err != nil {
+		return errors.Newf("cannot decode version in %q: %w", haveVersion, err)
+	}
+
+	if !c.Check(version) {
+		return errors.Newf("version %q from %q does not match constraint %q", haveVersion, cmdName, versionConstraint)
+	}
+	return nil
 }
