@@ -67,7 +67,7 @@
     {
       "type": "shell",
       "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E bash {{ .Path }}",
-      "script": "build.sh",
+      "script": "install.sh",
       "override": {
         "gcp": {
           "environment_vars": ["SRC_CLI_VERSION={{user `srcCliVersion`}}", "PLATFORM_TYPE=gcp"]
