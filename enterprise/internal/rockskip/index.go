@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/dboslee/lru"
 	"github.com/inconshreveable/log15"
 	pg "github.com/lib/pq"
-	"k8s.io/utils/lru"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -331,11 +331,11 @@ type indexRequest struct {
 }
 
 type symbolIdCache struct {
-	cache *lru.Cache
+	cache *lru.Cache[string, int]
 }
 
 func newSymbolIdCache(size int) *symbolIdCache {
-	return &symbolIdCache{cache: lru.New(size)}
+	return &symbolIdCache{cache: lru.New[string, int](lru.WithCapacity(size))}
 }
 
 func (s *symbolIdCache) get(path, symbol string) (int, bool) {
@@ -343,11 +343,11 @@ func (s *symbolIdCache) get(path, symbol string) (int, bool) {
 	if !ok {
 		return 0, false
 	}
-	return v.(int), true
+	return v, true
 }
 
 func (s *symbolIdCache) set(path, symbol string, id int) {
-	s.cache.Add(symbolIdCacheKey(path, symbol), id)
+	s.cache.Set(symbolIdCacheKey(path, symbol), id)
 }
 
 func symbolIdCacheKey(path, symbol string) string {
@@ -355,11 +355,11 @@ func symbolIdCacheKey(path, symbol string) string {
 }
 
 type pathSymbolsCache struct {
-	cache *lru.Cache
+	cache *lru.Cache[string, map[string]struct{}]
 }
 
 func newPathSymbolsCache(size int) *pathSymbolsCache {
-	return &pathSymbolsCache{cache: lru.New(size)}
+	return &pathSymbolsCache{cache: lru.New[string, map[string]struct{}](lru.WithCapacity(size))}
 }
 
 func (s *pathSymbolsCache) get(path string) (map[string]struct{}, bool) {
@@ -367,9 +367,9 @@ func (s *pathSymbolsCache) get(path string) (map[string]struct{}, bool) {
 	if !ok {
 		return nil, false
 	}
-	return v.(map[string]struct{}), true
+	return v, true
 }
 
 func (s *pathSymbolsCache) set(path string, symbols map[string]struct{}) {
-	s.cache.Add(path, symbols)
+	s.cache.Set(path, symbols)
 }
