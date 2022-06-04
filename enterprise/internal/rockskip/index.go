@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/amit7itz/goset"
 	"github.com/dboslee/lru"
 	"github.com/inconshreveable/log15"
 	pg "github.com/lib/pq"
@@ -134,9 +135,9 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 
 		getSymbols := func(commit string, paths []string) (map[string]map[string]struct{}, error) {
 			pathToSymbols := map[string]map[string]struct{}{}
-			pathsToFetchSet := map[string]struct{}{}
+			pathsToFetch := goset.NewSet[string]()
 			for _, path := range paths {
-				pathsToFetchSet[path] = struct{}{}
+				pathsToFetch.Add(path)
 			}
 
 			// Don't fetch files that are already in the cache.
@@ -144,18 +145,13 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 				for _, path := range paths {
 					if symbols, ok := pathSymbolsCache.Get(path); ok {
 						pathToSymbols[path] = symbols
-						delete(pathsToFetchSet, path)
+						pathsToFetch.Remove(path)
 					}
 				}
 			}
 
-			pathsToFetch := []string{}
-			for path := range pathsToFetchSet {
-				pathsToFetch = append(pathsToFetch, path)
-			}
-
 			tasklog.Start("ArchiveEach")
-			err = s.git.ArchiveEach(repo, commit, pathsToFetch, func(path string, contents []byte) error {
+			err = s.git.ArchiveEach(repo, commit, pathsToFetch.Items(), func(path string, contents []byte) error {
 				defer tasklog.Continue("ArchiveEach")
 
 				tasklog.Start("parse")
