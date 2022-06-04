@@ -77,8 +77,8 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 
 	parse := s.createParser()
 
-	symbolCache := newSymbolIdCache(s.symbolsCacheSize)
-	pathSymbolsCache := newPathSymbolsCache(s.pathSymbolsCacheSize)
+	symbolCache := lru.New[pathSymbol, int](lru.WithCapacity(s.symbolsCacheSize))
+	pathSymbolsCache := lru.New[string, map[string]struct{}](lru.WithCapacity(s.pathSymbolsCacheSize))
 
 	tasklog.Start("Log")
 	entriesIndexed := 0
@@ -142,7 +142,7 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 			// Don't fetch files that are already in the cache.
 			if commit == tipCommitHash {
 				for _, path := range paths {
-					if symbols, ok := pathSymbolsCache.get(path); ok {
+					if symbols, ok := pathSymbolsCache.Get(path); ok {
 						pathToSymbols[path] = symbols
 						delete(pathsToFetchSet, path)
 					}
@@ -179,7 +179,7 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 			// Cache the symbols we just parsed.
 			if commit != tipCommitHash {
 				for path, symbols := range pathToSymbols {
-					pathSymbolsCache.set(path, symbols)
+					pathSymbolsCache.Set(path, symbols)
 				}
 			}
 
@@ -224,7 +224,7 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 			for symbol := range symbols {
 				id := 0
 				ok := false
-				if id, ok = symbolCache.get(path, symbol); !ok {
+				if id, ok = symbolCache.Get(pathSymbol{path: path, symbol: symbol}); !ok {
 					tasklog.Start("GetSymbol")
 					found := false
 					id, found, err = GetSymbol(ctx, tx, repoId, path, symbol, hops)
@@ -283,7 +283,7 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 	return nil
 }
 
-func BatchInsertSymbols(ctx context.Context, tasklog *TaskLog, tx *sql.Tx, repoId, commit int, symbolCache *symbolIdCache, symbols map[string]map[string]struct{}) error {
+func BatchInsertSymbols(ctx context.Context, tasklog *TaskLog, tx *sql.Tx, repoId, commit int, symbolCache *lru.Cache[pathSymbol, int], symbols map[string]map[string]struct{}) error {
 	callback := func(inserter *batch.Inserter) error {
 		for path, pathSymbols := range symbols {
 			for symbol := range pathSymbols {
@@ -303,7 +303,7 @@ func BatchInsertSymbols(ctx context.Context, tasklog *TaskLog, tx *sql.Tx, repoI
 		if err := rows.Scan(&path, &symbol, &id); err != nil {
 			return err
 		}
-		symbolCache.set(path, symbol, id)
+		symbolCache.Set(pathSymbol{path: path, symbol: symbol}, id)
 		return nil
 	}
 
@@ -330,46 +330,7 @@ type indexRequest struct {
 	done chan struct{}
 }
 
-type symbolIdCache struct {
-	cache *lru.Cache[string, int]
-}
-
-func newSymbolIdCache(size int) *symbolIdCache {
-	return &symbolIdCache{cache: lru.New[string, int](lru.WithCapacity(size))}
-}
-
-func (s *symbolIdCache) get(path, symbol string) (int, bool) {
-	v, ok := s.cache.Get(symbolIdCacheKey(path, symbol))
-	if !ok {
-		return 0, false
-	}
-	return v, true
-}
-
-func (s *symbolIdCache) set(path, symbol string, id int) {
-	s.cache.Set(symbolIdCacheKey(path, symbol), id)
-}
-
-func symbolIdCacheKey(path, symbol string) string {
-	return path + ":" + symbol
-}
-
-type pathSymbolsCache struct {
-	cache *lru.Cache[string, map[string]struct{}]
-}
-
-func newPathSymbolsCache(size int) *pathSymbolsCache {
-	return &pathSymbolsCache{cache: lru.New[string, map[string]struct{}](lru.WithCapacity(size))}
-}
-
-func (s *pathSymbolsCache) get(path string) (map[string]struct{}, bool) {
-	v, ok := s.cache.Get(path)
-	if !ok {
-		return nil, false
-	}
-	return v, true
-}
-
-func (s *pathSymbolsCache) set(path string, symbols map[string]struct{}) {
-	s.cache.Set(path, symbols)
+type pathSymbol struct {
+	path   string
+	symbol string
 }
