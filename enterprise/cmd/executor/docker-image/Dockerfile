@@ -17,8 +17,11 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 # Firecracker doesn't work in docker, so disable it by default.
 ENV EXECUTOR_USE_FIRECRACKER=false
 
-# Install git. We use the same version here as we use in gitserver.
-RUN apk add --no-cache 'git>=2.34.1' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main
+# Install git and docker. We use the same version here as we use in gitserver.
+RUN apk add --no-cache \
+    'git>=2.34.1' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main \
+    docker \
+    ca-certificates
 
 # Install src-cli.
 ARG SRC_CLI_VERSION
