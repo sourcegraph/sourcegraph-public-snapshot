@@ -829,7 +829,7 @@ func publishExecutor(version string, skipHashCompare bool) operations.Operation 
 				bk.Cmd(fmt.Sprintf("%s %s", checkDependencySoftFailScript, candidateBuildStep)))
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/release.sh"))
+			bk.Cmd("./enterprise/cmd/executor/vm-image/release.sh"))
 
 		pipeline.AddStep(":packer: :white_check_mark: Publish executor image", stepOpts...)
 	}
