@@ -2,7 +2,7 @@
 
 # This script builds the executor image as a GCP boot disk image and as an AWS AMI.
 
-cd "$(dirname "${BASH_SOURCE[0]}")"
+cd "$(dirname "${BASH_SOURCE[0]}")"/../../../..
 set -eu
 
 OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
@@ -12,7 +12,7 @@ cleanup() {
 trap cleanup EXIT
 
 # Capture src cli version before we reconfigure go environment.
-SRC_CLI_VERSION="$(go run ../../../../internal/cmd/src-cli-version/main.go)"
+SRC_CLI_VERSION="$(go run ./internal/cmd/src-cli-version/main.go)"
 
 # Environment for building linux binaries
 export GO111MODULE=on
@@ -21,14 +21,16 @@ export GOOS=linux
 export CGO_ENABLED=0
 
 echo "--- go build"
+pushd ./enterprise/cmd/executor 1>/dev/null
 pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/executor"
 bin_name="$OUTPUT/$(basename $pkg)"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$bin_name" "$pkg"
+popd 1>/dev/null
 
 echo "--- create binary artifacts"
 # Setup new release folder that contains binary, info text.
-mkdir -p "artifacts/executor/$(git rev-parse HEAD)"
-cd "artifacts/executor/$(git rev-parse HEAD)"
+mkdir -p "enterprise/cmd/executor/vm-image/artifacts/executor/$(git rev-parse HEAD)"
+pushd "enterprise/cmd/executor/vm-image/artifacts/executor/$(git rev-parse HEAD)" 1>/dev/null
 
 echo "executor built from https://github.com/sourcegraph/sourcegraph" >info.txt
 echo >>info.txt
@@ -37,22 +39,24 @@ mkdir -p linux-amd64
 # Copy binary into new folder
 cp "$bin_name" linux-amd64/executor
 sha256sum linux-amd64/executor >>linux-amd64/executor_SHA256SUM
-cd ../../../..
+popd 1>/dev/null
 # Upload the new release folder
 echo "--- upload binary artifacts"
-gsutil cp -r artifacts/executor gs://sourcegraph-artifacts
+gsutil cp -r enterprise/cmd/executor/vm-image/artifacts/executor gs://sourcegraph-artifacts
 gsutil iam ch allUsers:objectViewer gs://sourcegraph-artifacts
 
+# Fetch the e2e builder service account so we can spawn a packer VM.
 echo "--- gcp secret"
 gcloud secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"$OUTPUT/builder-sa-key.json"
 
 echo "--- packer build"
-
 # Copy files into workspace.
+pushd ./enterprise/cmd/executor/vm-images 1>/dev/null
 cp executor.json "$OUTPUT"
 cp install.sh "$OUTPUT"
 cp -R ignite-ubuntu "$OUTPUT"
-cp ../../../../.tool-versions "$OUTPUT"
+cp .tool-versions "$OUTPUT"
+popd 1>/dev/null
 
 export NAME
 NAME=executor-$(git log -n1 --pretty=format:%h)-${BUILDKITE_BUILD_NUMBER}
