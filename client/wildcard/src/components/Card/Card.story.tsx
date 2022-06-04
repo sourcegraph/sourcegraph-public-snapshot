@@ -4,6 +4,7 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { H1, H2, H3, Text } from '..'
 import { Button } from '../Button'
 import { Grid } from '../Grid'
 
@@ -44,13 +45,13 @@ export default config
 
 export const Simple: Story = () => (
     <>
-        <h1>Cards</h1>
-        <p>
+        <H1>Cards</H1>
+        <Text>
             A card is a flexible and extensible content container. It includes options for headers and footers, a wide
             variety of content, contextual background colors, and powerful display options.{' '}
-        </p>
+        </Text>
 
-        <h2>Examples</h2>
+        <H2>Examples</H2>
 
         <Grid className="mb-3" columnCount={1}>
             <Card>
@@ -105,10 +106,10 @@ const cardItem = (
 
 export const InteractiveCard: Story = () => (
     <>
-        <h2>Interactive Cards</h2>
+        <H2>Interactive Cards</H2>
         {cardItem}
 
-        <h3 className="mt-4">Cards List</h3>
+        <H3 className="mt-4">Cards List</H3>
 
         <div className="d-flex flex-column">
             {cardItem}

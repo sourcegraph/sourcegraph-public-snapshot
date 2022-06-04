@@ -6,7 +6,7 @@ import * as H from 'history'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Alert, Link } from '@sourcegraph/wildcard'
+import { Button, Alert, Link, Code } from '@sourcegraph/wildcard'
 
 import { BatchSpecFields } from '../../../graphql-operations'
 import { MultiSelectContext } from '../MultiSelectContext'
@@ -24,16 +24,13 @@ export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
     history: H.History
 }
 
-export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateBatchChangeAlertProps> = ({
-    specID,
-    toBeArchived,
-    batchChange,
-    viewerCanAdminister,
-    history,
-    telemetryService,
-}) => {
+export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
+    React.PropsWithChildren<CreateUpdateBatchChangeAlertProps>
+> = ({ specID, toBeArchived, batchChange, viewerCanAdminister, history, telemetryService }) => {
     const batchChangeID = batchChange?.id
 
+    // `BatchChangePreviewContext` is responsible for managing the overrideable
+    // publication states for preview changesets on the clientside.
     const { publicationStates } = useContext(BatchChangePreviewContext)
     const { selected } = useContext(MultiSelectContext)
 
@@ -92,7 +89,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                     ) : (
                         'Review the proposed changesets below.'
                     )}{' '}
-                    Click 'Apply' or run <code>src batch apply</code> against your batch spec to{' '}
+                    Click 'Apply' or run <Code>src batch apply</Code> against your batch spec to{' '}
                     {batchChange ? 'update' : 'create'} the batch change and perform the indicated action on each
                     changeset. Select a changeset and modify the action to customize the publication state of each or
                     all changesets.

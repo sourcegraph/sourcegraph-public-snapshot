@@ -3,7 +3,7 @@ import { FunctionComponent, useCallback, useState } from 'react'
 import { Subject } from 'rxjs'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Alert } from '@sourcegraph/wildcard'
+import { Button, Alert, Input, Label } from '@sourcegraph/wildcard'
 
 import { useEnqueueIndexJob } from '../hooks/useEnqueueIndexJob'
 
@@ -18,7 +18,7 @@ enum State {
     Queued,
 }
 
-export const EnqueueForm: FunctionComponent<EnqueueFormProps> = ({ repoId, querySubject }) => {
+export const EnqueueForm: FunctionComponent<React.PropsWithChildren<EnqueueFormProps>> = ({ repoId, querySubject }) => {
     const [revlike, setRevlike] = useState('HEAD')
     const [state, setState] = useState(() => State.Idle)
     const [queueResult, setQueueResult] = useState<number>()
@@ -53,12 +53,11 @@ export const EnqueueForm: FunctionComponent<EnqueueFormProps> = ({ repoId, query
             {enqueueError && <ErrorAlert prefix="Error enqueueing index job" error={enqueueError} />}
 
             <div className="form-inline">
-                <label htmlFor="revlike">Git revlike</label>
+                <Label htmlFor="revlike">Git revlike</Label>
 
-                <input
-                    type="text"
+                <Input
                     id="revlike"
-                    className="form-control ml-2"
+                    className="ml-2"
                     value={revlike}
                     onChange={event => setRevlike(event.target.value)}
                 />

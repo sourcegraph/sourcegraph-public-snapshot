@@ -1,11 +1,13 @@
 import React from 'react'
 
+import { Text } from '@sourcegraph/wildcard'
+
 import styles from './CloseChangesetsListEmptyElement.module.scss'
 
-export const CloseChangesetsListEmptyElement: React.FunctionComponent<{}> = () => (
+export const CloseChangesetsListEmptyElement: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className={styles.closeChangesetsListEmptyElementBody}>
-        <p className="text-center text-muted font-weight-normal">
+        <Text alignment="center" weight="regular" className="text-muted">
             Closing this batch change will not alter changesets and no changesets will remain open.
-        </p>
+        </Text>
     </div>
 )

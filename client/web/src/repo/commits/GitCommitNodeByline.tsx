@@ -21,7 +21,7 @@ interface Props {
 /**
  * Displays a Git commit's author and committer (with avatars if available) and the dates.
  */
-export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
+export const GitCommitNodeByline: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     author,
     committer,
     className = '',

@@ -4,7 +4,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { asError } from '@sourcegraph/common'
-import { Button, LoadingSpinner, useObservable, Modal } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useObservable, Modal, H2 } from '@sourcegraph/wildcard'
 
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext, CustomInsightDashboard } from '../../../../../core'
@@ -21,7 +21,7 @@ export interface AddInsightModalProps {
     onClose: () => void
 }
 
-export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = props => {
+export const AddInsightModal: React.FunctionComponent<React.PropsWithChildren<AddInsightModalProps>> = props => {
     const { dashboard, onClose } = props
     const { getAccessibleInsightsList, assignInsightsToDashboard } = useContext(CodeInsightsBackendContext)
 
@@ -66,9 +66,9 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
                 <CloseIcon />
             </Button>
 
-            <h2 className="mb-3">
+            <H2 className="mb-3">
                 Add insight to <q>{dashboard.title}</q>
-            </h2>
+            </H2>
 
             {!insights.length && <span>There are no insights for this dashboard.</span>}
 

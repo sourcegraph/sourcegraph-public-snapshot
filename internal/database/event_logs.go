@@ -28,8 +28,11 @@ const (
 )
 
 type EventLogStore interface {
-	// AggregatedCodeIntelEvents calculates CodeIntelAggregatedEvent for each every unique event type related to code intel.
+	// AggregatedCodeIntelEvents calculates CodeIntelAggregatedEvent for each unique event type related to code intel.
 	AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error)
+
+	// AggregatedCodeIntelInvestigationEvents calculates CodeIntelAggregatedInvestigationEvent for each unique investigation type.
+	AggregatedCodeIntelInvestigationEvents(ctx context.Context) ([]types.CodeIntelAggregatedInvestigationEvent, error)
 
 	// AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
 	AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error)
@@ -64,6 +67,9 @@ type EventLogStore interface {
 	// administration (upload, index records, index configuration, etc) in the past week.
 	CodeIntelligenceSettingsPageViewCount(ctx context.Context) (int, error)
 
+	// RequestsByLanguage returns a map of language names to the number of requests of precise support for that language.
+	RequestsByLanguage(ctx context.Context) (map[string]int, error)
+
 	// CodeIntelligenceWAUs returns the WAU (current week) with any (precise or search-based) code intelligence event.
 	CodeIntelligenceWAUs(ctx context.Context) (int, error)
 
@@ -95,6 +101,9 @@ type EventLogStore interface {
 	// a given type. The value of `now` should be the current time in UTC. Returns an array of length `periods`, with one
 	// entry for each period in the time span.
 	CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error)
+
+	// CountUsersWithSetting returns the number of users wtih the given temporary setting set to the given value.
+	CountUsersWithSetting(ctx context.Context, setting string, value any) (int, error)
 
 	Insert(ctx context.Context, e *Event) error
 
@@ -128,12 +137,7 @@ type eventLogStore struct {
 	*basestore.Store
 }
 
-// EventLogs instantiates and returns a new EventLogStore with prepared statements.
-func EventLogs(db dbutil.DB) EventLogStore {
-	return &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-// NewEventLogStoreWithDB instantiates and returns a new EventLogStore using the other store handle.
+// EventLogsWith instantiates and returns a new EventLogStore using the other store handle.
 func EventLogsWith(other basestore.ShareableStore) EventLogStore {
 	return &eventLogStore{Store: basestore.NewWithHandle(other.Handle())}
 }
@@ -196,14 +200,14 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 		return json.RawMessage(`{}`)
 	}
 
-	rowValues := make(chan []interface{}, len(events))
+	rowValues := make(chan []any, len(events))
 	for _, event := range events {
 		featureFlags, err := json.Marshal(event.FeatureFlags)
 		if err != nil {
 			return err
 		}
 
-		rowValues <- []interface{}{
+		rowValues <- []any{
 			event.Name,
 			// 🚨 SECURITY: It is important to sanitize event URL before
 			// being stored to the database to help guarantee no malicious
@@ -453,6 +457,16 @@ type EventArgumentMatch struct {
 type PercentileValue struct {
 	Start  time.Time
 	Values []float64
+}
+
+func (l *eventLogStore) CountUsersWithSetting(ctx context.Context, setting string, value any) (int, error) {
+	count, _, err := basestore.ScanFirstInt(l.Store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM temporary_settings WHERE %s <@ contents`, jsonSettingFragment(setting, value))))
+	return count, err
+}
+
+func jsonSettingFragment(setting string, value any) string {
+	raw, _ := json.Marshal(map[string]any{setting: value})
+	return string(raw)
 }
 
 func (l *eventLogStore) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
@@ -1041,7 +1055,7 @@ func (l *eventLogStore) aggregatedCodeIntelEvents(ctx context.Context, now time.
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		var event types.CodeIntelAggregatedEvent
@@ -1057,10 +1071,6 @@ func (l *eventLogStore) aggregatedCodeIntelEvents(ctx context.Context, now time.
 		}
 
 		events = append(events, event)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
 	}
 
 	return events, nil
@@ -1085,7 +1095,73 @@ SELECT
   current_week,
   COUNT(*) AS total_week,
   COUNT(DISTINCT user_id) AS uniques_week
-FROM events GROUP BY name, current_week, language_id;
+FROM events
+GROUP BY name, current_week, language_id
+ORDER BY name;
+`
+
+func (l *eventLogStore) AggregatedCodeIntelInvestigationEvents(ctx context.Context) ([]types.CodeIntelAggregatedInvestigationEvent, error) {
+	return l.aggregatedCodeIntelInvestigationEvents(ctx, time.Now().UTC())
+}
+
+func (l *eventLogStore) aggregatedCodeIntelInvestigationEvents(ctx context.Context, now time.Time) (events []types.CodeIntelAggregatedInvestigationEvent, err error) {
+	var eventNames = []string{
+		"CodeIntelligenceIndexerSetupInvestigated",
+		"CodeIntelligenceUploadErrorInvestigated",
+		"CodeIntelligenceIndexErrorInvestigated",
+	}
+
+	var eventNameQueries []*sqlf.Query
+	for _, name := range eventNames {
+		eventNameQueries = append(eventNameQueries, sqlf.Sprintf("%s", name))
+	}
+
+	query := sqlf.Sprintf(aggregatedCodeIntelInvestigationEventsQuery, now, now, sqlf.Join(eventNameQueries, ", "))
+
+	rows, err := l.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		var event types.CodeIntelAggregatedInvestigationEvent
+		err := rows.Scan(
+			&event.Name,
+			&event.Week,
+			&event.TotalWeek,
+			&event.UniquesWeek,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		events = append(events, event)
+	}
+
+	return events, nil
+}
+
+var aggregatedCodeIntelInvestigationEventsQuery = `
+-- source: internal/database/event_logs.go:aggregatedCodeIntelInvestigationEvents
+WITH events AS (
+  SELECT
+    name,
+    ` + aggregatedUserIDQueryFragment + ` AS user_id,
+    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week
+  FROM event_logs
+  WHERE
+    timestamp >= ` + makeDateTruncExpression("week", "%s::timestamp") + `
+    AND name IN (%s)
+)
+SELECT
+  name,
+  current_week,
+  COUNT(*) AS total_week,
+  COUNT(DISTINCT user_id) AS uniques_week
+FROM events
+GROUP BY name, current_week
+ORDER BY name;
 `
 
 func (l *eventLogStore) AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error) {
@@ -1276,3 +1352,36 @@ func makeDateTruncExpression(unit, expr string) string {
 
 	return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s))`, unit, expr)
 }
+
+// RequestsByLanguage returns a map of language names to the number of requests of precise support for that language.
+func (l *eventLogStore) RequestsByLanguage(ctx context.Context) (_ map[string]int, err error) {
+	rows, err := l.Query(ctx, sqlf.Sprintf(requestsByLanguageQuery))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	requestsByLanguage := map[string]int{}
+	for rows.Next() {
+		var (
+			language string
+			count    int
+		)
+		if err := rows.Scan(&language, &count); err != nil {
+			return nil, err
+		}
+
+		requestsByLanguage[language] = count
+	}
+
+	return requestsByLanguage, nil
+}
+
+var requestsByLanguageQuery = `
+-- source: internal/database/event_logs.go:RequestsByLanguage
+SELECT
+	language_id,
+	COUNT(*) as count
+FROM codeintel_langugage_support_requests
+GROUP BY language_id
+`

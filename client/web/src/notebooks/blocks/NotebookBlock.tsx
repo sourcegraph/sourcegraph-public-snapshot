@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 
-import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
+import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 
 import { BlockProps } from '..'
 import { isModifierKeyPressed, isMonacoEditorDescendant } from '../notebook/useNotebookEventHandlers'
@@ -22,7 +22,7 @@ interface NotebookBlockProps extends Pick<BlockProps, 'isSelected' | 'isOtherBlo
     focusInput?: () => void
 }
 
-export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
+export const NotebookBlock: React.FunctionComponent<React.PropsWithChildren<NotebookBlockProps>> = ({
     children,
     id,
     className,
@@ -38,7 +38,7 @@ export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
     focusInput,
 }) => {
     const isInputFocused = useIsBlockInputFocused(id)
-    const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
+    const isMacPlatform = useMemo(() => isMacPlatformFunc(), [])
 
     const onEnterBlock = useCallback(() => {
         if (isInputVisible) {

@@ -29,7 +29,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
           src="/img/sourcegraph-logo-light.svg"
         />
         <h2
-          class="d-flex align-items-center mb-4 mt-1 pageHeading"
+          class="h2 d-flex align-items-center mb-4 mt-1 pageHeading"
         >
           Easily search the code you care about.
         </h2>
@@ -74,7 +74,9 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
       <div
         class="leftOrRight signUpWrapper"
       >
-        <h2>
+        <h2
+          class="h2"
+        >
           Create a free account
         </h2>
         <div
@@ -177,7 +179,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             class="form-group d-flex flex-column align-content-start"
           >
             <label
-              class="align-self-start"
+              class="label align-self-start"
               for="email"
             >
               Email
@@ -185,24 +187,29 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             <div
               class="container"
             >
-              <input
-                autocomplete="email"
-                class="form-control"
-                id="email"
-                name="email"
-                placeholder=" "
-                required=""
-                spellcheck="false"
-                type="email"
-                value=""
-              />
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  aria-describedby="email-input-invalid-feedback"
+                  autocomplete="email"
+                  class="form-control with-invalid-icon"
+                  id="email"
+                  name="email"
+                  placeholder=" "
+                  required=""
+                  spellcheck="false"
+                  type="email"
+                  value=""
+                />
+              </div>
             </div>
           </div>
           <div
             class="form-group d-flex flex-column align-content-start"
           >
             <label
-              class="align-self-start"
+              class="label align-self-start"
               for="username"
             >
               Username
@@ -210,27 +217,32 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             <div
               class="container"
             >
-              <input
-                autocapitalize="off"
-                autocomplete="username"
-                class="form-control"
-                id="username"
-                maxlength="255"
-                name="username"
-                pattern="^[\\\\dA-Za-z](?:[\\\\dA-Za-z]|[.-](?=[\\\\dA-Za-z]))*-?$"
-                placeholder=" "
-                required=""
-                spellcheck="false"
-                type="text"
-                value=""
-              />
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  aria-describedby="username-input-invalid-feedback"
+                  autocapitalize="off"
+                  autocomplete="username"
+                  class="form-control with-invalid-icon"
+                  id="username"
+                  maxlength="255"
+                  name="username"
+                  pattern="^[\\\\dA-Za-z](?:[\\\\dA-Za-z]|[.-](?=[\\\\dA-Za-z]))*-?$"
+                  placeholder=" "
+                  required=""
+                  spellcheck="false"
+                  type="text"
+                  value=""
+                />
+              </div>
             </div>
           </div>
           <div
             class="form-group d-flex flex-column align-content-start"
           >
             <label
-              class="align-self-start"
+              class="label align-self-start"
               for="password"
             >
               Password
@@ -238,21 +250,27 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             <div
               class="container"
             >
-              <input
-                autocomplete="new-password"
-                class="form-control"
-                formnovalidate=""
-                id="password"
-                minlength="12"
-                name="password"
-                placeholder=" "
-                required=""
-                type="password"
-                value=""
-              />
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  aria-describedby="password-input-invalid-feedback password-requirements"
+                  autocomplete="new-password"
+                  class="form-control with-invalid-icon"
+                  formnovalidate=""
+                  id="password"
+                  minlength="12"
+                  name="password"
+                  placeholder=" "
+                  required=""
+                  type="password"
+                  value=""
+                />
+              </div>
             </div>
             <small
               class="form-help text-muted"
+              id="password-requirements"
             >
               At least 12 characters
             </small>

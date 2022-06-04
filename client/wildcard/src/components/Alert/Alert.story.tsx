@@ -10,6 +10,8 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import 'storybook-addon-designs'
 
+import { H1, H4, Text } from '..'
+
 import { Alert } from './Alert'
 import { ALERT_VARIANTS } from './constants'
 
@@ -54,21 +56,21 @@ export default config
 
 export const Alerts: Story = () => (
     <>
-        <h1>Alerts</h1>
-        <p>
+        <H1>Alerts</H1>
+        <Text>
             Provide contextual feedback messages for typical user actions with the handful of available and flexible
             alert messages.
-        </p>
+        </Text>
         <div className="mb-2">
             {ALERT_VARIANTS.map(variant => (
                 <Alert key={variant} variant={variant}>
-                    <h4>Too many matching repositories</h4>
+                    <H4>Too many matching repositories</H4>
                     Use a 'repo:' or 'repogroup:' filter to narrow your search.
                 </Alert>
             ))}
             <Alert variant="info" className="d-flex align-items-center">
                 <div className="flex-grow-1">
-                    <h4>Too many matching repositories</h4>
+                    <H4>Too many matching repositories</H4>
                     Use a 'repo:' or 'repogroup:' filter to narrow your search.
                 </div>
                 <AlertLink className="mr-2" to="/" onClick={flow(preventDefault, action(classNames('link clicked')))}>

@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal, H3, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
 import { Scalars } from '../../../../graphql-operations'
@@ -18,13 +18,9 @@ export interface ReenqueueChangesetsModalProps {
     reenqueueChangesets?: typeof _reenqueueChangesets
 }
 
-export const ReenqueueChangesetsModal: React.FunctionComponent<ReenqueueChangesetsModalProps> = ({
-    onCancel,
-    afterCreate,
-    batchChangeID,
-    changesetIDs,
-    reenqueueChangesets = _reenqueueChangesets,
-}) => {
+export const ReenqueueChangesetsModal: React.FunctionComponent<
+    React.PropsWithChildren<ReenqueueChangesetsModalProps>
+> = ({ onCancel, afterCreate, batchChangeID, changesetIDs, reenqueueChangesets = _reenqueueChangesets }) => {
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
 
     const onSubmit = useCallback<React.FormEventHandler>(async () => {
@@ -39,8 +35,8 @@ export const ReenqueueChangesetsModal: React.FunctionComponent<ReenqueueChangese
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={LABEL_ID}>
-            <h3 id={LABEL_ID}>Re-enqueue changesets</h3>
-            <p className="mb-4">Are you sure you want to re-enqueue all the selected changesets?</p>
+            <H3 id={LABEL_ID}>Re-enqueue changesets</H3>
+            <Text className="mb-4">Are you sure you want to re-enqueue all the selected changesets?</Text>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             <div className="d-flex justify-content-end">
                 <Button

@@ -39,7 +39,7 @@ interface DiffHunkProps extends ThemeProps {
     persistLines?: boolean
 }
 
-export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
+export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkProps>> = ({
     fileDiffAnchor,
     decorations,
     hunk,
@@ -73,10 +73,16 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                     .map(decoration => decorationStyleForTheme(decoration, isLightTheme))
                     .reduce((style, decoration) => ({ ...style, ...decoration }), {})
                 return (
+                    /*
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast) for all changes in this file
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    */
                     <tr
                         key={index}
                         data-hunk-line-kind={line.kind}
                         className={classNames(
+                            'a11y-ignore',
                             line.kind === DiffHunkLineType.UNCHANGED && styles.lineBoth,
                             line.kind === DiffHunkLineType.DELETED && styles.lineDeletion,
                             line.kind === DiffHunkLineType.ADDED && styles.lineAddition,

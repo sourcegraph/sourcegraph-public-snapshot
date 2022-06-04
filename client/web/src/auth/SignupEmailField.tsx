@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { deriveInputClassName, InputValidationState } from '@sourcegraph/shared/src/util/useInputValidation'
+import { Label } from '@sourcegraph/wildcard'
 
 import { EmailInput } from './SignInSignUpCommon'
 
@@ -15,7 +16,7 @@ interface SignupEmailFieldProps {
     emailInputReference: React.Ref<HTMLInputElement>
 }
 
-export const SignupEmailField: React.FunctionComponent<SignupEmailFieldProps> = ({
+export const SignupEmailField: React.FunctionComponent<React.PropsWithChildren<SignupEmailFieldProps>> = ({
     emailState,
     loading,
     label,
@@ -23,14 +24,14 @@ export const SignupEmailField: React.FunctionComponent<SignupEmailFieldProps> = 
     emailInputReference,
 }) => (
     <div className="form-group d-flex flex-column align-content-start">
-        <label
+        <Label
             htmlFor="email"
             className={classNames('align-self-start', {
                 'text-danger font-weight-bold': emailState.kind === 'INVALID',
             })}
         >
             {label}
-        </label>
+        </Label>
         <LoaderInput className={deriveInputClassName(emailState)} loading={emailState.kind === 'LOADING'}>
             <EmailInput
                 className={deriveInputClassName(emailState)}
@@ -41,8 +42,13 @@ export const SignupEmailField: React.FunctionComponent<SignupEmailFieldProps> = 
                 autoFocus={true}
                 placeholder=" "
                 inputRef={emailInputReference}
+                aria-describedby="email-input-invalid-feedback"
             />
         </LoaderInput>
-        {emailState.kind === 'INVALID' && <small className="invalid-feedback">{emailState.reason}</small>}
+        {emailState.kind === 'INVALID' && (
+            <small className="invalid-feedback" id="email-input-invalid-feedback">
+                {emailState.reason}
+            </small>
+        )}
     </div>
 )

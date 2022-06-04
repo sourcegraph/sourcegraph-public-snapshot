@@ -9,6 +9,7 @@ import {
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { H1, H2 } from '@sourcegraph/wildcard'
 
 import { LazyMonacoQueryInputProps } from './LazyMonacoQueryInput'
 import { SearchBox, SearchBoxProps } from './SearchBox'
@@ -58,13 +59,13 @@ add('SearchBox', () => (
 
                     return (
                         <div key={editorComponent}>
-                            <h1>{editorComponent}</h1>
-                            <h2>Default</h2>
+                            <H1>{editorComponent}</H1>
+                            <H2>Default</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox {...searchBoxProps} isLightTheme={props.isLightTheme} />
                             </div>
 
-                            <h2>Regexp enabled</h2>
+                            <H2>Regexp enabled</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -73,7 +74,7 @@ add('SearchBox', () => (
                                 />
                             </div>
 
-                            <h2>Structural enabled</h2>
+                            <H2>Structural enabled</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -82,12 +83,12 @@ add('SearchBox', () => (
                                 />
                             </div>
 
-                            <h2>Case sensitivity enabled</h2>
+                            <H2>Case sensitivity enabled</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox {...searchBoxProps} caseSensitive={true} isLightTheme={props.isLightTheme} />
                             </div>
 
-                            <h2>With search contexts</h2>
+                            <H2>With search contexts</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -97,7 +98,7 @@ add('SearchBox', () => (
                                 />
                             </div>
 
-                            <h2>With search contexts, user context selected</h2>
+                            <H2>With search contexts, user context selected</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -107,7 +108,7 @@ add('SearchBox', () => (
                                 />
                             </div>
 
-                            <h2>With search contexts, disabled based on query</h2>
+                            <H2>With search contexts, disabled based on query</H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}

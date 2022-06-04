@@ -9,11 +9,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -64,7 +61,7 @@ type client struct {
 
 	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
 	// of rate limiting in HTTP response headers).
-	rateLimit *rate.Limiter
+	rateLimit *ratelimit.InstrumentedLimiter
 }
 
 // NewClient creates a new Bitbucket Cloud API client from the given external
@@ -147,7 +144,7 @@ func (c *client) Ping(ctx context.Context) error {
 	return nil
 }
 
-func (c *client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results interface{}) (*PageToken, error) {
+func (c *client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results any) (*PageToken, error) {
 	if qry == nil {
 		qry = make(url.Values)
 	}
@@ -165,7 +162,7 @@ func (c *client) page(ctx context.Context, path string, qry url.Values, token *P
 // API 2.0 pagination renders the full link of next page in the response.
 // See more at https://developer.atlassian.com/bitbucket/api/2/reference/meta/pagination
 // However, for the very first request, use method page instead.
-func (c *client) reqPage(ctx context.Context, url string, results interface{}) (*PageToken, error) {
+func (c *client) reqPage(ctx context.Context, url string, results any) (*PageToken, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -174,7 +171,7 @@ func (c *client) reqPage(ctx context.Context, url string, results interface{}) (
 	var next PageToken
 	err = c.do(ctx, req, &struct {
 		*PageToken
-		Values interface{} `json:"values"`
+		Values any `json:"values"`
 	}{
 		PageToken: &next,
 		Values:    results,
@@ -187,7 +184,7 @@ func (c *client) reqPage(ctx context.Context, url string, results interface{}) (
 	return &next, nil
 }
 
-func (c *client) do(ctx context.Context, req *http.Request, result interface{}) error {
+func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 	req.URL = c.URL.ResolveReference(req.URL)
 
 	// If the request doesn't expect a body, then including a content-type can
@@ -207,13 +204,8 @@ func (c *client) do(ctx context.Context, req *http.Request, result interface{}) 
 		return err
 	}
 
-	startWait := time.Now()
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return err
-	}
-
-	if d := time.Since(startWait); d > 200*time.Millisecond {
-		log15.Warn("Bitbucket Cloud self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 
 	resp, err := c.httpClient.Do(req)

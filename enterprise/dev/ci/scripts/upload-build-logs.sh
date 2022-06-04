@@ -18,6 +18,7 @@ if [ "$1" == "-h" ]; then
   exit 1
 fi
 
+# shellcheck disable=SC1091
 source /root/.profile
 
 set -euo pipefail
@@ -28,7 +29,7 @@ echo "~~~ :go: Building sg"
 (
   set -x
   pushd dev/sg
-  go build -o ../../sg -ldflags "-X main.BuildCommit=$BUILDKITE_COMMIT" -mod=mod .
+  go build -o ../../sg -mod=mod .
   popd
 )
 

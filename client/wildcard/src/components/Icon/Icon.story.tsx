@@ -3,6 +3,7 @@ import { Story, Meta } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { H3 } from '..'
 import { SourcegraphIcon } from '../SourcegraphIcon'
 
 import { Icon } from './Icon'
@@ -33,10 +34,10 @@ export default config
 
 export const Simple: Story = () => (
     <>
-        <h3>Small Icon</h3>
-        <Icon as={SourcegraphIcon} size="sm" />
+        <H3>Small Icon</H3>
+        <Icon role="img" as={SourcegraphIcon} size="sm" aria-label="Sourcegraph logo" />
 
-        <h3>Medium Icon</h3>
-        <Icon as={SourcegraphIcon} size="md" />
+        <H3>Medium Icon</H3>
+        <Icon role="img" as={SourcegraphIcon} size="md" aria-label="Sourcegraph logo" />
     </>
 )

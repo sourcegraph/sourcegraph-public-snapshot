@@ -10,7 +10,19 @@ import { catchError, switchMap, tap } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Container, PageHeader, LoadingSpinner, FeedbackText, Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import {
+    Container,
+    PageHeader,
+    LoadingSpinner,
+    FeedbackText,
+    Button,
+    Link,
+    Alert,
+    Icon,
+    Input,
+    Text,
+    Code,
+} from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -61,7 +73,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
         if (this.props.repo.mirrorInfo.cloneInProgress) {
             title = 'Cloning in progress...'
             description =
-                <code>{this.props.repo.mirrorInfo.cloneProgress}</code> ||
+                <Code>{this.props.repo.mirrorInfo.cloneProgress}</Code> ||
                 'This repository is currently being cloned from its remote repository.'
             buttonLabel = (
                 <span>
@@ -221,10 +233,10 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                                 </Alert>
                             ) : (
                                 <Alert className={classNames('mb-0', styles.alert)} variant="danger">
-                                    <p>The remote repository is unreachable. Logs follow.</p>
+                                    <Text>The remote repository is unreachable. Logs follow.</Text>
                                     <div>
                                         <pre className={styles.log}>
-                                            <code>{this.state.result.error}</code>
+                                            <Code>{this.state.result.error}</Code>
                                         </pre>
                                     </div>
                                 </Alert>
@@ -302,16 +314,19 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                     {this.state.loading && <LoadingSpinner />}
                     {this.state.error && <ErrorAlert error={this.state.error} />}
                     <div className="form-group">
-                        <label>
-                            Remote repository URL{' '}
-                            <small className="text-info">
-                                <Icon as={LockIcon} /> Only visible to site admins
-                            </small>
-                        </label>
-                        <input
-                            className="form-control"
+                        <Input
                             value={this.props.repo.mirrorInfo.remoteURL || '(unknown)'}
                             readOnly={true}
+                            className="mb-0"
+                            label={
+                                <>
+                                    {' '}
+                                    Remote repository URL{' '}
+                                    <small className="text-info">
+                                        <Icon role="img" as={LockIcon} aria-hidden={true} /> Only visible to site admins
+                                    </small>
+                                </>
+                            }
                         />
                         {this.state.repo.viewerCanAdminister && (
                             <small className="form-text text-muted">
@@ -345,14 +360,14 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                                     repository is not reachable.
                                 </li>
                                 <li className={styles.step}>
-                                    <code>
-                                        <strong>No ECDSA host key is known ... Host key verification failed?</strong>
-                                    </code>{' '}
+                                    <Code weight="bold">
+                                        No ECDSA host key is known ... Host key verification failed?
+                                    </Code>{' '}
                                     See{' '}
                                     <Link to="/help/admin/repo/auth#ssh-authentication-config-keys-known-hosts">
                                         SSH repository authentication documentation
                                     </Link>{' '}
-                                    for how to provide an SSH <code>known_hosts</code> file with the remote host's SSH
+                                    for how to provide an SSH <Code>known_hosts</Code> file with the remote host's SSH
                                     host key.
                                 </li>
                                 <li className={styles.step}>

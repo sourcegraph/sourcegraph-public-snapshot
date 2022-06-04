@@ -13,6 +13,8 @@
 
 - [Developing the product documentation](documentation_implementation.md)
 - [Observability](../background-information/observability/index.md)
+  - [How to add observability](add_observability.md)
+  - [How to add logging](add_logging.md)
   - [How to find monitoring](find_monitoring.md)
   - [How to add monitoring](add_monitoring.md)
   - [How to enable continuous profiling in production](profiling_continuous.md)

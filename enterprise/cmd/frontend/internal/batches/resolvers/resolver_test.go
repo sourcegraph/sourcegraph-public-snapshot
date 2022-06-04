@@ -13,6 +13,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
@@ -63,7 +65,7 @@ func TestNullIDResilience(t *testing.T) {
 		var response struct{ Node struct{ ID string } }
 
 		query := `query($id: ID!) { node(id: $id) { id } }`
-		if errs := apitest.Exec(ctx, t, s, map[string]interface{}{"id": id}, &response, query); len(errs) > 0 {
+		if errs := apitest.Exec(ctx, t, s, map[string]any{"id": id}, &response, query); len(errs) > 0 {
 			t.Errorf("GraphQL request failed: %#+v", errs[0])
 		}
 
@@ -204,7 +206,7 @@ func TestCreateBatchSpec(t *testing.T) {
 				changesetSpecIDs[i] = marshalChangesetSpecRandID(spec.RandID)
 			}
 
-			input := map[string]interface{}{
+			input := map[string]any{
 				"namespace":      userAPIID,
 				"batchSpec":      rawSpec,
 				"changesetSpecs": changesetSpecIDs,
@@ -223,7 +225,7 @@ func TestCreateBatchSpec(t *testing.T) {
 					t.Errorf("unexpected error(s): %+v", errs)
 				}
 
-				var unmarshaled interface{}
+				var unmarshaled any
 				err = json.Unmarshal([]byte(rawSpec), &unmarshaled)
 				if err != nil {
 					t.Fatal(err)
@@ -319,7 +321,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	input := map[string]interface{}{
+	input := map[string]any{
 		"changesetSpec": ct.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID), "d34db33f"),
 	}
 
@@ -436,7 +438,7 @@ func TestApplyBatchChange(t *testing.T) {
 	}
 
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
-	input := map[string]interface{}{
+	input := map[string]any{
 		"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
 	}
 
@@ -553,7 +555,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 	userID := ct.CreateTestUser(t, db, true).ID
 	namespaceID := relay.MarshalID("User", userID)
 
-	input := map[string]interface{}{
+	input := map[string]any{
 		"namespace": namespaceID,
 		"name":      "my-batch-change",
 	}
@@ -582,7 +584,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 	orgID := ct.InsertTestOrg(t, db, "my-org")
 	namespaceID2 := relay.MarshalID("Org", orgID)
 
-	input2 := map[string]interface{}{
+	input2 := map[string]any{
 		"namespace": namespaceID2,
 		"name":      "my-batch-change",
 	}
@@ -594,7 +596,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 	}
 
 	// This case should fail because the name fails validation
-	input3 := map[string]interface{}{
+	input3 := map[string]any{
 		"namespace": namespaceID,
 		"name":      "not: valid:\nname",
 	}
@@ -650,7 +652,7 @@ func TestCreateBatchChange(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	input := map[string]interface{}{
+	input := map[string]any{
 		"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
 	}
 
@@ -725,10 +727,10 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 	// them with the same test code provided we special case the response type
 	// handling.
 	for name, tc := range map[string]struct {
-		exec func(ctx context.Context, t testing.TB, s *graphql.Schema, in map[string]interface{}) (*apitest.BatchChange, error)
+		exec func(ctx context.Context, t testing.TB, s *graphql.Schema, in map[string]any) (*apitest.BatchChange, error)
 	}{
 		"applyBatchChange": {
-			exec: func(ctx context.Context, t testing.TB, s *graphql.Schema, in map[string]interface{}) (*apitest.BatchChange, error) {
+			exec: func(ctx context.Context, t testing.TB, s *graphql.Schema, in map[string]any) (*apitest.BatchChange, error) {
 				var response struct{ ApplyBatchChange apitest.BatchChange }
 				if errs := apitest.Exec(ctx, t, s, in, &response, mutationApplyBatchChange); errs != nil {
 					return nil, errors.Newf("GraphQL errors: %v", errs)
@@ -737,7 +739,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 			},
 		},
 		"createBatchChange": {
-			exec: func(ctx context.Context, t testing.TB, s *graphql.Schema, in map[string]interface{}) (*apitest.BatchChange, error) {
+			exec: func(ctx context.Context, t testing.TB, s *graphql.Schema, in map[string]any) (*apitest.BatchChange, error) {
 				var response struct{ CreateBatchChange apitest.BatchChange }
 				if errs := apitest.Exec(ctx, t, s, in, &response, mutationCreateBatchChange); errs != nil {
 					return nil, errors.Newf("GraphQL errors: %v", errs)
@@ -780,7 +782,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			// Handle the interesting error cases for different
 			// publicationStates inputs.
-			for name, states := range map[string][]map[string]interface{}{
+			for name, states := range map[string][]map[string]any{
 				"other batch spec": {
 					{
 						"changesetSpec":    marshalChangesetSpecRandID(otherChangesetSpec.RandID),
@@ -817,7 +819,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 				},
 			} {
 				t.Run(name, func(t *testing.T) {
-					input := map[string]interface{}{
+					input := map[string]any{
 						"batchSpec":         string(marshalBatchSpecRandID(batchSpec.RandID)),
 						"publicationStates": states,
 					}
@@ -829,9 +831,9 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 
 			// Finally, let's actually make a legit apply.
 			t.Run("success", func(t *testing.T) {
-				input := map[string]interface{}{
+				input := map[string]any{
 					"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
-					"publicationStates": []map[string]interface{}{
+					"publicationStates": []map[string]any{
 						{
 							"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
 							"publicationState": true,
@@ -916,7 +918,7 @@ func TestMoveBatchChange(t *testing.T) {
 	// Move to a new name
 	batchChangeAPIID := string(marshalBatchChangeID(batchChange.ID))
 	newBatchChagneName := "new-name"
-	input := map[string]interface{}{
+	input := map[string]any{
 		"batchChange": batchChangeAPIID,
 		"newName":     newBatchChagneName,
 	}
@@ -937,7 +939,7 @@ func TestMoveBatchChange(t *testing.T) {
 
 	// Move to a new namespace
 	orgAPIID := graphqlbackend.MarshalOrgID(orgID)
-	input = map[string]interface{}{
+	input = map[string]any{
 		"batchChange":  string(marshalBatchChangeID(batchChange.ID)),
 		"newNamespace": orgAPIID,
 	}
@@ -1192,7 +1194,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	})
 
 	t.Run("User credential", func(t *testing.T) {
-		input := map[string]interface{}{
+		input := map[string]any{
 			"user":                graphqlbackend.MarshalUserID(userID),
 			"externalServiceKind": string(extsvc.KindGitHub),
 			"externalServiceURL":  "https://github.com/",
@@ -1238,7 +1240,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		}
 	})
 	t.Run("Site credential", func(t *testing.T) {
-		input := map[string]interface{}{
+		input := map[string]any{
 			"user":                nil,
 			"externalServiceKind": string(extsvc.KindGitHub),
 			"externalServiceURL":  "https://github.com/",
@@ -1332,7 +1334,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	}
 
 	t.Run("User credential", func(t *testing.T) {
-		input := map[string]interface{}{
+		input := map[string]any{
 			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, false),
 		}
 
@@ -1354,7 +1356,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	})
 
 	t.Run("Site credential", func(t *testing.T) {
-		input := map[string]interface{}{
+		input := map[string]any{
 			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, true),
 		}
 
@@ -1414,8 +1416,8 @@ func TestCreateChangesetComments(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	generateInput := func() map[string]interface{} {
-		return map[string]interface{}{
+	generateInput := func() map[string]any {
+		return map[string]any{
 			"batchChange": marshalBatchChangeID(batchChange.ID),
 			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
 			"body":        "test-body",
@@ -1522,8 +1524,8 @@ func TestReenqueueChangesets(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	generateInput := func() map[string]interface{} {
-		return map[string]interface{}{
+	generateInput := func() map[string]any {
+		return map[string]any{
 			"batchChange": marshalBatchChangeID(batchChange.ID),
 			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
 		}
@@ -1632,8 +1634,8 @@ func TestMergeChangesets(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	generateInput := func() map[string]interface{} {
-		return map[string]interface{}{
+	generateInput := func() map[string]any {
+		return map[string]any{
 			"batchChange": marshalBatchChangeID(batchChange.ID),
 			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
 		}
@@ -1742,8 +1744,8 @@ func TestCloseChangesets(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	generateInput := func() map[string]interface{} {
-		return map[string]interface{}{
+	generateInput := func() map[string]any {
+		return map[string]any{
 			"batchChange": marshalBatchChangeID(batchChange.ID),
 			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
 		}
@@ -1868,8 +1870,8 @@ func TestPublishChangesets(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	generateInput := func() map[string]interface{} {
-		return map[string]interface{}{
+	generateInput := func() map[string]any {
+		return map[string]any{
 			"batchChange": marshalBatchChangeID(batchChange.ID),
 			"changesets": []string{
 				string(marshalChangesetID(publishableChangeset.ID)),
@@ -1923,6 +1925,104 @@ func TestPublishChangesets(t *testing.T) {
 const mutationPublishChangesets = `
 mutation($batchChange: ID!, $changesets: [ID!]!, $draft: Boolean!) {
 	publishChangesets(batchChange: $batchChange, changesets: $changesets, draft: $draft) { id }
+}
+`
+
+func TestCheckBatchChangesCredential(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ct.MockRSAKeygen(t)
+
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+
+	pruneUserCredentials(t, db, nil)
+
+	userID := ct.CreateTestUser(t, db, true).ID
+
+	cstore := store.New(db, &observation.TestContext, nil)
+
+	authenticator := &auth.OAuthBearerToken{Token: "SOSECRET"}
+	userCred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+		Domain:              database.UserCredentialDomainBatches,
+		ExternalServiceType: extsvc.TypeGitHub,
+		ExternalServiceID:   "https://github.com/",
+		UserID:              userID,
+	}, authenticator)
+	if err != nil {
+		t.Fatal(err)
+	}
+	siteCred := &btypes.SiteCredential{
+		ExternalServiceType: extsvc.TypeGitHub,
+		ExternalServiceID:   "https://github.com/",
+	}
+	if err := cstore.CreateSiteCredential(ctx, siteCred, authenticator); err != nil {
+		t.Fatal(err)
+	}
+
+	r := &Resolver{store: cstore}
+	s, err := newSchema(database.NewDB(db), r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mockValidateAuthenticator := func(t *testing.T, err error) {
+		service.Mocks.ValidateAuthenticator = func(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
+			return err
+		}
+		t.Cleanup(func() {
+			service.Mocks.Reset()
+		})
+	}
+
+	t.Run("valid site credential", func(t *testing.T) {
+		mockValidateAuthenticator(t, nil)
+
+		input := map[string]any{
+			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, true),
+		}
+
+		var response struct{ CheckBatchChangesCredential apitest.EmptyResponse }
+		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+		apitest.MustExec(actorCtx, t, s, input, &response, queryCheckCredential)
+	})
+
+	t.Run("valid user credential", func(t *testing.T) {
+		mockValidateAuthenticator(t, nil)
+
+		input := map[string]any{
+			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, false),
+		}
+
+		var response struct{ CheckBatchChangesCredential apitest.EmptyResponse }
+		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+		apitest.MustExec(actorCtx, t, s, input, &response, queryCheckCredential)
+	})
+
+	t.Run("invalid credential", func(t *testing.T) {
+		mockValidateAuthenticator(t, errors.New("credential is not authorized"))
+
+		input := map[string]any{
+			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, true),
+		}
+
+		var response struct{ CheckBatchChangesCredential apitest.EmptyResponse }
+		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+		errs := apitest.Exec(actorCtx, t, s, input, &response, queryCheckCredential)
+
+		assert.Len(t, errs, 1)
+		assert.Equal(t, errs[0].Extensions["code"], "ErrVerifyCredentialFailed")
+	})
+}
+
+const queryCheckCredential = `
+query($batchChangesCredential: ID!) {
+  checkBatchChangesCredential(batchChangesCredential: $batchChangesCredential) { alwaysNil }
 }
 `
 

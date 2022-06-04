@@ -473,7 +473,7 @@ func testServer(t *testing.T, spec routeSpec) *httptest.Server {
 }
 
 func normalizeJSON(v []byte) string {
-	temp := map[string]interface{}{}
+	temp := map[string]any{}
 	_ = json.Unmarshal(v, &temp)
 	v, _ = json.Marshal(temp)
 	return string(v)

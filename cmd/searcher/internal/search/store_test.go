@@ -16,7 +16,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestPrepareZip(t *testing.T) {
@@ -138,6 +141,7 @@ func TestIngoreSizeMax(t *testing.T) {
 		"foo_*",
 		"*.foo",
 		"bar.baz",
+		"**/*.bam",
 	}
 	tests := []struct {
 		name    string
@@ -149,10 +153,14 @@ func TestIngoreSizeMax(t *testing.T) {
 		{"foo_bar", true},
 		{"bar.baz", true},
 		{"bar.foo", true},
+		{"hello.bam", true},
+		{"sub/dir/hello.bam", true},
+		{"/sub/dir/hello.bam", true},
 		// Fail
 		{"baz.foo.bar", false},
 		{"bar_baz", false},
 		{"baz.baz", false},
+		{"sub/dir/bar.foo", false},
 	}
 
 	for _, test := range tests {
@@ -262,6 +270,12 @@ func tmpStore(t *testing.T) *Store {
 	d := t.TempDir()
 	return &Store{
 		Path: d,
+		Log:  logtest.Scoped(t),
+
+		ObservationContext: &observation.Context{
+			Registerer: metrics.TestRegisterer,
+			Logger:     logtest.Scoped(t),
+		},
 	}
 }
 

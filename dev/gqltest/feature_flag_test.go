@@ -75,7 +75,7 @@ func TestFeatureFlags(t *testing.T) {
 				CreateFeatureFlag featureFlagResult
 			}
 		}
-		params := map[string]interface{}{"name": name, "value": value, "rollout": rolloutBasisPoints}
+		params := map[string]any{"name": name, "value": value, "rollout": rolloutBasisPoints}
 		err := client.GraphQL("", m, params, &res)
 		return res.Data.CreateFeatureFlag, err
 	}
@@ -97,7 +97,7 @@ func TestFeatureFlags(t *testing.T) {
 				UpdateFeatureFlag featureFlagResult
 			}
 		}
-		params := map[string]interface{}{"name": name, "value": value, "rollout": rolloutBasisPoints}
+		params := map[string]any{"name": name, "value": value, "rollout": rolloutBasisPoints}
 		err := client.GraphQL("", m, params, &res)
 		return res.Data.UpdateFeatureFlag, err
 	}
@@ -110,7 +110,7 @@ func TestFeatureFlags(t *testing.T) {
 				alwaysNil		
 			}
 		}`
-		params := map[string]interface{}{"name": name}
+		params := map[string]any{"name": name}
 		return client.GraphQL("", m, params, nil)
 	}
 
@@ -262,7 +262,7 @@ func TestFeatureFlags(t *testing.T) {
 				CreateFeatureFlagOverride featureFlagOverrideResult
 			}
 		}
-		params := map[string]interface{}{"namespace": namespace, "flagName": flagName, "value": value}
+		params := map[string]any{"namespace": namespace, "flagName": flagName, "value": value}
 		err := client.GraphQL("", m, params, &res)
 		return res.Data.CreateFeatureFlagOverride, err
 	}
@@ -283,7 +283,7 @@ func TestFeatureFlags(t *testing.T) {
 				UpdateFeatureFlagOverride featureFlagOverrideResult
 			}
 		}
-		params := map[string]interface{}{"id": id, "value": value}
+		params := map[string]any{"id": id, "value": value}
 		err := client.GraphQL("", m, params, &res)
 		return res.Data.UpdateFeatureFlagOverride, err
 	}
@@ -298,7 +298,7 @@ func TestFeatureFlags(t *testing.T) {
 			}
 		}`
 
-		params := map[string]interface{}{"id": id}
+		params := map[string]any{"id": id}
 		return client.GraphQL("", m, params, nil)
 	}
 

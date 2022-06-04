@@ -10,14 +10,14 @@ import (
 func TestPipelineStructural(t *testing.T) {
 	test := func(input string) string {
 		pipelinePlan, _ := Pipeline(InitStructural(input))
-		return pipelinePlan.ToParseTree().String()
+		return pipelinePlan.ToQ().String()
 	}
 
 	autogold.Want("contains(...) spans newlines", `"repo:contains.file(\nfoo\n)"`).Equal(t, test("repo:contains.file(\nfoo\n)"))
 }
 
 func jsonFormatted(nodes []Node) string {
-	var jsons []interface{}
+	var jsons []any
 	for _, node := range nodes {
 		jsons = append(jsons, toJSON(node))
 	}
@@ -39,11 +39,12 @@ func TestSubstituteSearchContexts(t *testing.T) {
 		}
 
 		if verbose {
-			return jsonFormatted(plan.ToParseTree())
+			return jsonFormatted(plan.ToQ())
 		}
-		return plan.ToParseTree().String()
+		return plan.ToQ().String()
 	}
 
+	autogold.Want("failing", `(or (and "repo:primary" "repo:protobuf" "select:repo") (and "repo:secondary" "repo:protobuf" "select:repo") (and "repo:primary" "repo:PROTOBUF" "select:repo") (and "repo:secondary" "repo:PROTOBUF" "select:repo"))`).Equal(t, test("context:go-deps (r:protobuf OR r:PROTOBUF) select:repo", false))
 	autogold.Want("basic", `(or (and "repo:primary" "scamaz") (and "repo:secondary" "scamaz"))`).Equal(t, test("context:gordo scamaz", false))
 
 	autogold.Want("preserve predicate label", `[

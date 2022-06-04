@@ -8,7 +8,7 @@ import { Observable } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon, H2, Text } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -25,7 +25,7 @@ interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
 }
 
-const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node }) => (
+const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => (
     <li
         className="repository-node list-group-item py-2"
         data-test-repository={node.name}
@@ -44,14 +44,14 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node }) 
                         className="ml-2 text-muted"
                         data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
                     >
-                        <Icon as={CloudOutlineIcon} /> Not yet cloned
+                        <Icon role="img" as={CloudOutlineIcon} aria-hidden={true} /> Not yet cloned
                     </small>
                 )}
             </div>
             <div className="repository-node__actions">
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
                     <Button to={node.url} variant="secondary" size="sm" as={Link}>
-                        <Icon as={CloudDownloadIcon} /> Clone now
+                        <Icon role="img" as={CloudDownloadIcon} aria-hidden={true} /> Clone now
                     </Button>
                 )}{' '}
                 {
@@ -62,7 +62,7 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node }) 
                         size="sm"
                         as={Link}
                     >
-                        <Icon as={SettingsIcon} /> Settings
+                        <Icon role="img" as={SettingsIcon} aria-hidden={true} /> Settings
                     </Button>
                 }{' '}
             </div>
@@ -115,7 +115,11 @@ const FILTERS: FilteredConnectionFilter[] = [
 /**
  * A page displaying the repositories on this site.
  */
-export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = ({ history, location, telemetryService }) => {
+export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    history,
+    location,
+    telemetryService,
+}) => {
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminRepos')
     }, [telemetryService])
@@ -147,14 +151,14 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = ({ hist
                     statuses are displayed below.
                 </Alert>
             )}
-            <h2>Repositories</h2>
-            <p>
+            <H2>Repositories</H2>
+            <Text>
                 Repositories are synced from connected{' '}
                 <Link to="/site-admin/external-services" data-testid="test-repositories-code-host-connections-link">
                     code host connections
                 </Link>
                 .
-            </p>
+            </Text>
             <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
                 className="list-group list-group-flush mt-3"
                 noun="repository"

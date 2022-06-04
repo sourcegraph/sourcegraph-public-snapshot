@@ -71,23 +71,30 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
       <div
         class="input-group"
       >
-        <input
-          class="form-control input"
-          readonly=""
-          type="text"
-          value="lk1"
-        />
+        <div
+          class="container loader-input loaderInput"
+        >
+          <input
+            class="input form-control with-invalid-icon"
+            readonly=""
+            type="text"
+            value="lk1"
+          />
+        </div>
         <div
           class="input-group-append"
         >
           <button
+            aria-label="Copy"
             class="btn btnSecondary"
             type="button"
           >
             <svg
+              aria-hidden="true"
               class="mdi-icon iconInline"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
@@ -170,23 +177,30 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
       <div
         class="input-group"
       >
-        <input
-          class="form-control input"
-          readonly=""
-          type="text"
-          value="lk1"
-        />
+        <div
+          class="container loader-input loaderInput"
+        >
+          <input
+            class="input form-control with-invalid-icon"
+            readonly=""
+            type="text"
+            value="lk1"
+          />
+        </div>
         <div
           class="input-group-append"
         >
           <button
+            aria-label="Copy"
             class="btn btnSecondary"
             type="button"
           >
             <svg
+              aria-hidden="true"
               class="mdi-icon iconInline"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >

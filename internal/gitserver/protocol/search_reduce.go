@@ -167,7 +167,7 @@ func mergeOrRegexp(n Node) Node {
 	}
 
 	unmergeable := operator.Operands[:0]
-	mergeable := map[interface{}]Node{}
+	mergeable := map[any]Node{}
 	for _, operand := range operator.Operands {
 		switch v := operand.(type) {
 		case *AuthorMatches:

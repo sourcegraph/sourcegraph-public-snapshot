@@ -24,7 +24,7 @@ interface Props extends RepositoryReleasesAreaPageProps {
 }
 
 /** A page that shows all of a repository's tags. */
-export const RepositoryReleasesTagsPage: React.FunctionComponent<Props> = ({
+export const RepositoryReleasesTagsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     repo,
     history,
     location,
@@ -45,7 +45,7 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<Props> = ({
             <PageTitle title="Tags" />
             <FilteredConnection<GitRefFields>
                 className="my-3"
-                listClassName="list-group list-group-flush"
+                listClassName="list-group list-group-flush test-filtered-tags-connection"
                 noun="tag"
                 pluralNoun="tags"
                 queryConnection={queryTags}

@@ -28,7 +28,7 @@ const abbreviateNumber = (number: number): string => {
 const limitHit = (progress: Progress): boolean => progress.skipped.some(skipped => skipped.reason.indexOf('-limit') > 0)
 
 export const StreamingProgressCount: React.FunctionComponent<
-    Pick<StreamingProgressProps, 'progress' | 'state' | 'showTrace'> & { className?: string }
+    React.PropsWithChildren<Pick<StreamingProgressProps, 'progress' | 'state' | 'showTrace'> & { className?: string }>
 > = ({ progress, state, showTrace, className = '' }) => (
     <>
         <small
@@ -45,6 +45,7 @@ export const StreamingProgressCount: React.FunctionComponent<
             {(progress.durationMs / 1000).toFixed(2)}s
             {progress.repositoriesCount !== undefined && (
                 <Icon
+                    role="img"
                     className="ml-1"
                     data-tooltip={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
                         'repository',
@@ -52,13 +53,19 @@ export const StreamingProgressCount: React.FunctionComponent<
                         'repositories'
                     )}`}
                     as={InformationOutlineIcon}
+                    tabIndex={0}
+                    aria-label={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
+                        'repository',
+                        progress.repositoriesCount,
+                        'repositories'
+                    )}`}
                 />
             )}
         </small>
         {showTrace && progress.trace && (
             <small className="d-flex ml-2">
                 <Link to={progress.trace}>
-                    <Icon className="mr-2" as={ClipboardPulseOutlineIcon} />
+                    <Icon role="img" aria-hidden={true} className="mr-2" as={ClipboardPulseOutlineIcon} />
                     View trace
                 </Link>
             </small>

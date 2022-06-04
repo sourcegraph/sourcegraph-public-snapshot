@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 
@@ -12,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -27,7 +26,20 @@ var testCommand = &cli.Command{
 	Name:      "test",
 	ArgsUsage: "<testsuite>",
 	Usage:     "Run the given test suite",
-	Category:  CategoryDev,
+	UsageText: `
+# Run different test suites:
+sg test backend
+sg test backend-integration
+sg test frontend
+sg test frontend-e2e
+
+# List available test suites:
+sg test -help
+
+# Arguments are passed along to the command
+sg test backend-integration -run TestSearch
+`,
+	Category: CategoryDev,
 	BashComplete: completeOptions(func() (options []string) {
 		config, _ := sgconf.Get(configFile, configOverwriteFile)
 		if config == nil {
@@ -44,18 +56,17 @@ var testCommand = &cli.Command{
 func testExec(ctx context.Context, args []string) error {
 	config, err := sgconf.Get(configFile, configOverwriteFile)
 	if err != nil {
-		writeWarningLinef(err.Error())
-		os.Exit(1)
+		return err
 	}
 
 	if len(args) == 0 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No test suite specified"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "No test suite specified"))
 		return flag.ErrHelp
 	}
 
 	cmd, ok := config.Tests[args[0]]
 	if !ok {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: test suite %q not found :(", args[0]))
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: test suite %q not found :(", args[0]))
 		return flag.ErrHelp
 	}
 
@@ -65,19 +76,19 @@ func testExec(ctx context.Context, args []string) error {
 func constructTestCmdLongHelp() string {
 	var out strings.Builder
 
-	fmt.Fprintf(&out, "  Runs the given testsuite.")
+	fmt.Fprintf(&out, "Testsuites are defined in sg configuration.")
 
 	// Attempt to parse config to list available testsuites, but don't fail on
 	// error, because we should never error when the user wants --help output.
 	config, err := sgconf.Get(configFile, configOverwriteFile)
 	if err != nil {
 		out.Write([]byte("\n"))
-		output.NewOutput(&out, output.OutputOpts{}).WriteLine(newWarningLinef(err.Error()))
+		std.NewOutput(&out, false).WriteWarningf(err.Error())
 		return out.String()
 	}
 
 	fmt.Fprintf(&out, "\n\n")
-	fmt.Fprintf(&out, "AVAILABLE TESTSUITES IN %s%s%s:\n", output.StyleBold, configFile, output.StyleReset)
+	fmt.Fprintf(&out, "Available testsuites in `%s`:\n", configFile)
 	fmt.Fprintf(&out, "\n")
 
 	var names []string
@@ -85,7 +96,7 @@ func constructTestCmdLongHelp() string {
 		names = append(names, name)
 	}
 	sort.Strings(names)
-	fmt.Fprint(&out, strings.Join(names, "\n"))
+	fmt.Fprint(&out, "* "+strings.Join(names, "\n* "))
 
 	return out.String()
 }

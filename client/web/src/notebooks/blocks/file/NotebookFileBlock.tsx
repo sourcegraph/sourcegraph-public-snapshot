@@ -13,8 +13,8 @@ import { startWith } from 'rxjs/operators'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
+import { CodeExcerpt } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
@@ -48,7 +48,7 @@ interface NotebookFileBlockProps
 
 const LOADING = 'loading' as const
 
-export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> = React.memo(
+export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<NotebookFileBlockProps>> = React.memo(
     ({
         id,
         input,
@@ -115,7 +115,7 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
                 {
                     type: 'link',
                     label: 'Open in new tab',
-                    icon: <Icon as={OpenInNewIcon} />,
+                    icon: <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />,
                     url: fileURL,
                 },
             ],
@@ -127,7 +127,7 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
                 {
                     type: 'button',
                     label: showInputs ? 'Save' : 'Edit',
-                    icon: <Icon as={showInputs ? CheckIcon : PencilIcon} />,
+                    icon: <Icon role="img" aria-hidden={true} as={showInputs ? CheckIcon : PencilIcon} />,
                     onClick: () => setShowInputs(!showInputs),
                     keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
                 },
@@ -234,16 +234,12 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
     }
 )
 
-const NotebookFileBlockHeader: React.FunctionComponent<FileBlockInput & { fileURL: string }> = ({
-    repositoryName,
-    filePath,
-    revision,
-    lineRange,
-    fileURL,
-}) => (
+const NotebookFileBlockHeader: React.FunctionComponent<
+    React.PropsWithChildren<FileBlockInput & { fileURL: string }>
+> = ({ repositoryName, filePath, revision, lineRange, fileURL }) => (
     <>
         <div className="mr-2">
-            <Icon as={FileDocumentIcon} />
+            <Icon role="img" aria-hidden={true} as={FileDocumentIcon} />
         </div>
         <div className="d-flex flex-column">
             <div className="mb-1 d-flex align-items-center">

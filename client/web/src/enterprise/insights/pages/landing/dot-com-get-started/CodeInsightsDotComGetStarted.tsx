@@ -3,7 +3,7 @@ import React, { useEffect } from 'react'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, PageHeader, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
@@ -21,7 +21,9 @@ const DOT_COM_CONTEXT = { mode: CodeInsightsLandingPageType.Cloud }
 
 export interface CodeInsightsDotComGetStartedProps extends TelemetryProps {}
 
-export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsDotComGetStartedProps> = props => {
+export const CodeInsightsDotComGetStarted: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightsDotComGetStartedProps>
+> = props => {
     const { telemetryService } = props
 
     useEffect(() => {
@@ -71,17 +73,17 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
                         </aside>
 
                         <section className={styles.hereDescriptionBlock}>
-                            <h2 className={classNames(styles.heroTitle)}>
+                            <H2 className={classNames(styles.heroTitle)}>
                                 Draw insights from your codebase about how different initiatives are tracking over time
-                            </h2>
+                            </H2>
 
-                            <p>
+                            <Text>
                                 Create customizable, visual dashboards with meaningful codebase signals your team can
                                 use to answer questions about what's in your code and how your code is changing.
                                 Anything you can search, you can create a Code Insight for.
-                            </p>
+                            </Text>
 
-                            <h3 className={classNames(styles.hereBulletTitle)}>Use Code Insights to...</h3>
+                            <H3 className={classNames(styles.hereBulletTitle)}>Use Code Insights to...</H3>
 
                             <ul>
                                 <li>Track migrations, adoption, and deprecations</li>
@@ -115,7 +117,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
                     </Card>
 
                     <section className={styles.quoteSection}>
-                        <h2>Trusted by leading engineering teams around the world:</h2>
+                        <H2>Trusted by leading engineering teams around the world:</H2>
 
                         <q className={styles.quote}>
                             As we’ve grown, so has the need to better track and communicate our progress and goals
@@ -139,7 +141,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
 
                     <section className={styles.installLocallySection}>
                         <Card as={CardBody} className={styles.installLocallyRequirements}>
-                            <h3>Code Insights requirements</h3>
+                            <H3>Code Insights requirements</H3>
                             <ul className={styles.installLocallyRequirementsList}>
                                 <li>On-prem installation</li>
                                 <li>Create up to 2 code insights for free</li>
@@ -150,12 +152,12 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
                         <Card as={CardBody} className={styles.installLocallyGetStarted}>
                             <SourcegraphInstallLocallyIcon className="flex-shrink-0" />
                             <div>
-                                <h3>Install locally to get started</h3>
+                                <H3>Install locally to get started</H3>
 
-                                <p>
+                                <Text>
                                     Code Insights requires a local Sourcegraph installation via Docker Compose or
                                     Kubernetes. You can check it out for free by installing locally.
-                                </p>
+                                </Text>
 
                                 <Button
                                     as={Link}

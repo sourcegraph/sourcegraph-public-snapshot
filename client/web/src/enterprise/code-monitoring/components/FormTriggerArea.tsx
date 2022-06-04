@@ -12,7 +12,7 @@ import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/s
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Card, Icon, H3, H2 } from '@sourcegraph/wildcard'
+import { Button, Link, Card, Icon, Checkbox, Code, H2, H3 } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
@@ -34,44 +34,61 @@ interface TriggerAreaProps extends ThemeProps {
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
 const isLiteralOrRegexp = (value: string): boolean => value === 'literal' || value === 'regexp'
 
-const ValidQueryChecklistItem: React.FunctionComponent<{
-    checked: boolean
-    hint?: string
-    className?: string
-    dataTestid?: string
-}> = ({ checked, children, hint, className, dataTestid }) => (
-    <label className={classNames('d-flex align-items-center mb-1 text-muted', className)}>
-        <input className="sr-only" type="checkbox" disabled={true} checked={checked} data-testid={dataTestid} />
-
-        {checked ? (
-            <Icon className={classNames('text-success', styles.checklistCheckbox)} aria-hidden={true} as={CheckIcon} />
-        ) : (
-            <Icon
-                className={classNames(styles.checklistCheckbox, styles.checklistCheckboxUnchecked)}
-                aria-hidden={true}
-                as={RadioboxBlankIcon}
-            />
-        )}
-
-        <small className={checked ? styles.checklistChildrenFaded : ''}>{children}</small>
-
-        {hint && (
-            <>
-                <span className="sr-only"> {hint}</span>
-
-                <span data-tooltip={hint} data-placement="bottom" className="d-flex">
+const ValidQueryChecklistItem: React.FunctionComponent<
+    React.PropsWithChildren<{
+        checked: boolean
+        hint?: string
+        className?: string
+        dataTestid?: string
+    }>
+> = ({ checked, children, hint, className, dataTestid }) => (
+    <Checkbox
+        wrapperClassName={classNames('d-flex align-items-center text-muted pl-0', className)}
+        className="sr-only"
+        disabled={true}
+        checked={checked}
+        data-testid={dataTestid}
+        id={dataTestid || 'ValidQueryCheckListInput'}
+        label={
+            <div className="d-flex align-items-center mb-1">
+                {checked ? (
                     <Icon
-                        className={classNames(styles.checklistHint, checked && styles.checklistHintFaded)}
+                        role="img"
+                        className={classNames('text-success', styles.checklistCheckbox)}
                         aria-hidden={true}
-                        as={HelpCircleIcon}
+                        as={CheckIcon}
                     />
-                </span>
-            </>
-        )}
-    </label>
+                ) : (
+                    <Icon
+                        role="img"
+                        className={classNames(styles.checklistCheckbox, styles.checklistCheckboxUnchecked)}
+                        aria-hidden={true}
+                        as={RadioboxBlankIcon}
+                    />
+                )}
+
+                <small className={checked ? styles.checklistChildrenFaded : ''}>{children}</small>
+
+                {hint && (
+                    <>
+                        <span className="sr-only"> {hint}</span>
+
+                        <span data-tooltip={hint} data-placement="bottom" className="d-inline-flex">
+                            <Icon
+                                role="img"
+                                className={classNames(styles.checklistHint, checked && styles.checklistHintFaded)}
+                                aria-hidden={true}
+                                as={HelpCircleIcon}
+                            />
+                        </span>
+                    </>
+                )}
+            </div>
+        }
+    />
 )
 
-export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
+export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<TriggerAreaProps>> = ({
     query,
     onQueryChange,
     triggerCompleted,
@@ -217,9 +234,8 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     caseSensitive={false}
                                     queryState={queryState}
                                     onChange={setQueryState}
-                                    onSubmit={() => {}}
                                     globbing={false}
-                                    preventNewLine={false}
+                                    preventNewLine={true}
                                     autoFocus={true}
                                 />
                             </div>
@@ -236,6 +252,8 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 >
                                     Preview results{' '}
                                     <Icon
+                                        role="img"
+                                        aria-hidden={true}
                                         className={classNames('ml-1', styles.queryInputPreviewLinkIcon)}
                                         as={OpenInNewIcon}
                                     />
@@ -250,7 +268,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     hint="Code monitors support literal and regex search. Searches are literal by default."
                                     dataTestid="patterntype-checkbox"
                                 >
-                                    Is <code>patternType:literal</code> or <code>patternType:regexp</code>
+                                    Is <Code>patternType:literal</Code> or <Code>patternType:regexp</Code>
                                 </ValidQueryChecklistItem>
                             </li>
                             <li>
@@ -259,7 +277,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     hint="type:diff targets code present in new commits, while type:commit targets commit messages"
                                     dataTestid="type-checkbox"
                                 >
-                                    Contains a <code>type:diff</code> or <code>type:commit</code> filter
+                                    Contains a <Code>type:diff</Code> or <Code>type:commit</Code> filter
                                 </ValidQueryChecklistItem>
                             </li>
                             <li>
@@ -268,7 +286,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     hint="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
                                     dataTestid="repo-checkbox"
                                 >
-                                    Contains a <code>repo:</code> filter
+                                    Contains a <Code>repo:</Code> filter
                                 </ValidQueryChecklistItem>
                             </li>
                             <li>
@@ -316,12 +334,12 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 When there are new search results
                             </div>
                             {triggerCompleted ? (
-                                <code
+                                <Code
                                     className={classNames('text-break text-muted', styles.queryLabel)}
                                     data-testid="trigger-query-existing"
                                 >
                                     {query}
-                                </code>
+                                </Code>
                             ) : (
                                 <span className="text-muted">
                                     This trigger will fire when new search results are found for a given search query.

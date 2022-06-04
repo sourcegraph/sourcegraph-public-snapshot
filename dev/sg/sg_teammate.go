@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/slack"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -30,9 +30,18 @@ var (
 	teammateCommand = &cli.Command{
 		Name:        "teammate",
 		Usage:       "Get information about Sourcegraph teammates",
-		Description: `Get information about Sourcegraph teammates, such as their current time and handbook page!`,
-		Category:    CategoryCompany,
-		Action:      suggestSubcommandsAction,
+		Description: `For example, you can check a teammate's current time and find their handbook bio!`,
+		UsageText: `
+# Get the current time of a team mate based on their slack handle (case insensitive).
+sg teammate time @dax
+sg teammate time dax
+# or their full name (case insensitive)
+sg teammate time thorsten ball
+
+# Open their handbook bio
+sg teammate handbook asdine
+`,
+		Category: CategoryCompany,
 		Subcommands: []*cli.Command{{
 			Name:      "time",
 			ArgsUsage: "<nickname>",
@@ -49,7 +58,7 @@ var (
 				if err != nil {
 					return err
 				}
-				stdout.Out.Writef("%s's current time is %s",
+				std.Out.Writef("%s's current time is %s",
 					teammate.Name, timeAtLocation(teammate.SlackTimezone))
 				return nil
 			}),
@@ -69,7 +78,7 @@ var (
 				if err != nil {
 					return err
 				}
-				stdout.Out.Writef("Opening handbook link for %s: %s", teammate.Name, teammate.HandbookLink)
+				std.Out.Writef("Opening handbook link for %s: %s", teammate.Name, teammate.HandbookLink)
 				return open.URL(teammate.HandbookLink)
 			}),
 		}},

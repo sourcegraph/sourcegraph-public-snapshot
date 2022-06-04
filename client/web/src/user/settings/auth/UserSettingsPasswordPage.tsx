@@ -6,7 +6,7 @@ import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Button, Container, PageHeader, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Input, Label } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
@@ -150,8 +150,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                         <Form onSubmit={this.handleSubmit}>
                             <Container className="mb-3">
                                 {/* Include a username field as a hint for password managers to update the saved password. */}
-                                <input
-                                    type="text"
+                                <Input
                                     value={this.props.user.username}
                                     name="username"
                                     autoComplete="username"
@@ -159,7 +158,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                     hidden={true}
                                 />
                                 <div className="form-group">
-                                    <label htmlFor="oldPassword">Old password</label>
+                                    <Label htmlFor="oldPassword">Old password</Label>
                                     <PasswordInput
                                         value={this.state.oldPassword}
                                         onChange={this.onOldPasswordFieldChange}
@@ -174,7 +173,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                 </div>
 
                                 <div className="form-group">
-                                    <label htmlFor="newPassword">New password</label>
+                                    <Label htmlFor="newPassword">New password</Label>
                                     <PasswordInput
                                         value={this.state.newPassword}
                                         onChange={this.onNewPasswordFieldChange}
@@ -196,7 +195,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                     {this.getPasswordRequirements()}
                                 </div>
                                 <div className="form-group mb-0">
-                                    <label htmlFor="newPasswordConfirmation">Confirm new password</label>
+                                    <Label htmlFor="newPasswordConfirmation">Confirm new password</Label>
                                     <PasswordInput
                                         value={this.state.newPasswordConfirmation}
                                         onChange={this.onNewPasswordConfirmationFieldChange}

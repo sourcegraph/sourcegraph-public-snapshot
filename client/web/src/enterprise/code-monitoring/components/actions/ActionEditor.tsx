@@ -42,7 +42,7 @@ export interface ActionEditorProps {
     _testStartOpen?: boolean
 }
 
-export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
+export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<ActionEditorProps>> = ({
     title,
     label,
     subtitle,
@@ -148,11 +148,16 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                                 {testAgainButtonText}
                             </Button>
                         )}
+
                         {testButtonDisabledReason && (
-                            <div className={classNames('mt-2', styles.testActionError)}>{testButtonDisabledReason}</div>
+                            <div aria-live="polite" className={classNames('mt-2', styles.testActionError)}>
+                                {testButtonDisabledReason}
+                            </div>
                         )}
+
                         {isErrorLike(testState) && (
                             <div
+                                aria-live="polite"
                                 className={classNames('mt-2', styles.testActionError)}
                                 data-testid={`test-${idName}-error`}
                             >

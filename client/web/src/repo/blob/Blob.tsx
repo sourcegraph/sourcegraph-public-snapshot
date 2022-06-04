@@ -5,7 +5,18 @@ import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
 import { isEqual } from 'lodash'
-import { BehaviorSubject, combineLatest, merge, EMPTY, from, fromEvent, of, ReplaySubject, Subscription } from 'rxjs'
+import {
+    BehaviorSubject,
+    combineLatest,
+    merge,
+    EMPTY,
+    from,
+    fromEvent,
+    of,
+    ReplaySubject,
+    Subscription,
+    Subject,
+} from 'rxjs'
 import {
     catchError,
     concatMap,
@@ -14,6 +25,7 @@ import {
     first,
     map,
     mapTo,
+    pairwise,
     switchMap,
     tap,
     throttleTime,
@@ -28,6 +40,7 @@ import {
     locateTarget,
     findPositionsFromEvents,
     createHoverifier,
+    HoverState,
 } from '@sourcegraph/codeintellify'
 import {
     asError,
@@ -50,10 +63,10 @@ import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/feature
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
-import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
+import { HoverContext, PinOptions } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
@@ -67,7 +80,7 @@ import {
     toURIWithPath,
     parseQueryAndHash,
 } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/wildcard'
+import { Code, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
@@ -176,8 +189,19 @@ const STATUS_BAR_VERTICAL_GAP_VAR = '--blob-status-bar-vertical-gap'
  * previous viewer (e.g. hoverifier subscription, line decorations). If we don't remove extension features
  * in this state, hovers can lead to errors like `DocumentNotFoundError`.
  */
-export const Blob: React.FunctionComponent<BlobProps> = props => {
-    const { location, isLightTheme, extensionsController, blobInfo, platformContext } = props
+export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> = props => {
+    const { location, isLightTheme, extensionsController, blobInfo, platformContext, settingsCascade } = props
+
+    const settingsChanges = useMemo(() => new BehaviorSubject<Settings | null>(null), [])
+    useEffect(() => {
+        if (
+            settingsCascade.final &&
+            !isErrorLike(settingsCascade.final) &&
+            (!settingsChanges.value || !isEqual(settingsChanges.value, settingsCascade.final))
+        ) {
+            settingsChanges.next(settingsCascade.final)
+        }
+    }, [settingsCascade, settingsChanges])
 
     // Element reference subjects passed to `hoverifier`
     const blobElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
@@ -200,6 +224,15 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         },
         [codeViewElements]
     )
+
+    // Emits on changes from URL search params
+    const urlSearchParameters = useMemo(() => new ReplaySubject<URLSearchParams>(1), [])
+    const nextUrlSearchParameters = useCallback((value: URLSearchParams) => urlSearchParameters.next(value), [
+        urlSearchParameters,
+    ])
+    useEffect(() => {
+        nextUrlSearchParameters(new URLSearchParams(location.search))
+    }, [nextUrlSearchParameters, location.search])
 
     // Emits on position changes from URL hash
     const locationPositions = useMemo(() => new ReplaySubject<LineOrPositionOrRange>(1), [])
@@ -253,9 +286,47 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | undefined>()
 
+    const popoverCloses = useMemo(() => new Subject<void>(), [])
+    const nextPopoverClose = useCallback((click: void) => popoverCloses.next(click), [popoverCloses])
+
+    useObservable(
+        useMemo(
+            () =>
+                popoverCloses.pipe(
+                    withLatestFrom(urlSearchParameters),
+                    tap(([, parameters]) => {
+                        parameters.delete('popover')
+                        props.history.push({
+                            ...location,
+                            search: formatSearchParameters(parameters),
+                        })
+                    })
+                ),
+            [location, popoverCloses, props.history, urlSearchParameters]
+        )
+    )
+
+    const popoverParameter = useMemo(() => urlSearchParameters.pipe(map(parameters => parameters.get('popover'))), [
+        urlSearchParameters,
+    ])
+
     const hoverifier = useMemo(
         () =>
             createHoverifier<HoverContext, HoverMerged, ActionItemAction>({
+                pinOptions: {
+                    pins: popoverParameter.pipe(
+                        filter(value => value === 'pinned'),
+                        mapTo(undefined)
+                    ),
+                    closeButtonClicks: merge(
+                        popoverCloses,
+                        popoverParameter.pipe(
+                            pairwise(),
+                            filter(([previous, next]) => previous === 'pinned' && next !== 'pinned'),
+                            mapTo(undefined)
+                        )
+                    ),
+                },
                 hoverOverlayElements,
                 hoverOverlayRerenders: rerenders.pipe(
                     withLatestFrom(hoverOverlayElements, blobElements),
@@ -279,12 +350,13 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 getActions: context => getHoverActions({ extensionsController, platformContext }, context),
             }),
         [
-            // None of these dependencies are likely to change
+            popoverParameter,
+            popoverCloses,
+            hoverOverlayElements,
+            rerenders,
+            blobElements,
             extensionsController,
             platformContext,
-            hoverOverlayElements,
-            blobElements,
-            rerenders,
         ]
     )
 
@@ -326,20 +398,22 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                             query = toPositionOrRangeQueryParameter({ position })
                         }
 
+                        const parameters = new URLSearchParams(location.search)
+                        parameters.delete('popover')
+                        nextPopoverClose()
+
                         if (position && !('character' in position)) {
                             // Only change the URL when clicking on blank space on the line (not on
                             // characters). Otherwise, this would interfere with go to definition.
                             props.history.push({
                                 ...location,
-                                search: formatSearchParameters(
-                                    addLineRangeQueryParameter(new URLSearchParams(location.search), query)
-                                ),
+                                search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
                             })
                         }
                     }),
                     mapTo(undefined)
                 ),
-            [codeViewElements, hoverifier, props.history, location]
+            [codeViewElements, hoverifier.hoverState.selectedPosition, location, nextPopoverClose, props.history]
         )
     )
 
@@ -386,6 +460,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                     // Don't want to create new viewers on position change
                     locationPositions.pipe(first()),
                     from(extensionsController.extHostAPI),
+                    settingsChanges,
                 ]).pipe(
                     concatMap(([blobInfo, initialPosition, extensionHostAPI]) => {
                         const uri = toURIWithPath(blobInfo)
@@ -422,7 +497,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                     }),
                     mapTo(undefined)
                 ),
-            [blobInfoChanges, locationPositions, viewerUpdates, extensionsController]
+            [blobInfoChanges, locationPositions, extensionsController.extHostAPI, settingsChanges, viewerUpdates]
         )
     )
 
@@ -540,7 +615,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     )
 
     // Passed to HoverOverlay
-    const hoverState = useObservable(hoverifier.hoverStateUpdates) || {}
+    const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
+        useObservable(hoverifier.hoverStateUpdates) || {}
 
     // Status bar
     const getStatusBarItems = useCallback(
@@ -604,10 +680,42 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         )
     )
 
+    const pinOptions = useMemo<PinOptions>(
+        () => ({
+            showCloseButton: true,
+            onCloseButtonClick: nextPopoverClose,
+            onCopyLinkButtonClick: async () => {
+                const line = hoverifier.hoverState.hoveredToken?.line
+                const character = hoverifier.hoverState.hoveredToken?.character
+                if (line === undefined || character === undefined) {
+                    return
+                }
+                const point = { line, character }
+                const range = { start: point, end: point }
+                const context = { position: point, range }
+                const search = new URLSearchParams(location.search)
+                search.set('popover', 'pinned')
+                props.history.push({
+                    search: formatSearchParameters(
+                        addLineRangeQueryParameter(search, toPositionOrRangeQueryParameter(context))
+                    ),
+                })
+                await navigator.clipboard.writeText(window.location.href)
+            },
+        }),
+        [
+            hoverifier.hoverState.hoveredToken?.line,
+            hoverifier.hoverState.hoveredToken?.character,
+            location.search,
+            nextPopoverClose,
+            props.history,
+        ]
+    )
+
     return (
         <>
             <div className={classNames(props.className, styles.blob)} ref={nextBlobElement}>
-                <code
+                <Code
                     className={classNames('test-blob', styles.blobCode, props.wrapCode && styles.blobCodeWrapped)}
                     ref={nextCodeViewElement}
                     dangerouslySetInnerHTML={{
@@ -621,6 +729,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         nav={url => (props.nav ? props.nav(url) : props.history.push(url))}
                         hoveredTokenElement={hoverState.hoveredTokenElement}
                         hoverRef={nextOverlayElement}
+                        pinOptions={pinOptions}
                         extensionsController={extensionsController}
                     />
                 )}

@@ -9,16 +9,12 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/grafana/regexp"
-	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -155,11 +151,14 @@ func Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.Commi
 		return searchZoekt(ctx, repoName, commitID, inputRev, branch, query, first, includePatterns)
 	}
 
-	ctx, done := context.WithTimeout(ctx, 5*time.Second)
+	serverTimeout := 5 * time.Second
+	clientTimeout := 2 * serverTimeout
+
+	ctx, done := context.WithTimeout(ctx, clientTimeout)
 	defer done()
 	defer func() {
 		if ctx.Err() != nil && len(res) == 0 {
-			err = errors.New("processing symbols is taking longer than expected. Try again in a while")
+			err = errors.Newf("The symbols service appears unresponsive, check the logs for errors.")
 		}
 	}()
 	var includePatternsSlice []string
@@ -172,6 +171,7 @@ func Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.Commi
 		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
 		Repo:            repoName.Name,
 		IncludePatterns: includePatternsSlice,
+		Timeout:         int(serverTimeout.Seconds()),
 	}
 	if query != nil {
 		searchArgs.Query = *query
@@ -229,35 +229,4 @@ func limitOrDefault(first *int32) int {
 		return DefaultSymbolLimit
 	}
 	return int(*first)
-}
-
-type RepoUniverseSymbolSearch struct {
-	GlobalZoektQuery *zoektutil.GlobalZoektQuery
-	ZoektArgs        *search.ZoektParameters
-	RepoOptions      search.RepoOptions
-}
-
-func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
-	defer func() { finish(alert, err) }()
-
-	userPrivateRepos := repos.PrivateReposForActor(ctx, clients.DB, s.RepoOptions)
-	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
-	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
-
-	// always search for symbols in indexed repositories when searching the repo universe.
-	err = zoektutil.DoZoektSearchGlobal(ctx, clients.Zoekt, s.ZoektArgs, stream)
-	if err != nil {
-		tr.LogFields(otlog.Error(err))
-		// Only record error if we haven't timed out.
-		if ctx.Err() == nil {
-			return nil, err
-		}
-	}
-
-	return nil, nil
-}
-
-func (*RepoUniverseSymbolSearch) Name() string {
-	return "RepoUniverseSymbolSearch"
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -51,7 +51,7 @@ func (s *insightsQueryRunnerJob) Routines(ctx context.Context, logger log.Logger
 		return nil, err
 	}
 
-	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(mainAppDb))
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.NewDB(mainAppDb).SubRepoPerms())
 	if err != nil {
 		return nil, errors.Errorf("Failed to create sub-repo client: %v", err)
 	}
@@ -61,7 +61,7 @@ func (s *insightsQueryRunnerJob) Routines(ctx context.Context, logger log.Logger
 		return nil, err
 	}
 
-	return background.GetBackgroundQueryRunnerJob(context.Background(), mainAppDb, insightsDB), nil
+	return background.GetBackgroundQueryRunnerJob(context.Background(), logger, mainAppDb, insightsDB), nil
 }
 
 func NewInsightsQueryRunnerJob() job.Job {

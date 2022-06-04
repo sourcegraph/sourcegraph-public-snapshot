@@ -5,21 +5,23 @@ import * as H from 'history'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, H4 } from '@sourcegraph/wildcard'
 
 import styles from './ActionContainer.module.scss'
 
-export const BaseActionContainer: React.FunctionComponent<{
-    title: React.ReactFragment
-    description: React.ReactFragment
-    action: React.ReactFragment
-    details?: React.ReactFragment
-    className?: string
-}> = ({ title, description, action, details, className }) => (
+export const BaseActionContainer: React.FunctionComponent<
+    React.PropsWithChildren<{
+        title: React.ReactFragment
+        description: React.ReactFragment
+        action: React.ReactFragment
+        details?: React.ReactFragment
+        className?: string
+    }>
+> = ({ title, description, action, details, className }) => (
     <div className={classNames(styles.actionContainer, className)}>
         <div className={styles.row}>
             <div>
-                <h4 className={styles.title}>{title}</h4>
+                <H4 className={styles.title}>{title}</H4>
                 {description}
             </div>
             <div className={styles.btnContainer}>{action}</div>

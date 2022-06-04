@@ -177,5 +177,5 @@ func LogEvent(ctx context.Context, db database.DB, name, url string, userID int3
 		Argument:        argument,
 		FeatureFlags:    featureFlags,
 	}
-	return database.EventLogs(db).Insert(ctx, info)
+	return db.EventLogs().Insert(ctx, info)
 }

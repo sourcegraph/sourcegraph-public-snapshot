@@ -8,7 +8,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 
 import { CustomersSection } from './CustomersSection'
@@ -20,9 +19,9 @@ import { TipsAndTricks } from './TipsAndTricks'
 
 import styles from './LoggedOutHomepage.module.scss'
 
-export interface LoggedOutHomepageProps extends TelemetryProps, ThemeProps, FeatureFlagProps {}
+export interface LoggedOutHomepageProps extends TelemetryProps, ThemeProps {}
 
-export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> = props => (
+export const LoggedOutHomepage: React.FunctionComponent<React.PropsWithChildren<LoggedOutHomepageProps>> = props => (
     <DynamicWebFonts fonts={fonts}>
         <div className={styles.loggedOutHomepage}>
             <div className={styles.content}>
@@ -30,7 +29,6 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                     height={8}
                     className={classNames(styles.gettingStartedTour, 'h-100')}
                     telemetryService={props.telemetryService}
-                    featureFlags={props.featureFlags}
                     isSourcegraphDotCom={true}
                 />
                 <div className={styles.videoCard}>

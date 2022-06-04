@@ -11,7 +11,7 @@ import (
 )
 
 func TestEmptyCustomGitFetch(t *testing.T) {
-	customGitFetch = func() interface{} {
+	customGitFetch = func() any {
 		return buildCustomFetchMappings(nil)
 	}
 
@@ -66,7 +66,7 @@ func TestCustomGitFetch(t *testing.T) {
 		},
 	}
 
-	customGitFetch = func() interface{} {
+	customGitFetch = func() any {
 		return buildCustomFetchMappings(mappings)
 	}
 

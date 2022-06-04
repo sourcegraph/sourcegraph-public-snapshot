@@ -1,0 +1,17 @@
+.status-bar {
+    display: flex;
+    flex-direction: row;
+    height: 2rem;
+    background-color: var(--subtle-bg);
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.progress-count {
+    margin-left: 0;
+    background-color: inherit;
+}
+
+.spacer {
+    flex-grow: 1;
+}

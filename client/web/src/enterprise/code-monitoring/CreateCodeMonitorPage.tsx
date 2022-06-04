@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import * as H from 'history'
 import { Observable } from 'rxjs'
 
@@ -27,7 +28,9 @@ interface CreateCodeMonitorPageProps extends ThemeProps {
     isSourcegraphDotCom: boolean
 }
 
-const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPageProps> = ({
+const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
+    React.PropsWithChildren<CreateCodeMonitorPageProps>
+> = ({
     authenticatedUser,
     history,
     location,
@@ -81,7 +84,8 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
                     <>
                         Code monitors watch your code for specific triggers and run actions in response.{' '}
                         <Link to="/help/code_monitoring/how-tos/starting_points" target="_blank" rel="noopener">
-                            Learn more
+                            <VisuallyHidden>Learn more about code monitors</VisuallyHidden>
+                            <span aria-hidden={true}>Learn more</span>
                         </Link>
                     </>
                 }

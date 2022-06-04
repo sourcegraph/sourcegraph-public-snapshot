@@ -18,7 +18,7 @@ To see this dashboard, visit `/-/debug/grafana/d/frontend/frontend` on your Sour
 
 <p class="subtitle">99th percentile successful search request duration over 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-99th-percentile-search-request-duration) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-99th-percentile-search-request-duration) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100000` on your Sourcegraph instance.
 
@@ -37,7 +37,7 @@ Query: `histogram_quantile(0.99, sum by (le)(rate(src_search_streaming_latency_s
 
 <p class="subtitle">90th percentile successful search request duration over 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-search-request-duration) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-90th-percentile-search-request-duration) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100001` on your Sourcegraph instance.
 
@@ -56,7 +56,7 @@ Query: `histogram_quantile(0.90, sum by (le)(rate(src_search_streaming_latency_s
 
 <p class="subtitle">Hard timeout search responses every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-hard-timeout-search-responses) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-hard-timeout-search-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100010` on your Sourcegraph instance.
 
@@ -75,7 +75,7 @@ Query: `(sum(increase(src_graphql_search_response{status="timeout",source="brows
 
 <p class="subtitle">Hard error search responses every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-hard-error-search-responses) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-hard-error-search-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100011` on your Sourcegraph instance.
 
@@ -94,7 +94,7 @@ Query: `sum by (status)(increase(src_graphql_search_response{status=~"error",sou
 
 <p class="subtitle">Partial timeout search responses every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-partial-timeout-search-responses) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-partial-timeout-search-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100012` on your Sourcegraph instance.
 
@@ -113,7 +113,7 @@ Query: `sum by (status)(increase(src_graphql_search_response{status="partial_tim
 
 <p class="subtitle">Search alert user suggestions shown every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-search-alert-user-suggestions) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-search-alert-user-suggestions) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100013` on your Sourcegraph instance.
 
@@ -134,7 +134,7 @@ Query: `sum by (alert_type)(increase(src_graphql_search_response{status="alert",
 
 Investigate potential sources of latency by selecting Explore and modifying the `sum by(le)` section to include additional labels: for example, `sum by(le, job)` or `sum by (le, instance)`.
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-page-load-latency) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-page-load-latency) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100020` on your Sourcegraph instance.
 
@@ -153,7 +153,7 @@ Query: `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_secon
 
 <p class="subtitle">90th percentile blob load latency over 10m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-blob-load-latency) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-blob-load-latency) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100021` on your Sourcegraph instance.
 
@@ -174,7 +174,7 @@ Query: `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_secon
 
 <p class="subtitle">99th percentile code-intel successful search request duration over 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-99th-percentile-search-codeintel-request-duration) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-99th-percentile-search-codeintel-request-duration) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100100` on your Sourcegraph instance.
 
@@ -193,7 +193,7 @@ Query: `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_buck
 
 <p class="subtitle">90th percentile code-intel successful search request duration over 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-search-codeintel-request-duration) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-90th-percentile-search-codeintel-request-duration) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100101` on your Sourcegraph instance.
 
@@ -212,7 +212,7 @@ Query: `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_buck
 
 <p class="subtitle">Hard timeout search code-intel responses every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-hard-timeout-search-codeintel-responses) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-hard-timeout-search-codeintel-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100110` on your Sourcegraph instance.
 
@@ -231,7 +231,7 @@ Query: `(sum(increase(src_graphql_search_response{status="timeout",source="brows
 
 <p class="subtitle">Hard error search code-intel responses every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-hard-error-search-codeintel-responses) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-hard-error-search-codeintel-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100111` on your Sourcegraph instance.
 
@@ -250,7 +250,7 @@ Query: `sum by (status)(increase(src_graphql_search_response{status=~"error",sou
 
 <p class="subtitle">Partial timeout search code-intel responses every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-partial-timeout-search-codeintel-responses) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-partial-timeout-search-codeintel-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100112` on your Sourcegraph instance.
 
@@ -269,7 +269,7 @@ Query: `sum by (status)(increase(src_graphql_search_response{status="partial_tim
 
 <p class="subtitle">Search code-intel alert user suggestions shown every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-search-codeintel-alert-user-suggestions) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-search-codeintel-alert-user-suggestions) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100113` on your Sourcegraph instance.
 
@@ -290,7 +290,7 @@ Query: `sum by (alert_type)(increase(src_graphql_search_response{status="alert",
 
 <p class="subtitle">99th percentile successful search API request duration over 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-99th-percentile-search-api-request-duration) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-99th-percentile-search-api-request-duration) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100200` on your Sourcegraph instance.
 
@@ -309,7 +309,7 @@ Query: `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_buck
 
 <p class="subtitle">90th percentile successful search API request duration over 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-search-api-request-duration) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-90th-percentile-search-api-request-duration) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100201` on your Sourcegraph instance.
 
@@ -328,7 +328,7 @@ Query: `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_buck
 
 <p class="subtitle">Hard error search API responses every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-hard-error-search-api-responses) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-hard-error-search-api-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100210` on your Sourcegraph instance.
 
@@ -347,7 +347,7 @@ Query: `sum by (status)(increase(src_graphql_search_response{status=~"error",sou
 
 <p class="subtitle">Partial timeout search API responses every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-partial-timeout-search-api-responses) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-partial-timeout-search-api-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100211` on your Sourcegraph instance.
 
@@ -366,7 +366,7 @@ Query: `sum(increase(src_graphql_search_response{status="partial_timeout",source
 
 <p class="subtitle">Search API alert user suggestions shown every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-search-api-alert-user-suggestions) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-search-api-alert-user-suggestions) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100212` on your Sourcegraph instance.
 
@@ -2469,7 +2469,7 @@ Query: `sum(increase(src_oobmigration_errors_total{op="down",job=~"^(frontend|so
 
 <p class="subtitle">Internal indexed search error responses every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-internal-indexed-search-error-responses) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-internal-indexed-search-error-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101800` on your Sourcegraph instance.
 
@@ -2488,7 +2488,7 @@ Query: `sum by(code) (increase(src_zoekt_request_duration_seconds_count{code!~"2
 
 <p class="subtitle">Internal unindexed search error responses every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-internal-unindexed-search-error-responses) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-internal-unindexed-search-error-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101801` on your Sourcegraph instance.
 
@@ -2507,7 +2507,7 @@ Query: `sum by(code) (increase(searcher_service_request_total{code!~"2.."}[5m]))
 
 <p class="subtitle">Internal API error responses every 5m by route</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-internalapi-error-responses) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-internalapi-error-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101802` on your Sourcegraph instance.
 
@@ -2526,7 +2526,7 @@ Query: `sum by(category) (increase(src_frontend_internal_request_duration_second
 
 <p class="subtitle">99th percentile successful gitserver query duration over 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-99th-percentile-gitserver-duration) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-99th-percentile-gitserver-duration) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101810` on your Sourcegraph instance.
 
@@ -2545,7 +2545,7 @@ Query: `histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request
 
 <p class="subtitle">Gitserver error responses every 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-gitserver-error-responses) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-gitserver-error-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101811` on your Sourcegraph instance.
 
@@ -2564,7 +2564,7 @@ Query: `sum by (category)(increase(src_gitserver_request_duration_seconds_count{
 
 <p class="subtitle">Warning test alert metric</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-observability-test-alert-warning) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-observability-test-alert-warning) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101820` on your Sourcegraph instance.
 
@@ -2583,7 +2583,7 @@ Query: `max by(owner) (observability_test_metric_warning)`
 
 <p class="subtitle">Critical test alert metric</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-observability-test-alert-critical) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-observability-test-alert-critical) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101821` on your Sourcegraph instance.
 
@@ -3217,7 +3217,7 @@ Query: `sum (irate(src_graphql_request_duration_seconds_count{route="OrgReposito
 
 <p class="subtitle">Cryptographic requests to Cloud KMS every 1m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-cloudkms-cryptographic-requests) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-cloudkms-cryptographic-requests) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102100` on your Sourcegraph instance.
 
@@ -3356,7 +3356,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="frontend"})`
 
 <p class="subtitle">Mean blocked seconds per conn request</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102220` on your Sourcegraph instance.
 
@@ -3463,7 +3463,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^(frontend|sourcegr
 
 <p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-container-cpu-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-container-cpu-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102301` on your Sourcegraph instance.
 
@@ -3482,7 +3482,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegr
 
 <p class="subtitle">Container memory usage by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-container-memory-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-container-memory-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102302` on your Sourcegraph instance.
 
@@ -3525,7 +3525,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^(frontend|sourcegrap
 
 <p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102400` on your Sourcegraph instance.
 
@@ -3544,7 +3544,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 <p class="subtitle">Container memory usage (1d maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102401` on your Sourcegraph instance.
 
@@ -3563,7 +3563,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(
 
 <p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102410` on your Sourcegraph instance.
 
@@ -3582,7 +3582,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(fro
 
 <p class="subtitle">Container memory usage (5m maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102411` on your Sourcegraph instance.
 
@@ -3597,6 +3597,28 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(
 
 <br />
 
+#### frontend: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alerts reference](./alerts.md#frontend-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102412` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^(frontend|sourcegraph-frontend).*"})`
+
+</details>
+
+<br />
+
 ### Frontend: Golang runtime monitoring
 
 #### frontend: go_goroutines
@@ -3605,7 +3627,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(
 
 A high value here indicates a possible goroutine leak.
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-go-goroutines) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-go-goroutines) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102500` on your Sourcegraph instance.
 
@@ -3624,7 +3646,7 @@ Query: `max by(instance) (go_goroutines{job=~".*(frontend|sourcegraph-frontend)"
 
 <p class="subtitle">Maximum go garbage collection duration</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-go-gc-duration-seconds) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-go-gc-duration-seconds) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102501` on your Sourcegraph instance.
 
@@ -3645,7 +3667,7 @@ Query: `max by(instance) (go_gc_duration_seconds{job=~".*(frontend|sourcegraph-f
 
 <p class="subtitle">Percentage pods available</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-pods-available-percentage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-pods-available-percentage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102600` on your Sourcegraph instance.
 
@@ -3712,7 +3734,7 @@ Query: `round(sum(increase(src_search_ranking_result_clicked_sum{type="commit"}[
 
 Mean search duration for all successful sentinel queries
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-successful-sentinel-duration-over-2h) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-mean-successful-sentinel-duration-over-2h) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102800` on your Sourcegraph instance.
 
@@ -3733,7 +3755,7 @@ Query: `sum(rate(src_search_response_latency_seconds_sum{source=~`searchblitz.*`
 
 Mean time to first result for all successful streaming sentinel queries
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-sentinel-stream-latency-over-2h) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-mean-sentinel-stream-latency-over-2h) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102801` on your Sourcegraph instance.
 
@@ -3754,7 +3776,7 @@ Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*
 
 90th percentile search duration for all successful sentinel queries
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-successful-sentinel-duration-over-2h) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-90th-percentile-successful-sentinel-duration-over-2h) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102810` on your Sourcegraph instance.
 
@@ -3775,7 +3797,7 @@ Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_respo
 
 90th percentile time to first result for all successful streaming sentinel queries
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-sentinel-stream-latency-over-2h) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#frontend-90th-percentile-sentinel-stream-latency-over-2h) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102811` on your Sourcegraph instance.
 
@@ -4073,7 +4095,7 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_cpu_usag
 
 <p class="subtitle">Disk space remaining by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-disk-space-remaining) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#gitserver-disk-space-remaining) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100020` on your Sourcegraph instance.
 
@@ -4220,7 +4242,7 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_write
 
 A high value signals load.
 
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-running-git-commands) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#gitserver-running-git-commands) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100060` on your Sourcegraph instance.
 
@@ -4260,7 +4282,7 @@ Query: `sum by (cmd) (rate(src_gitserver_exec_duration_seconds_count[5m]))`
 
 <p class="subtitle">Repository clone queue size</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-repository-clone-queue-size) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#gitserver-repository-clone-queue-size) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100070` on your Sourcegraph instance.
 
@@ -4279,7 +4301,7 @@ Query: `sum(src_gitserver_clone_queue)`
 
 <p class="subtitle">Repository existence check queue size</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-repository-existence-check-queue-size) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#gitserver-repository-existence-check-queue-size) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100071` on your Sourcegraph instance.
 
@@ -4303,8 +4325,8 @@ You can query for individual commands using `sum by (cmd)(src_gitserver_exec_run
 
 If this value is consistently high, consider the following:
 
-- **Single container deployments:** Upgrade to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
-- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
+- **Single container deployments:** Upgrade to a [Docker Compose deployment](../deploy/docker-compose/migrate.md) which offers better scalability and resource isolation.
+- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../deploy/resource_estimator.md).
 
 This panel has no related alerts.
 
@@ -4325,7 +4347,7 @@ Query: `max(src_gitserver_echo_duration_seconds)`
 
 <p class="subtitle">Frontend-internal API error responses every 5m by route</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-frontend-internal-api-error-responses) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#gitserver-frontend-internal-api-error-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100081` on your Sourcegraph instance.
 
@@ -5331,7 +5353,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="gitserver"})`
 
 <p class="subtitle">Mean blocked seconds per conn request</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#gitserver-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100820` on your Sourcegraph instance.
 
@@ -5438,7 +5460,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^gitserver.*"}) > 6
 
 <p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-container-cpu-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#gitserver-container-cpu-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100901` on your Sourcegraph instance.
 
@@ -5457,7 +5479,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^gitserver.*"}`
 
 <p class="subtitle">Container memory usage by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-container-memory-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#gitserver-container-memory-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100902` on your Sourcegraph instance.
 
@@ -5500,7 +5522,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^gitserver.*"}[1h]) +
 
 <p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#gitserver-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101000` on your Sourcegraph instance.
 
@@ -5540,7 +5562,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^g
 
 <p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#gitserver-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101010` on your Sourcegraph instance.
 
@@ -5576,6 +5598,28 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^g
 
 <br />
 
+#### gitserver: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alerts reference](./alerts.md#gitserver-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101012` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^gitserver.*"})`
+
+</details>
+
+<br />
+
 ### Git Server: Golang runtime monitoring
 
 #### gitserver: go_goroutines
@@ -5584,7 +5628,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^g
 
 A high value here indicates a possible goroutine leak.
 
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-go-goroutines) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#gitserver-go-goroutines) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101100` on your Sourcegraph instance.
 
@@ -5603,7 +5647,7 @@ Query: `max by(instance) (go_goroutines{job=~".*gitserver"})`
 
 <p class="subtitle">Maximum go garbage collection duration</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-go-gc-duration-seconds) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#gitserver-go-gc-duration-seconds) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101101` on your Sourcegraph instance.
 
@@ -5624,7 +5668,7 @@ Query: `max by(instance) (go_gc_duration_seconds{job=~".*gitserver"})`
 
 <p class="subtitle">Percentage pods available</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#gitserver-pods-available-percentage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#gitserver-pods-available-percentage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101200` on your Sourcegraph instance.
 
@@ -5651,7 +5695,7 @@ To see this dashboard, visit `/-/debug/grafana/d/github-proxy/github-proxy` on y
 
 <p class="subtitle">Number of requests waiting on the global mutex</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-github-proxy-waiting-requests) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#github-proxy-github-proxy-waiting-requests) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100000` on your Sourcegraph instance.
 
@@ -5701,7 +5745,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^github-proxy.*"}) 
 
 <p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-container-cpu-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#github-proxy-container-cpu-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100101` on your Sourcegraph instance.
 
@@ -5720,7 +5764,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^github-proxy.*"}`
 
 <p class="subtitle">Container memory usage by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-container-memory-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#github-proxy-container-memory-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100102` on your Sourcegraph instance.
 
@@ -5763,7 +5807,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^github-proxy.*"}[1h]
 
 <p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#github-proxy-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100200` on your Sourcegraph instance.
 
@@ -5782,7 +5826,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 <p class="subtitle">Container memory usage (1d maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#github-proxy-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100201` on your Sourcegraph instance.
 
@@ -5801,7 +5845,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^g
 
 <p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#github-proxy-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100210` on your Sourcegraph instance.
 
@@ -5820,7 +5864,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^gith
 
 <p class="subtitle">Container memory usage (5m maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#github-proxy-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100211` on your Sourcegraph instance.
 
@@ -5835,6 +5879,28 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^g
 
 <br />
 
+#### github-proxy: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alerts reference](./alerts.md#github-proxy-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100212` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^github-proxy.*"})`
+
+</details>
+
+<br />
+
 ### GitHub Proxy: Golang runtime monitoring
 
 #### github-proxy: go_goroutines
@@ -5843,7 +5909,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^g
 
 A high value here indicates a possible goroutine leak.
 
-Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-go-goroutines) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#github-proxy-go-goroutines) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100300` on your Sourcegraph instance.
 
@@ -5862,7 +5928,7 @@ Query: `max by(instance) (go_goroutines{job=~".*github-proxy"})`
 
 <p class="subtitle">Maximum go garbage collection duration</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-go-gc-duration-seconds) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#github-proxy-go-gc-duration-seconds) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100301` on your Sourcegraph instance.
 
@@ -5883,7 +5949,7 @@ Query: `max by(instance) (go_gc_duration_seconds{job=~".*github-proxy"})`
 
 <p class="subtitle">Percentage pods available</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-pods-available-percentage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#github-proxy-pods-available-percentage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100400` on your Sourcegraph instance.
 
@@ -5908,7 +5974,7 @@ To see this dashboard, visit `/-/debug/grafana/d/postgres/postgres` on your Sour
 
 <p class="subtitle">Active connections</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-connections) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#postgres-connections) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100000` on your Sourcegraph instance.
 
@@ -5927,7 +5993,7 @@ Query: `sum by (job) (pg_stat_activity_count{datname!~"template.*|postgres|cloud
 
 <p class="subtitle">Connection in use</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-usage-connections-percentage) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#postgres-usage-connections-percentage) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100001` on your Sourcegraph instance.
 
@@ -5946,7 +6012,7 @@ Query: `sum(pg_stat_activity_count) by (job) / (sum(pg_settings_max_connections)
 
 <p class="subtitle">Maximum transaction durations</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-transaction-durations) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#postgres-transaction-durations) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100002` on your Sourcegraph instance.
 
@@ -5969,7 +6035,7 @@ Query: `sum by (job) (pg_stat_activity_max_tx_duration{datname!~"template.*|post
 
 A non-zero value indicates the database is online.
 
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-postgres-up) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#postgres-postgres-up) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100100` on your Sourcegraph instance.
 
@@ -5990,7 +6056,7 @@ Query: `pg_up`
 
 A non-zero value indicates the that Postgres failed to build an index. Expect degraded performance until the index is manually rebuilt.
 
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-invalid-indexes) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#postgres-invalid-indexes) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100101` on your Sourcegraph instance.
 
@@ -6011,7 +6077,7 @@ Query: `max by (relname)(pg_invalid_index_count)`
 
 This value indicates issues retrieving metrics from postgres_exporter.
 
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-pg-exporter-err) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#postgres-pg-exporter-err) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100110` on your Sourcegraph instance.
 
@@ -6032,7 +6098,7 @@ Query: `pg_exporter_last_scrape_error`
 
 A 0 value indicates that no migration is in progress.
 
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-migration-in-progress) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#postgres-migration-in-progress) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100111` on your Sourcegraph instance.
 
@@ -6139,7 +6205,7 @@ Query: `max by (relname)(pg_index_bloat_ratio) * 100`
 
 <p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#postgres-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100300` on your Sourcegraph instance.
 
@@ -6148,7 +6214,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100300`
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^(pgsql|codeintel-db|codeinsights-db).*"}[1d])`
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^(pgsql|codeintel-db|codeinsights).*"}[1d])`
 
 </details>
 
@@ -6158,7 +6224,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 <p class="subtitle">Container memory usage (1d maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#postgres-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100301` on your Sourcegraph instance.
 
@@ -6167,7 +6233,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100301`
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(pgsql|codeintel-db|codeinsights-db).*"}[1d])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(pgsql|codeintel-db|codeinsights).*"}[1d])`
 
 </details>
 
@@ -6177,7 +6243,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(
 
 <p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#postgres-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100310` on your Sourcegraph instance.
 
@@ -6186,7 +6252,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100310`
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(pgsql|codeintel-db|codeinsights-db).*"}[5m])`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(pgsql|codeintel-db|codeinsights).*"}[5m])`
 
 </details>
 
@@ -6196,7 +6262,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(pgs
 
 <p class="subtitle">Container memory usage (5m maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#postgres-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100311` on your Sourcegraph instance.
 
@@ -6205,7 +6271,29 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100311`
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(pgsql|codeintel-db|codeinsights-db).*"}[5m])`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(pgsql|codeintel-db|codeinsights).*"}[5m])`
+
+</details>
+
+<br />
+
+#### postgres: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alerts reference](./alerts.md#postgres-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100312` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^(pgsql|codeintel-db|codeinsights).*"})`
 
 </details>
 
@@ -6217,7 +6305,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(
 
 <p class="subtitle">Percentage pods available</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#postgres-pods-available-percentage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#postgres-pods-available-percentage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100400` on your Sourcegraph instance.
 
@@ -6226,7 +6314,7 @@ To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100400`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(app) (up{app=~".*(pgsql|codeintel-db|codeinsights-db)"}) / count by (app) (up{app=~".*(pgsql|codeintel-db|codeinsights-db)"}) * 100`
+Query: `sum by(app) (up{app=~".*(pgsql|codeintel-db|codeinsights)"}) / count by (app) (up{app=~".*(pgsql|codeintel-db|codeinsights)"}) * 100`
 
 </details>
 
@@ -6288,7 +6376,7 @@ Query: `sum(increase(src_codeintel_upload_total{job=~"^precise-code-intel-worker
 
 <p class="subtitle">Unprocessed upload record queue longest time in queue</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-codeintel-upload-queued-max-age) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#precise-code-intel-worker-codeintel-upload-queued-max-age) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100002` on your Sourcegraph instance.
 
@@ -7100,7 +7188,7 @@ Query: `sum by (op)(increase(src_codeintel_uploadstore_errors_total{job=~"^preci
 
 <p class="subtitle">Frontend-internal API error responses every 5m by route</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-frontend-internal-api-error-responses) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#precise-code-intel-worker-frontend-internal-api-error-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100700` on your Sourcegraph instance.
 
@@ -7197,7 +7285,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="precise-code-
 
 <p class="subtitle">Mean blocked seconds per conn request</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#precise-code-intel-worker-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100820` on your Sourcegraph instance.
 
@@ -7304,7 +7392,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^precise-code-intel
 
 <p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-container-cpu-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#precise-code-intel-worker-container-cpu-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100901` on your Sourcegraph instance.
 
@@ -7323,7 +7411,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^precise-code-intel
 
 <p class="subtitle">Container memory usage by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-container-memory-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#precise-code-intel-worker-container-memory-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100902` on your Sourcegraph instance.
 
@@ -7366,7 +7454,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^precise-code-intel-w
 
 <p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#precise-code-intel-worker-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=101000` on your Sourcegraph instance.
 
@@ -7385,7 +7473,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 <p class="subtitle">Container memory usage (1d maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#precise-code-intel-worker-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=101001` on your Sourcegraph instance.
 
@@ -7404,7 +7492,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^p
 
 <p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#precise-code-intel-worker-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=101010` on your Sourcegraph instance.
 
@@ -7423,7 +7511,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^prec
 
 <p class="subtitle">Container memory usage (5m maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#precise-code-intel-worker-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=101011` on your Sourcegraph instance.
 
@@ -7438,6 +7526,28 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^p
 
 <br />
 
+#### precise-code-intel-worker: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alerts reference](./alerts.md#precise-code-intel-worker-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=101012` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^precise-code-intel-worker.*"})`
+
+</details>
+
+<br />
+
 ### Precise Code Intel Worker: Golang runtime monitoring
 
 #### precise-code-intel-worker: go_goroutines
@@ -7446,7 +7556,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^p
 
 A high value here indicates a possible goroutine leak.
 
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-go-goroutines) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#precise-code-intel-worker-go-goroutines) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=101100` on your Sourcegraph instance.
 
@@ -7465,7 +7575,7 @@ Query: `max by(instance) (go_goroutines{job=~".*precise-code-intel-worker"})`
 
 <p class="subtitle">Maximum go garbage collection duration</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-go-gc-duration-seconds) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#precise-code-intel-worker-go-gc-duration-seconds) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=101101` on your Sourcegraph instance.
 
@@ -7486,7 +7596,7 @@ Query: `max by(instance) (go_gc_duration_seconds{job=~".*precise-code-intel-work
 
 <p class="subtitle">Percentage pods available</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-pods-available-percentage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#precise-code-intel-worker-pods-available-percentage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=101200` on your Sourcegraph instance.
 
@@ -7515,7 +7625,7 @@ To see this dashboard, visit `/-/debug/grafana/d/redis/redis` on your Sourcegrap
 
 A value of 1 indicates the service is currently running
 
-Refer to the [alert solutions reference](./alert_solutions.md#redis-redis-store-up) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#redis-redis-store-up) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100000` on your Sourcegraph instance.
 
@@ -7538,7 +7648,7 @@ Query: `redis_up{app="redis-store"}`
 
 A value of 1 indicates the service is currently running
 
-Refer to the [alert solutions reference](./alert_solutions.md#redis-redis-cache-up) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#redis-redis-cache-up) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100100` on your Sourcegraph instance.
 
@@ -7559,7 +7669,7 @@ Query: `redis_up{app="redis-cache"}`
 
 <p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#redis-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100200` on your Sourcegraph instance.
 
@@ -7578,7 +7688,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 <p class="subtitle">Container memory usage (1d maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#redis-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100201` on your Sourcegraph instance.
 
@@ -7597,7 +7707,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^r
 
 <p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#redis-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100210` on your Sourcegraph instance.
 
@@ -7616,7 +7726,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^redi
 
 <p class="subtitle">Container memory usage (5m maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#redis-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100211` on your Sourcegraph instance.
 
@@ -7631,13 +7741,35 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^r
 
 <br />
 
+#### redis: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alerts reference](./alerts.md#redis-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100212` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^redis-cache.*"})`
+
+</details>
+
+<br />
+
 ### Redis: Provisioning indicators (not available on server)
 
 #### redis: provisioning_container_cpu_usage_long_term
 
 <p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#redis-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100300` on your Sourcegraph instance.
 
@@ -7656,7 +7788,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 <p class="subtitle">Container memory usage (1d maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#redis-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100301` on your Sourcegraph instance.
 
@@ -7675,7 +7807,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^r
 
 <p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#redis-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100310` on your Sourcegraph instance.
 
@@ -7694,7 +7826,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^redi
 
 <p class="subtitle">Container memory usage (5m maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#redis-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100311` on your Sourcegraph instance.
 
@@ -7709,13 +7841,35 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^r
 
 <br />
 
+#### redis: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alerts reference](./alerts.md#redis-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100312` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^redis-store.*"})`
+
+</details>
+
+<br />
+
 ### Redis: Kubernetes monitoring (only available on Kubernetes)
 
 #### redis: pods_available_percentage
 
 <p class="subtitle">Percentage pods available</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#redis-pods-available-percentage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#redis-pods-available-percentage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100400` on your Sourcegraph instance.
 
@@ -7736,7 +7890,7 @@ Query: `sum by(app) (up{app=~".*redis-cache"}) / count by (app) (up{app=~".*redi
 
 <p class="subtitle">Percentage pods available</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#redis-pods-available-percentage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#redis-pods-available-percentage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100500` on your Sourcegraph instance.
 
@@ -7780,11 +7934,11 @@ Query: `sum by (job_name) (src_worker_jobs{job="worker"})`
 
 <br />
 
-#### worker: worker_job_codeintel-janitor_count
+#### worker: worker_job_codeintel-upload-janitor_count
 
-<p class="subtitle">Number of worker instances running the codeintel-janitor job</p>
+<p class="subtitle">Number of worker instances running the codeintel-upload-janitor job</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-worker-job-codeintel-janitor-count) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#worker-worker-job-codeintel-upload-janitor-count) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100010` on your Sourcegraph instance.
 
@@ -7793,17 +7947,17 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100010` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-janitor"})`
+Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-upload-janitor"})`
 
 </details>
 
 <br />
 
-#### worker: worker_job_codeintel-commitgraph_count
+#### worker: worker_job_codeintel-commitgraph-updater_count
 
-<p class="subtitle">Number of worker instances running the codeintel-commitgraph job</p>
+<p class="subtitle">Number of worker instances running the codeintel-commitgraph-updater job</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-worker-job-codeintel-commitgraph-count) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#worker-worker-job-codeintel-commitgraph-updater-count) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100011` on your Sourcegraph instance.
 
@@ -7812,17 +7966,17 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100011` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-commitgraph"})`
+Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-commitgraph-updater"})`
 
 </details>
 
 <br />
 
-#### worker: worker_job_codeintel-auto-indexing_count
+#### worker: worker_job_codeintel-autoindexing-scheduler_count
 
-<p class="subtitle">Number of worker instances running the codeintel-auto-indexing job</p>
+<p class="subtitle">Number of worker instances running the codeintel-autoindexing-scheduler job</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-worker-job-codeintel-auto-indexing-count) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#worker-worker-job-codeintel-autoindexing-scheduler-count) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100012` on your Sourcegraph instance.
 
@@ -7831,7 +7985,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100012` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-auto-indexing"})`
+Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-autoindexing-scheduler"})`
 
 </details>
 
@@ -7887,7 +8041,7 @@ Query: `sum(increase(src_codeintel_commit_graph_total{job=~"^worker.*"}[30m])) /
 
 <p class="subtitle">Repository queue longest time in queue</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-codeintel-commit-graph-queued-max-age) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#worker-codeintel-commit-graph-queued-max-age) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100102` on your Sourcegraph instance.
 
@@ -10359,7 +10513,7 @@ Query: `sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner
 
 Any value on this panel indicates code insights is not processing queries from its queue. This observable and alert only fire if there are records in the queue and there have been no dequeue attempts for 30 minutes.
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-insights-queue-unutilized-size) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#worker-insights-queue-unutilized-size) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102300` on your Sourcegraph instance.
 
@@ -10380,7 +10534,7 @@ Query: `max(src_insights_search_queue_total{job=~"^worker.*"}) > 0 and on(job) s
 
 <p class="subtitle">Frontend-internal API error responses every 5m by route</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-frontend-internal-api-error-responses) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#worker-frontend-internal-api-error-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102400` on your Sourcegraph instance.
 
@@ -10477,7 +10631,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="worker"})`
 
 <p class="subtitle">Mean blocked seconds per conn request</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#worker-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102520` on your Sourcegraph instance.
 
@@ -10584,7 +10738,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^worker.*"}) > 60)`
 
 <p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-container-cpu-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#worker-container-cpu-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102601` on your Sourcegraph instance.
 
@@ -10603,7 +10757,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^worker.*"}`
 
 <p class="subtitle">Container memory usage by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-container-memory-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#worker-container-memory-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102602` on your Sourcegraph instance.
 
@@ -10646,7 +10800,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^worker.*"}[1h]) + ra
 
 <p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#worker-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102700` on your Sourcegraph instance.
 
@@ -10665,7 +10819,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 <p class="subtitle">Container memory usage (1d maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#worker-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102701` on your Sourcegraph instance.
 
@@ -10684,7 +10838,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^w
 
 <p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#worker-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102710` on your Sourcegraph instance.
 
@@ -10703,7 +10857,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^work
 
 <p class="subtitle">Container memory usage (5m maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#worker-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102711` on your Sourcegraph instance.
 
@@ -10718,6 +10872,28 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^w
 
 <br />
 
+#### worker: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alerts reference](./alerts.md#worker-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102712` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^worker.*"})`
+
+</details>
+
+<br />
+
 ### Worker: Golang runtime monitoring
 
 #### worker: go_goroutines
@@ -10726,7 +10902,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^w
 
 A high value here indicates a possible goroutine leak.
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-go-goroutines) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#worker-go-goroutines) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102800` on your Sourcegraph instance.
 
@@ -10745,7 +10921,7 @@ Query: `max by(instance) (go_goroutines{job=~".*worker"})`
 
 <p class="subtitle">Maximum go garbage collection duration</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-go-gc-duration-seconds) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#worker-go-gc-duration-seconds) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102801` on your Sourcegraph instance.
 
@@ -10766,7 +10942,7 @@ Query: `max by(instance) (go_gc_duration_seconds{job=~".*worker"})`
 
 <p class="subtitle">Percentage pods available</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#worker-pods-available-percentage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#worker-pods-available-percentage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102900` on your Sourcegraph instance.
 
@@ -10815,7 +10991,7 @@ Query: `max(timestamp(vector(time()))) - max(src_repoupdater_syncer_sync_last_ti
 
 <p class="subtitle">Time since oldest sync</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-src-repoupdater-max-sync-backoff) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-src-repoupdater-max-sync-backoff) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100001` on your Sourcegraph instance.
 
@@ -10834,7 +11010,7 @@ Query: `max(src_repoupdater_max_sync_backoff)`
 
 <p class="subtitle">Site level external service sync error rate</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-src-repoupdater-syncer-sync-errors-total) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-src-repoupdater-syncer-sync-errors-total) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100002` on your Sourcegraph instance.
 
@@ -10843,7 +11019,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (family) (rate(src_repoupdater_syncer_sync_errors_total{owner!="user"}[5m]))`
+Query: `max by (family) (rate(src_repoupdater_syncer_sync_errors_total{owner!="user",reason!="invalid_npm_path",reason!="internal_rate_limit"}[5m]))`
 
 </details>
 
@@ -10853,7 +11029,7 @@ Query: `max by (family) (rate(src_repoupdater_syncer_sync_errors_total{owner!="u
 
 <p class="subtitle">Repo metadata sync was started</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-syncer-sync-start) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-syncer-sync-start) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100010` on your Sourcegraph instance.
 
@@ -10872,7 +11048,7 @@ Query: `max by (family) (rate(src_repoupdater_syncer_start_sync{family="Syncer.S
 
 <p class="subtitle">95th repositories sync duration</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-syncer-sync-duration) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-syncer-sync-duration) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100011` on your Sourcegraph instance.
 
@@ -10891,7 +11067,7 @@ Query: `histogram_quantile(0.95, max by (le, family, success) (rate(src_repoupda
 
 <p class="subtitle">95th repositories source duration</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-source-duration) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-source-duration) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100012` on your Sourcegraph instance.
 
@@ -10910,7 +11086,7 @@ Query: `histogram_quantile(0.95, max by (le) (rate(src_repoupdater_source_durati
 
 <p class="subtitle">Repositories synced</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-syncer-synced-repos) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-syncer-synced-repos) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100020` on your Sourcegraph instance.
 
@@ -10929,7 +11105,7 @@ Query: `max(max by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m]))
 
 <p class="subtitle">Repositories sourced</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-sourced-repos) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-sourced-repos) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100021` on your Sourcegraph instance.
 
@@ -10948,7 +11124,7 @@ Query: `max(rate(src_repoupdater_source_repos_total[1m]))`
 
 <p class="subtitle">Total number of user added repos</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-user-added-repos) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-user-added-repos) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100022` on your Sourcegraph instance.
 
@@ -10967,7 +11143,7 @@ Query: `max(src_repoupdater_user_repos_total)`
 
 <p class="subtitle">Repositories purge failed</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-purge-failed) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-purge-failed) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100030` on your Sourcegraph instance.
 
@@ -10986,7 +11162,7 @@ Query: `max(rate(src_repoupdater_purge_failed[1m]))`
 
 <p class="subtitle">Repositories scheduled due to hitting a deadline</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-sched-auto-fetch) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-sched-auto-fetch) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100040` on your Sourcegraph instance.
 
@@ -11027,7 +11203,7 @@ Query: `max(rate(src_repoupdater_sched_manual_fetch[1m]))`
 
 <p class="subtitle">Repositories managed by the scheduler</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-sched-known-repos) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-sched-known-repos) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100050` on your Sourcegraph instance.
 
@@ -11046,7 +11222,7 @@ Query: `max(src_repoupdater_sched_known_repos)`
 
 <p class="subtitle">Rate of growth of update queue length over 5 minutes</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-sched-update-queue-length) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-sched-update-queue-length) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100051` on your Sourcegraph instance.
 
@@ -11065,7 +11241,7 @@ Query: `max(deriv(src_repoupdater_sched_update_queue_length[5m]))`
 
 <p class="subtitle">Scheduler loops</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-sched-loops) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-sched-loops) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100052` on your Sourcegraph instance.
 
@@ -11084,7 +11260,7 @@ Query: `max(rate(src_repoupdater_sched_loops[1m]))`
 
 <p class="subtitle">Repos that haven't been fetched in more than 8 hours</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-src-repoupdater-stale-repos) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-src-repoupdater-stale-repos) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100060` on your Sourcegraph instance.
 
@@ -11103,7 +11279,7 @@ Query: `max(src_repoupdater_stale_repos)`
 
 <p class="subtitle">Repositories schedule error rate</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-sched-error) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-sched-error) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100061` on your Sourcegraph instance.
 
@@ -11124,7 +11300,7 @@ Query: `max(rate(src_repoupdater_sched_error[1m]))`
 
 <p class="subtitle">Time gap between least and most up to date permissions</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-perms) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-perms) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100100` on your Sourcegraph instance.
 
@@ -11143,7 +11319,7 @@ Query: `max by (type) (src_repoupdater_perms_syncer_perms_gap_seconds)`
 
 <p class="subtitle">Number of entities with stale permissions</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-stale-perms) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-stale-perms) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100101` on your Sourcegraph instance.
 
@@ -11162,7 +11338,7 @@ Query: `max by (type) (src_repoupdater_perms_syncer_stale_perms)`
 
 <p class="subtitle">Number of entities with no permissions</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-no-perms) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-no-perms) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100110` on your Sourcegraph instance.
 
@@ -11181,7 +11357,7 @@ Query: `max by (type) (src_repoupdater_perms_syncer_no_perms)`
 
 <p class="subtitle">Number of entities with outdated permissions</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-outdated-perms) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-outdated-perms) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100111` on your Sourcegraph instance.
 
@@ -11200,7 +11376,7 @@ Query: `max by (type) (src_repoupdater_perms_syncer_outdated_perms)`
 
 <p class="subtitle">95th permissions sync duration</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-sync-duration) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-sync-duration) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100120` on your Sourcegraph instance.
 
@@ -11219,7 +11395,7 @@ Query: `histogram_quantile(0.95, max by (le, type) (rate(src_repoupdater_perms_s
 
 <p class="subtitle">Permissions sync queued items</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-queue-size) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-queue-size) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100121` on your Sourcegraph instance.
 
@@ -11238,7 +11414,7 @@ Query: `max(src_repoupdater_perms_syncer_queue_size)`
 
 <p class="subtitle">Permissions sync error rate</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-sync-errors) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-sync-errors) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100130` on your Sourcegraph instance.
 
@@ -11281,7 +11457,7 @@ Query: `max(rate(src_repoupdater_perms_syncer_schedule_repos_total[1m]))`
 
 <p class="subtitle">The total number of external services</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-src-repoupdater-external-services-total) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-src-repoupdater-external-services-total) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100200` on your Sourcegraph instance.
 
@@ -11300,7 +11476,7 @@ Query: `max(src_repoupdater_external_services_total)`
 
 <p class="subtitle">The total number of user added external services</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-src-repoupdater-user-external-services-total) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-src-repoupdater-user-external-services-total) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100201` on your Sourcegraph instance.
 
@@ -11319,7 +11495,7 @@ Query: `max(src_repoupdater_user_external_services_total)`
 
 <p class="subtitle">The total number of queued sync jobs</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-repoupdater-queued-sync-jobs-total) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-repoupdater-queued-sync-jobs-total) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100210` on your Sourcegraph instance.
 
@@ -11338,7 +11514,7 @@ Query: `max(src_repoupdater_queued_sync_jobs_total)`
 
 <p class="subtitle">The total number of completed sync jobs</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-repoupdater-completed-sync-jobs-total) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-repoupdater-completed-sync-jobs-total) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100211` on your Sourcegraph instance.
 
@@ -11357,7 +11533,7 @@ Query: `max(src_repoupdater_completed_sync_jobs_total)`
 
 <p class="subtitle">The percentage of external services that have failed their most recent sync</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-repoupdater-errored-sync-jobs-percentage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-repoupdater-errored-sync-jobs-percentage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100212` on your Sourcegraph instance.
 
@@ -11376,7 +11552,7 @@ Query: `max(src_repoupdater_errored_sync_jobs_percentage)`
 
 <p class="subtitle">Remaining calls to GitHub graphql API before hitting the rate limit</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-github-graphql-rate-limit-remaining) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-github-graphql-rate-limit-remaining) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100220` on your Sourcegraph instance.
 
@@ -11395,7 +11571,7 @@ Query: `max by (name) (src_github_rate_limit_remaining_v2{resource="graphql"})`
 
 <p class="subtitle">Remaining calls to GitHub rest API before hitting the rate limit</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-github-rest-rate-limit-remaining) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-github-rest-rate-limit-remaining) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100221` on your Sourcegraph instance.
 
@@ -11414,7 +11590,7 @@ Query: `max by (name) (src_github_rate_limit_remaining_v2{resource="rest"})`
 
 <p class="subtitle">Remaining calls to GitHub search API before hitting the rate limit</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-github-search-rate-limit-remaining) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-github-search-rate-limit-remaining) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100222` on your Sourcegraph instance.
 
@@ -11496,7 +11672,7 @@ Query: `max by(name) (rate(src_github_rate_limit_wait_duration_seconds{resource=
 
 <p class="subtitle">Remaining calls to GitLab rest API before hitting the rate limit</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-gitlab-rest-rate-limit-remaining) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-gitlab-rest-rate-limit-remaining) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100240` on your Sourcegraph instance.
 
@@ -11527,6 +11703,48 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <summary>Technical details</summary>
 
 Query: `max by(name) (rate(src_gitlab_rate_limit_wait_duration_seconds{resource="rest"}[5m]))`
+
+</details>
+
+<br />
+
+#### repo-updater: src_internal_rate_limit_wait_duration_bucket
+
+<p class="subtitle">95th percentile time spent successfully waiting on our internal rate limiter</p>
+
+Indicates how long we`re waiting on our internal rate limiter when communicating with a code host
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100250` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.95, sum(rate(src_internal_rate_limit_wait_duration_bucket{failed="false"}[5m])) by (le, urn))`
+
+</details>
+
+<br />
+
+#### repo-updater: src_internal_rate_limit_wait_error_count
+
+<p class="subtitle">Rate of failures waiting on our internal rate limiter</p>
+
+The rate at which we fail our internal rate limiter.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100251` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (urn) (rate(src_internal_rate_limit_wait_duration_count{failed="true"}[5m]))`
 
 </details>
 
@@ -12154,7 +12372,7 @@ Query: `sum by (op)(increase(src_codeintel_npm_errors_total{op!="RunCommand",job
 
 <p class="subtitle">Frontend-internal API error responses every 5m by route</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-frontend-internal-api-error-responses) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-frontend-internal-api-error-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100700` on your Sourcegraph instance.
 
@@ -12251,7 +12469,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="repo-updater"
 
 <p class="subtitle">Mean blocked seconds per conn request</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100820` on your Sourcegraph instance.
 
@@ -12358,7 +12576,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^repo-updater.*"}) 
 
 <p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-container-cpu-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-container-cpu-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100901` on your Sourcegraph instance.
 
@@ -12377,7 +12595,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^repo-updater.*"}`
 
 <p class="subtitle">Container memory usage by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-container-memory-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-container-memory-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100902` on your Sourcegraph instance.
 
@@ -12420,7 +12638,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^repo-updater.*"}[1h]
 
 <p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101000` on your Sourcegraph instance.
 
@@ -12439,7 +12657,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 <p class="subtitle">Container memory usage (1d maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101001` on your Sourcegraph instance.
 
@@ -12458,7 +12676,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^r
 
 <p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101010` on your Sourcegraph instance.
 
@@ -12477,7 +12695,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^repo
 
 <p class="subtitle">Container memory usage (5m maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101011` on your Sourcegraph instance.
 
@@ -12492,6 +12710,28 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^r
 
 <br />
 
+#### repo-updater: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alerts reference](./alerts.md#repo-updater-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101012` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^repo-updater.*"})`
+
+</details>
+
+<br />
+
 ### Repo Updater: Golang runtime monitoring
 
 #### repo-updater: go_goroutines
@@ -12500,7 +12740,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^r
 
 A high value here indicates a possible goroutine leak.
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-go-goroutines) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-go-goroutines) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101100` on your Sourcegraph instance.
 
@@ -12519,7 +12759,7 @@ Query: `max by(instance) (go_goroutines{job=~".*repo-updater"})`
 
 <p class="subtitle">Maximum go garbage collection duration</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-go-gc-duration-seconds) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-go-gc-duration-seconds) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101101` on your Sourcegraph instance.
 
@@ -12540,7 +12780,7 @@ Query: `max by(instance) (go_gc_duration_seconds{job=~".*repo-updater"})`
 
 <p class="subtitle">Percentage pods available</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-pods-available-percentage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-pods-available-percentage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=101200` on your Sourcegraph instance.
 
@@ -12565,7 +12805,7 @@ To see this dashboard, visit `/-/debug/grafana/d/searcher/searcher` on your Sour
 
 <p class="subtitle">Unindexed search request errors every 5m by code</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#searcher-unindexed-search-request-errors) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#searcher-unindexed-search-request-errors) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100000` on your Sourcegraph instance.
 
@@ -12584,7 +12824,7 @@ Query: `sum by (code)(increase(searcher_service_request_total{code!="200",code!=
 
 <p class="subtitle">Requests per second over 10m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#searcher-replica-traffic) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#searcher-replica-traffic) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100001` on your Sourcegraph instance.
 
@@ -12681,7 +12921,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="searcher"})`
 
 <p class="subtitle">Mean blocked seconds per conn request</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#searcher-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#searcher-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100120` on your Sourcegraph instance.
 
@@ -12759,7 +12999,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_tim
 
 <p class="subtitle">Frontend-internal API error responses every 5m by route</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#searcher-frontend-internal-api-error-responses) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#searcher-frontend-internal-api-error-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100200` on your Sourcegraph instance.
 
@@ -12809,7 +13049,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^searcher.*"}) > 60
 
 <p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#searcher-container-cpu-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#searcher-container-cpu-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100301` on your Sourcegraph instance.
 
@@ -12828,7 +13068,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^searcher.*"}`
 
 <p class="subtitle">Container memory usage by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#searcher-container-memory-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#searcher-container-memory-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100302` on your Sourcegraph instance.
 
@@ -12871,7 +13111,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^searcher.*"}[1h]) + 
 
 <p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#searcher-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#searcher-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100400` on your Sourcegraph instance.
 
@@ -12890,7 +13130,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 <p class="subtitle">Container memory usage (1d maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#searcher-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#searcher-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100401` on your Sourcegraph instance.
 
@@ -12909,7 +13149,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^s
 
 <p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#searcher-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#searcher-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100410` on your Sourcegraph instance.
 
@@ -12928,7 +13168,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^sear
 
 <p class="subtitle">Container memory usage (5m maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#searcher-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#searcher-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100411` on your Sourcegraph instance.
 
@@ -12943,6 +13183,28 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^s
 
 <br />
 
+#### searcher: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alerts reference](./alerts.md#searcher-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100412` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^searcher.*"})`
+
+</details>
+
+<br />
+
 ### Searcher: Golang runtime monitoring
 
 #### searcher: go_goroutines
@@ -12951,7 +13213,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^s
 
 A high value here indicates a possible goroutine leak.
 
-Refer to the [alert solutions reference](./alert_solutions.md#searcher-go-goroutines) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#searcher-go-goroutines) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100500` on your Sourcegraph instance.
 
@@ -12970,7 +13232,7 @@ Query: `max by(instance) (go_goroutines{job=~".*searcher"})`
 
 <p class="subtitle">Maximum go garbage collection duration</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#searcher-go-gc-duration-seconds) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#searcher-go-gc-duration-seconds) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100501` on your Sourcegraph instance.
 
@@ -12991,7 +13253,7 @@ Query: `max by(instance) (go_gc_duration_seconds{job=~".*searcher"})`
 
 <p class="subtitle">Percentage pods available</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#searcher-pods-available-percentage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#searcher-pods-available-percentage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100600` on your Sourcegraph instance.
 
@@ -13813,7 +14075,7 @@ Query: `sum by (op)(increase(src_codeintel_symbols_gitserver_errors_total{job=~"
 
 <p class="subtitle">Frontend-internal API error responses every 5m by route</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#symbols-frontend-internal-api-error-responses) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#symbols-frontend-internal-api-error-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100500` on your Sourcegraph instance.
 
@@ -13863,7 +14125,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^symbols.*"}) > 60)
 
 <p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#symbols-container-cpu-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#symbols-container-cpu-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100601` on your Sourcegraph instance.
 
@@ -13882,7 +14144,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^symbols.*"}`
 
 <p class="subtitle">Container memory usage by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#symbols-container-memory-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#symbols-container-memory-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100602` on your Sourcegraph instance.
 
@@ -13925,7 +14187,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^symbols.*"}[1h]) + r
 
 <p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#symbols-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#symbols-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100700` on your Sourcegraph instance.
 
@@ -13944,7 +14206,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 <p class="subtitle">Container memory usage (1d maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#symbols-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#symbols-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100701` on your Sourcegraph instance.
 
@@ -13963,7 +14225,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^s
 
 <p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#symbols-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#symbols-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100710` on your Sourcegraph instance.
 
@@ -13982,7 +14244,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^symb
 
 <p class="subtitle">Container memory usage (5m maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#symbols-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#symbols-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100711` on your Sourcegraph instance.
 
@@ -13997,6 +14259,28 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^s
 
 <br />
 
+#### symbols: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alerts reference](./alerts.md#symbols-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100712` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^symbols.*"})`
+
+</details>
+
+<br />
+
 ### Symbols: Golang runtime monitoring
 
 #### symbols: go_goroutines
@@ -14005,7 +14289,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^s
 
 A high value here indicates a possible goroutine leak.
 
-Refer to the [alert solutions reference](./alert_solutions.md#symbols-go-goroutines) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#symbols-go-goroutines) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100800` on your Sourcegraph instance.
 
@@ -14024,7 +14308,7 @@ Query: `max by(instance) (go_goroutines{job=~".*symbols"})`
 
 <p class="subtitle">Maximum go garbage collection duration</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#symbols-go-gc-duration-seconds) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#symbols-go-gc-duration-seconds) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100801` on your Sourcegraph instance.
 
@@ -14045,7 +14329,7 @@ Query: `max by(instance) (go_gc_duration_seconds{job=~".*symbols"})`
 
 <p class="subtitle">Percentage pods available</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#symbols-pods-available-percentage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#symbols-pods-available-percentage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100900` on your Sourcegraph instance.
 
@@ -14177,7 +14461,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^syntect-server.*"}
 
 <p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-container-cpu-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#syntect-server-container-cpu-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewPanel=100101` on your Sourcegraph instance.
 
@@ -14196,7 +14480,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^syntect-server.*"}
 
 <p class="subtitle">Container memory usage by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-container-memory-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#syntect-server-container-memory-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewPanel=100102` on your Sourcegraph instance.
 
@@ -14239,7 +14523,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^syntect-server.*"}[1
 
 <p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#syntect-server-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewPanel=100200` on your Sourcegraph instance.
 
@@ -14258,7 +14542,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 <p class="subtitle">Container memory usage (1d maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#syntect-server-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewPanel=100201` on your Sourcegraph instance.
 
@@ -14277,7 +14561,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^s
 
 <p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#syntect-server-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewPanel=100210` on your Sourcegraph instance.
 
@@ -14296,7 +14580,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^synt
 
 <p class="subtitle">Container memory usage (5m maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#syntect-server-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewPanel=100211` on your Sourcegraph instance.
 
@@ -14311,13 +14595,35 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^s
 
 <br />
 
+#### syntect-server: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alerts reference](./alerts.md#syntect-server-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewPanel=100212` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^syntect-server.*"})`
+
+</details>
+
+<br />
+
 ### Syntect Server: Kubernetes monitoring (only available on Kubernetes)
 
 #### syntect-server: pods_available_percentage
 
 <p class="subtitle">Percentage pods available</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-pods-available-percentage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#syntect-server-pods-available-percentage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewPanel=100300` on your Sourcegraph instance.
 
@@ -14440,7 +14746,7 @@ Query: `sum by (instance) (increase(index_num_stopped_tracking_total{instance=~`
 
 <p class="subtitle">Average resolve revision duration over 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-average-resolve-revision-duration) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#zoekt-average-resolve-revision-duration) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100020` on your Sourcegraph instance.
 
@@ -14467,7 +14773,7 @@ This value can spike up during deployments/etc. Only if you encounter
 sustained periods of errors is there an underlying issue. When sustained
 this indicates repositories will not get updated indexes.
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-get-index-options-error-increase) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#zoekt-get-index-options-error-increase) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100021` on your Sourcegraph instance.
 
@@ -14488,7 +14794,7 @@ Query: `sum(increase(get_index_options_error_total[5m]))`
 
 <p class="subtitle">Indexed search request errors every 5m by code</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexed-search-request-errors) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#zoekt-indexed-search-request-errors) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100100` on your Sourcegraph instance.
 
@@ -15548,7 +15854,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^zoekt-indexserver.
 
 <p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-container-cpu-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#zoekt-container-cpu-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100701` on your Sourcegraph instance.
 
@@ -15567,7 +15873,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-indexserver.
 
 <p class="subtitle">Container memory usage by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-container-memory-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#zoekt-container-memory-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100702` on your Sourcegraph instance.
 
@@ -15639,7 +15945,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^zoekt-webserver.*"
 
 <p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-container-cpu-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#zoekt-container-cpu-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100801` on your Sourcegraph instance.
 
@@ -15658,7 +15964,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-webserver.*"
 
 <p class="subtitle">Container memory usage by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-container-memory-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#zoekt-container-memory-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100802` on your Sourcegraph instance.
 
@@ -15701,7 +16007,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^zoekt-webserver.*"}[
 
 <p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#zoekt-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100900` on your Sourcegraph instance.
 
@@ -15720,7 +16026,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 <p class="subtitle">Container memory usage (1d maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#zoekt-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100901` on your Sourcegraph instance.
 
@@ -15739,7 +16045,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^z
 
 <p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#zoekt-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100910` on your Sourcegraph instance.
 
@@ -15758,7 +16064,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^zoek
 
 <p class="subtitle">Container memory usage (5m maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#zoekt-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100911` on your Sourcegraph instance.
 
@@ -15773,13 +16079,35 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^z
 
 <br />
 
+#### zoekt: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alerts reference](./alerts.md#zoekt-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100912` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^zoekt-indexserver.*"})`
+
+</details>
+
+<br />
+
 ### Zoekt: [zoekt-webserver] Provisioning indicators (not available on server)
 
 #### zoekt: provisioning_container_cpu_usage_long_term
 
 <p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#zoekt-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101000` on your Sourcegraph instance.
 
@@ -15798,7 +16126,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 <p class="subtitle">Container memory usage (1d maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#zoekt-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101001` on your Sourcegraph instance.
 
@@ -15817,7 +16145,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^z
 
 <p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#zoekt-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101010` on your Sourcegraph instance.
 
@@ -15836,7 +16164,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^zoek
 
 <p class="subtitle">Container memory usage (5m maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#zoekt-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101011` on your Sourcegraph instance.
 
@@ -15851,13 +16179,35 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^z
 
 <br />
 
+#### zoekt: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alerts reference](./alerts.md#zoekt-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101012` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^zoekt-webserver.*"})`
+
+</details>
+
+<br />
+
 ### Zoekt: Kubernetes monitoring (only available on Kubernetes)
 
 #### zoekt: pods_available_percentage
 
 <p class="subtitle">Percentage pods available</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-pods-available-percentage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#zoekt-pods-available-percentage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101100` on your Sourcegraph instance.
 
@@ -15889,7 +16239,7 @@ It might indicate that certain rule groups are taking too long to evaluate, or P
 
 Rules that Sourcegraph ships with are grouped under `/sg_config_prometheus`. [Custom rules are grouped under `/sg_prometheus_addons`](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration).
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-rule-eval-duration) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#prometheus-prometheus-rule-eval-duration) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100000` on your Sourcegraph instance.
 
@@ -15910,7 +16260,7 @@ Query: `sum by(rule_group) (avg_over_time(prometheus_rule_group_last_duration_se
 
 Rules that Sourcegraph ships with are grouped under `/sg_config_prometheus`. [Custom rules are grouped under `/sg_prometheus_addons`](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration).
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-rule-eval-failures) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#prometheus-prometheus-rule-eval-failures) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100001` on your Sourcegraph instance.
 
@@ -15931,7 +16281,7 @@ Query: `sum by(rule_group) (rate(prometheus_rule_evaluation_failures_total[5m]))
 
 <p class="subtitle">Alertmanager notification latency over 1m by integration</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-alertmanager-notification-latency) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#prometheus-alertmanager-notification-latency) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100100` on your Sourcegraph instance.
 
@@ -15950,7 +16300,7 @@ Query: `sum by(integration) (rate(alertmanager_notification_latency_seconds_sum[
 
 <p class="subtitle">Failed alertmanager notifications over 1m by integration</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-alertmanager-notification-failures) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#prometheus-alertmanager-notification-failures) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100101` on your Sourcegraph instance.
 
@@ -15973,7 +16323,7 @@ Query: `sum by(integration) (rate(alertmanager_notifications_failed_total[1m]))`
 
 A `1` indicates Prometheus reloaded its configuration successfully.
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-config-status) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#prometheus-prometheus-config-status) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100200` on your Sourcegraph instance.
 
@@ -15994,7 +16344,7 @@ Query: `prometheus_config_last_reload_successful`
 
 A `1` indicates Alertmanager reloaded its configuration successfully.
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-alertmanager-config-status) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#prometheus-alertmanager-config-status) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100201` on your Sourcegraph instance.
 
@@ -16013,7 +16363,7 @@ Query: `alertmanager_config_last_reload_successful`
 
 <p class="subtitle">Prometheus tsdb failures by operation over 1m by operation</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-tsdb-op-failure) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#prometheus-prometheus-tsdb-op-failure) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100210` on your Sourcegraph instance.
 
@@ -16032,7 +16382,7 @@ Query: `increase(label_replace({__name__=~"prometheus_tsdb_(.*)_failed_total"}, 
 
 <p class="subtitle">Prometheus scrapes that exceed the sample limit over 10m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-target-sample-exceeded) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#prometheus-prometheus-target-sample-exceeded) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100211` on your Sourcegraph instance.
 
@@ -16051,7 +16401,7 @@ Query: `increase(prometheus_target_scrapes_exceeded_sample_limit_total[10m])`
 
 <p class="subtitle">Prometheus scrapes rejected due to duplicate timestamps over 10m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometheus-target-sample-duplicate) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#prometheus-prometheus-target-sample-duplicate) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100212` on your Sourcegraph instance.
 
@@ -16101,7 +16451,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^prometheus.*"}) > 
 
 <p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-container-cpu-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#prometheus-container-cpu-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100301` on your Sourcegraph instance.
 
@@ -16120,7 +16470,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^prometheus.*"}`
 
 <p class="subtitle">Container memory usage by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-container-memory-usage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#prometheus-container-memory-usage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100302` on your Sourcegraph instance.
 
@@ -16163,7 +16513,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^prometheus.*"}[1h]) 
 
 <p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#prometheus-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100400` on your Sourcegraph instance.
 
@@ -16182,7 +16532,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 <p class="subtitle">Container memory usage (1d maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#prometheus-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100401` on your Sourcegraph instance.
 
@@ -16201,7 +16551,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^p
 
 <p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#prometheus-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100410` on your Sourcegraph instance.
 
@@ -16220,7 +16570,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^prom
 
 <p class="subtitle">Container memory usage (5m maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#prometheus-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100411` on your Sourcegraph instance.
 
@@ -16235,13 +16585,35 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^p
 
 <br />
 
+#### prometheus: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alerts reference](./alerts.md#prometheus-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100412` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^prometheus.*"})`
+
+</details>
+
+<br />
+
 ### Prometheus: Kubernetes monitoring (only available on Kubernetes)
 
 #### prometheus: pods_available_percentage
 
 <p class="subtitle">Percentage pods available</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#prometheus-pods-available-percentage) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#prometheus-pods-available-percentage) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100500` on your Sourcegraph instance.
 
@@ -17656,7 +18028,7 @@ Query: `sum(rate(node_network_transmit_errs_total{job=~"(sourcegraph-code-intel-
 
 A high value here indicates a possible goroutine leak.
 
-Refer to the [alert solutions reference](./alert_solutions.md#executor-go-goroutines) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#executor-go-goroutines) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100900` on your Sourcegraph instance.
 
@@ -17675,7 +18047,7 @@ Query: `max by(instance) (go_goroutines{job=~".*(executor|sourcegraph-code-intel
 
 <p class="subtitle">Maximum go garbage collection duration</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#executor-go-gc-duration-seconds) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#executor-go-gc-duration-seconds) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100901` on your Sourcegraph instance.
 
@@ -17685,6 +18057,1829 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100901`
 <summary>Technical details</summary>
 
 Query: `max by(instance) (go_gc_duration_seconds{job=~".*(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors)"})`
+
+</details>
+
+<br />
+
+## Global Containers Resource Usage
+
+<p class="subtitle">Container usage and provisioning indicators of all services.</p>
+
+To see this dashboard, visit `/-/debug/grafana/d/containers/containers` on your Sourcegraph instance.
+
+### Global Containers Resource Usage: Containers (not available on server)
+
+#### containers: container_memory_usage
+
+<p class="subtitle">Container memory usage of all services</p>
+
+This value indicates the memory usage of all containers.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}`
+
+</details>
+
+<br />
+
+#### containers: container_cpu_usage
+
+<p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
+
+This value indicates the CPU usage of all containers.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100010` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}`
+
+</details>
+
+<br />
+
+### Global Containers Resource Usage: Containers: Provisioning Indicators (not available on server)
+
+#### containers: container_memory_usage_provisioning
+
+<p class="subtitle">Container memory usage (5m maximum) of services that exceed 80% memory limit</p>
+
+Containers that exceed 80% memory limit. The value indicates potential underprovisioned resources.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}[5m]) >= 80`
+
+</details>
+
+<br />
+
+#### containers: container_cpu_usage_provisioning
+
+<p class="subtitle">Container cpu usage total (5m maximum) across all cores of services that exceed 80% cpu limit</p>
+
+Containers that exceed 80% CPU limit. The value indicates potential underprovisioned resources.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100110` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}[5m]) >= 80`
+
+</details>
+
+<br />
+
+#### containers: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100120` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}) >= 1`
+
+</details>
+
+<br />
+
+#### containers: container_missing
+
+<p class="subtitle">Container missing</p>
+
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100130` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `count by(name) ((time() - container_last_seen{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|minio|jaeger).*"}) > 60)`
+
+</details>
+
+<br />
+
+## Code Intelligence > Autoindexing
+
+<p class="subtitle">The service at `internal/codeintel/autoindexing`.</p>
+
+To see this dashboard, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing` on your Sourcegraph instance.
+
+### Code Intelligence > Autoindexing: Codeintel: Autoindexing > Service
+
+#### codeintel-autoindexing: codeintel_autoindexing_total
+
+<p class="subtitle">Aggregate service operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_99th_percentile_duration
+
+<p class="subtitle">Aggregate successful service operation duration distribution over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100001` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_duration_seconds_bucket{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_errors_total
+
+<p class="subtitle">Aggregate service operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100002` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_error_rate
+
+<p class="subtitle">Aggregate service operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100003` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_total
+
+<p class="subtitle">Service operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100010` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful service operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100011` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_duration_seconds_bucket{job=~"^.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_errors_total
+
+<p class="subtitle">Service operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100012` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_error_rate
+
+<p class="subtitle">Service operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100013` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Autoindexing: Codeintel: Autoindexing > GQL transport
+
+#### codeintel-autoindexing: codeintel_autoindexing_transport_graphql_total
+
+<p class="subtitle">Aggregate resolver operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_transport_graphql_99th_percentile_duration
+
+<p class="subtitle">Aggregate successful resolver operation duration distribution over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100101` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_transport_graphql_errors_total
+
+<p class="subtitle">Aggregate resolver operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100102` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_transport_graphql_error_rate
+
+<p class="subtitle">Aggregate resolver operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100103` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_transport_graphql_total
+
+<p class="subtitle">Resolver operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100110` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_transport_graphql_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful resolver operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100111` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_transport_graphql_errors_total
+
+<p class="subtitle">Resolver operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100112` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_transport_graphql_error_rate
+
+<p class="subtitle">Resolver operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100113` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Autoindexing: Codeintel: Autoindexing > Store (internal)
+
+#### codeintel-autoindexing: codeintel_autoindexing_store_total
+
+<p class="subtitle">Aggregate store operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100200` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_store_99th_percentile_duration
+
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100201` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_store_duration_seconds_bucket{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_store_errors_total
+
+<p class="subtitle">Aggregate store operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100202` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_store_error_rate
+
+<p class="subtitle">Aggregate store operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100203` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_store_total
+
+<p class="subtitle">Store operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100210` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_store_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful store operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100211` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_store_duration_seconds_bucket{job=~"^.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_store_errors_total
+
+<p class="subtitle">Store operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100212` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_store_error_rate
+
+<p class="subtitle">Store operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100213` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Autoindexing: Codeintel: Autoindexing > Inference service (internal)
+
+#### codeintel-autoindexing: codeintel_autoindexing_inference_total
+
+<p class="subtitle">Aggregate service operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100300` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_inference_99th_percentile_duration
+
+<p class="subtitle">Aggregate successful service operation duration distribution over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100301` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_inference_errors_total
+
+<p class="subtitle">Aggregate service operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100302` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_inference_error_rate
+
+<p class="subtitle">Aggregate service operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100303` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_inference_total
+
+<p class="subtitle">Service operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100310` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_inference_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful service operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100311` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{job=~"^.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_inference_errors_total
+
+<p class="subtitle">Service operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100312` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: codeintel_autoindexing_inference_error_rate
+
+<p class="subtitle">Service operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100313` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Autoindexing: Codeintel: Luasandbox service
+
+#### codeintel-autoindexing: luasandbox_total
+
+<p class="subtitle">Aggregate service operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100400` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_luasandbox_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: luasandbox_99th_percentile_duration
+
+<p class="subtitle">Aggregate successful service operation duration distribution over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100401` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum  by (le)(rate(src_luasandbox_duration_seconds_bucket{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: luasandbox_errors_total
+
+<p class="subtitle">Aggregate service operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100402` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: luasandbox_error_rate
+
+<p class="subtitle">Aggregate service operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100403` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_luasandbox_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_luasandbox_total{job=~"^.*"}[5m])) + sum(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: luasandbox_total
+
+<p class="subtitle">Service operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100410` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_luasandbox_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: luasandbox_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful service operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100411` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_luasandbox_duration_seconds_bucket{job=~"^.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: luasandbox_errors_total
+
+<p class="subtitle">Service operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100412` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-autoindexing: luasandbox_error_rate
+
+<p class="subtitle">Service operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing?viewPanel=100413` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_luasandbox_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+## Code Intelligence > Uploads
+
+<p class="subtitle">The service at `internal/codeintel/uploads`.</p>
+
+To see this dashboard, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads` on your Sourcegraph instance.
+
+### Code Intelligence > Uploads: Codeintel: Uploads > Service
+
+#### codeintel-uploads: codeintel_uploads_total
+
+<p class="subtitle">Aggregate service operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_99th_percentile_duration
+
+<p class="subtitle">Aggregate successful service operation duration distribution over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100001` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum  by (le)(rate(src_codeintel_uploads_duration_seconds_bucket{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_errors_total
+
+<p class="subtitle">Aggregate service operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100002` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_error_rate
+
+<p class="subtitle">Aggregate service operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100003` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_total
+
+<p class="subtitle">Service operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100010` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful service operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100011` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_duration_seconds_bucket{job=~"^.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_errors_total
+
+<p class="subtitle">Service operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100012` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_error_rate
+
+<p class="subtitle">Service operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100013` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Uploads: Codeintel: Uploads > Store
+
+#### codeintel-uploads: codeintel_uploads_store_total
+
+<p class="subtitle">Aggregate store operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_store_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_store_99th_percentile_duration
+
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100101` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum  by (le)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_store_errors_total
+
+<p class="subtitle">Aggregate store operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100102` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_store_error_rate
+
+<p class="subtitle">Aggregate store operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100103` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_store_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_store_total
+
+<p class="subtitle">Store operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100110` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_store_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful store operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100111` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_store_errors_total
+
+<p class="subtitle">Store operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100112` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_store_error_rate
+
+<p class="subtitle">Store operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100113` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Uploads: Codeintel: Uploads > GQL Transport
+
+#### codeintel-uploads: codeintel_uploads_transport_graphql_total
+
+<p class="subtitle">Aggregate resolver operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100200` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_transport_graphql_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_transport_graphql_99th_percentile_duration
+
+<p class="subtitle">Aggregate successful resolver operation duration distribution over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100201` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum  by (le)(rate(src_codeintel_uploads_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_transport_graphql_errors_total
+
+<p class="subtitle">Aggregate resolver operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100202` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_transport_graphql_error_rate
+
+<p class="subtitle">Aggregate resolver operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100203` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_transport_graphql_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_transport_graphql_total
+
+<p class="subtitle">Resolver operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100210` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_transport_graphql_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful resolver operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100211` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_transport_graphql_errors_total
+
+<p class="subtitle">Resolver operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100212` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_transport_graphql_error_rate
+
+<p class="subtitle">Resolver operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100213` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_transport_graphql_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Uploads: Codeintel: Uploads > HTTP Transport
+
+#### codeintel-uploads: codeintel_uploads_transport_http_total
+
+<p class="subtitle">Aggregate http handler operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100300` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_transport_http_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_transport_http_99th_percentile_duration
+
+<p class="subtitle">Aggregate successful http handler operation duration distribution over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100301` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum  by (le)(rate(src_codeintel_uploads_transport_http_duration_seconds_bucket{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_transport_http_errors_total
+
+<p class="subtitle">Aggregate http handler operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100302` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_transport_http_error_rate
+
+<p class="subtitle">Aggregate http handler operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100303` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_transport_http_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_transport_http_total
+
+<p class="subtitle">Http handler operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100310` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_transport_http_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful http handler operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100311` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_transport_http_duration_seconds_bucket{job=~"^.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_transport_http_errors_total
+
+<p class="subtitle">Http handler operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100312` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_transport_http_error_rate
+
+<p class="subtitle">Http handler operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100313` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_transport_http_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Code Intelligence > Uploads: Codeintel: Uploads > Cleanup task
+
+#### codeintel-uploads: codeintel_background_upload_records_removed_total
+
+<p class="subtitle">Lsif upload records deleted every 5m</p>
+
+Number of LSIF upload records deleted due to expiration or unreachability every 5m
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100400` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_upload_records_removed_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_background_index_records_removed_total
+
+<p class="subtitle">Lsif index records deleted every 5m</p>
+
+Number of LSIF index records deleted due to expiration or unreachability every 5m
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100401` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_index_records_removed_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_background_uploads_purged_total
+
+<p class="subtitle">Lsif upload data bundles deleted every 5m</p>
+
+Number of LSIF upload data bundles purged from the codeintel-db database every 5m
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100402` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_uploads_purged_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_background_audit_log_records_expired_total
+
+<p class="subtitle">Lsif upload audit log records deleted every 5m</p>
+
+Number of LSIF upload audit log records deleted due to expiration every 5m
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100403` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_audit_log_records_expired_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_uploads_background_cleanup_errors_total
+
+<p class="subtitle">Cleanup task operation errors every 5m</p>
+
+Number of code intelligence cleanup task errors every 5m
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100410` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_uploads_background_cleanup_errors_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+### Code Intelligence > Uploads: Codeintel: Repository with stale commit graph
+
+#### codeintel-uploads: codeintel_commit_graph_queue_size
+
+<p class="subtitle">Repository queue size</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100500` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max(src_codeintel_commit_graph_total{job=~"^.*"})`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_commit_graph_queue_growth_rate
+
+<p class="subtitle">Repository queue growth rate over 30m</p>
+
+This value compares the rate of enqueues against the rate of finished jobs.
+
+	- A value < than 1 indicates that process rate > enqueue rate
+	- A value = than 1 indicates that process rate = enqueue rate
+	- A value > than 1 indicates that process rate < enqueue rate
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100501` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_commit_graph_total{job=~"^.*"}[30m])) / sum(increase(src_codeintel_commit_graph_processor_total{job=~"^.*"}[30m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_commit_graph_queued_max_age
+
+<p class="subtitle">Repository queue longest time in queue</p>
+
+Refer to the [alerts reference](./alerts.md#codeintel-uploads-codeintel-commit-graph-queued-max-age) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100502` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^.*"})`
+
+</details>
+
+<br />
+
+### Code Intelligence > Uploads: Codeintel: Uploads > Expiration task
+
+#### codeintel-uploads: codeintel_background_repositories_scanned_total_total
+
+<p class="subtitle">Lsif upload repository scan repositories scanned every 5m</p>
+
+Number of repositories scanned for data retention
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100600` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_repositories_scanned_total_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_background_upload_records_scanned_total_total
+
+<p class="subtitle">Lsif upload records scan records scanned every 5m</p>
+
+Number of codeintel upload records scanned for data retention
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100601` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_upload_records_scanned_total_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_background_commits_scanned_total_total
+
+<p class="subtitle">Lsif upload commits scanned commits scanned every 5m</p>
+
+Number of commits reachable from a codeintel upload record scanned for data retention
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100602` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_commits_scanned_total_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-uploads: codeintel_background_upload_records_expired_total_total
+
+<p class="subtitle">Lsif upload records expired uploads scanned every 5m</p>
+
+Number of codeintel upload records marked as expired
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads?viewPanel=100603` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_upload_records_expired_total_total{job=~"^.*"}[5m]))`
+
+</details>
+
+<br />
+
+## Code Intelligence > Policies
+
+<p class="subtitle">The service at `internal/codeintel/policies`.</p>
+
+To see this dashboard, visit `/-/debug/grafana/d/codeintel-policies/codeintel-policies` on your Sourcegraph instance.
+
+### Code Intelligence > Policies: Codeintel: Policies > Repository Pattern Matcher task
+
+#### codeintel-policies: codeintel_background_policies_updated_total_total
+
+<p class="subtitle">Lsif repository pattern matcher repositories pattern matcher every 5m</p>
+
+Number of configuration policies whose repository membership list was updated
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-policies?viewPanel=100000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_policies_updated_total_total{job=~"^.*"}[5m]))`
 
 </details>
 

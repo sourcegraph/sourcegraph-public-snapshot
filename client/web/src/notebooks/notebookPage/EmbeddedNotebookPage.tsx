@@ -5,8 +5,8 @@ import { NEVER } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { fetchHighlightedFileLineRanges as fetchHighlightedFileLineRangesShared } from '@sourcegraph/shared/src/backend/file'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { Alert, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
@@ -33,7 +33,10 @@ interface EmbeddedNotebookPageProps
 
 const LOADING = 'loading' as const
 
-export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageProps> = ({ notebookId, ...props }) => {
+export const EmbeddedNotebookPage: React.FunctionComponent<React.PropsWithChildren<EmbeddedNotebookPageProps>> = ({
+    notebookId,
+    ...props
+}) => {
     useEffect(() => eventLogger.logViewEvent('EmbeddedNotebookPage'), [])
 
     const platformContext = useMemo(() => createPlatformContext(), [])

@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
@@ -33,6 +34,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsService := &fakeDepsService{deps: map[string][]dependencies.Repo{}}
 
 	s := vcsDependenciesSyncer{
+		logger:      logtest.Scoped(t),
 		typ:         "fake",
 		scheme:      "fake",
 		placeholder: placeholder,
@@ -237,6 +239,7 @@ func (f fakeDep) Scheme() string               { return "fake" }
 func (f fakeDep) PackageSyntax() string        { return f.name }
 func (f fakeDep) PackageManagerSyntax() string { return f.name + "@" + f.version }
 func (f fakeDep) PackageVersion() string       { return f.version }
+func (f fakeDep) Description() string          { return f.name + "@" + f.version }
 func (f fakeDep) RepoName() api.RepoName       { return api.RepoName("fake/" + f.name) }
 func (f fakeDep) GitTagFromVersion() string    { return "v" + f.version }
 func (f fakeDep) Less(other reposource.PackageDependency) bool {

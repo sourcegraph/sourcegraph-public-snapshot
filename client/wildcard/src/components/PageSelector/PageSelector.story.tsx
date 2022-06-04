@@ -6,6 +6,8 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { H1, H2 } from '..'
+
 import { PageSelector } from './PageSelector'
 
 const decorator: DecoratorFn = story => (
@@ -27,16 +29,16 @@ export const Simple: Story = () => {
 
 export const AllPageSelectors: Story = () => (
     <>
-        <h1>Page Selector</h1>
-        <h2>Short</h2>
+        <H1>Page Selector</H1>
+        <H2>Short</H2>
         <Short />
-        <h2>Long</h2>
+        <H2>Long</H2>
         <Long />
-        <h2>Long active</h2>
+        <H2>Long active</H2>
         <LongActive />
-        <h2>Long complete</h2>
+        <H2>Long complete</H2>
         <LongComplete />
-        <h2>Long on mobile</h2>
+        <H2>Long on mobile</H2>
         <LongOnMobile />
     </>
 )

@@ -11,6 +11,7 @@ import { panels } from '@sourcegraph/branded/src/components/panel/TabbedPanelCon
 import { EmptyPanelView } from '@sourcegraph/branded/src/components/panel/views/EmptyPanelView'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { H1, H2 } from '../..'
 import { Button } from '../../Button'
 import { Grid } from '../../Grid'
 import { Icon } from '../../Icon'
@@ -51,10 +52,9 @@ const config: Meta = {
 
 export default config
 
-const PanelBodyContent: React.FunctionComponent<{ position: typeof PANEL_POSITIONS[number] }> = ({
-    position,
-    children,
-}) => (
+const PanelBodyContent: React.FunctionComponent<
+    React.PropsWithChildren<{ position: typeof PANEL_POSITIONS[number] }>
+> = ({ position, children }) => (
     <div
         className={classNames(
             'p-2',
@@ -78,8 +78,8 @@ export const Simple: Story = () => {
             <Grid columnCount={4}>
                 <div />
                 <div>
-                    <h1>Panel</h1>
-                    <h2>Positions</h2>
+                    <H1>Panel</H1>
+                    <H2>Positions</H2>
                     <div className="mb-2">
                         <Button variant="secondary" onClick={() => showPanelWithPosition('left')}>
                             Show left panel
@@ -146,7 +146,7 @@ export const WithChildren: Story = props => {
                             data-placement="left"
                             variant="icon"
                         >
-                            <Icon as={CloseIcon} />
+                            <Icon role="img" aria-hidden={true} as={CloseIcon} />
                         </Button>
                     </div>
                 </div>

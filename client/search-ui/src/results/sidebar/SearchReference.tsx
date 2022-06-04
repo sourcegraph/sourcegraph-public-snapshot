@@ -32,6 +32,7 @@ import {
     CollapseHeader,
     CollapsePanel,
     Icon,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import styles from './SearchReference.module.scss'
@@ -218,6 +219,14 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: false,
     },
     {
+        ...createQueryExampleFromString('dependents({regex-pattern})'),
+        field: FilterType.repo,
+        description:
+            'Search inside repositories that depend on repositories matched by the provided regex pattern. This parameter is experimental.',
+        examples: ['repo:revdeps(^go/github\\.com/google/go-cmp$@v0.5.8)'],
+        showSuggestions: true,
+    },
+    {
         ...createQueryExampleFromString('{revision}'),
         field: FilterType.rev,
         commonRank: 20,
@@ -341,7 +350,10 @@ interface SearchReferenceExampleProps {
     onClick?: (example: string) => void
 }
 
-const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProps> = ({ example, onClick }) => {
+const SearchReferenceExample: React.FunctionComponent<React.PropsWithChildren<SearchReferenceExampleProps>> = ({
+    example,
+    onClick,
+}) => {
     // All current examples are literal queries
     const scanResult = scanSearchQuery(example, false, SearchPatternType.literal)
     // We only use valid queries as examples, so this will always be true
@@ -419,7 +431,7 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                         aria-label={collapsed ? 'Show filter description' : 'Hide filter description'}
                     >
                         <small className="text-monospace">i</small>
-                        <Icon as={CollapseIcon} />
+                        <Icon role="img" aria-hidden={true} as={CollapseIcon} />
                     </CollapseHeader>
                 </span>
                 <CollapsePanel>
@@ -428,16 +440,16 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                             <Markdown dangerousInnerHTML={renderMarkdown(searchReference.description)} />
                         )}
                         {searchReference.alias && (
-                            <p>
+                            <Text>
                                 Alias:{' '}
                                 <span className="text-code search-filter-keyword">
                                     {searchReference.alias}
                                     {isFilterInfo(searchReference) ? ':' : ''}
                                 </span>
-                            </p>
+                            </Text>
                         )}
                         {isFilterInfo(searchReference) && isNegatableFilter(searchReference.field) && (
-                            <p>
+                            <Text>
                                 Negation:{' '}
                                 <span className="test-code search-filter-keyword">-{searchReference.field}:</span>
                                 {searchReference.alias && (
@@ -451,16 +463,16 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                                 )}
                                 <br />
                                 <span className={styles.placeholder}>(opt + click filter in reference list)</span>
-                            </p>
+                            </Text>
                         )}
                         {searchReference.examples && (
                             <>
                                 <div className="font-weight-medium">Examples</div>
                                 <div className={classNames('text-code', styles.examples)}>
                                     {searchReference.examples.map(example => (
-                                        <p key={example}>
+                                        <Text key={example}>
                                             <SearchReferenceExample example={example} onClick={onExampleClick} />
-                                        </p>
+                                        </Text>
                                     ))}
                                 </div>
                             </>
@@ -588,13 +600,13 @@ const SearchReference = React.memo(
                         </TabPanels>
                     </Tabs>
                 )}
-                <p className={sidebarStyles.sidebarSectionFooter}>
+                <Text className={sidebarStyles.sidebarSectionFooter}>
                     <small>
                         <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
-                            Search syntax <Icon as={ExternalLinkIcon} />
+                            Search syntax <Icon role="img" aria-hidden={true} as={ExternalLinkIcon} />
                         </Link>
                     </small>
-                </p>
+                </Text>
             </div>
         )
     }

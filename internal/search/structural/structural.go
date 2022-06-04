@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -60,11 +62,12 @@ type searchRepos struct {
 // getJob returns a function parameterized by ctx to search over repos.
 func (s *searchRepos) getJob(ctx context.Context) func() error {
 	return func() error {
-		searcherJob := &searcher.Searcher{
+		searcherJob := &searcher.TextSearchJob{
 			PatternInfo:     s.args.PatternInfo,
 			Repos:           s.repoSet.AsList(),
 			Indexed:         s.repoSet.IsIndexed(),
 			UseFullDeadline: s.args.UseFullDeadline,
+			Features:        s.args.Features,
 		}
 
 		_, err := searcherJob.Run(ctx, s.clients, s.stream)
@@ -87,6 +90,7 @@ func streamStructuralSearch(ctx context.Context, clients job.RuntimeClients, arg
 		searcherArgs := &search.SearcherParameters{
 			PatternInfo:     args.PatternInfo,
 			UseFullDeadline: args.UseFullDeadline,
+			Features:        args.Features,
 		}
 
 		jobs = append(jobs, &searchRepos{clients: clients, args: searcherArgs, stream: stream, repoSet: repoSet})
@@ -137,7 +141,7 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 	matches := make([]result.Match, 0, len(event.Results))
 	for _, fm := range event.Results {
 		if _, ok := fm.(*result.FileMatch); !ok {
-			return errors.Errorf("StructuralSearch failed to convert results")
+			return errors.Errorf("StructuralSearchJob failed to convert results")
 		}
 		matches = append(matches, fm)
 	}
@@ -149,7 +153,7 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 	return err
 }
 
-type StructuralSearch struct {
+type SearchJob struct {
 	ZoektArgs        *search.ZoektParameters
 	SearcherArgs     *search.SearcherParameters
 	UseIndex         query.YesNoOnly
@@ -158,7 +162,7 @@ type StructuralSearch struct {
 	RepoOpts search.RepoOptions
 }
 
-func (s *StructuralSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
@@ -184,6 +188,20 @@ func (s *StructuralSearch) Run(ctx context.Context, clients job.RuntimeClients, 
 	})
 }
 
-func (*StructuralSearch) Name() string {
-	return "Structural"
+func (*SearchJob) Name() string {
+	return "StructuralSearchJob"
+}
+
+func (s *SearchJob) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("query", s.ZoektArgs.Query),
+		log.String("type", string(s.ZoektArgs.Typ)),
+		log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
+		trace.Printf("select", "%q", s.ZoektArgs.Select),
+		trace.Stringer("patternInfo", s.SearcherArgs.PatternInfo),
+		log.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
+		log.String("useIndex", string(s.UseIndex)),
+		log.Bool("containsRefGlobs", s.ContainsRefGlobs),
+		trace.Stringer("repoOpts", &s.RepoOpts),
+	}
 }

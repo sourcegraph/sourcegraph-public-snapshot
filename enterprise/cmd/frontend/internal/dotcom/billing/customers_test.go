@@ -20,7 +20,7 @@ func TestGetOrAssignUserCustomerID(t *testing.T) {
 	}
 	defer func() { mockCreateCustomerID = nil }()
 
-	u, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
+	u, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}

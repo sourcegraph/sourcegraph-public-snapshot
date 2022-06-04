@@ -5,7 +5,7 @@ import * as uuid from 'uuid'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Input } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CreateNotebookVariables } from '../../graphql-operations'
@@ -27,13 +27,9 @@ interface ImportMarkdownNotebookButtonProps extends TelemetryProps {
     setImportState: (state: typeof LOADING | ErrorLike | undefined) => void
 }
 
-export const ImportMarkdownNotebookButton: React.FunctionComponent<ImportMarkdownNotebookButtonProps> = ({
-    authenticatedUser,
-    telemetryService,
-    importState,
-    setImportState,
-    importNotebook,
-}) => {
+export const ImportMarkdownNotebookButton: React.FunctionComponent<
+    React.PropsWithChildren<ImportMarkdownNotebookButtonProps>
+> = ({ authenticatedUser, telemetryService, importState, setImportState, importNotebook }) => {
     const fileInputReference = useRef<HTMLInputElement>(null)
 
     const onImportButtonClick = useCallback(() => {
@@ -81,7 +77,7 @@ export const ImportMarkdownNotebookButton: React.FunctionComponent<ImportMarkdow
 
     return (
         <>
-            <input
+            <Input
                 type="file"
                 className="d-none"
                 ref={fileInputReference}
@@ -95,7 +91,7 @@ export const ImportMarkdownNotebookButton: React.FunctionComponent<ImportMarkdow
                 disabled={importState === LOADING}
                 className="ml-2"
             >
-                <Icon className="mr-1" as={UploadIcon} />
+                <Icon role="img" aria-hidden={true} className="mr-1" as={UploadIcon} />
                 <span>{importState === LOADING ? 'Importing...' : 'Import Markdown notebook'}</span>
             </Button>
         </>

@@ -58,7 +58,7 @@ func SignIn(baseURL, email, password string) (*Client, error) {
 }
 
 // authenticate initializes an authenticated client with given request body.
-func authenticate(baseURL, path string, body interface{}) (*Client, error) {
+func authenticate(baseURL, path string, body any) (*Client, error) {
 	client, err := NewClient(baseURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "new client")
@@ -133,7 +133,7 @@ func NewClient(baseURL string) (*Client, error) {
 // authenticate is used to send a HTTP POST request to an URL that is able to authenticate
 // a user with given body (marshalled to JSON), e.g. site admin init, sign in. Once the
 // client is authenticated, the session cookie will be stored as a proof of authentication.
-func (c *Client) authenticate(path string, body interface{}) error {
+func (c *Client) authenticate(path string, body any) error {
 	p, err := jsoniter.Marshal(body)
 	if err != nil {
 		return errors.Wrap(err, "marshal body")
@@ -243,8 +243,8 @@ var graphqlQueryNameRe = lazyregexp.New(`(query|mutation) +(\w)+`)
 // GraphQL makes a GraphQL request to the server on behalf of the user authenticated by the client.
 // An optional token can be passed to impersonate other users. A nil target will skip unmarshalling
 // the returned JSON response.
-func (c *Client) GraphQL(token, query string, variables map[string]interface{}, target interface{}) error {
-	body, err := jsoniter.Marshal(map[string]interface{}{
+func (c *Client) GraphQL(token, query string, variables map[string]any, target any) error {
+	body, err := jsoniter.Marshal(map[string]any{
 		"query":     query,
 		"variables": variables,
 	})

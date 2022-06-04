@@ -36,20 +36,23 @@ func Init(_ *testing.M) {
 // InitWithLevel does the same thing as Init, but uses the provided log level to configur
 // the log level for this package's tests, which can be helpful for exceptionally noisy
 // tests.
+//
+// If your loggers are parameterized, you can also use logtest.NoOp to silence output for
+// specific tests.
 func InitWithLevel(_ *testing.M, level log.Level) {
 	initGlobal(level.Parse())
 }
 
 func initGlobal(level zapcore.Level) {
 	// use an empty resource, we don't log output Resource in dev mode anyway
-	globallogger.Init(otfields.Resource{}, zap.NewAtomicLevelAt(level), encoders.OutputConsole, true)
+	globallogger.Init(otfields.Resource{}, level, encoders.OutputConsole, true)
 }
 
 // configurableAdapter exposes internal APIs on zapAdapter.
 type configurableAdapter interface {
 	log.Logger
 
-	WithAdditionalCore(core zapcore.Core) log.Logger
+	WithCore(func(c zapcore.Core) zapcore.Core) log.Logger
 }
 
 type CapturedLog struct {
@@ -57,13 +60,17 @@ type CapturedLog struct {
 	Scope   string
 	Level   log.Level
 	Message string
-	Fields  map[string]interface{}
+	Fields  map[string]any
 }
 
-// Get retrieves a logger from scoped to the the given test.
-//
-// Unlike log.Scoped(), logtest.Scoped() is safe to use without initialization.
-func Scoped(t testing.TB) log.Logger {
+type LoggerOptions struct {
+	// Level configures the minimum log level to output.
+	Level log.Level
+	// FailOnErrorLogs indicates that the test should fail if an error log is output.
+	FailOnErrorLogs bool
+}
+
+func scopedTestLogger(t testing.TB, options LoggerOptions) log.Logger {
 	// initialize just in case - the underlying call to log.Init is no-op if this has
 	// already been done. We allow this in testing for convenience.
 	Init(nil)
@@ -71,19 +78,47 @@ func Scoped(t testing.TB) log.Logger {
 	// On cleanup, flush the global logger.
 	t.Cleanup(func() { globallogger.Get(true).Sync() })
 
-	return log.Scoped(t.Name(), "")
+	root := log.Scoped(t.Name(), "")
+
+	// Cast into internal API
+	configurable := root.(configurableAdapter)
+
+	// Hook test output
+	return configurable.WithCore(func(c zapcore.Core) zapcore.Core {
+		var level zapcore.LevelEnabler = c // by default, use the parent core's leveller
+		if options.Level != "" {
+			level = zap.NewAtomicLevelAt(options.Level.Parse())
+		}
+
+		return newTestingCore(t, level, options.FailOnErrorLogs) // replace the core entirely
+	})
+}
+
+// Scoped retrieves a logger scoped to the the given test. It writes to testing.TB.
+//
+// Unlike log.Scoped(), logtest.Scoped() is safe to use without initialization.
+func Scoped(t testing.TB) log.Logger {
+	return scopedTestLogger(t, LoggerOptions{})
+}
+
+// Scoped retrieves a logger scoped to the the given test, configured with additional
+// options. It writes to testing.TB.
+//
+// Unlike log.Scoped(), logtest.Scoped() is safe to use without initialization.
+func ScopedWith(t testing.TB, options LoggerOptions) log.Logger {
+	return scopedTestLogger(t, options)
 }
 
 // Captured retrieves a logger from scoped to the the given test, and returns a callback,
 // dumpLogs, which flushes the logger buffer and returns log entries.
 func Captured(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog) {
-	root := Scoped(t)
-
-	// Cast into internal API
-	configurable := root.(configurableAdapter)
+	// Cast into internal APIs
+	configurable := scopedTestLogger(t, LoggerOptions{}).(configurableAdapter)
 
 	observerCore, entries := observer.New(zap.DebugLevel) // capture all levels
-	logger = configurable.WithAdditionalCore(observerCore)
+	logger = configurable.WithCore(func(c zapcore.Core) zapcore.Core {
+		return zapcore.NewTee(observerCore, c)
+	})
 
 	return logger, func() []CapturedLog {
 		entries := entries.TakeAll()
@@ -99,4 +134,9 @@ func Captured(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog)
 		}
 		return logs
 	}
+}
+
+// NoOp returns a no-op Logger, useful for silencing all output in a specific test.
+func NoOp(t *testing.T) log.Logger {
+	return Scoped(t).IncreaseLevel("noop", "no-op logger", log.LevelNone)
 }

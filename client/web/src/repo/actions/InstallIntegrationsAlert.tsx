@@ -29,13 +29,9 @@ const IDE_CTA_CADENCE_SHIFT = 3
 
 type CtaToDisplay = 'browser' | 'ide'
 
-export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegrationsAlertProps> = ({
-    codeHostIntegrationMessaging,
-    externalURLs,
-    className,
-    page,
-    onExtensionAlertDismissed,
-}) => {
+export const InstallIntegrationsAlert: React.FunctionComponent<
+    React.PropsWithChildren<InstallIntegrationsAlertProps>
+> = ({ codeHostIntegrationMessaging, externalURLs, className, page, onExtensionAlertDismissed }) => {
     const displayBrowserExtensionCTABasedOnCadence = usePersistentCadence(CADENCE_KEY, DISPLAY_CADENCE)
     const displayIDEExtensionCTABasedOnCadence = usePersistentCadence(
         CADENCE_KEY,
@@ -58,7 +54,7 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
 
     const ctaToDisplay = useMemo<CtaToDisplay | undefined>(
         (): CtaToDisplay | undefined => {
-            if (tourQueryParameters?.isTour) {
+            if (tourQueryParameters.isTour) {
                 return
             }
 

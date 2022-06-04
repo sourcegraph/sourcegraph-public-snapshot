@@ -4,32 +4,34 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
-import { Button, Collapse, CollapseHeader, CollapsePanel, H2, H5, Icon } from '@sourcegraph/wildcard'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, H2, H5, Input } from '@sourcegraph/wildcard'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
 
 import styles from './SearchSidebarSection.module.scss'
 
-export const SearchSidebarSection: React.FunctionComponent<{
-    sectionId: string
-    header: string
-    children?: React.ReactElement | React.ReactElement[] | ((filter: string) => React.ReactElement)
-    className?: string
-    showSearch?: boolean // Search only works if children are FilterLink
-    onToggle?: (id: string, open: boolean) => void
-    startCollapsed?: boolean
-    /**
-     * Shown when the built-in search doesn't find any results.
-     */
-    noResultText?: React.ReactElement | string
-    /**
-     * Clear the search input whenever this value changes. This is supposed to
-     * be used together with function children, which use the search input but
-     * handle search on their own.
-     * Defaults to the component's children.
-     */
-    clearSearchOnChange?: {}
-}> = React.memo(
+export const SearchSidebarSection: React.FunctionComponent<
+    React.PropsWithChildren<{
+        sectionId: string
+        header: string
+        children?: React.ReactElement | React.ReactElement[] | ((filter: string) => React.ReactElement)
+        className?: string
+        showSearch?: boolean // Search only works if children are FilterLink
+        onToggle?: (id: string, open: boolean) => void
+        startCollapsed?: boolean
+        /**
+         * Shown when the built-in search doesn't find any results.
+         */
+        noResultText?: React.ReactElement | string
+        /**
+         * Clear the search input whenever this value changes. This is supposed to
+         * be used together with function children, which use the search input but
+         * handle search on their own.
+         * Defaults to the component's children.
+         */
+        clearSearchOnChange?: {}
+    }>
+> = React.memo(
     ({
         sectionId,
         header,
@@ -114,23 +116,26 @@ export const SearchSidebarSection: React.FunctionComponent<{
                         <H5 as={H2} className="flex-grow-1">
                             {header}
                         </H5>
-                        <Icon className="mr-1" as={isOpened ? ChevronDownIcon : ChevronLeftIcon} />
+                        <Icon
+                            role="img"
+                            aria-hidden={true}
+                            className="mr-1"
+                            as={isOpened ? ChevronDownIcon : ChevronLeftIcon}
+                        />
                     </CollapseHeader>
 
                     <CollapsePanel>
                         <div className={classNames('pb-4', !searchVisible && 'border-top')}>
                             {searchVisible && (
-                                <input
+                                <Input
                                     type="search"
                                     placeholder="Find..."
                                     aria-label="Find filters"
                                     value={filter}
                                     onChange={event => setFilter(event.currentTarget.value)}
                                     data-testid="sidebar-section-search-box"
-                                    className={classNames(
-                                        'form-control form-control-sm',
-                                        styles.sidebarSectionSearchBox
-                                    )}
+                                    inputClassName={styles.sidebarSectionSearchBox}
+                                    variant="small"
                                 />
                             )}
                             {body}

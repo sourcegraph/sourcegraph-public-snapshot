@@ -13,8 +13,8 @@ import { startWith } from 'rxjs/operators'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
+import { CodeExcerpt } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -23,7 +23,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
-import { Alert, Icon, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Alert, Icon, Link, LoadingSpinner, Code, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, SymbolBlock, SymbolBlockInput, SymbolBlockOutput } from '../..'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
@@ -54,7 +54,9 @@ function isSymbolOutputLoaded(
     return output !== undefined && !isErrorLike(output) && output !== LOADING
 }
 
-export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockProps> = React.memo(
+export const NotebookSymbolBlock: React.FunctionComponent<
+    React.PropsWithChildren<NotebookSymbolBlockProps>
+> = React.memo(
     ({
         id,
         input,
@@ -113,7 +115,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
                 {
                     type: 'link',
                     label: 'Open in new tab',
-                    icon: <Icon as={OpenInNewIcon} />,
+                    icon: <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />,
                     url: symbolURL,
                     isDisabled: symbolURL.length === 0,
                 },
@@ -127,7 +129,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
                 {
                     type: 'button',
                     label: showInputs ? 'Save' : 'Edit',
-                    icon: <Icon as={showInputs ? CheckIcon : PencilIcon} />,
+                    icon: <Icon role="img" aria-hidden={true} as={showInputs ? CheckIcon : PencilIcon} />,
                     onClick: () => setShowInputs(!showInputs),
                     keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
                 },
@@ -234,7 +236,7 @@ interface NotebookSymbolBlockHeaderProps extends SymbolBlockInput {
     symbolURL: string
 }
 
-const NotebookSymbolBlockHeader: React.FunctionComponent<NotebookSymbolBlockHeaderProps> = ({
+const NotebookSymbolBlockHeader: React.FunctionComponent<React.PropsWithChildren<NotebookSymbolBlockHeaderProps>> = ({
     repositoryName,
     filePath,
     symbolFoundAtLatestRevision,
@@ -250,14 +252,16 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<NotebookSymbolBlockHead
         </div>
         <div className="d-flex flex-column">
             <div className="mb-1 d-flex align-items-center">
-                <code data-testid="selected-symbol-name">
+                <Code data-testid="selected-symbol-name">
                     <Link className={styles.headerLink} to={symbolURL}>
                         {symbolName}
                     </Link>
                     {symbolContainerName && <span className="text-muted"> {symbolContainerName}</span>}
-                </code>
+                </Code>
                 {symbolFoundAtLatestRevision === false && (
                     <Icon
+                        role="img"
+                        aria-label={`Symbol not found at the latest revision, showing symbol at revision ${effectiveRevision}.`}
                         as={InformationOutlineIcon}
                         className="ml-1"
                         data-tooltip={`Symbol not found at the latest revision, showing symbol at revision ${effectiveRevision}.`}

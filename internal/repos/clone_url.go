@@ -7,6 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -15,8 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pagure"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
@@ -81,12 +80,16 @@ func CloneURL(kind, config string, repo *types.Repo) (string, error) {
 		}
 	case *schema.GoModulesConnection:
 		return string(repo.Name), nil
+	case *schema.PythonPackagesConnection:
+		return string(repo.Name), nil
+	case *schema.RustPackagesConnection:
+		return string(repo.Name), nil
 	case *schema.JVMPackagesConnection:
-		if r, ok := repo.Metadata.(*jvmpackages.Metadata); ok {
+		if r, ok := repo.Metadata.(*reposource.MavenMetadata); ok {
 			return r.Module.CloneURL(), nil
 		}
 	case *schema.NpmPackagesConnection:
-		if r, ok := repo.Metadata.(*npmpackages.Metadata); ok {
+		if r, ok := repo.Metadata.(*reposource.NpmMetadata); ok {
 			return r.Package.CloneURL(), nil
 		}
 	default:

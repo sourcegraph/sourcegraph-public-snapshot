@@ -91,7 +91,7 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> = ({
+export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<CodeIntelUploadsPageProps>> = ({
     repo,
     queryLsifUploadsByRepository = defaultQueryLsifUploadsByRepository,
     queryLsifUploadsList = defaultQueryLsifUploadsList,
@@ -167,6 +167,7 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
                     <FilteredConnection<LsifUploadFields, Omit<CodeIntelUploadNodeProps, 'node'>>
                         listComponent="div"
                         listClassName={classNames(styles.grid, 'mb-3')}
+                        inputClassName="w-auto"
                         noun="upload"
                         pluralNoun="uploads"
                         nodeComponent={CodeIntelUploadNode}

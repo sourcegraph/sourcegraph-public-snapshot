@@ -1,5 +1,7 @@
 import { render } from '@testing-library/react'
 
+import { H4 } from '@sourcegraph/wildcard'
+
 import { Alert } from './Alert'
 import { ALERT_VARIANTS } from './constants'
 
@@ -8,6 +10,7 @@ describe('Alert', () => {
         const { container } = render(<Alert>Simple Alert</Alert>)
         expect(container.firstChild).toMatchInlineSnapshot(`
             <div
+              aria-live="polite"
               class=""
               role="alert"
             >
@@ -19,7 +22,7 @@ describe('Alert', () => {
     it.each(ALERT_VARIANTS)("renders variant '%s' correctly", variant => {
         const { container } = render(
             <Alert variant={variant}>
-                <h4>Too many matching repositories</h4>
+                <H4>Too many matching repositories</H4>
                 Use a 'repo:' or 'repogroup:' filter to narrow your search.
             </Alert>
         )

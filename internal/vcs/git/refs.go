@@ -1,15 +1,12 @@
 package git
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -65,13 +62,6 @@ type BranchesOptions struct {
 	ContainsCommit string `json:"ContainsCommit,omitempty" url:",omitempty"`
 }
 
-// A Tag is a VCS tag.
-type Tag struct {
-	Name         string `json:"Name,omitempty"`
-	api.CommitID `json:"CommitID,omitempty"`
-	CreatorDate  time.Time
-}
-
 // BehindAhead is a set of behind/ahead counts.
 type BehindAhead struct {
 	Behind uint32 `json:"Behind,omitempty"`
@@ -92,12 +82,6 @@ func (p ByAuthorDate) Less(i, j int) bool {
 	return p[i].Commit.Author.Date.Before(p[j].Commit.Author.Date)
 }
 func (p ByAuthorDate) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
-
-type Tags []*Tag
-
-func (p Tags) Len() int           { return len(p) }
-func (p Tags) Less(i, j int) bool { return p[i].Name < p[j].Name }
-func (p Tags) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // branchFilter is a filter for branch names.
 // If not empty, only contained branch names are allowed. If empty, all names are allowed.
@@ -157,7 +141,7 @@ func ListBranches(ctx context.Context, db database.DB, repo api.RepoName, opt Br
 
 		branch := &Branch{Name: name, Head: ref.CommitID}
 		if opt.IncludeCommit {
-			branch.Commit, err = getCommit(ctx, db, repo, ref.CommitID, ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+			branch.Commit, err = getCommit(ctx, db, repo, ref.CommitID, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
 			if err != nil {
 				return nil, err
 			}
@@ -220,54 +204,6 @@ func GetBehindAhead(ctx context.Context, db database.DB, repo api.RepoName, left
 	return &BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }
 
-// ListTags returns a list of all tags in the repository.
-func ListTags(ctx context.Context, db database.DB, repo api.RepoName) ([]*Tag, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: Tags")
-	defer span.Finish()
-
-	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
-	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
-	// using committerdate).
-	cmd := gitserver.NewClient(db).GitCommand(repo, "tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)")
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
-			return nil, err
-		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
-	}
-
-	return parseTags(out)
-}
-
-func parseTags(in []byte) ([]*Tag, error) {
-	in = bytes.TrimSuffix(in, []byte("\n")) // remove trailing newline
-	if len(in) == 0 {
-		return nil, nil // no tags
-	}
-	lines := bytes.Split(in, []byte("\n"))
-	tags := make([]*Tag, len(lines))
-	for i, line := range lines {
-		parts := bytes.SplitN(line, []byte("\x00"), 3)
-		if len(parts) != 3 {
-			return nil, errors.Errorf("invalid git tag list output line: %q", line)
-		}
-
-		tag := &Tag{
-			Name:     string(parts[1]),
-			CommitID: api.CommitID(parts[0]),
-		}
-
-		date, err := strconv.ParseInt(string(parts[2]), 10, 64)
-		if err == nil {
-			tag.CreatorDate = time.Unix(date, 0).UTC()
-		}
-
-		tags[i] = tag
-	}
-	return tags, nil
-}
-
 type byteSlices [][]byte
 
 func (p byteSlices) Len() int           { return len(p) }
@@ -325,44 +261,4 @@ var invalidBranch = lazyregexp.New(`\.\.|/\.|\.lock$|[\000-\037\177 ~^:?*[]+|^/|
 // NOTE: It does not require a slash as mentioned in point 2.
 func ValidateBranchName(branch string) bool {
 	return !(invalidBranch.MatchString(branch) || strings.EqualFold(branch, "head"))
-}
-
-// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
-func RevList(repo string, db database.DB, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	command := gitserver.NewClient(db).GitCommand(api.RepoName(repo), RevListArgs(commit)...)
-	command.DisableTimeout()
-	stdout, err := command.StdoutReader(ctx)
-	if err != nil {
-		return err
-	}
-	defer stdout.Close()
-
-	return RevListEach(stdout, onCommit)
-}
-
-func RevListArgs(givenCommit string) []string {
-	return []string{"rev-list", "--first-parent", givenCommit}
-}
-
-func RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	reader := bufio.NewReader(stdout)
-
-	for {
-		commit, err := reader.ReadString('\n')
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return err
-		}
-		commit = commit[:len(commit)-1] // Drop the trailing newline
-		shouldContinue, err := onCommit(commit)
-		if !shouldContinue {
-			return err
-		}
-	}
-
-	return nil
 }

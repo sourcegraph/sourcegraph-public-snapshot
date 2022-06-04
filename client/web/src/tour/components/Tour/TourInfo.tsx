@@ -9,9 +9,12 @@ export interface TourInfoProps {
     isSourcegraphDotCom: boolean
 }
 
-export const TourInfo: React.FunctionComponent<TourInfoProps> = ({ className, isSourcegraphDotCom }) => {
+export const TourInfo: React.FunctionComponent<React.PropsWithChildren<TourInfoProps>> = ({
+    className,
+    isSourcegraphDotCom,
+}) => {
     if (!isSourcegraphDotCom) {
         return null
     }
-    return <div className={classNames(GETTING_STARTED_TOUR_MARKER, className)} />
+    return <div id={GETTING_STARTED_TOUR_MARKER} className={classNames('d-none', className)} />
 }

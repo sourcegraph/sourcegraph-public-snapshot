@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"testing"
 
 	sitter "github.com/smacker/go-tree-sitter"
 
@@ -90,7 +91,7 @@ func spacesToColumn(s string, column int) int {
 }
 
 // colorSprintfFunc is a color printing function.
-type colorSprintfFunc func(a ...interface{}) string
+type colorSprintfFunc func(a ...any) string
 
 // bracket prefixes all the lines of the given string with pretty brackets.
 func bracket(text string) string {
@@ -243,4 +244,16 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 	}
 
 	return &Node{RepoCommitPath: repoCommitPath, Node: root, Contents: contents, LangSpec: langSpec}, nil
+}
+
+func fatalIfError(t *testing.T, err error) {
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func fatalIfErrorLabel(t *testing.T, err error, label string) {
+	if err != nil {
+		t.Fatalf("%s: %s", label, err)
+	}
 }

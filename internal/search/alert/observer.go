@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -241,8 +240,6 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	}
 
 	var (
-		rErr *commit.RepoLimitError
-		tErr *commit.TimeLimitError
 		mErr *searchrepos.MissingRepoRevsError
 		oErr *errOverRepoLimit
 	)
@@ -301,24 +298,6 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		}, nil
 	}
 
-	if errors.As(err, &rErr) {
-		return &search.Alert{
-			PrometheusType: "exceeded_diff_commit_search_limit",
-			Title:          fmt.Sprintf("Too many matching repositories for %s search to handle", rErr.ResultType),
-			Description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`, strings.Title(rErr.ResultType), rErr.Max),
-			Priority:       2,
-		}, nil
-	}
-
-	if errors.As(err, &tErr) {
-		return &search.Alert{
-			PrometheusType: "exceeded_diff_commit_with_time_search_limit",
-			Title:          fmt.Sprintf("Too many matching repositories for %s search to handle", tErr.ResultType),
-			Description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search.`, strings.Title(tErr.ResultType), tErr.Max),
-			Priority:       1,
-		}, nil
-	}
-
 	return nil, err
 }
 
@@ -345,7 +324,7 @@ func needsRepositoryConfiguration(ctx context.Context, db database.DB) (bool, er
 		}
 	}
 
-	count, err := database.ExternalServices(db).Count(ctx, database.ExternalServicesListOptions{
+	count, err := db.ExternalServices().Count(ctx, database.ExternalServicesListOptions{
 		Kinds: kinds,
 	})
 	if err != nil {
@@ -355,7 +334,7 @@ func needsRepositoryConfiguration(ctx context.Context, db database.DB) (bool, er
 }
 
 func needsPackageHostConfiguration(ctx context.Context, db database.DB) (bool, error) {
-	count, err := database.ExternalServices(db).Count(ctx, database.ExternalServicesListOptions{
+	count, err := db.ExternalServices().Count(ctx, database.ExternalServicesListOptions{
 		Kinds: []string{
 			extsvc.KindNpmPackages,
 			extsvc.KindGoModules,

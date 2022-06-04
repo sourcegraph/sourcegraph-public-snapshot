@@ -1,13 +1,15 @@
 import * as Sentry from '@sentry/browser'
 import classNames from 'classnames'
+import { fromEvent } from 'rxjs'
+import { filter, map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
-import { subtypeOf } from '@sourcegraph/common'
+import { LineOrPositionOrRange, subtypeOf } from '@sourcegraph/common'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { background } from '../../../browser-extension/web-extension-api/runtime'
-import { CodeHost } from '../shared/codeHost'
+import { CodeHost, OverlayPosition } from '../shared/codeHost'
 import { CodeView } from '../shared/codeViews'
 import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
@@ -24,21 +26,26 @@ export function checkIsGitlab(): boolean {
     return !!document.head.querySelector('meta[content="GitLab"]')
 }
 
-const adjustOverlayPosition: CodeHost['adjustOverlayPosition'] = ({ top, left }) => {
+const adjustOverlayPosition: CodeHost['adjustOverlayPosition'] = args => {
+    const topOrBottom = 'top' in args ? 'top' : 'bottom'
+    let topOrBottomValue = 'top' in args ? args.top : args.bottom
+
     const header = document.querySelector('header')
     if (header) {
-        top += header.getBoundingClientRect().height
+        topOrBottomValue += header.getBoundingClientRect().height
     }
     // When running GitLab from source, we also need to take into account
     // the debug header shown at the top of the page.
     const debugHeader = document.querySelector('#js-peek.development')
     if (debugHeader) {
-        top += debugHeader.getBoundingClientRect().height
+        topOrBottomValue += debugHeader.getBoundingClientRect().height
     }
+
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return {
-        top,
-        left,
-    }
+        [topOrBottom]: topOrBottomValue,
+        left: args.left,
+    } as OverlayPosition
 }
 
 export const getToolbarMount = (codeView: HTMLElement, pageKind?: GitLabPageKind): HTMLElement => {
@@ -166,6 +173,26 @@ export const isPrivateRepository = (repoName: string, fetchCache = background.fe
         })
 }
 
+export const parseHash = (hash: string): LineOrPositionOrRange => {
+    if (hash.startsWith('#')) {
+        hash = hash.slice(1)
+    }
+
+    if (!/^L\d+(-\d+)?$/.test(hash)) {
+        return {}
+    }
+
+    const lpr = {} as LineOrPositionOrRange
+    const [startString, endString] = hash.slice(1).split('-')
+
+    lpr.line = parseInt(startString, 10)
+    if (endString) {
+        lpr.endLine = parseInt(endString, 10)
+    }
+
+    return lpr
+}
+
 export const gitlabCodeHost = subtypeOf<CodeHost>()({
     type: 'gitlab',
     name: 'GitLab',
@@ -242,6 +269,7 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         className: classNames('card', styles.hoverOverlay),
         actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
+        closeButtonClassName: 'btn btn-transparent p-0 btn-icon--gitlab',
         iconClassName: 'square s16',
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
     },
@@ -254,4 +282,11 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         }
         return null
     },
+    // We listen to links clicks instead of 'hashchange' event as GitLab uses anchor links
+    // to scroll to the selected line. Link click doesn't trigger 'hashchange' event
+    // despite the URL hash is updated.
+    observeLineSelection: fromEvent(document, 'click').pipe(
+        filter(event => (event.target as HTMLElement).matches('a[data-line-number]')),
+        map(() => parseHash(window.location.hash))
+    ),
 })

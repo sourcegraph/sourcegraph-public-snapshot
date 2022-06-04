@@ -9,8 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output/outputtest"
 )
 
@@ -92,17 +91,10 @@ func useOutputBuffer(t *testing.T) *outputtest.Buffer {
 	t.Helper()
 
 	buf := &outputtest.Buffer{}
-	out := output.NewOutput(buf, output.OutputOpts{
-		ForceTTY:    true,
-		ForceColor:  true,
-		ForceHeight: 25,
-		ForceWidth:  80,
-		Verbose:     true,
-	})
 
-	oldStdout := stdout.Out
-	stdout.Out = out
-	t.Cleanup(func() { stdout.Out = oldStdout })
+	oldStdout := std.Out
+	std.Out = std.NewFixedOutput(buf, true)
+	t.Cleanup(func() { std.Out = oldStdout })
 
 	return buf
 }

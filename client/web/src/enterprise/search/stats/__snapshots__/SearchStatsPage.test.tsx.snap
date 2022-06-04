@@ -9,12 +9,14 @@ exports[`SearchStatsPage limitHit 1`] = `
       class="d-flex align-items-center justify-content-between mb-3"
     >
       <h2
-        class="d-flex align-items-center mb-0"
+        class="h2 d-flex align-items-center mb-0"
       >
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline mr-2"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -34,30 +36,37 @@ exports[`SearchStatsPage limitHit 1`] = `
       class="form"
     >
       <div
-        class="form-group d-flex align-items-stretch"
+        class="form-group d-flex"
       >
-        <input
-          autocapitalize="off"
-          autocomplete="off"
-          autocorrect="off"
-          class="form-control flex-1 test-stats-query"
-          id="stats-page__query"
-          placeholder="Enter a Sourcegraph search query"
-          spellcheck="false"
-          type="search"
-          value="abc"
-        />
+        <div
+          class="container loader-input loaderInput mb-0 w-100"
+        >
+          <input
+            autocapitalize="off"
+            autocomplete="off"
+            autocorrect="off"
+            class="form-control with-invalid-icon"
+            id="stats-page__query"
+            placeholder="Enter a Sourcegraph search query"
+            spellcheck="false"
+            type="search"
+            value="abc"
+          />
+        </div>
       </div>
     </form>
     <hr
       class="my-3"
     />
     <div
+      aria-live="assertive"
       class=""
       role="alert"
     >
       Limit hit. Add 
-      <code>
+      <code
+        class="code"
+      >
         count:5000
       </code>
        (or an even larger number) to your query to retry with a higher limit.
@@ -75,12 +84,14 @@ exports[`SearchStatsPage renders 1`] = `
       class="d-flex align-items-center justify-content-between mb-3"
     >
       <h2
-        class="d-flex align-items-center mb-0"
+        class="h2 d-flex align-items-center mb-0"
       >
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline mr-2"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -100,19 +111,23 @@ exports[`SearchStatsPage renders 1`] = `
       class="form"
     >
       <div
-        class="form-group d-flex align-items-stretch"
+        class="form-group d-flex"
       >
-        <input
-          autocapitalize="off"
-          autocomplete="off"
-          autocorrect="off"
-          class="form-control flex-1 test-stats-query"
-          id="stats-page__query"
-          placeholder="Enter a Sourcegraph search query"
-          spellcheck="false"
-          type="search"
-          value="abc"
-        />
+        <div
+          class="container loader-input loaderInput mb-0 w-100"
+        >
+          <input
+            autocapitalize="off"
+            autocomplete="off"
+            autocorrect="off"
+            class="form-control with-invalid-icon"
+            id="stats-page__query"
+            placeholder="Enter a Sourcegraph search query"
+            spellcheck="false"
+            type="search"
+            value="abc"
+          />
+        </div>
       </div>
     </form>
     <hr

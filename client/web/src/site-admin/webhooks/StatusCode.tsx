@@ -10,13 +10,13 @@ export interface Props {
     code: number
 }
 
-export const StatusCode: React.FunctionComponent<Props> = ({ code }) => (
+export const StatusCode: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ code }) => (
     <span>
         <span className={classNames('mr-1')}>
             {code < 400 ? (
-                <Icon className="text-success" as={CheckIcon} />
+                <Icon role="img" className="text-success" as={CheckIcon} aria-hidden={true} />
             ) : (
-                <Icon className="text-danger" as={AlertCircleIcon} />
+                <Icon role="img" className="text-danger" as={AlertCircleIcon} aria-hidden={true} />
             )}
         </span>
         {code}

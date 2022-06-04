@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect } from 'react'
 
+import classNames from 'classnames'
 import { fromEvent } from 'rxjs'
 import { finalize, tap } from 'rxjs/operators'
 
@@ -27,7 +28,7 @@ interface Props extends HoverOverlayProps, HoverThresholdProps, SettingsCascadeP
     nav?: (url: string) => void
 }
 
-export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
+export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(
         (alertType: string) => {
@@ -121,6 +122,7 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
         <HoverOverlay
             {...propsToUse}
             className={styles.webHoverOverlay}
+            closeButtonClassName={classNames('btn btn-icon', styles.webHoverOverlayCloseButton)}
             actionItemClassName="border-0"
             onAlertDismissed={onAlertDismissed}
             getAlertVariant={getAlertVariant}

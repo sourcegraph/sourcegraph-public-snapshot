@@ -11,10 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func toJSON(node Node) interface{} {
+func toJSON(node Node) any {
 	switch n := node.(type) {
 	case Operator:
-		var jsons []interface{}
+		var jsons []any
 		for _, o := range n.Operands {
 			jsons = append(jsons, toJSON(o))
 		}
@@ -22,19 +22,19 @@ func toJSON(node Node) interface{} {
 		switch n.Kind {
 		case And:
 			return struct {
-				And []interface{} `json:"and"`
+				And []any `json:"and"`
 			}{
 				And: jsons,
 			}
 		case Or:
 			return struct {
-				Or []interface{} `json:"or"`
+				Or []any `json:"or"`
 			}{
 				Or: jsons,
 			}
 		case Concat:
 			return struct {
-				Concat []interface{} `json:"concat"`
+				Concat []any `json:"concat"`
 			}{
 				Concat: jsons,
 			}
@@ -67,7 +67,7 @@ func toJSON(node Node) interface{} {
 }
 
 func nodesToJSON(nodes []Node) string {
-	var jsons []interface{}
+	var jsons []any
 	for _, node := range nodes {
 		jsons = append(jsons, toJSON(node))
 	}
@@ -97,7 +97,12 @@ func TestSubstituteAliases(t *testing.T) {
 	autogold.Want(
 		"substitution honors literal search pattern",
 		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"]},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsAlias","Literal"]}]}]`).
-		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteral))
+		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteralDefault))
+
+	autogold.Want(
+		"substitution honors path",
+		`[{"field":"file","value":"foo","negated":false,"labels":["IsAlias"]}]`).
+		Equal(t, test("path:foo", SearchTypeLiteralDefault))
 }
 
 func TestLowercaseFieldNames(t *testing.T) {
@@ -121,12 +126,8 @@ func TestHoist(t *testing.T) {
 			want:  `"repo:foo" (or "a" "b")`,
 		},
 		{
-			input: `repo:foo a or b file:bar`,
-			want:  `"repo:foo" "file:bar" (or "a" "b")`,
-		},
-		{
-			input: `repo:foo a or b or c file:bar`,
-			want:  `"repo:foo" "file:bar" (or "a" "b" "c")`,
+			input: `repo:foo file:bar a and b or c`,
+			want:  `"repo:foo" "file:bar" (or (and "a" "b") "c")`,
 		},
 		{
 			input: "repo:foo bar { and baz {",
@@ -137,32 +138,45 @@ func TestHoist(t *testing.T) {
 			want:  `"repo:foo" (and (concat "bar" "{") (concat "baz" "{") (concat "qux" "{"))`,
 		},
 		{
+			input: `repo:foo a or b file:bar`,
+			want:  `"repo:foo" "file:bar" (or "a" "b")`,
+		},
+		{
+			input: `repo:foo a or b or c file:bar`,
+			want:  `"repo:foo" "file:bar" (or "a" "b" "c")`,
+		},
+		{
 			input: `repo:foo a and b or c and d or e file:bar`,
 			want:  `"repo:foo" "file:bar" (or (and "a" "b") (and "c" "d") "e")`,
 		},
-		// This next pattern is valid for the heuristic, even though the ordering of the
-		// patterns 'a' and 'c' in the first and last position are not ordered next to the
-		// 'or' keyword. This because no ordering is assumed for patterns vs. field:value
-		// parameters in the grammar. To preserve relative ordering and check this would
-		// impose significant complexity to PartitionParameters function during parsing, and
-		// the PartitionSearchPattern helper function that the heurstic relies on. So: we
-		// accept this heuristic behavior here.
-		{
-			input: `a repo:foo or b or file:bar c`,
-			want:  `"repo:foo" "file:bar" (or "a" "b" "c")`,
-		},
 		// Errors.
 		{
+			input:      "a repo:foo or b",
+			wantErrMsg: "unnatural order: patterns not followed by parameter",
+		},
+		{
+			input:      "a repo:foo q or b",
+			wantErrMsg: "unnatural order: patterns not followed by parameter",
+		},
+		{
+			input:      "repo:bar a repo:foo or b",
+			wantErrMsg: "unnatural order: patterns not followed by parameter",
+		},
+		{
+			input:      `a repo:foo or b or file:bar c`,
+			wantErrMsg: "unnatural order: patterns not followed by parameter",
+		},
+		{
 			input:      "repo:foo or a",
-			wantErrMsg: "could not partition first or last expression",
+			wantErrMsg: "could not partition first expression",
 		},
 		{
 			input:      "a or repo:foo",
-			wantErrMsg: "could not partition first or last expression",
+			wantErrMsg: "unnatural order: patterns not followed by parameter",
 		},
 		{
 			input:      "repo:foo or repo:bar",
-			wantErrMsg: "could not partition first or last expression",
+			wantErrMsg: "could not partition first expression",
 		},
 		{
 			input:      "a b",
@@ -171,6 +185,10 @@ func TestHoist(t *testing.T) {
 		{
 			input:      "repo:foo a or repo:foobar b or c file:bar",
 			wantErrMsg: `inner expression (and "repo:foobar" "b") is not a pure pattern expression`,
+		},
+		{
+			input:      "repo:a b or c repo:b d or e",
+			wantErrMsg: `inner expression (and "repo:b" (concat "c" "d")) is not a pure pattern expression`,
 		},
 	}
 	for _, c := range cases {
@@ -184,7 +202,7 @@ func TestHoist(t *testing.T) {
 					leafParser: SearchTypeRegex,
 				}
 				nodes, _ := parser.parseOr()
-				return newOperator(nodes, And)
+				return NewOperator(nodes, And)
 			}
 			query := parse(c.input)
 			hoistedQuery, err := Hoist(query)
@@ -439,9 +457,9 @@ func TestPipeline(t *testing.T) {
 	}}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
-			plan, err := Pipeline(Init(c.input, SearchTypeLiteral))
+			plan, err := Pipeline(Init(c.input, SearchTypeLiteralDefault))
 			require.NoError(t, err)
-			got := plan.ToParseTree().String()
+			got := plan.ToQ().String()
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
 			}
@@ -923,7 +941,7 @@ func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
 		t.Run(c.input, func(t *testing.T) {
 			plan, _ := Pipeline(InitRegexp(c.input))
 			p := MapPlan(plan, ConcatRevFilters)
-			if diff := cmp.Diff(c.want, toString(p.ToParseTree())); diff != "" {
+			if diff := cmp.Diff(c.want, toString(p.ToQ())); diff != "" {
 				t.Error(diff)
 			}
 		})
@@ -942,7 +960,7 @@ func TestQueryField(t *testing.T) {
 
 func TestSubstituteCountAll(t *testing.T) {
 	test := func(input string) string {
-		query, _ := Parse(input, SearchTypeLiteral)
+		query, _ := Parse(input, SearchTypeLiteralDefault)
 		q := SubstituteCountAll(query)
 		return toString(q)
 	}

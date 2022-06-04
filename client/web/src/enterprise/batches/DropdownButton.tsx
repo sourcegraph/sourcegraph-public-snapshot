@@ -12,6 +12,8 @@ import {
     MenuList,
     Position,
     MenuItem,
+    H4,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import styles from './DropdownButton.module.scss'
@@ -47,7 +49,7 @@ export interface Props {
     tooltip?: string
 }
 
-export const DropdownButton: React.FunctionComponent<Props> = ({
+export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     actions,
     defaultAction,
     disabled,
@@ -165,13 +167,16 @@ interface DropdownItemProps {
     action: Action
 }
 
-const DropdownItem: React.FunctionComponent<DropdownItemProps> = ({ action, setSelectedType }) => {
+const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItemProps>> = ({
+    action,
+    setSelectedType,
+}) => {
     const onSelect = useCallback(() => {
         setSelectedType(action.type)
     }, [setSelectedType, action.type])
     return (
         <MenuItem className={styles.menuListItem} onSelect={onSelect} disabled={action.disabled}>
-            <h4 className="mb-1">
+            <H4 className="mb-1">
                 {action.dropdownTitle}
                 {action.experimental && (
                     <>
@@ -179,10 +184,10 @@ const DropdownItem: React.FunctionComponent<DropdownItemProps> = ({ action, setS
                         <ProductStatusBadge status="experimental" as="small" />
                     </>
                 )}
-            </h4>
-            <p className="text-wrap text-muted mb-0">
+            </H4>
+            <Text className="text-wrap text-muted mb-0">
                 <small>{action.dropdownDescription}</small>
-            </p>
+            </Text>
         </MenuItem>
     )
 }

@@ -16,6 +16,7 @@ import (
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -276,7 +277,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(db)
+			s := NewUpdateScheduler(logtest.Scoped(t), db)
 
 			for _, call := range test.calls {
 				s.updateQueue.enqueue(call.repo, call.priority)
@@ -442,7 +443,7 @@ func TestUpdateQueue_remove(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(database.NewMockDB())
+			s := NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
 			setupInitialQueue(s, test.initialQueue)
 
 			// Perform the removals.
@@ -514,7 +515,7 @@ func TestUpdateQueue_acquireNext(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(database.NewMockDB())
+			s := NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
 			setupInitialQueue(s, test.initialQueue)
 
 			// Test aquireNext.
@@ -638,13 +639,14 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 			},
 		},
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// The recording is not important for testing this method, but we want to mock and clean up timers.
 			_, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(database.NewMockDB())
+			s := NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
 			setupInitialSchedule(s, test.initialSchedule)
 			setupInitialQueue(s, test.initialQueue)
 
@@ -790,7 +792,7 @@ func TestSchedule_upsert(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(database.NewMockDB())
+			s := NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
 			setupInitialSchedule(s, test.initialSchedule)
 
 			for _, call := range test.upsertCalls {
@@ -812,7 +814,7 @@ func TestUpdateQueue_PrioritiseUncloned(t *testing.T) {
 	_, stop := startRecording()
 	defer stop()
 
-	s := NewUpdateScheduler(database.NewMockDB())
+	s := NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
 
 	assertFront := func(name api.RepoName) {
 		t.Helper()
@@ -850,7 +852,7 @@ func TestScheduleInsertNew(t *testing.T) {
 	_, stop := startRecording()
 	defer stop()
 
-	s := NewUpdateScheduler(database.NewMockDB())
+	s := NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
 
 	assertFront := func(name api.RepoName) {
 		t.Helper()
@@ -1041,7 +1043,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(database.NewMockDB())
+			s := NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
 			setupInitialSchedule(s, test.initialSchedule)
 			s.schedule.randGenerator = &mockRandomGenerator{}
 
@@ -1140,7 +1142,7 @@ func TestSchedule_remove(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(database.NewMockDB())
+			s := NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
 			setupInitialSchedule(s, test.initialSchedule)
 
 			for _, call := range test.removeCalls {
@@ -1302,7 +1304,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler(database.NewMockDB())
+			s := NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
 
 			setupInitialSchedule(s, test.initialSchedule)
 
@@ -1433,7 +1435,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			}
 			defer func() { requestRepoUpdate = nil }()
 
-			s := NewUpdateScheduler(database.NewMockDB())
+			s := NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
 			s.schedule.randGenerator = &mockRandomGenerator{}
 
 			// unbuffer the channel
@@ -1539,6 +1541,7 @@ func Test_updateQueue_Less(t *testing.T) {
 }
 
 func TestGetCustomInterval(t *testing.T) {
+
 	for _, tc := range []struct {
 		name     string
 		c        *conf.Unified
@@ -1602,7 +1605,7 @@ func TestGetCustomInterval(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			interval := getCustomInterval(tc.c, tc.repoName)
+			interval := getCustomInterval(logtest.Scoped(t), tc.c, tc.repoName)
 			if tc.want != interval {
 				t.Fatalf("Want %v, got %v", tc.want, interval)
 			}

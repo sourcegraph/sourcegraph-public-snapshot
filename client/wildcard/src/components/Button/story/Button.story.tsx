@@ -5,6 +5,7 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { H1, H2, Text } from '../..'
 import { Button } from '../Button'
 import { ButtonGroup } from '../ButtonGroup'
 import { BUTTON_VARIANTS, BUTTON_SIZES } from '../constants'
@@ -53,20 +54,20 @@ export const Simple: Story = () => (
 
 export const AllButtons: Story = () => (
     <div className="pb-3">
-        <h1>Buttons</h1>
-        <h2>Variants</h2>
+        <H1>Buttons</H1>
+        <H2>Variants</H2>
         <ButtonVariants variants={BUTTON_VARIANTS} />
-        <h2>Outline</h2>
+        <H2>Outline</H2>
         <ButtonVariants variants={['primary', 'secondary', 'danger']} outline={true} />
-        <h2>Icons</h2>
-        <p>We can use icons with our buttons.</p>
+        <H2>Icons</H2>
+        <Text>We can use icons with our buttons.</Text>
         <ButtonVariants variants={['danger']} icon={SearchIcon} />
         <ButtonVariants variants={['danger']} icon={SearchIcon} outline={true} />
-        <h2>Smaller</h2>
-        <p>We can make our buttons smaller.</p>
+        <H2>Smaller</H2>
+        <Text>We can make our buttons smaller.</Text>
         <ButtonVariants variants={['primary']} size="sm" outline={true} />
-        <h2>Links</h2>
-        <p>Links can be made to look like buttons.</p>
+        <H2>Links</H2>
+        <Text>Links can be made to look like buttons.</Text>
         <Button
             variant="secondary"
             as="a"
@@ -77,9 +78,9 @@ export const AllButtons: Story = () => (
         >
             I am a link
         </Button>
-        <p>Buttons can be made to look like links.</p>
+        <Text>Buttons can be made to look like links.</Text>
         <ButtonVariants variants={['link']} />
-        <h2>Button Display</h2>
+        <H2>Button Display</H2>
         <Button className="mb-3" size="sm" variant="secondary" display="inline">
             Inline
         </Button>
@@ -87,7 +88,7 @@ export const AllButtons: Story = () => (
             Block
         </Button>
 
-        <h2>Button Group</h2>
+        <H2>Button Group</H2>
         <ButtonGroup className="mb-3">
             <Button variant="secondary" display="block">
                 Grouped
@@ -99,8 +100,8 @@ export const AllButtons: Story = () => (
                 Grouped
             </Button>
         </ButtonGroup>
-        <h2>Tooltips</h2>
-        <p>Buttons can have tooltips.</p>
+        <H2>Tooltips</H2>
+        <Text>Buttons can have tooltips.</Text>
         <Button variant="primary" className="mr-3" data-tooltip="Some extra context on the button.">
             Enabled
         </Button>

@@ -2,11 +2,11 @@ import React, { useCallback } from 'react'
 
 import * as Monaco from 'monaco-editor'
 
-import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { RepoFileLink } from '@sourcegraph/search-ui'
 import { getFileMatchUrl, getRepositoryUrl, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Code } from '@sourcegraph/wildcard'
 
 import { BlockProps, SymbolBlockInput } from '../..'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
@@ -30,11 +30,9 @@ function getSymbolSuggestionsQuery(queryInput: string): string {
     return `${queryInput} fork:yes type:symbol count:50`
 }
 
-export const NotebookSymbolBlockInput: React.FunctionComponent<NotebookSymbolBlockInputProps> = ({
-    editor,
-    onSymbolSelected,
-    ...props
-}) => {
+export const NotebookSymbolBlockInput: React.FunctionComponent<
+    React.PropsWithChildren<NotebookSymbolBlockInputProps>
+> = ({ editor, onSymbolSelected, ...props }) => {
     useFocusMonacoEditorOnMount({ editor, isEditing: true })
 
     const fetchSymbolSuggestions = useCallback(
@@ -74,10 +72,12 @@ export const NotebookSymbolBlockInput: React.FunctionComponent<NotebookSymbolBlo
     )
 }
 
-const SymbolSuggestions: React.FunctionComponent<{
-    suggestions: SymbolMatch[]
-    onSymbolSelected: (symbol: SymbolBlockInput) => void
-}> = ({ suggestions, onSymbolSelected }) => (
+const SymbolSuggestions: React.FunctionComponent<
+    React.PropsWithChildren<{
+        suggestions: SymbolMatch[]
+        onSymbolSelected: (symbol: SymbolBlockInput) => void
+    }>
+> = ({ suggestions, onSymbolSelected }) => (
     <div className={styles.symbolSuggestions}>
         {suggestions.map(suggestion => (
             <div key={`${suggestion.repository}_${suggestion.path}`} className="pr-2">
@@ -108,10 +108,10 @@ const SymbolSuggestions: React.FunctionComponent<{
                         data-testid="symbol-suggestion-button"
                     >
                         <SymbolIcon kind={symbol.kind} className="mr-1" />
-                        <code>
+                        <Code>
                             {symbol.name}{' '}
                             {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
-                        </code>
+                        </Code>
                     </Button>
                 ))}
             </div>

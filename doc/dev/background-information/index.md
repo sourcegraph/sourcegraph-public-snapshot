@@ -13,6 +13,7 @@
 ## Development
 
 - [`sg` - the Sourcegraph developer tool](./sg/index.md)
+  - [Full `sg` reference](./sg/reference.md)
 - [Developing the web clients](web/index.md)
   - [Developing the web app](web/web_app.md)
   - [Developing the code host integrations](web/code_host_integrations.md)
@@ -71,4 +72,4 @@
 
 - [Telemetry](telemetry.md)
 - [Adding, changing and debugging pings](adding_ping_data.md)
-- [Deploy Sourcegraph with Helm chart (BETA)](../../admin/install/kubernetes/helm.md)
+- [Deploy Sourcegraph with Helm chart (BETA)](../../admin/deploy/kubernetes/helm.md)

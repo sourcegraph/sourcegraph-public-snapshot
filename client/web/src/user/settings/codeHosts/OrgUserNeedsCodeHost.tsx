@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Container, Button, Link } from '@sourcegraph/wildcard'
+import { Container, Button, Link, H3, Text } from '@sourcegraph/wildcard'
 
 import { useExternalServices } from '../../../auth/useExternalServices'
 import { ListExternalServiceFields } from '../../../graphql-operations'
@@ -23,7 +23,7 @@ export interface OrgUserNeedsCodeHost {
     user: UserContext
 }
 
-export const OrgUserNeedsCodeHost: React.FunctionComponent<OrgUserNeedsCodeHost> = ({
+export const OrgUserNeedsCodeHost: React.FunctionComponent<React.PropsWithChildren<OrgUserNeedsCodeHost>> = ({
     orgExternalServices,
     user,
     orgDisplayName,
@@ -35,11 +35,11 @@ export const OrgUserNeedsCodeHost: React.FunctionComponent<OrgUserNeedsCodeHost>
         const missingString = userMissing.join(' and ')
         return (
             <Container className="mb-4">
-                <h3>Just one more step...</h3>
-                <p>
+                <H3>Just one more step...</H3>
+                <Text>
                     Connect with {missingString} to start searching across the {orgDisplayName} organization's private
                     repositories on Sourcegraph.
-                </p>
+                </Text>
                 <Button to={`/users/${user.username}/settings/code-hosts`} variant="primary" as={Link}>
                     Connect with {missingString}
                 </Button>
@@ -54,10 +54,9 @@ export interface SearchUserNeedsCodeHostProps {
     user: UserContext
 }
 
-export const SearchUserNeedsCodeHost: React.FunctionComponent<SearchUserNeedsCodeHostProps> = ({
-    orgSearchContext,
-    user,
-}) => {
+export const SearchUserNeedsCodeHost: React.FunctionComponent<
+    React.PropsWithChildren<SearchUserNeedsCodeHostProps>
+> = ({ orgSearchContext, user }) => {
     // If this is not an auto context (that starts with @) we show nothing
     if (!orgSearchContext || !orgSearchContext.startsWith('@')) {
         return null
@@ -76,7 +75,9 @@ interface PotentialOrgUserNeedsCodeHost {
     user: UserContext
 }
 // This is a separate component to make sure the useExternalServices hook is not used conditionally - see https://reactjs.org/docs/hooks-rules.html#only-call-hooks-at-the-top-level
-const PotentialOrgUserNeedsCodeHost: React.FunctionComponent<PotentialOrgUserNeedsCodeHost> = ({ org, user }) => {
+const PotentialOrgUserNeedsCodeHost: React.FunctionComponent<
+    React.PropsWithChildren<PotentialOrgUserNeedsCodeHost>
+> = ({ org, user }) => {
     const { externalServices: orgExternalServices } = useExternalServices(org.id)
     return (
         <OrgUserNeedsCodeHost

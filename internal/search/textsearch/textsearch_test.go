@@ -7,12 +7,11 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-	"strings"
 	"testing"
-	"testing/quick"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -334,74 +333,89 @@ func mkRepos(names ...string) []types.MinimalRepo {
 }
 
 func TestFileMatch_Limit(t *testing.T) {
-	desc := func(fm *result.FileMatch) string {
-		parts := []string{fmt.Sprintf("symbols=%d", len(fm.Symbols))}
-		for _, lm := range fm.LineMatches {
-			parts = append(parts, fmt.Sprintf("lm=%d", len(lm.OffsetAndLengths)))
-		}
-		return strings.Join(parts, " ")
+	tests := []struct {
+		numHunkRanges       int
+		numSymbolMatches    int
+		limit               int
+		expNumHunkRanges    int
+		expNumSymbolMatches int
+		expRemainingLimit   int
+		wantLimitHit        bool
+	}{
+		{
+			numHunkRanges:     3,
+			numSymbolMatches:  0,
+			limit:             1,
+			expNumHunkRanges:  1,
+			expRemainingLimit: 0,
+			wantLimitHit:      true,
+		},
+		{
+			numHunkRanges:       0,
+			numSymbolMatches:    3,
+			limit:               1,
+			expNumSymbolMatches: 1,
+			expRemainingLimit:   0,
+			wantLimitHit:        true,
+		},
+		{
+			numHunkRanges:     3,
+			numSymbolMatches:  0,
+			limit:             5,
+			expNumHunkRanges:  3,
+			expRemainingLimit: 2,
+			wantLimitHit:      false,
+		},
+		{
+			numHunkRanges:       0,
+			numSymbolMatches:    3,
+			limit:               5,
+			expNumSymbolMatches: 3,
+			expRemainingLimit:   2,
+			wantLimitHit:        false,
+		},
+		{
+			numHunkRanges:     3,
+			numSymbolMatches:  0,
+			limit:             3,
+			expNumHunkRanges:  3,
+			expRemainingLimit: 0,
+			wantLimitHit:      false,
+		},
+		{
+			numHunkRanges:       0,
+			numSymbolMatches:    3,
+			limit:               3,
+			expNumSymbolMatches: 3,
+			expRemainingLimit:   0,
+			wantLimitHit:        false,
+		},
+		{
+			// An empty FileMatch should still count against the limit
+			numHunkRanges:       0,
+			numSymbolMatches:    0,
+			limit:               1,
+			expNumSymbolMatches: 0,
+			expNumHunkRanges:    0,
+			wantLimitHit:        false,
+		},
 	}
 
-	f := func(lineMatches []result.LineMatch, symbols []int, limitInput uint32) bool {
-		fm := &result.FileMatch{
-			// SearchSymbolResult fails to generate due to private fields. So
-			// we just generate a slice of ints and use its length. This is
-			// fine for limit which only looks at the slice and not in it.
-			Symbols: make([]*result.SymbolMatch, len(symbols)),
-		}
-		// We don't use *LineMatch as args since quick can generate nil.
-		for _, lm := range lineMatches {
-			lm := lm
-			fm.LineMatches = append(fm.LineMatches, &lm)
-		}
-		beforeDesc := desc(fm)
-
-		// It isn't interesting to test limit > ResultCount, so we bound it to
-		// [1, ResultCount]
-		count := fm.ResultCount()
-		limit := (int(limitInput) % count) + 1
-
-		after := fm.Limit(limit)
-		newCount := fm.ResultCount()
-
-		if after == 0 && newCount == limit {
-			return true
-		}
-
-		afterDesc := desc(fm)
-		t.Logf("failed limit=%d count=%d => after=%d newCount=%d:\nbeforeDesc: %s\nafterDesc:  %s", limit, count, after, newCount, beforeDesc, afterDesc)
-		return false
-	}
-	t.Run("quick", func(t *testing.T) {
-		if err := quick.Check(f, nil); err != nil {
-			t.Error("quick check failed")
-		}
-	})
-
-	cases := []struct {
-		Name        string
-		LineMatches []result.LineMatch
-		Symbols     int
-		Limit       int
-	}{{
-		Name: "1 line match",
-		LineMatches: []result.LineMatch{{
-			OffsetAndLengths: [][2]int32{{1, 1}},
-		}},
-		Limit: 1,
-	}, {
-		Name:  "file path match",
-		Limit: 1,
-	}, {
-		Name:  "file path match 2",
-		Limit: 2,
-	}}
-
-	for _, c := range cases {
-		t.Run(c.Name, func(t *testing.T) {
-			if !f(c.LineMatches, make([]int, c.Symbols), uint32(c.Limit)) {
-				t.Error("failed")
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
+			fileMatch := &result.FileMatch{
+				File:         result.File{},
+				ChunkMatches: result.ChunkMatches{{Ranges: make(result.Ranges, tt.numHunkRanges)}},
+				Symbols:      make([]*result.SymbolMatch, tt.numSymbolMatches),
+				LimitHit:     false,
 			}
+
+			got := fileMatch.Limit(tt.limit)
+
+			require.Equal(t, tt.expNumHunkRanges, fileMatch.ChunkMatches.MatchCount())
+			require.Equal(t, tt.expNumSymbolMatches, len(fileMatch.Symbols))
+			require.Equal(t, tt.expRemainingLimit, got)
+			require.Equal(t, tt.wantLimitHit, fileMatch.LimitHit)
 		})
 	}
 }
@@ -461,7 +475,7 @@ func RunRepoSubsetTextSearch(
 			return nil, streaming.Stats{}, err
 		}
 
-		zoektJob := &zoektutil.ZoektRepoSubsetSearch{
+		zoektJob := &zoektutil.RepoSubsetTextSearchJob{
 			Repos:          indexed,
 			Query:          zoektQuery,
 			Typ:            search.TextRequest,
@@ -479,7 +493,7 @@ func RunRepoSubsetTextSearch(
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
-		searcherJob := &searcher.Searcher{
+		searcherJob := &searcher.TextSearchJob{
 			PatternInfo:     searcherArgs.PatternInfo,
 			Repos:           unindexed,
 			Indexed:         false,

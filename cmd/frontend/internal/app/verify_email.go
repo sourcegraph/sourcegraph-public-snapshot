@@ -86,10 +86,10 @@ func logEmailVerified(ctx context.Context, db database.DB, r *http.Request, user
 	}
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
-	database.SecurityEventLogs(db).LogEvent(ctx, event)
+	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
-func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...interface{}) {
+func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...any) {
 	log15.Error(msg, errArgs...)
 	http.Error(w, msg, code)
 }

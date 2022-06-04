@@ -10,7 +10,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -34,7 +33,7 @@ func (email *UserEmail) NeedsVerificationCoolDown() bool {
 
 // userEmailNotFoundError is the error that is returned when a user email is not found.
 type userEmailNotFoundError struct {
-	args []interface{}
+	args []any
 }
 
 func (err userEmailNotFoundError) Error() string {
@@ -67,11 +66,6 @@ type UserEmailsStore interface {
 // userEmailsStore provides access to the `user_emails` table.
 type userEmailsStore struct {
 	*basestore.Store
-}
-
-// UserEmails instantiates and returns a new UserEmailsStore with prepared statements.
-func UserEmails(db dbutil.DB) UserEmailsStore {
-	return &userEmailsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // UserEmailsWith instantiates and returns a new UserEmailsStore using the other store handle.
@@ -109,7 +103,7 @@ func (s *userEmailsStore) GetPrimaryEmail(ctx context.Context, id int32) (email 
 	if err := s.Handle().DB().QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND is_primary",
 		id,
 	).Scan(&email, &verified); err != nil {
-		return "", false, userEmailNotFoundError{[]interface{}{fmt.Sprintf("id %d", id)}}
+		return "", false, userEmailNotFoundError{[]any{fmt.Sprintf("id %d", id)}}
 	}
 	return email, verified, nil
 }
@@ -117,7 +111,7 @@ func (s *userEmailsStore) GetPrimaryEmail(ctx context.Context, id int32) (email 
 // SetPrimaryEmail sets the primary email for a user.
 // The address must be verified.
 // All other addresses for the user will be set as not primary.
-func (s *userEmailsStore) SetPrimaryEmail(ctx context.Context, userID int32, email string) error {
+func (s *userEmailsStore) SetPrimaryEmail(ctx context.Context, userID int32, email string) (err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
@@ -156,7 +150,7 @@ func (s *userEmailsStore) Get(ctx context.Context, userID int32, email string) (
 	if err := s.Handle().DB().QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND email=$2",
 		userID, email,
 	).Scan(&emailCanonicalCase, &verified); err != nil {
-		return "", false, userEmailNotFoundError{[]interface{}{fmt.Sprintf("userID %d email %q", userID, email)}}
+		return "", false, userEmailNotFoundError{[]any{fmt.Sprintf("userID %d email %q", userID, email)}}
 	}
 	return emailCanonicalCase, verified, nil
 }
@@ -169,7 +163,7 @@ func (s *userEmailsStore) Add(ctx context.Context, userID int32, email string, v
 
 // Remove removes a user email. It returns an error if there is no such email associated with the user or the email
 // is the user's primary address
-func (s *userEmailsStore) Remove(ctx context.Context, userID int32, email string) error {
+func (s *userEmailsStore) Remove(ctx context.Context, userID int32, email string) (err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
@@ -269,7 +263,7 @@ LIMIT 1
 	if err != nil {
 		return nil, err
 	} else if len(emails) < 1 {
-		return nil, userEmailNotFoundError{[]interface{}{fmt.Sprintf("email %q", email)}}
+		return nil, userEmailNotFoundError{[]any{fmt.Sprintf("email %q", email)}}
 	}
 	return emails[0], nil
 }
@@ -311,7 +305,7 @@ func (s *userEmailsStore) ListByUser(ctx context.Context, opt UserEmailsListOpti
 }
 
 // getBySQL returns user emails matching the SQL query, if any exist.
-func (s *userEmailsStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*UserEmail, error) {
+func (s *userEmailsStore) getBySQL(ctx context.Context, query string, args ...any) ([]*UserEmail, error) {
 	rows, err := s.Handle().DB().QueryContext(ctx,
 		`SELECT user_emails.user_id, user_emails.email, user_emails.created_at, user_emails.verification_code,
 				user_emails.verified_at, user_emails.last_verification_sent_at, user_emails.is_primary FROM user_emails `+query, args...)

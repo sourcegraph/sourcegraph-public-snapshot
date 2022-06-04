@@ -1,6 +1,8 @@
 import { storiesOf } from '@storybook/react'
 import sinon from 'sinon'
 
+import { H2 } from '@sourcegraph/wildcard'
+
 import { WebStory } from '../../../../components/WebStory'
 import { mockAuthenticatedUser } from '../../testing/util'
 import { ActionProps } from '../FormActionArea'
@@ -31,28 +33,28 @@ add('WebhookAction', () => (
     <WebStory>
         {() => (
             <>
-                <h2>Action card disabled</h2>
+                <H2>Action card disabled</H2>
                 <WebhookAction {...defaultProps} disabled={true} />
 
-                <h2>Closed, not populated</h2>
+                <H2>Closed, not populated</H2>
                 <WebhookAction {...defaultProps} />
 
-                <h2>Open, not populated</h2>
+                <H2>Open, not populated</H2>
                 <WebhookAction {...defaultProps} _testStartOpen={true} />
 
-                <h2>Closed, populated, enabled</h2>
+                <H2>Closed, populated, enabled</H2>
                 <WebhookAction {...defaultProps} action={action} />
 
-                <h2>Open, populated, enabled</h2>
+                <H2>Open, populated, enabled</H2>
                 <WebhookAction {...defaultProps} _testStartOpen={true} action={action} />
 
-                <h2>Open, populated with error, enabled</h2>
+                <H2>Open, populated with error, enabled</H2>
                 <WebhookAction {...defaultProps} _testStartOpen={true} action={{ ...action, url: 'mailto:test' }} />
 
-                <h2>Closed, populated, disabled</h2>
+                <H2>Closed, populated, disabled</H2>
                 <WebhookAction {...defaultProps} action={{ ...action, enabled: false }} />
 
-                <h2>Open, populated, disabled</h2>
+                <H2>Open, populated, disabled</H2>
                 <WebhookAction {...defaultProps} _testStartOpen={true} action={{ ...action, enabled: false }} />
             </>
         )}

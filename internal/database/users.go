@@ -92,11 +92,6 @@ type userStore struct {
 
 var _ UserStore = (*userStore)(nil)
 
-// Users instantiates and returns a new RepoStore with prepared statements.
-func Users(db dbutil.DB) UserStore {
-	return &userStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
 // UsersWith instantiates and returns a new RepoStore using the other store handle.
 func UsersWith(other basestore.ShareableStore) UserStore {
 	return &userStore{Store: basestore.NewWithHandle(other.Handle())}
@@ -113,7 +108,7 @@ func (u *userStore) Transact(ctx context.Context) (UserStore, error) {
 
 // userNotFoundErr is the error that is returned when a user is not found.
 type userNotFoundErr struct {
-	args []interface{}
+	args []any
 }
 
 func (err userNotFoundErr) Error() string {
@@ -127,7 +122,7 @@ func (err userNotFoundErr) NotFound() bool {
 // NewUserNotFoundError returns a new error indicating that the user with the given user ID was not
 // found.
 func NewUserNotFoundError(userID int32) error {
-	return userNotFoundErr{args: []interface{}{"userID", userID}}
+	return userNotFoundErr{args: []any{"userID", userID}}
 }
 
 // errCannotCreateUser is the error that is returned when
@@ -401,7 +396,7 @@ func logAccountCreatedEvent(ctx context.Context, db dbutil.DB, u *types.User, se
 		Timestamp:       time.Now(),
 	}
 
-	SecurityEventLogs(db).LogEvent(ctx, event)
+	NewDB(db).SecurityEventLogs().LogEvent(ctx, event)
 }
 
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
@@ -488,7 +483,7 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 		return err
 	}
 	if nrows == 0 {
-		return userNotFoundErr{args: []interface{}{id}}
+		return userNotFoundErr{args: []any{id}}
 	}
 	return nil
 }
@@ -510,7 +505,7 @@ func (u *userStore) Delete(ctx context.Context, id int32) (err error) {
 		return err
 	}
 	if rows == 0 {
-		return userNotFoundErr{args: []interface{}{id}}
+		return userNotFoundErr{args: []any{id}}
 	}
 
 	// Release the username so it can be used by another user or org.
@@ -600,7 +595,7 @@ func (u *userStore) HardDelete(ctx context.Context, id int32) (err error) {
 		return err
 	}
 	if rows == 0 {
-		return userNotFoundErr{args: []interface{}{id}}
+		return userNotFoundErr{args: []any{id}}
 	}
 
 	logUserDeletionEvent(ctx, u.Handle().DB(), id, SecurityEventNameAccountNuked)
@@ -628,7 +623,7 @@ func logUserDeletionEvent(ctx context.Context, db dbutil.DB, id int32, name Secu
 		Timestamp:       time.Now(),
 	}
 
-	SecurityEventLogs(db).LogEvent(ctx, event)
+	NewDB(db).SecurityEventLogs().LogEvent(ctx, event)
 }
 
 // SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin.
@@ -729,7 +724,7 @@ func (u *userStore) InvalidateSessionsByID(ctx context.Context, id int32) (err e
 		return err
 	}
 	if nrows == 0 {
-		return userNotFoundErr{args: []interface{}{id}}
+		return userNotFoundErr{args: []any{id}}
 	}
 	return nil
 }
@@ -1072,7 +1067,7 @@ func LogPasswordEvent(ctx context.Context, db dbutil.DB, r *http.Request, name S
 	}
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
-	SecurityEventLogs(db).LogEvent(ctx, event)
+	NewDB(db).SecurityEventLogs().LogEvent(ctx, event)
 }
 
 func hashPassword(password string) (sql.NullString, error) {
@@ -1124,7 +1119,7 @@ func (u *userStore) SetTag(ctx context.Context, userID int32, tag string, presen
 		return err
 	}
 	if nrows == 0 {
-		return userNotFoundErr{args: []interface{}{userID}}
+		return userNotFoundErr{args: []any{userID}}
 	}
 	return nil
 }
@@ -1136,7 +1131,7 @@ func (u *userStore) HasTag(ctx context.Context, userID int32, tag string) (bool,
 	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return false, userNotFoundErr{[]interface{}{userID}}
+			return false, userNotFoundErr{[]any{userID}}
 		}
 		return false, err
 	}
@@ -1155,7 +1150,7 @@ func (u *userStore) Tags(ctx context.Context, userID int32) (map[string]bool, er
 	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, userNotFoundErr{[]interface{}{userID}}
+			return nil, userNotFoundErr{[]any{userID}}
 		}
 		return nil, err
 	}

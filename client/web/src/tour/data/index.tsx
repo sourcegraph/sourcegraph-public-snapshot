@@ -5,6 +5,8 @@ import NotebookIcon from 'mdi-react/NotebookIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import ShieldSearchIcon from 'mdi-react/ShieldSearchIcon'
 
+import { Code } from '@sourcegraph/wildcard'
+
 import { TourLanguage, TourTaskType } from '../components/Tour/types'
 
 /**
@@ -239,14 +241,13 @@ export const authenticatedTasks: TourTaskType[] = [
                     <>
                         <strong>Discover code across multiple repositories</strong>
                         <br />
-                        The <code>repo:</code> keyword allows searching in multiple repositories matching a term. Use it
+                        The <Code>repo:</Code> keyword allows searching in multiple repositories matching a term. Use it
                         to reference all of your projects or find open source examples.
                     </>
                 ),
             },
         ],
     },
-
     {
         title: 'Install an IDE extension',
         icon: <PuzzleOutlineIcon size="2.3rem" />,

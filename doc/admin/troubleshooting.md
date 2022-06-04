@@ -69,7 +69,7 @@ Please then upload the `sourcegraph-metrics-dump.tgz` file to Sourcegraph suppor
 
 #### Single-container Sourcegraph deployments
 
-To create a metrics dump from a [single-container `sourcegraph/server` deployment](install/docker/index.md), follow these steps:
+To create a metrics dump from a [single-container `sourcegraph/server` deployment](deploy/docker-single-container/index.md), follow these steps:
 
 * Open a shell to the running container:
     1. Run `docker ps` to get the name of the Sourcegraph server container.

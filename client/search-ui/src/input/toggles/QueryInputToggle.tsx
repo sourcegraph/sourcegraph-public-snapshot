@@ -36,7 +36,11 @@ export interface ToggleProps {
 /**
  * A toggle displayed in the QueryInput.
  */
-export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggle, interactive = true, ...props }) => {
+export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<ToggleProps>> = ({
+    onToggle,
+    interactive = true,
+    ...props
+}) => {
     const toggleCheckbox = useRef<HTMLDivElement | null>(null)
 
     const disabledRule = useMemo(() => props.disableOn?.find(({ condition }) => condition), [props.disableOn])
@@ -69,8 +73,13 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
     const isActive = props.isActive && !disabledRule
 
     const interactiveProps = interactive
-        ? { tabIndex: 0, 'data-tooltip': tooltipValue, onClick: onCheckboxToggled }
-        : {}
+        ? {
+              tabIndex: 0,
+              'aria-label': `${props.title} toggle`,
+              'data-tooltip': tooltipValue,
+              onClick: onCheckboxToggled,
+          }
+        : { tabIndex: -1, 'aria-hidden': true, 'data-tooltip': tooltipValue }
 
     return (
         // Click events here are defined in useEffect
@@ -89,10 +98,9 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
             variant="icon"
             aria-disabled={!!disabledRule}
             aria-checked={isActive}
-            aria-label={`${props.title} toggle`}
             {...interactiveProps}
         >
-            <Icon as={props.icon} />
+            <Icon role="img" aria-hidden={true} as={props.icon} />
         </Button>
     )
 }

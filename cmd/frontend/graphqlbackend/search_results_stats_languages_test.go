@@ -40,11 +40,11 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		return io.NopCloser(bytes.NewReader(data)), nil
 	}
 	const wantDefaultBranchRef = "refs/heads/foo"
-	git.Mocks.ExecSafe = func(params []string) (stdout, stderr []byte, exitCode int, err error) {
+	gitserver.Mocks.ExecSafe = func(params []string) (stdout, stderr []byte, exitCode int, err error) {
 		// Mock default branch lookup in (*RepositoryResolver).DefaultBranch.
 		return []byte(wantDefaultBranchRef), nil, 0, nil
 	}
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if want := "HEAD"; spec != want {
 			t.Errorf("got spec %q, want %q", spec, want)
 		}
@@ -62,7 +62,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	}
 	defer gitserver.ResetClientMocks()
 
-	mkResult := func(path string, lineNumbers ...int32) *result.FileMatch {
+	mkResult := func(path string, lineNumbers ...int) *result.FileMatch {
 		rn := types.MinimalRepo{
 			Name: "r",
 		}

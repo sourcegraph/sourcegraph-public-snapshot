@@ -50,7 +50,7 @@ func (s *SurveyResponseStore) Create(ctx context.Context, userID *int32, email *
 	return id, err
 }
 
-func (s *SurveyResponseStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.SurveyResponse, error) {
+func (s *SurveyResponseStore) getBySQL(ctx context.Context, query string, args ...any) ([]*types.SurveyResponse, error) {
 	rows, err := s.Handle().DB().QueryContext(ctx, "SELECT id, user_id, email, score, reason, better, created_at FROM survey_responses "+query, args...)
 	if err != nil {
 		return nil, err

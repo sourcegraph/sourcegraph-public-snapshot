@@ -89,15 +89,15 @@ type GraphQLResponseSearch struct {
 	Data struct {
 		Search struct {
 			Results struct {
-				Results []interface{} `json:"results"`
+				Results []any `json:"results"`
 			} `json:"results"`
 		} `json:"search"`
 	} `json:"data"`
 }
 
 type GraphQLQuery struct {
-	Query     string      `json:"query"`
-	Variables interface{} `json:"variables"`
+	Query     string `json:"query"`
+	Variables any    `json:"variables"`
 }
 
 const gqlSearch = `query Search(

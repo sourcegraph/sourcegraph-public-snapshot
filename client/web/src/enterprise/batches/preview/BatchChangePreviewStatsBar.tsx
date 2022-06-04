@@ -2,7 +2,7 @@ import React, { useContext, useMemo } from 'react'
 
 import classNames from 'classnames'
 
-import { Badge, useObservable } from '@sourcegraph/wildcard'
+import { Badge, H2, useObservable } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { ApplyPreviewStatsFields, DiffStatFields, Scalars } from '../../../graphql-operations'
@@ -35,11 +35,11 @@ export interface BatchChangePreviewStatsBarProps {
     queryApplyPreviewStats?: typeof _queryApplyPreviewStats
 }
 
-export const BatchChangePreviewStatsBar: React.FunctionComponent<BatchChangePreviewStatsBarProps> = ({
-    batchSpec,
-    diffStat,
-    queryApplyPreviewStats = _queryApplyPreviewStats,
-}) => {
+export const BatchChangePreviewStatsBar: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangePreviewStatsBarProps>
+> = ({ batchSpec, diffStat, queryApplyPreviewStats = _queryApplyPreviewStats }) => {
+    // `BatchChangePreviewContext` is responsible for managing the overrideable
+    // publication states for preview changesets on the clientside.
     const { publicationStates } = useContext(BatchChangePreviewContext)
 
     /** We use this to recalculate the stats when the publication states are modified. */
@@ -57,11 +57,11 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<BatchChangePrev
 
     return (
         <div className="d-flex flex-wrap mb-3 align-items-center">
-            <h2 className="m-0 align-self-center">
+            <H2 className="m-0 align-self-center">
                 <Badge variant="info" className="text-uppercase mb-0">
                     Preview
                 </Badge>
-            </h2>
+            </H2>
             <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'd-none d-sm-block mx-3')} />
             <DiffStatStack className={styles.batchChangePreviewStatsBarDiff} {...diffStat} />
             <div className={classNames(styles.batchChangePreviewStatsBarHorizontalDivider, 'd-block d-sm-none my-3')} />
@@ -71,6 +71,7 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<BatchChangePrev
                     styles.batchChangePreviewStatsBarMetrics,
                     'flex-grow-1 d-flex justify-content-end'
                 )}
+                aria-label="Preview Stats"
             >
                 <PreviewStatsAdded count={stats.added} />
                 <PreviewStatsRemoved count={stats.removed} />
@@ -94,7 +95,7 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<BatchChangePrev
     )
 }
 
-export const PreviewStatsAdded: React.FunctionComponent<{ count: number }> = ({ count }) => (
+export const PreviewStatsAdded: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({ count }) => (
     <div className={classNames(styles.batchChangePreviewStatsBarStat, 'd-flex flex-column mr-2 text-nowrap')}>
         <div className="d-flex flex-column align-items-center justify-content-center">
             <span className={styles.previewStatsAddedLine}>&nbsp;</span>
@@ -108,7 +109,9 @@ export const PreviewStatsAdded: React.FunctionComponent<{ count: number }> = ({ 
         {count} Added
     </div>
 )
-export const PreviewStatsModified: React.FunctionComponent<{ count: number }> = ({ count }) => (
+export const PreviewStatsModified: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({
+    count,
+}) => (
     <div className={classNames(styles.batchChangePreviewStatsBarStat, 'd-flex flex-column text-nowrap ml-2')}>
         <div className="d-flex flex-column align-items-center">
             <span className={styles.previewStatsModifiedLine}>&nbsp;</span>
@@ -125,7 +128,7 @@ export const PreviewStatsModified: React.FunctionComponent<{ count: number }> = 
         {count} Modified
     </div>
 )
-export const PreviewStatsRemoved: React.FunctionComponent<{ count: number }> = ({ count }) => (
+export const PreviewStatsRemoved: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({ count }) => (
     <div className={classNames(styles.batchChangePreviewStatsBarStat, 'd-flex flex-column mx-2 text-nowrap')}>
         <div className="d-flex flex-column align-items-center">
             <span className={styles.previewStatsRemovedLine}>&nbsp;</span>

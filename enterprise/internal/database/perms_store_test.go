@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -543,6 +544,61 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
+func testPermsStore_SetRepoPermissionsUnrestricted(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		assertUnrestricted := func(ctx context.Context, t *testing.T, s *permsStore, id int32, want bool) {
+			t.Helper()
+			p := &authz.RepoPermissions{
+				RepoID: id,
+				Perm:   authz.Read,
+			}
+			if err := s.LoadRepoPermissions(ctx, p); err != nil {
+				t.Fatalf("loading permissions for %d: %v", id, err)
+			}
+			if p.Unrestricted != want {
+				t.Fatalf("Want %v, got %v for %d", want, p.Unrestricted, id)
+			}
+		}
+
+		t.Run("test simple set", func(t *testing.T) {
+			ctx := context.Background()
+			s := setupTestPerms(t, db, clock)
+
+			// Add a couple of repos
+			for i := 0; i < 2; i++ {
+				rp := &authz.RepoPermissions{
+					RepoID:  int32(i + 1),
+					Perm:    authz.Read,
+					UserIDs: toMapset(2),
+				}
+				if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+					t.Fatal(err)
+				}
+			}
+			assertUnrestricted(ctx, t, s, 1, false)
+			assertUnrestricted(ctx, t, s, 2, false)
+
+			// Set them both to unrestricted
+			if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{1, 2}, true); err != nil {
+				t.Fatal(err)
+			}
+			assertUnrestricted(ctx, t, s, 1, true)
+			assertUnrestricted(ctx, t, s, 2, true)
+
+			// Set them back to false again, also checking that more than 65535 IDs
+			// can be processed without an error
+			var ids [66000]int32
+			ids[0] = 1
+			ids[65900] = 2
+			if err := s.SetRepoPermissionsUnrestricted(ctx, ids[:], false); err != nil {
+				t.Fatal(err)
+			}
+			assertUnrestricted(ctx, t, s, 1, false)
+			assertUnrestricted(ctx, t, s, 2, false)
+		})
+	}
+}
+
 func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 	tests := []struct {
 		name            string
@@ -674,6 +730,32 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 
 			if rp.SyncedAt.IsZero() {
 				t.Fatal("SyncedAt was not updated but supposed to")
+			}
+		})
+
+		t.Run("unrestricted columns should be set", func(t *testing.T) {
+			// TOOD: Use this in other tests
+			s := setupTestPerms(t, db, clock)
+
+			rp := &authz.RepoPermissions{
+				RepoID:       1,
+				Perm:         authz.Read,
+				UserIDs:      toMapset(2),
+				Unrestricted: true,
+			}
+			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+				t.Fatal(err)
+			}
+
+			rp = &authz.RepoPermissions{
+				RepoID: 1,
+				Perm:   authz.Read,
+			}
+			if err := s.LoadRepoPermissions(context.Background(), rp); err != nil {
+				t.Fatal(err)
+			}
+			if rp.Unrestricted != true {
+				t.Fatal("Want true")
 			}
 		})
 
@@ -2701,7 +2783,7 @@ WHERE user_id = 2`, clock().AddDate(1, 0, 0))
 		}
 
 		// Should only get user 1 back (NULL FIRST)
-		results, err := s.UserIDsWithOldestPerms(ctx, 1)
+		results, err := s.UserIDsWithOldestPerms(ctx, 1, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2712,7 +2794,7 @@ WHERE user_id = 2`, clock().AddDate(1, 0, 0))
 		}
 
 		// Should get both users back
-		results, err = s.UserIDsWithOldestPerms(ctx, 2)
+		results, err = s.UserIDsWithOldestPerms(ctx, 2, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2725,13 +2807,27 @@ WHERE user_id = 2`, clock().AddDate(1, 0, 0))
 			t.Fatal(diff)
 		}
 
+		// Ignore users that have synced recently (or in the future)
+		results, err = s.UserIDsWithOldestPerms(ctx, 5, 1*time.Hour)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantResults = map[int32]time.Time{
+			1: {},
+			// User 2 should be filtered out since it synced in the future
+		}
+		if diff := cmp.Diff(wantResults, results); diff != "" {
+			t.Fatal(diff)
+		}
+
 		// Hard-delete user 2
 		if err := s.execute(ctx, sqlf.Sprintf(`DELETE FROM users WHERE id = 2`)); err != nil {
 			t.Fatal(err)
 		}
 
 		// Should only get user 1 back with limit=2
-		results, err = s.UserIDsWithOldestPerms(ctx, 2)
+		results, err = s.UserIDsWithOldestPerms(ctx, 2, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2798,38 +2894,52 @@ func testPermsStore_ReposIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 			}
 		}
 
-		// Mock user repo 2's permissions to be synced in the future
+		// Mock repo 2's permissions to be synced in the past
 		q := sqlf.Sprintf(`
 UPDATE repo_permissions
 SET synced_at = %s
-WHERE repo_id = 2`, clock().AddDate(1, 0, 0))
+WHERE repo_id = 2`, clock().AddDate(-1, 0, 0))
 		if err := s.execute(ctx, q); err != nil {
 			t.Fatal(err)
 		}
 
 		// Should only get repo 1 back
-		results, err := s.ReposIDsWithOldestPerms(ctx, 1)
+		results, err := s.ReposIDsWithOldestPerms(ctx, 1, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		wantResults := map[api.RepoID]time.Time{1: clock()}
+		wantResults := map[api.RepoID]time.Time{2: clock().AddDate(-1, 0, 0)}
 		if diff := cmp.Diff(wantResults, results); diff != "" {
 			t.Fatalf("Results mismatch (-want +got):\n%s", diff)
 		}
 
-		// Should get both repos back
-		results, err = s.ReposIDsWithOldestPerms(ctx, 2)
+		// Should get two repos back
+		results, err = s.ReposIDsWithOldestPerms(ctx, 2, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		wantResults = map[api.RepoID]time.Time{
 			1: clock(),
-			2: clock().AddDate(1, 0, 0),
+			2: clock().AddDate(-1, 0, 0),
 		}
 		if diff := cmp.Diff(wantResults, results); diff != "" {
 			t.Fatalf("Results mismatch (-want +got):\n%s", diff)
+		}
+
+		// Ignore repos that have synced recently (or in the future)
+		results, err = s.ReposIDsWithOldestPerms(ctx, 2, 1*time.Hour)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantResults = map[api.RepoID]time.Time{
+			// Only repo 2 should appear since it was synced a long time in the past
+			2: clock().AddDate(-1, 0, 0),
+		}
+		if diff := cmp.Diff(wantResults, results); diff != "" {
+			t.Fatal(diff)
 		}
 
 		// Hard-delete repo 2
@@ -2838,7 +2948,7 @@ WHERE repo_id = 2`, clock().AddDate(1, 0, 0))
 		}
 
 		// Should only get repo 1 back with limit=2
-		results, err = s.ReposIDsWithOldestPerms(ctx, 2)
+		results, err = s.ReposIDsWithOldestPerms(ctx, 2, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2852,6 +2962,7 @@ WHERE repo_id = 2`, clock().AddDate(1, 0, 0))
 
 func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
+		db := database.NewDB(db)
 		s := perms(db, clock)
 		ctx := context.Background()
 		t.Cleanup(func() {
@@ -2869,7 +2980,7 @@ func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*tes
 		//  1. Is not a member of any organization
 		//  2. Is a member of an organization without a code host connection
 		//  3. Is a member of an organization with a code host connection
-		users := database.Users(db)
+		users := db.Users()
 		alice, err := users.Create(ctx,
 			database.NewUser{
 				Email:           "alice@example.com",
@@ -2895,19 +3006,19 @@ func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*tes
 		)
 		require.NoError(t, err)
 
-		orgs := database.Orgs(db)
+		orgs := db.Orgs()
 		bobOrg, err := orgs.Create(ctx, "bob-org", nil)
 		require.NoError(t, err)
 		cindyOrg, err := orgs.Create(ctx, "cindy-org", nil)
 		require.NoError(t, err)
 
-		orgMembers := database.OrgMembers(db)
+		orgMembers := db.OrgMembers()
 		_, err = orgMembers.Create(ctx, bobOrg.ID, bob.ID)
 		require.NoError(t, err)
 		_, err = orgMembers.Create(ctx, cindyOrg.ID, cindy.ID)
 		require.NoError(t, err)
 
-		err = database.ExternalServices(db).Create(ctx,
+		err = db.ExternalServices().Create(ctx,
 			func() *conf.Unified { return &conf.Unified{} },
 			&types.ExternalService{
 				Kind:           extsvc.KindGitHub,
@@ -3017,4 +3128,13 @@ func testPermsStore_Metrics(db *sql.DB) func(*testing.T) {
 			t.Fatalf("mismatch (-want +got):\n%s", diff)
 		}
 	}
+}
+
+func setupTestPerms(t *testing.T, db dbutil.DB, clock func() time.Time) *permsStore {
+	t.Helper()
+	s := perms(db, clock)
+	t.Cleanup(func() {
+		cleanupPermsTables(t, s)
+	})
+	return s
 }

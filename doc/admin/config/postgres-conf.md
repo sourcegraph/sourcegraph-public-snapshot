@@ -2,7 +2,7 @@
 
 Sourcegraph Kubernetes cluster site admins can override the default PostgreSQL configuration by supplying their own `postgresql.conf` file contents. These are specified in [`pgsql.ConfigMap.yaml`](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/pgsql/pgsql.ConfigMap.yaml).
 
-For [Docker Compose](../install/docker-compose/index.md) deployment, site admins can also override the default PostgreSQL configuration by modifying the external configuration files at [pgsql/conf/postgresql.conf], [codeintel-db/conf/postgresql.conf], and [codeinsights-db/conf/postgresql.conf]. These files are mounted to the Postgres server during runtime (NOTE: This is only available in versions 3.39 and later).
+For [Docker Compose](../deploy/docker-compose/index.md) deployment, site admins can also override the default PostgreSQL configuration by modifying the external configuration files at [pgsql/conf/postgresql.conf], [codeintel-db/conf/postgresql.conf], and [codeinsights-db/conf/postgresql.conf]. These files are mounted to the Postgres server during runtime (NOTE: This is only available in versions 3.39 and later).
 
 There is no officially supported way of customizing the PostgreSQL configuration in the single Docker image.
 

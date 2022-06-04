@@ -4,7 +4,7 @@ import * as H from 'history'
 import { map } from 'rxjs/operators'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, H5 } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
 import { RepoBatchChange, RepositoryFields } from '../../../graphql-operations'
@@ -32,7 +32,7 @@ interface Props extends ThemeProps {
 /**
  * A list of batch changes affecting a particular repo.
  */
-export const RepoBatchChanges: React.FunctionComponent<Props> = ({
+export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     viewerCanAdminister,
     history,
     location,
@@ -84,15 +84,15 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
     )
 }
 
-export const RepoBatchChangesHeader: React.FunctionComponent = () => (
+export const RepoBatchChangesHeader: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <>
         {/* Empty filler elements for the spaces in the grid that don't need headers */}
         <span />
         <span />
-        <h5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Status</h5>
-        <h5 className="p-2 d-none d-md-block text-uppercase text-nowrap">Changeset information</h5>
-        <h5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Check state</h5>
-        <h5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Review state</h5>
-        <h5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Changes</h5>
+        <H5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Status</H5>
+        <H5 className="p-2 d-none d-md-block text-uppercase text-nowrap">Changeset information</H5>
+        <H5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Check state</H5>
+        <H5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Review state</H5>
+        <H5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Changes</H5>
     </>
 )

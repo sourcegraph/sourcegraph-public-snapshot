@@ -11,7 +11,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -21,7 +20,7 @@ import (
 
 // userExternalAccountNotFoundError is the error that is returned when a user external account is not found.
 type userExternalAccountNotFoundError struct {
-	args []interface{}
+	args []any
 }
 
 func (err userExternalAccountNotFoundError) Error() string {
@@ -98,11 +97,6 @@ type userExternalAccountsStore struct {
 	key encryption.Key
 }
 
-// ExternalAccounts instantiates and returns a new UserExternalAccountsStore with prepared statements.
-func ExternalAccounts(db dbutil.DB) UserExternalAccountsStore {
-	return &userExternalAccountsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
 // ExternalAccountsWith instantiates and returns a new UserExternalAccountsStore using the other store handle.
 func ExternalAccountsWith(other basestore.ShareableStore) UserExternalAccountsStore {
 	return &userExternalAccountsStore{Store: basestore.NewWithHandle(other.Handle())}
@@ -170,7 +164,7 @@ AND deleted_at IS NULL
 RETURNING user_id
 `, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data, keyID).Scan(&userID)
 	if err == sql.ErrNoRows {
-		err = userExternalAccountNotFoundError{[]interface{}{spec}}
+		err = userExternalAccountNotFoundError{[]any{spec}}
 	}
 	return userID, err
 }
@@ -258,7 +252,7 @@ AND deleted_at IS NULL
 		return err
 	}
 	if nrows == 0 {
-		return userExternalAccountNotFoundError{[]interface{}{existingID}}
+		return userExternalAccountNotFoundError{[]any{existingID}}
 	}
 	return nil
 }
@@ -342,7 +336,7 @@ func (s *userExternalAccountsStore) Delete(ctx context.Context, id int32) error 
 		return err
 	}
 	if nrows == 0 {
-		return userExternalAccountNotFoundError{[]interface{}{id}}
+		return userExternalAccountNotFoundError{[]any{id}}
 	}
 	return nil
 }

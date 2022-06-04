@@ -1,0 +1,41 @@
+.form {
+    display: flex;
+    flex: 1;
+    margin-top: 1.5rem;
+    // Default of min-height: auto when this element is display: flex allows children to
+    // set its height. We want to keep this fixed and have children overflow: auto
+    // instead.
+    min-height: 0;
+}
+
+.editor-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 20%;
+    height: 100%;
+}
+
+.editor {
+    flex: 1;
+    max-height: 100%;
+}
+
+// Should mostly match WorkspacesPreview header and LibraryPane header
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.download-link {
+    padding: 0;
+    font-weight: normal;
+    margin-bottom: 1rem;
+}

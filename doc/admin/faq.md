@@ -81,11 +81,11 @@ More information on each available panel in the dashboards is available in the [
 
 ### What does this `<ALERT-MESSAGE>` mean?
 
-See [Alert solutions](https://docs.sourcegraph.com/admin/observability/alert_solutions) to learn about each alert and their possible solutions.
+See [Alert solutions](https://docs.sourcegraph.com/admin/observability/alerts) to learn about each alert and their possible solutions.
 
 ### What’s the threshold for each resource?
 
-All resources dashboards contain a section called `Container monitoring` that indicate thresholds at which alerts will fire for each resource ([example alert](https://docs.sourcegraph.com/admin/observability/alert_solutions#frontend-container-cpu-usage)).
+All resources dashboards contain a section called `Container monitoring` that indicate thresholds at which alerts will fire for each resource ([example alert](https://docs.sourcegraph.com/admin/observability/alerts#frontend-container-cpu-usage)).
 
 More information on each available panel in the dashboards is available in the [Dashboards reference](https://docs.sourcegraph.com/admin/observability/dashboards).
 
@@ -117,7 +117,7 @@ Other monitoring systems that support Prometheus scraping (for example, Datadog 
 
 ### I am getting "Error: Cluster information not available" in the Instrumentation page, what should I do?
 
-This error is expected if your instance was not [deployed with Kubernetes](./install/kubernetes/index.md). The Instrumentation page is currently only available for Kubernetes instances.
+This error is expected if your instance was not [deployed with Kubernetes](./deploy/kubernetes/index.md). The Instrumentation page is currently only available for Kubernetes instances.
 
 ## Troubleshooting
 

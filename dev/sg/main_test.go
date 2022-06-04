@@ -23,7 +23,12 @@ func TestAppRun(t *testing.T) {
 	sg.Writer = &out
 	sg.ErrWriter = &err
 	// Check app starts up correctly
-	assert.NoError(t, sg.Run([]string{"help"}))
+	assert.NoError(t, sg.Run([]string{
+		"help",
+		// Use a fixed output configuration for consistency, and to avoid issues with
+		// detection.
+		"--disable-output-detection",
+	}))
 	assert.Contains(t, out.String(), "The Sourcegraph developer tool!")
 	// We do not want errors anywhere
 	assert.NotContains(t, out.String(), "error")
@@ -47,7 +52,10 @@ func testCommandFormatting(t *testing.T, cmd *cli.Command) {
 		assert.NotEmpty(t, cmd.Name, "Name should be set")
 		assert.NotEmpty(t, cmd.Usage, "Usage should be set")
 		assert.False(t, strings.HasSuffix(cmd.Usage, "."), "Usage should not end with period")
-		assert.NotNil(t, cmd.Action, "Action must be provided (for parent commands, 'suggestSubcommandsAction'")
+		if len(cmd.Subcommands) == 0 {
+			assert.NotNil(t, cmd.Action, "Action must be provided for command without subcommands")
+		}
+		assert.Nil(t, cmd.After, "After should not be used for simplicity")
 
 		for _, subCmd := range cmd.Subcommands {
 			testCommandFormatting(t, subCmd)

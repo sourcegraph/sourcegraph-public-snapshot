@@ -33,7 +33,7 @@ func Test_setRepos(t *testing.T) {
 {
   "PARALLEL": [
     {
-      "ZoektRepoSubset": {
+      "ZoektRepoSubsetTextSearchJob": {
         "Repos": {
           "RepoRevs": {
             "1": {
@@ -53,7 +53,7 @@ func Test_setRepos(t *testing.T) {
       }
     },
     {
-      "Searcher": {
+      "SearcherTextSearchJob": {
         "PatternInfo": null,
         "Repos": [
           {
@@ -66,14 +66,18 @@ func Test_setRepos(t *testing.T) {
           }
         ],
         "Indexed": false,
-        "UseFullDeadline": false
+        "UseFullDeadline": false,
+        "Features": {
+          "ContentBasedLangFilters": false,
+          "HybridSearch": false
+        }
       }
     }
   ]
 }`).Equal(t, test(
 		NewParallelJob(
-			&zoekt.ZoektRepoSubsetSearch{},
-			&searcher.Searcher{},
+			&zoekt.RepoSubsetTextSearchJob{},
+			&searcher.TextSearchJob{},
 		),
 	))
 }

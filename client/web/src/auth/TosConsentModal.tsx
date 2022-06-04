@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { gql, useMutation } from '@apollo/client'
 
-import { Link, Alert, AnchorLink } from '@sourcegraph/wildcard'
+import { Link, Alert, AnchorLink, Checkbox, H1, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 
@@ -18,7 +18,9 @@ export const SET_TOS_ACCEPTED_MUTATION = gql`
     }
 `
 
-export const TosConsentModal: React.FunctionComponent<{ afterTosAccepted: () => void }> = ({ afterTosAccepted }) => {
+export const TosConsentModal: React.FunctionComponent<React.PropsWithChildren<{ afterTosAccepted: () => void }>> = ({
+    afterTosAccepted,
+}) => {
     const [agree, setAgree] = useState(false)
 
     const onAgreeChanged = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => {
@@ -45,28 +47,31 @@ export const TosConsentModal: React.FunctionComponent<{ afterTosAccepted: () => 
         <div className={styles.container}>
             <SourcegraphIcon className={styles.icon} />
             <div className={styles.content}>
-                <h1>We respect your data privacy</h1>
-                <p className="mb-5">
+                <H1>We respect your data privacy</H1>
+                <Text className="mb-5">
                     We take data privacy seriously. We collect only what we need to provide a great experience, and we
                     never have access to your private data or code.
-                </p>
+                </Text>
                 {/* eslint-disable-next-line react/forbid-elements */}
                 <form onSubmit={onSubmit}>
                     <div className="form-group">
-                        <div className="form-check">
-                            <label className="form-check-label">
-                                <input type="checkbox" className="form-check-input" onChange={onAgreeChanged} /> I agree
-                                to Sourcegraph's{' '}
-                                <Link to="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
-                                    Terms of Service
-                                </Link>{' '}
-                                and{' '}
-                                <Link to="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
-                                    Privacy Policy
-                                </Link>{' '}
-                                (required)
-                            </label>
-                        </div>
+                        <Checkbox
+                            onChange={onAgreeChanged}
+                            id="terms-and-services-checkbox"
+                            label={
+                                <>
+                                    I agree to Sourcegraph's{' '}
+                                    <Link to="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
+                                        Terms of Service
+                                    </Link>{' '}
+                                    and{' '}
+                                    <Link to="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
+                                        Privacy Policy
+                                    </Link>{' '}
+                                    (required)
+                                </>
+                            }
+                        />
                     </div>
                     <LoaderButton
                         loading={loading}
@@ -77,10 +82,10 @@ export const TosConsentModal: React.FunctionComponent<{ afterTosAccepted: () => 
                         variant="primary"
                     />
                 </form>
-                <p className="mt-5">
+                <Text className="mt-5">
                     If you do not agree, <AnchorLink to="/-/sign-out">sign out</AnchorLink> and contact your site admin
                     to have your account deleted.
-                </p>
+                </Text>
                 {error && (
                     <Alert className="mt-4" variant="danger">
                         Error accepting Terms of Service: {error.message}

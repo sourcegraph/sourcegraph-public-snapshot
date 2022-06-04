@@ -9,10 +9,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"time"
-
-	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -32,7 +28,7 @@ type Client struct {
 
 	// RateLimit is the self-imposed rate limiter (since Gerrit does not have a concept
 	// of rate limiting in HTTP response headers).
-	rateLimit *rate.Limiter
+	rateLimit *ratelimit.InstrumentedLimiter
 }
 
 // NewClient returns an authenticated Gerrit API client with
@@ -54,6 +50,39 @@ func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.D
 		URL:        u,
 		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
 	}, nil
+}
+
+type ListAccountsResponse []Account
+
+func (c *Client) ListAccountsByEmail(ctx context.Context, email string) (ListAccountsResponse, error) {
+	qsAccounts := make(url.Values)
+	qsAccounts.Set("q", fmt.Sprintf("email:%s", email)) // TODO: what query should we run?
+	return c.listAccounts(ctx, qsAccounts)
+}
+
+func (c *Client) ListAccountsByUsername(ctx context.Context, username string) (ListAccountsResponse, error) {
+	qsAccounts := make(url.Values)
+	qsAccounts.Set("q", fmt.Sprintf("username:%s", username)) // TODO: what query should we run?
+	return c.listAccounts(ctx, qsAccounts)
+}
+
+func (c *Client) listAccounts(ctx context.Context, qsAccounts url.Values) (ListAccountsResponse, error) {
+	qsAccounts.Set("o", "details")
+
+	urlPath := "a/accounts/"
+
+	uAllProjects := url.URL{Path: urlPath, RawQuery: qsAccounts.Encode()}
+
+	reqAllAccounts, err := http.NewRequest("GET", uAllProjects.String(), nil)
+
+	if err != nil {
+		return nil, err
+	}
+	respAllAccts := ListAccountsResponse{}
+	if _, err = c.do(ctx, reqAllAccounts, &respAllAccts); err != nil {
+		return respAllAccts, err
+	}
+	return respAllAccts, nil
 }
 
 // ListProjectsArgs defines options to be set on ListProjects method calls.
@@ -121,19 +150,14 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (proje
 }
 
 // nolint:unparam
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (*http.Response, error) {
+func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
 
 	// Add Basic Auth headers for authenticated requests.
 	req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(c.Config.Username+":"+c.Config.Password)))
 
-	startWait := time.Now()
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
-	}
-
-	if d := time.Since(startWait); d > 200*time.Millisecond {
-		log15.Warn("Gerrit self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 
 	resp, err := c.httpClient.Do(req)
@@ -167,6 +191,14 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		}
 	}
 	return resp, json.Unmarshal(bs[4:], result)
+}
+
+type Account struct {
+	ID          int32  `json:"_account_id"`
+	Name        string `json:"name"`
+	DisplayName string `json:"display_name"`
+	Email       string `json:"email"`
+	Username    string `json:"username"`
 }
 
 type Project struct {

@@ -18,8 +18,7 @@ Code intelligence-specific code:
 Docs:
 
 - [Deployment documentation](deployment.md)
-- [How LSIF indexes are processed](uploads.md)
+- [How indexes are processed](uploads.md)
 - [How precise code intelligence queries are resolved](queries.md)
 - [How code intelligence extensions resolve hovers](extensions.md)
 - [How Sourcegraph auto-indexes source code](auto-indexing.md)
-- [API docs developer guide](apidocs/index.md)

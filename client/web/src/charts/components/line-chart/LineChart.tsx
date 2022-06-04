@@ -1,6 +1,5 @@
-import { ReactElement, useMemo, useState, SVGProps } from 'react'
+import { ReactElement, useMemo, useState, SVGProps, CSSProperties } from 'react'
 
-import { curveLinear } from '@visx/curve'
 import { Group } from '@visx/group'
 import { scaleTime, scaleLinear } from '@visx/scale'
 import { LinePath } from '@visx/shape'
@@ -30,6 +29,8 @@ export interface LineChartContentProps<Datum> extends SeriesLikeChart<Datum>, SV
     width: number
     height: number
     zeroYAxisMin?: boolean
+    isSeriesSelected: (id: string) => boolean
+    isSeriesHovered: (id: string) => boolean
 }
 
 const sortByDataKey = (dataKey: string | number | symbol, activeDataKey: string): number =>
@@ -48,6 +49,8 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         zeroYAxisMin = false,
         onDatumClick = noop,
         className,
+        isSeriesSelected,
+        isSeriesHovered,
         ...attributes
     } = props
 
@@ -63,8 +66,8 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                 margin: {
                     top: 10,
                     right: 20,
-                    left: yAxisElement?.getBoundingClientRect().width,
-                    bottom: xAxisReference?.getBoundingClientRect().height,
+                    left: yAxisElement?.getBBox().width,
+                    bottom: xAxisReference?.getBBox().height,
                 },
             }),
         [yAxisElement, xAxisReference, outerWidth, outerHeight]
@@ -106,10 +109,10 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             voronoi<Point<D>>({
                 x: point => point.x,
                 y: point => point.y,
-                width,
-                height,
-            })(points),
-        [width, height, points]
+                width: outerWidth,
+                height: outerHeight,
+            })(Object.values(points).flat()),
+        [outerWidth, outerHeight, points]
     )
 
     const handlers = useChartEventHandlers({
@@ -128,6 +131,17 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             }
         },
     })
+
+    const getHoverStyle = (id: string): CSSProperties => {
+        const opacity = isSeriesSelected(id) ? 1 : isSeriesHovered(id) ? 0.5 : 0
+
+        return {
+            opacity,
+            transitionProperty: 'opacity',
+            transitionDuration: '200ms',
+            transitionTimingFunction: 'ease-out',
+        }
+    }
 
     return (
         <svg
@@ -154,33 +168,32 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                 {[...dataSeries]
                     .sort(series => sortByDataKey(series.id, activePoint?.seriesId || ''))
                     .map(line => (
-                        <LinePath
-                            key={line.id}
-                            data={line.data as SeriesDatum<D>[]}
-                            defined={isDatumWithValidNumber}
-                            x={data => xScale(data.x)}
-                            y={data => yScale(getDatumValue(data))}
-                            stroke={line.color}
-                            curve={curveLinear}
-                            strokeLinecap="round"
-                            strokeWidth={2}
-                        />
-                    ))}
-
-                {[...points]
-                    .sort(point => sortByDataKey(point.seriesId, activePoint?.seriesId || ''))
-                    .map(point => (
-                        <PointGlyph
-                            key={point.id}
-                            left={point.x}
-                            top={point.y}
-                            active={activePoint?.id === point.id}
-                            color={point.color}
-                            linkURL={point.linkUrl}
-                            onClick={onDatumClick}
-                            onFocus={event => setActivePoint({ ...point, element: event.target })}
-                            onBlur={() => setActivePoint(undefined)}
-                        />
+                        <Group key={line.id} style={getHoverStyle(`${line.id}`)}>
+                            <LinePath
+                                data={line.data as SeriesDatum<D>[]}
+                                defined={isDatumWithValidNumber}
+                                x={data => xScale(data.x)}
+                                y={data => yScale(getDatumValue(data))}
+                                stroke={line.color}
+                                strokeLinecap="round"
+                                strokeWidth={2}
+                            />
+                            {points[line.id]
+                                .sort(point => sortByDataKey(point.seriesId, activePoint?.seriesId || ''))
+                                .map(point => (
+                                    <PointGlyph
+                                        key={point.id}
+                                        left={point.x}
+                                        top={point.y}
+                                        active={activePoint?.id === point.id}
+                                        color={point.color}
+                                        linkURL={point.linkUrl}
+                                        onClick={onDatumClick}
+                                        onFocus={event => setActivePoint({ ...point, element: event.target })}
+                                        onBlur={() => setActivePoint(undefined)}
+                                    />
+                                ))}
+                        </Group>
                     ))}
             </Group>
 

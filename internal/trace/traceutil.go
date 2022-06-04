@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
@@ -71,6 +72,24 @@ func ContextFromSpan(span opentracing.Span) *otfields.TraceContext {
 	}
 
 	return nil
+}
+
+// Logger will set the TraceContext on l if ctx has one, and also assign the trace
+// family as a scope if a trace family is found. This is an expanded convenience function
+// around l.WithTrace for the common case.
+//
+// If you already set the family manually on the logger scope, then you might want to use
+// trace.Context(ctx) instead.
+func Logger(ctx context.Context, l sglog.Logger) sglog.Logger {
+	if t := TraceFromContext(ctx); t != nil {
+		if t.family != "" {
+			l = l.Scoped(t.family, "trace family")
+		}
+		if tc := ContextFromSpan(t.span); tc != nil {
+			l = l.WithTrace(*tc)
+		}
+	}
+	return l
 }
 
 // URL returns a trace URL for the given trace ID at the given external URL.
@@ -169,7 +188,7 @@ type Trace struct {
 // LazyPrintf evaluates its arguments with fmt.Sprintf each time the
 // /debug/requests page is rendered. Any memory referenced by a will be
 // pinned until the trace is finished and later discarded.
-func (t *Trace) LazyPrintf(format string, a ...interface{}) {
+func (t *Trace) LazyPrintf(format string, a ...any) {
 	t.span.LogFields(Printf("log", format, a...))
 	t.trace.LazyPrintf(format, a...)
 }
@@ -240,7 +259,7 @@ func (t tagsOpt) Apply(o *opentracing.StartSpanOptions) {
 		return
 	}
 	if o.Tags == nil {
-		o.Tags = make(map[string]interface{}, len(t.tags)+1)
+		o.Tags = make(map[string]any, len(t.tags)+1)
 	}
 	if t.title != "" {
 		o.Tags["title"] = t.title
@@ -253,7 +272,7 @@ func (t tagsOpt) Apply(o *opentracing.StartSpanOptions) {
 // Printf is an opentracing log.Field which is a LazyLogger. So the format
 // string will only be evaluated if the trace is collected. In the case of
 // net/trace, it will only be evaluated on page load.
-func Printf(key, f string, args ...interface{}) log.Field {
+func Printf(key, f string, args ...any) log.Field {
 	return log.Lazy(func(fv log.Encoder) {
 		fv.EmitString(key, fmt.Sprintf(f, args...))
 	})
@@ -354,7 +373,7 @@ func (e *encoder) EmitFloat64(key string, value float64) {
 	e.EmitString(key, strconv.FormatFloat(value, 'E', -1, 64))
 }
 
-func (e *encoder) EmitObject(key string, value interface{}) {
+func (e *encoder) EmitObject(key string, value any) {
 	e.EmitString(key, fmt.Sprintf("%+v", value))
 }
 
@@ -406,7 +425,7 @@ func (e *spanTagEncoder) EmitFloat64(key string, value float64) {
 	e.SetTag(key, value)
 }
 
-func (e *spanTagEncoder) EmitObject(key string, value interface{}) {
+func (e *spanTagEncoder) EmitObject(key string, value any) {
 	s := fmt.Sprintf("%#+v", value)
 	e.EmitString(key, s)
 }

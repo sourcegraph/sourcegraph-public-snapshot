@@ -20,7 +20,7 @@ export interface ChangesetStatusCellProps {
     state: ChangesetFields['state']
 }
 
-export const ChangesetStatusCell: React.FunctionComponent<ChangesetStatusCellProps> = ({
+export const ChangesetStatusCell: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusCellProps>> = ({
     id,
     state,
     className = 'd-flex',
@@ -51,100 +51,110 @@ export const ChangesetStatusCell: React.FunctionComponent<ChangesetStatusCellPro
 
 const iconClassNames = 'm-0 text-nowrap flex-column align-items-center justify-content-center'
 
-interface ChangesetStatusIconProps {
+interface ChangesetStatusIconProps extends React.HTMLAttributes<HTMLDivElement> {
     label?: React.ReactNode
     className?: string
 }
 
-export const ChangesetStatusUnpublished: React.FunctionComponent<ChangesetStatusIconProps> = ({
+export const ChangesetStatusUnpublished: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
     label = <span>Unpublished</span>,
     className,
+    ...props
 }) => (
-    <div className={classNames(iconClassNames, className)}>
-        <SourceBranchIcon />
+    <div className={classNames(iconClassNames, className)} {...props}>
+        <SourceBranchIcon role="presentation" />
         {label}
     </div>
 )
-export const ChangesetStatusClosed: React.FunctionComponent<ChangesetStatusIconProps> = ({
+export const ChangesetStatusClosed: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
     label = <span>Closed</span>,
     className,
+    ...props
 }) => (
-    <div className={classNames(iconClassNames, className)}>
-        <SourcePullIcon className="text-danger" />
+    <div className={classNames(iconClassNames, className)} {...props}>
+        <SourcePullIcon className="text-danger" role="presentation" />
         {label}
     </div>
 )
-export const ChangesetStatusMerged: React.FunctionComponent<ChangesetStatusIconProps> = ({
+export const ChangesetStatusMerged: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
     label = <span>Merged</span>,
     className,
+    ...props
 }) => (
-    <div className={classNames(iconClassNames, className)}>
-        <SourceMergeIcon className="text-merged" />
+    <div className={classNames(iconClassNames, className)} {...props}>
+        <SourceMergeIcon className="text-merged" role="presentation" />
         {label}
     </div>
 )
-export const ChangesetStatusOpen: React.FunctionComponent<ChangesetStatusIconProps> = ({
+export const ChangesetStatusOpen: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
     label = <span>Open</span>,
     className,
+    ...props
 }) => (
-    <div className={classNames(iconClassNames, className)}>
-        <SourcePullIcon className="text-success" />
+    <div className={classNames(iconClassNames, className)} {...props}>
+        <SourcePullIcon className="text-success" role="presentation" />
         {label}
     </div>
 )
-export const ChangesetStatusDraft: React.FunctionComponent<ChangesetStatusIconProps> = ({
+export const ChangesetStatusDraft: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
     label = <span>Draft</span>,
     className,
+    ...props
 }) => (
-    <div className={classNames(iconClassNames, className)}>
-        <SourcePullIcon />
+    <div className={classNames(iconClassNames, className)} {...props}>
+        <SourcePullIcon role="presentation" />
         {label}
     </div>
 )
-export const ChangesetStatusDeleted: React.FunctionComponent<ChangesetStatusIconProps> = ({
+export const ChangesetStatusDeleted: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
     label = <span>Deleted</span>,
     className,
+    ...props
 }) => (
-    <div className={classNames(iconClassNames, className)}>
-        <DeleteIcon />
+    <div className={classNames(iconClassNames, className)} {...props}>
+        <DeleteIcon role="presentation" />
         {label}
     </div>
 )
-export const ChangesetStatusError: React.FunctionComponent<ChangesetStatusIconProps> = ({
+export const ChangesetStatusError: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
     label = <span className="text-danger">Failed</span>,
     className,
+    ...props
 }) => (
-    <div className={classNames(iconClassNames, className)}>
-        <AlertCircleIcon className="text-danger" />
+    <div className={classNames(iconClassNames, className)} {...props}>
+        <AlertCircleIcon className="text-danger" role="presentation" />
         {label}
     </div>
 )
-export const ChangesetStatusRetrying: React.FunctionComponent<ChangesetStatusIconProps> = ({
+export const ChangesetStatusRetrying: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
     label = <span>Retrying</span>,
     className,
+    ...props
 }) => (
-    <div className={classNames(iconClassNames, className)}>
-        <AutorenewIcon />
+    <div className={classNames(iconClassNames, className)} {...props}>
+        <AutorenewIcon role="presentation" />
         {label}
     </div>
 )
 
-export const ChangesetStatusProcessing: React.FunctionComponent<ChangesetStatusIconProps> = ({
+export const ChangesetStatusProcessing: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
     label = <span>Processing</span>,
     className,
+    ...props
 }) => (
-    <div className={classNames(iconClassNames, className)}>
-        <TimerSandIcon />
+    <div className={classNames(iconClassNames, className)} {...props}>
+        <TimerSandIcon role="presentation" />
         {label}
     </div>
 )
 
-export const ChangesetStatusArchived: React.FunctionComponent<ChangesetStatusIconProps> = ({
+export const ChangesetStatusArchived: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
     label = <span>Archived</span>,
     className,
+    ...props
 }) => (
-    <div className={classNames(iconClassNames, className)}>
-        <ArchiveIcon />
+    <div className={classNames(iconClassNames, className)} {...props}>
+        <ArchiveIcon role="presentation" />
         {label}
     </div>
 )

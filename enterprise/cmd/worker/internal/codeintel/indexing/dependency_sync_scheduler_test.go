@@ -6,12 +6,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	enterprisedbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	enterprisedbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestDependencySyncSchedulerJVM(t *testing.T) {
@@ -22,7 +23,7 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
 	mockScanner := NewMockPackageReferenceScanner()
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
-	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(enterprisedbstore.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-java"}, true, nil)
+	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(enterprisedbstore.Upload{ID: 42, RepositoryID: 50, Indexer: "scip-java"}, true, nil)
 	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: dependencies.JVMPackagesScheme, Name: "name1", Version: "v2.2.0"}}, true, nil)
 
 	handler := dependencySyncSchedulerHandler{
@@ -31,10 +32,11 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 		extsvcStore: mockExtsvcStore,
 	}
 
+	logger := logtest.Scoped(t)
 	job := enterprisedbstore.DependencySyncingJob{
 		UploadID: 42,
 	}
-	if err := handler.Handle(context.Background(), job); err != nil {
+	if err := handler.Handle(context.Background(), logger, job); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
@@ -78,10 +80,11 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 		extsvcStore: mockExtsvcStore,
 	}
 
+	logger := logtest.Scoped(t)
 	job := enterprisedbstore.DependencySyncingJob{
 		UploadID: 42,
 	}
-	if err := handler.Handle(context.Background(), job); err != nil {
+	if err := handler.Handle(context.Background(), logger, job); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 

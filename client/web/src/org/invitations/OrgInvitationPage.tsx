@@ -7,7 +7,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 import { Maybe, OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import { IEmptyResponse, IOrganizationInvitation } from '@sourcegraph/shared/src/schema'
-import { Alert, AnchorLink, Button, LoadingSpinner, Link } from '@sourcegraph/wildcard'
+import { Alert, AnchorLink, Button, LoadingSpinner, Link, H2, H3 } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -73,7 +73,12 @@ export const INVITATION_BY_TOKEN = gql`
 /**
  * Displays the organization invitation for the user, based on the token in the invite URL.
  */
-export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticatedUser, className, history, match }) => {
+export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    authenticatedUser,
+    className,
+    history,
+    match,
+}) => {
     const token = match.params.token
 
     const { data: inviteData, loading: inviteLoading, error: inviteError } = useQuery<InviteResult, InviteVariables>(
@@ -195,7 +200,7 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
                     icon={<OrgAvatar org={orgName} className="mt-3 mb-4" size="lg" />}
                 >
                     <Form className="text-center pr-4 pl-4 pb-4">
-                        <h2>You've been invited to join the {orgDisplayName} organization</h2>
+                        <H2>You've been invited to join the {orgDisplayName} organization</H2>
                         <div className="mt-4">
                             <UserAvatar className={classNames('mr-2', styles.userAvatar)} user={sender} size={24} />
                             <span>
@@ -236,7 +241,7 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
             )}
             {error && (
                 <ModalPage className={classNames(styles.orgInvitationPage, className, 'p-4')}>
-                    <h3>You've been invited to join an organization.</h3>
+                    <H3>You've been invited to join an organization.</H3>
                     <Alert variant="danger" className="mt-3">
                         Error: {error}
                     </Alert>

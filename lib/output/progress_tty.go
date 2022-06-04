@@ -85,19 +85,19 @@ func (p *progressTTY) SetValue(i int, v float64) {
 }
 
 func (p *progressTTY) Verbose(s string) {
-	if p.o.opts.Verbose {
+	if p.o.verbose {
 		p.Write(s)
 	}
 }
 
-func (p *progressTTY) Verbosef(format string, args ...interface{}) {
-	if p.o.opts.Verbose {
+func (p *progressTTY) Verbosef(format string, args ...any) {
+	if p.o.verbose {
 		p.Writef(format, args...)
 	}
 }
 
 func (p *progressTTY) VerboseLine(line FancyLine) {
-	if p.o.opts.Verbose {
+	if p.o.verbose {
 		p.WriteLine(line)
 	}
 }
@@ -112,7 +112,7 @@ func (p *progressTTY) Write(s string) {
 	p.draw()
 }
 
-func (p *progressTTY) Writef(format string, args ...interface{}) {
+func (p *progressTTY) Writef(format string, args ...any) {
 	p.o.Lock()
 	defer p.o.Unlock()
 

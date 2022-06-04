@@ -14,7 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -39,8 +38,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -113,9 +115,9 @@ func main() {
 	}
 	db := database.NewDB(sqlDB)
 
-	repoStore := database.Repos(db)
+	repoStore := db.Repos()
 	depsSvc := livedependencies.GetService(db, nil)
-	externalServiceStore := database.ExternalServices(db)
+	externalServiceStore := db.ExternalServices()
 
 	err = keyring.Init(ctx)
 	if err != nil {
@@ -123,6 +125,7 @@ func main() {
 	}
 
 	gitserver := server.Server{
+		Logger:             logger,
 		ReposDir:           reposDir,
 		DesiredPercentFree: wantPctFree2,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
@@ -376,7 +379,7 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", errors.Wrap(err, "new authenticator with GitHub App")
 	}
 
-	client := github.NewV3Client(svc.URN(), apiURL, auther, cli)
+	client := github.NewV3Client(log.Scoped("github.v3", "github v3 client"), svc.URN(), apiURL, auther, cli)
 
 	token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, externalServiceStore, svc, client, installationID)
 	if err != nil {
@@ -408,7 +411,7 @@ func getVCSSyncer(
 		return nil, errors.Wrap(err, "get repository")
 	}
 
-	extractOptions := func(connection interface{}) (string, error) {
+	extractOptions := func(connection any) (string, error) {
 		for _, info := range r.Sources {
 			extSvc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
 			if err != nil {
@@ -449,7 +452,8 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		return server.NewNpmPackagesSyncer(c, depsSvc, nil, urn), nil
+		cli := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.ExternalDoer)
+		return server.NewNpmPackagesSyncer(c, depsSvc, cli), nil
 	case extsvc.TypeGoModules:
 		var c schema.GoModulesConnection
 		urn, err := extractOptions(&c)
@@ -458,6 +462,22 @@ func getVCSSyncer(
 		}
 		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalDoer)
 		return server.NewGoModulesSyncer(&c, depsSvc, cli), nil
+	case extsvc.TypePythonPackages:
+		var c schema.PythonPackagesConnection
+		urn, err := extractOptions(&c)
+		if err != nil {
+			return nil, err
+		}
+		cli := pypi.NewClient(urn, c.Urls, httpcli.ExternalDoer)
+		return server.NewPythonPackagesSyncer(&c, depsSvc, cli), nil
+	case extsvc.TypeRustPackages:
+		var c schema.RustPackagesConnection
+		urn, err := extractOptions(&c)
+		if err != nil {
+			return nil, err
+		}
+		cli := crates.NewClient(urn, httpcli.ExternalDoer)
+		return server.NewRustPackagesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
 }
@@ -476,6 +496,7 @@ func syncSiteLevelExternalServiceRateLimiters(ctx context.Context, store databas
 func syncRateLimiters(ctx context.Context, store database.ExternalServiceStore, perSecond int) {
 	backoff := 5 * time.Second
 	batchSize := 50
+	logger := log.Scoped("sync rate limiter", "Sync rate limiters from config.")
 
 	// perSecond should be spread across all gitserver instances and we want to wait
 	// until we know about at least one instance.
@@ -485,8 +506,8 @@ func syncRateLimiters(ctx context.Context, store database.ExternalServiceStore, 
 		if instanceCount > 0 {
 			break
 		}
-		log15.Warn("found zero gitserver instance, trying again in %s", backoff)
-		time.Sleep(backoff)
+
+		logger.Warn("found zero gitserver instance, trying again after backoff", log.Duration("backoff", backoff))
 	}
 
 	limiter := rate.NewLimiter(rate.Limit(float64(perSecond)/float64(instanceCount)), batchSize)
@@ -500,7 +521,7 @@ func syncRateLimiters(ctx context.Context, store database.ExternalServiceStore, 
 	for {
 		start := time.Now()
 		if err := syncer.SyncLimitersSince(ctx, lastSuccessfulSync); err != nil {
-			log15.Warn("syncRateLimiters: error syncing rate limits", "error", err)
+			logger.Warn("syncRateLimiters: error syncing rate limits", log.Error(err))
 		} else {
 			lastSuccessfulSync = start
 		}

@@ -16,13 +16,13 @@ func (p *progressWithStatusBarsSimple) Complete() {
 	writeStatusBars(p.Output, p.statusBars)
 }
 
-func (p *progressWithStatusBarsSimple) StatusBarUpdatef(i int, format string, args ...interface{}) {
+func (p *progressWithStatusBarsSimple) StatusBarUpdatef(i int, format string, args ...any) {
 	if p.statusBars[i] != nil {
 		p.statusBars[i].Updatef(format, args...)
 	}
 }
 
-func (p *progressWithStatusBarsSimple) StatusBarCompletef(i int, format string, args ...interface{}) {
+func (p *progressWithStatusBarsSimple) StatusBarCompletef(i int, format string, args ...any) {
 	if p.statusBars[i] != nil {
 		wasComplete := p.statusBars[i].completed
 		p.statusBars[i].Completef(format, args...)
@@ -32,7 +32,7 @@ func (p *progressWithStatusBarsSimple) StatusBarCompletef(i int, format string, 
 	}
 }
 
-func (p *progressWithStatusBarsSimple) StatusBarFailf(i int, format string, args ...interface{}) {
+func (p *progressWithStatusBarsSimple) StatusBarFailf(i int, format string, args ...any) {
 	if p.statusBars[i] != nil {
 		wasCompleted := p.statusBars[i].completed
 		p.statusBars[i].Failf(format, args...)
@@ -42,7 +42,7 @@ func (p *progressWithStatusBarsSimple) StatusBarFailf(i int, format string, args
 	}
 }
 
-func (p *progressWithStatusBarsSimple) StatusBarResetf(i int, label, format string, args ...interface{}) {
+func (p *progressWithStatusBarsSimple) StatusBarResetf(i int, label, format string, args ...any) {
 	if p.statusBars[i] != nil {
 		p.statusBars[i].Resetf(label, format, args...)
 	}
@@ -59,7 +59,7 @@ func newProgressWithStatusBarsSimple(bars []*ProgressBar, statusBars []*StatusBa
 	}
 
 	if opts != nil && opts.NoSpinner {
-		if p.Output.opts.Verbose {
+		if p.Output.verbose {
 			writeBars(p.Output, p.bars)
 			writeStatusBars(p.Output, p.statusBars)
 		}
@@ -73,7 +73,7 @@ func newProgressWithStatusBarsSimple(bars []*ProgressBar, statusBars []*StatusBa
 		for {
 			select {
 			case <-ticker.C:
-				if p.Output.opts.Verbose {
+				if p.Output.verbose {
 					writeBars(p.Output, p.bars)
 					writeStatusBars(p.Output, p.statusBars)
 				}
@@ -89,7 +89,7 @@ func newProgressWithStatusBarsSimple(bars []*ProgressBar, statusBars []*StatusBa
 }
 
 func writeStatusBar(w Writer, bar *StatusBar) {
-	w.Writef("%s: "+bar.format, append([]interface{}{bar.label}, bar.args...)...)
+	w.Writef("%s: "+bar.format, append([]any{bar.label}, bar.args...)...)
 }
 
 func writeStatusBars(o *Output, bars []*StatusBar) {

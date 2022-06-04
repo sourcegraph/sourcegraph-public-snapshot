@@ -188,7 +188,7 @@ func waitForRedis(s *redistore.RediStore) {
 // session exists, a new session is created.
 //
 // The value is JSON-encoded before being stored.
-func SetData(w http.ResponseWriter, r *http.Request, key string, value interface{}) error {
+func SetData(w http.ResponseWriter, r *http.Request, key string, value any) error {
 	session, err := sessionStore.Get(r, cookieName)
 	if err != nil {
 		return errors.WithMessage(err, "getting session")
@@ -208,7 +208,7 @@ func SetData(w http.ResponseWriter, r *http.Request, key string, value interface
 // be a pointer).
 //
 // The value is JSON-decoded from the raw bytes stored by the call to SetData.
-func GetData(r *http.Request, key string, value interface{}) error {
+func GetData(r *http.Request, key string, value any) error {
 	session, err := sessionStore.Get(r, cookieName)
 	if err != nil {
 		return errors.WithMessage(err, "getting session")
@@ -270,7 +270,7 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 // InvalidateSessionCurrentUser invalidates all sessions for the current user.
 func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request, db database.DB) error {
 	a := actor.FromContext(r.Context())
-	err := database.Users(db).InvalidateSessionsByID(r.Context(), a.UID)
+	err := db.Users().InvalidateSessionsByID(r.Context(), a.UID)
 	if err != nil {
 		return err
 	}
@@ -285,7 +285,7 @@ func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request, db dat
 // If an error occurs, it returns the error
 func InvalidateSessionsByID(ctx context.Context, db database.DB, id int32) error {
 	// Get the user from the request context
-	return database.Users(db).InvalidateSessionsByID(ctx, id)
+	return db.Users().InvalidateSessionsByID(ctx, id)
 }
 
 // CookieMiddleware is an http.Handler middleware that authenticates

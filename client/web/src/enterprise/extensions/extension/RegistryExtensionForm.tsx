@@ -12,18 +12,20 @@ import {
     RegistryPublisher,
 } from '../../../extensions/extension/extension'
 
-export const RegistryPublisherFormGroup: React.FunctionComponent<{
-    /** The current publisher value. */
-    value?: Scalars['ID']
+export const RegistryPublisherFormGroup: React.FunctionComponent<
+    React.PropsWithChildren<{
+        /** The current publisher value. */
+        value?: Scalars['ID']
 
-    /** The viewer's authorized publishers, undefined while loading, or an error. */
-    publishersOrError: 'loading' | RegistryPublisher[] | ErrorLike
+        /** The viewer's authorized publishers, undefined while loading, or an error. */
+        publishersOrError: 'loading' | RegistryPublisher[] | ErrorLike
 
-    disabled?: boolean
-    onChange?: React.FormEventHandler<HTMLSelectElement>
+        disabled?: boolean
+        onChange?: React.FormEventHandler<HTMLSelectElement>
 
-    className?: string
-}> = ({ className = '', value, publishersOrError, disabled, onChange }) => (
+        className?: string
+    }>
+> = ({ className = '', value, publishersOrError, disabled, onChange }) => (
     <>
         {isErrorLike(publishersOrError) ? (
             <ErrorAlert error={publishersOrError} />
@@ -53,12 +55,14 @@ export const RegistryPublisherFormGroup: React.FunctionComponent<{
     </>
 )
 
-export const RegistryExtensionNameFormGroup: React.FunctionComponent<{
-    value: string
-    disabled?: boolean
-    onChange: React.FormEventHandler<HTMLInputElement>
-    className?: string
-}> = ({ value, disabled, onChange, className }) => (
+export const RegistryExtensionNameFormGroup: React.FunctionComponent<
+    React.PropsWithChildren<{
+        value: string
+        disabled?: boolean
+        onChange: React.FormEventHandler<HTMLInputElement>
+        className?: string
+    }>
+> = ({ value, disabled, onChange, className }) => (
     <Input
         label="Name"
         type="text"

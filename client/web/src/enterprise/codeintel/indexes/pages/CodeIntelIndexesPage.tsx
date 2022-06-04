@@ -73,7 +73,7 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> = ({
+export const CodeIntelIndexesPage: FunctionComponent<React.PropsWithChildren<CodeIntelIndexesPageProps>> = ({
     authenticatedUser,
     repo,
     queryLsifIndexListByRepository = defaultQueryLsifIndexListByRepository,
@@ -123,6 +123,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                 <div className="list-group position-relative">
                     <FilteredConnection<LsifIndexFields, Omit<CodeIntelIndexNodeProps, 'node'>>
                         listComponent="div"
+                        inputClassName="w-auto"
                         listClassName={classNames(styles.grid, 'mb-3')}
                         noun="index"
                         pluralNoun="indexes"

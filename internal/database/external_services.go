@@ -150,11 +150,6 @@ func (e *externalServiceStore) copy() *externalServiceStore {
 	}
 }
 
-// ExternalServices instantiates and returns a new ExternalServicesStore with prepared statements.
-func ExternalServices(db dbutil.DB) ExternalServiceStore {
-	return &externalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
 // ExternalServicesWith instantiates and returns a new ExternalServicesStore with prepared statements.
 func ExternalServicesWith(other basestore.ShareableStore) ExternalServiceStore {
 	return &externalServiceStore{Store: basestore.NewWithHandle(other.Handle())}
@@ -199,11 +194,13 @@ var ExternalServiceKinds = map[string]ExternalServiceKind{
 	extsvc.KindGitolite:        {CodeHost: true, JSONSchema: schema.GitoliteSchemaJSON},
 	extsvc.KindGoModules:       {CodeHost: true, JSONSchema: schema.GoModulesSchemaJSON},
 	extsvc.KindJVMPackages:     {CodeHost: true, JSONSchema: schema.JVMPackagesSchemaJSON},
+	extsvc.KindNpmPackages:     {CodeHost: true, JSONSchema: schema.NpmPackagesSchemaJSON},
 	extsvc.KindOther:           {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
 	extsvc.KindPagure:          {CodeHost: true, JSONSchema: schema.PagureSchemaJSON},
-	extsvc.KindNpmPackages:     {CodeHost: true, JSONSchema: schema.NpmPackagesSchemaJSON},
 	extsvc.KindPerforce:        {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
 	extsvc.KindPhabricator:     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
+	extsvc.KindPythonPackages:  {CodeHost: true, JSONSchema: schema.PythonPackagesSchemaJSON},
+	extsvc.KindRustPackages:    {CodeHost: true, JSONSchema: schema.RustPackagesSchemaJSON},
 }
 
 // ExternalServiceKind describes a kind of external service.
@@ -1411,7 +1408,7 @@ func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawC
 	return nil
 }
 
-func configurationHasWebhooks(config interface{}) bool {
+func configurationHasWebhooks(config any) bool {
 	switch v := config.(type) {
 	case *schema.GitHubConnection:
 		return len(v.Webhooks) > 0

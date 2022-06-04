@@ -18,7 +18,6 @@ import type { BatchChangeClosePageProps } from '../close/BatchChangeClosePage'
 import type { CreateBatchChangePageProps } from '../create/CreateBatchChangePage'
 import type { BatchChangeDetailsPageProps } from '../detail/BatchChangeDetailsPage'
 import { TabName } from '../detail/BatchChangeDetailsTabs'
-import type { BatchSpecExecutionDetailsPageProps } from '../execution/BatchSpecExecutionDetailsPage'
 import type { BatchChangeListPageProps, NamespaceBatchChangeListPageProps } from '../list/BatchChangeListPage'
 import type { BatchChangePreviewPageProps } from '../preview/BatchChangePreviewPage'
 
@@ -48,10 +47,6 @@ const BatchChangeClosePage = lazyComponent<BatchChangeClosePageProps, 'BatchChan
     () => import('../close/BatchChangeClosePage'),
     'BatchChangeClosePage'
 )
-const BatchSpecExecutionDetailsPage = lazyComponent<
-    BatchSpecExecutionDetailsPageProps,
-    'BatchSpecExecutionDetailsPage'
->(() => import('../execution/BatchSpecExecutionDetailsPage'), 'BatchSpecExecutionDetailsPage')
 const DotcomGettingStartedPage = lazyComponent<DotcomGettingStartedPageProps, 'DotcomGettingStartedPage'>(
     () => import('./DotcomGettingStartedPage'),
     'DotcomGettingStartedPage'
@@ -70,13 +65,15 @@ interface Props<RouteProps extends {} = {}>
 /**
  * The global batch changes area.
  */
-export const GlobalBatchChangesArea: React.FunctionComponent<Props> = props => (
+export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => (
     <div className="w-100">
         {props.isSourcegraphDotCom ? <DotcomGettingStartedPage /> : <AuthenticatedBatchChangesArea {...props} />}
     </div>
 )
 
-const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+)
 
 interface AuthenticatedProps extends Props {
     authenticatedUser: AuthenticatedUser
@@ -162,17 +159,3 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
         </Switch>
     </div>
 ))
-
-export interface ExecutionAreaProps extends NamespaceBatchChangesAreaProps<{ batchSpecID: string }> {}
-
-/**
- * This is just a dumb hack to work around the namespaces header that is preserved on
- * original, non-SSBC pages but omitted from newer, SSBC ones, which bring their own
- * header. Eventually all BC pages should supply their own header, at which point this can
- * be removed.
- */
-export const ExecutionArea = withAuthenticatedUser<ExecutionAreaProps & { authenticatedUser: AuthenticatedUser }>(
-    ({ match, namespaceID, ...outerProps }) => (
-        <BatchSpecExecutionDetailsPage {...outerProps} match={match} batchSpecID={match.params.batchSpecID} />
-    )
-)

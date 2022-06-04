@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -32,8 +34,9 @@ import (
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
-var _ graphqlbackend.InsightSeriesResolver = &insightSeriesResolver{}
+var _ graphqlbackend.InsightSeriesResolver = &precalculatedInsightSeriesResolver{}
 
+// TODO(insights): remove insightSeriesResolver when `insights` is removed from graphql query schema
 type insightSeriesResolver struct {
 	insightsStore   store.Interface
 	workerBaseStore *basestore.Store
@@ -47,34 +50,26 @@ func (r *insightSeriesResolver) SeriesId() string { return r.series.SeriesID }
 
 func (r *insightSeriesResolver) Label() string { return r.series.Label }
 
-func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
+func (r *insightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	var opts store.SeriesPointsOpts
 
 	// Query data points only for the series we are representing.
 	seriesID := r.series.SeriesID
 	opts.SeriesID = &seriesID
 
-	if args.From == nil {
-		// Default to last 12mo of data
-		frames := query.BuildFrames(12, timeseries.TimeInterval{
-			Unit:  types.IntervalUnit(r.series.SampleIntervalUnit),
-			Value: r.series.SampleIntervalValue,
-		}, time.Now())
-		oldest := time.Now().AddDate(-1, 0, 0)
-		if len(frames) != 0 {
-			possibleOldest := frames[0].From
-			if possibleOldest.Before(oldest) {
-				oldest = possibleOldest
-			}
+	// Default to last 12 frames of data
+	frames := query.BuildFrames(12, timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(r.series.SampleIntervalUnit),
+		Value: r.series.SampleIntervalValue,
+	}, time.Now())
+	oldest := time.Now().AddDate(-1, 0, 0)
+	if len(frames) != 0 {
+		possibleOldest := frames[0].From
+		if possibleOldest.Before(oldest) {
+			oldest = possibleOldest
 		}
-		args.From = &graphqlbackend.DateTime{Time: oldest}
 	}
-	if args.From != nil {
-		opts.From = &args.From.Time
-	}
-	if args.To != nil {
-		opts.To = &args.To.Time
-	}
+	opts.From = &oldest
 
 	includeRepo := func(regex ...string) {
 		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, regex...)
@@ -83,18 +78,10 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 		opts.ExcludeRepoRegex = append(opts.ExcludeRepoRegex, regex...)
 	}
 
-	// to preserve backwards compatibility, we are going to keep the arguments on this resolver for now. Ideally
-	// we would deprecate these in favor of passing arguments from a higher level resolver (insight view) to match
-	// the model of how we want default filters to work at the insight view level. That said, we will only inherit
-	// higher resolver filters if provided filter arguments are nil.
-	if args.IncludeRepoRegex != nil {
-		includeRepo(*args.IncludeRepoRegex)
-	} else if r.filters.IncludeRepoRegex != nil {
+	if r.filters.IncludeRepoRegex != nil {
 		includeRepo(*r.filters.IncludeRepoRegex)
 	}
-	if args.ExcludeRepoRegex != nil {
-		excludeRepo(*args.ExcludeRepoRegex)
-	} else if r.filters.ExcludeRepoRegex != nil {
+	if r.filters.ExcludeRepoRegex != nil {
 		excludeRepo(*r.filters.ExcludeRepoRegex)
 	}
 
@@ -150,7 +137,7 @@ func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawCo
 			if err != nil {
 				return nil, nil, errors.Wrapf(err, "failed to parse search query for search context: %s", rawContext)
 			}
-			inc, exc := plan.ToParseTree().Repositories()
+			inc, exc := plan.ToQ().Repositories()
 			include = append(include, inc...)
 			exclude = append(exclude, exc...)
 		}
@@ -238,7 +225,7 @@ func (p *precalculatedInsightSeriesResolver) Label() string {
 	return p.label
 }
 
-func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, args *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
+func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	resolvers := make([]graphqlbackend.InsightsDataPointResolver, 0, len(p.points))
 	for _, point := range p.points {
 		resolvers = append(resolvers, insightsDataPointResolver{point})
@@ -263,68 +250,57 @@ func (p *precalculatedInsightSeriesResolver) DirtyMetadata(ctx context.Context) 
 }
 
 type insightSeriesResolverGenerator interface {
-	Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error)
+	Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error)
 	handles(series types.InsightViewSeries) bool
 	SetNext(nextGenerator insightSeriesResolverGenerator)
 }
 
 type handleSeriesFunc func(series types.InsightViewSeries) bool
-type resolverGenerator func(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error)
+type resolverGenerator func(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error)
 
 type seriesResolverGenerator struct {
 	next             insightSeriesResolverGenerator
-	handelsSeries    handleSeriesFunc
+	handlesSeries    handleSeriesFunc
 	generateResolver resolverGenerator
 }
 
 func (j *seriesResolverGenerator) handles(series types.InsightViewSeries) bool {
-	if j.handelsSeries == nil {
+	if j.handlesSeries == nil {
 		return false
 	}
-	return j.handelsSeries(series)
+	return j.handlesSeries(series)
 }
 
 func (j *seriesResolverGenerator) SetNext(nextGenerator insightSeriesResolverGenerator) {
 	j.next = nextGenerator
 }
 
-func (j *seriesResolverGenerator) Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+func (j *seriesResolverGenerator) Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
 	if j.handles(series) {
-		return j.generateResolver(ctx, series, baseResolver, filters)
+		return j.generateResolver(ctx, series, baseResolver, filters, seriesOptions)
 	}
 	if j.next != nil {
-		return j.next.Generate(ctx, series, baseResolver, filters)
+		return j.next.Generate(ctx, series, baseResolver, filters, seriesOptions)
 	} else {
 		log15.Error("no generator for insight series", "seriesID", series.SeriesID)
 		return nil, errors.New("no resolvers for insights series")
 	}
 }
 
-func newSeriesResolverGenerator(handels handleSeriesFunc, generate resolverGenerator) insightSeriesResolverGenerator {
+func newSeriesResolverGenerator(handles handleSeriesFunc, generate resolverGenerator) insightSeriesResolverGenerator {
 	return &seriesResolverGenerator{
-		handelsSeries:    handels,
+		handlesSeries:    handles,
 		generateResolver: generate,
 	}
 }
 
-func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	return []graphqlbackend.InsightSeriesResolver{&insightSeriesResolver{
-		insightsStore:   r.timeSeriesStore,
-		workerBaseStore: r.workerBaseStore,
-		series:          definition,
-		metadataStore:   r.insightStore,
-		filters:         filters,
-	}}, nil
-}
-
-func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	var opts store.SeriesPointsOpts
-
+func getRecordedSeriesPointOpts(ctx context.Context, db dbutil.DB, definition types.InsightViewSeries, filters types.InsightViewFilters) (*store.SeriesPointsOpts, error) {
+	opts := &store.SeriesPointsOpts{}
 	// Query data points only for the series we are representing.
 	seriesID := definition.SeriesID
 	opts.SeriesID = &seriesID
 
-	// Default to last 12mo of data
+	// Default to last 12 points of data
 	frames := query.BuildFrames(12, timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
 		Value: definition.SampleIntervalValue,
@@ -337,7 +313,6 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 		}
 	}
 	opts.From = &oldest
-
 	includeRepo := func(regex ...string) {
 		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, regex...)
 	}
@@ -351,16 +326,58 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 	if filters.ExcludeRepoRegex != nil {
 		excludeRepo(*filters.ExcludeRepoRegex)
 	}
-	scLoader := &scLoader{primary: r.workerBaseStore.Handle().DB()}
+
+	scLoader := &scLoader{primary: db}
 	inc, exc, err := unwrapSearchContexts(ctx, scLoader, filters.SearchContexts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unwrapSearchContexts")
 	}
 	includeRepo(inc...)
 	excludeRepo(exc...)
+	return opts, nil
+}
+
+func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
+	opts, err := getRecordedSeriesPointOpts(ctx, r.workerBaseStore.Handle().DB(), definition, filters)
+	if err != nil {
+		return nil, errors.Wrap(err, "getRecordedSeriesPointOpts")
+	}
+
+	points, err := r.timeSeriesStore.SeriesPoints(ctx, *opts)
+	if err != nil {
+		return nil, err
+	}
+
+	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, definition.SeriesID)
+	if err != nil {
+		return nil, errors.Wrap(err, "QueryJobsStatus")
+	}
+	statusResolver := NewStatusResolver(status, definition.BackfillQueuedAt)
+
+	var resolvers []graphqlbackend.InsightSeriesResolver
+
+	resolvers = append(resolvers, &precalculatedInsightSeriesResolver{
+		insightsStore:   r.timeSeriesStore,
+		workerBaseStore: r.workerBaseStore,
+		series:          definition,
+		metadataStore:   r.insightStore,
+		points:          points,
+		label:           definition.Label,
+		filters:         filters,
+		seriesId:        definition.SeriesID,
+		statusResolver:  statusResolver,
+	})
+	return resolvers, nil
+}
+
+func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
+	opts, err := getRecordedSeriesPointOpts(ctx, r.workerBaseStore.Handle().DB(), definition, filters)
+	if err != nil {
+		return nil, errors.Wrap(err, "getRecordedSeriesPointOpts")
+	}
 
 	groupedByCapture := make(map[string][]store.SeriesPoint)
-	allPoints, err := r.timeSeriesStore.SeriesPoints(ctx, opts)
+	allPoints, err := r.timeSeriesStore.SeriesPoints(ctx, *opts)
 	if err != nil {
 		return nil, err
 	}
@@ -374,14 +391,16 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 		groupedByCapture[*point.Capture] = append(groupedByCapture[*point.Capture], point)
 	}
 
-	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, seriesID)
+	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, definition.SeriesID)
 	if err != nil {
 		return nil, errors.Wrap(err, "QueryJobsStatus")
 	}
 	statusResolver := NewStatusResolver(status, definition.BackfillQueuedAt)
 
+	sortedCaptureGroups, limit := getSortedCaptureGroups(seriesOptions, definition, groupedByCapture)
 	var resolvers []graphqlbackend.InsightSeriesResolver
-	for capturedValue, points := range groupedByCapture {
+	for _, capturedValue := range sortedCaptureGroups[0:limit] {
+		points := groupedByCapture[capturedValue]
 		sort.Slice(points, func(i, j int) bool {
 			return points[i].Time.Before(points[j].Time)
 		})
@@ -393,7 +412,7 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 			points:          points,
 			label:           capturedValue,
 			filters:         filters,
-			seriesId:        fmt.Sprintf("%s-%s", seriesID, capturedValue),
+			seriesId:        fmt.Sprintf("%s-%s", definition.SeriesID, capturedValue),
 			statusResolver:  statusResolver,
 		})
 	}
@@ -420,8 +439,8 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 	return resolvers, nil
 }
 
-func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
+func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
+	executor := query.NewCaptureGroupExecutor(r.postgresDB, time.Now)
 	interval := timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
 		Value: definition.SampleIntervalValue,
@@ -438,16 +457,46 @@ func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.In
 		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
 	}
 
-	var resolvers []graphqlbackend.InsightSeriesResolver
+	groupedByCapture := make(map[string][]store.SeriesPoint)
+	var allPoints []store.SeriesPoint
 	for i := range generatedSeries {
-		resolvers = append(resolvers, &dynamicInsightSeriesResolver{generated: &generatedSeries[i]})
+		for _, point := range generatedSeries[i].Points {
+			allPoints = append(allPoints, store.SeriesPoint{
+				SeriesID: generatedSeries[i].SeriesId,
+				Time:     point.Time,
+				Value:    float64(point.Count),
+				Capture:  &generatedSeries[i].Label,
+			})
+		}
+	}
+	for i := range allPoints {
+		point := allPoints[i]
+		if point.Capture == nil {
+			// skip nil values, this shouldn't be a real possibility
+			continue
+		}
+		groupedByCapture[*point.Capture] = append(groupedByCapture[*point.Capture], point)
+	}
+
+	sortedCaptureGroups, limit := getSortedCaptureGroups(seriesOptions, definition, groupedByCapture)
+	var resolvers []graphqlbackend.InsightSeriesResolver
+	for _, capture := range sortedCaptureGroups[0:limit] {
+		var series query.GeneratedTimeSeries
+		for i := range generatedSeries {
+			if generatedSeries[i].Label == capture {
+				series = generatedSeries[i]
+				break
+			}
+		}
+
+		resolvers = append(resolvers, &dynamicInsightSeriesResolver{generated: &series})
 	}
 
 	return resolvers, nil
 }
 
-func streamingSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	executor := query.NewStreamingExecutor(r.postgresDB, r.insightsDB, time.Now)
+func streamingSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
+	executor := query.NewStreamingExecutor(r.postgresDB, time.Now)
 	interval := timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
 		Value: definition.SampleIntervalValue,
@@ -470,4 +519,116 @@ func streamingSeriesJustInTime(ctx context.Context, definition types.InsightView
 	}
 
 	return resolvers, nil
+}
+
+func getSortedCaptureGroups(seriesOptions types.SeriesDisplayOptions, definition types.InsightViewSeries, captureGroups map[string][]store.SeriesPoint) ([]string, int32) {
+	var sortMode types.SeriesSortMode
+	var sortDirection types.SeriesSortDirection
+	var limit int32
+	if seriesOptions.SortOptions != nil {
+		sortMode = seriesOptions.SortOptions.Mode
+		sortDirection = seriesOptions.SortOptions.Direction
+	} else {
+		if definition.SeriesSortMode != nil {
+			sortMode = *definition.SeriesSortMode
+		} else {
+			sortMode = types.ResultCount
+		}
+		if definition.SeriesSortDirection != nil {
+			sortDirection = *definition.SeriesSortDirection
+		} else {
+			sortDirection = types.Desc
+		}
+	}
+
+	orderedCaptureGroups := make([][]store.SeriesPoint, 0, len(captureGroups))
+	for _, value := range captureGroups {
+		orderedCaptureGroups = append(orderedCaptureGroups, value)
+	}
+
+	getMostRecentValue := func(points []store.SeriesPoint) float64 {
+		return points[len(points)-1].Value
+	}
+
+	ascLexSort := func(s1 string, s2 string) (hasSemVar bool, result bool) {
+		version1, err1 := semver.NewVersion(s1)
+		version2, err2 := semver.NewVersion(s2)
+		if err1 == nil && err2 == nil {
+			return true, version1.Compare(version2) < 0
+		}
+		if err1 != nil && err2 == nil {
+			return true, false
+		}
+		if err1 == nil && err2 != nil {
+			return true, true
+		}
+		return false, false
+	}
+
+	// First sort lexicographically (ascending) to make sure the ordering is consistent even if some result counts are equal.
+	sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
+		hasSemVar, result := ascLexSort(*orderedCaptureGroups[i][0].Capture, *orderedCaptureGroups[j][0].Capture)
+		if hasSemVar == true {
+			return result
+		}
+		return strings.Compare(*orderedCaptureGroups[i][0].Capture, *orderedCaptureGroups[j][0].Capture) < 0
+	})
+
+	switch sortMode {
+	case types.ResultCount:
+		if sortDirection == types.Asc {
+			sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
+				return getMostRecentValue(orderedCaptureGroups[i]) < getMostRecentValue(orderedCaptureGroups[j])
+			})
+		} else {
+			sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
+				return getMostRecentValue(orderedCaptureGroups[i]) > getMostRecentValue(orderedCaptureGroups[j])
+			})
+		}
+	case types.Lexicographical:
+		if sortDirection == types.Asc {
+			// Already pre-sorted by default
+		} else {
+			sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
+				hasSemVar, result := ascLexSort(*orderedCaptureGroups[i][0].Capture, *orderedCaptureGroups[j][0].Capture)
+				if hasSemVar == true {
+					return !result
+				}
+				return strings.Compare(*orderedCaptureGroups[i][0].Capture, *orderedCaptureGroups[j][0].Capture) > 0
+			})
+		}
+	case types.DateAdded:
+		if sortDirection == types.Asc {
+			sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
+				return orderedCaptureGroups[i][0].Time.Before(orderedCaptureGroups[j][0].Time)
+			})
+		} else {
+			sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
+				return orderedCaptureGroups[i][0].Time.After(orderedCaptureGroups[j][0].Time)
+			})
+		}
+	}
+
+	groupNames := []string{}
+	for _, group := range orderedCaptureGroups {
+		groupNames = append(groupNames, *group[0].Capture)
+	}
+
+	if seriesOptions.Limit != nil {
+		limit = *seriesOptions.Limit
+	} else if definition.SeriesLimit != nil {
+		limit = *definition.SeriesLimit
+	} else {
+		limit = 20
+	}
+	limit = minInt(int(limit), len(groupNames))
+
+	return groupNames, limit
+}
+
+func minInt(a, b int) int32 {
+	if a < b {
+		return int32(a)
+	}
+	return int32(b)
 }

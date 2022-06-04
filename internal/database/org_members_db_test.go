@@ -16,23 +16,23 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create fixtures.
-	org1, err := Orgs(db).Create(ctx, "org1", nil)
+	org1, err := db.Orgs().Create(ctx, "org1", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	org2, err := Orgs(db).Create(ctx, "org2", nil)
+	org2, err := db.Orgs().Create(ctx, "org2", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	org3, err := Orgs(db).Create(ctx, "org3", nil)
+	org3, err := db.Orgs().Create(ctx, "org3", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	user1, err := Users(db).Create(ctx, NewUser{
+	user1, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a1@example.com",
 		Username:              "u1",
 		Password:              "p",
@@ -41,7 +41,7 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = Users(db).Create(ctx, NewUser{
+	_, err = db.Users().Create(ctx, NewUser{
 		Email:                 "a2@example.com",
 		Username:              "u2",
 		Password:              "p",
@@ -50,7 +50,7 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := OrgMembers(db).Create(ctx, org1.ID, user1.ID); err != nil {
+	if _, err := db.OrgMembers().Create(ctx, org1.ID, user1.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -62,7 +62,7 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 		}
 		got := map[string][]int32{}
 		for _, org := range []*types.Org{org1, org2, org3} {
-			members, err := OrgMembers(db).GetByOrgID(ctx, org.ID)
+			members, err := db.OrgMembers().GetByOrgID(ctx, org.ID)
 			if err != nil {
 				return err
 			}
@@ -80,13 +80,13 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 	}
 
 	// Try twice; it should be idempotent.
-	if err := OrgMembers(db).CreateMembershipInOrgsForAllUsers(ctx, []string{"org1", "org3"}); err != nil {
+	if err := db.OrgMembers().CreateMembershipInOrgsForAllUsers(ctx, []string{"org1", "org3"}); err != nil {
 		t.Fatal(err)
 	}
 	if err := check(); err != nil {
 		t.Fatal(err)
 	}
-	if err := OrgMembers(db).CreateMembershipInOrgsForAllUsers(ctx, []string{"org1", "org3"}); err != nil {
+	if err := db.OrgMembers().CreateMembershipInOrgsForAllUsers(ctx, []string{"org1", "org3"}); err != nil {
 		t.Fatal(err)
 	}
 	if err := check(); err != nil {
@@ -94,7 +94,7 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 	}
 
 	// Passing an org that does not exist should not be an error.
-	if err := OrgMembers(db).CreateMembershipInOrgsForAllUsers(ctx, []string{"doesntexist"}); err != nil {
+	if err := db.OrgMembers().CreateMembershipInOrgsForAllUsers(ctx, []string{"doesntexist"}); err != nil {
 		t.Fatal(err)
 	}
 	if err := check(); err != nil {
@@ -102,7 +102,7 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 	}
 
 	// An empty list shouldn't be an error.
-	if err := OrgMembers(db).CreateMembershipInOrgsForAllUsers(ctx, []string{}); err != nil {
+	if err := db.OrgMembers().CreateMembershipInOrgsForAllUsers(ctx, []string{}); err != nil {
 		t.Fatal(err)
 	}
 	if err := check(); err != nil {
@@ -114,22 +114,22 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 	// Create fixtures.
-	org1, err := Orgs(db).Create(ctx, "org1", nil)
+	org1, err := db.Orgs().Create(ctx, "org1", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	org2, err := Orgs(db).Create(ctx, "org2", nil)
+	org2, err := db.Orgs().Create(ctx, "org2", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	org3, err := Orgs(db).Create(ctx, "org3", nil)
+	org3, err := db.Orgs().Create(ctx, "org3", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	user1, err := Users(db).Create(ctx, NewUser{
+	user1, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a1@example.com",
 		Username:              "u1",
 		Password:              "p",
@@ -138,7 +138,7 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	user2, err := Users(db).Create(ctx, NewUser{
+	user2, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a2@example.com",
 		Username:              "u2",
 		Password:              "p2",
@@ -147,7 +147,7 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	deletedUser, err := Users(db).Create(ctx, NewUser{
+	deletedUser, err := db.Users().Create(ctx, NewUser{
 		Email:                 "deleted@example.com",
 		Username:              "deleted",
 		Password:              "p2",
@@ -156,12 +156,12 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	OrgMembers(db).Create(ctx, org1.ID, user1.ID)
-	OrgMembers(db).Create(ctx, org2.ID, user1.ID)
-	OrgMembers(db).Create(ctx, org2.ID, user2.ID)
-	OrgMembers(db).Create(ctx, org3.ID, user1.ID)
-	OrgMembers(db).Create(ctx, org3.ID, deletedUser.ID)
-	err = Users(db).Delete(ctx, deletedUser.ID)
+	db.OrgMembers().Create(ctx, org1.ID, user1.ID)
+	db.OrgMembers().Create(ctx, org2.ID, user1.ID)
+	db.OrgMembers().Create(ctx, org2.ID, user2.ID)
+	db.OrgMembers().Create(ctx, org3.ID, user1.ID)
+	db.OrgMembers().Create(ctx, org3.ID, deletedUser.ID)
+	err = db.Users().Delete(ctx, deletedUser.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +174,7 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 		{"org with two members", org2.ID, 2},
 		{"org with one deleted member", org3.ID, 1}} {
 		t.Run(test.name, func(*testing.T) {
-			got, err := OrgMembers(db).MemberCount(ctx, test.orgID)
+			got, err := db.OrgMembers().MemberCount(ctx, test.orgID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -192,7 +192,7 @@ func TestOrgMembers_AutocompleteMembersSearch(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	tests := []struct {
@@ -269,7 +269,7 @@ func TestOrgMembers_AutocompleteMembersSearch(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := Users(db).Create(ctx, NewUser{
+			_, err := db.Users().Create(ctx, NewUser{
 				Username:              test.username,
 				DisplayName:           test.name,
 				Email:                 test.email,
@@ -282,7 +282,7 @@ func TestOrgMembers_AutocompleteMembersSearch(t *testing.T) {
 		})
 	}
 
-	users, err := OrgMembers(db).AutocompleteMembersSearch(ctx, 1, "testus")
+	users, err := db.OrgMembers().AutocompleteMembersSearch(ctx, 1, "testus")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,15 +291,15 @@ func TestOrgMembers_AutocompleteMembersSearch(t *testing.T) {
 		t.Errorf("got %d, want %d", len(users), want)
 	}
 
-	user, err := Users(db).GetByUsername(ctx, "searchablefalse")
+	user, err := db.Users().GetByUsername(ctx, "searchablefalse")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := Users(db).Update(ctx, user.ID, UserUpdate{Searchable: boolptr(false)}); err != nil {
+	if err := db.Users().Update(ctx, user.ID, UserUpdate{Searchable: boolptr(false)}); err != nil {
 		t.Fatal(err)
 	}
 
-	users2, err := OrgMembers(db).AutocompleteMembersSearch(ctx, 1, "searchable")
+	users2, err := db.OrgMembers().AutocompleteMembersSearch(ctx, 1, "searchable")
 	if err != nil {
 		t.Fatal(err)
 	}

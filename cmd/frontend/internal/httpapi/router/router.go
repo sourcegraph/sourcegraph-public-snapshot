@@ -26,20 +26,18 @@ const (
 	GitHubWebhooks          = "github.webhooks"
 	GitLabWebhooks          = "gitlab.webhooks"
 	BitbucketServerWebhooks = "bitbucketServer.webhooks"
+	BitbucketCloudWebhooks  = "bitbucketCloud.webhooks"
 
 	SettingsGetForSubject  = "internal.settings.get-for-subject"
 	OrgsListUsers          = "internal.orgs.list-users"
 	OrgsGetByName          = "internal.orgs.get-by-name"
-	UsersGetByUsername     = "internal.users.get-by-username"
 	UserEmailsGetEmail     = "internal.user-emails.get-email"
 	ExternalURL            = "internal.app-url"
-	CanSendEmail           = "internal.can-send-email"
 	SendEmail              = "internal.send-email"
 	Extension              = "internal.extension"
 	GitExec                = "internal.git.exec"
 	GitInfoRefs            = "internal.git.info-refs"
 	GitResolveRevision     = "internal.git.resolve-revision"
-	GitTar                 = "internal.git.tar"
 	GitUploadPack          = "internal.git.upload-pack"
 	PhabricatorRepoCreate  = "internal.phabricator.repo.create"
 	ReposGetByName         = "internal.repos.get-by-name"
@@ -68,9 +66,10 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
 	base.Path("/gitlab-webhooks").Methods("POST").Name(GitLabWebhooks)
 	base.Path("/bitbucket-server-webhooks").Methods("POST").Name(BitbucketServerWebhooks)
+	base.Path("/bitbucket-cloud-webhooks").Methods("POST").Name(BitbucketCloudWebhooks)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(SearchStream)
-	base.Path("/compute/stream").Methods("GET").Name(ComputeStream)
+	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
 	base.Path("/src-cli/version").Methods("GET").Name(SrcCliVersion)
 	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCliDownload)
 
@@ -97,16 +96,13 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/settings/get-for-subject").Methods("POST").Name(SettingsGetForSubject)
 	base.Path("/orgs/list-users").Methods("POST").Name(OrgsListUsers)
 	base.Path("/orgs/get-by-name").Methods("POST").Name(OrgsGetByName)
-	base.Path("/users/get-by-username").Methods("POST").Name(UsersGetByUsername)
 	base.Path("/user-emails/get-email").Methods("POST").Name(UserEmailsGetEmail)
 	base.Path("/app-url").Methods("POST").Name(ExternalURL)
-	base.Path("/can-send-email").Methods("POST").Name(CanSendEmail)
 	base.Path("/send-email").Methods("POST").Name(SendEmail)
 	base.Path("/extension").Methods("POST").Name(Extension)
 	base.Path("/git/{RepoID:[0-9]+}/exec").Methods("POST").Name(GitExec)
 	base.Path("/git/{RepoName:.*}/info/refs").Methods("GET").Name(GitInfoRefs)
 	base.Path("/git/{RepoName:.*}/resolve-revision/{Spec}").Methods("GET").Name(GitResolveRevision)
-	base.Path("/git/{RepoName:.*}/tar/{Commit}").Methods("GET").Name(GitTar)
 	base.Path("/git/{RepoName:.*}/git-upload-pack").Methods("GET", "POST").Name(GitUploadPack)
 	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)
 	base.Path("/external-services/configs").Methods("POST").Name(ExternalServiceConfigs)
@@ -121,7 +117,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/telemetry").Methods("POST").Name(Telemetry)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(StreamingSearch)
-	base.Path("/compute/stream").Methods("GET").Name(ComputeStream)
+	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 

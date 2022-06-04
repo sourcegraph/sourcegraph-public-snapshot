@@ -30,7 +30,7 @@ const (
 
 type migrator struct {
 	insightsDB dbutil.DB
-	postgresDB dbutil.DB
+	postgresDB database.DB
 
 	settingsMigrationJobsStore *store.DBSettingsMigrationJobsStore
 	settingsStore              database.SettingsStore
@@ -40,15 +40,15 @@ type migrator struct {
 	workerBaseStore            *basestore.Store
 }
 
-func NewMigrator(insightsDB dbutil.DB, postgresDB dbutil.DB) oobmigration.Migrator {
+func NewMigrator(insightsDB dbutil.DB, postgresDB database.DB) oobmigration.Migrator {
 	return &migrator{
 		insightsDB:                 insightsDB,
 		postgresDB:                 postgresDB,
 		settingsMigrationJobsStore: store.NewSettingsMigrationJobsStore(postgresDB),
-		settingsStore:              database.Settings(postgresDB),
+		settingsStore:              postgresDB.Settings(),
 		insightStore:               store.NewInsightStore(insightsDB),
 		dashboardStore:             store.NewDashboardStore(insightsDB),
-		orgStore:                   database.Orgs(postgresDB),
+		orgStore:                   postgresDB.Orgs(),
 		workerBaseStore:            basestore.NewWithDB(postgresDB, sql.TxOptions{}),
 	}
 }
@@ -138,7 +138,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 	var subject api.SettingsSubject
 	var migrationContext migrationContext
 	var subjectName string
-	orgStore := database.Orgs(m.postgresDB)
+	orgStore := m.postgresDB.Orgs()
 
 	defer func() {
 		jobStoreTx.UpdateRuns(ctx, job.UserId, job.OrgId, job.Runs+1)
@@ -161,7 +161,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		migrationContext.userId = int(userId)
 		migrationContext.orgIds = orgIds
 
-		userStore := database.Users(m.postgresDB)
+		userStore := m.postgresDB.Users()
 		user, err := userStore.GetByID(ctx, userId)
 		if err != nil {
 			// If the user doesn't exist, just mark the job complete.

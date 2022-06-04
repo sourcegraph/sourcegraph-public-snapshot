@@ -112,6 +112,7 @@ describe('Backend insight drill down filters', () => {
                 includeRepoRegex: '',
                 excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
             },
+            seriesDisplayOptions: {},
         })
     })
 
@@ -210,7 +211,7 @@ describe('Backend insight drill down filters', () => {
                         lineColor: 'var(--oc-red-7)',
                     },
                     repositoryScope: {
-                        repositories: [],
+                        repositories: ['github.com/sourcegraph/sourcegraph'],
                     },
                     timeScope: {
                         stepInterval: {
@@ -227,7 +228,7 @@ describe('Backend insight drill down filters', () => {
                         lineColor: 'var(--oc-blue-7)',
                     },
                     repositoryScope: {
-                        repositories: [],
+                        repositories: ['github.com/sourcegraph/sourcegraph'],
                     },
                     timeScope: {
                         stepInterval: {
@@ -246,6 +247,7 @@ describe('Backend insight drill down filters', () => {
                     includeRepoRegex: 'github.com/sourcegraph/sourcegraph',
                     excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
                 },
+                seriesDisplayOptions: {},
             },
         })
     })

@@ -3,13 +3,14 @@ import React from 'react'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
-import { Button, Card, Input } from '@sourcegraph/wildcard'
+import { Button, Card, Input, Code } from '@sourcegraph/wildcard'
 
 import { getDefaultInputProps } from '../../../../../../components/form/getDefaultInputProps'
 import { useField } from '../../../../../../components/form/hooks/useField'
-import { useForm } from '../../../../../../components/form/hooks/useForm'
+import { useForm, ValidationResult } from '../../../../../../components/form/hooks/useForm'
 import { InsightQueryInput } from '../../../../../../components/form/query-input/InsightQueryInput'
 import { createRequiredValidator } from '../../../../../../components/form/validators'
+import { searchQueryValidator } from '../../../capture-group/utils/search-query-validator'
 import { DEFAULT_DATA_SERIES_COLOR } from '../../constants'
 import { EditableDataSeries } from '../../types'
 import { FormColorInput } from '../form-color-input/FormColorInput'
@@ -17,7 +18,21 @@ import { FormColorInput } from '../form-color-input/FormColorInput'
 import { getQueryPatternTypeFilter } from './get-pattern-type-filter'
 
 const requiredNameField = createRequiredValidator('Name is a required field for data series.')
-const validQuery = createRequiredValidator('Query is a required field for data series.')
+const validQuery = (value: string | undefined, validity: ValidityState | null | undefined): ValidationResult => {
+    const result = createRequiredValidator('Query is a required field for data series.')(value, validity)
+    if (result) {
+        return result
+    }
+    const { isNotContext, isNotRepo } = searchQueryValidator(value || '', true)
+
+    if (!isNotContext) {
+        return 'The `context:` filter is not supported; instead, run over all repositories and use the `context:` on the filter panel after creation'
+    }
+
+    if (!isNotRepo) {
+        return 'Do not include a `repo:` filter; add targeted repositories above, or filter repos on the filter panel after creation'
+    }
+}
 
 interface FormSeriesInputProps {
     /** Series index. */
@@ -52,7 +67,7 @@ interface FormSeriesInputProps {
     onChange?: (formValues: EditableDataSeries, valid: boolean) => void
 }
 
-export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = props => {
+export const FormSeriesInput: React.FunctionComponent<React.PropsWithChildren<FormSeriesInputProps>> = props => {
     const {
         index,
         series,
@@ -165,12 +180,9 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
     )
 }
 
-const QueryFieldDescription: React.FunctionComponent = () => (
+const QueryFieldDescription: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <span>
-        Do not include the <code>context:</code> or <code>repo:</code> filter; if needed, <code>repo:</code> will be
+        Do not include the <Code>context:</Code> or <Code>repo:</Code> filter; if needed, <Code>repo:</Code> will be
         added automatically.
-        <br />
-        Tip: include <code>archived:no</code> and <code>fork:no</code> if you don't want results from archived or forked
-        repos.
     </span>
 )

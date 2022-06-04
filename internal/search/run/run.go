@@ -90,7 +90,7 @@ func NewSearchInputs(
 
 	inputs := &SearchInputs{
 		Plan:                plan,
-		Query:               plan.ToParseTree(),
+		Query:               plan.ToQ(),
 		OriginalQuery:       searchQuery,
 		UserSettings:        settings,
 		OnSourcegraphDotCom: sourcegraphDotComMode,
@@ -113,39 +113,40 @@ func (e *QueryError) Error() string {
 	return fmt.Sprintf("invalid query %q: %s", e.Query, e.Err)
 }
 
-// detectSearchType returns the search type to perform ("regexp", or
-// "literal"). The search type derives from three sources: the version and
-// patternType parameters passed to the search endpoint (literal search is the
-// default in V2), and the `patternType:` filter in the input query string which
-// overrides the searchType, if present.
+// detectSearchType returns the search type to perform. The search type derives
+// from three sources: the version and patternType parameters passed to the
+// search endpoint (literal search is the default in V2), and the `patternType:`
+// filter in the input query string which overrides the searchType, if present.
 func detectSearchType(version string, patternType *string) (query.SearchType, error) {
 	var searchType query.SearchType
 	if patternType != nil {
 		switch *patternType {
 		case "literal":
-			searchType = query.SearchTypeLiteral
+			searchType = query.SearchTypeLiteralDefault
 		case "regexp":
 			searchType = query.SearchTypeRegex
 		case "structural":
 			searchType = query.SearchTypeStructural
+		case "lucky":
+			searchType = query.SearchTypeLucky
 		default:
-			return -1, errors.Errorf("unrecognized patternType: %v", patternType)
+			return -1, errors.Errorf("unrecognized patternType %q", *patternType)
 		}
 	} else {
 		switch version {
 		case "V1":
 			searchType = query.SearchTypeRegex
 		case "V2":
-			searchType = query.SearchTypeLiteral
+			searchType = query.SearchTypeLiteralDefault
 		default:
-			return -1, errors.Errorf("unrecognized version want \"V1\" or \"V2\": %v", version)
+			return -1, errors.Errorf("unrecognized version: want \"V1\" or \"V2\", got %q", version)
 		}
 	}
 	return searchType, nil
 }
 
 func overrideSearchType(input string, searchType query.SearchType) query.SearchType {
-	q, err := query.Parse(input, query.SearchTypeLiteral)
+	q, err := query.Parse(input, query.SearchTypeLiteralDefault)
 	q = query.LowercaseFieldNames(q)
 	if err != nil {
 		// If parsing fails, return the default search type. Any actual
@@ -157,9 +158,11 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 		case "regex", "regexp":
 			searchType = query.SearchTypeRegex
 		case "literal":
-			searchType = query.SearchTypeLiteral
+			searchType = query.SearchTypeLiteralDefault
 		case "structural":
 			searchType = query.SearchTypeStructural
+		case "lucky":
+			searchType = query.SearchTypeLucky
 		}
 	})
 	return searchType

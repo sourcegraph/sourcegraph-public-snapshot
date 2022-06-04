@@ -30,7 +30,9 @@ export interface CodeIntelConfigurationPolicyPageProps
     history: H.History
 }
 
-export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfigurationPolicyPageProps> = ({
+export const CodeIntelConfigurationPolicyPage: FunctionComponent<
+    React.PropsWithChildren<CodeIntelConfigurationPolicyPageProps>
+> = ({
     match: {
         params: { id },
     },
@@ -147,7 +149,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                         >
                             {!isDeleting && (
                                 <>
-                                    <Icon as={DeleteIcon} /> Delete policy
+                                    <Icon role="img" aria-hidden={true} as={DeleteIcon} /> Delete policy
                                 </>
                             )}
                             {isDeleting && (

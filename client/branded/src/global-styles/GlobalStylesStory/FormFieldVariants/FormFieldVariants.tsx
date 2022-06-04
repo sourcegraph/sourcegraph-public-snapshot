@@ -1,40 +1,55 @@
 import React, { ReactNode } from 'react'
 
-import classNames from 'classnames'
-
-import { RadioButton, Select, TextArea } from '@sourcegraph/wildcard'
+import { Checkbox, RadioButton, Select, TextArea, Input } from '@sourcegraph/wildcard'
 import 'storybook-addon-designs'
 
 import styles from './FormFieldVariants.module.scss'
 
-type FieldVariants = 'standard' | 'invalid' | 'valid' | 'disabled'
+type FieldVariants = 'standard' | 'invalid' | 'valid' | 'disabled' | 'error'
+
+type InputStatus = 'initial' | 'error' | 'loading' | 'valid'
 
 interface WithVariantsProps {
-    field: React.ComponentType<{
-        className?: string
-        disabled?: boolean
-        message?: ReactNode
-        variant: FieldVariants
-    }>
+    field: React.ComponentType<
+        React.PropsWithChildren<{
+            className?: string
+            disabled?: boolean
+            message?: ReactNode
+            variant: FieldVariants
+            status?: InputStatus
+        }>
+    >
 }
 
 const FieldMessageText = 'Helper text'
 
-const FieldMessage: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+const FieldMessage: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({ className }) => (
     <small className={className}>{FieldMessageText}</small>
 )
 
 // Use this temporarily for form components which ones we haven't implemented in wilcard package yet
-const WithVariantsAndMessageElements: React.FunctionComponent<WithVariantsProps> = ({ field: Field }) => (
+const WithVariantsAndMessageElements: React.FunctionComponent<React.PropsWithChildren<WithVariantsProps>> = ({
+    field: Field,
+}) => (
     <>
         <Field variant="standard" message={<FieldMessage className="field-message" />} />
-        <Field variant="invalid" className="is-invalid" message={<FieldMessage className="invalid-feedback" />} />
-        <Field variant="valid" className="is-valid" message={<FieldMessage className="valid-feedback" />} />
+        <Field
+            status="error"
+            variant="error"
+            className="is-invalid"
+            message={<FieldMessage className="invalid-feedback" />}
+        />
+        <Field
+            status="valid"
+            variant="valid"
+            className="is-valid"
+            message={<FieldMessage className="valid-feedback" />}
+        />
         <Field variant="disabled" disabled={true} message={<FieldMessage className="field-message" />} />
     </>
 )
 
-const WithVariants: React.FunctionComponent<WithVariantsProps> = ({ field: Field }) => (
+const WithVariants: React.FunctionComponent<React.PropsWithChildren<WithVariantsProps>> = ({ field: Field }) => (
     <>
         <Field variant="standard" message={FieldMessageText} />
         <Field variant="invalid" message={FieldMessageText} />
@@ -43,17 +58,12 @@ const WithVariants: React.FunctionComponent<WithVariantsProps> = ({ field: Field
     </>
 )
 
-export const FormFieldVariants: React.FunctionComponent = () => (
+export const FormFieldVariants: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className={styles.grid}>
         <WithVariantsAndMessageElements
-            field={({ className, message, ...props }) => (
+            field={({ className, variant, message, ...props }) => (
                 <fieldset className="form-group">
-                    <input
-                        type="text"
-                        placeholder="Form field"
-                        className={classNames('form-control', className)}
-                        {...props}
-                    />
+                    <Input placeholder="Form field" className={className} {...props} />
                     {message}
                 </fieldset>
             )}
@@ -90,20 +100,18 @@ export const FormFieldVariants: React.FunctionComponent = () => (
                 </fieldset>
             )}
         />
-        <WithVariantsAndMessageElements
+        <WithVariants
             field={({ className, message, variant, ...props }) => (
-                <fieldset className="form-check">
-                    <input
-                        id={`inputFieldsetCheck - ${variant}`}
-                        type="checkbox"
-                        className={classNames('form-check-input', className)}
-                        {...props}
-                    />
-                    <label className="form-check-label" htmlFor={`inputFieldsetCheck - ${variant}`}>
-                        Checkbox
-                    </label>
-                    {message}
-                </fieldset>
+                <Checkbox
+                    id={`inputFieldsetCheck - ${variant}`}
+                    label="Checkbox"
+                    className={className}
+                    name={`inputFieldsetCheck - ${variant}`}
+                    isValid={variant === 'invalid' ? false : variant === 'valid' ? true : undefined}
+                    message={message}
+                    disabled={variant === 'disabled'}
+                    {...props}
+                />
             )}
         />
         <WithVariants

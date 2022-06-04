@@ -24,6 +24,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -1044,7 +1045,7 @@ func TestClient_RepoIDs(t *testing.T) {
 	checkGolden(t, "RepoIDs", ids)
 }
 
-func checkGolden(t *testing.T, name string, got interface{}) {
+func checkGolden(t *testing.T, name string, got any) {
 	t.Helper()
 
 	data, err := json.MarshalIndent(got, " ", " ")
@@ -1215,7 +1216,7 @@ func TestClient_WithAuthenticator(t *testing.T) {
 
 	old := &Client{
 		URL:       uri,
-		rateLimit: rate.NewLimiter(10, 10),
+		rateLimit: &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(10, 10)},
 		Auth:      &auth.BasicAuth{Username: "johnsson", Password: "mothersmaidenname"},
 	}
 
@@ -1265,6 +1266,23 @@ func TestClient_CreateFork(t *testing.T) {
 	assert.NotEqual(t, "SGDEMO", have.Project.Key)
 
 	checkGolden(t, fixture, have)
+}
+
+func TestClient_ProjectRepos(t *testing.T) {
+	cli := NewTestClient(t, "ProjectRepos", *update)
+
+	// Empty project key should cause an error
+	_, err := cli.ProjectRepos(context.Background(), "")
+	if err == nil {
+		t.Fatal("Empty projectKey should cause an error", err)
+	}
+
+	repos, err := cli.ProjectRepos(context.Background(), "SGDEMO")
+	if err != nil {
+		t.Fatal("Error during getting SGDEMO project repos", err)
+	}
+
+	checkGolden(t, "ProjectRepos", repos)
 }
 
 func TestMain(m *testing.M) {

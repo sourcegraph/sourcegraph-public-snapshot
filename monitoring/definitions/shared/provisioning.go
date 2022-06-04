@@ -25,7 +25,7 @@ var (
 			Warning:     monitoring.Alert().GreaterOrEqual(80).For(14 * 24 * time.Hour),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
 			Owner:       owner,
-			PossibleSolutions: strings.ReplaceAll(`
+			NextSteps: strings.ReplaceAll(`
 			- **Kubernetes:** Consider increasing CPU limits in the 'Deployment.yaml' for the {{CONTAINER_NAME}} service.
 			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
 		`, "{{CONTAINER_NAME}}", containerName),
@@ -40,7 +40,7 @@ var (
 			Warning:     monitoring.Alert().GreaterOrEqual(80).For(14 * 24 * time.Hour),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
 			Owner:       owner,
-			PossibleSolutions: strings.ReplaceAll(`
+			NextSteps: strings.ReplaceAll(`
 			- **Kubernetes:** Consider increasing memory limits in the 'Deployment.yaml' for the {{CONTAINER_NAME}} service.
 			- **Docker Compose:** Consider increasing 'memory:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
 		`, "{{CONTAINER_NAME}}", containerName),
@@ -55,7 +55,7 @@ var (
 			Warning:     monitoring.Alert().GreaterOrEqual(90).For(30 * time.Minute),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
 			Owner:       owner,
-			PossibleSolutions: strings.ReplaceAll(`
+			NextSteps: strings.ReplaceAll(`
 			- **Kubernetes:** Consider increasing CPU limits in the the relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
 		`, "{{CONTAINER_NAME}}", containerName),
@@ -70,7 +70,26 @@ var (
 			Warning:     monitoring.Alert().GreaterOrEqual(90),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
 			Owner:       owner,
-			PossibleSolutions: strings.ReplaceAll(`
+			NextSteps: strings.ReplaceAll(`
+			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
+			- **Docker Compose:** Consider increasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
+		`, "{{CONTAINER_NAME}}", containerName),
+		}
+	}
+
+	ContainerOOMKILLEvents sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
+		return Observable{
+			Name:        "container_oomkill_events_total",
+			Description: "container OOMKILL events total by instance",
+			Query:       fmt.Sprintf(`max by (name) (container_oom_events_total{%s})`, CadvisorContainerNameMatcher(containerName)),
+			Warning:     monitoring.Alert().GreaterOrEqual(1),
+			Panel:       monitoring.Panel().LegendFormat("{{name}}"),
+			Owner:       owner,
+			Interpretation: `
+				This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+				When it occurs frequently, it is an indicator of underprovisioning.
+			`,
+			NextSteps: strings.ReplaceAll(`
 			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
 		`, "{{CONTAINER_NAME}}", containerName),
@@ -90,6 +109,8 @@ type ContainerProvisioningIndicatorsGroupOptions struct {
 
 	// ShortTermMemoryUsage transforms the default observable used to construct the short-term memory usage panel.
 	ShortTermMemoryUsage ObservableOption
+
+	OOMKILLEvents ObservableOption
 
 	// CustomTitle, if provided, provides a custom title for this provisioning group that will be displayed in Grafana.
 	CustomTitle string
@@ -119,6 +140,7 @@ func NewProvisioningIndicatorsGroup(containerName string, owner monitoring.Obser
 			{
 				options.ShortTermCPUUsage.safeApply(ProvisioningCPUUsageShortTerm(containerName, owner)).Observable(),
 				options.ShortTermMemoryUsage.safeApply(ProvisioningMemoryUsageShortTerm(containerName, owner)).Observable(),
+				options.OOMKILLEvents.safeApply(ContainerOOMKILLEvents(containerName, owner)).Observable(),
 			},
 		},
 	}

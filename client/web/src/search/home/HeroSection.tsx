@@ -4,11 +4,11 @@ import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, H2 } from '@sourcegraph/wildcard'
 
 import styles from './HeroSection.module.scss'
 
-export const HeroSection: React.FunctionComponent<ThemeProps & TelemetryProps> = ({
+export const HeroSection: React.FunctionComponent<React.PropsWithChildren<ThemeProps & TelemetryProps>> = ({
     isLightTheme,
     telemetryService,
 }) => {
@@ -20,10 +20,10 @@ export const HeroSection: React.FunctionComponent<ThemeProps & TelemetryProps> =
                 <img src={`${assetsRoot}/img/homepage-hero-${theme}.svg`} alt="" className={styles.image} />
             </div>
             <div className={styles.column}>
-                <h2 className={styles.header}>
+                <H2 className={styles.header}>
                     Great code search helps you <br className="d-lg-inline d-none" />
                     <strong className={styles.headerBold}>write, reference, and fix, faster.</strong>
-                </h2>
+                </H2>
                 <div className={styles.text}>
                     Over 800,000 developers use Sourcegraph to:
                     <ul className="mt-2">

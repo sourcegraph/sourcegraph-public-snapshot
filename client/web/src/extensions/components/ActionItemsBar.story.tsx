@@ -9,8 +9,7 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { extensionsController, NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
-// eslint-disable-next-line no-restricted-imports
-import { Tooltip } from '@sourcegraph/wildcard'
+import { DeprecatedTooltip } from '@sourcegraph/wildcard'
 
 import { AppRouterContainer } from '../../components/AppRouterContainer'
 
@@ -63,7 +62,7 @@ const decorator: DecoratorFn = story => (
     <>
         <style>{webStyles}</style>
         <AppRouterContainer>
-            <Tooltip />
+            <DeprecatedTooltip />
             <div className="container mt-3">{story()}</div>
         </AppRouterContainer>
     </>
@@ -83,7 +82,7 @@ const config: Meta = {
 
 export default config
 
-export const Default: React.FunctionComponent = () => {
+export const Default: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const { useActionItemsBar } = useWebActionItems()
 
     return (

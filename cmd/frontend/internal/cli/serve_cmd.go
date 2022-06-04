@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -73,7 +74,7 @@ var (
 
 	nginxAddr = env.Get("SRC_NGINX_HTTP_ADDR", "", "HTTP listen address for nginx reverse proxy to SRC_HTTP_ADDR. Has preference over SRC_HTTP_ADDR for ExternalURL.")
 
-	// dev browser browser extension ID. You can find this by going to chrome://extensions
+	// dev browser extension ID. You can find this by going to chrome://extensions
 	devExtension = "chrome-extension://bmfbcejdknlknpncfpeloejonjoledha"
 	// production browser extension ID. This is found by viewing our extension in the chrome store.
 	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
@@ -192,7 +193,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	// Run enterprise setup hook
 	enterprise := enterpriseSetupHook(db, conf.DefaultClient())
 
-	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
 		return errors.Wrap(err, "Failed to create sub-repo client")
 	}
@@ -314,14 +315,17 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	externalHandler := newExternalHTTPHandler(
 		db,
 		schema,
-		enterprise.GitHubWebhook,
-		enterprise.GitLabWebhook,
-		enterprise.BitbucketServerWebhook,
-		enterprise.NewCodeIntelUploadHandler,
+		rateLimiter,
+		&httpapi.Handlers{
+			GitHubWebhook:             enterprise.GitHubWebhook,
+			GitLabWebhook:             enterprise.GitLabWebhook,
+			BitbucketServerWebhook:    enterprise.BitbucketServerWebhook,
+			BitbucketCloudWebhook:     enterprise.BitbucketCloudWebhook,
+			NewCodeIntelUploadHandler: enterprise.NewCodeIntelUploadHandler,
+			NewComputeStreamHandler:   enterprise.NewComputeStreamHandler,
+		},
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppCloudSetupHandler,
-		enterprise.NewComputeStreamHandler,
-		rateLimiter,
 	)
 	httpServer := &http.Server{
 		Handler:      externalHandler,

@@ -42,7 +42,7 @@ export const savedSearchesPanelFragment = gql`
     }
 `
 
-export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
+export const SavedSearchesPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     className,
     telemetryService,
@@ -81,7 +81,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                     variant="secondary"
                     as={Link}
                 >
-                    <Icon as={PlusIcon} />
+                    <Icon role="img" aria-hidden={true} as={PlusIcon} />
                     Create a saved search
                 </Button>
             )}
@@ -117,7 +117,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
                                             aria-label={`Edit saved search ${search.description}`}
                                         >
-                                            <Icon as={PencilOutlineIcon} />
+                                            <Icon role="img" aria-hidden={true} as={PencilOutlineIcon} />
                                         </Link>
                                     ) : (
                                         <Link
@@ -125,7 +125,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
                                             aria-label={`Edit saved search ${search.description}`}
                                         >
-                                            <Icon as={PencilOutlineIcon} />
+                                            <Icon role="img" aria-hidden={true} as={PencilOutlineIcon} />
                                         </Link>
                                     ))}
                             </div>

@@ -31,7 +31,9 @@ import { UserFacingCodeIntelligenceBadgeContent } from './UserFacingCodeIntellig
 
 import styles from './CodeIntelligenceBadgeMenu.module.scss'
 
-export const CodeIntelligenceBadgeMenu: React.FunctionComponent<CodeIntelligenceBadgeContentProps> = ({
+export const CodeIntelligenceBadgeMenu: React.FunctionComponent<
+    React.PropsWithChildren<CodeIntelligenceBadgeContentProps>
+> = ({
     isStorybook,
     now,
     useCodeIntelStatus = defaultUseCodeIntelStatus,
@@ -99,8 +101,9 @@ export const CodeIntelligenceBadgeMenu: React.FunctionComponent<CodeIntelligence
                 <MenuButton
                     className={classNames('text-decoration-none', styles.braindot, dotStyle)}
                     onClick={() => setBadgeUsed(true)}
+                    aria-label="Code intelligence"
                 >
-                    <Icon as={BrainIcon} />
+                    <Icon role="img" aria-hidden={true} as={BrainIcon} />
                 </MenuButton>
 
                 <MenuList position={Position.bottomEnd} className={styles.dropdownMenu} isOpen={isStorybook}>

@@ -75,6 +75,14 @@ func resultContent(ctx context.Context, db database.DB, r result.Match, onlyPath
 			return "", false, err
 		}
 		return string(contentBytes), true, nil
+	case *result.CommitDiffMatch:
+		var sb strings.Builder
+		for _, h := range m.Hunks {
+			for _, l := range h.Lines {
+				sb.WriteString(l)
+			}
+		}
+		return sb.String(), true, nil
 	case *result.CommitMatch:
 		var content string
 		if m.DiffPreview != nil {

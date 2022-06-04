@@ -1,7 +1,7 @@
 import React, { FunctionComponent } from 'react'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { Alert } from '@sourcegraph/wildcard'
+import { Alert, Label, H3 } from '@sourcegraph/wildcard'
 
 import { RadioButtons } from '../../../../components/RadioButtons'
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../../graphql-operations'
@@ -23,7 +23,7 @@ export interface IndexingSettingsProps {
     allowGlobalPolicies?: boolean
 }
 
-export const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({
+export const IndexingSettings: FunctionComponent<React.PropsWithChildren<IndexingSettingsProps>> = ({
     policy,
     repo,
     setPolicy,
@@ -53,7 +53,7 @@ export const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({
 
     return (
         <div className="form-group">
-            <h3>Auto-indexing</h3>
+            <H3>Auto-indexing</H3>
             <div className="mb-4 form-group">
                 <RadioButtons
                     nodes={radioButtons}
@@ -73,9 +73,9 @@ export const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({
                         </Alert>
                     )}
 
-                <label className="ml-4" htmlFor="index-commit-max-age">
+                <Label className="ml-4" htmlFor="index-commit-max-age">
                     Commit max age
-                </label>
+                </Label>
                 <DurationSelect
                     id="index-commit-max-age"
                     value={policy.indexCommitMaxAgeHours ? `${policy.indexCommitMaxAgeHours}` : null}
@@ -94,9 +94,9 @@ export const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({
                         onToggle={indexIntermediateCommits => updatePolicy({ indexIntermediateCommits })}
                         disabled={!policy.indexingEnabled}
                     />
-                    <label htmlFor="index-intermediate-commits" className="ml-2">
+                    <Label htmlFor="index-intermediate-commits" className="ml-2">
                         Index intermediate commits
-                    </label>
+                    </Label>
                 </div>
             )}
         </div>

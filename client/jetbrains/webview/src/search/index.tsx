@@ -1,62 +1,102 @@
 import { render } from 'react-dom'
 
-import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
-import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
+import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
+
+import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
 
 import { App } from './App'
-import { loadContent } from './lib/blob'
-import { callJava } from './mockJavaInterface'
+import { handleRequest } from './java-to-js-bridge'
+import {
+    getConfig,
+    getTheme,
+    indicateFinishedLoading,
+    loadLastSearch,
+    onOpen,
+    onPreviewChange,
+    onPreviewClear,
+} from './js-to-java-bridge'
+import type { PluginConfig, Search, Theme } from './types'
 
 setLinkComponent(AnchorLink)
 
-export interface RequestToJava {
-    action: string
-    arguments: object
-}
+let isDarkTheme = false
+let instanceURL = 'https://sourcegraph.com'
+let isGlobbingEnabled = false
+let accessToken: string | null = null
+let initialSearch: Search | null = null
+let initialAuthenticatedUser: AuthenticatedUser | null
 
-/* Add global functions to global window object */
-declare global {
-    interface Window {
-        initializeSourcegraph: (isDarkTheme: boolean) => void
-        callJava: (request: RequestToJava) => Promise<object>
+window.initializeSourcegraph = async () => {
+    const [theme, config, lastSearch, authenticatedUser] = await Promise.allSettled([
+        getTheme(),
+        getConfig(),
+        loadLastSearch(),
+        getAuthenticatedUser(instanceURL, accessToken),
+    ])
+
+    applyConfig((config as PromiseFulfilledResult<PluginConfig>).value)
+    applyTheme((theme as PromiseFulfilledResult<Theme>).value)
+    applyLastSearch((lastSearch as PromiseFulfilledResult<Search | null>).value)
+    applyAuthenticatedUser(authenticatedUser.status === 'fulfilled' ? authenticatedUser.value : null)
+    if (accessToken && authenticatedUser.status === 'rejected') {
+        console.warn(`No initial authenticated user with access token “${accessToken}”`)
     }
+
+    polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
+
+    renderReactApp()
+
+    await indicateFinishedLoading()
 }
 
-async function onOpen(match: ContentMatch, lineIndex: number): Promise<void> {
-    console.log('open', await loadContent(match), match.lineMatches[lineIndex])
-}
+window.callJS = handleRequest
 
-async function onPreviewChange(match: ContentMatch, lineIndex: number): Promise<void> {
-    console.log('preview', await loadContent(match), match.lineMatches[lineIndex])
-}
-
-function onPreviewClear(): void {
-    console.log('clear preview')
-}
-
-function renderReactApp(): void {
+export function renderReactApp(): void {
     const node = document.querySelector('#main') as HTMLDivElement
-    render(<App onOpen={onOpen} onPreviewChange={onPreviewChange} onPreviewClear={onPreviewClear} />, node)
+    render(
+        <App
+            isDarkTheme={isDarkTheme}
+            instanceURL={instanceURL}
+            isGlobbingEnabled={isGlobbingEnabled}
+            accessToken={accessToken}
+            initialSearch={initialSearch}
+            onOpen={onOpen}
+            onPreviewChange={onPreviewChange}
+            onPreviewClear={onPreviewClear}
+            initialAuthenticatedUser={initialAuthenticatedUser}
+        />,
+        node
+    )
 }
 
-window.initializeSourcegraph = (isDarkTheme: boolean) => {
-    window
-        .callJava({ action: 'getTheme', arguments: {} })
-        .then(response => {
-            const root = document.querySelector(':root') as HTMLElement
-            root.style.setProperty('--primary', (response as { buttonColor: string }).buttonColor)
-            renderReactApp()
-        })
-        .catch((error: Error) => {
-            console.error(`Failed to get theme: ${error.message}`)
-            renderReactApp()
-        })
+export function applyConfig(config: PluginConfig): void {
+    instanceURL = config.instanceURL
+    isGlobbingEnabled = config.isGlobbingEnabled || false
+    accessToken = config.accessToken || null
+}
+
+export function applyTheme(theme: Theme): void {
+    // Dark/light theme
     document.documentElement.classList.add('theme')
-    document.documentElement.classList.add(isDarkTheme ? 'theme-dark' : 'theme-light')
+    document.documentElement.classList.remove(theme.isDarkTheme ? 'theme-light' : 'theme-dark')
+    document.documentElement.classList.add(theme.isDarkTheme ? 'theme-dark' : 'theme-light')
+    isDarkTheme = theme.isDarkTheme
+
+    // Button color (test)
+    const buttonColor = theme.buttonColor
+    const root = document.querySelector(':root') as HTMLElement
+    if (buttonColor) {
+        root.style.setProperty('--button-color', buttonColor)
+    }
+    root.style.setProperty('--primary', buttonColor)
 }
 
-/* Initialize app for standalone server */
-if (window.location.search.includes('standalone=true')) {
-    window.callJava = callJava
-    window.initializeSourcegraph(true)
+function applyLastSearch(lastSearch: Search | null): void {
+    initialSearch = lastSearch
+}
+
+function applyAuthenticatedUser(authenticatedUser: AuthenticatedUser | null): void {
+    initialAuthenticatedUser = authenticatedUser
 }

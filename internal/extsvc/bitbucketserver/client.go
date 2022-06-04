@@ -14,14 +14,12 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/gomodule/oauth1/oauth"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/segmentio/fasthash/fnv1"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -58,7 +56,7 @@ type Client struct {
 	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a
 	// concept of rate limiting in HTTP response headers). Default limits are defined
 	// in extsvc.GetLimitFromConfig
-	rateLimit *rate.Limiter
+	rateLimit *ratelimit.InstrumentedLimiter
 }
 
 // NewClient returns an authenticated Bitbucket Server API client with
@@ -792,6 +790,27 @@ func (c *Client) LoadPullRequestBuildStatuses(ctx context.Context, pr *PullReque
 	return nil
 }
 
+// ProjectRepos returns all repos of a project with a given projectKey
+func (c *Client) ProjectRepos(ctx context.Context, projectKey string) (repos []*Repo, err error) {
+	if projectKey == "" {
+		return nil, errors.New("project key empty")
+	}
+
+	path := fmt.Sprintf("rest/api/1.0/projects/%s/repos", projectKey)
+
+	pageToken := &PageToken{Limit: 1000}
+
+	for pageToken.HasMore() {
+		var page []*Repo
+		if pageToken, err = c.page(ctx, path, nil, pageToken, &page); err != nil {
+			return nil, err
+		}
+		repos = append(repos, page...)
+	}
+
+	return repos, nil
+}
+
 func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, error) {
 	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
 	req, err := http.NewRequest("GET", u, nil)
@@ -870,7 +889,7 @@ func (c *Client) Fork(ctx context.Context, projectKey, repoSlug string, input Cr
 	return &resp, err
 }
 
-func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results interface{}) (*PageToken, error) {
+func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results any) (*PageToken, error) {
 	if qry == nil {
 		qry = make(url.Values)
 	}
@@ -888,7 +907,7 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 	var next PageToken
 	_, err = c.do(ctx, req, &struct {
 		*PageToken
-		Values interface{} `json:"values"`
+		Values any `json:"values"`
 	}{
 		PageToken: &next,
 		Values:    results,
@@ -901,7 +920,7 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 	return &next, nil
 }
 
-func (c *Client) send(ctx context.Context, method, path string, qry url.Values, payload, result interface{}) (*http.Response, error) {
+func (c *Client) send(ctx context.Context, method, path string, qry url.Values, payload, result any) (*http.Response, error) {
 	if qry == nil {
 		qry = make(url.Values)
 	}
@@ -923,7 +942,7 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 	return c.do(ctx, req, result)
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (*http.Response, error) {
+func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -939,13 +958,8 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		return nil, err
 	}
 
-	startWait := time.Now()
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
-	}
-
-	if d := time.Since(startWait); d > 200*time.Millisecond {
-		log15.Warn("Bitbucket self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 
 	resp, err := c.httpClient.Do(req)
@@ -1539,7 +1553,7 @@ func (c *Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest, 
 
 	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"text": body,
 	}
 

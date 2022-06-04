@@ -31,8 +31,8 @@ const jsonTestInput = `
 		},
 		{
 			"root": "web/",
-			"indexer": "lsif-tsc",
-			"indexer_args": ["-p", "."],
+			"indexer": "scip-typescript",
+			"indexer_args": ["index", "--yarn-workspaces"],
 			"outfile": "lsif.dump",
 		},
 	]
@@ -68,8 +68,8 @@ func TestUnmarshalJSON(t *testing.T) {
 			{
 				Steps:       nil,
 				Root:        "web/",
-				Indexer:     "lsif-tsc",
-				IndexerArgs: []string{"-p", "."},
+				Indexer:     "scip-typescript",
+				IndexerArgs: []string{"index", "--yarn-workspaces"},
 				Outfile:     "lsif.dump",
 			},
 		},
@@ -87,12 +87,12 @@ func TestJsonUnmarshal(t *testing.T) {
 		"hello": "world",
 	}`
 
-	var actual interface{}
+	var actual any
 	if err := jsonUnmarshal(input, &actual); err != nil {
 		t.Fatalf("unexpected error unmarshalling payload: %s", err)
 	}
 
-	if diff := cmp.Diff(map[string]interface{}{"hello": "world"}, actual); diff != "" {
+	if diff := cmp.Diff(map[string]any{"hello": "world"}, actual); diff != "" {
 		t.Errorf("unexpected configuration (-want +got):\n%s", diff)
 	}
 }

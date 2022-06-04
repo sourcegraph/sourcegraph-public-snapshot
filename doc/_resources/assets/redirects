@@ -73,7 +73,7 @@
 /admin/auth/saml_with_microsoft_adfs /admin/auth/saml/microsoft_adfs 308
 /admin/config/critical_config /admin/migration/3_11 308
 /admin/external_service/bitbucketserver /integration/bitbucket_server 308
-/admin/install/cluster.md /admin/install/index.md 308
+/admin/install/cluster.md /admin/deploy/index.md 308
 /admin/monitoring /admin/observability 308
 /admin/monitoring/reporting_search_timeouts /admin/observability/troubleshooting#scenario-search-timeouts 308
 /admin/monitoring/metrics_reference /admin/observability/metrics_guide 308
@@ -229,8 +229,44 @@
 /batch_changes/how-tos/configuring_user_credentials /batch_changes/how-tos/configuring_credentials 308
 /batch-changes/references/troubleshooting /batch_changes/references/troubleshooting 308
 
-/admin/install/docker-compose/update /admin/install/docker-compose/operations#upgrade 308
-/admin/install/docker-compose/configure /admin/install/docker-compose/operations#configure 308
-/admin/install/kubernetes/overlays /admin/install/kubernetes/configure 308
-
 /dev/background-information/continuous_integration /dev/background-information/ci 308
+/dev/how-to/add_and_use_logging /dev/how-to/add_logging 308
+
+/admin/install /admin/deploy 308
+
+/admin/install/kubernetes/azure /admin/deploy/kubernetes 308
+/admin/install/kubernetes/configure /admin/deploy/kubernetes/configure 308
+/admin/install/kubernetes/eks /admin/deploy/kubernetes/eks 308
+/admin/install/kubernetes/helm /admin/deploy/kubernetes/helm 308
+/admin/install/kubernetes /admin/deploy/kubernetes 308
+/admin/install/kubernetes/kustomize /admin/deploy/kubernetes/kustomize 308
+/admin/install/kubernetes/operations /admin/deploy/kubernetes/operations 308
+/admin/install/kubernetes/scale /admin/deploy/kubernetes/scale 308
+/admin/install/kubernetes/troubleshoot /admin/deploy/kubernetes/troubleshoot 308
+/admin/install/kubernetes/update /admin/deploy/kubernetes/update 308
+/admin/install/kubernetes/overlays /admin/deploy/kubernetes/configure 308
+
+/admin/install/docker-compose/aws /admin/deploy/docker-compose/aws 308
+/admin/install/docker-compose/digitalocean /admin/deploy/docker-compose/digitalocean 308
+/admin/install/docker-compose/google_cloud /admin/deploy/docker-compose/google_cloud 308
+/admin/install/docker-compose /admin/deploy/docker-compose 308
+/admin/install/docker-compose/migrate /admin/deploy/docker-compose/migrate 308
+/admin/install/docker-compose/operations /admin/deploy/docker-compose#operations 308
+/admin/install/docker-compose/update /admin/deploy/docker-compose#upgrade 308
+/admin/install/docker-compose/configure /admin/deploy/docker-compose#configure 308
+
+/admin/install/docker/aws /admin/deploy/docker-single-container/aws 308
+/admin/install/docker/digitalocean /admin/deploy/docker-single-container/digitalocean 308
+/admin/install/docker/google_cloud /admin/deploy/docker-single-container/google_cloud 308
+/admin/install/docker /admin/deploy/docker-single-container 308
+
+/admin/install/managed /admin/deploy/managed 308
+/admin/install/migrate-backup /admin/deploy/migrate-backup 308
+/admin/install/resource_estimator /admin/deploy/resource_estimator 308
+
+/admin/install/cluster.md /admin/deploy 308
+/admin/deploy/cluster /admin/deploy 308
+
+/admin/deploy/docker /admin/deploy/docker-single-container 308
+
+/admin/observability/alert_solutions /admin/observability/alerts 308

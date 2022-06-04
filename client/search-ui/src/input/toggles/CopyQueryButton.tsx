@@ -8,7 +8,7 @@ import { Observable, merge, of } from 'rxjs'
 import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { Button, Icon, TooltipController, useEventObservable } from '@sourcegraph/wildcard'
+import { Button, Icon, DeprecatedTooltipController, useEventObservable } from '@sourcegraph/wildcard'
 
 interface Props {
     fullQuery: string
@@ -20,7 +20,7 @@ interface Props {
 /**
  * A repository header action that copies the current page's URL to the clipboard.
  */
-export const CopyQueryButton: React.FunctionComponent<Props> = (props: Props) => {
+export const CopyQueryButton: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
     // Convoluted, but using props.fullQuery directly in the copyFullQuery callback does not work, since
     // props.fullQuery is not refrenced during the render and it is not updated within the callback.
     const fullQueryReference = useRef<string>('')
@@ -36,7 +36,7 @@ export const CopyQueryButton: React.FunctionComponent<Props> = (props: Props) =>
                 clicks.pipe(
                     tap(copyFullQuery),
                     switchMapTo(merge(of(true), of(false).pipe(delay(2000)))),
-                    tap(() => TooltipController.forceUpdate()),
+                    tap(() => DeprecatedTooltipController.forceUpdate()),
                     startWith(false)
                 ),
             [copyFullQuery]
@@ -55,7 +55,7 @@ export const CopyQueryButton: React.FunctionComponent<Props> = (props: Props) =>
                 aria-live="polite"
                 onClick={nextClick}
             >
-                <Icon as={ClipboardOutlineIcon} />
+                <Icon role="img" aria-hidden={true} as={ClipboardOutlineIcon} />
             </Button>
             {props.keyboardShortcutForFullCopy.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={copyFullQuery} allowDefault={false} ignoreInput={true} />

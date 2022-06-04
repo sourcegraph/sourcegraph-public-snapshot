@@ -1,4 +1,4 @@
-import { SearchBasedInsightSeries } from '../../../../../../core/types'
+import { SearchBasedInsightSeries } from '../../../../../../core'
 import { createDefaultEditSeries } from '../../components/search-insight-creation-content/hooks/use-editable-series'
 import { CreateInsightFormFields } from '../../types'
 
@@ -30,7 +30,7 @@ export function decodeSearchInsightUrl(queryParameters: string): Partial<CreateI
 type UnsupportedValues = 'series' | 'step' | 'visibility' | 'stepValue'
 
 export interface SearchInsightURLValues extends Omit<CreateInsightFormFields, UnsupportedValues> {
-    series: (Omit<SearchBasedInsightSeries, 'id'> & { id?: string })[]
+    series: (Omit<SearchBasedInsightSeries, 'id'> & { id?: string | number })[]
 }
 
 export function encodeSearchInsightUrl(values: Partial<SearchInsightURLValues>): string {
