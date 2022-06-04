@@ -796,7 +796,7 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 func buildExecutor(version string, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
-			bk.Key(candidateImageStepKey("executor")),
+			bk.Key(candidateImageStepKey("executor.vm-image")),
 			bk.Env("VERSION", version),
 		}
 		if !skipHashCompare {
@@ -815,7 +815,7 @@ func buildExecutor(version string, skipHashCompare bool) operations.Operation {
 
 func publishExecutor(version string, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		candidateBuildStep := candidateImageStepKey("executor")
+		candidateBuildStep := candidateImageStepKey("executor.vm-image")
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
 			bk.Env("VERSION", version),
@@ -839,7 +839,7 @@ func publishExecutor(version string, skipHashCompare bool) operations.Operation 
 func buildExecutorDockerMirror(version string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
-			bk.Key(candidateImageStepKey("executor-docker-mirror")),
+			bk.Key(candidateImageStepKey("executor-docker-miror.vm-image")),
 			bk.Env("VERSION", version),
 		}
 		stepOpts = append(stepOpts,
@@ -851,7 +851,7 @@ func buildExecutorDockerMirror(version string) operations.Operation {
 
 func publishExecutorDockerMirror(version string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		candidateBuildStep := candidateImageStepKey("executor-docker-mirror")
+		candidateBuildStep := candidateImageStepKey("executor-docker-miror.vm-image")
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
 			bk.Env("VERSION", version),
