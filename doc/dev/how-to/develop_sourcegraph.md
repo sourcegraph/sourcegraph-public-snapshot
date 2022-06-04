@@ -65,5 +65,5 @@ To make code changes, make a new branch and navigate to it. This is where you wi
 
 `git checkout -b your_new_branch_name`
 
-Be sure to review the steps in [Contributing to Sourcegraph](https://github.com/northyg/sourcegraph/blob/main/CONTRIBUTING.md)
+Be sure to review the steps in [Contributing to Sourcegraph.](https://github.com/northyg/sourcegraph/blob/main/CONTRIBUTING.md) For questions or comments, reach out at [Sourcegraph Github discussions](https://github.com/sourcegraph/sourcegraph/discussions) or email us at community@sourcegraph.com
 
