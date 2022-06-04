@@ -169,6 +169,10 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 
 				pathToSymbols[path] = map[string]struct{}{}
 				for _, symbol := range symbols {
+					if len(symbol.Name) > 8191 {
+						// index row requires 10528 bytes, maximum size is 8191 (SQLSTATE 54000)
+						continue
+					}
 					pathToSymbols[path][symbol.Name] = struct{}{}
 				}
 

@@ -2,24 +2,22 @@ package parser
 
 import (
 	"context"
-
-	"github.com/sourcegraph/go-ctags"
 )
 
-type ParserFactory func() (ctags.Parser, error)
+type ParserFactory func() (SimpleParser, error)
 
 type ParserPool interface {
-	Get(ctx context.Context) (ctags.Parser, error)
-	Done(parser ctags.Parser)
+	Get(ctx context.Context) (SimpleParser, error)
+	Done(parser SimpleParser)
 }
 
 type parserPool struct {
 	newParser ParserFactory
-	pool      chan ctags.Parser
+	pool      chan SimpleParser
 }
 
 func NewParserPool(newParser ParserFactory, numParserProcesses int) (ParserPool, error) {
-	pool := make(chan ctags.Parser, numParserProcesses)
+	pool := make(chan SimpleParser, numParserProcesses)
 	for i := 0; i < numParserProcesses; i++ {
 		parser, err := newParser()
 		if err != nil {
@@ -40,7 +38,7 @@ func NewParserPool(newParser ParserFactory, numParserProcesses int) (ParserPool,
 // the pool. This method always returns a non-nil parser with a nil error value.
 //
 // This method blocks until a parser is available or the given context is canceled.
-func (p *parserPool) Get(ctx context.Context) (ctags.Parser, error) {
+func (p *parserPool) Get(ctx context.Context) (SimpleParser, error) {
 	select {
 	case parser := <-p.pool:
 		if parser != nil {
@@ -54,6 +52,6 @@ func (p *parserPool) Get(ctx context.Context) (ctags.Parser, error) {
 	}
 }
 
-func (p *parserPool) Done(parser ctags.Parser) {
+func (p *parserPool) Done(parser SimpleParser) {
 	p.pool <- parser
 }

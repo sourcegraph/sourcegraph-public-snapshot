@@ -9,6 +9,7 @@ import (
 
 	sitter "github.com/smacker/go-tree-sitter"
 
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -116,7 +117,7 @@ func bracket(text string) string {
 // forEachCapture runs the given tree-sitter query on the given node and calls f(captureName, node) for
 // each capture.
 func forEachCapture(query string, node Node, f func(captureName string, node Node)) error {
-	sitterQuery, err := sitter.NewQuery([]byte(query), node.LangSpec.language)
+	sitterQuery, err := sitter.NewQuery([]byte(query), node.LangSpec.Language)
 	if err != nil {
 		return errors.Newf("failed to parse query: %s\n%s", err, query)
 	}
@@ -140,6 +141,41 @@ func forEachCapture(query string, node Node, f func(captureName string, node Nod
 	}
 
 	return nil
+}
+
+type CapturedNode struct {
+	node        Node
+	captureName string
+}
+
+func allCaptures(query string, node Node) ([]CapturedNode, error) {
+	sitterQuery, err := sitter.NewQuery([]byte(query), node.LangSpec.Language)
+	if err != nil {
+		return nil, errors.Newf("failed to parse query: %s\n%s", err, query)
+	}
+	defer sitterQuery.Close()
+	cursor := sitter.NewQueryCursor()
+	defer cursor.Close()
+	cursor.Exec(sitterQuery, node.Node)
+
+	var captures []CapturedNode
+	match, _, hasCapture := cursor.NextCapture()
+	for hasCapture {
+		for _, capture := range match.Captures {
+			captures = append(captures, CapturedNode{
+				node: Node{
+					RepoCommitPath: node.RepoCommitPath,
+					Node:           capture.Node,
+					Contents:       node.Contents,
+					LangSpec:       node.LangSpec,
+				},
+				captureName: sitterQuery.CaptureNameForId(capture.Index),
+			})
+		}
+		match, _, hasCapture = cursor.NextCapture()
+	}
+
+	return captures, nil
 }
 
 // nodeToRange returns the range of the node.
@@ -208,42 +244,97 @@ func WithNodePtr(other Node, newNode *sitter.Node) *Node {
 	}
 }
 
-var unrecognizedFileExtensionError = errors.New("unrecognized file extension")
-var unsupportedLanguageError = errors.New("unsupported language")
+var UnrecognizedFileExtensionError = errors.New("unrecognized file extension")
+var UnsupportedLanguageError = errors.New("unsupported language")
+var NoTopLevelSymbolsQuery = errors.New("no top level symbols query")
 
 // Parses a file and returns info about it.
 func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCommitPath) (*Node, error) {
-	ext := strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
-
-	langName, ok := extToLang[ext]
-	if !ok {
-		return nil, unrecognizedFileExtensionError
-	}
-
-	langSpec, ok := langToLangSpec[langName]
-	if !ok {
-		return nil, unsupportedLanguageError
-	}
-
-	s.parser.SetLanguage(langSpec.language)
-
 	contents, err := s.readFile(ctx, repoCommitPath)
 	if err != nil {
 		return nil, err
 	}
 
-	tree, err := s.parser.ParseCtx(ctx, nil, contents)
-	if err != nil {
-		return nil, errors.Newf("failed to parse file contents: %s", err)
+	root, cleanup, err := Parse(ctx, s.parser, repoCommitPath, contents)
+	if cleanup != nil {
+		s.closables = append(s.closables, cleanup)
 	}
-	s.closables = append(s.closables, tree.Close)
+	if err != nil {
+		return nil, err
+	}
+
+	return root, nil
+}
+
+func Parse(ctx context.Context, parser *sitter.Parser, repoCommitPath types.RepoCommitPath, contents []byte) (node *Node, cleanup func(), err error) {
+	ext := strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
+
+	langName, ok := ExtToLang[ext]
+	if !ok {
+		return nil, nil, UnrecognizedFileExtensionError
+	}
+
+	langSpec, ok := LangToLangSpec[langName]
+	if !ok {
+		return nil, nil, UnsupportedLanguageError
+	}
+
+	parser.SetLanguage(langSpec.Language)
+
+	tree, err := parser.ParseCtx(ctx, nil, contents)
+	if err != nil {
+		return nil, nil, errors.Newf("failed to parse file contents: %s", err)
+	}
 
 	root := tree.RootNode()
 	if root == nil {
-		return nil, errors.New("root is nil")
+		return nil, tree.Close, errors.New("root is nil")
 	}
 
-	return &Node{RepoCommitPath: repoCommitPath, Node: root, Contents: contents, LangSpec: langSpec}, nil
+	return &Node{
+		RepoCommitPath: repoCommitPath,
+		Node:           root,
+		Contents:       contents,
+		LangSpec:       langSpec,
+	}, tree.Close, nil
+}
+
+func GetSymbols(ctx context.Context, parser *sitter.Parser, repoCommitPath types.RepoCommitPath, contents []byte) (result.Symbols, error) {
+	root, cleanup, err := Parse(ctx, parser, repoCommitPath, contents)
+	if cleanup != nil {
+		defer cleanup()
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	symbols := result.Symbols{}
+
+	query := root.LangSpec.TopLevelSymbolsQuery
+	if query == "" {
+		return nil, NoTopLevelSymbolsQuery
+	}
+
+	captures, err := allCaptures(query, *root)
+	if err != nil {
+		return nil, err
+	}
+	for _, capture := range captures {
+		symbols = append(symbols, result.Symbol{
+			Name:        capture.node.Node.Content(root.Contents),
+			Path:        root.RepoCommitPath.Path,
+			Line:        int(capture.node.Node.StartPoint().Row),
+			Character:   int(capture.node.Node.StartPoint().Column),
+			Kind:        capture.captureName,
+			Language:    root.LangSpec.Name,
+			Parent:      "",
+			ParentKind:  "",
+			Signature:   "",
+			FileLimited: false,
+		})
+	}
+
+	return symbols, nil
 }
 
 func fatalIfError(t *testing.T, err error) {

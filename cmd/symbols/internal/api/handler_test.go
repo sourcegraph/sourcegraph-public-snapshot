@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/go-ctags"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
@@ -34,8 +33,8 @@ func TestHandler(t *testing.T) {
 
 	cache := diskcache.NewStore(tmpDir, "symbols", diskcache.WithBackgroundTimeout(20*time.Minute))
 
-	parserFactory := func() (ctags.Parser, error) {
-		pathToEntries := map[string][]*ctags.Entry{
+	parserFactory := func() (parser.SimpleParser, error) {
+		pathToEntries := map[string]result.Symbols{
 			"a.js": {
 				{
 					Name: "x",
@@ -143,14 +142,14 @@ func TestHandler(t *testing.T) {
 }
 
 type mockParser struct {
-	pathToEntries map[string][]*ctags.Entry
+	pathToEntries map[string]result.Symbols
 }
 
-func newMockParser(pathToEntries map[string][]*ctags.Entry) ctags.Parser {
+func newMockParser(pathToEntries map[string]result.Symbols) parser.SimpleParser {
 	return &mockParser{pathToEntries: pathToEntries}
 }
 
-func (m *mockParser) Parse(path string, content []byte) ([]*ctags.Entry, error) {
+func (m *mockParser) Parse(path string, content []byte) (result.Symbols, error) {
 	if entries, ok := m.pathToEntries[path]; ok {
 		return entries, nil
 	}

@@ -60,7 +60,7 @@ func LocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(nil)
 
 		// Log the error if it's not an unrecognized file extension or unsupported language error.
-		if !errors.Is(err, unrecognizedFileExtensionError) && !errors.Is(err, unsupportedLanguageError) {
+		if !errors.Is(err, UnrecognizedFileExtensionError) && !errors.Is(err, UnsupportedLanguageError) {
 			log15.Error("failed to generate local code intel payload", "err", err)
 		}
 

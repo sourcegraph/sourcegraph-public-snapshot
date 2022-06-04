@@ -128,7 +128,7 @@ type DirOrNode struct {
 }
 
 func (squirrel *SquirrelService) getDef(ctx context.Context, node *Node) (*DirOrNode, error) {
-	switch node.LangSpec.name {
+	switch node.LangSpec.Name {
 	// case "java":
 	// case "go":
 	// case "csharp":
