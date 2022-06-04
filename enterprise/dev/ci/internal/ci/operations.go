@@ -807,7 +807,7 @@ func buildExecutor(version string, skipHashCompare bool) operations.Operation {
 				bk.Cmd(fmt.Sprintf("%s ./enterprise/cmd/executor/hash.sh", compareHashScript)))
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/build.sh"))
+			bk.Cmd("./enterprise/cmd/executor/vm-image/build.sh"))
 
 		pipeline.AddStep(":packer: :construction: Build executor image", stepOpts...)
 	}
