@@ -12,7 +12,7 @@ cleanup() {
 trap cleanup EXIT
 
 # Capture src cli version before we reconfigure go environment.
-SRC_CLI_VERSION="$(go run ../../../internal/cmd/src-cli-version/main.go)"
+SRC_CLI_VERSION="$(go run ../../../../internal/cmd/src-cli-version/main.go)"
 
 # Environment for building linux binaries
 export GO111MODULE=on
