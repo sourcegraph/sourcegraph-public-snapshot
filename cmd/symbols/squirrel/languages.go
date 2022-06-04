@@ -31,7 +31,7 @@ var langToExts = func() map[string][]string {
 }()
 
 // Mapping from file extension to language name.
-var extToLang = func() map[string]string {
+var ExtToLang = func() map[string]string {
 	m := map[string]string{}
 	for lang, exts := range langToExts {
 		for _, ext := range exts {
@@ -46,11 +46,12 @@ var extToLang = func() map[string]string {
 
 // Info about a language.
 type LangSpec struct {
-	name         string
-	language     *sitter.Language
-	commentStyle CommentStyle
-	// localsQuery is a tree-sitter localsQuery that finds scopes and defs.
-	localsQuery string
+	Name         string
+	Language     *sitter.Language
+	CommentStyle CommentStyle
+	// LocalsQuery is a tree-sitter LocalsQuery that finds scopes and defs.
+	LocalsQuery          string
+	TopLevelSymbolsQuery string
 }
 
 // Info about comments in a language.
@@ -66,18 +67,18 @@ var javaStyleStripRegex = regexp.MustCompile(`^//|^\s*\*/?|^/\*\*|\*/$`)
 var javaStyleIgnoreRegex = regexp.MustCompile(`^\s*(/\*\*|\*/)\s*$`)
 
 // Mapping from language name to language specification.
-var langToLangSpec = map[string]LangSpec{
+var LangToLangSpec = map[string]LangSpec{
 	"java": {
-		name:     "java",
-		language: java.GetLanguage(),
-		commentStyle: CommentStyle{
+		Name:     "java",
+		Language: java.GetLanguage(),
+		CommentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
 			stripRegex:    javaStyleStripRegex,
 			ignoreRegex:   javaStyleIgnoreRegex,
 			codeFenceName: "java",
 			skipNodeTypes: []string{"modifiers"},
 		},
-		localsQuery: `
+		LocalsQuery: `
 (block)                   @scope ; { ... }
 (lambda_expression)       @scope ; (x, y) -> ...
 (catch_clause)            @scope ; try { ... } catch (Exception e) { ... }
@@ -95,14 +96,14 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"go": {
-		name:     "go",
-		language: golang.GetLanguage(),
-		commentStyle: CommentStyle{
+		Name:     "go",
+		Language: golang.GetLanguage(),
+		CommentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
 			stripRegex:    regexp.MustCompile(`^//`),
 			codeFenceName: "go",
 		},
-		localsQuery: `
+		LocalsQuery: `
 (block)                   @scope ; { ... }
 (function_declaration)    @scope ; func f() { ... }
 (method_declaration)      @scope ; func (r R) f() { ... }
@@ -121,15 +122,15 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"csharp": {
-		name:     "csharp",
-		language: csharp.GetLanguage(),
-		commentStyle: CommentStyle{
+		Name:     "csharp",
+		Language: csharp.GetLanguage(),
+		CommentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
 			stripRegex:    javaStyleStripRegex,
 			ignoreRegex:   javaStyleIgnoreRegex,
 			codeFenceName: "csharp",
 		},
-		localsQuery: `
+		LocalsQuery: `
 (block)                   @scope ; { ... }
 (method_declaration)      @scope ; void f() { ... }
 (for_statement)           @scope ; for (...) ...
@@ -146,14 +147,14 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"python": {
-		name:     "python",
-		language: python.GetLanguage(),
-		commentStyle: CommentStyle{
+		Name:     "python",
+		Language: python.GetLanguage(),
+		CommentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
 			stripRegex:    regexp.MustCompile(`^#`),
 			codeFenceName: "python",
 		},
-		localsQuery: `
+		LocalsQuery: `
 (function_definition)     @scope ; def f(): ...
 (lambda)                  @scope ; lambda ...: ...
 (generator_expression)    @scope ; (x for x in xs)
@@ -171,17 +172,21 @@ var langToLangSpec = map[string]LangSpec{
 (for_in_clause           left: (identifier) @definition)                                   ; (... for x in xs)
 (for_in_clause           left: (pattern_list (identifier) @definition))                    ; (... for x, y in xs)
 `,
+		TopLevelSymbolsQuery: `
+(function_definition) @function
+(class_definition) @class
+`,
 	},
 	"javascript": {
-		name:     "javascript",
-		language: javascript.GetLanguage(),
-		commentStyle: CommentStyle{
+		Name:     "javascript",
+		Language: javascript.GetLanguage(),
+		CommentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
 			stripRegex:    javaStyleStripRegex,
 			ignoreRegex:   javaStyleIgnoreRegex,
 			codeFenceName: "javascript",
 		},
-		localsQuery: `
+		LocalsQuery: `
 (class_declaration)              @scope ; class C { ... }
 (method_definition)              @scope ; class ... { f() { ... } }
 (statement_block)                @scope ; { ... }
@@ -207,15 +212,15 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"typescript": {
-		name:     "typescript",
-		language: tsx.GetLanguage(),
-		commentStyle: CommentStyle{
+		Name:     "typescript",
+		Language: tsx.GetLanguage(),
+		CommentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
 			stripRegex:    javaStyleStripRegex,
 			ignoreRegex:   javaStyleIgnoreRegex,
 			codeFenceName: "typescript",
 		},
-		localsQuery: `
+		LocalsQuery: `
 (class_declaration)              @scope ; class C { ... }
 (method_definition)              @scope ; class ... { f() { ... } }
 (statement_block)                @scope ; { ... }
@@ -241,15 +246,15 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"cpp": {
-		name:     "cpp",
-		language: cpp.GetLanguage(),
-		commentStyle: CommentStyle{
+		Name:     "cpp",
+		Language: cpp.GetLanguage(),
+		CommentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
 			stripRegex:    javaStyleStripRegex,
 			ignoreRegex:   javaStyleIgnoreRegex,
 			codeFenceName: "cpp",
 		},
-		localsQuery: `
+		LocalsQuery: `
 (compound_statement) @scope ; { ... }
 (for_statement)      @scope ; for (int i = 0; ...) ...
 (for_range_loop)     @scope ; for (int x : xs) ...
@@ -266,14 +271,14 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"ruby": {
-		name:     "ruby",
-		language: ruby.GetLanguage(),
-		commentStyle: CommentStyle{
+		Name:     "ruby",
+		Language: ruby.GetLanguage(),
+		CommentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
 			stripRegex:    regexp.MustCompile(`^#`),
 			codeFenceName: "ruby",
 		},
-		localsQuery: `
+		LocalsQuery: `
 (method)   @scope ; def f() ...
 (block)    @scope ; { ... }
 (do_block) @scope ; do ... end

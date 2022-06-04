@@ -110,13 +110,13 @@ func createParserWithConfig(config types.CtagsConfig) (rockskip.ParseSymbolsFunc
 	}
 
 	return func(path string, bytes []byte) (symbols []rockskip.Symbol, err error) {
-		entries, err := parser.Parse(path, bytes)
+		resultSymbols, err := parser.Parse(path, bytes)
 		if err != nil {
 			return nil, err
 		}
 
 		symbols = []rockskip.Symbol{}
-		for _, entry := range entries {
+		for _, entry := range resultSymbols {
 			symbols = append(symbols, rockskip.Symbol{
 				Name:   entry.Name,
 				Parent: entry.Parent,

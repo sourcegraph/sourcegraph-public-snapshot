@@ -7,7 +7,7 @@ import (
 
 // Returns the markdown hover message for the given node if it exists.
 func findHover(node Node) string {
-	style := node.LangSpec.commentStyle
+	style := node.LangSpec.CommentStyle
 
 	hover := ""
 	hover += "```" + style.codeFenceName + "\n"

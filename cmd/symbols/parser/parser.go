@@ -2,8 +2,6 @@ package parser
 
 import (
 	"context"
-	"log"
-	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -19,6 +17,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type SimpleParser interface {
+	Parse(path string, content []byte) (result.Symbols, error)
+	Close()
+}
 
 type Parser interface {
 	Parse(ctx context.Context, args search.SymbolsParameters, paths []string) (<-chan SymbolOrError, error)
@@ -167,45 +170,13 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	p.operations.parsing.Inc()
 	defer p.operations.parsing.Dec()
 
-	entries, err := parser.Parse(parseRequest.Path, parseRequest.Data)
+	symbols, err := parser.Parse(parseRequest.Path, parseRequest.Data)
 	if err != nil {
 		return errors.Wrap(err, "parser.Parse")
 	}
-	trace.Log(otlog.Int("numEntries", len(entries)))
+	trace.Log(otlog.Int("numEntries", len(symbols)))
 
-	lines := strings.Split(string(parseRequest.Data), "\n")
-
-	for _, e := range entries {
-		if !shouldPersistEntry(e) {
-			continue
-		}
-
-		// ⚠️ Careful, ctags lines are 1-indexed!
-		line := e.Line - 1
-		if line < 0 || line >= len(lines) {
-			log15.Warn("ctags returned an invalid line number", "path", parseRequest.Path, "line", e.Line, "len(lines)", len(lines), "symbol", e.Name)
-			continue
-		}
-
-		character := strings.Index(lines[line], e.Name)
-		if character == -1 {
-			// Could not find the symbol in the line. ctags doesn't always return the right line.
-			character = 0
-		}
-
-		symbol := result.Symbol{
-			Name:        e.Name,
-			Path:        e.Path,
-			Line:        line,
-			Character:   character,
-			Kind:        e.Kind,
-			Language:    e.Language,
-			Parent:      e.Parent,
-			ParentKind:  e.ParentKind,
-			Signature:   e.Signature,
-			FileLimited: e.FileLimited,
-		}
-
+	for _, symbol := range symbols {
 		select {
 		case symbolOrErrors <- SymbolOrError{Symbol: symbol}:
 			atomic.AddUint32(totalSymbols, 1)
@@ -218,7 +189,38 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	return nil
 }
 
-func (p *parser) parserFromPool(ctx context.Context) (ctags.Parser, error) {
+func ctagsEntryToSymbol(e *ctags.Entry, path string, lines []string) *result.Symbol {
+	if !shouldPersistEntry(e) {
+		return nil
+	}
+
+	// ⚠️ Careful, ctags lines are 1-indexed!
+	line := e.Line - 1
+	if line < 0 || line >= len(lines) {
+		log15.Warn("ctags returned an invalid line number", "path", path, "line", e.Line, "len(lines)", len(lines), "symbol", e.Name)
+		return nil
+	}
+
+	character := strings.Index(lines[line], e.Name)
+	if character == -1 {
+		// Could not find the symbol in the line. ctags doesn't always return the right line.
+		character = 0
+	}
+	return &result.Symbol{
+		Name:        e.Name,
+		Path:        e.Path,
+		Line:        line,
+		Character:   character,
+		Kind:        e.Kind,
+		Language:    e.Language,
+		Parent:      e.Parent,
+		ParentKind:  e.ParentKind,
+		Signature:   e.Signature,
+		FileLimited: e.FileLimited,
+	}
+}
+
+func (p *parser) parserFromPool(ctx context.Context) (SimpleParser, error) {
 	p.operations.parseQueueSize.Inc()
 	defer p.operations.parseQueueSize.Dec()
 
@@ -249,22 +251,20 @@ func shouldPersistEntry(e *ctags.Entry) bool {
 	return true
 }
 
-func SpawnCtags(ctagsConfig types.CtagsConfig) (ctags.Parser, error) {
-	options := ctags.Options{
-		Bin:                ctagsConfig.Command,
-		PatternLengthLimit: ctagsConfig.PatternLengthLimit,
-	}
-	if ctagsConfig.LogErrors {
-		options.Info = log.New(os.Stderr, "ctags: ", log.LstdFlags)
-	}
-	if ctagsConfig.DebugLogs {
-		options.Debug = log.New(os.Stderr, "DBUG ctags: ", log.LstdFlags)
-	}
-
-	parser, err := ctags.New(options)
+func SpawnCtags(ctagsConfig types.CtagsConfig) (SimpleParser, error) {
+	// Spawn the base ctags parser
+	parser, err := NewCtagsParser(ctagsConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new ctags parser")
 	}
 
+	// Use tree-sitter where available
+	parser = NewTreeSitterParser(parser)
+
+	// Skip big files
 	return NewFilteringParser(parser, ctagsConfig.MaxFileSize, ctagsConfig.MaxSymbols), nil
+}
+
+type ctagsSimpleParser struct {
+	parser ctags.Parser
 }

@@ -3,16 +3,16 @@ package parser
 import (
 	"bytes"
 
-	"github.com/sourcegraph/go-ctags"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 type FilteringParser struct {
-	parser      ctags.Parser
+	parser      SimpleParser
 	maxFileSize int
 	maxSymbols  int
 }
 
-func NewFilteringParser(parser ctags.Parser, maxFileSize int, maxSymbols int) ctags.Parser {
+func NewFilteringParser(parser SimpleParser, maxFileSize int, maxSymbols int) SimpleParser {
 	return &FilteringParser{
 		parser:      parser,
 		maxFileSize: maxFileSize,
@@ -20,7 +20,7 @@ func NewFilteringParser(parser ctags.Parser, maxFileSize int, maxSymbols int) ct
 	}
 }
 
-func (p *FilteringParser) Parse(path string, content []byte) ([]*ctags.Entry, error) {
+func (p *FilteringParser) Parse(path string, content []byte) (result.Symbols, error) {
 	if len(content) > p.maxFileSize {
 		// File is over 512KiB, don't parse it
 		return nil, nil
