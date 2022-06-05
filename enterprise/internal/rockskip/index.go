@@ -79,7 +79,7 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 	parse := s.createParser()
 
 	symbolCache := lru.New[pathSymbol, int](lru.WithCapacity(s.symbolsCacheSize))
-	pathSymbolsCache := lru.New[string, map[string]struct{}](lru.WithCapacity(s.pathSymbolsCacheSize))
+	pathSymbolsCache := lru.New[string, *goset.Set[string]](lru.WithCapacity(s.pathSymbolsCacheSize))
 
 	tasklog.Start("Log")
 	entriesIndexed := 0
@@ -133,8 +133,8 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 			}
 		}
 
-		getSymbols := func(commit string, paths []string) (map[string]map[string]struct{}, error) {
-			pathToSymbols := map[string]map[string]struct{}{}
+		getSymbols := func(commit string, paths []string) (map[string]*goset.Set[string], error) {
+			pathToSymbols := map[string]*goset.Set[string]{}
 			pathsToFetch := goset.NewSet[string]()
 			for _, path := range paths {
 				pathsToFetch.Add(path)
@@ -160,9 +160,9 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 					return errors.Wrap(err, "parse")
 				}
 
-				pathToSymbols[path] = map[string]struct{}{}
+				pathToSymbols[path] = goset.NewSet[string]()
 				for _, symbol := range symbols {
-					pathToSymbols[path][symbol.Name] = struct{}{}
+					pathToSymbols[path].Add(symbol.Name)
 				}
 
 				return nil
@@ -192,32 +192,24 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 		}
 
 		// Compute the symmetric difference of symbols between the added and deleted paths.
-		deletedSymbols := map[string]map[string]struct{}{}
-		addedSymbols := map[string]map[string]struct{}{}
+		deletedSymbols := map[string]*goset.Set[string]{}
+		addedSymbols := map[string]*goset.Set[string]{}
 		for _, pathStatus := range entry.PathStatuses {
+			deleted := symbolsFromDeletedFiles[pathStatus.Path]
+			added := symbolsFromAddedFiles[pathStatus.Path]
 			switch pathStatus.Status {
 			case gitdomain.DeletedAMD:
-				deletedSymbols[pathStatus.Path] = symbolsFromDeletedFiles[pathStatus.Path]
+				deletedSymbols[pathStatus.Path] = deleted
 			case gitdomain.AddedAMD:
-				addedSymbols[pathStatus.Path] = symbolsFromAddedFiles[pathStatus.Path]
+				addedSymbols[pathStatus.Path] = added
 			case gitdomain.ModifiedAMD:
-				deletedSymbols[pathStatus.Path] = map[string]struct{}{}
-				addedSymbols[pathStatus.Path] = map[string]struct{}{}
-				for name := range symbolsFromDeletedFiles[pathStatus.Path] {
-					if _, ok := symbolsFromAddedFiles[pathStatus.Path][name]; !ok {
-						deletedSymbols[pathStatus.Path][name] = struct{}{}
-					}
-				}
-				for name := range symbolsFromAddedFiles[pathStatus.Path] {
-					if _, ok := symbolsFromDeletedFiles[pathStatus.Path][name]; !ok {
-						addedSymbols[pathStatus.Path][name] = struct{}{}
-					}
-				}
+				deletedSymbols[pathStatus.Path] = deleted.Difference(added)
+				addedSymbols[pathStatus.Path] = added.Difference(deleted)
 			}
 		}
 
 		for path, symbols := range deletedSymbols {
-			for symbol := range symbols {
+			for _, symbol := range symbols.Items() {
 				id := 0
 				ok := false
 				if id, ok = symbolCache.Get(pathSymbol{path: path, symbol: symbol}); !ok {
@@ -279,10 +271,10 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 	return nil
 }
 
-func BatchInsertSymbols(ctx context.Context, tasklog *TaskLog, tx *sql.Tx, repoId, commit int, symbolCache *lru.Cache[pathSymbol, int], symbols map[string]map[string]struct{}) error {
+func BatchInsertSymbols(ctx context.Context, tasklog *TaskLog, tx *sql.Tx, repoId, commit int, symbolCache *lru.Cache[pathSymbol, int], symbols map[string]*goset.Set[string]) error {
 	callback := func(inserter *batch.Inserter) error {
 		for path, pathSymbols := range symbols {
-			for symbol := range pathSymbols {
+			for _, symbol := range pathSymbols.Items() {
 				if err := inserter.Insert(ctx, pg.Array([]int{commit}), pg.Array([]int{}), repoId, path, symbol); err != nil {
 					return err
 				}
