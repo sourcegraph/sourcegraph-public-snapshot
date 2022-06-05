@@ -39,7 +39,6 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 	defer func() { err = errors.CombineErrors(err, releaseLock()) }()
 
 	tipCommit := NULL
-	tipCommitHash := ""
 	tipHeight := 0
 
 	var repoId int
@@ -59,7 +58,6 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 			return false, err
 		} else if present {
 			tipCommit = commit
-			tipCommitHash = commitHash
 			tipHeight = height
 			return false, nil
 		}
@@ -133,25 +131,37 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 			}
 		}
 
-		getSymbols := func(commit string, paths []string) (map[string]*goset.Set[string], error) {
-			pathToSymbols := map[string]*goset.Set[string]{}
-			pathsToFetch := goset.NewSet[string]()
-			for _, path := range paths {
-				pathsToFetch.Add(path)
-			}
-
-			// Don't fetch files that are already in the cache.
-			if commit == tipCommitHash {
-				for _, path := range paths {
-					if symbols, ok := pathSymbolsCache.Get(path); ok {
-						pathToSymbols[path] = symbols
-						pathsToFetch.Remove(path)
-					}
+		symbolsFromDeletedFiles := map[string]*goset.Set[string]{}
+		{
+			// Fill from the cache.
+			for _, path := range deletedPaths {
+				if symbols, ok := pathSymbolsCache.Get(path); ok {
+					symbolsFromDeletedFiles[path] = symbols
 				}
 			}
 
+			// Fetch the rest from the DB.
+			pathsToFetch := goset.NewSet[string]()
+			for _, path := range deletedPaths {
+				if _, ok := pathSymbolsCache.Get(path); !ok {
+					pathsToFetch.Add(path)
+				}
+			}
+
+			pathToSymbols, err := GetSymbolsInFiles(ctx, tx, repoId, pathsToFetch.Items(), hops)
+			if err != nil {
+				return err
+			}
+
+			for path, symbols := range pathToSymbols {
+				symbolsFromDeletedFiles[path] = symbols
+			}
+		}
+
+		symbolsFromAddedFiles := map[string]*goset.Set[string]{}
+		{
 			tasklog.Start("ArchiveEach")
-			err = s.git.ArchiveEach(repo, commit, pathsToFetch.Items(), func(path string, contents []byte) error {
+			err = s.git.ArchiveEach(repo, entry.Commit, addedPaths, func(path string, contents []byte) error {
 				defer tasklog.Continue("ArchiveEach")
 
 				tasklog.Start("parse")
@@ -160,35 +170,21 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 					return errors.Wrap(err, "parse")
 				}
 
-				pathToSymbols[path] = goset.NewSet[string]()
+				symbolsFromAddedFiles[path] = goset.NewSet[string]()
 				for _, symbol := range symbols {
-					pathToSymbols[path].Add(symbol.Name)
+					symbolsFromAddedFiles[path].Add(symbol.Name)
 				}
+
+				// Cache the symbols we just parsed.
+				pathSymbolsCache.Set(path, symbolsFromAddedFiles[path])
 
 				return nil
 			})
 
 			if err != nil {
-				return nil, errors.Wrap(err, "while looping ArchiveEach")
+				return errors.Wrap(err, "while looping ArchiveEach")
 			}
 
-			// Cache the symbols we just parsed.
-			if commit != tipCommitHash {
-				for path, symbols := range pathToSymbols {
-					pathSymbolsCache.Set(path, symbols)
-				}
-			}
-
-			return pathToSymbols, nil
-		}
-
-		symbolsFromDeletedFiles, err := getSymbols(tipCommitHash, deletedPaths)
-		if err != nil {
-			return errors.Wrap(err, "getSymbols (deleted)")
-		}
-		symbolsFromAddedFiles, err := getSymbols(entry.Commit, addedPaths)
-		if err != nil {
-			return errors.Wrap(err, "getSymbols (added)")
 		}
 
 		// Compute the symmetric difference of symbols between the added and deleted paths.
@@ -196,7 +192,13 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 		addedSymbols := map[string]*goset.Set[string]{}
 		for _, pathStatus := range entry.PathStatuses {
 			deleted := symbolsFromDeletedFiles[pathStatus.Path]
+			if deleted == nil {
+				deleted = goset.NewSet[string]()
+			}
 			added := symbolsFromAddedFiles[pathStatus.Path]
+			if added == nil {
+				added = goset.NewSet[string]()
+			}
 			switch pathStatus.Status {
 			case gitdomain.DeletedAMD:
 				deletedSymbols[pathStatus.Path] = deleted
@@ -257,7 +259,6 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 		}
 
 		tipCommit = commit
-		tipCommitHash = entry.Commit
 		tipHeight += 1
 
 		return nil
