@@ -640,15 +640,6 @@ CREATE TABLE batch_spec_workspaces (
     step_cache_results jsonb DEFAULT '{}'::jsonb NOT NULL
 );
 
-CREATE SEQUENCE batch_spec_workspaces_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE batch_spec_workspaces_id_seq OWNED BY batch_spec_workspaces.id;
-
 CREATE TABLE batch_specs (
     id bigint NOT NULL,
     rand_id text NOT NULL,
@@ -665,6 +656,70 @@ CREATE TABLE batch_specs (
     no_cache boolean DEFAULT false NOT NULL,
     CONSTRAINT batch_specs_has_1_namespace CHECK (((namespace_user_id IS NULL) <> (namespace_org_id IS NULL)))
 );
+
+CREATE VIEW batch_spec_workspace_execution_queue AS
+ WITH tenant_queues AS (
+         SELECT spec.user_id,
+            max(exec.started_at) AS latest_dequeue
+           FROM ((batch_spec_workspace_execution_jobs exec
+             JOIN batch_spec_workspaces workspace ON ((workspace.id = exec.batch_spec_workspace_id)))
+             JOIN batch_specs spec ON ((spec.id = workspace.batch_spec_id)))
+          GROUP BY spec.user_id
+        ), materialized_queue_candidates AS MATERIALIZED (
+         SELECT exec.id,
+            exec.batch_spec_workspace_id,
+            exec.state,
+            exec.failure_message,
+            exec.started_at,
+            exec.finished_at,
+            exec.process_after,
+            exec.num_resets,
+            exec.num_failures,
+            exec.execution_logs,
+            exec.worker_hostname,
+            exec.last_heartbeat_at,
+            exec.created_at,
+            exec.updated_at,
+            exec.cancel,
+            exec.access_token_id,
+            exec.queued_at,
+            rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS tenant_queue_rank
+           FROM (((batch_spec_workspace_execution_jobs exec
+             JOIN batch_spec_workspaces workspace ON ((workspace.id = exec.batch_spec_workspace_id)))
+             JOIN batch_specs spec ON ((spec.id = workspace.batch_spec_id)))
+             JOIN tenant_queues queue ON ((queue.user_id = spec.user_id)))
+          WHERE (exec.state = 'queued'::text)
+          ORDER BY (rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id)), queue.latest_dequeue NULLS FIRST
+        )
+ SELECT row_number() OVER () AS place_in_queue,
+    materialized_queue_candidates.id,
+    materialized_queue_candidates.batch_spec_workspace_id,
+    materialized_queue_candidates.state,
+    materialized_queue_candidates.failure_message,
+    materialized_queue_candidates.started_at,
+    materialized_queue_candidates.finished_at,
+    materialized_queue_candidates.process_after,
+    materialized_queue_candidates.num_resets,
+    materialized_queue_candidates.num_failures,
+    materialized_queue_candidates.execution_logs,
+    materialized_queue_candidates.worker_hostname,
+    materialized_queue_candidates.last_heartbeat_at,
+    materialized_queue_candidates.created_at,
+    materialized_queue_candidates.updated_at,
+    materialized_queue_candidates.cancel,
+    materialized_queue_candidates.access_token_id,
+    materialized_queue_candidates.queued_at,
+    materialized_queue_candidates.tenant_queue_rank
+   FROM materialized_queue_candidates;
+
+CREATE SEQUENCE batch_spec_workspaces_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE batch_spec_workspaces_id_seq OWNED BY batch_spec_workspaces.id;
 
 CREATE SEQUENCE batch_specs_id_seq
     START WITH 1
