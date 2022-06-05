@@ -4,10 +4,23 @@
 }
 
 // Global page paragraphs
-.root p {
-    font-size: 1.125rem;
-    line-height: 1.375rem;
-    margin-bottom: 32px;
+.root,
+.selfHostedRoot {
+    p {
+        font-size: 1.125rem;
+        line-height: 1.375rem;
+        margin-bottom: 32px;
+    }
+}
+
+.selfHostedRoot {
+    background: linear-gradient(90deg, #d5e6f7, #e8d1ff);
+    h1 {
+        font-size: 2.75rem;
+        line-height: 3.75rem;
+    }
+
+    color: #343a4d;
 }
 
 // Get started page index specific

@@ -31,6 +31,7 @@ const UnlockAccountPage = lazyComponent(() => import('./auth/UnlockAccount'), 'U
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
 const DeploymentOptions = lazyComponent(() => import('./deployment-options'), 'DeploymentOptions')
+const SelfHostedDeploymentOption = lazyComponent(() => import('./deployment-options/self-hosted'), 'SelfHosted')
 
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
@@ -152,6 +153,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: PageRoutes.DeploymentOptions,
         render: props => <DeploymentOptions {...props} />,
+        exact: true,
+    },
+    {
+        path: PageRoutes.SelfHostedDeploymentOption,
+        render: props => <SelfHostedDeploymentOption {...props} />,
         exact: true,
     },
     {

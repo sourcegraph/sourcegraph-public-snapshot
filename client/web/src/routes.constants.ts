@@ -6,6 +6,7 @@ export enum PageRoutes {
     SignIn = '/sign-in',
     SignUp = '/sign-up',
     DeploymentOptions = '/deployment-options',
+    SelfHostedDeploymentOption = '/deployment-options/self-hosted',
     UnlockAccount = '/unlock-account/:token',
     Welcome = '/welcome',
     Settings = '/settings',
