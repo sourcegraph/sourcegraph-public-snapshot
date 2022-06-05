@@ -1,4 +1,6 @@
-CREATE OR REPLACE VIEW batch_spec_workspace_execution_queue AS
+DROP VIEW IF EXISTS batch_spec_workspace_execution_queue;
+
+CREATE VIEW batch_spec_workspace_execution_queue AS
 WITH tenant_queues AS (
     SELECT
         spec.user_id,
@@ -8,43 +10,32 @@ WITH tenant_queues AS (
     JOIN batch_specs spec ON spec.id = workspace.batch_spec_id
     GROUP BY spec.user_id
 ),
--- We are creating this materialized CTE because PostgreSQL doesn't allow `FOR UPDATE` on window functions,
--- the materialised CTE tricks postgres into thinking the window function isn't part of the main query.
+-- We are creating this materialized CTE because PostgreSQL doesn't allow `FOR UPDATE` with window functions.
+-- Materializing it makes sure that the view query is not inlined into the FOR UPDATE select the Dequeue method
+-- performs.
 materialized_queue_candidates AS MATERIALIZED (
     SELECT
-        spec.id AS spec_id,
-        queue.user_id,
         exec.*,
-        queue.current_concurrency,
-        queue.latest_dequeue
+        RANK() OVER (
+            PARTITION BY queue.user_id
+            -- Make sure the jobs are still fulfilled in timely order, and that the ordering is stable.
+            ORDER BY exec.created_at ASC, exec.id ASC
+        ) AS tenant_queue_rank
     FROM batch_spec_workspace_execution_jobs exec
+    -- Join workspaces, because we need to map exec->tenant_queue via exec_jobs->workspaces->batch_specs->tenant_queues, phew.
+    -- Optimization: Store the tenant on the job record directly, although it's a denormalization.
     JOIN batch_spec_workspaces workspace ON workspace.id = exec.batch_spec_workspace_id
     JOIN batch_specs spec ON spec.id = workspace.batch_spec_id
     JOIN tenant_queues queue ON queue.user_id = spec.user_id
     WHERE
+    	-- Only queued records should get a rank.
         exec.state = 'queued'
     ORDER BY
-        -- Round-robin let tenants dequeue jobs
-        ROW_NUMBER() OVER (
-            PARTITION BY queue.user_id
-            ORDER BY queue.latest_dequeue ASC NULLS FIRST, exec.id
-        )
-),
-no_of_distinct_jobs_creator AS (
-    SELECT COUNT(DISTINCT user_id) FROM materialized_queue_candidates
-),
-last_dequeued_user AS (
-    SELECT
-        CASE
-            WHEN n.count > 1 THEN m.user_id
-            ELSE 0
-        END id
-    FROM materialized_queue_candidates m, no_of_distinct_jobs_creator n
-    GROUP BY m.user_id, m.latest_dequeue, n.count
-    ORDER BY m.latest_dequeue DESC NULLS LAST
-    LIMIT 1
+        -- Round-robin let tenants dequeue jobs.
+        tenant_queue_rank,
+        -- And ensure the user who dequeued the longest ago is next.
+        queue.latest_dequeue ASC NULLS FIRST
 )
 SELECT
     ROW_NUMBER() OVER () AS place_in_queue, materialized_queue_candidates.*
-FROM materialized_queue_candidates, last_dequeued_user
-    WHERE materialized_queue_candidates.user_id != last_dequeued_user.id;
+FROM materialized_queue_candidates;

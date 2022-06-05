@@ -331,24 +331,27 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin(t *testing.T)
 	s := New(db, &observation.TestContext, nil)
 	workerStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
 
-	// We create multiple jobs for each user because this test ensures jobs are dequeued in a round-robin fashion.
-	// that said, per round, no user should have more than one job in queue.
-	setupBatchSpecAssociation(ctx, s, t, user, repo)  // Job_ID: 1, User_ID: 1
-	setupBatchSpecAssociation(ctx, s, t, user, repo)  // Job_ID: 2, User_ID: 1
-	setupBatchSpecAssociation(ctx, s, t, user2, repo) // Job_ID: 3, User_ID: 2
-	setupBatchSpecAssociation(ctx, s, t, user2, repo) // Job_ID: 4, User_ID: 2
-	setupBatchSpecAssociation(ctx, s, t, user3, repo) // Job_ID: 5, User_ID: 3
-	setupBatchSpecAssociation(ctx, s, t, user3, repo) // Job_ID: 6, User_ID: 3
+	// We create multiple jobs for each user because this test ensures jobs are
+	// dequeued in a round-robin fashion, starting with the user who dequeued
+	// the longest ago.
+	job1 := setupBatchSpecAssociation(ctx, s, t, user, repo)  // User_ID: 1
+	job2 := setupBatchSpecAssociation(ctx, s, t, user, repo)  // User_ID: 1
+	job3 := setupBatchSpecAssociation(ctx, s, t, user2, repo) // User_ID: 2
+	job4 := setupBatchSpecAssociation(ctx, s, t, user2, repo) // User_ID: 2
+	job5 := setupBatchSpecAssociation(ctx, s, t, user3, repo) // User_ID: 3
+	job6 := setupBatchSpecAssociation(ctx, s, t, user3, repo) // User_ID: 3
 
-	want := []int{3, 1, 4, 5, 2, 6}
-	have := []int{}
+	want := []int64{job1, job3, job5, job2, job4, job6}
+	have := []int64{}
 
+	// We dequeue records until there are no more left. Then, we check in which
+	// order they were returned.
 	for {
-		r, found, _ := workerStore.Dequeue(ctx, "test-worker-1", nil)
+		r, found, _ := workerStore.Dequeue(ctx, "test-worker", nil)
 		if !found {
 			break
 		}
-		have = append(have, r.RecordID())
+		have = append(have, int64(r.RecordID()))
 	}
 
 	if diff := cmp.Diff(want, have); diff != "" {
@@ -356,8 +359,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin(t *testing.T)
 	}
 }
 
-func setupBatchSpecAssociation(ctx context.Context, s *Store, t *testing.T, user *types.User, repo *types.Repo) {
-	// Setup all the associations for user ID 1's batch spec
+func setupBatchSpecAssociation(ctx context.Context, s *Store, t *testing.T, user *types.User, repo *types.Repo) int64 {
 	batchSpec := &btypes.BatchSpec{UserID: user.ID, NamespaceUserID: user.ID, RawSpec: "horse", Spec: &batcheslib.BatchSpec{
 		ChangesetTemplate: &batcheslib.ChangesetTemplate{},
 	}}
@@ -374,6 +376,8 @@ func setupBatchSpecAssociation(ctx context.Context, s *Store, t *testing.T, user
 	if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 		t.Fatal(err)
 	}
+
+	return job.ID
 }
 
 func intptr(i int) *int { return &i }

@@ -65,7 +65,9 @@ var batchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
 
 const executionPlaceInQueueFragment = `
 SELECT
-	id, place_in_queue
+	-- TODO: Don't alias back this column. Ideally we change the name across the
+	-- codebase.
+	id, tenant_queue_rank AS place_in_queue
 FROM batch_spec_workspace_execution_queue
 `
 
