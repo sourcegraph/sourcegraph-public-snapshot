@@ -113,6 +113,7 @@ interface ExperimentalActionButtonProps extends ButtonDropdownCtaProps {
     isNonExperimentalLinkDisabled?: boolean
     onNonExperimentalLinkClick?: () => void
     className?: string
+    ariaLabel?: string
 }
 
 const ExperimentalActionButton: React.FunctionComponent<
@@ -130,6 +131,10 @@ const ExperimentalActionButton: React.FunctionComponent<
             variant="secondary"
             outline={true}
             size="sm"
+            aria-disabled={props.isNonExperimentalLinkDisabled ? 'true' : undefined}
+            aria-label={props.ariaLabel}
+            // to make disabled ButtonLink focusable
+            tabIndex={0}
         >
             {props.button}
         </ButtonLink>
@@ -268,6 +273,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     viewEventName="SearchResultMonitorCTAShown"
                     returnTo={createCodeMonitorAction.url}
                     onToggle={onCreateCodeMonitorButtonSelect}
+                    ariaLabel={
+                        props.authenticatedUser && !canCreateMonitorFromQuery
+                            ? 'Disabled button, Code monitors only support type:diff or type:commit searches.'
+                            : undefined
+                    }
                 />
             </li>
         )
