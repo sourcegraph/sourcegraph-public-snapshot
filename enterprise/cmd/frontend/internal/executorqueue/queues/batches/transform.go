@@ -81,7 +81,9 @@ func transformRecord(ctx context.Context, s BatchesStore, job *btypes.BatchSpecW
 
 	frontendURL := conf.Get().ExternalURL
 
-	srcEndpoint, err := makeURL(frontendURL, accessToken)
+	// TODO: This must be configurable and not just be the external URL.
+	// For OOTB deployments we want to hit the frontend internally.
+	srcEndpoint, err := makeURL("http://host.docker.internal:3081", accessToken)
 	if err != nil {
 		return apiclient.Job{}, err
 	}
