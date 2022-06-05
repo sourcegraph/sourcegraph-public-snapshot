@@ -2,10 +2,11 @@ import { FunctionComponent } from 'react'
 import * as H from 'history'
 
 import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
-import { Link, AnchorLink, ButtonLink } from '@sourcegraph/wildcard'
+import { ButtonLink } from '@sourcegraph/wildcard'
 
-import { PageTitle } from '../components/PageTitle'
 import styles from './styles.module.scss'
+import { PageRoutes } from '../routes.constants'
+import { PageTitle } from '../components/PageTitle'
 
 export const BestForTitle: FunctionComponent = () => (
     <div className={`text-uppercase font-weight-bolder mb-1 ${styles.bestForTitle}`}>Best For</div>
@@ -44,13 +45,8 @@ export const DeploymentOptions: FunctionComponent<IProps> = ({ history }) => (
                             security functionality.
                         </p>
 
-                        <ButtonLink
-                            variant="merged"
-                            to="https://about.sourcegraph.com/get-started/self-hosted"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Get started for free <ArrowRightIcon />
+                        <ButtonLink variant="merged" to={PageRoutes.SelfHostedDeploymentOption}>
+                            Try Self-Hosted <ArrowRightIcon />
                         </ButtonLink>
                     </section>
 
@@ -67,8 +63,8 @@ export const DeploymentOptions: FunctionComponent<IProps> = ({ history }) => (
                             manage a deployment.
                         </p>
 
-                        <ButtonLink variant="merged" onSelect={() => history.push('/welcome')}>
-                            Get started for free <ArrowRightIcon />
+                        <ButtonLink variant="merged" to={PageRoutes.Welcome}>
+                            Continue with Cloud <ArrowRightIcon />
                         </ButtonLink>
                     </section>
                 </div>

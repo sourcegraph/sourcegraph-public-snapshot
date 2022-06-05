@@ -1,0 +1,52 @@
+.windowUI {
+    border-radius: 20px;
+    box-shadow: -4px 4px 10px 0 rgba(0, 0, 0, 0.25);
+
+    h3 {
+        font-size: 1.75rem;
+    }
+
+    code {
+        white-space: unset;
+        font-size: 1.125rem;
+        line-height: 1.75rem;
+
+        small {
+            font-size: 80%;
+        }
+    }
+}
+
+.windowActions {
+    background-color: #f1f1f1;
+    height: 45px;
+}
+
+.windowAction {
+    width: 14px;
+    height: 14px;
+}
+
+.icon {
+    width: 35px;
+    height: 35px;
+}
+
+@keyframes flashBackground {
+    0% {
+        background: #fff2cf;
+    }
+    100% {
+        background-color: none;
+    }
+}
+
+.flashBackground {
+    animation: flashBackground 1s ease-out;
+}
+
+.deployToServer {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+}
