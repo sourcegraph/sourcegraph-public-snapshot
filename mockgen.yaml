@@ -380,3 +380,7 @@ mocks:
     interfaces:
       - WithHooks
     path: github.com/sourcegraph/sourcegraph/internal/workerutil
+  - filename: dev/team/mock.go
+    interfaces:
+      - TeammateResolver
+    path: github.com/sourcegraph/sourcegraph/dev/team
