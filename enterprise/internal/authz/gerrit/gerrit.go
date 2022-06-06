@@ -3,6 +3,7 @@ package gerrit
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/url"
 
 	jsoniter "github.com/json-iterator/go"
