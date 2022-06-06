@@ -2295,7 +2295,7 @@
     p-limit "3.1.0"
     tslib "~2.3.0"
 
-"@graphql-tools/merge@8.2.13":
+"@graphql-tools/merge@8.2.13", "@graphql-tools/merge@^8.2.6":
   version "8.2.13"
   resolved "https://registry.npmjs.org/@graphql-tools/merge/-/merge-8.2.13.tgz#d4f254dcea301ce3d9c23b03eb68a7ae9baf6981"
   integrity sha512-lhzjCa6wCthOYl7B6UzER3SGjU2WjSGnW0WGr8giMYsrtf6G3vIRotMcSVMlhDzyyMIOn7uPULOUt3/kaJ/rIA==
@@ -2303,7 +2303,7 @@
     "@graphql-tools/utils" "8.6.12"
     tslib "~2.4.0"
 
-"@graphql-tools/merge@8.2.6", "@graphql-tools/merge@^8.2.6":
+"@graphql-tools/merge@8.2.6":
   version "8.2.6"
   resolved "https://registry.npmjs.org/@graphql-tools/merge/-/merge-8.2.6.tgz#7fb615fa9c143c3151ff025e501d52bd48186d19"
   integrity sha512-dkwTm4czMISi/Io47IVvq2Fl9q4TIGKpJ0VZjuXYdEFkECyH6A5uwxZfPVandZG+gQs8ocFFoa6RisiUJLZrJw==
@@ -2448,14 +2448,14 @@
     value-or-promise "^1.0.11"
     ws "^8.3.0"
 
-"@graphql-tools/utils@8.6.12":
+"@graphql-tools/utils@8.6.12", "@graphql-tools/utils@^8.6.5":
   version "8.6.12"
   resolved "https://registry.npmjs.org/@graphql-tools/utils/-/utils-8.6.12.tgz#0a550dc0331fd9b097fe7223d65cbbee720556e4"
   integrity sha512-WQ91O40RC+UJgZ9K+IzevSf8oolR1QE+WQ21Oyc2fgDYYiqT0eSf+HVyhZr/8x9rVjn3N9HeqCsywbdmbljg0w==
   dependencies:
     tslib "~2.4.0"
 
-"@graphql-tools/utils@8.6.5", "@graphql-tools/utils@^8.6.5":
+"@graphql-tools/utils@8.6.5":
   version "8.6.5"
   resolved "https://registry.npmjs.org/@graphql-tools/utils/-/utils-8.6.5.tgz#ac04571b03f854c7a938b2ab700516a6c6d32335"
   integrity sha512-mjOtaWiS2WIqRz/cq5gaeM3sVrllcu2xbtHROw1su1v3xWa3D3dKgn8Lrl7+tvWs5WUVySsBss/VZ3WdoPkCrA==
