@@ -4,7 +4,7 @@ import { useMergeRefs } from 'use-callback-ref'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useDeepMemo } from '@sourcegraph/wildcard'
+import { Link, useDeepMemo } from '@sourcegraph/wildcard'
 
 import { ParentSize } from '../../../../../../charts'
 import { CodeInsightsBackendContext, LangStatsInsight } from '../../../../core'
@@ -77,9 +77,9 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
         >
             <InsightCardHeader
                 title={
-                    <a href={shareableUrl} target="_blank" rel="noopener noreferrer">
+                    <Link to={shareableUrl} target="_blank" rel="noopener noreferrer">
                         insight.title
-                    </a>
+                    </Link>
                 }
             >
                 {isVisible && (
