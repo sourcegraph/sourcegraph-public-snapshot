@@ -1,4 +1,4 @@
-import React, { Ref, useContext, useRef, useState } from 'react'
+import React, { Ref, useContext, useReducer, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import VisibilitySensor from 'react-visibility-sensor'
@@ -18,6 +18,7 @@ import {
 import { BackendInsight, BackendInsightData, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend/gql/GetInsightView'
 import { createBackendInsightData } from '../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
+import { insightPollingInterval } from '../../../../core/backend/gql-backend/utils/insight-polling'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
@@ -44,6 +45,9 @@ interface BackendInsightProps
     resizing?: boolean
 }
 
+function wasEverVisible(previouslyVisible: boolean, currentVisibility: boolean): boolean {
+    return previouslyVisible || currentVisibility
+}
 /**
  * Renders search based insight. Fetches insight data by gql api handler.
  */
@@ -53,7 +57,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     const { currentDashboard, dashboards } = useContext(InsightContext)
     const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
     const { toggle, isSeriesSelected, isSeriesHovered, setHoveredId } = useSeriesToggle()
-    const [wasVisble, setWasVisibile] = useState(false)
+    const [wasVisble, dispatchVisibilityChange] = useReducer(wasEverVisible, false)
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
 
     // Visual line chart settings
@@ -93,7 +97,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
         {
             variables: { id: insight.id, filters: filterInput, seriesDisplayOptions: displayInput },
             fetchPolicy: 'cache-and-network',
-            pollInterval: insight.repositories.length === 0 ? 5000 : 750,
+            pollInterval: insightPollingInterval(insight),
             skip: !wasVisble,
             onCompleted: data => {
                 const parsedData = createBackendInsightData(insight, data.insightViews.nodes[0])
@@ -164,15 +168,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     })
 
     return (
-        <VisibilitySensor
-            active={true}
-            onChange={isVisible => {
-                if (!wasVisble && isVisible) {
-                    setWasVisibile(true)
-                }
-            }}
-            partialVisibility={true}
-        >
+        <VisibilitySensor active={true} onChange={dispatchVisibilityChange} partialVisibility={true}>
             <InsightCard
                 {...otherProps}
                 ref={mergedInsightCardReference}

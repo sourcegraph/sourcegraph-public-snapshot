@@ -1,4 +1,4 @@
-import React, { useContext, useRef, useState } from 'react'
+import React, { useContext, useRef, useState, useReducer } from 'react'
 
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
@@ -37,8 +37,9 @@ import {
     InsightType,
 } from '../../../../../core'
 import { BackendInsightData } from '../../../../../core/backend/code-insights-backend-types'
-import { GET_INSIGHT_VIEW_GQL } from '../../../../../core/backend/gql-backend/gql/GetInsightView'
+import { GET_INSIGHT_VIEW_GQL } from '../../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
+import { insightPollingInterval } from '../../../../../core/backend/gql-backend/utils/insight-polling'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../../pings'
 import { StandaloneInsightContextMenu } from '../context-menu/StandaloneInsightContextMenu'
 
@@ -49,12 +50,16 @@ interface StandaloneBackendInsight extends TelemetryProps {
     className?: string
 }
 
+function wasEverVisible(previouslyVisible: boolean, currentVisibility: boolean): boolean {
+    return previouslyVisible || currentVisibility
+}
+
 export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackendInsight> = props => {
     const { telemetryService, insight, className } = props
     const history = useHistory()
     const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
     const { toggle, isSeriesSelected, isSeriesHovered, setHoveredId } = useSeriesToggle()
-    const [isVisible, setVisibility] = useState(false)
+    const [wasVisble, dispatchVisibilityChange] = useReducer(wasEverVisible, false)
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
 
     // Visual line chart settings
@@ -89,7 +94,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         {
             variables: { id: insight.id, filters: filterInput, seriesDisplayOptions: displayInput },
             fetchPolicy: 'cache-and-network',
-            pollInterval: 3000,
+            pollInterval: insightPollingInterval(insight),
             onCompleted: data => {
                 const parsedData = createBackendInsightData(insight, data.insightViews.nodes[0])
                 if (!parsedData.isFetchingHistoricalData) {
@@ -187,8 +192,8 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                     />
                 </InsightCardHeader>
 
-                <VisibilitySensor active={true} onChange={setVisibility} partialVisibility={true}>
-                    {loading || !isVisible || !insightData ? (
+                <VisibilitySensor active={true} onChange={dispatchVisibilityChange} partialVisibility={true}>
+                    {loading || !wasVisble || !insightData ? (
                         <InsightCardLoading>Loading code insight</InsightCardLoading>
                     ) : error ? (
                         <BackendInsightErrorAlert error={error} />
