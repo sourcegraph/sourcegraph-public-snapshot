@@ -38,14 +38,14 @@ import styles from './SearchPageInput.module.scss'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
-        ThemeProps,
-        ThemePreferenceProps,
-        ActivationProps,
-        KeyboardShortcutsProps,
-        TelemetryProps,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
-        Pick<SubmitSearchParameters, 'source'>,
-        SearchContextInputProps {
+    ThemeProps,
+    ThemePreferenceProps,
+    ActivationProps,
+    KeyboardShortcutsProps,
+    TelemetryProps,
+    PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
+    Pick<SubmitSearchParameters, 'source'>,
+    SearchContextInputProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -134,6 +134,11 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         [submitSearchOnChange]
     )
 
+    // We want to prevent autofocus by default on touch screens as it results
+    // in the device keyboard not showing until the input loses focus and
+    // gets focused by the user again.
+    const isTouchDevice = window?.ontouchstart !== undefined
+
     return (
         <div className="d-flex flex-row flex-shrink-past-contents">
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
@@ -155,7 +160,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         queryState={userQueryState}
                         onChange={setUserQueryState}
                         onSubmit={onSubmit}
-                        autoFocus={props.showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
+                        autoFocus={props.showOnboardingTour ? shouldFocusQueryInput : isTouchDevice ? false : props.autoFocus !== false}
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
                     />
