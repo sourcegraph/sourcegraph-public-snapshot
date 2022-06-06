@@ -479,9 +479,17 @@ type defaultBranch struct {
 
 func TestFindWorkspaces(t *testing.T) {
 	repoRevs := []*RepoRevision{
-		{Repo: &types.Repo{ID: 1, Name: "github.com/sourcegraph/automation-testing"}},
-		{Repo: &types.Repo{ID: 2, Name: "github.com/sourcegraph/sourcegraph"}},
-		{Repo: &types.Repo{ID: 3, Name: "bitbucket.sgdev.org/SOUR/automation-testing"}},
+		{Repo: &types.Repo{ID: 1, Name: "github.com/sourcegraph/automation-testing"}, FileMatches: []string{}},
+		{Repo: &types.Repo{ID: 2, Name: "github.com/sourcegraph/sourcegraph"}, FileMatches: []string{}},
+		{Repo: &types.Repo{ID: 3, Name: "bitbucket.sgdev.org/SOUR/automation-testing"}, FileMatches: []string{}},
+		// This one has file matches.
+		{
+			Repo: &types.Repo{
+				ID:   4,
+				Name: "github.com/sourcegraph/src-cli",
+			},
+			FileMatches: []string{"a/b", "a/b/c", "d/e/f"},
+		},
 	}
 	steps := []batcheslib.Step{{Run: "echo 1"}}
 
@@ -502,6 +510,7 @@ func TestFindWorkspaces(t *testing.T) {
 				{RepoRevision: repoRevs[0], Path: ""},
 				{RepoRevision: repoRevs[1], Path: ""},
 				{RepoRevision: repoRevs[2], Path: ""},
+				{RepoRevision: repoRevs[3], Path: ""},
 			},
 		},
 
@@ -517,6 +526,7 @@ func TestFindWorkspaces(t *testing.T) {
 				{RepoRevision: repoRevs[0], Path: ""},
 				{RepoRevision: repoRevs[1], Path: ""},
 				{RepoRevision: repoRevs[2], Path: ""},
+				{RepoRevision: repoRevs[3], Path: ""},
 			},
 		},
 
@@ -533,6 +543,7 @@ func TestFindWorkspaces(t *testing.T) {
 			},
 			wantWorkspaces: []*RepoWorkspace{
 				{RepoRevision: repoRevs[1], Path: ""},
+				{RepoRevision: repoRevs[3], Path: ""},
 			},
 		},
 
@@ -555,6 +566,7 @@ func TestFindWorkspaces(t *testing.T) {
 				{RepoRevision: repoRevs[2], Path: "a/b"},
 				{RepoRevision: repoRevs[2], Path: "a/b/c"},
 				{RepoRevision: repoRevs[2], Path: "d/e/f"},
+				{RepoRevision: repoRevs[3], Path: ""},
 			},
 		},
 
@@ -581,8 +593,10 @@ func TestFindWorkspaces(t *testing.T) {
 				{RepoRevision: repoRevs[2], Path: "a/b", OnlyFetchWorkspace: true},
 				{RepoRevision: repoRevs[2], Path: "a/b/c", OnlyFetchWorkspace: true},
 				{RepoRevision: repoRevs[2], Path: "d/e/f", OnlyFetchWorkspace: true},
+				{RepoRevision: repoRevs[3], Path: ""},
 			},
 		},
+
 		"workspace configuration without 'in' matches all": {
 			spec: &batcheslib.BatchSpec{
 				Steps: steps,
@@ -619,6 +633,27 @@ func TestFindWorkspaces(t *testing.T) {
 				repoRevs[0].Key(): {"a/b"},
 			},
 			wantErr: errors.New(`repository github.com/sourcegraph/automation-testing matches multiple workspaces.in globs in the batch spec. glob: "github.com/sourcegraph/automation-testing"`),
+		},
+		"workspace gets subset of search_result_paths": {
+			spec: &batcheslib.BatchSpec{
+				Steps: steps,
+				Workspaces: []batcheslib.WorkspaceConfiguration{
+					{
+						In:               "*src-cli",
+						RootAtLocationOf: "package.json",
+					},
+				},
+			},
+			finderResults: finderResults{
+				repoRevs[3].Key(): {"a/b", "d"},
+			},
+			wantWorkspaces: []*RepoWorkspace{
+				{RepoRevision: repoRevs[0], Path: ""},
+				{RepoRevision: repoRevs[1], Path: ""},
+				{RepoRevision: repoRevs[2], Path: ""},
+				{RepoRevision: &RepoRevision{Repo: repoRevs[3].Repo, Branch: repoRevs[3].Branch, Commit: repoRevs[3].Commit, FileMatches: []string{"a/b", "a/b/c"}}, Path: "a/b"},
+				{RepoRevision: &RepoRevision{Repo: repoRevs[3].Repo, Branch: repoRevs[3].Branch, Commit: repoRevs[3].Commit, FileMatches: []string{"d/e/f"}}, Path: "d"},
+			},
 		},
 	}
 
