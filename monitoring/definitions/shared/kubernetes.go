@@ -19,11 +19,15 @@ var (
 			Name:        "pods_available_percentage",
 			Description: "percentage pods available",
 			// the 'app' label is only available in Kubernetes deloyments - it indicates the pod.
-			Query:             fmt.Sprintf(`sum by(app) (up{app=~".*%[1]s"}) / count by (app) (up{app=~".*%[1]s"}) * 100`, containerName),
-			Critical:          monitoring.Alert().LessOrEqual(90).For(10 * time.Minute),
-			Panel:             monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
-			Owner:             owner,
-			PossibleSolutions: "none",
+			Query:    fmt.Sprintf(`sum by(app) (up{app=~".*%[1]s"}) / count by (app) (up{app=~".*%[1]s"}) * 100`, containerName),
+			Critical: monitoring.Alert().LessOrEqual(90).For(10 * time.Minute),
+			Panel:    monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
+			Owner:    owner,
+			// Solutions similar to the ContainerMissing solutions.
+			NextSteps: fmt.Sprintf(`
+				- Determine if the pod was OOM killed using 'kubectl describe pod %[1]s' (look for 'OOMKilled: true') and, if so, consider increasing the memory limit in the relevant 'Deployment.yaml'.
+				- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'kubectl logs -p %[1]s'.
+			`, containerName),
 		}
 	}
 )

@@ -1,9 +1,9 @@
-import { from, Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { from, Observable, ReplaySubject } from 'rxjs'
+import { distinctUntilChanged, map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
-import { requestGraphQL } from '../../backend/graphql'
+import type { requestGraphQL } from '../../backend/graphql'
 import { FetchFeatureFlagsResult } from '../../graphql-operations'
 import { FeatureFlagName } from '../featureFlags'
 
@@ -12,9 +12,11 @@ import { getFeatureFlagOverride } from './feature-flag-local-overrides'
 /**
  * Fetches the evaluated feature flags for the current user
  */
-function fetchFeatureFlags(): Observable<FetchFeatureFlagsResult['viewerFeatureFlags']> {
+function fetchFeatureFlags(
+    requestGraphQLFunction: typeof requestGraphQL
+): Observable<FetchFeatureFlagsResult['viewerFeatureFlags']> {
     return from(
-        requestGraphQL<FetchFeatureFlagsResult>(
+        requestGraphQLFunction<FetchFeatureFlagsResult>(
             gql`
                 query FetchFeatureFlags {
                     viewerFeatureFlags {
@@ -46,20 +48,23 @@ class FeatureFlagsProxyMap extends Map<FeatureFlagName, boolean> {
 }
 
 export interface IFeatureFlagClient {
-    on(flagName: FeatureFlagName, callback: (value: boolean, error?: Error) => void): () => void
+    get(flagName: FeatureFlagName): Observable<boolean>
 }
 
 export class FeatureFlagClient implements IFeatureFlagClient {
-    private cache = new FeatureFlagsProxyMap()
-    constructor() {
-        fetchFeatureFlags()
+    private flags$ = new ReplaySubject<FeatureFlagsProxyMap>(1)
+    constructor(requestGraphQLFunction: typeof requestGraphQL) {
+        fetchFeatureFlags(requestGraphQLFunction)
             .toPromise()
-            .then(flags => {
-                for (const flag of flags) {
-                    this.cache.set(flag.name as FeatureFlagName, flag.value)
-                }
+            .then(flags =>
+                this.flags$.next(
+                    new FeatureFlagsProxyMap(flags.map(({ name, value }) => [name as FeatureFlagName, value]))
+                )
+            )
+            .catch(error => {
+                console.error(error)
+                this.flags$.error(error)
             })
-            .catch(console.error)
     }
 
     /**
@@ -68,13 +73,10 @@ export class FeatureFlagClient implements IFeatureFlagClient {
      *
      * @returns a cleanup/unsubscribe function
      */
-    // eslint-disable-next-line id-length
-    public on(flagName: FeatureFlagName, callback: (value: boolean, error?: Error) => void): () => void {
-        Promise.resolve(this.cache.get(flagName) || false)
-            .then(callback)
-            .catch(error => callback(false, error))
-        return () => {
-            // TODO: cleanup
-        }
+    public get(flagName: FeatureFlagName): Observable<boolean> {
+        return this.flags$.pipe(
+            map(flags => flags.get(flagName) || false),
+            distinctUntilChanged()
+        )
     }
 }

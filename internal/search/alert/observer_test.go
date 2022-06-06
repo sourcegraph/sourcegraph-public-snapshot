@@ -4,49 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-func TestAlertForDiffCommitSearchLimits(t *testing.T) {
-	cases := []struct {
-		name                 string
-		multiErr             error
-		wantAlertDescription string
-	}{
-		{
-			name:                 "diff_search_warns_on_repos_greater_than_search_limit",
-			multiErr:             errors.Append(nil, &commit.RepoLimitError{ResultType: "diff", Max: 50}),
-			wantAlertDescription: `Diff search can currently only handle searching across 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`,
-		},
-		{
-			name:                 "commit_search_warns_on_repos_greater_than_search_limit",
-			multiErr:             errors.Append(nil, &commit.RepoLimitError{ResultType: "commit", Max: 50}),
-			wantAlertDescription: `Commit search can currently only handle searching across 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`,
-		},
-		{
-			name:                 "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
-			multiErr:             errors.Append(nil, &commit.TimeLimitError{ResultType: "commit", Max: 10000}),
-			wantAlertDescription: `Commit search can currently only handle searching across 10000 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search.`,
-		},
-	}
-
-	for _, test := range cases {
-		alert, _ := (&Observer{}).errorToAlert(context.Background(), test.multiErr)
-		haveAlertDescription := alert.Description
-		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
-			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
-		}
-	}
-}
 
 func TestErrorToAlertStructuralSearch(t *testing.T) {
 	cases := []struct {

@@ -483,6 +483,8 @@ export class FilteredConnection<
         //     this.state.connectionOrError.nodes.length > 0 &&
         //     this.props.hideControlsWhenEmpty
 
+        const inputPlaceholder = this.props.inputPlaceholder || `Search ${this.props.pluralNoun}...`
+
         return (
             <ConnectionContainer compact={this.props.compact} className={this.props.className}>
                 {
@@ -491,8 +493,8 @@ export class FilteredConnection<
                             ref={this.setFilterRef}
                             hideSearch={this.props.hideSearch}
                             inputClassName={this.props.inputClassName}
-                            inputPlaceholder={this.props.inputPlaceholder || `Search ${this.props.pluralNoun}...`}
-                            inputAriaLabel={this.props.inputAriaLabel}
+                            inputPlaceholder={inputPlaceholder}
+                            inputAriaLabel={this.props.inputAriaLabel || inputPlaceholder}
                             inputValue={this.state.query}
                             onInputChange={this.onChange}
                             autoFocus={this.props.autoFocus}

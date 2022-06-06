@@ -5,7 +5,7 @@ import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { WrapDisabledIcon } from '@sourcegraph/shared/src/components/icons'
-import { TooltipController, Icon } from '@sourcegraph/wildcard'
+import { DeprecatedTooltipController, Icon } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
@@ -52,7 +52,7 @@ export class ToggleLineWrap extends React.PureComponent<
                 ToggleLineWrap.setValue(value)
                 this.setState({ value })
                 this.props.onDidUpdate(value)
-                TooltipController.forceUpdate()
+                DeprecatedTooltipController.forceUpdate()
             })
         )
 

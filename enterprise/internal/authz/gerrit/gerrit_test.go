@@ -2,12 +2,9 @@ package gerrit
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"net/url"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 
@@ -69,6 +66,7 @@ func TestProvider_FetchAccount(t *testing.T) {
 		})
 	}
 }
+
 
 func TestProvider_ValidateConnection(t *testing.T) {
 	testCases := []struct {

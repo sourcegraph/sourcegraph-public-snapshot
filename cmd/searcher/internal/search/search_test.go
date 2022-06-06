@@ -11,6 +11,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -66,77 +67,100 @@ func main() {
 		{protocol.PatternInfo{Pattern: "foo"}, ""},
 
 		{protocol.PatternInfo{Pattern: "World", IsCaseSensitive: true}, `
-README.md:1:# Hello World
+README.md:1:1:
+# Hello World
 `},
 
 		{protocol.PatternInfo{Pattern: "world", IsCaseSensitive: true}, `
-README.md:3:Hello world example in go
-main.go:6:	fmt.Println("Hello world")
+README.md:3:3:
+Hello world example in go
+main.go:6:6:
+	fmt.Println("Hello world")
 `},
 
 		{protocol.PatternInfo{Pattern: "world"}, `
-README.md:1:# Hello World
-README.md:3:Hello world example in go
-main.go:6:	fmt.Println("Hello world")
+README.md:1:1:
+# Hello World
+README.md:3:3:
+Hello world example in go
+main.go:6:6:
+	fmt.Println("Hello world")
 `},
 
 		{protocol.PatternInfo{Pattern: "func.*main"}, ""},
 
 		{protocol.PatternInfo{Pattern: "func.*main", IsRegExp: true}, `
-main.go:5:func main() {
+main.go:5:5:
+func main() {
 `},
 
 		// https://github.com/sourcegraph/sourcegraph/issues/8155
 		{protocol.PatternInfo{Pattern: "^func", IsRegExp: true}, `
-main.go:5:func main() {
+main.go:5:5:
+func main() {
 `},
 		{protocol.PatternInfo{Pattern: "^FuNc", IsRegExp: true}, `
-main.go:5:func main() {
+main.go:5:5:
+func main() {
 `},
 
 		{protocol.PatternInfo{Pattern: "mai", IsWordMatch: true}, ""},
 
 		{protocol.PatternInfo{Pattern: "main", IsWordMatch: true}, `
-main.go:1:package main
-main.go:5:func main() {
+main.go:1:1:
+package main
+main.go:5:5:
+func main() {
 `},
 
 		// Ensure we handle CaseInsensitive regexp searches with
 		// special uppercase chars in pattern.
 		{protocol.PatternInfo{Pattern: `printL\B`, IsRegExp: true}, `
-main.go:6:	fmt.Println("Hello world")
+main.go:6:6:
+	fmt.Println("Hello world")
 `},
 
 		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README.md"}, `
-main.go:6:	fmt.Println("Hello world")
+main.go:6:6:
+	fmt.Println("Hello world")
 `},
 		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.md"}}, `
-README.md:1:# Hello World
-README.md:3:Hello world example in go
+README.md:1:1:
+# Hello World
+README.md:3:3:
+Hello world example in go
 `},
 
 		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"*.{md,txt}", "*.txt"}}, `
-abc.txt:1:w
+abc.txt:1:1:
+w
 `},
 
 		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README\\.md", PathPatternsAreRegExps: true}, `
-main.go:6:	fmt.Println("Hello world")
+main.go:6:6:
+	fmt.Println("Hello world")
 `},
 		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"\\.md"}, PathPatternsAreRegExps: true}, `
-README.md:1:# Hello World
-README.md:3:Hello world example in go
+README.md:1:1:
+# Hello World
+README.md:3:3:
+Hello world example in go
 `},
 
 		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"\\.(md|txt)", "README"}, PathPatternsAreRegExps: true}, `
-README.md:1:# Hello World
-README.md:3:Hello world example in go
+README.md:1:1:
+# Hello World
+README.md:3:3:
+Hello world example in go
 `},
 
 		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.{MD,go}"}, PathPatternsAreCaseSensitive: true}, `
-main.go:6:	fmt.Println("Hello world")
+main.go:6:6:
+	fmt.Println("Hello world")
 `},
 		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)`}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: true}, `
-main.go:6:	fmt.Println("Hello world")
+main.go:6:6:
+	fmt.Println("Hello world")
 `},
 
 		{protocol.PatternInfo{Pattern: "doesnotmatch"}, ""},
@@ -144,62 +168,83 @@ main.go:6:	fmt.Println("Hello world")
 milton.png
 `},
 		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:package main
-main.go:2:
-main.go:3:import "fmt"
+main.go:1:3:
+package main
+
+import "fmt"
 `},
 		{protocol.PatternInfo{Pattern: "package main\n\\s*import \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:package main
-main.go:2:
-main.go:3:import "fmt"
+main.go:1:3:
+package main
+
+import "fmt"
 `},
 		{protocol.PatternInfo{Pattern: "package main\n", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:package main
+main.go:1:2:
+package main
+
 `},
 		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:package main
-main.go:2:
-`},
-		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:package main
-main.go:2:
+main.go:1:3:
+package main
+
+import "fmt"
 `},
 		{protocol.PatternInfo{Pattern: "\nfunc", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:4:
-main.go:5:func main() {
+main.go:4:5:
+
+func main() {
 `},
 		{protocol.PatternInfo{Pattern: "\n\\s*func", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:3:import "fmt"
-main.go:4:
-main.go:5:func main() {
+main.go:3:5:
+import "fmt"
+
+func main() {
 `},
 		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"\n\nfunc main\\(\\) {", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:package main
-main.go:2:
-main.go:3:import "fmt"
-main.go:4:
-main.go:5:func main() {
+main.go:1:5:
+package main
+
+import "fmt"
+
+func main() {
 `},
 		{protocol.PatternInfo{Pattern: "\n", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-README.md:1:# Hello World
-README.md:2:
-main.go:1:package main
-main.go:2:
-main.go:3:import "fmt"
-main.go:4:
-main.go:5:func main() {
-main.go:6:	fmt.Println("Hello world")
-main.go:7:}
+README.md:1:3:
+# Hello World
+
+Hello world example in go
+main.go:1:8:
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello world")
+}
+
 `},
 
-		{protocol.PatternInfo{Pattern: "^$", IsRegExp: true}, ``},
+		{protocol.PatternInfo{Pattern: "^$", IsRegExp: true}, `
+README.md:2:2:
+
+main.go:2:2:
+
+main.go:4:4:
+
+main.go:8:8:
+
+milton.png:1:1:
+
+`},
 		{protocol.PatternInfo{
 			Pattern:         "filename contains regex metachars",
 			IncludePatterns: []string{"file++.plus"},
 			IsStructuralPat: true,
 			IsRegExp:        true, // To test for a regression, imply that IsStructuralPat takes precedence.
 		}, `
-file++.plus:1:filename contains regex metachars
+file++.plus:1:1:
+filename contains regex metachars
 `},
 
 		{protocol.PatternInfo{Pattern: "World", IsNegated: true}, `
@@ -226,10 +271,12 @@ symlink
 `},
 		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: true}, `
 abc.txt
-symlink:1:abc.txt
+symlink:1:1:
+abc.txt
 `},
 		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: false, PatternMatchesContent: true}, `
-symlink:1:abc.txt
+symlink:1:1:
+abc.txt
 `},
 		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: false}, `
 abc.txt
@@ -543,27 +590,21 @@ func fetchTimeoutForCI(t *testing.T) string {
 func toString(m []protocol.FileMatch) string {
 	buf := new(bytes.Buffer)
 	for _, f := range m {
-		if len(f.LineMatches) == 0 && len(f.MultilineMatches) == 0 {
+		if len(f.ChunkMatches) == 0 {
 			buf.WriteString(f.Path)
 			buf.WriteByte('\n')
 		}
-		for _, l := range f.LineMatches {
+		for _, cm := range f.ChunkMatches {
 			buf.WriteString(f.Path)
 			buf.WriteByte(':')
-			buf.WriteString(strconv.Itoa(l.LineNumber + 1))
+			buf.WriteString(strconv.Itoa(int(cm.ContentStart.Line) + 1))
 			buf.WriteByte(':')
-			buf.WriteString(l.Preview)
+			buf.WriteString(strconv.Itoa(int(cm.ContentStart.Line) + strings.Count(cm.Content, "\n") + 1))
+			buf.WriteByte(':')
+			buf.WriteByte('\n')
+			buf.WriteString(cm.Content)
 			buf.WriteByte('\n')
 		}
-		for _, l := range f.MultilineMatches {
-			buf.WriteString(f.Path)
-			buf.WriteByte(':')
-			buf.WriteString(strconv.Itoa(int(l.Start.Line) + 1))
-			buf.WriteByte(':')
-			buf.WriteString(l.Preview)
-			buf.WriteByte('\n')
-		}
-
 	}
 	return buf.String()
 }
@@ -576,13 +617,13 @@ func sanityCheckSorted(m []protocol.FileMatch) error {
 		if i > 0 && m[i].Path == m[i-1].Path {
 			return errors.Errorf("duplicate FileMatch on %s", m[i].Path)
 		}
-		lm := m[i].LineMatches
-		if !sort.IsSorted(sortByLineNumber(lm)) {
+		cm := m[i].ChunkMatches
+		if !sort.IsSorted(sortByLineNumber(cm)) {
 			return errors.Errorf("unsorted LineMatches for %s", m[i].Path)
 		}
-		for j := range lm {
-			if j > 0 && lm[j].LineNumber == lm[j-1].LineNumber {
-				return errors.Errorf("duplicate LineNumber on %s:%d", m[i].Path, lm[j].LineNumber)
+		for j := range cm {
+			if j > 0 && cm[j].ContentStart.Line == cm[j-1].ContentStart.Line {
+				return errors.Errorf("duplicate LineNumber on %s:%d", m[i].Path, cm[j].ContentStart.Line)
 			}
 		}
 	}
@@ -595,8 +636,8 @@ func (m sortByPath) Len() int           { return len(m) }
 func (m sortByPath) Less(i, j int) bool { return m[i].Path < m[j].Path }
 func (m sortByPath) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }
 
-type sortByLineNumber []protocol.LineMatch
+type sortByLineNumber []protocol.ChunkMatch
 
 func (m sortByLineNumber) Len() int           { return len(m) }
-func (m sortByLineNumber) Less(i, j int) bool { return m[i].LineNumber < m[j].LineNumber }
+func (m sortByLineNumber) Less(i, j int) bool { return m[i].ContentStart.Line < m[j].ContentStart.Line }
 func (m sortByLineNumber) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }

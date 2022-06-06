@@ -208,13 +208,13 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 	}
 	t.Cleanup(func() { gitserver.Mocks.ExecReader = nil })
 
-	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+	gitserver.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
 		if string(a) != baseRev && string(b) != headRev {
 			t.Fatalf("git.Mocks.MergeBase received unknown commit ids: %s %s", a, b)
 		}
 		return a, nil
 	}
-	t.Cleanup(func() { git.Mocks.MergeBase = nil })
+	t.Cleanup(func() { gitserver.Mocks.MergeBase = nil })
 }
 
 func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.Changeset, batchChange int64) {

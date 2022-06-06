@@ -56,7 +56,7 @@ func (fm *FileMatchResolver) Symbols() []symbolResolver {
 }
 
 func (fm *FileMatchResolver) LineMatches() []lineMatchResolver {
-	lineMatches := fm.FileMatch.HunkMatches.AsLineMatches()
+	lineMatches := fm.FileMatch.ChunkMatches.AsLineMatches()
 	r := make([]lineMatchResolver, 0, len(lineMatches))
 	for _, lm := range lineMatches {
 		r = append(r, lineMatchResolver{lm})

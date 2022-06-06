@@ -28,11 +28,11 @@ import {
     getAvailableSearchContextSpecOrDefault,
     SearchQueryStateStoreProvider,
 } from '@sourcegraph/search'
+import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
 import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import {
     Controller as ExtensionsController,
     createController as createExtensionsController,
@@ -51,8 +51,7 @@ import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/tempo
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import {
     // This is the root Tooltip usage
-    // eslint-disable-next-line no-restricted-imports
-    Tooltip,
+    DeprecatedTooltip,
     FeedbackText,
     setLinkComponent,
     RouterLink,
@@ -468,7 +467,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     <BrowserExtensionTracker />
                                                 </Router>
                                             </ScrollManager>
-                                            <Tooltip key={1} />
+                                            <DeprecatedTooltip key={1} />
                                             <Notifications
                                                 key={2}
                                                 extensionsController={this.extensionsController}

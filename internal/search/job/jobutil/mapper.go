@@ -164,7 +164,7 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		if m.MapSequentialJob != nil {
 			children = m.MapSequentialJob(children)
 		}
-		return NewSequentialJob(children...)
+		return NewSequentialJob(false, children...)
 
 	case *TimeoutJob:
 		child := m.Map(j.child)

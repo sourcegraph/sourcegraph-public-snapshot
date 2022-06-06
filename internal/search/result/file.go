@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -42,8 +43,8 @@ func (f *File) URL() *url.URL {
 type FileMatch struct {
 	File
 
-	HunkMatches HunkMatches
-	Symbols     []*SymbolMatch `json:"-"`
+	ChunkMatches ChunkMatches
+	Symbols      []*SymbolMatch `json:"-"`
 
 	LimitHit bool
 }
@@ -55,7 +56,7 @@ func (fm *FileMatch) RepoName() types.MinimalRepo {
 func (fm *FileMatch) searchResultMarker() {}
 
 func (fm *FileMatch) ResultCount() int {
-	rc := len(fm.Symbols) + fm.HunkMatches.MatchCount()
+	rc := len(fm.Symbols) + fm.ChunkMatches.MatchCount()
 	if rc == 0 {
 		return 1 // 1 to count "empty" results like type:path results
 	}
@@ -66,7 +67,7 @@ func (fm *FileMatch) ResultCount() int {
 // the absence of a true `PathMatch` type, we use this function as a proxy
 // signal to drive `select:file` logic that deduplicates path results.
 func (fm *FileMatch) IsPathMatch() bool {
-	return len(fm.HunkMatches) == 0 && len(fm.Symbols) == 0
+	return len(fm.ChunkMatches) == 0 && len(fm.Symbols) == 0
 }
 
 func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
@@ -77,7 +78,7 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 			ID:   fm.Repo.ID,
 		}
 	case filter.File:
-		fm.HunkMatches = nil
+		fm.ChunkMatches = nil
 		fm.Symbols = nil
 		if len(selectPath) > 1 && selectPath[1] == "directory" {
 			fm.Path = path.Clean(path.Dir(fm.Path)) + "/" // Add trailing slash for clarity.
@@ -85,7 +86,7 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 		return fm
 	case filter.Symbol:
 		if len(fm.Symbols) > 0 {
-			fm.HunkMatches = nil // Only return symbol match if symbols exist
+			fm.ChunkMatches = nil // Only return symbol match if symbols exist
 			if len(selectPath) > 1 {
 				filteredSymbols := SelectSymbolKind(fm.Symbols, selectPath[1])
 				if len(filteredSymbols) == 0 {
@@ -98,7 +99,7 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 		return nil
 	case filter.Content:
 		// Only return file match if line matches exist
-		if len(fm.HunkMatches) > 0 {
+		if len(fm.ChunkMatches) > 0 {
 			fm.Symbols = nil
 			return fm
 		}
@@ -113,7 +114,7 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 // counts and limit.
 func (fm *FileMatch) AppendMatches(src *FileMatch) {
 	// TODO merge hunk matches smartly
-	fm.HunkMatches = append(fm.HunkMatches, src.HunkMatches...)
+	fm.ChunkMatches = append(fm.ChunkMatches, src.ChunkMatches...)
 	fm.Symbols = append(fm.Symbols, src.Symbols...)
 	fm.LimitHit = fm.LimitHit || src.LimitHit
 }
@@ -124,7 +125,7 @@ func (fm *FileMatch) AppendMatches(src *FileMatch) {
 //   if limit >= ResultCount then nothing is done and we return limit - ResultCount.
 //   if limit < ResultCount then ResultCount becomes limit and we return 0.
 func (fm *FileMatch) Limit(limit int) int {
-	matchCount := fm.HunkMatches.MatchCount()
+	matchCount := fm.ChunkMatches.MatchCount()
 	symbolCount := len(fm.Symbols)
 
 	// An empty FileMatch should still count against the limit -- see *FileMatch.ResultCount()
@@ -133,7 +134,7 @@ func (fm *FileMatch) Limit(limit int) int {
 	}
 
 	if limit < matchCount {
-		fm.HunkMatches.Limit(limit)
+		fm.ChunkMatches.Limit(limit)
 		limit = 0
 		fm.LimitHit = true
 	} else {
@@ -165,12 +166,12 @@ func (fm *FileMatch) Key() Key {
 	return k
 }
 
-// HunkMatch stores the smallest (and contiguous) line range of file content
+// ChunkMatch stores the smallest (and contiguous) line range of file content
 // corresponding to the set of ranges. We represent it this way so we always
 // have the complete line available to clients for display purposes and we
 // aways have the complete content of the matched range available for further
 // computation.
-type HunkMatch struct {
+type ChunkMatch struct {
 	// Content contains the lines overlapped by Ranges. Content will always
 	// contain full lines. This means the slice of file content contained
 	// in Content will always be:
@@ -192,8 +193,8 @@ type HunkMatch struct {
 	Ranges Ranges
 }
 
-// MatchedContent returns the content matched by the ranges in this HunkMatch.
-func (h HunkMatch) MatchedContent() []string {
+// MatchedContent returns the content matched by the ranges in this ChunkMatch.
+func (h ChunkMatch) MatchedContent() []string {
 	// Create a new set of ranges whose offsets are
 	// relative to the start of the content.
 	relRanges := h.Ranges.Sub(h.ContentStart)
@@ -204,16 +205,16 @@ func (h HunkMatch) MatchedContent() []string {
 	return res
 }
 
-// AsLineMatches facilitates converting from HunkMatch to a set of LineMatches.
+// AsLineMatches facilitates converting from ChunkMatch to a set of LineMatches.
 // This loses information like byte offsets and the logical relationship
 // between lines in a multiline match, but it allows us to keep providing the
 // LineMatch representation for clients without breaking backwards compatibility.
-func (h HunkMatch) AsLineMatches() []*LineMatch {
+func (h ChunkMatch) AsLineMatches() []*LineMatch {
 	lines := strings.Split(h.Content, "\n")
 	lineMatches := make([]*LineMatch, len(lines))
 	for i, line := range lines {
 		lineNumber := h.ContentStart.Line + i
-		var offsetAndLengths [][2]int32
+		offsetAndLengths := [][2]int32{}
 		for _, rr := range h.Ranges {
 			for rangeLine := rr.Start.Line; rangeLine <= rr.End.Line; rangeLine++ {
 				if rangeLine == lineNumber {
@@ -222,12 +223,14 @@ func (h HunkMatch) AsLineMatches() []*LineMatch {
 						start = rr.Start.Column
 					}
 
-					end := len(line)
+					end := utf8.RuneCountInString(line)
 					if rangeLine == rr.End.Line {
 						end = rr.End.Column
 					}
 
-					offsetAndLengths = append(offsetAndLengths, [2]int32{int32(start), int32(end - start)})
+					if start != end {
+						offsetAndLengths = append(offsetAndLengths, [2]int32{int32(start), int32(end - start)})
+					}
 				}
 			}
 		}
@@ -240,9 +243,9 @@ func (h HunkMatch) AsLineMatches() []*LineMatch {
 	return lineMatches
 }
 
-type HunkMatches []HunkMatch
+type ChunkMatches []ChunkMatch
 
-func (hs HunkMatches) AsLineMatches() []*LineMatch {
+func (hs ChunkMatches) AsLineMatches() []*LineMatch {
 	res := make([]*LineMatch, 0, len(hs))
 	for _, h := range hs {
 		res = append(res, h.AsLineMatches()...)
@@ -250,7 +253,7 @@ func (hs HunkMatches) AsLineMatches() []*LineMatch {
 	return res
 }
 
-func (hs HunkMatches) MatchCount() int {
+func (hs ChunkMatches) MatchCount() int {
 	count := 0
 	for _, h := range hs {
 		count += len(h.Ranges)
@@ -258,7 +261,7 @@ func (hs HunkMatches) MatchCount() int {
 	return count
 }
 
-func (hs *HunkMatches) Limit(limit int) {
+func (hs *ChunkMatches) Limit(limit int) {
 	matches := *hs
 	for i, match := range matches {
 		if len(match.Ranges) >= limit {

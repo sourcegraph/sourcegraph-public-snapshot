@@ -1,5 +1,9 @@
 import React, { createContext, useEffect, useMemo } from 'react'
 
+import { Observable, of, throwError } from 'rxjs'
+
+import { requestGraphQL } from '../backend/graphql'
+
 import { FeatureFlagName } from './featureFlags'
 import { removeFeatureFlagOverride, setFeatureFlagOverride } from './lib/feature-flag-local-overrides'
 import { FeatureFlagClient, IFeatureFlagClient } from './lib/FeatureFlagClient'
@@ -48,7 +52,7 @@ export const FeatureFlagsProvider: React.FunctionComponent<FeatureFlagsProviderP
     isLocalOverrideEnabled = true,
     children,
 }) => {
-    const client = useMemo(() => new FeatureFlagClient(), [])
+    const client = useMemo(() => new FeatureFlagClient(requestGraphQL), [])
 
     return (
         <FeatureFlagsContext.Provider value={{ client }}>
@@ -59,7 +63,7 @@ export const FeatureFlagsProvider: React.FunctionComponent<FeatureFlagsProviderP
 }
 
 interface MockedFeatureFlagsProviderProps {
-    overrides: Map<FeatureFlagName, boolean>
+    overrides: Map<FeatureFlagName, boolean | Error>
 }
 
 /**
@@ -80,12 +84,10 @@ export const MockedFeatureFlagsProvider: React.FunctionComponent<MockedFeatureFl
 }
 
 class MockFeatureFlagClient implements IFeatureFlagClient {
-    constructor(private overrides: Map<FeatureFlagName, boolean>) {}
+    constructor(private overrides: Map<FeatureFlagName, boolean | Error>) {}
 
-    // eslint-disable-next-line id-length
-    public on(flagName: FeatureFlagName, callback: (value: boolean, error?: Error) => void): () => void {
-        callback(this.overrides.get(flagName) || false)
-
-        return () => {}
+    public get(flagName: FeatureFlagName): Observable<boolean> {
+        const value = this.overrides.get(flagName)
+        return value instanceof Error ? throwError(value) : of(value || false)
     }
 }
