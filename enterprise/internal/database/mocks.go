@@ -11195,9 +11195,6 @@ type MockPermsStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *PermsStoreHandleFunc
-	// ListExternalAccountsFunc is an instance of a mock function object
-	// controlling the behavior of the method ListExternalAccounts.
-	ListExternalAccountsFunc *PermsStoreListExternalAccountsFunc
 	// ListPendingUsersFunc is an instance of a mock function object
 	// controlling the behavior of the method ListPendingUsers.
 	ListPendingUsersFunc *PermsStoreListPendingUsersFunc
@@ -11289,11 +11286,6 @@ func NewMockPermsStore() *MockPermsStore {
 		},
 		HandleFunc: &PermsStoreHandleFunc{
 			defaultHook: func() (r0 *basestore.TransactableHandle) {
-				return
-			},
-		},
-		ListExternalAccountsFunc: &PermsStoreListExternalAccountsFunc{
-			defaultHook: func(context.Context, int32) (r0 []*extsvc.Account, r1 error) {
 				return
 			},
 		},
@@ -11424,11 +11416,6 @@ func NewStrictMockPermsStore() *MockPermsStore {
 				panic("unexpected invocation of MockPermsStore.Handle")
 			},
 		},
-		ListExternalAccountsFunc: &PermsStoreListExternalAccountsFunc{
-			defaultHook: func(context.Context, int32) ([]*extsvc.Account, error) {
-				panic("unexpected invocation of MockPermsStore.ListExternalAccounts")
-			},
-		},
 		ListPendingUsersFunc: &PermsStoreListPendingUsersFunc{
 			defaultHook: func(context.Context, string, string) ([]string, error) {
 				panic("unexpected invocation of MockPermsStore.ListPendingUsers")
@@ -11543,9 +11530,6 @@ func NewMockPermsStoreFrom(i PermsStore) *MockPermsStore {
 		},
 		HandleFunc: &PermsStoreHandleFunc{
 			defaultHook: i.Handle,
-		},
-		ListExternalAccountsFunc: &PermsStoreListExternalAccountsFunc{
-			defaultHook: i.ListExternalAccounts,
 		},
 		ListPendingUsersFunc: &PermsStoreListPendingUsersFunc{
 			defaultHook: i.ListPendingUsers,
@@ -12241,116 +12225,6 @@ func (c PermsStoreHandleFuncCall) Args() []interface{} {
 // invocation.
 func (c PermsStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// PermsStoreListExternalAccountsFunc describes the behavior when the
-// ListExternalAccounts method of the parent MockPermsStore instance is
-// invoked.
-type PermsStoreListExternalAccountsFunc struct {
-	defaultHook func(context.Context, int32) ([]*extsvc.Account, error)
-	hooks       []func(context.Context, int32) ([]*extsvc.Account, error)
-	history     []PermsStoreListExternalAccountsFuncCall
-	mutex       sync.Mutex
-}
-
-// ListExternalAccounts delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockPermsStore) ListExternalAccounts(v0 context.Context, v1 int32) ([]*extsvc.Account, error) {
-	r0, r1 := m.ListExternalAccountsFunc.nextHook()(v0, v1)
-	m.ListExternalAccountsFunc.appendCall(PermsStoreListExternalAccountsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ListExternalAccounts
-// method of the parent MockPermsStore instance is invoked and the hook
-// queue is empty.
-func (f *PermsStoreListExternalAccountsFunc) SetDefaultHook(hook func(context.Context, int32) ([]*extsvc.Account, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ListExternalAccounts method of the parent MockPermsStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *PermsStoreListExternalAccountsFunc) PushHook(hook func(context.Context, int32) ([]*extsvc.Account, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *PermsStoreListExternalAccountsFunc) SetDefaultReturn(r0 []*extsvc.Account, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32) ([]*extsvc.Account, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *PermsStoreListExternalAccountsFunc) PushReturn(r0 []*extsvc.Account, r1 error) {
-	f.PushHook(func(context.Context, int32) ([]*extsvc.Account, error) {
-		return r0, r1
-	})
-}
-
-func (f *PermsStoreListExternalAccountsFunc) nextHook() func(context.Context, int32) ([]*extsvc.Account, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *PermsStoreListExternalAccountsFunc) appendCall(r0 PermsStoreListExternalAccountsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of PermsStoreListExternalAccountsFuncCall
-// objects describing the invocations of this function.
-func (f *PermsStoreListExternalAccountsFunc) History() []PermsStoreListExternalAccountsFuncCall {
-	f.mutex.Lock()
-	history := make([]PermsStoreListExternalAccountsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// PermsStoreListExternalAccountsFuncCall is an object that describes an
-// invocation of method ListExternalAccounts on an instance of
-// MockPermsStore.
-type PermsStoreListExternalAccountsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*extsvc.Account
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c PermsStoreListExternalAccountsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c PermsStoreListExternalAccountsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // PermsStoreListPendingUsersFunc describes the behavior when the

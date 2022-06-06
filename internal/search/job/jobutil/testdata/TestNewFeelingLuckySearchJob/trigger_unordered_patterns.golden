@@ -1,0 +1,397 @@
+{
+  "ALERT": {
+    "SEQUENTIAL": [
+      {
+        "TIMEOUT": {
+          "LIMIT": {
+            "PARALLEL": [
+              {
+                "ZoektGlobalTextSearchJob": {
+                  "GlobalZoektQuery": {
+                    "Query": {
+                      "Pattern": "parse func",
+                      "CaseSensitive": false,
+                      "FileName": false,
+                      "Content": false
+                    },
+                    "RepoScope": [
+                      {
+                        "Children": [
+                          {
+                            "Pattern": "HEAD",
+                            "Exact": true
+                          },
+                          41
+                        ]
+                      }
+                    ],
+                    "IncludePrivate": true
+                  },
+                  "ZoektArgs": {
+                    "Query": null,
+                    "Typ": "text",
+                    "FileMatchLimit": 500,
+                    "Select": []
+                  },
+                  "RepoOpts": {
+                    "RepoFilters": null,
+                    "MinusRepoFilters": null,
+                    "Dependencies": null,
+                    "Dependents": null,
+                    "CaseSensitiveRepoFilters": false,
+                    "SearchContextSpec": "global",
+                    "CommitAfter": "",
+                    "Visibility": "Any",
+                    "Limit": 0,
+                    "Cursors": null,
+                    "ForkSet": false,
+                    "NoForks": true,
+                    "OnlyForks": false,
+                    "OnlyCloned": false,
+                    "ArchivedSet": false,
+                    "NoArchived": true,
+                    "OnlyArchived": false
+                  }
+                }
+              },
+              {
+                "ReposComputeExcludedJob": {
+                  "RepoOpts": {
+                    "RepoFilters": null,
+                    "MinusRepoFilters": null,
+                    "Dependencies": null,
+                    "Dependents": null,
+                    "CaseSensitiveRepoFilters": false,
+                    "SearchContextSpec": "global",
+                    "CommitAfter": "",
+                    "Visibility": "Any",
+                    "Limit": 0,
+                    "Cursors": null,
+                    "ForkSet": false,
+                    "NoForks": true,
+                    "OnlyForks": false,
+                    "OnlyCloned": false,
+                    "ArchivedSet": false,
+                    "NoArchived": true,
+                    "OnlyArchived": false
+                  }
+                }
+              },
+              {
+                "PARALLEL": [
+                  {
+                    "REPOPAGER": {
+                      "SearcherTextSearchJob": {
+                        "PatternInfo": {
+                          "Pattern": "parse func",
+                          "IsNegated": false,
+                          "IsRegExp": true,
+                          "IsStructuralPat": false,
+                          "CombyRule": "",
+                          "IsWordMatch": false,
+                          "IsCaseSensitive": false,
+                          "FileMatchLimit": 500,
+                          "Index": "yes",
+                          "Select": [],
+                          "IncludePatterns": null,
+                          "ExcludePattern": "",
+                          "FilePatternsReposMustInclude": null,
+                          "FilePatternsReposMustExclude": null,
+                          "PathPatternsAreCaseSensitive": false,
+                          "PatternMatchesContent": true,
+                          "PatternMatchesPath": true,
+                          "Languages": null
+                        },
+                        "Repos": null,
+                        "Indexed": false,
+                        "UseFullDeadline": true,
+                        "Features": {
+                          "ContentBasedLangFilters": false,
+                          "HybridSearch": false
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "RepoSearchJob": {
+                      "RepoOpts": {
+                        "RepoFilters": [
+                          "parse func"
+                        ],
+                        "MinusRepoFilters": null,
+                        "Dependencies": null,
+                        "Dependents": null,
+                        "CaseSensitiveRepoFilters": false,
+                        "SearchContextSpec": "global",
+                        "CommitAfter": "",
+                        "Visibility": "Any",
+                        "Limit": 0,
+                        "Cursors": null,
+                        "ForkSet": false,
+                        "NoForks": true,
+                        "OnlyForks": false,
+                        "OnlyCloned": false,
+                        "ArchivedSet": false,
+                        "NoArchived": true,
+                        "OnlyArchived": false
+                      },
+                      "FilePatternsReposMustInclude": null,
+                      "FilePatternsReposMustExclude": null,
+                      "Features": {
+                        "ContentBasedLangFilters": false,
+                        "HybridSearch": false
+                      },
+                      "Mode": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "value": 500
+        },
+        "value": "20s"
+      },
+      {
+        "TIMEOUT": {
+          "LIMIT": {
+            "PARALLEL": [
+              {
+                "ZoektGlobalTextSearchJob": {
+                  "GlobalZoektQuery": {
+                    "Query": {
+                      "Children": [
+                        {
+                          "Pattern": "parse",
+                          "CaseSensitive": false,
+                          "FileName": false,
+                          "Content": false
+                        },
+                        {
+                          "Pattern": "func",
+                          "CaseSensitive": false,
+                          "FileName": false,
+                          "Content": false
+                        }
+                      ]
+                    },
+                    "RepoScope": [
+                      {
+                        "Children": [
+                          {
+                            "Pattern": "HEAD",
+                            "Exact": true
+                          },
+                          41
+                        ]
+                      }
+                    ],
+                    "IncludePrivate": true
+                  },
+                  "ZoektArgs": {
+                    "Query": null,
+                    "Typ": "text",
+                    "FileMatchLimit": 500,
+                    "Select": []
+                  },
+                  "RepoOpts": {
+                    "RepoFilters": null,
+                    "MinusRepoFilters": null,
+                    "Dependencies": null,
+                    "Dependents": null,
+                    "CaseSensitiveRepoFilters": false,
+                    "SearchContextSpec": "",
+                    "CommitAfter": "",
+                    "Visibility": "Any",
+                    "Limit": 0,
+                    "Cursors": null,
+                    "ForkSet": false,
+                    "NoForks": true,
+                    "OnlyForks": false,
+                    "OnlyCloned": false,
+                    "ArchivedSet": false,
+                    "NoArchived": true,
+                    "OnlyArchived": false
+                  }
+                }
+              },
+              {
+                "ReposComputeExcludedJob": {
+                  "RepoOpts": {
+                    "RepoFilters": null,
+                    "MinusRepoFilters": null,
+                    "Dependencies": null,
+                    "Dependents": null,
+                    "CaseSensitiveRepoFilters": false,
+                    "SearchContextSpec": "",
+                    "CommitAfter": "",
+                    "Visibility": "Any",
+                    "Limit": 0,
+                    "Cursors": null,
+                    "ForkSet": false,
+                    "NoForks": true,
+                    "OnlyForks": false,
+                    "OnlyCloned": false,
+                    "ArchivedSet": false,
+                    "NoArchived": true,
+                    "OnlyArchived": false
+                  }
+                }
+              },
+              {
+                "AND": [
+                  {
+                    "LIMIT": {
+                      "PARALLEL": [
+                        {
+                          "REPOPAGER": {
+                            "SearcherTextSearchJob": {
+                              "PatternInfo": {
+                                "Pattern": "parse",
+                                "IsNegated": false,
+                                "IsRegExp": true,
+                                "IsStructuralPat": false,
+                                "CombyRule": "",
+                                "IsWordMatch": false,
+                                "IsCaseSensitive": false,
+                                "FileMatchLimit": 500,
+                                "Index": "yes",
+                                "Select": [],
+                                "IncludePatterns": null,
+                                "ExcludePattern": "",
+                                "FilePatternsReposMustInclude": null,
+                                "FilePatternsReposMustExclude": null,
+                                "PathPatternsAreCaseSensitive": false,
+                                "PatternMatchesContent": true,
+                                "PatternMatchesPath": true,
+                                "Languages": null
+                              },
+                              "Repos": null,
+                              "Indexed": false,
+                              "UseFullDeadline": true,
+                              "Features": {
+                                "ContentBasedLangFilters": false,
+                                "HybridSearch": false
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "RepoSearchJob": {
+                            "RepoOpts": {
+                              "RepoFilters": [
+                                "parse"
+                              ],
+                              "MinusRepoFilters": null,
+                              "Dependencies": null,
+                              "Dependents": null,
+                              "CaseSensitiveRepoFilters": false,
+                              "SearchContextSpec": "",
+                              "CommitAfter": "",
+                              "Visibility": "Any",
+                              "Limit": 0,
+                              "Cursors": null,
+                              "ForkSet": false,
+                              "NoForks": true,
+                              "OnlyForks": false,
+                              "OnlyCloned": false,
+                              "ArchivedSet": false,
+                              "NoArchived": true,
+                              "OnlyArchived": false
+                            },
+                            "FilePatternsReposMustInclude": null,
+                            "FilePatternsReposMustExclude": null,
+                            "Features": {
+                              "ContentBasedLangFilters": false,
+                              "HybridSearch": false
+                            },
+                            "Mode": 1
+                          }
+                        }
+                      ]
+                    },
+                    "value": 40000
+                  },
+                  {
+                    "LIMIT": {
+                      "PARALLEL": [
+                        {
+                          "REPOPAGER": {
+                            "SearcherTextSearchJob": {
+                              "PatternInfo": {
+                                "Pattern": "func",
+                                "IsNegated": false,
+                                "IsRegExp": true,
+                                "IsStructuralPat": false,
+                                "CombyRule": "",
+                                "IsWordMatch": false,
+                                "IsCaseSensitive": false,
+                                "FileMatchLimit": 500,
+                                "Index": "yes",
+                                "Select": [],
+                                "IncludePatterns": null,
+                                "ExcludePattern": "",
+                                "FilePatternsReposMustInclude": null,
+                                "FilePatternsReposMustExclude": null,
+                                "PathPatternsAreCaseSensitive": false,
+                                "PatternMatchesContent": true,
+                                "PatternMatchesPath": true,
+                                "Languages": null
+                              },
+                              "Repos": null,
+                              "Indexed": false,
+                              "UseFullDeadline": true,
+                              "Features": {
+                                "ContentBasedLangFilters": false,
+                                "HybridSearch": false
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "RepoSearchJob": {
+                            "RepoOpts": {
+                              "RepoFilters": [
+                                "func"
+                              ],
+                              "MinusRepoFilters": null,
+                              "Dependencies": null,
+                              "Dependents": null,
+                              "CaseSensitiveRepoFilters": false,
+                              "SearchContextSpec": "",
+                              "CommitAfter": "",
+                              "Visibility": "Any",
+                              "Limit": 0,
+                              "Cursors": null,
+                              "ForkSet": false,
+                              "NoForks": true,
+                              "OnlyForks": false,
+                              "OnlyCloned": false,
+                              "ArchivedSet": false,
+                              "NoArchived": true,
+                              "OnlyArchived": false
+                            },
+                            "FilePatternsReposMustInclude": null,
+                            "FilePatternsReposMustExclude": null,
+                            "Features": {
+                              "ContentBasedLangFilters": false,
+                              "HybridSearch": false
+                            },
+                            "Mode": 1
+                          }
+                        }
+                      ]
+                    },
+                    "value": 40000
+                  }
+                ]
+              }
+            ]
+          },
+          "value": 500
+        },
+        "value": "20s"
+      }
+    ]
+  }
+}

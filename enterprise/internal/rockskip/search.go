@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/amit7itz/goset"
 	"github.com/grafana/regexp"
 	"github.com/grafana/regexp/syntax"
 	"github.com/inconshreveable/log15"
@@ -229,14 +230,14 @@ func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameter
 		return nil, err
 	}
 
-	pathSet := map[string]struct{}{}
+	paths := goset.NewSet[string]()
 	for rows.Next() {
 		var path string
 		err = rows.Scan(&path)
 		if err != nil {
 			return nil, errors.Wrap(err, "Search: Scan")
 		}
-		pathSet[path] = struct{}{}
+		paths.Add(path)
 	}
 
 	stopErr := errors.New("stop iterating")
@@ -246,11 +247,7 @@ func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameter
 	parse := s.createParser()
 
 	threadStatus.Tasklog.Start("ArchiveEach")
-	paths := []string{}
-	for path := range pathSet {
-		paths = append(paths, path)
-	}
-	err = s.git.ArchiveEach(string(args.Repo), string(args.CommitID), paths, func(path string, contents []byte) error {
+	err = s.git.ArchiveEach(string(args.Repo), string(args.CommitID), paths.Items(), func(path string, contents []byte) error {
 		defer threadStatus.Tasklog.Continue("ArchiveEach")
 
 		threadStatus.Tasklog.Start("parse")

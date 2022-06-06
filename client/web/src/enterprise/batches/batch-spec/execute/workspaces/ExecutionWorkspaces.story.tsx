@@ -20,17 +20,11 @@ import { BATCH_SPEC_WORKSPACES, BATCH_SPEC_WORKSPACE_BY_ID, FETCH_BATCH_SPEC_EXE
 
 import { ExecutionWorkspaces } from './ExecutionWorkspaces'
 
-const { add } = storiesOf('web/batches/batch-spec/execute/ExecutionWorkspaces', module)
-    .addDecorator(story => (
-        <div className="p-3 d-flex" style={{ height: '95vh', width: '100%' }}>
-            {story()}
-        </div>
-    ))
-    .addParameters({
-        chromatic: {
-            disableSnapshot: false,
-        },
-    })
+const { add } = storiesOf('web/batches/batch-spec/execute/ExecutionWorkspaces', module).addDecorator(story => (
+    <div className="p-3 d-flex" style={{ height: '95vh', width: '100%' }}>
+        {story()}
+    </div>
+))
 
 const MOCKS = new WildcardMockLink([
     {
