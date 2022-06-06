@@ -78,10 +78,9 @@ The most likely error message indicating a problem is:
 Error prefetching SAML service provider metadata
 ```
 
-### Filters to control user sign-up and sign-in
+### How to control user sign-up and sign-in
 
 Use the following filters to restrict how users can create accounts and sign in to your Sourcegraph instance via SAML auth provider.
-
 
 **allowSignup**
 
