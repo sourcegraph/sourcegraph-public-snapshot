@@ -2,8 +2,6 @@ package batches
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches/env"
@@ -140,7 +138,6 @@ type ParseBatchSpecOptions struct {
 	AllowArrayEnvironments bool
 	AllowTransformChanges  bool
 	AllowConditionalExec   bool
-	BatchSpecDirectory     string
 }
 
 func ParseBatchSpec(data []byte, opts ParseBatchSpecOptions) (*BatchSpec, error) {
@@ -198,36 +195,6 @@ func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*Ba
 					"step %d in batch spec uses the 'if' attribute for conditional execution, which is not supported in this Sourcegraph version",
 					i+1,
 				)))
-			}
-		}
-	}
-
-	if len(opts.BatchSpecDirectory) > 0 {
-		for i, step := range spec.Steps {
-			for j, mount := range step.Mount {
-				p := mount.Path
-				if !filepath.IsAbs(p) {
-					// the path is relative, try to build the absolute path since Docker will only mount absolute paths
-					p = filepath.Join(opts.BatchSpecDirectory, p)
-				}
-				info, err := os.Stat(p)
-				if os.IsNotExist(err) {
-					errs = errors.Append(errs, NewValidationError(errors.Newf("step %d mount path %s does not exist", i+1, p)))
-				} else if err != nil {
-					errs = errors.Append(errs, NewValidationError(errors.Wrapf(err, "step %d mount path validation", i+1)))
-				} else {
-					if !strings.HasPrefix(p, opts.BatchSpecDirectory) {
-						errs = errors.Append(errs, NewValidationError(errors.Newf("step %d mount path is not in the same directory or subdirectory as the batch spec", i+1)))
-					}
-					// Mounting a directory on Docker must end with the separator. So, append the separator this to make
-					// users lives easier and avoid churn.
-					if info.IsDir() && !strings.HasSuffix(p, string(filepath.Separator)) {
-						p += string(filepath.Separator)
-					}
-					// update the mount path to the absolute path so this logic does not get applied again when executing
-					// the step
-					step.Mount[j].Path = p
-				}
 			}
 		}
 	}
