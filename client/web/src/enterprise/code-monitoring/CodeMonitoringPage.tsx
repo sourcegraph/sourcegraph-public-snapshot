@@ -95,12 +95,6 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
         <div className="code-monitoring-page" data-testid="code-monitoring-page">
             <PageTitle title="Code Monitoring" />
             <PageHeader
-                path={[
-                    {
-                        icon: CodeMonitoringLogo,
-                        text: 'Code monitoring',
-                    },
-                ]}
                 actions={
                     authenticatedUser && (
                         <Button to="/code-monitoring/new" variant="primary" as={Link}>
@@ -119,7 +113,11 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                     )
                 }
                 className="mb-3"
-            />
+            >
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb icon={CodeMonitoringLogo}>Code monitoring</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
 
             {userHasCodeMonitors === 'loading' ? (
                 <LoadingSpinner inline={false} />
