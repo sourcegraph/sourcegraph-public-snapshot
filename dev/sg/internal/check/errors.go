@@ -3,7 +3,7 @@ package check
 import "github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 
 // RenderableError can be implemented to render expanded details about the error's results
-// to sg output.
+// to sg output. First, err.Error() is printed, and then Render is called.
 //
 // This is intended as an equivalent to the old lint.Report-style return values.
 //

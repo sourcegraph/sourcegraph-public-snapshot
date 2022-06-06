@@ -39,7 +39,7 @@ func (r *Runner[Args]) Check(
 	if len(results.failed) > 0 {
 		return errors.Newf("%d checks failed (%d skipped)", len(results.failed), len(results.skipped))
 	}
-	r.out.WriteSuccessf("%d checks passed! (%d skipped)", len(results.all), len(results.skipped))
+
 	return nil
 }
 
@@ -88,8 +88,8 @@ func (r *Runner[Args]) Fix(
 
 				// TODO send pending
 				if err := c.Fix(ctx, IO{
-					Input:    r.in,
-					Progress: r.out,
+					Input:  r.in,
+					Writer: r.out,
 				}, args); err != nil {
 					pending.Complete(output.Styledf(output.StyleFailure, "%d. %s - Failed to fix %s: %s",
 						idx, category.Name, c.Name, err.Error()))
@@ -128,6 +128,9 @@ func (r *Runner[Args]) Interactive(
 
 		// Get args when we run
 		results = r.run(ctx, getArgs())
+		if len(results.failed) == 0 {
+			break
+		}
 
 		r.out.WriteWarningf("Some checks failed. Which one do you want to fix?")
 
@@ -191,34 +194,40 @@ func (r *Runner[Args]) run(ctx context.Context, args Args) runResults {
 		pending := r.out.Pending(output.Styledf(output.StylePending, "%d. %s - Determining status...", idx, category.Name))
 
 		// Validate dependents
-		var failed bool
+		var failures []error
 		for _, d := range category.DependsOn {
-			if !categoryResults[d] {
-				failed = true
+			if met, exists := categoryResults[d]; !exists {
+				failures = append(failures, errors.Newf("Required check category %q not found", d))
+			} else if !met {
+				failures = append(failures, errors.Newf("Required check category %q not met", d))
 			}
 		}
 
 		// Validate checks
-		if !failed {
+		if len(failures) == 0 {
 			for _, c := range category.Checks {
 				if err := c.RunCheck(ctx, IO{
-					Input:    r.in,
-					Progress: pending,
+					Input:  r.in,
+					Writer: pending,
 				}, args); err != nil {
-					failed = true
+					failures = append(failures, err)
 				}
 			}
 		}
 
 		// Report results
-		pending.Destroy()
-		categoryResults[category.Name] = failed
-		if !failed {
+		categoryResults[category.Name] = len(failures) == 0
+		if len(failures) == 0 {
+			// If success, progress messages are not important
+			pending.Destroy()
 			r.out.WriteSuccessf("%d. %s", idx, category.Name)
 			results.failed = removeEntry(results.failed, i)
 		} else {
-			// TODO write failure
-			r.out.WriteFailuref("%d. %s", idx, category.Name)
+			// If failures, progress messages are important - TODO maybe make toggle-able
+			for _, failure := range failures {
+				pending.WriteLine(output.Styled(output.StyleWarning, failure.Error()))
+			}
+			pending.Complete(output.Linef(output.EmojiWarning, output.StyleFailure, "%d. %s", idx, category.Name))
 		}
 	}
 
@@ -395,8 +404,8 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 		for _, dep := range category.Checks {
 			// TODO
 			_ = dep.RunCheck(ctx, IO{
-				Input:    r.in,
-				Progress: pending,
+				Input:  r.in,
+				Writer: pending,
 			}, args)
 		}
 		pending.Destroy()
@@ -426,8 +435,8 @@ func (r *Runner[Args]) fixDependencyAutomatically(ctx context.Context, check *Ch
 	r.out.WriteNoticef("Trying my hardest to fix %q automatically...", check.Name)
 
 	if err := check.Fix(ctx, IO{
-		Input:    r.in,
-		Progress: r.out,
+		Input:  r.in,
+		Writer: r.out,
 	}, args); err != nil {
 		r.out.WriteFailuref("Failed to fix check: %s", err)
 		return err
