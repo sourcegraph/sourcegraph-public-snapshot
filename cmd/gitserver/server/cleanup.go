@@ -187,7 +187,7 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 			wrongShardRepoSize += size
 			if wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
 				if _, ok := gitServerAddressSet[s.Hostname]; !ok {
-					s.Logger.Warn("current shard is not included in the list of known gitserver shards, skipping", log.String("dir", string(dir)), log.String("current-shard", addr), log.Strings("all-shards", gitServerAddrs))
+					s.Logger.Warn("current shard is not included in the list of known gitserver shards, skipping", log.String("dir", string(dir)), log.String("current-hostname", s.Hostname), log.String("target-shard", addr), log.Strings("all-shards", gitServerAddrs))
 					return false, nil
 				}
 				s.Logger.Info("removing repo cloned on the wrong shard", log.String("dir", string(dir)), log.String("target-shard", addr), log.String("current-shard", s.Hostname), log.Int64("size-bytes", size))
