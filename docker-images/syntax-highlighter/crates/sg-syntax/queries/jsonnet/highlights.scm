@@ -20,15 +20,19 @@
 
 [
   (local)
+  (super)
   "function"
   "for"
   "in"
+  "import"
+  "importstr"
 ] @keyword
 
 ; Language basics
 (comment) @comment
 (number) @number
 [ (true) (false) ] @boolean
+[ (self) (dollar) ] @constant.builtin
 (binaryop) @operator
 (unaryop) @operator
 
