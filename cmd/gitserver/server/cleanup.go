@@ -116,8 +116,9 @@ var (
 		Help: "whether git prune was a success (true/false) and whether it was skipped (true/false)",
 	}, []string{"success", "skipped"})
 	janitorTimer = promauto.NewHistogram(prometheus.HistogramOpts{
-		Name: "src_gitserver_janitor_duration_seconds",
-		Help: "Duration of gitserver janitor background job",
+		Name:    "src_gitserver_janitor_duration_seconds",
+		Help:    "Duration of gitserver janitor background job",
+		Buckets: []float64{0.1, 1, 10, 60, 300, 3600, 7200},
 	})
 )
 
