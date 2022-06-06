@@ -10,8 +10,8 @@ import (
 type IO struct {
 	// Input can be read for user input. It may be nil in non-interactive modes.
 	Input io.Reader
-	// Output can be used to write progress messages.
-	output.Writer
+	// Progress can be used to write progress messages.
+	Progress output.Writer
 }
 
 // EnableFunc can be implemented to allow toggling whether they are skipped or not.

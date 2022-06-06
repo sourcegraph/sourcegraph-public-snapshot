@@ -88,8 +88,8 @@ func (r *Runner[Args]) Fix(
 
 				// TODO send pending
 				if err := c.Fix(ctx, IO{
-					Input:  r.in,
-					Writer: r.out,
+					Input:    r.in,
+					Progress: r.out,
 				}, args); err != nil {
 					pending.Complete(output.Styledf(output.StyleFailure, "%d. %s - Failed to fix %s: %s",
 						idx, category.Name, c.Name, err.Error()))
@@ -202,8 +202,8 @@ func (r *Runner[Args]) run(ctx context.Context, args Args) runResults {
 		if !failed {
 			for _, c := range category.Checks {
 				if err := c.RunCheck(ctx, IO{
-					Input:  r.in,
-					Writer: pending,
+					Input:    r.in,
+					Progress: pending,
 				}, args); err != nil {
 					failed = true
 				}
@@ -395,8 +395,8 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 		for _, dep := range category.Checks {
 			// TODO
 			_ = dep.RunCheck(ctx, IO{
-				Input:  r.in,
-				Writer: pending,
+				Input:    r.in,
+				Progress: pending,
 			}, args)
 		}
 		pending.Destroy()
@@ -426,8 +426,8 @@ func (r *Runner[Args]) fixDependencyAutomatically(ctx context.Context, check *Ch
 	r.out.WriteNoticef("Trying my hardest to fix %q automatically...", check.Name)
 
 	if err := check.Fix(ctx, IO{
-		Input:  r.in,
-		Writer: r.out,
+		Input:    r.in,
+		Progress: r.out,
 	}, args); err != nil {
 		r.out.WriteFailuref("Failed to fix check: %s", err)
 		return err
