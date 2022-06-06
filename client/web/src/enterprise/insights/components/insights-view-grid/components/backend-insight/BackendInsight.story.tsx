@@ -13,7 +13,13 @@ import { H2 } from '@sourcegraph/wildcard'
 import { WebStory } from '../../../../../../components/WebStory'
 import { GetInsightViewResult, SeriesSortDirection, SeriesSortMode } from '../../../../../../graphql-operations'
 import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
-import { BackendInsightData, CodeInsightsBackendContext, CodeInsightsGqlBackend, SearchBasedInsight, SeriesChartContent } from '../../../../core'
+import {
+    BackendInsightData,
+    CodeInsightsBackendContext,
+    CodeInsightsGqlBackend,
+    SearchBasedInsight,
+    SeriesChartContent,
+} from '../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend/gql/GetInsightView'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
 import {
@@ -165,7 +171,7 @@ const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     dashboardReferenceCount: 0,
     isFrozen: false,
     repositories: [],
-    dashboards: []
+    dashboards: [],
 }
 
 const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
@@ -183,7 +189,7 @@ const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     dashboardReferenceCount: 0,
     isFrozen: false,
     repositories: [],
-    dashboards: []
+    dashboards: [],
 }
 
 const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
@@ -197,7 +203,7 @@ const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
     filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
     dashboardReferenceCount: 0,
     isFrozen: false,
-    dashboards: []
+    dashboards: [],
 }
 
 const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewResult> = {
@@ -220,8 +226,8 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
                             sortOptions: {
                                 __typename: 'SeriesSortOptions',
                                 mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC
-                            }
+                                direction: SeriesSortDirection.ASC,
+                            },
                         },
                         appliedSeriesDisplayOptions: {
                             __typename: 'SeriesDisplayOptions',
@@ -229,8 +235,8 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
                             sortOptions: {
                                 __typename: 'SeriesSortOptions',
                                 mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC
-                            }
+                                direction: SeriesSortDirection.ASC,
+                            },
                         },
                         dataSeries: [
                             {
@@ -500,8 +506,8 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
                             sortOptions: {
                                 __typename: 'SeriesSortOptions',
                                 mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC
-                            }
+                                direction: SeriesSortDirection.ASC,
+                            },
                         },
                         appliedSeriesDisplayOptions: {
                             __typename: 'SeriesDisplayOptions',
@@ -509,8 +515,8 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
                             sortOptions: {
                                 __typename: 'SeriesSortOptions',
                                 mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC
-                            }
+                                direction: SeriesSortDirection.ASC,
+                            },
                         },
                         dataSeries: [
                             {
@@ -780,8 +786,8 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
                             sortOptions: {
                                 __typename: 'SeriesSortOptions',
                                 mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC
-                            }
+                                direction: SeriesSortDirection.ASC,
+                            },
                         },
                         appliedSeriesDisplayOptions: {
                             __typename: 'SeriesDisplayOptions',
@@ -789,8 +795,8 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
                             sortOptions: {
                                 __typename: 'SeriesSortOptions',
                                 mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC
-                            }
+                                direction: SeriesSortDirection.ASC,
+                            },
                         },
                         dataSeries: [
                             {
