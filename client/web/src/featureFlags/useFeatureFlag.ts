@@ -10,12 +10,14 @@ type FetchStatus = 'initial' | 'loaded' | 'error'
  *
  * @returns [flagValue, fetchStatus, error]
  */
-export function useFeatureFlag(flagName: FeatureFlagName): [boolean, FetchStatus, any?] {
+export function useFeatureFlag(flagName: FeatureFlagName, defaultValue = false): [boolean, FetchStatus, any?] {
     const { client } = useContext(FeatureFlagsContext)
-    const [{ value, status, error }, setResult] = useState<{ value: boolean; status: FetchStatus; error?: any }>({
-        status: 'initial',
-        value: false,
-    })
+    const [{ value, status, error }, setResult] = useState<{ value: boolean | null; status: FetchStatus; error?: any }>(
+        {
+            status: 'initial',
+            value: defaultValue,
+        }
+    )
 
     useEffect(() => {
         let isMounted = true
@@ -49,5 +51,5 @@ export function useFeatureFlag(flagName: FeatureFlagName): [boolean, FetchStatus
         }
     }, [client, flagName])
 
-    return [value, status, error]
+    return [typeof value === 'boolean' ? value : defaultValue, status, error]
 }

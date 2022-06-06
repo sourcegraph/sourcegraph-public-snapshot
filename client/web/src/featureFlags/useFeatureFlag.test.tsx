@@ -8,8 +8,9 @@ describe('useFeatureFlag', () => {
     const ENABLED_FLAG = 'enabled-flag' as FeatureFlagName
     const DISABLED_FLAG = 'disabled-flag' as FeatureFlagName
     const ERROR_FLAG = 'error-flag' as FeatureFlagName
-    const setup = (initialFlagName: FeatureFlagName, refetchInterval?: number) =>
-        renderHook(({ flagName }) => useFeatureFlag(flagName), {
+    const NON_EXISTING_FLAG = 'non-existing-flag' as FeatureFlagName
+    const setup = (initialFlagName: FeatureFlagName, defaultValue = false, refetchInterval?: number) =>
+        renderHook(({ flagName }) => useFeatureFlag(flagName, defaultValue), {
             wrapper: function Wrapper({ children, overrides }) {
                 return (
                     <MockedFeatureFlagsProvider
@@ -40,6 +41,18 @@ describe('useFeatureFlag', () => {
         expect(state.result.current).toStrictEqual([false, 'loaded', undefined])
     })
 
+    it('returns [defaultValue=true] correctly', async () => {
+        const state = setup(NON_EXISTING_FLAG, true)
+        await state.waitForNextUpdate()
+        expect(state.result.current).toEqual(expect.arrayContaining([true, 'loaded']))
+    })
+
+    it('returns [defaultValue=false] correctly', async () => {
+        const state = setup(NON_EXISTING_FLAG, false)
+        await state.waitForNextUpdate()
+        expect(state.result.current).toEqual(expect.arrayContaining([false, 'loaded']))
+    })
+
     it('returns [true] value correctly', async () => {
         const state = setup(ENABLED_FLAG)
         // Initial state
@@ -52,7 +65,7 @@ describe('useFeatureFlag', () => {
     })
 
     it('updates on value change', async () => {
-        const state = setup(ENABLED_FLAG, 100)
+        const state = setup(ENABLED_FLAG, false, 100)
         // Initial state
         expect(state.result.current).toStrictEqual([false, 'initial', undefined])
 

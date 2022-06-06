@@ -1423,8 +1423,9 @@ type Query {
 
     """
     Evaluates a feature flag for the current user
+    Returns null if feature flag does not exist
     """
-    evaluateFeatureFlag(flagName: String!): Boolean!
+    evaluateFeatureFlag(flagName: String!): Boolean
 
     """
     Retrieve all evaluated feature flags for the current user
