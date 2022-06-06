@@ -85,6 +85,7 @@ func (r *Runner[Args]) Interactive(
 	return nil
 }
 
+// runResults provides a summary of categories checks results.
 type runResults struct {
 	all     []int
 	failed  []int
@@ -97,6 +98,11 @@ func (r *Runner[Args]) run(ctx context.Context, args Args) runResults {
 	for i := range r.categories {
 		results.failed = append(results.failed, i)
 		results.all = append(results.all, i)
+	}
+
+	categoryResults := make(map[string]bool)
+	for _, category := range r.categories {
+		categoryResults[category.Name] = false
 	}
 
 	for i, category := range r.categories {
@@ -114,15 +120,27 @@ func (r *Runner[Args]) run(ctx context.Context, args Args) runResults {
 
 		pending := r.io.Pending(output.Styledf(output.StylePending, "%d. %s - Determining status...", idx, category.Name))
 
-		var hasFailedChecks bool
-		for _, c := range category.Checks {
-			if err := c.RunCheck(ctx, r.io, args); err != nil {
-				hasFailedChecks = true
+		// Validate dependents
+		var failed bool
+		for _, d := range category.DependsOn {
+			if !categoryResults[d] {
+				failed = true
 			}
 		}
-		pending.Destroy()
 
-		if !hasFailedChecks {
+		// Validate checks
+		if !failed {
+			for _, c := range category.Checks {
+				if err := c.RunCheck(ctx, r.io, args); err != nil {
+					failed = true
+				}
+			}
+		}
+
+		// Report results
+		pending.Destroy()
+		categoryResults[category.Name] = failed
+		if !failed {
 			r.io.Output.WriteSuccessf("%d. %s", idx, category.Name)
 			results.failed = removeEntry(results.failed, i)
 		} else {

@@ -49,6 +49,10 @@ type Category[Args any] struct {
 	Description string
 	Checks      []*Check[Args]
 
+	// DependsOn lists names of Categories that must be fulfilled before checks in this
+	// category are run.
+	DependsOn []string
+
 	// Enabled can be implemented to indicate when this checker should be skipped.
 	Enabled EnableFunc[Args]
 }
