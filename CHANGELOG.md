@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- Output variables created from batch spec steps will no longer have an extra newline added if the output doesn't end with a newline. [sourcegraph/sourcegraph#36562](https://github.com/sourcegraph/sourcegraph/issues/36562)
+
 ### Removed
 
 ## 3.40.4
