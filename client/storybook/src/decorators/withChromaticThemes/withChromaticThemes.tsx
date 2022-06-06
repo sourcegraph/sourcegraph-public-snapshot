@@ -1,14 +1,18 @@
-import { FunctionComponent, PropsWithChildren, ReactElement, useState } from 'react'
+import { ReactElement } from 'react'
 
 import { DecoratorFunction } from '@storybook/addons'
-import classNames from 'classnames'
 
-import { PopoverRoot } from '@sourcegraph/wildcard'
+import { ChromaticRoot } from './ChromaticRoot'
 
-import { ChromaticThemeContext } from '../../hooks/useChromaticTheme'
-
-import styles from './ChromaticThemes.module.scss'
-
+/**
+ * The global Storybook decorator used to snapshot stories with multiple themes in Chromatic.
+ *
+ * It's a recommended way of achieving this goal:
+ * https://www.chromatic.com/docs/faq#do-you-support-taking-snapshots-of-a-component-with-multiple-the
+ *
+ * If the `chromatic.enableDarkMode` story parameter is set to `true`, the story will
+ * be rendered twice in Chromatic — in light and dark modes.
+ */
 export const withChromaticThemes: DecoratorFunction<ReactElement> = (StoryFunc, { parameters }) => {
     if (parameters?.chromatic?.enableDarkMode) {
         return (
@@ -25,27 +29,4 @@ export const withChromaticThemes: DecoratorFunction<ReactElement> = (StoryFunc, 
     }
 
     return <StoryFunc />
-}
-
-interface ChromaticRootProps {
-    theme: 'light' | 'dark'
-}
-
-const ChromaticRoot: FunctionComponent<PropsWithChildren<ChromaticRootProps>> = props => {
-    const { theme, children } = props
-
-    const [rootReference, setElement] = useState<HTMLDivElement | null>(null)
-    const themeClass = theme === 'light' ? 'theme-light' : 'theme-dark'
-
-    return (
-        <ChromaticThemeContext.Provider value={{ theme }}>
-            <PopoverRoot.Provider value={{ renderRoot: rootReference }}>
-                <div className={classNames(themeClass, styles.themeWrapper)}>
-                    {children}
-
-                    <div ref={setElement} />
-                </div>
-            </PopoverRoot.Provider>
-        </ChromaticThemeContext.Provider>
-    )
 }
