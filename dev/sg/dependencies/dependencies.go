@@ -2,17 +2,12 @@ package dependencies
 
 import (
 	"context"
-	"io"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 )
 
 type CheckArgs struct {
-	Input io.Reader
-	Out   *std.Output
-
 	Teammate bool
 	InRepo   bool
 

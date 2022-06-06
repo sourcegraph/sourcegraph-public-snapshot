@@ -40,6 +40,70 @@ func (r *Runner[Args]) Check(
 	return nil
 }
 
+func (r *Runner[Args]) Fix(
+	ctx context.Context,
+	getArgs func() Args,
+) error {
+	ctx, err := usershell.Context(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Keep interactive runner up until all issues are fixed, or all remaining issues are unfixable
+	results := runResults{
+		failed: []int{1}, // initialize, this gets reset immediately
+	}
+	var unfixable map[int]bool
+	for len(results.failed) != len(unfixable) {
+		// Get state
+		args := getArgs()
+		results = r.run(ctx, args)
+		unfixable = make(map[int]bool)
+
+		for _, idx := range results.failed {
+			category := r.categories[idx]
+			pending := r.io.Pending(output.Styledf(output.StylePending, "%d. %s - Determining status...", idx, category.Name))
+			if !category.HasFixable() {
+				pending.Complete(output.Styledf(output.StyleFailure, "%d. %s - Cannot be fixed automatically.", idx, category.Name))
+				unfixable[idx] = true
+				continue
+			}
+
+			for _, c := range category.Checks {
+				// If category is fixed, we are good to go
+				if c.IsMet() {
+					continue
+				}
+
+				// Otherwise, check if this is fixable at all
+				if c.Fix == nil {
+					pending.WriteLine(output.Styledf(output.StyleGrey, "%d. %s - %s cannot be fixed automatically.",
+						idx, category.Name, c.Name))
+					unfixable[idx] = true
+					continue
+				}
+
+				// TODO send pending
+				if err := c.Fix(ctx, r.io, args); err != nil {
+					pending.Complete(output.Styledf(output.StyleFailure, "%d. %s - Failed to fix %s: %s",
+						idx, category.Name, c.Name, err.Error()))
+					return err
+				}
+				pending.WriteLine(output.Styledf(output.StyleSuccess, "%d. %s - Fixed %s!",
+					idx, category.Name, c.Name))
+			}
+
+			pending.Complete(output.Styledf(output.StyleGrey, "%d. %s - Done", idx, category.Name))
+		}
+	}
+
+	if len(unfixable) > 0 {
+		return errors.Newf("%d categories could not be fixed", len(unfixable))
+	}
+
+	return nil
+}
+
 func (r *Runner[Args]) Interactive(
 	ctx context.Context,
 	getArgs func() Args,
