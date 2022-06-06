@@ -47,6 +47,33 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 		return &generate.Report{Err: err}
 	}
 
+	// Determine which goimports we can use
+	var goimportsBinary string
+	if _, err := exec.LookPath("goimports"); err == nil {
+		goimportsBinary = "goimports"
+	} else {
+		// Installed (unconditionally) below
+		goimportsBinary = "./.bin/goimports"
+	}
+
+	// Install a local version of goimports - we do this whether we have a
+	// version of goimports or not because we need to feed it into the go-mockgen
+	// configuration file (which we don't yet template).
+	err = run.Cmd(ctx, "go", "install", "golang.org/x/tools/cmd/goimports").
+		Environ(os.Environ()).
+		Env(map[string]string{
+			// Install to local bin
+			"GOBIN": filepath.Join(rootDir, ".bin"),
+		}).
+		Run().
+		Stream(&sb)
+	if err != nil {
+		return &generate.Report{
+			Output: sb.String(),
+			Err:    errors.Wrap(err, "go install golang.org/x/tools/cmd/goimports returned an error"),
+		}
+	}
+
 	wd, err := os.Getwd()
 	if err != nil {
 		return &generate.Report{Err: err}
@@ -89,34 +116,12 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 	if verbosity != QuietOutput {
 		reportOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "goimports -w"))
 	}
-	if _, err := exec.LookPath("goimports"); err != nil {
-		// Install goimports if not present
-		err := run.Cmd(ctx, "go", "install", "golang.org/x/tools/cmd/goimports").
-			Environ(os.Environ()).
-			Env(map[string]string{
-				// Install to local bin
-				"GOBIN": filepath.Join(rootDir, ".bin"),
-			}).
-			Run().
-			Stream(&sb)
-		if err != nil {
-			return &generate.Report{
-				Output: sb.String(),
-				Err:    errors.Wrap(err, "go install golang.org/x/tools/cmd/goimports returned an error"),
-			}
-		}
 
-		err = root.Run(run.Cmd(ctx, "./.bin/goimports", "-w")).Stream(&sb)
-		if err != nil {
-			return &generate.Report{
-				Output: sb.String(),
-				Err:    errors.Wrap(err, "goimports -w"),
-			}
-		}
-	} else {
-		err = root.Run(run.Cmd(ctx, "goimports", "-w").Environ(os.Environ())).Stream(&sb)
-		if err != nil {
-			return &generate.Report{Output: sb.String(), Err: errors.Wrap(err, "goimports -w")}
+	err = root.Run(run.Cmd(ctx, goimportsBinary, "-w")).Stream(&sb)
+	if err != nil {
+		return &generate.Report{
+			Output: sb.String(),
+			Err:    errors.Wrap(err, "goimports -w"),
 		}
 	}
 
