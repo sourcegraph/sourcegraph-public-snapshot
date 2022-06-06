@@ -282,7 +282,7 @@ func (s *relayState) decode(encoded string) {
 }
 
 func allowSignin(p *provider, groups map[string]bool) bool {
-	if p.config.AllowGroups == nil {
+	if len(p.config.AllowGroups) == 0 {
 		return true
 	}
 
