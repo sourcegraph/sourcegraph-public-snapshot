@@ -9,6 +9,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Card, CardBody, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
+import { useFeatureFlag } from '../../../../../../../featureFlags/useFeatureFlag'
 import {
     GetInsightViewResult,
     GetInsightViewVariables,
@@ -61,6 +62,8 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const { toggle, isSeriesSelected, isSeriesHovered, setHoveredId } = useSeriesToggle()
     const [wasVisble, dispatchVisibilityChange] = useReducer(wasEverVisible, false)
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
+    const [disablePolling] = useFeatureFlag('disable-insight-polling')
+    const pollingInterval = disablePolling ? 0 : insightPollingInterval(insight)
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
@@ -94,7 +97,8 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         {
             variables: { id: insight.id, filters: filterInput, seriesDisplayOptions: displayInput },
             fetchPolicy: 'cache-and-network',
-            pollInterval: insightPollingInterval(insight),
+            pollInterval: pollingInterval,
+            skip: !wasVisble,
             onCompleted: data => {
                 const parsedData = createBackendInsightData(insight, data.insightViews.nodes[0])
                 if (!parsedData.isFetchingHistoricalData) {
