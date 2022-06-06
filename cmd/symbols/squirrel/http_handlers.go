@@ -101,7 +101,7 @@ func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc) func(w http.Resp
 		if os.Getenv("SQUIRREL_DEBUG") == "true" {
 			debugStringBuilder := &strings.Builder{}
 			fmt.Fprintln(debugStringBuilder, "👉 /symbolInfo repo:", args.Repo, "commit:", args.Commit, "path:", args.Path, "row:", args.Row, "column:", args.Column)
-			prettyPrintBreadcrumbs(debugStringBuilder, squirrel.breadcrumbs, readFileFromGitserver)
+			squirrel.breadcrumbs.pretty(debugStringBuilder, readFileFromGitserver)
 			if result == nil {
 				fmt.Fprintln(debugStringBuilder, "❌ no definition found")
 			} else {
