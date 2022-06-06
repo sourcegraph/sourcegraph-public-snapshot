@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"path"
@@ -73,6 +74,20 @@ func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 		if p.Saml != nil && c.SiteConfig().ExternalURL == "" && !loggedNeedsExternalURL {
 			problems = append(problems, conf.NewSiteProblem("saml auth provider requires `externalURL` to be set to the external URL of your site (example: https://sourcegraph.example.com)"))
 			loggedNeedsExternalURL = true
+		}
+	}
+
+	seen := map[string]int{}
+	for i, p := range c.SiteConfig().AuthProviders {
+		if p.Saml != nil {
+			// we can ignore errors: converting to JSON must work, as we parsed from JSON before
+			bytes, _ := json.Marshal(*p.Saml)
+			key := string(bytes)
+			if j, ok := seen[key]; ok {
+				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("SAML auth provider at index %d is duplicate of index %d, ignoring", i, j)))
+			} else {
+				seen[key] = i
+			}
 		}
 	}
 
