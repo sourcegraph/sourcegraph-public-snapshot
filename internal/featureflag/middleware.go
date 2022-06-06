@@ -3,6 +3,7 @@ package featureflag
 import (
 	"context"
 	"net/http"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
@@ -10,13 +11,9 @@ import (
 type flagContextKey struct{}
 
 type Store interface {
-	GetFeatureFlag(context.Context, string) (*FeatureFlag, error)
-	GetFeatureFlags(context.Context) ([]*FeatureFlag, error)
-	GetUserFlag(ctx context.Context, userID int32, flagName string) (*bool, error)
-	GetAnonymousUserFlag(ctx context.Context, anonymousUID string, flagName string) (*bool, error)
-	GetGlobalFeatureFlag(ctx context.Context, flagName string) (*bool, error)
-	GetOrgOverrideForUser(ctx context.Context, uid int32, flag string) (*Override, error)
-	GetUserOverride(ctx context.Context, uid int32, flag string) (*Override, error)
+	GetUserFlags(context.Context, int32) (map[string]bool, error)
+	GetAnonymousUserFlags(context.Context, string) (map[string]bool, error)
+	GetGlobalFeatureFlags(context.Context) (map[string]bool, error)
 }
 
 // Middleware evaluates the feature flags for the current user and adds the
@@ -34,55 +31,62 @@ func Middleware(ffs Store, next http.Handler) http.Handler {
 // them.
 type flagSetFetcher struct {
 	ffs Store
+
+	once sync.Once
+	// Actor is the actor that was used to populate flagSet
+	actor *actor.Actor
+	// flagSet is the once-populated set of flags for the actor at the time of population
+	flagSet FlagSet
 }
 
-func (f *flagSetFetcher) evaluateForActor(ctx context.Context, a *actor.Actor, flagName string) (flag *bool, err error) {
+func (f *flagSetFetcher) fetch(ctx context.Context) FlagSet {
+	f.once.Do(func() {
+		f.actor = actor.FromContext(ctx)
+		f.flagSet = f.fetchForActor(ctx, f.actor)
+	})
+
+	currentActor := actor.FromContext(ctx)
+	if f.actor == currentActor {
+		// If the actor hasn't changed, return the cached flag set
+		return f.flagSet
+	}
+
+	// Otherwise, re-fetch the flag set
+	return f.fetchForActor(ctx, currentActor)
+}
+
+func (f *flagSetFetcher) fetchForActor(ctx context.Context, a *actor.Actor) FlagSet {
 	if a.IsAuthenticated() {
-		if flag, err = f.ffs.GetUserFlag(ctx, a.UID, flagName); flag != nil {
-			setEvaluatedFlagToCache(flagName, a, *flag)
+		flags, err := f.ffs.GetUserFlags(ctx, a.UID)
+		if err == nil {
+			return FlagSet(flags)
 		}
-		return flag, err
+		// Continue if err != nil
 	}
 
 	if a.AnonymousUID != "" {
-		if flag, err = f.ffs.GetAnonymousUserFlag(ctx, a.AnonymousUID, flagName); flag != nil {
-			setEvaluatedFlagToCache(flagName, a, *flag)
+		flags, err := f.ffs.GetAnonymousUserFlags(ctx, a.AnonymousUID)
+		if err == nil {
+			return FlagSet(flags)
 		}
-		return flag, err
+		// Continue if err != nil
 	}
 
-	if flag, err = f.ffs.GetGlobalFeatureFlag(ctx, flagName); flag != nil {
-		setEvaluatedFlagToCache(flagName, a, *flag)
+	flags, err := f.ffs.GetGlobalFeatureFlags(ctx)
+	if err == nil {
+		return FlagSet(flags)
 	}
-	return flag, err
+
+	return FlagSet(make(map[string]bool))
 }
 
-// EvaluateForActorFromContext evaluates value for the flag name passed
-// for the actor from the context. It requires the context to be wrapped
-// with *WithFlags*, otherwise it will return false by default. It also
-// set the evaluated flags to redis cache which later can be used to pass
-// feature flags context to event logs.
-func EvaluateForActorFromContext(ctx context.Context, flagName string) (result bool) {
-	result = false
-	if flags := ctx.Value(flagContextKey{}); flags != nil {
-		if value, _ := flags.(*flagSetFetcher).evaluateForActor(ctx, actor.FromContext(ctx), flagName); value != nil {
-			result = *value
-		}
-	}
-	return result
-}
-
-// FromContext returns a map of already evaluated flags and their values
-// for the actor from the context. It required the context to be wrapped
-// with *WithFlags*, otherwise it will return an empty map by default.
+// FromContext retrieves the current set of flags from the current
+// request's context.
 func FromContext(ctx context.Context) FlagSet {
 	if flags := ctx.Value(flagContextKey{}); flags != nil {
-		if f, err := flags.(*flagSetFetcher).ffs.GetFeatureFlags(ctx); err == nil {
-			return getEvaluatedFlagSetFromCache(f, actor.FromContext(ctx))
-		}
+		return flags.(*flagSetFetcher).fetch(ctx)
 	}
-
-	return FlagSet{}
+	return nil
 }
 
 // WithFlags adds a flag fetcher to the context so consumers of the
