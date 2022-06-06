@@ -2,8 +2,6 @@ package parser
 
 import (
 	"context"
-	"log"
-	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -253,12 +251,6 @@ func SpawnCtags(ctagsConfig types.CtagsConfig) (ctags.Parser, error) {
 	options := ctags.Options{
 		Bin:                ctagsConfig.Command,
 		PatternLengthLimit: ctagsConfig.PatternLengthLimit,
-	}
-	if ctagsConfig.LogErrors {
-		options.Info = log.New(os.Stderr, "ctags: ", log.LstdFlags)
-	}
-	if ctagsConfig.DebugLogs {
-		options.Debug = log.New(os.Stderr, "DBUG ctags: ", log.LstdFlags)
 	}
 
 	parser, err := ctags.New(options)
