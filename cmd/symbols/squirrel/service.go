@@ -187,7 +187,7 @@ func (squirrel *SquirrelService) onCall(node Node, arg fmt.Stringer, ret func() 
 	}
 }
 
-// add adds a breadcrumb.
+// breadcrumb adds a breadcrumb.
 func (squirrel *SquirrelService) breadcrumb(node Node, message string) {
 	squirrel.breadcrumbWithOpts(node, func() string { return message }, 2)
 }
