@@ -52,15 +52,15 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 		return &generate.Report{Err: err}
 	}
 
-	// Grab the packages list
-	pkgPaths, err := findPackagesWithGenerate(wd, wd)
-	if err != nil {
-		return &generate.Report{Err: err}
-	}
-
 	// Run go generate on the packages list
 	var goGenerateErr error
 	if len(args) == 0 {
+		// Grab the packages list
+		pkgPaths, err := findPackagesWithGenerate(wd, wd)
+		if err != nil {
+			return &generate.Report{Err: err}
+		}
+
 		// If no packages are given, go for everything but the exception.
 		filtered := make([]string, 0, len(pkgPaths))
 		for _, pkgPath := range pkgPaths {
