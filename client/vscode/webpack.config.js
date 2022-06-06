@@ -36,14 +36,23 @@ function getExtensionCoreConfiguration(targetType) {
     output: {
       // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
       path: path.resolve(__dirname, 'dist', `${targetType}`),
-      filename: 'extension.js',
+      filename: '[name].js',
       library: {
         type: 'umd',
       },
       globalObject: 'globalThis',
       devtoolModuleFilenameTemplate: '../[resource-path]',
     },
-    devtool: 'source-map',
+    performance: {
+      hints: false,
+    },
+    optimization: {
+      splitChunks: {
+        minSize: 10000,
+        maxSize: 240000,
+      },
+    },
+    devtool: mode === 'development' ? 'source-map' : false,
     externals: {
       // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
       vscode: 'commonjs vscode',
@@ -130,10 +139,19 @@ const webviewConfig = {
     helpSidebar: [path.resolve(helpSidebarWebviewPath, 'index.tsx')],
     style: path.join(webviewSourcePath, 'index.scss'),
   },
-  devtool: 'source-map',
+  devtool: mode === 'development' ? 'source-map' : false,
   output: {
     path: path.resolve(__dirname, 'dist/webview'),
     filename: '[name].js',
+  },
+  performance: {
+    hints: false,
+  },
+  optimization: {
+    splitChunks: {
+      minSize: 10000,
+      maxSize: 250000,
+    },
   },
   plugins: [
     new MiniCssExtractPlugin(),
