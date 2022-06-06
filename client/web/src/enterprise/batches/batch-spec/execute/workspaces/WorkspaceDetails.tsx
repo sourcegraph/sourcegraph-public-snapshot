@@ -15,6 +15,7 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import TimelineClockOutlineIcon from 'mdi-react/TimelineClockOutlineIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
+import indicator from 'ordinal/indicator'
 import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -319,29 +320,12 @@ const UnsupportedWorkspaceDetails: React.FunctionComponent<
     </>
 )
 
-const NumberInQueue: React.FunctionComponent<React.PropsWithChildren<{ number: number }>> = ({ number }) => {
-    let suffix: string
-    console.log('NumberInQueue', number, number % 10)
-    switch (number % 10) {
-        case 1:
-            suffix = 'st'
-            break
-        case 2:
-            suffix = 'nd'
-            break
-        case 3:
-            suffix = 'rd'
-            break
-        default:
-            suffix = 'th'
-    }
-    return (
-        <>
-            {number}
-            <sup>{suffix}</sup>
-        </>
-    )
-}
+const NumberInQueue: React.FunctionComponent<React.PropsWithChildren<{ number: number }>> = ({ number }) => (
+    <>
+        {number}
+        <sup>{indicator(number)}</sup>
+    </>
+)
 
 interface ChangesetSpecNodeProps extends ThemeProps {
     node: BatchSpecWorkspaceChangesetSpecFields
