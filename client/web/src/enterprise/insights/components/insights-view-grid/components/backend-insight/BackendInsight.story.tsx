@@ -11,12 +11,14 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { GetInsightViewResult } from '../../../../../../graphql-operations'
+import { GetInsightViewResult, SeriesSortDirection, SeriesSortMode } from '../../../../../../graphql-operations'
 import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
-import { BackendInsightData, SearchBasedInsight, SeriesChartContent } from '../../../../core'
+import { BackendInsightData, CodeInsightsBackendContext, CodeInsightsGqlBackend, SearchBasedInsight, SeriesChartContent } from '../../../../core'
+import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend/gql/GetInsightView'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
 import {
     BackendInsight as BackendInsightType,
+    CaptureGroupInsight,
     InsightExecutionType,
     InsightType,
     isCaptureGroupInsight,
@@ -148,7 +150,7 @@ const TestBackendInsight: React.FunctionComponent<React.PropsWithChildren<unknow
     />
 )
 
-const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBackendBasedInsight = {
+const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     type: InsightType.SearchBased,
     executionType: InsightExecutionType.Backend,
     id: 'backend-mock',
@@ -162,9 +164,11 @@ const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBackendBasedInsight = {
     filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
     dashboardReferenceCount: 0,
     isFrozen: false,
+    repositories: [],
+    dashboards: []
 }
 
-const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBackendBasedInsight = {
+const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     type: InsightType.SearchBased,
     executionType: InsightExecutionType.Backend,
     id: 'backend-mock',
@@ -178,6 +182,8 @@ const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBackendBasedInsight = {
     filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
     dashboardReferenceCount: 0,
     isFrozen: false,
+    repositories: [],
+    dashboards: []
 }
 
 const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
@@ -191,6 +197,7 @@ const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
     filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
     dashboardReferenceCount: 0,
     isFrozen: false,
+    dashboards: []
 }
 
 const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewResult> = {
@@ -207,6 +214,24 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
                 nodes: [
                     {
                         id: 'aW5zaWdodF92aWV3OiIyNU9aNFFpTERPMGRQVUZSQWNtYnBvZ1hhWnMi',
+                        defaultSeriesDisplayOptions: {
+                            __typename: 'SeriesDisplayOptions',
+                            limit: 20,
+                            sortOptions: {
+                                __typename: 'SeriesSortOptions',
+                                mode: SeriesSortMode.LEXICOGRAPHICAL,
+                                direction: SeriesSortDirection.ASC
+                            }
+                        },
+                        appliedSeriesDisplayOptions: {
+                            __typename: 'SeriesDisplayOptions',
+                            limit: 20,
+                            sortOptions: {
+                                __typename: 'SeriesSortOptions',
+                                mode: SeriesSortMode.LEXICOGRAPHICAL,
+                                direction: SeriesSortDirection.ASC
+                            }
+                        },
                         dataSeries: [
                             {
                                 seriesId: '001',
@@ -469,6 +494,24 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
                 nodes: [
                     {
                         id: 'aW5zaWdodF92aWV3OiIyNU9ZY1VQdThxeXpvcnR1WmJXZE9qdVh2Y2Yi',
+                        defaultSeriesDisplayOptions: {
+                            __typename: 'SeriesDisplayOptions',
+                            limit: 20,
+                            sortOptions: {
+                                __typename: 'SeriesSortOptions',
+                                mode: SeriesSortMode.LEXICOGRAPHICAL,
+                                direction: SeriesSortDirection.ASC
+                            }
+                        },
+                        appliedSeriesDisplayOptions: {
+                            __typename: 'SeriesDisplayOptions',
+                            limit: 20,
+                            sortOptions: {
+                                __typename: 'SeriesSortOptions',
+                                mode: SeriesSortMode.LEXICOGRAPHICAL,
+                                direction: SeriesSortDirection.ASC
+                            }
+                        },
                         dataSeries: [
                             {
                                 seriesId: '001',
@@ -731,6 +774,24 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
                 nodes: [
                     {
                         id: 'aW5zaWdodF92aWV3OiIyNU9lSm8xcTZub05nUkh3aG9MWEdCdUdtN3Yi',
+                        defaultSeriesDisplayOptions: {
+                            __typename: 'SeriesDisplayOptions',
+                            limit: 20,
+                            sortOptions: {
+                                __typename: 'SeriesSortOptions',
+                                mode: SeriesSortMode.LEXICOGRAPHICAL,
+                                direction: SeriesSortDirection.ASC
+                            }
+                        },
+                        appliedSeriesDisplayOptions: {
+                            __typename: 'SeriesDisplayOptions',
+                            limit: 20,
+                            sortOptions: {
+                                __typename: 'SeriesSortOptions',
+                                mode: SeriesSortMode.LEXICOGRAPHICAL,
+                                direction: SeriesSortDirection.ASC
+                            }
+                        },
                         dataSeries: [
                             {
                                 seriesId: '25OeJqBD4dOacJDmOA1cXY97Iyb',
