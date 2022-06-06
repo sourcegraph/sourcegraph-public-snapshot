@@ -13,11 +13,11 @@ import {
     BatchSpecListConnectionFields,
 } from '../../graphql-operations'
 
-export const queryBatchSpecs = ({ first, after }: BatchSpecsVariables): Observable<BatchSpecListConnectionFields> =>
+export const queryBatchSpecs = ({ first, after, excludeNonSSBCSpecs }: BatchSpecsVariables): Observable<BatchSpecListConnectionFields> =>
     requestGraphQL<BatchSpecsResult, BatchSpecsVariables>(
         gql`
-            query BatchSpecs($first: Int, $after: String) {
-                batchSpecs(first: $first, after: $after) {
+            query BatchSpecs($first: Int, $after: String, $excludeNonSSBCSpecs: Boolean) {
+                batchSpecs(first: $first, after: $after, excludeNonSSBCSpecs: $excludeNonSSBCSpecs) {
                     ...BatchSpecListConnectionFields
                 }
             }
@@ -27,6 +27,7 @@ export const queryBatchSpecs = ({ first, after }: BatchSpecsVariables): Observab
         {
             first,
             after,
+            excludeNonSSBCSpecs
         }
     ).pipe(
         map(dataOrThrowErrors),
