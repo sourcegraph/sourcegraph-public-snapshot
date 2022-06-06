@@ -163,9 +163,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         autoFocus={
                             props.showOnboardingTour
                                 ? shouldFocusQueryInput
-                                : isTouchDevice
-                                ? false
-                                : props.autoFocus !== false
+                                : !isTouchDevice && props.autoFocus !== false
                         }
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
