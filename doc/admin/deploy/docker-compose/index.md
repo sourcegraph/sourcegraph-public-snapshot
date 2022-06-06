@@ -19,11 +19,15 @@ Complete the following tasks before deploying Sourcegraph with Docker Compose:
     - Determine the number and size of the repos in your environment.
     - Determine the number of users and their engagement rate with the repos. 
     - Configure the server resources using the [resource estimator](../resource_estimator.md) to ensure it has sufficient CPUs, memory, and SSD capacity.
+
 >Note: Sourcegraph requires SSD backed storage. 
+
 - Configure ingress firewall rules to enable secure access to the server.
 - Configure access for the server to your deployment files, in the examples that follow a Personal Access Token for GitHub is required.   
 - Install [Docker Compose](https://docs.docker.com/compose/) on the server. Sourcegraph deployments should *not* be deployed with Docker Swarm
+
 >Note: Minimum Docker [v20.10.0](https://docs.docker.com/engine/release-notes/#20100) and Docker Compose [v1.29.0](https://docs.docker.com/compose/release-notes/#1290)
+
 - Obtain a [Sourcegraph license](https://about.sourcegraph.com/pricing/). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
 
 ## Installation Process Overview
@@ -47,55 +51,56 @@ The [`sourcegraph/deploy-sourcegraph-docker`](https://github.com/sourcegraph/dep
 
 > WARNING: In GitHub, forks of public repos are also public. Create a private fork if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository. However, a preferable approach would be to use a Secrets Management Service. 
 
-1. Use the GithHub GUI to [Create a fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) reference repository.
+1\. Use the GithHub GUI to [Create a fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) reference repository.
 
 *Alternatively*, if you are using GitHub and you want your fork to be private, create a private clone of the reference repository in your code host. This process can be performed on any machine with access to your code host:
 
-1. Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example `<you/private-repository>` in GitHub.
+1\. Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example `<you/private-repository>` in GitHub.
 
-2. Bare clone the reference repository. 
+2\. Bare clone the reference repository. 
 
-  ```bash
+```bash
   git clone --bare https://github.com/sourcegraph/deploy-sourcegraph-docker/
-  ```
-  
-3. Navigate to the bare clone and mirror push it to your private repository.
+```
 
-  ```bash
+3\. Navigate to the bare clone and mirror push it to your private repository.
+
+```bash
   cd deploy-sourcegraph-docker.git
   git push --mirror https://github.com/<you/private-repository>.git
-  ```
+```
 
-4. Remove your local bare clone. 
-  ```bash
+4\. Remove your local bare clone. 
+
+```bash
   cd ..
   rm -rf deploy-sourcegraph-docker.git
-  ```
+```
 
 ## Clone your fork
 
 Clone your fork of the reference repo to your local machine. In this example, you clone the GitHub repo you created earlier: 
 
-  ```bash
+```bash
   git clone https://github.com/<you/private-repository>.git 
-  ```
+```
 
 ## Configure a release branch
 
 Add the reference repository as an `upstream` remote so that you can get updates.
 
-  ```bash
+```bash
   git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph-docker
-  ```
+```
 
 Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](#upgrade-and-migration) and install your Sourcegraph instance.
 
-  ```bash
+```bash
   # Specify the version you want to install
   export SOURCEGRAPH_VERSION="v3.40.1"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
-  ```
+```
 
 ## Make YAML customizations
 
@@ -174,9 +179,9 @@ See ["Environment variables in Compose"](https://docs.docker.com/compose/environ
 Publish the customized configuration to the release branch you created earlier:
 
 ```bash
-git add .
-git commit -m "customize docker-compose.yaml for environment"
-git push origin release
+  git add .
+  git commit -m "customize docker-compose.yaml for environment"
+  git push origin release
 ```
 
 ## Clone your release branch onto your server
@@ -195,8 +200,8 @@ Now that you have published your changes to your code host you can deploy your c
 On the production server, move to the configuration directory and run Sourcegraph:
 
 ```bash
-cd docker-compose
-docker-compose up -d
+  cd docker-compose
+  docker-compose up -d
 ```
 
 Once the server is ready (the `sourcegraph-frontend-0` service is healthy when running `docker ps`), navigate to the `sourcegraph-frontend-0` hostname or IP address on port `80`.  
@@ -246,9 +251,11 @@ The following instructions are specific to backing up and restoring the Sourcegr
 
 These instructions will back up the primary `sourcegraph` database and the [codeintel](../../../code_intelligence/index.md) database.
 
-1. `ssh` from your local machine into the machine hosting the `sourcegraph` deployment
-2. `cd` to the `deploy-sourcegraph-docker/docker-compose` directory on the host
-3. Verify the deployment is running:
+1\. `ssh` from your local machine into the machine hosting the `sourcegraph` deployment
+
+2\. `cd` to the `deploy-sourcegraph-docker/docker-compose` directory on the host
+
+3\. Verify the deployment is running:
 
 ```bash
 docker-compose ps
@@ -278,54 +285,55 @@ worker                      /sbin/tini -- /usr/local/b ...   Up                 
 zoekt-indexserver-0         /sbin/tini -- zoekt-source ...   Up
 zoekt-webserver-0           /sbin/tini -- /bin/sh -c z ...   Up (healthy)
 ```
-4. Stop the deployment, and restart the databases service only to ensure there are no other connections during backup and restore.
+4\. Stop the deployment, and restart the databases service only to ensure there are no other connections during backup and restore.
 
 ```bash
 docker-compose down
 docker-compose -f db-only-migrate.docker-compose.yaml up -d
 ```
 
-5. Generate the database dumps
+5\. Generate the database dumps
 
 ```bash
 docker exec pgsql sh -c 'pg_dump -C --username sg sg' > sourcegraph_db.out
 docker exec codeintel-db -c 'pg_dump -C --username sg sg' > codeintel_db.out
 ```
 
-6. Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location. 
+6\. Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location. 
 
 #### Restore Sourcegraph databases into a new environment
 
 The following instructions apply **only if you are restoring your databases into a new deployment** of Sourcegraph ie: a new virtual machine. If you are restoring a previously running environment, see the instructions for [restoring a previously running deployment](#restoring-sourcegraph-databases-into-an-existing-environment)
 
-1. Copy the database dump files into the `deploy-sourcegraph-docker/docker-compose` directory. 
-2. Start the database services
+1\. Copy the database dump files into the `deploy-sourcegraph-docker/docker-compose` directory. 
+
+2\. Start the database services
 
 ```bash
 docker-compose -f db-only-migrate.docker-compose.yaml up -d
 ```
 
-3. Copy the database files into the containers
+3\. Copy the database files into the containers
 
 ```bash
 docker cp sourcegraph_db.out pgsql:/tmp/sourecgraph_db.out
 docker cp codeintel_db.out codeintel-db:/tmp/codeintel_db.out
 ```
 
-4. Restore the databases
+4\. Restore the databases
 
 ```bash
 docker exec pgsql sh -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
 docker exec codeintel-db sh -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
 ```
 
-5. Start the remaining Sourcegraph services
+5\. Start the remaining Sourcegraph services
 
 ```bash
 docker-compose up -d
 ```
 
-6. Verify the deployment has started 
+6\. Verify the deployment has started 
 
 ```bash 
 docker-compose ps
@@ -356,43 +364,44 @@ zoekt-indexserver-0         /sbin/tini -- zoekt-source ...   Up
 zoekt-webserver-0           /sbin/tini -- /bin/sh -c z ...   Up (healthy)> docker-compose ps
 ```
 
-7. Browse to your Sourcegraph deployment, login and verify your existing configuration has been restored
+7\. Browse to your Sourcegraph deployment, login and verify your existing configuration has been restored
 
 ### Restore Sourcegraph databases into an existing environment
 
-1. `cd` to the `deploy-sourcegraph-docker/docker-compose` and stop the previous deployment and remove any existing volumes
+1\. `cd` to the `deploy-sourcegraph-docker/docker-compose` and stop the previous deployment and remove any existing volumes
 ```bash
 docker-compose down
 docker volume rm docker-compose_pgsql
 docker volume rm docker-compose_codeintel-db
 ```
 
-2. Start the databases services only
+2\. Start the databases services only
+
 ```bash
 docker-compose -f db-only-migrate.docker-compose.yaml up -d
 ```
 
-3. Copy the database files into the containers
+3\. Copy the database files into the containers
 
 ```bash
 docker cp sourcegraph_db.out pgsql:/tmp/sourecgraph_db.out
 docker cp codeintel_db.out codeintel-db:/tmp/codeintel_db.out
 ```
 
-4. Restore the databases
+4\. Restore the databases
 
 ```bash
 docker exec pgsql sh -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
 docker exec codeintel-db sh -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
 ```
 
-5. Start the remaining Sourcegraph services
+5\. Start the remaining Sourcegraph services
 
 ```bash
 docker-compose up -d
 ```
 
-6. Verify the deployment has started 
+6\. Verify the deployment has started 
 
 ```bash 
 docker-compose ps
@@ -423,7 +432,7 @@ zoekt-indexserver-0         /sbin/tini -- zoekt-source ...   Up
 zoekt-webserver-0           /sbin/tini -- /bin/sh -c z ...   Up (healthy)> docker-compose ps
 ```
 
-7. Browse to your Sourcegraph deployment, login and verify your existing configuration has been restored
+7\. Browse to your Sourcegraph deployment, login and verify your existing configuration has been restored
 
 ### Monitoring
 
