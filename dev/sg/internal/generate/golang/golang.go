@@ -47,33 +47,6 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 		return &generate.Report{Err: err}
 	}
 
-	// Determine which goimports we can use
-	var goimportsBinary string
-	if _, err := exec.LookPath("goimports"); err == nil {
-		goimportsBinary = "goimports"
-	} else {
-		// Installed (unconditionally) below
-		goimportsBinary = "./.bin/goimports"
-	}
-
-	// Install a local version of goimports - we do this whether we have a
-	// version of goimports or not because we need to feed it into the go-mockgen
-	// configuration file (which we don't yet template).
-	err = run.Cmd(ctx, "go", "install", "golang.org/x/tools/cmd/goimports").
-		Environ(os.Environ()).
-		Env(map[string]string{
-			// Install to local bin
-			"GOBIN": filepath.Join(rootDir, ".bin"),
-		}).
-		Run().
-		Stream(&sb)
-	if err != nil {
-		return &generate.Report{
-			Output: sb.String(),
-			Err:    errors.Wrap(err, "go install golang.org/x/tools/cmd/goimports returned an error"),
-		}
-	}
-
 	wd, err := os.Getwd()
 	if err != nil {
 		return &generate.Report{Err: err}
@@ -115,6 +88,32 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 	// Run goimports -w
 	if verbosity != QuietOutput {
 		reportOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "goimports -w"))
+	}
+
+	// Determine which goimports we can use
+	var goimportsBinary string
+	if _, err := exec.LookPath("goimports"); err == nil {
+		goimportsBinary = "goimports"
+	} else {
+		// Install a local version of goimports - we do this whether we have a
+		// version of goimports or not because we need to feed it into the go-mockgen
+		// configuration file (which we don't yet template).
+		err = run.Cmd(ctx, "go", "install", "golang.org/x/tools/cmd/goimports").
+			Environ(os.Environ()).
+			Env(map[string]string{
+				// Install to local bin
+				"GOBIN": filepath.Join(rootDir, ".bin"),
+			}).
+			Run().
+			Stream(&sb)
+		if err != nil {
+			return &generate.Report{
+				Output: sb.String(),
+				Err:    errors.Wrap(err, "go install golang.org/x/tools/cmd/goimports returned an error"),
+			}
+		}
+
+		goimportsBinary = "./.bin/goimports"
 	}
 
 	err = root.Run(run.Cmd(ctx, goimportsBinary, "-w")).Stream(&sb)
@@ -203,6 +202,14 @@ func runGoGenerate(ctx context.Context, pkgPaths []string, progressBar bool, ver
 		if err != nil {
 			progress.Destroy()
 		} else {
+			// We often get stuck on something like (7/21 packages generated) and a complete
+			// progress bar. This is a short hack to get around that; maybe we should ensure
+			// that progress bars (in general) account for all of their subtasks before being
+			// marked as complete.
+			done = total
+			progress.SetValue(0, done)
+			progress.SetLabelAndRecalc(0, fmt.Sprintf("%d/%d packages generated", int(total), int(total)))
+
 			progress.Complete()
 		}
 	}()

@@ -1,4 +1,5 @@
 package sourcegraph
 
-// Keep this version in sync with go.mod
+// Keep these versions in sync with go.mod
+//go:generate go install golang.org/x/tools/cmd/goimports@v0.1.10
 //go:generate go run github.com/derision-test/go-mockgen/cmd/go-mockgen@v1.3.1
