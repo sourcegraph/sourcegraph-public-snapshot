@@ -8,7 +8,7 @@ export PATH="$GOBIN:$PATH"
 export GO111MODULE=on
 
 # Keep this in sync with go.mod
-REQUIRED_VERSION='1.2.0'
+REQUIRED_VERSION='1.3.0'
 
 set +o pipefail
 INSTALLED_VERSION="$(go-mockgen --version || :)"
@@ -21,4 +21,4 @@ if [[ "${INSTALLED_VERSION}" != "${REQUIRED_VERSION}" ]]; then
   go install "golang.org/x/tools/cmd/goimports"
 fi
 
-go-mockgen -f "$@"
+go-mockgen
