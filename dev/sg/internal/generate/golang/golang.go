@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -46,10 +47,15 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 		return &generate.Report{Err: err}
 	}
 
-	// Grab the packages list
-	pkgPaths, err := root.Run(run.Cmd(ctx, "go", "list", "./...")).Lines()
+	wd, err := os.Getwd()
 	if err != nil {
-		return &generate.Report{Err: errors.Wrap(err, "go list ./...")}
+		return &generate.Report{Err: err}
+	}
+
+	// Grab the packages list
+	pkgPaths, err := findPackagesWithGenerate(wd, wd)
+	if err != nil {
+		return &generate.Report{Err: err}
 	}
 
 	// Run go generate on the packages list
@@ -127,6 +133,41 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 		Output:   sb.String(),
 		Duration: time.Since(start),
 	}
+}
+
+var goGeneratePattern = regexp.MustCompile(`^//go:generate (.+)$`)
+
+func findPackagesWithGenerate(root, dir string) (packages []string, _ error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, entry := range entries {
+		path := filepath.Join(dir, entry.Name())
+
+		if entry.IsDir() {
+			pkgs, err := findPackagesWithGenerate(root, path)
+			if err != nil {
+				return nil, err
+			}
+
+			packages = append(packages, pkgs...)
+		} else if filepath.Ext(entry.Name()) == ".go" {
+			contents, err := os.ReadFile(path)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, line := range bytes.Split(contents, []byte{'\n'}) {
+				if goGeneratePattern.Match(line) {
+					packages = append(packages, "github.com/sourcegraph/sourcegraph"+dir[len(root):])
+				}
+			}
+		}
+	}
+
+	return packages, nil
 }
 
 func runGoGenerate(ctx context.Context, pkgPaths []string, progressBar bool, verbosity OutputVerbosityType, out io.Writer) (err error) {
