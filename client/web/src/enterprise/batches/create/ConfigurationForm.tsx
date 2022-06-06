@@ -15,7 +15,7 @@ import {
     SettingsOrgSubject,
     SettingsUserSubject,
 } from '@sourcegraph/shared/src/settings/settings'
-import { Button, Container, Input, Icon, RadioButton, Typography } from '@sourcegraph/wildcard'
+import { Button, Container, Input, Icon, RadioButton, H3 } from '@sourcegraph/wildcard'
 
 import {
     BatchChangeFields,
@@ -161,9 +161,10 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                     </small>
                 )}
                 <hr className="my-3" />
-                <Typography.H3 className="text-muted">
-                    Visibility <Icon data-tooltip="Coming soon" as={InfoCircleOutlineIcon} />
-                </Typography.H3>
+                <H3 className="text-muted">
+                    Visibility{' '}
+                    <Icon role="img" aria-label="Coming soon" data-tooltip="Coming soon" as={InfoCircleOutlineIcon} />
+                </H3>
                 <div className="form-group mb-1">
                     <RadioButton
                         name="visibility"
@@ -183,7 +184,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                         disabled={true}
                         label={
                             <>
-                                Private <Icon className="text-warning" aria-hidden={true} as={LockIcon} />
+                                Private <Icon role="img" aria-hidden={true} className="text-warning" as={LockIcon} />
                             </>
                         }
                         aria-label="Private"

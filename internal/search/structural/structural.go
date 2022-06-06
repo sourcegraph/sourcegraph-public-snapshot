@@ -62,11 +62,12 @@ type searchRepos struct {
 // getJob returns a function parameterized by ctx to search over repos.
 func (s *searchRepos) getJob(ctx context.Context) func() error {
 	return func() error {
-		searcherJob := &searcher.SearcherJob{
+		searcherJob := &searcher.TextSearchJob{
 			PatternInfo:     s.args.PatternInfo,
 			Repos:           s.repoSet.AsList(),
 			Indexed:         s.repoSet.IsIndexed(),
 			UseFullDeadline: s.args.UseFullDeadline,
+			Features:        s.args.Features,
 		}
 
 		_, err := searcherJob.Run(ctx, s.clients, s.stream)
@@ -89,6 +90,7 @@ func streamStructuralSearch(ctx context.Context, clients job.RuntimeClients, arg
 		searcherArgs := &search.SearcherParameters{
 			PatternInfo:     args.PatternInfo,
 			UseFullDeadline: args.UseFullDeadline,
+			Features:        args.Features,
 		}
 
 		jobs = append(jobs, &searchRepos{clients: clients, args: searcherArgs, stream: stream, repoSet: repoSet})
@@ -151,7 +153,7 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 	return err
 }
 
-type StructuralSearchJob struct {
+type SearchJob struct {
 	ZoektArgs        *search.ZoektParameters
 	SearcherArgs     *search.SearcherParameters
 	UseIndex         query.YesNoOnly
@@ -160,7 +162,7 @@ type StructuralSearchJob struct {
 	RepoOpts search.RepoOptions
 }
 
-func (s *StructuralSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
@@ -186,11 +188,11 @@ func (s *StructuralSearchJob) Run(ctx context.Context, clients job.RuntimeClient
 	})
 }
 
-func (*StructuralSearchJob) Name() string {
+func (*SearchJob) Name() string {
 	return "StructuralSearchJob"
 }
 
-func (s *StructuralSearchJob) Tags() []log.Field {
+func (s *SearchJob) Tags() []log.Field {
 	return []log.Field{
 		trace.Stringer("query", s.ZoektArgs.Query),
 		log.String("type", string(s.ZoektArgs.Typ)),

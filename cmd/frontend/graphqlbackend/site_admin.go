@@ -231,7 +231,7 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 		return nil, errors.New("refusing to set current user site admin status")
 	}
 
-	if err = database.Users(r.db).SetIsSiteAdmin(ctx, affectedUserID, args.SiteAdmin); err != nil {
+	if err = r.db.Users().SetIsSiteAdmin(ctx, affectedUserID, args.SiteAdmin); err != nil {
 		return nil, err
 	}
 

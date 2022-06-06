@@ -13,9 +13,13 @@ import {
     isErrorLike,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
-import { LastSyncedIcon, FileMatchChildrenStyles as styles } from '@sourcegraph/search-ui'
+import {
+    LastSyncedIcon,
+    FileMatchChildrenStyles as styles,
+    CodeExcerpt,
+    FetchFileParameters,
+} from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { CodeExcerpt, FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
@@ -25,7 +29,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
-import { Typography } from '@sourcegraph/wildcard'
+import { Code } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
@@ -291,10 +295,10 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     onClick={() => openSymbol(symbol.url)}
                 >
                     <SymbolIcon kind={symbol.kind} className="mr-1" />
-                    <Typography.Code>
+                    <Code>
                         {symbol.name}{' '}
                         {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
-                    </Typography.Code>
+                    </Code>
                 </button>
             ))}
 

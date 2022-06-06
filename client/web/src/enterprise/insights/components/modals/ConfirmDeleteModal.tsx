@@ -2,7 +2,7 @@ import React from 'react'
 
 import { noop } from 'lodash'
 
-import { Typography, Text } from '@sourcegraph/wildcard'
+import { H3, Text } from '@sourcegraph/wildcard'
 
 import { Insight } from '../../core'
 import { useDeleteInsight } from '../../hooks/use-delete-insight'
@@ -46,7 +46,7 @@ export const ConfirmDeleteModal: React.FunctionComponent<ConfirmDeleteModalProps
             variant="danger"
             confirmText="Delete forever"
         >
-            <Typography.H3 className="text-danger mb-4">Delete '{insight.title}'?</Typography.H3>
+            <H3 className="text-danger mb-4">Delete '{insight.title}'?</H3>
             <Text className="mb-4">Are you sure you want to delete insight {insight.title}? This can't be undone.</Text>
         </ConfirmationModal>
     )

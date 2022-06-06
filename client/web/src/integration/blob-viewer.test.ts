@@ -628,7 +628,7 @@ describe('Blob viewer', () => {
 
                     const fixedLineDecorationType = sourcegraph.app.createDecorationType()
 
-                    // Match all occurences of 'word', decorate lines
+                    // Match all occurrences of 'word', decorate lines
                     function decorateWordLines(editor: sourcegraph.CodeEditor) {
                         const text = editor.document.text ?? ''
 

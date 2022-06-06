@@ -32,6 +32,7 @@ const (
 	SearchTypeRegex SearchType = iota
 	SearchTypeLiteralDefault
 	SearchTypeStructural
+	SearchTypeLucky
 )
 
 func (s SearchType) String() string {
@@ -42,6 +43,8 @@ func (s SearchType) String() string {
 		return "literal"
 	case SearchTypeStructural:
 		return "structural"
+	case SearchTypeLucky:
+		return "lucky"
 	default:
 		return fmt.Sprintf("unknown{%d}", s)
 	}
@@ -186,9 +189,9 @@ func (p Plan) ToQ() Q {
 	nodes := make([]Node, 0, len(p))
 	for _, basic := range p {
 		operands := basic.ToParseTree()
-		nodes = append(nodes, newOperator(operands, And)...)
+		nodes = append(nodes, NewOperator(operands, And)...)
 	}
-	return Q(newOperator(nodes, Or))
+	return Q(NewOperator(nodes, Or))
 }
 
 // Basic represents a leaf expression to evaluate in our search engine. A basic

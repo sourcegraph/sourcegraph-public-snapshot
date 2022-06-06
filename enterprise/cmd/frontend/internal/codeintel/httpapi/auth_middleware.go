@@ -80,7 +80,7 @@ func authMiddleware(next http.Handler, db database.DB, authValidators AuthValida
 }
 
 func isSiteAdmin(ctx context.Context, db database.DB) bool {
-	user, err := database.Users(db).GetByCurrentAuthUser(ctx)
+	user, err := db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
 			return false

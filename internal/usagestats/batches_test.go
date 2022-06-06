@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -24,7 +25,11 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	repoStore := db.Repos()
 	esStore := db.ExternalServices()
 
-	now := time.Now()
+	// making use of a mock clock here to ensure all time operations are appropriately mocked
+	// https://docs.sourcegraph.com/dev/background-information/languages/testing_go_code#testing-time
+	clock := glock.NewMockClock()
+	now := clock.Now()
+
 	svc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
@@ -54,19 +59,23 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	}
 
 	// Create a user.
-	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "test"})
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "test"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Create another user.
-	user2, err := database.Users(db).Create(ctx, database.NewUser{Username: "test-2"})
+	user2, err := db.Users().Create(ctx, database.NewUser{Username: "test-2"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	lastMonthCreationDate := now.AddDate(0, -1, 2)
-	twoMonthsAgoCreationDate := now.AddDate(0, -2, 2)
+	// Due to irregularity in the amount of days in a month, subtracting simply a month from a date can deduct
+	// 30 days, but that's incorrect because not every month has 30 days.
+	// This poses a problem, therefore deducting three days after the initial month deduction ensures we'll
+	// always get a date that falls in the previous month regardless of the day in question.
+	lastMonthCreationDate := now.AddDate(0, -1, -3)
+	twoMonthsAgoCreationDate := now.AddDate(0, -2, -3)
 
 	// Create batch specs
 	_, err = db.ExecContext(context.Background(), `

@@ -6,7 +6,7 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { Typography } from '@sourcegraph/wildcard'
+import { H2 } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -54,7 +54,7 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
         return (
             <div className="user-settings-external-accounts-page">
                 <PageTitle title="External accounts" />
-                <Typography.H2>External accounts</Typography.H2>
+                <H2>External accounts</H2>
                 <FilteredConnection<ExternalAccountFields, Omit<ExternalAccountNodeProps, 'node'>>
                     className="list-group list-group-flush mt-3"
                     noun="external account"

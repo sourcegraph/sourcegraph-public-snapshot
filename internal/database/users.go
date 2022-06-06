@@ -92,11 +92,6 @@ type userStore struct {
 
 var _ UserStore = (*userStore)(nil)
 
-// Users instantiates and returns a new RepoStore with prepared statements.
-func Users(db dbutil.DB) UserStore {
-	return &userStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
 // UsersWith instantiates and returns a new RepoStore using the other store handle.
 func UsersWith(other basestore.ShareableStore) UserStore {
 	return &userStore{Store: basestore.NewWithHandle(other.Handle())}

@@ -12,17 +12,22 @@ exports[`RepositoryReleasesTagsPage renders 1`] = `
       <form
         class="w-100 d-inline-flex justify-content-between flex-row noncompact"
       >
-        <input
-          autocapitalize="off"
-          autocomplete="off"
-          autocorrect="off"
-          class="form-control"
-          name="query"
-          placeholder="Search tags..."
-          spellcheck="false"
-          type="search"
-          value=""
-        />
+        <div
+          class="container loader-input loaderInput input"
+        >
+          <input
+            aria-label="Search tags..."
+            autocapitalize="off"
+            autocomplete="off"
+            autocorrect="off"
+            class="form-control with-invalid-icon"
+            name="query"
+            placeholder="Search tags..."
+            spellcheck="false"
+            type="search"
+            value=""
+          />
+        </div>
       </form>
       <div
         class="normal"

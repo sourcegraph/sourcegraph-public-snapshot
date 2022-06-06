@@ -208,13 +208,13 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 	}
 	t.Cleanup(func() { gitserver.Mocks.ExecReader = nil })
 
-	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+	gitserver.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
 		if string(a) != baseRev && string(b) != headRev {
 			t.Fatalf("git.Mocks.MergeBase received unknown commit ids: %s %s", a, b)
 		}
 		return a, nil
 	}
-	t.Cleanup(func() { git.Mocks.MergeBase = nil })
+	t.Cleanup(func() { gitserver.Mocks.MergeBase = nil })
 }
 
 func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.Changeset, batchChange int64) {
@@ -228,12 +228,12 @@ func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.C
 
 func pruneUserCredentials(t *testing.T, db database.DB, key encryption.Key) {
 	t.Helper()
-	creds, _, err := database.UserCredentials(db, key).List(context.Background(), database.UserCredentialsListOpts{})
+	creds, _, err := db.UserCredentials(key).List(context.Background(), database.UserCredentialsListOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, c := range creds {
-		if err := database.UserCredentials(db, key).Delete(context.Background(), c.ID); err != nil {
+		if err := db.UserCredentials(key).Delete(context.Background(), c.ID); err != nil {
 			t.Fatal(err)
 		}
 	}

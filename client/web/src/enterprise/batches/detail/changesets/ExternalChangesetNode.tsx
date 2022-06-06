@@ -15,7 +15,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, Alert, Icon, Typography, Text } from '@sourcegraph/wildcard'
+import { Button, Alert, Icon, H4, Text } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { InputTooltip } from '../../../../components/InputTooltip'
@@ -93,11 +93,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                {isExpanded ? (
-                    <Icon aria-label="Close section" as={ChevronDownIcon} />
-                ) : (
-                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
-                )}
+                <Icon role="img" aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
             </Button>
             {selectable ? (
                 <div className="p-2">
@@ -166,7 +162,6 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
             </div>
             {/* The button for expanding the information used on xs devices. */}
             <Button
-                aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
                 className={classNames(
                     styles.externalChangesetNodeShowDetails,
@@ -175,11 +170,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                 outline={true}
                 variant="secondary"
             >
-                {isExpanded ? (
-                    <Icon aria-label="Close section" as={ChevronDownIcon} />
-                ) : (
-                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
-                )}{' '}
+                <Icon role="img" aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (
@@ -226,9 +217,9 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
 
 const SyncerError: React.FunctionComponent<React.PropsWithChildren<{ syncerError: string }>> = ({ syncerError }) => (
     <Alert role="alert" variant="danger">
-        <Typography.H4 className={classNames(styles.alertHeading)}>
+        <H4 className={classNames(styles.alertHeading)}>
             Encountered error during last attempt to sync changeset data from code host
-        </Typography.H4>
+        </H4>
         <ErrorMessage error={syncerError} />
         <hr className="my-2" />
         <Text className="mb-0">
@@ -248,9 +239,7 @@ const ChangesetError: React.FunctionComponent<
 
     return (
         <Alert role="alert" variant="danger">
-            <Typography.H4 className={classNames(styles.alertHeading)}>
-                Failed to run operations on changeset
-            </Typography.H4>
+            <H4 className={classNames(styles.alertHeading)}>Failed to run operations on changeset</H4>
             <ErrorMessage error={node.error} />
         </Alert>
     )
@@ -282,6 +271,8 @@ const RetryChangesetButton: React.FunctionComponent<
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} prefix="Error re-enqueueing changeset" />}
             <Button className="mb-1" onClick={onRetry} disabled={isLoading === true} variant="link">
                 <Icon
+                    role="img"
+                    aria-hidden={true}
                     className={classNames(isLoading === true && styles.externalChangesetNodeRetrySpinning)}
                     as={SyncIcon}
                 />{' '}

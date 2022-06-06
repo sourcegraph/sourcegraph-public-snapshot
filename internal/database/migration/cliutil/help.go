@@ -8,10 +8,5 @@ import (
 )
 
 func ConstructLongHelp() string {
-	names := make([]string, 0, len(schemas.SchemaNames))
-	for _, name := range schemas.SchemaNames {
-		names = append(names, fmt.Sprintf("  %s", name))
-	}
-
-	return fmt.Sprintf("AVAILABLE SCHEMAS\n%s", strings.Join(names, "\n"))
+	return fmt.Sprintf("Available schemas:\n\n* %s", strings.Join(schemas.SchemaNames, "\n* "))
 }

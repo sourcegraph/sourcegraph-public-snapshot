@@ -42,7 +42,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
 
     const queryLicenses = useCallback(
         (args: { first?: number }): Observable<GQL.IProductSubscriptionConnection> => {
-            const vars: GQL.IProductSubscriptionsOnDotcomQueryArguments = {
+            const variables: GQL.IProductSubscriptionsOnDotcomQueryArguments = {
                 first: args.first,
                 account: props.user.id,
             }
@@ -63,7 +63,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                     }
                     ${productSubscriptionFragment}
                 `,
-                vars
+                variables
             ).pipe(
                 map(({ data, errors }) => {
                     if (!data || !data.dotcom || !data.dotcom.productSubscriptions || (errors && errors.length > 0)) {

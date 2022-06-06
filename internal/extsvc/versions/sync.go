@@ -86,7 +86,7 @@ func loadVersions(ctx context.Context, logger log.Logger, store database.Externa
 	}
 
 	for _, svc := range unique {
-		src, err := sourcer(svc)
+		src, err := sourcer(ctx, svc)
 		if err != nil {
 			return versions, err
 		}

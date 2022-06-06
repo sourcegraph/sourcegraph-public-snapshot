@@ -259,6 +259,7 @@ func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
 		return nil
 	}
 	cmd := usershell.Cmd(ctx, cmdStr)
+	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
