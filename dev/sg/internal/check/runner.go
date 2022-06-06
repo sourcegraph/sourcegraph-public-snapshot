@@ -27,6 +27,11 @@ func (r *Runner[Args]) Check(
 	ctx context.Context,
 	args Args,
 ) error {
+	ctx, err := usershell.Context(ctx)
+	if err != nil {
+		return err
+	}
+
 	results := r.run(ctx, args)
 	if len(results.failed) > 0 {
 		return errors.Newf("%d checks failed (%d skipped)", len(results.failed), len(results.skipped))
@@ -35,7 +40,7 @@ func (r *Runner[Args]) Check(
 	return nil
 }
 
-func (r *Runner[Args]) RunInteractive(
+func (r *Runner[Args]) Interactive(
 	ctx context.Context,
 	getArgs func() Args,
 ) error {
@@ -86,6 +91,7 @@ type runResults struct {
 	skipped []int
 }
 
+// run is the main entrypoint for running the checks in this runner.
 func (r *Runner[Args]) run(ctx context.Context, args Args) runResults {
 	var results runResults
 	for i := range r.categories {

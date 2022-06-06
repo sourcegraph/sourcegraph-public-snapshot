@@ -13,7 +13,7 @@ import (
 
 func TestMacOS(t *testing.T) {
 	var output strings.Builder
-	runner := NewRunner("macos", check.IO{
+	runner := NewRunner("darwin", check.IO{
 		Input:  nil,
 		Output: std.NewFixedOutput(&output, false),
 	})
