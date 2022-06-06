@@ -5,7 +5,7 @@ import { useMergeRefs } from 'use-callback-ref'
 
 import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
+import { Link, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
 import { SeriesDisplayOptionsInput } from '../../../../../../graphql-operations'
 import { BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
@@ -154,9 +154,9 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
         >
             <InsightCardHeader
                 title={
-                    <a href={shareableUrl} target="_blank" rel="noopener noreferrer">
+                    <Link to={shareableUrl} target="_blank" rel="noopener noreferrer">
                         insight.title
-                    </a>
+                    </Link>
                 }
             >
                 {isVisible && (
