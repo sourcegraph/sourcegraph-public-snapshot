@@ -22,6 +22,7 @@ import {
     generatePointsField,
     getChartContentSizes,
     getMinMaxBoundaries,
+    SeriesWithData,
 } from './utils'
 
 import styles from './LineChart.module.scss'
@@ -144,6 +145,17 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         }
     }
 
+    const sortedSeries = useMemo(() => {
+        return (
+            [...dataSeries]
+                // resorts array based on hover state
+                // this is to make sure the hovered series is always rendered on top
+                // since SVGs do not support z-index, we have to render the hovered
+                // series last
+                .sort(series => sortByDataKey(series.id, activePoint?.seriesId || ''))
+        )
+    }, [dataSeries, activePoint])
+
     return (
         <svg
             width={outerWidth}
@@ -166,39 +178,33 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             <Group top={margin.top}>
                 {stacked && <StackedArea dataSeries={dataSeries} xScale={xScale} yScale={yScale} />}
 
-                {[...dataSeries]
-                    // resorts array based on hover state
-                    // this is to make sure the hovered series is always rendered on top
-                    // since SVGs do not support z-index, we have to render the hovered
-                    // series last
-                    .sort(series => sortByDataKey(series.id, activePoint?.seriesId || ''))
-                    .map(line => (
-                        <Group key={line.id} style={getHoverStyle(`${line.id}`)}>
-                            <LinePath
-                                data={line.data as SeriesDatum<D>[]}
-                                defined={isDatumWithValidNumber}
-                                x={data => xScale(data.x)}
-                                y={data => yScale(getDatumValue(data))}
-                                stroke={line.color}
-                                curve={curveLinear}
-                                strokeLinecap="round"
-                                strokeWidth={2}
+                {sortedSeries.map(line => (
+                    <Group key={line.id} style={getHoverStyle(`${line.id}`)}>
+                        <LinePath
+                            data={line.data as SeriesDatum<D>[]}
+                            defined={isDatumWithValidNumber}
+                            x={data => xScale(data.x)}
+                            y={data => yScale(getDatumValue(data))}
+                            stroke={line.color}
+                            curve={curveLinear}
+                            strokeLinecap="round"
+                            strokeWidth={2}
+                        />
+                        {points[line.id].map(point => (
+                            <PointGlyph
+                                key={point.id}
+                                left={point.x}
+                                top={point.y}
+                                active={activePoint?.id === point.id}
+                                color={point.color}
+                                linkURL={point.linkUrl}
+                                onClick={onDatumClick}
+                                onFocus={event => setActivePoint({ ...point, element: event.target })}
+                                onBlur={() => setActivePoint(undefined)}
                             />
-                            {points[line.id].map(point => (
-                                <PointGlyph
-                                    key={point.id}
-                                    left={point.x}
-                                    top={point.y}
-                                    active={activePoint?.id === point.id}
-                                    color={point.color}
-                                    linkURL={point.linkUrl}
-                                    onClick={onDatumClick}
-                                    onFocus={event => setActivePoint({ ...point, element: event.target })}
-                                    onBlur={() => setActivePoint(undefined)}
-                                />
-                            ))}
-                        </Group>
-                    ))}
+                        ))}
+                    </Group>
+                ))}
             </Group>
 
             {activePoint && (
