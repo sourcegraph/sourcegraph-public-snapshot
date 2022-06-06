@@ -51,17 +51,17 @@ type Parameter struct {
 	Annotation Annotation `json:"-"`
 }
 
-type operatorKind int
+type OperatorKind int
 
 const (
-	Or operatorKind = iota
+	Or OperatorKind = iota
 	And
 	Concat
 )
 
 // Operator is a nonterminal node of kind Kind with child nodes Operands.
 type Operator struct {
-	Kind       operatorKind
+	Kind       OperatorKind
 	Operands   []Node
 	Annotation Annotation
 }
@@ -997,7 +997,7 @@ loop:
 // reduce takes lists of left and right nodes and reduces them if possible. For example,
 // (and a (b and c))       => (and a b c)
 // (((a and b) or c) or d) => (or (and a b) c d)
-func reduce(left, right []Node, kind operatorKind) ([]Node, bool) {
+func reduce(left, right []Node, kind OperatorKind) ([]Node, bool) {
 	if param, ok := left[0].(Parameter); ok && param.Value == "" {
 		// Remove empty string parameter.
 		return right, true
@@ -1050,7 +1050,7 @@ func reduce(left, right []Node, kind operatorKind) ([]Node, bool) {
 
 // NewOperator constructs a new node of kind operatorKind with operands nodes,
 // reducing nodes as needed.
-func NewOperator(nodes []Node, kind operatorKind) []Node {
+func NewOperator(nodes []Node, kind OperatorKind) []Node {
 	if len(nodes) == 0 {
 		return nil
 	} else if len(nodes) == 1 {

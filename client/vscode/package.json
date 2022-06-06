@@ -225,12 +225,12 @@
     "build:node": "NODE_ENV=production TARGET_TYPE=node yarn task:gulp webpack",
     "build:web": "NODE_ENV=production TARGET_TYPE=webworker yarn task:gulp webpack",
     "build:test": "NODE_ENV=production TARGET_TYPE=webworker IS_TEST=true yarn task:gulp webpack",
-    "watch": "yarn task:gulp watchWebpack",
+    "watch": "yarn check:version && yarn task:gulp watchWebpack",
     "watch:node": "NODE_ENV=development TARGET_TYPE=node yarn task:gulp watchWebpack",
     "watch:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp watchWebpack",
     "watch:test": "NODE_ENV=development TARGET_TYPE=webworker IS_TEST=true yarn task:gulp watchWebpack",
     "test-integration": "TS_NODE_PROJECT=tests/tsconfig.json mocha --parallel=$CI --retries=2 ./tests/**/*.test.ts",
-    "version:check": "ts-node ./scripts/version-check.ts",
+    "check:version": "ts-node ./scripts/version-check.ts",
     "release": "ts-node ./scripts/release.ts"
   }
 }
