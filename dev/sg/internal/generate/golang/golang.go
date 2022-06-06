@@ -92,9 +92,7 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 
 	// Determine which goimports we can use
 	var goimportsBinary string
-	if _, err := exec.LookPath("goimports"); err == nil {
-		goimportsBinary = "goimports"
-	} else {
+	if _, err := exec.LookPath("goimports"); err != nil {
 		// Install a local version of goimports - we do this whether we have a
 		// version of goimports or not because we need to feed it into the go-mockgen
 		// configuration file (which we don't yet template).
@@ -114,6 +112,8 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 		}
 
 		goimportsBinary = "./.bin/goimports"
+	} else {
+		goimportsBinary = "goimports"
 	}
 
 	err = root.Run(run.Cmd(ctx, goimportsBinary, "-w")).Stream(&sb)
