@@ -1843,7 +1843,7 @@ extend type Query {
         """
         after: String
         """
-        Exclude batch specs with `created_from_raw` = false.
+        Exclude batch specs created with the `src-cli` workflow.
         """
         excludeNonSSBCSpecs: Boolean
     ): BatchSpecConnection!
