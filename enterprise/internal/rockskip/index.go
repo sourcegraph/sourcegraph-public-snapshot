@@ -6,9 +6,9 @@ import (
 	"fmt"
 
 	"github.com/amit7itz/goset"
-	"github.com/dboslee/lru"
 	"github.com/inconshreveable/log15"
 	pg "github.com/lib/pq"
+	"k8s.io/utils/lru"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -76,8 +76,8 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 
 	parse := s.createParser()
 
-	symbolCache := lru.New[pathSymbol, int](lru.WithCapacity(s.symbolsCacheSize))
-	pathSymbolsCache := lru.New[string, *goset.Set[string]](lru.WithCapacity(s.pathSymbolsCacheSize))
+	symbolCache := lru.New(s.symbolsCacheSize)
+	pathSymbolsCache := lru.New(s.pathSymbolsCacheSize)
 
 	tasklog.Start("Log")
 	entriesIndexed := 0
@@ -136,7 +136,7 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 			// Fill from the cache.
 			for _, path := range deletedPaths {
 				if symbols, ok := pathSymbolsCache.Get(path); ok {
-					symbolsFromDeletedFiles[path] = symbols
+					symbolsFromDeletedFiles[path] = symbols.(*goset.Set[string])
 				}
 			}
 
@@ -176,7 +176,7 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 				}
 
 				// Cache the symbols we just parsed.
-				pathSymbolsCache.Set(path, symbolsFromAddedFiles[path])
+				pathSymbolsCache.Add(path, symbolsFromAddedFiles[path])
 
 				return nil
 			})
@@ -213,8 +213,10 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 		for path, symbols := range deletedSymbols {
 			for _, symbol := range symbols.Items() {
 				id := 0
-				ok := false
-				if id, ok = symbolCache.Get(pathSymbol{path: path, symbol: symbol}); !ok {
+				id_, ok := symbolCache.Get(pathSymbol{path: path, symbol: symbol})
+				if ok {
+					id = id_.(int)
+				} else {
 					tasklog.Start("GetSymbol")
 					found := false
 					id, found, err = GetSymbol(ctx, tx, repoId, path, symbol, hops)
@@ -275,7 +277,7 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 	return nil
 }
 
-func BatchInsertSymbols(ctx context.Context, tasklog *TaskLog, tx *sql.Tx, repoId, commit int, symbolCache *lru.Cache[pathSymbol, int], symbols map[string]*goset.Set[string]) error {
+func BatchInsertSymbols(ctx context.Context, tasklog *TaskLog, tx *sql.Tx, repoId, commit int, symbolCache *lru.Cache, symbols map[string]*goset.Set[string]) error {
 	callback := func(inserter *batch.Inserter) error {
 		for path, pathSymbols := range symbols {
 			for _, symbol := range pathSymbols.Items() {
@@ -295,7 +297,7 @@ func BatchInsertSymbols(ctx context.Context, tasklog *TaskLog, tx *sql.Tx, repoI
 		if err := rows.Scan(&path, &symbol, &id); err != nil {
 			return err
 		}
-		symbolCache.Set(pathSymbol{path: path, symbol: symbol}, id)
+		symbolCache.Add(pathSymbol{path: path, symbol: symbol}, id)
 		return nil
 	}
 
