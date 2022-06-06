@@ -431,6 +431,7 @@
     "monaco-yaml": "^3.2.1",
     "nice-ticks": "^1.0.1",
     "open-color": "^1.8.0",
+    "ordinal": "^1.0.3",
     "path-browserify": "^1.0.1",
     "postcss-inset": "^1.0.0",
     "pretty-bytes": "^5.3.0",
