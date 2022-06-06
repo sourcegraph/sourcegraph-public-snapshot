@@ -18,6 +18,7 @@ import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Badge,
@@ -494,9 +495,11 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                     {step.diffStat && (
                         <DiffStat className={styles.stepDiffStat} {...step.diffStat} expandedCounts={true} />
                     )}
-                    <span className={classNames('text-monospace text-muted', styles.stepTime)}>
-                        <StepTimer step={step} />
-                    </span>
+                    {step.startedAt && (
+                        <span className={classNames('text-monospace text-muted', styles.stepTime)}>
+                            <StepTimer startedAt={step.startedAt} finishedAt={step.finishedAt} />
+                        </span>
+                    )}
                 </>
             }
         >
@@ -589,7 +592,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
         return (
             <Icon
                 role="img"
-                className="text-success"
+                className="text-success flex-shrink-0"
                 aria-label="A cached result for this step has been found"
                 data-tooltip="A cached result for this step has been found"
                 as={ContentSaveIcon}
@@ -600,7 +603,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
         return (
             <Icon
                 role="img"
-                className="text-muted"
+                className="text-muted flex-shrink-0"
                 aria-label="The step has been skipped"
                 data-tooltip="The step has been skipped"
                 as={LinkVariantRemoveIcon}
@@ -611,7 +614,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
         return (
             <Icon
                 role="img"
-                className="text-muted"
+                className="text-muted flex-shrink-0"
                 aria-label="This step is waiting to be processed"
                 data-tooltip="This step is waiting to be processed"
                 as={TimerSandIcon}
@@ -622,7 +625,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
         return (
             <Icon
                 role="img"
-                className="text-muted"
+                className="text-muted flex-shrink-0"
                 aria-label="This step is currently running"
                 data-tooltip="This step is currently running"
                 as={LoadingSpinner}
@@ -633,7 +636,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
         return (
             <Icon
                 role="img"
-                className="text-success"
+                className="text-success flex-shrink-0"
                 aria-label="This step ran successfully"
                 data-tooltip="This step ran successfully"
                 as={CheckBoldIcon}
@@ -643,7 +646,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
     return (
         <Icon
             role="img"
-            className="text-danger"
+            className="text-danger flex-shrink-0"
             aria-label={`This step failed with exit code ${String(step.exitCode)}`}
             data-tooltip={`This step failed with exit code ${String(step.exitCode)}`}
             as={AlertCircleIcon}
@@ -651,14 +654,10 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
     )
 }
 
-const StepTimer: React.FunctionComponent<React.PropsWithChildren<{ step: BatchSpecWorkspaceStepFields }>> = ({
-    step,
-}) => {
-    if (!step.startedAt) {
-        return null
-    }
-    return <Duration start={step.startedAt} end={step.finishedAt ?? undefined} />
-}
+const StepTimer: React.FunctionComponent<React.PropsWithChildren<{ startedAt: string; finishedAt: Maybe<string> }>> = ({
+    startedAt,
+    finishedAt,
+}) => <Duration start={startedAt} end={finishedAt ?? undefined} />
 
 interface WorkspaceStepFileDiffConnectionProps extends ThemeProps {
     workspaceID: Scalars['ID']
