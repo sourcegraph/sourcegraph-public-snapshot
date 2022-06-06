@@ -19,10 +19,12 @@ Complete the following tasks before deploying Sourcegraph with Docker Compose:
     - Determine the number and size of the repos in your environment.
     - Determine the number of users and their engagement rate with the repos. 
     - Configure the server resources using the [resource estimator](../resource_estimator.md) to ensure it has sufficient CPUs, memory, and SSD capacity.
+
 >Note: Sourcegraph requires SSD backed storage. 
 - Configure ingress firewall rules to enable secure access to the server.
 - Configure access for the server to your deployment files, in the examples that follow a Personal Access Token for GitHub is required.   
 - Install [Docker Compose](https://docs.docker.com/compose/) on the server. Sourcegraph deployments should *not* be deployed with Docker Swarm
+
 >Note: Minimum Docker [v20.10.0](https://docs.docker.com/engine/release-notes/#20100) and Docker Compose [v1.29.0](https://docs.docker.com/compose/release-notes/#1290)
 - Obtain a [Sourcegraph license](https://about.sourcegraph.com/pricing/). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
 
@@ -51,22 +53,25 @@ The [`sourcegraph/deploy-sourcegraph-docker`](https://github.com/sourcegraph/dep
 
 *Alternatively*, if you are using GitHub and you want your fork to be private, create a private clone of the reference repository in your code host. This process can be performed on any machine with access to your code host:
 
-1. Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example `<you/private-repository>` in GitHub.
+</pre>1. Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example `<you/private-repository>` in GitHub.</pre>
 
-2. Bare clone the reference repository. 
+</pre>2. Bare clone the reference repository. </pre>
 
   ```bash
   git clone --bare https://github.com/sourcegraph/deploy-sourcegraph-docker/
   ```
-  
-3. Navigate to the bare clone and mirror push it to your private repository.
+
+</pre> 3. Navigate to the bare clone and mirror push it to your private repository.</pre>
+
 
   ```bash
   cd deploy-sourcegraph-docker.git
   git push --mirror https://github.com/<you/private-repository>.git
   ```
 
-4. Remove your local bare clone. 
+
+</pre> 4. Remove your local bare clone.</pre> 
+
   ```bash
   cd ..
   rm -rf deploy-sourcegraph-docker.git
@@ -278,54 +283,54 @@ worker                      /sbin/tini -- /usr/local/b ...   Up                 
 zoekt-indexserver-0         /sbin/tini -- zoekt-source ...   Up
 zoekt-webserver-0           /sbin/tini -- /bin/sh -c z ...   Up (healthy)
 ```
-4. Stop the deployment, and restart the databases service only to ensure there are no other connections during backup and restore.
+</pre>4. Stop the deployment, and restart the databases service only to ensure there are no other connections during backup and restore.</pre>
 
 ```bash
 docker-compose down
 docker-compose -f db-only-migrate.docker-compose.yaml up -d
 ```
 
-5. Generate the database dumps
+</pre>5. Generate the database dumps</pre>
 
 ```bash
 docker exec pgsql sh -c 'pg_dump -C --username sg sg' > sourcegraph_db.out
 docker exec codeintel-db -c 'pg_dump -C --username sg sg' > codeintel_db.out
 ```
 
-6. Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location. 
+</pre>6. Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location.</pre> 
 
 #### Restore Sourcegraph databases into a new environment
 
 The following instructions apply **only if you are restoring your databases into a new deployment** of Sourcegraph ie: a new virtual machine. If you are restoring a previously running environment, see the instructions for [restoring a previously running deployment](#restoring-sourcegraph-databases-into-an-existing-environment)
 
-1. Copy the database dump files into the `deploy-sourcegraph-docker/docker-compose` directory. 
-2. Start the database services
+</pre>1. Copy the database dump files into the `deploy-sourcegraph-docker/docker-compose` directory. </pre>
+</pre>2. Start the database services</pre>
 
 ```bash
 docker-compose -f db-only-migrate.docker-compose.yaml up -d
 ```
 
-3. Copy the database files into the containers
+</pre>3. Copy the database files into the containers</pre>
 
 ```bash
 docker cp sourcegraph_db.out pgsql:/tmp/sourecgraph_db.out
 docker cp codeintel_db.out codeintel-db:/tmp/codeintel_db.out
 ```
 
-4. Restore the databases
+</pre>4. Restore the databases</pre>
 
 ```bash
 docker exec pgsql sh -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
 docker exec codeintel-db sh -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
 ```
 
-5. Start the remaining Sourcegraph services
+</pre>5. Start the remaining Sourcegraph services</pre>
 
 ```bash
 docker-compose up -d
 ```
 
-6. Verify the deployment has started 
+</pre>6. Verify the deployment has started </pre>
 
 ```bash 
 docker-compose ps
@@ -356,43 +361,45 @@ zoekt-indexserver-0         /sbin/tini -- zoekt-source ...   Up
 zoekt-webserver-0           /sbin/tini -- /bin/sh -c z ...   Up (healthy)> docker-compose ps
 ```
 
-7. Browse to your Sourcegraph deployment, login and verify your existing configuration has been restored
+</pre>7. Browse to your Sourcegraph deployment, login and verify your existing configuration has been restored</pre>
 
 ### Restore Sourcegraph databases into an existing environment
 
-1. `cd` to the `deploy-sourcegraph-docker/docker-compose` and stop the previous deployment and remove any existing volumes
+</pre>1. `cd` to the `deploy-sourcegraph-docker/docker-compose` and stop the previous deployment and remove any existing volumes</pre>
+
 ```bash
 docker-compose down
 docker volume rm docker-compose_pgsql
 docker volume rm docker-compose_codeintel-db
 ```
 
-2. Start the databases services only
+</pre>2. Start the databases services only</pre>
+
 ```bash
 docker-compose -f db-only-migrate.docker-compose.yaml up -d
 ```
 
-3. Copy the database files into the containers
+</pre>3. Copy the database files into the containers</pre>
 
 ```bash
 docker cp sourcegraph_db.out pgsql:/tmp/sourecgraph_db.out
 docker cp codeintel_db.out codeintel-db:/tmp/codeintel_db.out
 ```
 
-4. Restore the databases
+</pre>4. Restore the databases</pre>
 
 ```bash
 docker exec pgsql sh -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
 docker exec codeintel-db sh -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
 ```
 
-5. Start the remaining Sourcegraph services
+</pre>5. Start the remaining Sourcegraph services</pre>
 
 ```bash
 docker-compose up -d
 ```
 
-6. Verify the deployment has started 
+</pre>6. Verify the deployment has started </pre>
 
 ```bash 
 docker-compose ps
@@ -423,7 +430,7 @@ zoekt-indexserver-0         /sbin/tini -- zoekt-source ...   Up
 zoekt-webserver-0           /sbin/tini -- /bin/sh -c z ...   Up (healthy)> docker-compose ps
 ```
 
-7. Browse to your Sourcegraph deployment, login and verify your existing configuration has been restored
+</pre>7. Browse to your Sourcegraph deployment, login and verify your existing configuration has been restored</pre>
 
 ### Monitoring
 
