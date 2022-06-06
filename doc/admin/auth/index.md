@@ -55,14 +55,31 @@ The [`builtin` auth provider](../config/site_config.md#builtin-password-authenti
 
 Password reset links expire after 4 hours.
 
-Site configuration example:
 
-```json
-{
-  // ...,
-  "auth.providers": [{ "type": "builtin", "allowSignup": true }]
-}
+###  Filter to control user sign-up
+
+The filter `allowSignup`, in the builtin configuration, can be used to control who can create an account in a Sourcegraph instance.
+
+**allowSignup**
+
+  If set to `true`, users will see the sign up link under the login form and will have access to the sign up page, where they can create their accounts without restriction.
+
+  When not set, `allowSignup` will default to `false`.
+
+  If you choose to block sign-up in another auth provider, make sure this builtin filter is removed or set to `false`. Otherwise, users will have a way to bypass the restriction.
+
+  During the initial setup, the builtin sign-up will be available for the first user so they can create an account and become admin.
+
+
+### Site configuration example
+
+  ```json
+  {
+    // ...,
+    "auth.providers": [{ "type": "builtin", "allowSignup": true }]
+  }
 ```
+
 
 ### Account lockout
 
@@ -132,9 +149,9 @@ Then add the following lines to your site configuration:
       "displayName": "GitHub",
       "clientID": "replace-with-the-oauth-client-id",
       "clientSecret": "replace-with-the-oauth-client-secret",
-      "allowSignup": false,  // CAUTION: Set to true to enable signup. If nothing is specified in `allowOrgs`, any GitHub user can sign up.
-      "allowOrgs": ["your-org-name"], // Restrict logins and signups if enabled to members of these orgs.
-      "allowOrgsMap": { "orgName": ["your-team-name"]} // Restrict logins and signups if enabled to members of teams that belong to a given org.
+      "allowSignup": false,  // CAUTION: Set to true to enable signup. If nothing is specified in `allowOrgs` or `allowOrgsMap`, any GitHub user can sign up.
+      "allowOrgs": ["your-org-name"], // Restrict logins and sign-ups if enabled to members of these orgs.
+      "allowOrgsMap": { "orgName": ["your-team-name"]} // Restrict logins and sign-ups if enabled to members of teams that belong to a given org.
     }
   ]
 }
@@ -145,21 +162,79 @@ configuration.
 
 Leave the `url` field empty for GitHub.com.
 
-Set `allowSignup` to `true` to enable anyone with a GitHub account to sign up without invitation
-(typically done only for GitHub Enterprise). If `allowSignup` is `false`, a user can sign in through
-GitHub only if an account with the same verified email already exists. If none exists, a site admin
-must create one explicitly.
-
-> WARNING: If `allowSignup` is set to `true`, anyone with internet access to both your Sourcegraph instance and your Github url are able to sign up and login to your instance. In particular, if url is set to `https://github.com`, this means that anyone with a Github account could log in to your Sourcegraph instance and search your indexed code. Make sure to also configure the `allowOrgs` field described below to limit signups to your org, or limit public access to your Sourcegraph instance via IP restrictions / VPN. For assistance, contact support.
-
-The `allowOrgs` field restricts logins to members of the specified GitHub organizations while `allowOrgsMap` restricts logins to members of GitHub teams that belong to a given org. If you choose to use the latter, note that subteams inheritance is not supported, therefore only members of the listed teams will be granted access. In both cases, existing user sessions are **not invalidated**. Only new logins after these settings are changed are affected.
-
 Once you've configured GitHub as a sign-on provider, you may also want to [add GitHub repositories to Sourcegraph](../external_service/github.md#repository-syncing).
+
+
+### Filters to control user sign-up and sign-in
+
+You can use the following filters to control how users can create accounts and sign in to your Sourcegraph instance via the GitHub auth provider.
+
+**allowSignup**
+
+Set `allowSignup` to `true` to enable anyone with a GitHub account to sign up without invitation
+(typically done only for GitHub Enterprise).
+
+If set to `false` or not set, sign-up will be blocked. In this case, new users will only be able to sign in after an admin creates their account on Sourcegraph.
+The new user email, during their account creation, should match one of their GitHub verified emails.
+
+> WARNING: If `allowSignup` is set to `true`, anyone with internet access to both your Sourcegraph instance and your GitHub url are able to sign up and login to your instance. In particular, if url is set to `https://github.com`, this means that anyone with a Github account could log in to your Sourcegraph instance and search your indexed code. Make sure to also configure the `allowOrgs` field described below to limit sign-ups to your org, or limit public access to your Sourcegraph instance via IP restrictions / VPN. For assistance, contact support.
+
+
+```json
+  {
+    "type": "github",
+    ...
+    "allowSignup": false
+  }
+```
+
+**allowOrgs**
+
+Restricts sign-ins to members of the listed organizations. If empty or unset, no restriction will be applied.
+
+If combined with `"allowSignup": true`, only membrers of the allowed orgs can create their accounts in Sourcegraph via GitHub authentitcation.
+When combined with `"allowSignup": false` or unset, an admin should first create the user account so the user can then sign in with GitHub if they belong to the allowed orgs.
+
+  ```json
+    {
+      "type": "github",
+      // ...
+      "allowSignup": true,
+      "allowOrgs": ["org1", "org2"]
+    },
+  ```
+
+**allowOrgsMap**
+
+  Restricts sign-ups and new logins to members of the listed teams or subteams mapped to the organizations they belong to.
+
+  If empty or unset, no restrictions will be applied.
+
+  If combined with `"allowSignup": true`, only members of the allowed teams can create their accounts in Sourcegraph via GitHub authentication.
+  When set with `"allowSignup": false` or unset, an admim should first create the user account so that the user can login with GitHub.
+
+  Note that subteams inheritance is not supported — the name of child teams (subteams) should be informed so their members can be granted access to Sourcegraph.
+
+
+  ```json
+    {
+       "type": "github",
+      // ...
+      "allowOrgsMap": {
+        "org1": [
+          "team1", "subteam1"
+        ],
+        "org2": [
+          "subteam2"
+        ]
+      }
+    }
+  ```
+
 
 ## GitLab
 
-[Create a GitLab OAuth application](https://docs.gitlab.com/ee/integration/oauth_provider.html). Set
-the following values, replacing `sourcegraph.example.com` with the IP or hostname of your
+[Create a GitLab OAuth application](https://docs.gitlab.com/ee/integration/oauth_provider.html). Set the following values, replacing `sourcegraph.example.com` with the IP or hostname of your
 Sourcegraph instance:
 
 - Authorization callback URL: `https://sourcegraph.example.com/.auth/gitlab/callback`
@@ -177,8 +252,8 @@ Then add the following lines to your site configuration:
         "clientID": "replace-with-the-oauth-application-id",
         "clientSecret": "replace-with-the-oauth-secret",
         "url": "https://gitlab.example.com",
-        "allowSignup": false, // If not set, it defaults to true allowing any GitLab user with access to your instance to signup.
-        "allowGroups":[["group", "group/subgroup", "group/subgroup/subgroup"]], // Restrict logins and signups to members of groups or subgroups based on the full-path provided.
+        "allowSignup": false, // If not set, it defaults to true allowing any GitLab user with access to your instance to sign up.
+        "allowGroups":[["group", "group/subgroup", "group/subgroup/subgroup"]], // Restrict logins and sign-ups to members of groups or subgroups based on the full-path provided.
       }
     ]
 ```
@@ -188,6 +263,53 @@ configuration.
 
 Once you've configured GitLab as a sign-on provider, you may also want to [add GitLab repositories
 to Sourcegraph](../external_service/gitlab.md#repository-syncing).
+
+### Filters to control user sign-up and sign-in
+
+You can use the following filters to control how users can create accounts and sign in to your Sourcegraph instance via the GitLab auth provider.
+
+**allowSignup**
+
+  Allows new users to create their accounts in Sourcegraph via GitLab authentication (by clicking the "Continue with GitLab" button).
+
+  When `false`, sign-up will be blocked. In this case, new users can only sign in after an admin creates their account on Sourcegraph. The user account email should match their GitLab email.
+
+  * If not set, unliked with GitHub, it defaults to `true`, allowing any GitLab user with access to your instance to sign up*.
+
+
+  ```json
+    {
+      "type": "gitlab",
+      // ...
+      "allowSignup": false
+    }
+  ```
+
+**allowGroups**
+
+  Restricts new sign-ins to members of the listed groups or subgroups.
+
+  Instead of informing the groups or subgroups names, use their full path that can be copied from the URL.
+
+  For a parent group, the full path will be simple as `group`, but for nested groups it can look like `group/subgroup/subsubgroup`.
+
+  When empty or unset, no restrictions will be applied.
+
+  If combined with `"allowSignup": false`, an admim should first create the user account so that the user can sign in with GitLab.
+  If combined with `"allowSignup": true` or with `allowSignup` unset, only members of the the allowed groups or subgroups can create their accounts in Sourcegraph via GitLab authentitcation.
+
+
+  ```json
+    {
+      "type": "gitlab",
+      // ...
+      "allowSignup": true,
+      "allowGroups": [
+        "group/subgroup/subsubgroup"
+      ]
+    }
+  ```
+
 
 ## OpenID Connect
 
@@ -231,6 +353,21 @@ Example [`openidconnect` auth provider](../config/site_config.md#openid-connect-
 Sourcegraph supports the OpenID Connect Discovery standard for configuring the auth provider (using the document at, e.g., `https://oidc.example.com/.well-known/openid-configuration`).
 
 See the [`openid` auth provider documentation](../config/site_config.md#openid-connect-including-google-workspace) for the full set of configuration options.
+
+### Filter to control user sign-up
+
+**allowSignup**
+
+  It allows new users to creating their accounts via OpenID, or blocks the sign-up when set to `false`.
+  If not set, it defaults to `true`.
+
+  ```json
+    {
+      "type": "openidconnect",
+      // ...
+      "allowSignup": false
+    }
+  ```
 
 ### Google Workspace (Google accounts)
 
