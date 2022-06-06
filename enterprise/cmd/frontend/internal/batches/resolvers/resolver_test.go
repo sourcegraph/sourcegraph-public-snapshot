@@ -2081,7 +2081,7 @@ func TestListBatchSpecs(t *testing.T) {
 		var response struct{ BatchSpecs apitest.BatchSpecConnection }
 		apitest.MustExec(ctx, t, s, input, &response, queryListBatchSpecs)
 
-		// All batch specs should be returned here.
+		// Only 5 batch specs are returned here because we excluded non-SSBC batch specs.
 		assert.Len(t, response.BatchSpecs.Nodes, 5)
 	})
 }
