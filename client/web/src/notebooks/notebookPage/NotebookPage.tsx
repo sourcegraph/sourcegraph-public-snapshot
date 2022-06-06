@@ -276,11 +276,6 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                     )}
                                     {isNotebookLoaded(latestNotebook) && (
                                         <>
-                                            <Icon
-                                                role="img"
-                                                as={CheckCircleIcon}
-                                                className={classNames('text-success m-1', styles.autoSaveIndicator)}
-                                            />
                                             <CheckCircleIcon
                                                 className={classNames('text-success m-1', styles.autoSaveIndicator)}
                                             />
