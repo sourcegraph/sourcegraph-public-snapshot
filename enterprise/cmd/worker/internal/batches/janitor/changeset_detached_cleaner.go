@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const changesetCleanInterval = 24 * time.Hour
@@ -23,7 +24,7 @@ func NewChangesetDetachedCleaner(ctx context.Context, s *store.Store) goroutine.
 			if len(retention) > 0 {
 				d, err := time.ParseDuration(retention)
 				if err != nil {
-					return err
+					return errors.Wrap(err, "failed to parse config value batchChanges.changesetsRetention as duration")
 				}
 				return s.CleanDetachedChangesets(ctx, d)
 			}
