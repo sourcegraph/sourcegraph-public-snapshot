@@ -1,5 +1,5 @@
 import childProcess from 'child_process'
-import { mkdtempSync } from 'fs'
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import path from 'path'
 
@@ -12,12 +12,29 @@ const verbose = process.argv.includes('-v') || process.argv.includes('--verbose'
 export interface VSCodeTestDriver {
     page: Page
     dispose: (onDispose?: () => void) => void
+    userDataDirectory: string
 }
 
-export async function launchVsCode(vscodeExecutablePath: string): Promise<VSCodeTestDriver> {
+export async function launchVsCode({
+    vscodeExecutablePath,
+    settings,
+}: {
+    vscodeExecutablePath: string
+    settings?: string
+}): Promise<VSCodeTestDriver> {
     const extensionDevelopmentPath = path.join(__dirname, '..')
 
     const userDataDirectory = mkdtempSync(path.join(tmpdir(), 'vsce'))
+
+    if (settings) {
+        const userPath = path.join(userDataDirectory, 'User')
+        if (!existsSync(userPath)) {
+            mkdirSync(userPath)
+        }
+        const settingsPath = path.join(userPath, 'settings.json')
+        writeFileSync(settingsPath, settings)
+    }
+
     const extensionsDirectory = mkdtempSync(path.join(tmpdir(), 'vsce'))
 
     console.log('Starting VS Code', { verbose, vscodeExecutablePath, userDataDirectory, extensionsDirectory })
@@ -98,6 +115,7 @@ export async function launchVsCode(vscodeExecutablePath: string): Promise<VSCode
     return {
         page,
         dispose,
+        userDataDirectory,
     }
 }
 

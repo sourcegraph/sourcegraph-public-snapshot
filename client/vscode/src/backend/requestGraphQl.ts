@@ -1,5 +1,6 @@
 import { asError } from '@sourcegraph/common'
 import { checkOk, GraphQLResult, GRAPHQL_URI, isHTTPAuthError } from '@sourcegraph/http-client'
+
 import { accessTokenSetting, handleAccessTokenError } from '../settings/accessTokenSetting'
 import { endpointSetting, endpointRequestHeadersSetting } from '../settings/endpointSetting'
 
@@ -10,6 +11,12 @@ let invalidated = false
 export function invalidateClient(): void {
     invalidated = true
 }
+
+// In integration test environment, don't make requests until CDP session
+// has been established, which seems to take longer for VS Code.
+// In addition, the Sourcegraph VS Code extension is activated
+// on startup, which may be before we set up request interception.
+const TEST_INIT_DELAY = new Promise(resolve => setTimeout(resolve, 2500))
 
 export const requestGraphQLFromVSCode = async <R, V = object>(
     request: string,
@@ -36,9 +43,15 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
     }
     try {
         const url = new URL(apiURL, sourcegraphURL).href
-        // Debt: intercepted requests in integration tests
-        // have 0 status codes, so don't check in test environment.
-        const checkFunction = process.env.IS_TEST ? <T>(value: T): T => value : checkOk
+
+        let checkFunction: (response: Response) => Response = checkOk
+        if (process.env.IS_TEST) {
+            // Debt: intercepted requests in integration tests
+            // have 0 status codes, so don't check in test environment.
+            checkFunction = <T>(value: T): T => value
+            await TEST_INIT_DELAY
+        }
+
         const response = checkFunction(
             await fetch(url, {
                 body: JSON.stringify({

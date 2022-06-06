@@ -117,11 +117,15 @@ export class CdpAdapter extends PollyAdapter {
         // Create CDP sessions for all existing targets
         const targets = this.browser.targets()
 
-        await Promise.all(
-            targets.map(async target => {
-                await this.setupCDPSessionForTarget(target)
-            })
-        )
+        try {
+            await Promise.allSettled(
+                targets.map(async target => {
+                    await this.setupCDPSessionForTarget(target)
+                })
+            )
+        } catch {
+            // noop
+        }
 
         // Listen for future pages, create CDP session on creation
         this.browser.on('targetcreated', target => {

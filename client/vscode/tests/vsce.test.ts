@@ -10,14 +10,20 @@ import { createVSCodeIntegrationTestContext, VSCodeIntegrationTestContext } from
 import { getVSCodeWebviewFrames } from './getWebview'
 import { launchVsCode, VSCodeTestDriver } from './launch'
 
-const sourcegraphBaseUrl = 'https://sourcegraph.com'
+const sourcegraphBaseUrl = process.env.SOURCEGRAPH_URL || 'https://sourcegraph.com'
 const TEST_BACKCOMPAT = !!process.env.TEST_BACKCOMPAT
 
 describe('VS Code extension', () => {
     let vsCodeDriver: VSCodeTestDriver
     before(async () => {
         const vscodeExecutablePath = await downloadAndUnzipVSCode()
-        vsCodeDriver = await launchVsCode(vscodeExecutablePath)
+        vsCodeDriver = await launchVsCode({
+            vscodeExecutablePath,
+            settings: JSON.stringify({
+                'sourcegraph.url': sourcegraphBaseUrl,
+                'sourcegraph.accessToken': sourcegraphBaseUrl === 'https://sourcegraph.com' ? '' : 'fake',
+            }),
+        })
     })
     after(() => vsCodeDriver?.dispose())
 
@@ -157,8 +163,12 @@ describe('VS Code extension', () => {
             await searchPanelFrame.waitForSelector('.test-search-result strong', { visible: true })
             await searchPanelFrame.click('.test-search-result strong', { delay: 100 })
         } catch {
-            throw new Error('Timeout waiting for search results to render after nevigating back from repo display page')
+            throw new Error('Timeout waiting for search results to render after navigating back from repo display page')
         }
+
+        await vsCodeDriver.page.waitForSelector(
+            'div[title^="/gitlab.sgdev.org/aharvey/batch-change-utils@HEAD/-/blob/overridable/bool_or_string_test.go"]'
+        )
 
         // Look for file title
         const remoteFileTitle = await vsCodeDriver.page.title()
