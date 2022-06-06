@@ -630,6 +630,8 @@ github.com/derision-test/glock v1.0.0 h1:b6sViZG+Cm6QtdpqbfWEjaBVbzNPntIS4GzsxpS
 github.com/derision-test/glock v1.0.0/go.mod h1:jKtLdBMrF+XQatqvg46wiWdDfDSSDjdhO4dOM2FX9H4=
 github.com/derision-test/go-mockgen v1.3.0 h1:Od2vkWrfawjJ59GGY/XFB3HAkDkTphU3qxz49Rq3zUg=
 github.com/derision-test/go-mockgen v1.3.0/go.mod h1:/TXUePlhtHmDDCaDAi/a4g6xOHqMDz3Wf0r2NPGskB4=
+github.com/derision-test/go-mockgen v1.3.1 h1:2MgROy2nd+pPpKh/MVh8zl6WoDFZ/iss2m89lD2GY38=
+github.com/derision-test/go-mockgen v1.3.1/go.mod h1:/TXUePlhtHmDDCaDAi/a4g6xOHqMDz3Wf0r2NPGskB4=
 github.com/devigned/tab v0.1.1/go.mod h1:XG9mPq0dFghrYvoBF3xdRrJzSTX1b7IQrvaL9mzjeJY=
 github.com/dghubble/go-twitter v0.0.0-20190719072343-39e5462e111f/go.mod h1:xfg4uS5LEzOj8PgZV7SQYRHbG7jPUnelEiaAVJxmhJE=
 github.com/dghubble/gologin/v2 v2.3.0 h1:SMHahscgKmgrv4X+OAwFCJCuJ6mbLxOqB+FAVU+tOSA=
