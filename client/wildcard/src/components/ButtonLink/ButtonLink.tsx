@@ -1,9 +1,9 @@
-import React, { AnchorHTMLAttributes } from 'react'
+import React, { AnchorHTMLAttributes, useRef } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import { noop } from 'lodash'
 import { Key } from 'ts-key-enum'
+import { useMergeRefs } from 'use-callback-ref'
 
 import { isDefined } from '@sourcegraph/common'
 
@@ -11,9 +11,16 @@ import { ForwardReferenceComponent } from '../../types'
 import { Button, ButtonProps } from '../Button'
 import { Link, AnchorLink } from '../Link'
 
-const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>
-    event.key === Key.Enter && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey
-
+const isSelectKeyPress = (event: React.KeyboardEvent): boolean => {
+    event.preventDefault()
+    return (
+        (event.key === Key.Enter || event.key === ' ') &&
+        !event.ctrlKey &&
+        !event.shiftKey &&
+        !event.metaKey &&
+        !event.altKey
+    )
+}
 export type ButtonLinkProps = Omit<ButtonProps, 'as' | 'onSelect'> &
     Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'onSelect'> & {
         /** The link destination URL. */
@@ -59,20 +66,24 @@ export const ButtonLink = React.forwardRef((props, reference) => {
         disabledClassName,
         pressed,
         'data-tooltip': tooltip,
-        onSelect = noop,
+        onSelect,
         children,
         id,
         'data-content': dataContent,
         tabIndex,
         ...rest
     } = props
+    const buttonReference = useRef<HTMLAnchorElement>(null)
+    const mergedbuttonReference = useMergeRefs([buttonReference, reference])
 
     // We need to set up a keypress listener because <a onclick> doesn't get
     // triggered by enter.
     const handleKeyPress = (event: React.KeyboardEvent<HTMLElement>): void => {
-        if (!disabled && isSelectKeyPress(event)) {
-            onSelect(event)
+        if (disabled || !isSelectKeyPress(event)) {
+            return
         }
+
+        buttonReference.current?.click()
     }
 
     const handleClick = (event: React.MouseEvent<HTMLElement>): void => {
@@ -83,7 +94,7 @@ export const ButtonLink = React.forwardRef((props, reference) => {
             return
         }
 
-        onSelect(event)
+        onSelect?.(event)
     }
 
     const commonProps = {
@@ -97,7 +108,7 @@ export const ButtonLink = React.forwardRef((props, reference) => {
         onClick: onSelect,
         onKeyPress: handleKeyPress,
         id,
-        ref: reference,
+        ref: mergedbuttonReference,
         disabled,
     }
 

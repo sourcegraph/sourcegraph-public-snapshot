@@ -184,7 +184,7 @@ export const CheckboxRepositoryNode: React.FunctionComponent<React.PropsWithChil
                 className="p-2 w-100 d-flex justify-content-between"
                 onClick={onClick}
             >
-                <div className="d-flex align-items-center">
+                <div className="d-flex">
                     <Checkbox
                         className="mr-3"
                         aria-label={`select ${name} repository`}

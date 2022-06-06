@@ -4169,10 +4169,10 @@
     "@sourcegraph/codemod-toolkit-packages" "1.0.1"
     "@sourcegraph/codemod-toolkit-ts" "1.0.1"
 
-"@sourcegraph/eslint-config@0.30.0":
-  version "0.30.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.30.0.tgz#43d3d120a50c489d25834d903476098b3ed3c87e"
-  integrity sha512-LqHeGNOrHKcHHgZ6bqsax7UMcqfW5zgIzUrOPgnebg9l+r1amB2aiUo5ia4njY46Of6mnVxAgOkohxjoqDM4Ig==
+"@sourcegraph/eslint-config@0.31.0":
+  version "0.31.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.31.0.tgz#d6508841a340b52ba2b1ece35b054d89df7ab38d"
+  integrity sha512-a4MthnWhw37z/t94lnXZyH/zTAbG2IIXyGKi3du5PUNrF+B2E1KITRbhIUrv7kSfGADVkuV0t2imNEwXQcCgMQ==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.3"
     "@typescript-eslint/eslint-plugin" "^5.20.0"

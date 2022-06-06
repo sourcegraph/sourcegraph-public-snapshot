@@ -18,15 +18,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func assertPythonParsesPlaceholder() *reposource.PythonDependency {
+	placeholder, err := reposource.ParsePythonDependency("sourcegraph.com/placeholder@v0.0.0")
+	if err != nil {
+		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
+	}
+
+	return placeholder
+}
+
 func NewPythonPackagesSyncer(
 	connection *schema.PythonPackagesConnection,
 	svc *dependencies.Service,
 	client *pypi.Client,
 ) VCSSyncer {
-	placeholder, err := reposource.ParsePythonDependency("sourcegraph.com/placeholder@v0.0.0")
-	if err != nil {
-		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
-	}
+	placeholder := assertPythonParsesPlaceholder()
 
 	return &vcsDependenciesSyncer{
 		logger:      log.Scoped("vcs syncer", "csDependenciesSyncer implements the VCSSyncer interface for dependency repos"),
@@ -39,6 +45,7 @@ func NewPythonPackagesSyncer(
 	}
 }
 
+// pythonPackagesSyncer implements dependenciesSource
 type pythonPackagesSyncer struct {
 	client *pypi.Client
 }
@@ -70,7 +77,7 @@ func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep rep
 	}
 
 	if err = unpackPythonPackage(pkg, packageURL, dir); err != nil {
-		return errors.Wrap(err, "failed to unzip go module")
+		return errors.Wrap(err, "failed to unzip python module")
 	}
 
 	return nil
