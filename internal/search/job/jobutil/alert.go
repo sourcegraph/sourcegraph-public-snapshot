@@ -75,17 +75,14 @@ func (j *alertJob) Name() string {
 }
 
 func (j *alertJob) Tags() []log.Field {
-	tags := []log.Field{
+	return []log.Field{
 		trace.Stringer("query", j.inputs.Query),
 		log.String("originalQuery", j.inputs.OriginalQuery),
 		trace.Stringer("patternType", j.inputs.PatternType),
 		log.Bool("onSourcegraphDotCom", j.inputs.OnSourcegraphDotCom),
 		trace.Stringer("protocol", j.inputs.Protocol),
+		trace.Stringer("features", j.inputs.Features),
 	}
-	if j.inputs.Features != nil {
-		trace.Stringer("features", j.inputs.Features)
-	}
-	return tags
 }
 
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.

@@ -25,8 +25,7 @@ func TestMiddleware(t *testing.T) {
 		// After going through the middleware, a request with an actor should
 		// also have feature flags available.
 		v, ok := FromContext(r.Context()).GetBool("user1")
-		require.True(t, ok)
-		require.True(t, v)
+		require.True(t, v && ok)
 	}))
 	handler = Middleware(mockStore, handler)
 
