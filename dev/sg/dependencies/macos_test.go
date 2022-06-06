@@ -13,10 +13,7 @@ import (
 
 func TestMacOS(t *testing.T) {
 	var output strings.Builder
-	runner := NewRunner(OSMac, check.IO{
-		Input:  nil,
-		Output: std.NewFixedOutput(&output, false),
-	})
+	runner := check.NewRunner(nil, std.NewFixedOutput(&output, false), MacOS)
 
 	err := runner.Check(context.Background(), CheckArgs{})
 	assert.Nil(t, err)
