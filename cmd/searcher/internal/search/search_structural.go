@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -38,28 +39,15 @@ func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.F
 		return protocol.FileMatch{}, err
 	}
 
-	multilineMatches := make([]protocol.MultilineMatch, 0, len(combyMatch.Matches))
+	// Convert comby matches to ranges
+	ranges := make([]protocol.Range, 0, len(combyMatch.Matches))
 	for _, r := range combyMatch.Matches {
 		// trust, but verify
 		if r.Range.Start.Offset > len(fileBuf) || r.Range.End.Offset > len(fileBuf) {
 			return protocol.FileMatch{}, errors.New("comby match range does not fit in file")
 		}
 
-		firstLineStart := 0
-		if off := bytes.LastIndexByte(fileBuf[:r.Range.Start.Offset], '\n'); off >= 0 {
-			firstLineStart = off + 1
-		}
-
-		lastLineEnd := len(fileBuf)
-		if off := bytes.IndexByte(fileBuf[r.Range.End.Offset:], '\n'); off >= 0 {
-			lastLineEnd = r.Range.End.Offset + off
-		}
-
-		multilineMatches = append(multilineMatches, protocol.MultilineMatch{
-			// We don't use Comby's return value because it does not contain the full
-			// line contents. Instead, we use the ranges from comby to pull all the
-			// overlapped lines from the file contents.
-			Preview: string(fileBuf[firstLineStart:lastLineEnd]),
+		ranges = append(ranges, protocol.Range{
 			Start: protocol.Location{
 				Offset: int32(r.Range.Start.Offset),
 				// Comby returns 1-based line numbers and columns
@@ -73,12 +61,98 @@ func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.F
 			},
 		})
 	}
+
+	chunks := chunkRanges(ranges, 0)
+	chunkMatches := chunksToMatches(fileBuf, chunks)
 	return protocol.FileMatch{
-		Path:             combyMatch.URI,
-		MultilineMatches: multilineMatches,
-		MatchCount:       len(multilineMatches),
-		LimitHit:         false,
+		Path:         combyMatch.URI,
+		ChunkMatches: chunkMatches,
+		LimitHit:     false,
 	}, nil
+}
+
+// rangeChunk represents a set of adjacent ranges
+type rangeChunk struct {
+	// cover is the smallest range that completely contains every range in
+	// `ranges`. More precisely, cover.Start is the minimum range.Start in all
+	// `ranges` and cover.End is the maximum range.End in all `ranges`.
+	cover  protocol.Range
+	ranges []protocol.Range
+}
+
+// chunkRanges groups a set of ranges into chunks of adjacent ranges.
+//
+// `interChunkLines` is the minimum number of lines allowed between chunks. If
+// two chunks would have fewer than `interChunkLines` lines between them, they
+// are instead merged into a single chunk. For example, calling `chunkRanges`
+// with `interChunkLines == 0` means ranges on two adjacent lines would be
+// returned as two separate chunks.
+//
+// This function guarantees that the chunks returned are ordered by line number,
+// have no overlapping lines, and the line ranges covered are spaced apart by
+// a minimum of `interChunkLines`. More precisely, for any return value `rangeChunks`:
+// rangeChunks[i].cover.End.Line + interChunkLines < rangeChunks[i+1].cover.Start.Line
+func chunkRanges(ranges []protocol.Range, interChunkLines int) []rangeChunk {
+	// Sort by range start
+	sort.Slice(ranges, func(i, j int) bool {
+		return ranges[i].Start.Offset < ranges[j].Start.Offset
+	})
+
+	var chunks []rangeChunk
+	for i, rr := range ranges {
+		if i == 0 {
+			// First iteration, there are no chunks, so create a new one
+			chunks = append(chunks, rangeChunk{
+				cover:  rr,
+				ranges: []protocol.Range{rr},
+			})
+			continue
+		}
+
+		lastChunk := &chunks[len(chunks)-1] // pointer for mutability
+		if int(lastChunk.cover.End.Line)+interChunkLines >= int(rr.Start.Line) {
+			// The current range overlaps with the current chunk, so merge them
+			lastChunk.ranges = append(lastChunk.ranges, rr)
+
+			// Expand the chunk coverRange if needed
+			if rr.End.Offset > lastChunk.cover.End.Offset {
+				lastChunk.cover.End = rr.End
+			}
+		} else {
+			// No overlap, so create a new chunk
+			chunks = append(chunks, rangeChunk{
+				cover:  rr,
+				ranges: []protocol.Range{rr},
+			})
+		}
+	}
+	return chunks
+}
+
+func chunksToMatches(buf []byte, chunks []rangeChunk) []protocol.ChunkMatch {
+	chunkMatches := make([]protocol.ChunkMatch, 0, len(chunks))
+	for _, chunk := range chunks {
+		firstLineStart := int32(0)
+		if off := bytes.LastIndexByte(buf[:chunk.cover.Start.Offset], '\n'); off >= 0 {
+			firstLineStart = int32(off) + 1
+		}
+
+		lastLineEnd := int32(len(buf))
+		if off := bytes.IndexByte(buf[chunk.cover.End.Offset:], '\n'); off >= 0 {
+			lastLineEnd = chunk.cover.End.Offset + int32(off)
+		}
+
+		chunkMatches = append(chunkMatches, protocol.ChunkMatch{
+			Content: string(buf[firstLineStart:lastLineEnd]),
+			ContentStart: protocol.Location{
+				Offset: firstLineStart,
+				Line:   chunk.cover.Start.Line,
+				Column: 0,
+			},
+			Ranges: chunk.ranges,
+		})
+	}
+	return chunkMatches
 }
 
 var isValidMatcher = lazyregexp.New(`\.(s|sh|bib|c|cs|css|dart|clj|elm|erl|ex|f|fsx|go|html|hs|java|js|json|jl|kt|tex|lisp|nim|md|ml|org|pas|php|py|re|rb|rs|rst|scala|sql|swift|tex|txt|ts)$`)

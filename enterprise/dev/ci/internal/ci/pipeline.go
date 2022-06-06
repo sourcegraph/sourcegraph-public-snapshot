@@ -87,6 +87,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
 	case runtype.PullRequest:
+		// First, we set up core test operations that apply both to PRs and to other run
+		// types such as main.
+		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
+			MinimumUpgradeableVersion: minimumUpgradeableVersion,
+			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
+			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
+			ClientLintOnlyChangedFiles: false,
+		}))
+
+		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
 			// triggers a slow pipeline, currently only affects web. It's optional so we
 			// set it up separately from CoreTestOperations
@@ -99,13 +109,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				ops.Append(prPreview())
 			}
 		}
-
-		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
-			MinimumUpgradeableVersion: minimumUpgradeableVersion,
-			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
-			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
-			ClientLintOnlyChangedFiles: false,
-		}))
+		if c.Diff.Has(changed.DockerImages) {
+			testBuilds := operations.NewNamedSet("Test builds")
+			scanBuilds := operations.NewNamedSet("Scan test builds")
+			for _, image := range images.SourcegraphDockerImages {
+				testBuilds.Append(buildCandidateDockerImage(image, c.Version, c.candidateImageTag()))
+				scanBuilds.Append(trivyScanCandidateImage(image, c.candidateImageTag()))
+			}
+			ops.Merge(testBuilds)
+			ops.Merge(scanBuilds)
+		}
 
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))

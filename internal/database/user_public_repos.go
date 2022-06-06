@@ -2,26 +2,15 @@ package database
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
-
-func UserPublicRepos(db dbutil.DB) UserPublicRepoStore {
-	store := basestore.NewWithDB(db, sql.TxOptions{})
-	return &userPublicRepoStore{store}
-}
 
 func UserPublicReposWith(other basestore.ShareableStore) UserPublicRepoStore {
 	return &userPublicRepoStore{Store: basestore.NewWithHandle(other.Handle())}
-}
-
-func UserPublicReposWithStore(store *basestore.Store) UserPublicRepoStore {
-	return &userPublicRepoStore{store}
 }
 
 type UserPublicRepoStore interface {

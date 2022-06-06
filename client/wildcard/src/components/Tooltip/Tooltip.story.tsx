@@ -5,7 +5,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Button, Grid, Typography, Text } from '..'
+import { Button, Grid, Code, Text } from '..'
 
 import { Tooltip } from '.'
 
@@ -70,9 +70,8 @@ export const Conditional: Story = () => {
             </div>
 
             <Text>
-                A Tooltip can be conditionally shown by alternating between passing{' '}
-                <Typography.Code>null</Typography.Code> and a <Typography.Code>string</Typography.Code> in as{' '}
-                <Typography.Code>content</Typography.Code>.
+                A Tooltip can be conditionally shown by alternating between passing <Code>null</Code> and a{' '}
+                <Code>string</Code> in as <Code>content</Code>.
             </Text>
         </Grid>
     )
@@ -93,8 +92,8 @@ export const DisabledTrigger: Story = () => (
              * This is necessary to support our current implementation using Radix.
              * Reference: https://www.radix-ui.com/docs/primitives/components/tooltip#displaying-a-tooltip-from-a-disabled-button
              * */}
-            When rendering a Tooltip for a disabled <Typography.Code>{'<Button>'}</Typography.Code>, the button element
-            also needs to have the CSS property <Typography.Code>pointer-events: none</Typography.Code>.
+            When rendering a Tooltip for a disabled <Code>{'<Button>'}</Code>, the button element also needs to have the
+            CSS property <Code>pointer-events: none</Code>.
         </Text>
     </Grid>
 )
@@ -108,8 +107,7 @@ export const LongContent: Story = () => (
         </div>
 
         <Text>
-            Tooltips with long text will not exceed the width specified by{' '}
-            <Typography.Code>--tooltip-max-width</Typography.Code>.
+            Tooltips with long text will not exceed the width specified by <Code>--tooltip-max-width</Code>.
         </Text>
     </Grid>
 )
@@ -124,7 +122,7 @@ export const DefaultOpen: Story = () => (
 
         <Text>
             A pinned tooltip is shown on initial render (no user input required) by setting{' '}
-            <Typography.Code>defaultOpen={'{true}'}</Typography.Code>.
+            <Code>defaultOpen={'{true}'}</Code>.
         </Text>
     </Grid>
 )
@@ -172,8 +170,8 @@ export const PlacementOptions: Story = () => (
         </Grid>
 
         <Text>
-            The Tooltip will use the specified <Typography.Code>placement</Typography.Code> unless a viewport collision
-            is detected, in which case it will be mirrored.
+            The Tooltip will use the specified <Code>placement</Code> unless a viewport collision is detected, in which
+            case it will be mirrored.
         </Text>
     </>
 )
@@ -197,8 +195,8 @@ export const UpdateContent: Story = () => {
             </div>
 
             <Text>
-                The string passed in as <Typography.Code>content</Typography.Code> can be modified without any
-                controlled or forced updates required.
+                The string passed in as <Code>content</Code> can be modified without any controlled or forced updates
+                required.
             </Text>
         </Grid>
     )

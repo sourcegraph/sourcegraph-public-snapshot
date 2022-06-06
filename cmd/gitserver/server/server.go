@@ -409,7 +409,9 @@ func (s *Server) Handler() http.Handler {
 // background goroutine.
 func (s *Server) Janitor(interval time.Duration) {
 	for {
-		s.cleanupRepos()
+		cfg := conf.Get()
+		addrs := cfg.ServiceConnectionConfig.GitServers
+		s.cleanupRepos(addrs)
 		time.Sleep(interval)
 	}
 }
@@ -506,8 +508,10 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 			if err != nil {
 				s.Logger.Error("failed to clone repo", log.String("repo", string(job.repo)), log.Error(err))
 			}
-
-			s.setLastErrorNonFatal(ctx, job.repo, err)
+			// Use a different context in case we failed because the original context failed.
+			ctx2, cancel := s.serverContext()
+			defer cancel()
+			s.setLastErrorNonFatal(ctx2, job.repo, err)
 		}(j)
 	}
 }
@@ -536,6 +540,18 @@ var (
 		Name: "src_repo_sync_state_upsert_counter",
 		Help: "Incremented each time we upsert repo state in the database",
 	}, []string{"success"})
+	wrongShardReposTotal = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_gitserver_repo_wrong_shard",
+		Help: "The number of repos that are on disk on the wrong shard",
+	})
+	wrongShardReposSizeTotalBytes = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_gitserver_repo_wrong_shard_bytes",
+		Help: "Size (in bytes) of repos that are on disk on the wrong shard",
+	})
+	wrongShardReposDeletedCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_repo_wrong_shard_deleted",
+		Help: "The number of repos on the wrong shard that we deleted",
+	})
 )
 
 func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batchSize, perSecond int, fullSync bool) error {
@@ -668,6 +684,10 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 // In fact this commit will be just reverted.
 // If it still bothers you -- contact sashaostrikov
 func addrForKey(repo api.RepoName, addrs []string) string {
+	if len(addrs) == 0 {
+		// Avoid a panic where we index lower down
+		return ""
+	}
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	rs := string(repo)
 	sum := md5.Sum([]byte(rs))
@@ -1841,10 +1861,18 @@ type cloneOptions struct {
 
 // cloneRepo performs a clone operation for the given repository. It is
 // non-blocking by default.
-func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOptions) (string, error) {
+func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOptions) (cloneProgress string, err error) {
 	if isAlwaysCloningTest(repo) {
 		return "This will never finish cloning", nil
 	}
+
+	// We always want to store whether there was an error cloning the repo
+	defer func() {
+		// Use a different context in case we failed because the original context failed.
+		ctx2, cancel := s.serverContext()
+		defer cancel()
+		s.setLastErrorNonFatal(ctx2, repo, err)
+	}()
 
 	dir := s.dir(repo)
 
@@ -1923,8 +1951,6 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		// We are blocking, so use the passed in context.
 		err = s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
 		err = errors.Wrapf(err, "failed to clone %s", repo)
-		// Use a background context to ensure we still update the DB even if we time out
-		s.setLastErrorNonFatal(context.Background(), repo, err)
 		return "", err
 	}
 
@@ -1953,7 +1979,6 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	if err := s.rpsLimiter.Wait(ctx); err != nil {
 		return err
 	}
-
 	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel2()
 

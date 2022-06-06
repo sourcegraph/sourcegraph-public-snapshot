@@ -17,6 +17,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/keegancsmith/tmpfriend"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
@@ -87,6 +88,30 @@ func shutdownOnSignal(ctx context.Context, server *http.Server) error {
 	return server.Shutdown(ctx)
 }
 
+// setupTmpDir sets up a temporary directory on the same volume as the
+// cacheDir.
+//
+// Structural search relies on temporary files created from zoekt responses.
+// Additionally we shell out to programs that may or may not need a temporary
+// directory.
+//
+// search.Store will also take into account the files in tmp when deciding on
+// evicting items due to disk pressure. It won't delete those files unless
+// they are zip files. In the case of comby the files are temporary so them
+// being deleted while read by comby is fine since it will maintain an open
+// FD.
+func setupTmpDir() error {
+	tmpRoot := filepath.Join(cacheDir, ".searcher.tmp")
+	if err := os.MkdirAll(tmpRoot, 0755); err != nil {
+		return err
+	}
+	if !tmpfriend.IsTmpFriendDir(tmpRoot) {
+		_, err := tmpfriend.RootTempDir(tmpRoot)
+		return err
+	}
+	return nil
+}
+
 func run(logger log.Logger) error {
 	// Ready immediately
 	ready := make(chan struct{})
@@ -98,6 +123,10 @@ func run(logger log.Logger) error {
 		return errors.Wrapf(err, "invalid int %q for SEARCHER_CACHE_SIZE_MB", cacheSizeMB)
 	} else {
 		cacheSizeBytes = i * 1000 * 1000
+	}
+
+	if err := setupTmpDir(); err != nil {
+		return errors.Wrap(err, "failed to setup TMPDIR")
 	}
 
 	observationContext := &observation.Context{
@@ -137,6 +166,10 @@ func run(logger log.Logger) error {
 			Log:                logger,
 			ObservationContext: observationContext,
 			DB:                 db,
+		},
+		GitOutput: func(ctx context.Context, repo api.RepoName, args ...string) ([]byte, error) {
+			c := git.GitCommand(repo, args...)
+			return c.Output(ctx)
 		},
 		Log: logger,
 	}

@@ -248,11 +248,11 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 	}()
 
 	// Blame the first line match.
-	if len(fm.HunkMatches) == 0 {
+	if len(fm.ChunkMatches) == 0 {
 		// No line match
 		return time.Time{}, nil
 	}
-	hm := fm.HunkMatches[0]
+	hm := fm.ChunkMatches[0]
 	hunks, err := gitserver.NewClient(sr.db).BlameFile(ctx, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
 		NewestCommit: fm.CommitID,
 		StartLine:    hm.Ranges[0].Start.Line,
@@ -378,6 +378,8 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 				types = append(types, "literal")
 			case si.PatternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
+			case si.PatternType == query.SearchTypeLucky:
+				types = append(types, "lucky")
 			}
 		}
 	}

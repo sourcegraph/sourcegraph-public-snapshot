@@ -32,7 +32,7 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	user1, err := Users(db).Create(ctx, NewUser{
+	user1, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a1@example.com",
 		Username:              "u1",
 		Password:              "p",
@@ -41,7 +41,7 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = Users(db).Create(ctx, NewUser{
+	_, err = db.Users().Create(ctx, NewUser{
 		Email:                 "a2@example.com",
 		Username:              "u2",
 		Password:              "p",
@@ -129,7 +129,7 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	user1, err := Users(db).Create(ctx, NewUser{
+	user1, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a1@example.com",
 		Username:              "u1",
 		Password:              "p",
@@ -138,7 +138,7 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	user2, err := Users(db).Create(ctx, NewUser{
+	user2, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a2@example.com",
 		Username:              "u2",
 		Password:              "p2",
@@ -147,7 +147,7 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	deletedUser, err := Users(db).Create(ctx, NewUser{
+	deletedUser, err := db.Users().Create(ctx, NewUser{
 		Email:                 "deleted@example.com",
 		Username:              "deleted",
 		Password:              "p2",
@@ -161,7 +161,7 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 	db.OrgMembers().Create(ctx, org2.ID, user2.ID)
 	db.OrgMembers().Create(ctx, org3.ID, user1.ID)
 	db.OrgMembers().Create(ctx, org3.ID, deletedUser.ID)
-	err = Users(db).Delete(ctx, deletedUser.ID)
+	err = db.Users().Delete(ctx, deletedUser.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -269,7 +269,7 @@ func TestOrgMembers_AutocompleteMembersSearch(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := Users(db).Create(ctx, NewUser{
+			_, err := db.Users().Create(ctx, NewUser{
 				Username:              test.username,
 				DisplayName:           test.name,
 				Email:                 test.email,
@@ -291,11 +291,11 @@ func TestOrgMembers_AutocompleteMembersSearch(t *testing.T) {
 		t.Errorf("got %d, want %d", len(users), want)
 	}
 
-	user, err := Users(db).GetByUsername(ctx, "searchablefalse")
+	user, err := db.Users().GetByUsername(ctx, "searchablefalse")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := Users(db).Update(ctx, user.ID, UserUpdate{Searchable: boolptr(false)}); err != nil {
+	if err := db.Users().Update(ctx, user.ID, UserUpdate{Searchable: boolptr(false)}); err != nil {
 		t.Fatal(err)
 	}
 

@@ -29,7 +29,7 @@ func TestSavedSearchesIsEmpty(t *testing.T) {
 		t.Errorf("want %v, got %v", want, isEmpty)
 	}
 
-	_, err = Users(db).Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	_, err = db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
 		t.Fatal("can't create user", err)
 	}
@@ -63,7 +63,7 @@ func TestSavedSearchesCreate(t *testing.T) {
 	t.Parallel()
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
-	_, err := Users(db).Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
 		t.Fatal("can't create user", err)
 	}
@@ -102,7 +102,7 @@ func TestSavedSearchesUpdate(t *testing.T) {
 	t.Parallel()
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
-	_, err := Users(db).Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
 		t.Fatal("can't create user", err)
 	}
@@ -144,7 +144,7 @@ func TestSavedSearchesDelete(t *testing.T) {
 	t.Parallel()
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
-	_, err := Users(db).Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
 		t.Fatal("can't create user", err)
 	}
@@ -183,7 +183,7 @@ func TestSavedSearchesGetByUserID(t *testing.T) {
 	t.Parallel()
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
-	_, err := Users(db).Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
 		t.Fatal("can't create user", err)
 	}
@@ -226,7 +226,7 @@ func TestSavedSearchesGetByID(t *testing.T) {
 	t.Parallel()
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
-	_, err := Users(db).Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
 		t.Fatal("can't create user", err)
 	}
@@ -270,7 +270,7 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 	t.Parallel()
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
-	_, err := Users(db).Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
 	if err != nil {
 		t.Fatal("can't create user", err)
 	}

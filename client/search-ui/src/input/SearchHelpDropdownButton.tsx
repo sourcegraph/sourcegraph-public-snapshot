@@ -16,7 +16,7 @@ import {
     MenuDivider,
     MenuHeader,
     Icon,
-    Typography,
+    Code,
 } from '@sourcegraph/wildcard'
 
 import styles from './SearchHelpDropdownButton.module.scss'
@@ -63,65 +63,61 @@ export const SearchHelpDropdownButton: React.FunctionComponent<
                 <MenuHeader>Finding matches:</MenuHeader>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
-                        <span className="text-muted small">Structural:</span>{' '}
-                        <Typography.Code weight="bold">if(:[my_match])</Typography.Code>
+                        <span className="text-muted small">Structural:</span> <Code weight="bold">if(:[my_match])</Code>
                     </li>
                     <li>
-                        <span className="text-muted small">Regexp:</span>{' '}
-                        <Typography.Code weight="bold">(read|write)File</Typography.Code>
+                        <span className="text-muted small">Regexp:</span> <Code weight="bold">(read|write)File</Code>
                     </li>
                     <li>
-                        <span className="text-muted small">Exact:</span>{' '}
-                        <Typography.Code weight="bold">"fs.open(f)"</Typography.Code>
+                        <span className="text-muted small">Exact:</span> <Code weight="bold">"fs.open(f)"</Code>
                     </li>
                 </ul>
                 <MenuDivider />
                 <MenuHeader>Common search keywords:</MenuHeader>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
-                        <Typography.Code>
+                        <Code>
                             repo:<strong>my/repo</strong>
-                        </Typography.Code>
+                        </Code>
                     </li>
                     {isSourcegraphDotCom && (
                         <li>
-                            <Typography.Code>
+                            <Code>
                                 repo:<strong>github.com/myorg/</strong>
-                            </Typography.Code>
+                            </Code>
                         </li>
                     )}
                     <li>
-                        <Typography.Code>
+                        <Code>
                             file:<strong>my/file</strong>
-                        </Typography.Code>
+                        </Code>
                     </li>
                     <li>
-                        <Typography.Code>
+                        <Code>
                             lang:<strong>javascript</strong>
-                        </Typography.Code>
+                        </Code>
                     </li>
                 </ul>
                 <MenuDivider />
                 <MenuHeader>Diff/commit search keywords:</MenuHeader>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
-                        <Typography.Code>type:diff</Typography.Code> <em className="text-muted small">or</em>{' '}
-                        <Typography.Code>type:commit</Typography.Code>
+                        <Code>type:diff</Code> <em className="text-muted small">or</em> <Code>type:commit</Code>
                     </li>
                     <li>
-                        <Typography.Code>
+                        <Code>
                             after:<strong>"2 weeks ago"</strong>
-                        </Typography.Code>
+                        </Code>
                     </li>
                     <li>
-                        <Typography.Code>
+                        <Code>
                             author:<strong>alice@example.com</strong>
-                        </Typography.Code>
+                        </Code>
                     </li>
                     <li className="text-nowrap">
-                        <Typography.Code>
+                        <Code>
                             repo:<strong>r@*refs/heads/</strong>
-                        </Typography.Code>{' '}
+                        </Code>{' '}
                         <span className="text-muted small">(all branches)</span>
                     </li>
                 </ul>
@@ -137,8 +133,8 @@ export const SearchHelpDropdownButton: React.FunctionComponent<
                 </Link>
                 {isSourcegraphDotCom && (
                     <Alert className="small rounded-0 mb-0 mt-1" variant="info">
-                        On Sourcegraph.com, use a <Typography.Code>repo:</Typography.Code> filter to narrow your search
-                        to &le;500 repositories.
+                        On Sourcegraph.com, use a <Code>repo:</Code> filter to narrow your search to &le;500
+                        repositories.
                     </Alert>
                 )}
             </PopoverContent>

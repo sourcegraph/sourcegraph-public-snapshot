@@ -1,52 +1,59 @@
 <idea-plugin>
-  <id>com.sourcegraph.jetbrains</id>
-  <name>Sourcegraph</name>
-  <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
+    <id>com.sourcegraph.jetbrains</id>
+    <name>Sourcegraph</name>
+    <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
 
-  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
-       on how to target different products -->
-  <depends>com.intellij.modules.lang</depends>
+    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.lang</depends>
 
-  <extensions defaultExtensionNs="com.intellij">
-    <projectService serviceImplementation="com.sourcegraph.config.SourcegraphConfig"/>
-    <notificationGroup id="Sourcegraph" displayType="BALLOON"/>
-      <projectService id="sourcegraph.JCEFService" serviceImplementation="com.sourcegraph.find.JCEFService"/>
-  </extensions>
+    <extensions defaultExtensionNs="com.intellij">
+        <projectService serviceImplementation="com.sourcegraph.config.SourcegraphConfig"/>
+        <projectConfigurable
+            parentId="tools"
+            instance="com.sourcegraph.config.SettingsConfigurable"
+            id="com.sourcegraph.config.SettingsConfigurable"
+            displayName="Sourcegraph"
+            nonDefaultProject="false"
+        />
+        <notificationGroup id="Sourcegraph" displayType="BALLOON"/>
+        <projectService id="sourcegraph.JCEFService" serviceImplementation="com.sourcegraph.find.JCEFService"/>
+    </extensions>
 
-  <actions>
-      <action id="sourcegraph.openFile" class="com.sourcegraph.website.OpenFile" text="Open File"
-              description="Open selection in Sourcegraph">
-          <keyboard-shortcut first-keystroke="alt shift a" keymap="$default"/>
-      </action>
-      <action id="sourcegraph.searchSelection" class="com.sourcegraph.website.SearchSelection" text="Search Selection"
-              description="Search selection on Sourcegraph">
-          <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
-      </action>
-      <action id="sourcegraph.searchRepository" class="com.sourcegraph.website.SearchRepository"
-              text="Search Selection in Repository" description="Search selection in repository on Sourcegraph">
-          <keyboard-shortcut first-keystroke="alt r" keymap="$default"/>
-      </action>
-      <action id="sourcegraph.copy" class="com.sourcegraph.website.Copy" text="Copy Link to File"
-              description="Copy link to Sourcegraph">
-          <keyboard-shortcut first-keystroke="alt c" keymap="$default"/>
-      </action>
-      <group id="SourcegraphEditor" icon="/icons/icon.png" popup="true" text="Sourcegraph">
-          <reference ref="sourcegraph.searchSelection"/>
-          <reference ref="sourcegraph.searchRepository"/>
-          <reference ref="sourcegraph.openFile"/>
-          <reference ref="sourcegraph.copy"/>
-          <add-to-group anchor="last" group-id="EditorPopupMenu"/>
-      </group>
-      <action id="com.sourcegraph.website.OpenRevisionAction" icon="/icons/icon.png"
-              class="com.sourcegraph.website.OpenRevisionAction" text="Open in Sourcegraph"
-              description="Open revision diff in Sourcegraph">
-          <add-to-group group-id="VcsHistoryActionsGroup" anchor="last"/>
-          <add-to-group group-id="Vcs.Log.ContextMenu" anchor="last"/>
-          <add-to-group group-id="VcsHistoryActionsGroup.Toolbar" anchor="last"/>
-          <add-to-group group-id="VcsSelectionHistoryDialog.Popup" anchor="last"/>
-      </action>
-      <action id="sourcegraph.openSearch" class="com.sourcegraph.find.OpenSearchAction" text="Search in Sourcegraph">
-          <keyboard-shortcut first-keystroke="alt a" keymap="$default"/>
-      </action>
-  </actions>
+    <actions>
+        <action id="sourcegraph.openFile" class="com.sourcegraph.website.OpenFile" text="Open File"
+                description="Open selection in Sourcegraph">
+            <keyboard-shortcut first-keystroke="alt shift a" keymap="$default"/>
+        </action>
+        <action id="sourcegraph.searchSelection" class="com.sourcegraph.website.SearchSelection" text="Search Selection"
+                description="Search selection on Sourcegraph">
+            <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
+        </action>
+        <action id="sourcegraph.searchRepository" class="com.sourcegraph.website.SearchRepository"
+                text="Search Selection in Repository" description="Search selection in repository on Sourcegraph">
+            <keyboard-shortcut first-keystroke="alt r" keymap="$default"/>
+        </action>
+        <action id="sourcegraph.copy" class="com.sourcegraph.website.Copy" text="Copy Link to File"
+                description="Copy link to Sourcegraph">
+            <keyboard-shortcut first-keystroke="alt c" keymap="$default"/>
+        </action>
+        <group id="SourcegraphEditor" icon="/icons/icon.png" popup="true" text="Sourcegraph">
+            <reference ref="sourcegraph.searchSelection"/>
+            <reference ref="sourcegraph.searchRepository"/>
+            <reference ref="sourcegraph.openFile"/>
+            <reference ref="sourcegraph.copy"/>
+            <add-to-group anchor="last" group-id="EditorPopupMenu"/>
+        </group>
+        <action id="com.sourcegraph.website.OpenRevisionAction" icon="/icons/icon.png"
+                class="com.sourcegraph.website.OpenRevisionAction" text="Open in Sourcegraph"
+                description="Open revision diff in Sourcegraph">
+            <add-to-group group-id="VcsHistoryActionsGroup" anchor="last"/>
+            <add-to-group group-id="Vcs.Log.ContextMenu" anchor="last"/>
+            <add-to-group group-id="VcsHistoryActionsGroup.Toolbar" anchor="last"/>
+            <add-to-group group-id="VcsSelectionHistoryDialog.Popup" anchor="last"/>
+        </action>
+        <action id="sourcegraph.openSearch" class="com.sourcegraph.find.OpenSearchAction" text="Search in Sourcegraph">
+            <keyboard-shortcut first-keystroke="alt a" keymap="$default"/>
+        </action>
+    </actions>
 </idea-plugin>

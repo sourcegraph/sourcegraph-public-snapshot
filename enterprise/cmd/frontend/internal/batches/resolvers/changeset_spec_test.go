@@ -16,8 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -87,11 +87,11 @@ func TestChangesetSpecResolver(t *testing.T) {
 							ID: spec.Spec.BaseRepository,
 						},
 						ExternalID: "",
-						BaseRef:    git.AbbreviateRef(spec.Spec.BaseRef),
+						BaseRef:    gitdomain.AbbreviateRef(spec.Spec.BaseRef),
 						HeadRepository: apitest.Repository{
 							ID: spec.Spec.HeadRepository,
 						},
-						HeadRef: git.AbbreviateRef(spec.Spec.HeadRef),
+						HeadRef: gitdomain.AbbreviateRef(spec.Spec.HeadRef),
 						Title:   spec.Spec.Title,
 						Body:    spec.Spec.Body,
 						Commits: []apitest.GitCommitDescription{
@@ -142,11 +142,11 @@ func TestChangesetSpecResolver(t *testing.T) {
 							ID: spec.Spec.BaseRepository,
 						},
 						ExternalID: "",
-						BaseRef:    git.AbbreviateRef(spec.Spec.BaseRef),
+						BaseRef:    gitdomain.AbbreviateRef(spec.Spec.BaseRef),
 						HeadRepository: apitest.Repository{
 							ID: spec.Spec.HeadRepository,
 						},
-						HeadRef: git.AbbreviateRef(spec.Spec.HeadRef),
+						HeadRef: gitdomain.AbbreviateRef(spec.Spec.HeadRef),
 						Title:   spec.Spec.Title,
 						Body:    spec.Spec.Body,
 						Commits: []apitest.GitCommitDescription{
@@ -197,11 +197,11 @@ func TestChangesetSpecResolver(t *testing.T) {
 							ID: spec.Spec.BaseRepository,
 						},
 						ExternalID: "",
-						BaseRef:    git.AbbreviateRef(spec.Spec.BaseRef),
+						BaseRef:    gitdomain.AbbreviateRef(spec.Spec.BaseRef),
 						HeadRepository: apitest.Repository{
 							ID: spec.Spec.HeadRepository,
 						},
-						HeadRef: git.AbbreviateRef(spec.Spec.HeadRef),
+						HeadRef: gitdomain.AbbreviateRef(spec.Spec.HeadRef),
 						Title:   spec.Spec.Title,
 						Body:    spec.Spec.Body,
 						Commits: []apitest.GitCommitDescription{

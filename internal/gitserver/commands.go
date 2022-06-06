@@ -1,6 +1,7 @@
 package gitserver
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/hex"
@@ -25,7 +26,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/go-diff/diff"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -1156,7 +1156,7 @@ func (c *ClientImplementor) GetDefaultBranchShort(ctx context.Context, repo api.
 	return c.getDefaultBranch(ctx, repo, true)
 }
 
-// GetDefaultBranch returns the name of the default branch and the commit it's
+// getDefaultBranch returns the name of the default branch and the commit it's
 // currently at from the given repository.
 //
 // If the repository is empty or currently being cloned, empty values and no
@@ -1217,4 +1217,92 @@ func (c *ClientImplementor) execSafe(ctx context.Context, repo api.RepoName, par
 		err = nil // the error must just indicate that the exit code was nonzero
 	}
 	return stdout, stderr, exitCode, err
+}
+
+// MergeBase returns the merge base commit for the specified commits.
+func (c *ClientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+	if Mocks.MergeBase != nil {
+		return Mocks.MergeBase(repo, a, b)
+	}
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: MergeBase")
+	span.SetTag("A", a)
+	span.SetTag("B", b)
+	defer span.Finish()
+
+	cmd := c.GitCommand(repo, "merge-base", "--", string(a), string(b))
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+	}
+	return api.CommitID(bytes.TrimSpace(out)), nil
+}
+
+// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
+func (c *ClientImplementor) RevList(repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	command := c.GitCommand(api.RepoName(repo), RevListArgs(commit)...)
+	command.DisableTimeout()
+	stdout, err := command.StdoutReader(ctx)
+	if err != nil {
+		return err
+	}
+	defer stdout.Close()
+
+	return c.RevListEach(stdout, onCommit)
+}
+
+func RevListArgs(givenCommit string) []string {
+	return []string{"rev-list", "--first-parent", givenCommit}
+}
+
+func (c *ClientImplementor) RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	reader := bufio.NewReader(stdout)
+
+	for {
+		commit, err := reader.ReadString('\n')
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+		commit = commit[:len(commit)-1] // Drop the trailing newline
+		shouldContinue, err := onCommit(commit)
+		if !shouldContinue {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
+// revspecs).
+func (c *ClientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: BehindAhead")
+	defer span.Finish()
+
+	if err := checkSpecArgSafety(left); err != nil {
+		return nil, err
+	}
+	if err := checkSpecArgSafety(right); err != nil {
+		return nil, err
+	}
+
+	cmd := c.GitCommand(repo, "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
+	out, err := cmd.Output(ctx)
+	if err != nil {
+		return nil, err
+	}
+	behindAhead := strings.Split(strings.TrimSuffix(string(out), "\n"), "\t")
+	b, err := strconv.ParseUint(behindAhead[0], 10, 0)
+	if err != nil {
+		return nil, err
+	}
+	a, err := strconv.ParseUint(behindAhead[1], 10, 0)
+	if err != nil {
+		return nil, err
+	}
+	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }

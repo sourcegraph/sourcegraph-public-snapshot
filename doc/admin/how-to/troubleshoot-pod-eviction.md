@@ -16,5 +16,5 @@ This document assumes that you have deployed Sourcegraph on Kubernetes and you a
 
 ## Further resources
 
-- [Sourcegraph - Alert solutions](https://docs.sourcegraph.com/admin/observability/alert_solutions)
+- [Sourcegraph - Alert solutions](https://docs.sourcegraph.com/admin/observability/alerts)
 - [Kubernetes Eviction docs](https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/)

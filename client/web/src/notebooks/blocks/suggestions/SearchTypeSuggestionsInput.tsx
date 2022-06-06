@@ -14,7 +14,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { PathMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Typography, useObservable } from '@sourcegraph/wildcard'
+import { Button, Label, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps } from '../..'
 import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
@@ -113,7 +113,7 @@ export const SearchTypeSuggestionsInput = <S extends SymbolMatch | PathMatch>({
 
     return (
         <div>
-            <Typography.Label htmlFor={`${id}-search-type-query-input`}>{label}</Typography.Label>
+            <Label htmlFor={`${id}-search-type-query-input`}>{label}</Label>
             <div
                 id={`${id}-search-type-query-input`}
                 className={classNames(blockStyles.monacoWrapper, styles.queryInputMonacoWrapper)}

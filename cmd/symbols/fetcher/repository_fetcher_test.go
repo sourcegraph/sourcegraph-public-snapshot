@@ -8,9 +8,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
 func TestRepositoryFetcher(t *testing.T) {
@@ -33,11 +33,11 @@ func TestRepositoryFetcher(t *testing.T) {
 	gitserverClient.FetchTarFunc.SetDefaultHook(gitserver.CreateTestFetchTarFunc(tarContents))
 
 	repositoryFetcher := NewRepositoryFetcher(gitserverClient, 1000, 1_000_000, &observation.TestContext)
-	args := types.SearchArgs{Repo: api.RepoName("foo"), CommitID: api.CommitID("deadbeef")}
+	args := search.SymbolsParameters{Repo: api.RepoName("foo"), CommitID: api.CommitID("deadbeef")}
 
 	t.Run("all paths", func(t *testing.T) {
 		paths := []string(nil)
-		ch := repositoryFetcher.FetchRepositoryArchive(context.Background(), args, paths)
+		ch := repositoryFetcher.FetchRepositoryArchive(context.Background(), args.Repo, args.CommitID, paths)
 		parseRequests := consumeParseRequests(t, ch)
 
 		expectedParseRequests := validParseRequests
@@ -48,7 +48,7 @@ func TestRepositoryFetcher(t *testing.T) {
 
 	t.Run("selected paths", func(t *testing.T) {
 		paths := []string{"a.txt", "b.txt", "c.txt"}
-		ch := repositoryFetcher.FetchRepositoryArchive(context.Background(), args, paths)
+		ch := repositoryFetcher.FetchRepositoryArchive(context.Background(), args.Repo, args.CommitID, paths)
 		parseRequests := consumeParseRequests(t, ch)
 
 		expectedParseRequests := map[string]string{

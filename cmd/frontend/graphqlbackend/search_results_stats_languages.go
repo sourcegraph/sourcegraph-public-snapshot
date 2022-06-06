@@ -111,12 +111,12 @@ func searchResultsStatsLanguages(ctx context.Context, db database.DB, matches []
 				filesMap[key] = &fileStatsWork{}
 			}
 
-			if len(fileMatch.HunkMatches) > 0 {
+			if len(fileMatch.ChunkMatches) > 0 {
 				// Only count matching lines. TODO(sqs): bytes are not counted for these files
 				if filesMap[key].partialFiles == nil {
 					filesMap[key].partialFiles = map[string]uint64{}
 				}
-				filesMap[key].partialFiles[fileMatch.Path] += uint64(fileMatch.HunkMatches.MatchCount())
+				filesMap[key].partialFiles[fileMatch.Path] += uint64(fileMatch.ChunkMatches.MatchCount())
 			} else {
 				// Count entire file.
 				filesMap[key].fullEntries = append(filesMap[key].fullEntries, &fileInfo{

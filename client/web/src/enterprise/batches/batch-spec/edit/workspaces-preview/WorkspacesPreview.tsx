@@ -7,7 +7,7 @@ import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, useAccordion, useStopwatch, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, useAccordion, useStopwatch, Icon, H4 } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../../components/FilteredConnection'
 import {
@@ -169,12 +169,10 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             })}
         </div>
     ) : isServerStale ? (
-        <Typography.H4 className={styles.instruction}>
-            Finish editing your batch spec, then manually preview repositories.
-        </Typography.H4>
+        <H4 className={styles.instruction}>Finish editing your batch spec, then manually preview repositories.</H4>
     ) : (
         <>
-            <Typography.H4 className={styles.instruction}>
+            <H4 className={styles.instruction}>
                 {hasPreviewed ? 'Modify your' : 'Add an'} <span className="text-monospace">on:</span> statement to
                 preview repositories.
                 {!hasPreviewed && (
@@ -186,7 +184,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                         {exampleOpen ? 'Close example' : 'See example'}
                     </Button>
                 )}
-            </Typography.H4>
+            </H4>
             <animated.div style={exampleStyle} className={styles.onExample}>
                 <div ref={exampleReference} className="pt-2 pb-3">
                     <CodeSnippet className="w-100 m-0" code={ON_STATEMENT} language="yaml" withCopyButton={true} />

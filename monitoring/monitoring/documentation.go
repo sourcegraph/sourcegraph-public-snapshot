@@ -10,19 +10,19 @@ import (
 )
 
 const (
-	canonicalAlertSolutionsURL = "https://docs.sourcegraph.com/admin/observability/alert_solutions"
+	canonicalAlertDocsURL      = "https://docs.sourcegraph.com/admin/observability/alerts"
 	canonicalDashboardsDocsURL = "https://docs.sourcegraph.com/admin/observability/dashboards"
 
-	alertSolutionsFile = "alert_solutions.md"
+	alertsDocsFile     = "alerts.md"
 	dashboardsDocsFile = "dashboards.md"
 )
 
-const alertSolutionsHeader = `# Alert solutions
+const alertsReferenceHeader = `# Alerts reference
 
 <!-- DO NOT EDIT: generated via: go generate ./monitoring -->
 
-This document contains possible solutions for when you find alerts are firing in Sourcegraph's monitoring.
-If your alert isn't mentioned here, or if the solution doesn't help, [contact us](mailto:support@sourcegraph.com) for assistance.
+This document contains a complete reference of all alerts in Sourcegraph's monitoring, and next steps for when you find alerts that are firing.
+If your alert isn't mentioned here, or if the next steps don't help, [contact us](mailto:support@sourcegraph.com) for assistance.
 
 To learn more about Sourcegraph's alerting and how to set up alerts, see [our alerting guide](https://docs.sourcegraph.com/admin/observability/alerting).
 
@@ -65,14 +65,14 @@ func observableDocAnchor(c *Dashboard, o Observable) string {
 }
 
 type documentation struct {
-	alertSolutions bytes.Buffer
-	dashboards     bytes.Buffer
+	alertDocs  bytes.Buffer
+	dashboards bytes.Buffer
 }
 
 func renderDocumentation(containers []*Dashboard) (*documentation, error) {
 	var docs documentation
 
-	fmt.Fprint(&docs.alertSolutions, alertSolutionsHeader)
+	fmt.Fprint(&docs.alertDocs, alertsReferenceHeader)
 	fmt.Fprint(&docs.dashboards, dashboardsHeader)
 
 	for _, c := range containers {
@@ -106,12 +106,12 @@ func (d *documentation) renderAlertSolutionEntry(c *Dashboard, o Observable) err
 		return nil
 	}
 
-	fprintObservableHeader(&d.alertSolutions, c, &o, 2)
-	fprintSubtitle(&d.alertSolutions, o.Description)
+	fprintObservableHeader(&d.alertDocs, c, &o, 2)
+	fprintSubtitle(&d.alertDocs, o.Description)
 
 	var prometheusAlertNames []string // collect names for silencing configuration
 	// Render descriptions of various levels of this alert
-	fmt.Fprintf(&d.alertSolutions, "**Descriptions**\n\n")
+	fmt.Fprintf(&d.alertDocs, "**Descriptions**\n\n")
 	for _, alert := range []struct {
 		level     string
 		threshold *ObservableAlertDefinition
@@ -126,38 +126,38 @@ func (d *documentation) renderAlertSolutionEntry(c *Dashboard, o Observable) err
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(&d.alertSolutions, "- <span class=\"badge badge-%s\">%s</span> %s\n", alert.level, alert.level, desc)
+		fmt.Fprintf(&d.alertDocs, "- <span class=\"badge badge-%s\">%s</span> %s\n", alert.level, alert.level, desc)
 		prometheusAlertNames = append(prometheusAlertNames,
 			fmt.Sprintf("  \"%s\"", prometheusAlertName(alert.level, c.Name, o.Name)))
 	}
-	fmt.Fprint(&d.alertSolutions, "\n")
+	fmt.Fprint(&d.alertDocs, "\n")
 
-	// Render solutions for dealing with this alert
-	fmt.Fprintf(&d.alertSolutions, "**Possible solutions**\n\n")
-	if o.PossibleSolutions != "none" {
-		possibleSolutions, _ := toMarkdown(o.PossibleSolutions, true)
-		fmt.Fprintf(&d.alertSolutions, "%s\n", possibleSolutions)
+	// Render next steps for dealing with this alert
+	fmt.Fprintf(&d.alertDocs, "**Next steps**\n\n")
+	if o.NextSteps != "none" {
+		nextSteps, _ := toMarkdown(o.NextSteps, true)
+		fmt.Fprintf(&d.alertDocs, "%s\n", nextSteps)
 	}
 	if o.Interpretation != "" && o.Interpretation != "none" {
 		// indicate help is available in dashboards reference
-		fmt.Fprintf(&d.alertSolutions, "- More help interpreting this metric is available in the [dashboards reference](./%s#%s).\n",
+		fmt.Fprintf(&d.alertDocs, "- More help interpreting this metric is available in the [dashboards reference](./%s#%s).\n",
 			dashboardsDocsFile, observableDocAnchor(c, o))
 	} else {
 		// just show the panel reference
-		fmt.Fprintf(&d.alertSolutions, "- Learn more about the related dashboard panel in the [dashboards reference](./%s#%s).\n",
+		fmt.Fprintf(&d.alertDocs, "- Learn more about the related dashboard panel in the [dashboards reference](./%s#%s).\n",
 			dashboardsDocsFile, observableDocAnchor(c, o))
 	}
 	// add silencing configuration as another solution
-	fmt.Fprintf(&d.alertSolutions, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:\n\n")
-	fmt.Fprintf(&d.alertSolutions, "```json\n%s\n```\n\n", fmt.Sprintf(`"observability.silenceAlerts": [
+	fmt.Fprintf(&d.alertDocs, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:\n\n")
+	fmt.Fprintf(&d.alertDocs, "```json\n%s\n```\n\n", fmt.Sprintf(`"observability.silenceAlerts": [
 %s
 ]`, strings.Join(prometheusAlertNames, ",\n")))
 	if o.Owner.identifier != "" {
 		// add owner
-		fprintOwnedBy(&d.alertSolutions, o.Owner)
+		fprintOwnedBy(&d.alertDocs, o.Owner)
 	}
 	// render break for readability
-	fmt.Fprint(&d.alertSolutions, "\n<br />\n\n")
+	fmt.Fprint(&d.alertDocs, "\n<br />\n\n")
 	return nil
 }
 
@@ -171,10 +171,10 @@ func (d *documentation) renderDashboardPanelEntry(c *Dashboard, o Observable, pa
 		fmt.Fprintf(&d.dashboards, "%s\n\n", interpretation)
 	}
 
-	// add link to alert solutions IF there is an alert attached
+	// add link to alerts reference IF there is an alert attached
 	if !o.NoAlert {
-		fmt.Fprintf(&d.dashboards, "Refer to the [alert solutions reference](./%s#%s) for %s related to this panel.\n\n",
-			alertSolutionsFile, observableDocAnchor(c, o), pluralize("alert", o.alertsCount()))
+		fmt.Fprintf(&d.dashboards, "Refer to the [alerts reference](./%s#%s) for %s related to this panel.\n\n",
+			alertsDocsFile, observableDocAnchor(c, o), pluralize("alert", o.alertsCount()))
 	} else {
 		fmt.Fprintf(&d.dashboards, "This panel has no related alerts.\n\n")
 	}

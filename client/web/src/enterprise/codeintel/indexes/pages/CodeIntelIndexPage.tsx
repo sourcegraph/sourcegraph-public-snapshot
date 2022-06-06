@@ -8,7 +8,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LSIFIndexState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader, LoadingSpinner, useObservable, Typography } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, useObservable, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { PageTitle } from '../../../../components/PageTitle'
@@ -146,7 +146,7 @@ export const CodeIntelIndexPage: FunctionComponent<React.PropsWithChildren<CodeI
                     )}
 
                     <Container className="mt-2">
-                        <Typography.H3>Timeline</Typography.H3>
+                        <H3>Timeline</H3>
                         <CodeIntelIndexTimeline index={indexOrError} now={now} className="mb-3" />
                         <CodeIntelAssociatedUpload node={indexOrError} now={now} />
                     </Container>
