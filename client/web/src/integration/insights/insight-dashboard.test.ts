@@ -16,7 +16,7 @@ describe('[Code Insight] Dashboard', () => {
     let testContext: WebIntegrationTestContext
 
     before(async () => {
-        driver = await createDriverForTest({ devtools: true })
+        driver = await createDriverForTest()
     })
 
     beforeEach(async function () {
@@ -142,8 +142,8 @@ describe('[Code Insight] Dashboard', () => {
                     },
                     site: { __typename: 'Site', id: 'site_id' },
                 }),
-                UpdateDashboard: () => ({
-                    updateInsightsDashboard: {
+                CreateDashboard: () => ({
+                    createInsightsDashboard: {
                         __typename: 'InsightsDashboardPayload',
                         dashboard: {
                             __typename: 'InsightsDashboard',
