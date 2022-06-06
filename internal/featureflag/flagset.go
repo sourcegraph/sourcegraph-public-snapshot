@@ -24,7 +24,10 @@ type FlagSet struct {
 	actor *actor.Actor
 }
 
-func (f FlagSet) GetBool(flag string) (bool, bool) {
+func (f *FlagSet) GetBool(flag string) (bool, bool) {
+	if f == nil {
+		return false, false
+	}
 	v, ok := f.flags[flag]
 	if ok {
 		setEvaluatedFlagToCache(f.actor, flag, v)
@@ -32,15 +35,18 @@ func (f FlagSet) GetBool(flag string) (bool, bool) {
 	return v, ok
 }
 
-func (f FlagSet) GetBoolOr(flag string, defaultVal bool) bool {
+func (f *FlagSet) GetBoolOr(flag string, defaultVal bool) bool {
 	if v, ok := f.GetBool(flag); ok {
 		return v
 	}
 	return defaultVal
 }
 
-func (f FlagSet) String() string {
+func (f *FlagSet) String() string {
 	var sb strings.Builder
+	if f == nil {
+		return sb.String()
+	}
 	for k, v := range f.flags {
 		if v {
 			fmt.Fprintf(&sb, "%q: %v\n", k, v)
