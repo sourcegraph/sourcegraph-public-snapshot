@@ -5,7 +5,7 @@ import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutline
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 
 import { useLazyQuery } from '@sourcegraph/http-client'
-import { Badge, Button, Icon, Typography } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, H3 } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import {
@@ -99,7 +99,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                         'd-flex justify-content-between align-items-center flex-wrap mb-0'
                     )}
                 >
-                    <Typography.H3 className="text-nowrap mb-0" aria-label={headingAriaLabel}>
+                    <H3 className="text-nowrap mb-0" aria-label={headingAriaLabel}>
                         {isEnabled && (
                             <Icon
                                 role="img"
@@ -131,7 +131,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                                 Global token
                             </Badge>
                         )}
-                    </Typography.H3>
+                    </H3>
                     <div className="mb-0 d-flex justify-content-end flex-grow-1 align-items-baseline">
                         {isEnabled ? (
                             <>

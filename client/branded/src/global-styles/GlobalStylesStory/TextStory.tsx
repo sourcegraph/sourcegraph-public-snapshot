@@ -1,23 +1,23 @@
 import React from 'react'
 
-import { Link, Typography, Text } from '@sourcegraph/wildcard'
+import { Link, Code, H2, H3, H4, Text } from '@sourcegraph/wildcard'
 
 import { SEMANTIC_COLORS } from './constants'
 import { TextVariants } from './TextVariants'
 
 export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <>
-        <Typography.H2>Headings</Typography.H2>
+        <H2>Headings</H2>
         <table className="table">
             <tbody>
                 {(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const).map(Heading => (
                     <tr key={Heading}>
                         <td>
-                            <Typography.Code>
+                            <Code>
                                 {'<'}
                                 {Heading}
                                 {'>'}
-                            </Typography.Code>
+                            </Code>
                         </td>
                         <td>
                             <Heading>This is an {Heading.toUpperCase()}</Heading>
@@ -27,10 +27,10 @@ export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>
             </tbody>
         </table>
 
-        <Typography.H2>Text variations</Typography.H2>
+        <H2>Text variations</H2>
         <TextVariants />
 
-        <Typography.H2>Prose</Typography.H2>
+        <H2>Prose</H2>
         <Text>Text uses system fonts. The fonts should never be overridden.</Text>
         <Text>
             Minim nisi tempor Lorem do incididunt exercitation ipsum consectetur laboris elit est aute irure velit.
@@ -54,7 +54,7 @@ export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>
         </Text>
 
         <Text>
-            Text can be <i>idiomatic</i> with <Typography.Code>{'<i>'}</Typography.Code>. See{' '}
+            Text can be <i>idiomatic</i> with <Code>{'<i>'}</Code>. See{' '}
             <Link
                 target="__blank"
                 to="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/em#%3Ci%3E_vs._%3Cem%3E"
@@ -65,26 +65,26 @@ export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>
         </Text>
 
         <Text>
-            You can bring attention to the <b>element</b> with <Typography.Code>{'<b>'}</Typography.Code>.
+            You can bring attention to the <b>element</b> with <Code>{'<b>'}</Code>.
         </Text>
 
         <Text>
-            Text can have superscripts<sup>sup</sup> with <Typography.Code>{'<sup>'}</Typography.Code>.
+            Text can have superscripts<sup>sup</sup> with <Code>{'<sup>'}</Code>.
         </Text>
 
         <Text>
-            Text can have subscripts<sub>sub</sub> with <Typography.Code>{'<sub>'}</Typography.Code>.
+            Text can have subscripts<sub>sub</sub> with <Code>{'<sub>'}</Code>.
         </Text>
 
         <Text>
             <small>
-                You can use <Typography.Code>{'<small>'}</Typography.Code> to make small text. Use sparingly.
+                You can use <Code>{'<small>'}</Code> to make small text. Use sparingly.
             </small>
         </Text>
 
-        <Typography.H2>Color variations</Typography.H2>
+        <H2>Color variations</H2>
         <Text>
-            <Typography.Code>text-*</Typography.Code> classes can be used to apply semantic coloring to text.
+            <Code>text-*</Code> classes can be used to apply semantic coloring to text.
         </Text>
         <div className="mb-3">
             {['muted', ...SEMANTIC_COLORS].map(color => (
@@ -94,8 +94,8 @@ export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>
             ))}
         </div>
 
-        <Typography.H2>Lists</Typography.H2>
-        <Typography.H3>Ordered</Typography.H3>
+        <H2>Lists</H2>
+        <H3>Ordered</H3>
         <ol>
             <li>
                 Dolor est laborum aute adipisicing quis duis mollit pariatur nostrud eiusmod Lorem pariatur elit mollit.
@@ -113,9 +113,9 @@ export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>
             </li>
         </ol>
 
-        <Typography.H3>Unordered</Typography.H3>
+        <H3>Unordered</H3>
 
-        <Typography.H4>Dots</Typography.H4>
+        <H4>Dots</H4>
         <ul>
             <li>
                 Ullamco exercitation voluptate veniam et in incididunt Lorem id consequat dolor reprehenderit amet. Id
@@ -132,9 +132,9 @@ export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>
             </li>
         </ul>
 
-        <Typography.H4>Dashes</Typography.H4>
+        <H4>Dashes</H4>
         <Text>
-            Dashed lists are created using <Typography.Code>list-dashed</Typography.Code>.
+            Dashed lists are created using <Code>list-dashed</Code>.
         </Text>
         <ul className="list-dashed">
             <li>

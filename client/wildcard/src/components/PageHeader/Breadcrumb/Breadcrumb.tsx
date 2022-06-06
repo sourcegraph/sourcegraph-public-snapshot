@@ -6,7 +6,7 @@ import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 
 import styles from './Breadcrumb.module.scss'
 
-export type BreadcrumbIcon = React.ComponentType<{ className?: string }>
+export type BreadcrumbIcon = React.ComponentType<{ className?: string; role?: React.AriaRole }>
 export type BreadcrumbText = React.ReactNode
 
 type BreadcrumbProps = React.HTMLAttributes<HTMLSpanElement> & {
@@ -33,7 +33,7 @@ export const Breadcrumb: React.FunctionComponent<BreadcrumbProps> = ({
 }) => (
     <span className={classNames(styles.wrapper, className)} {...rest}>
         <LinkOrSpan className={styles.path} to={to} aria-label={ariaLabel}>
-            {Icon && <Icon className={styles.icon} aria-hidden={true} />}
+            {Icon && <Icon role="img" className={styles.icon} aria-hidden={true} />}
             {children && <span className={styles.text}>{children}</span>}
         </LinkOrSpan>
     </span>

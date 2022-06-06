@@ -1352,6 +1352,36 @@ CREATE SEQUENCE executor_heartbeats_id_seq
 
 ALTER SEQUENCE executor_heartbeats_id_seq OWNED BY executor_heartbeats.id;
 
+CREATE TABLE explicit_permissions_bitbucket_projects_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now(),
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    project_key text NOT NULL,
+    external_service_id integer NOT NULL,
+    permissions json[],
+    unrestricted boolean DEFAULT false NOT NULL,
+    CONSTRAINT explicit_permissions_bitbucket_projects_jobs_check CHECK ((((permissions IS NOT NULL) AND (unrestricted IS FALSE)) OR ((permissions IS NULL) AND (unrestricted IS TRUE))))
+);
+
+CREATE SEQUENCE explicit_permissions_bitbucket_projects_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE explicit_permissions_bitbucket_projects_jobs_id_seq OWNED BY explicit_permissions_bitbucket_projects_jobs.id;
+
 CREATE TABLE external_service_repos (
     external_service_id bigint NOT NULL,
     repo_id integer NOT NULL,
@@ -2989,6 +3019,8 @@ ALTER TABLE ONLY event_logs ALTER COLUMN id SET DEFAULT nextval('event_logs_id_s
 
 ALTER TABLE ONLY executor_heartbeats ALTER COLUMN id SET DEFAULT nextval('executor_heartbeats_id_seq'::regclass);
 
+ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SET DEFAULT nextval('explicit_permissions_bitbucket_projects_jobs_id_seq'::regclass);
+
 ALTER TABLE ONLY external_services ALTER COLUMN id SET DEFAULT nextval('external_services_id_seq'::regclass);
 
 ALTER TABLE ONLY gitserver_relocator_jobs ALTER COLUMN id SET DEFAULT nextval('gitserver_relocator_jobs_id_seq'::regclass);
@@ -3170,6 +3202,9 @@ ALTER TABLE ONLY executor_heartbeats
 
 ALTER TABLE ONLY executor_heartbeats
     ADD CONSTRAINT executor_heartbeats_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs
+    ADD CONSTRAINT explicit_permissions_bitbucket_projects_jobs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY external_service_repos
     ADD CONSTRAINT external_service_repos_repo_id_external_service_id_unique UNIQUE (repo_id, external_service_id);
@@ -3478,6 +3513,10 @@ CREATE INDEX external_services_has_webhooks_idx ON external_services USING btree
 CREATE INDEX external_services_namespace_org_id_idx ON external_services USING btree (namespace_org_id);
 
 CREATE INDEX external_services_namespace_user_id_idx ON external_services USING btree (namespace_user_id);
+
+CREATE UNIQUE INDEX external_services_unique_kind_org_id ON external_services USING btree (kind, namespace_org_id) WHERE ((deleted_at IS NULL) AND (namespace_user_id IS NULL) AND (namespace_org_id IS NOT NULL));
+
+CREATE UNIQUE INDEX external_services_unique_kind_user_id ON external_services USING btree (kind, namespace_user_id) WHERE ((deleted_at IS NULL) AND (namespace_org_id IS NULL) AND (namespace_user_id IS NOT NULL));
 
 CREATE INDEX feature_flag_overrides_org_id ON feature_flag_overrides USING btree (namespace_org_id) WHERE (namespace_org_id IS NOT NULL);
 

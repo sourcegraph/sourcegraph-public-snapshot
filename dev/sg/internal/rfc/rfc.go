@@ -14,16 +14,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-const (
-	credentials = `{"installed":{"client_id":"1043390970557-1okrt0mo0qt2ogn2mkp217cfrirr1rfd.apps.googleusercontent.com","project_id":"sg-cli","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_secret":"gkQ2alKQZr2088IFGr55ET_I","redirect_uris":["urn:ietf:wg:oauth:2.0:oob","http://localhost"]}}` // CI:LOCALHOST_OK
-)
-
 // Retrieve a token, saves the token, then returns the generated client.
-func getClient(ctx context.Context, config *oauth2.Config, out *output.Output) (*http.Client, error) {
+func getClient(ctx context.Context, config *oauth2.Config, out *std.Output) (*http.Client, error) {
 	sec, err := secrets.FromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -46,7 +43,9 @@ func getClient(ctx context.Context, config *oauth2.Config, out *output.Output) (
 }
 
 // Request a token from the web, then returns the retrieved token.
-func getTokenFromWeb(ctx context.Context, config *oauth2.Config, out *output.Output) (*oauth2.Token, error) {
+func getTokenFromWeb(ctx context.Context, config *oauth2.Config, out *std.Output) (*oauth2.Token, error) {
+	out.WriteNoticef("Setting up Google token via oAuth - follow the prompts to get set up!")
+
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 
 	out.Writef("Opening %s ...", authURL)
@@ -63,9 +62,24 @@ func getTokenFromWeb(ctx context.Context, config *oauth2.Config, out *output.Out
 	return config.Exchange(ctx, authCode)
 }
 
-func queryRFCs(ctx context.Context, query string, orderBy string, pager func(r *drive.FileList) error, out *output.Output) error {
+func queryRFCs(ctx context.Context, query string, orderBy string, pager func(r *drive.FileList) error, out *std.Output) error {
 	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON([]byte(credentials), drive.DriveMetadataReadonlyScope)
+	sec, err := secrets.FromContext(ctx)
+	if err != nil {
+		return err
+	}
+	clientCredentials, err := sec.GetExternal(ctx, secrets.ExternalSecret{
+		Provider: secrets.ExternalProvider1Pass,
+		Project:  "Shared",
+		// sg Google client credentials
+		Name:  "xyyaeojdvkch3uksxb5yoye7am",
+		Field: "credential",
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to get google client credentials")
+	}
+
+	config, err := google.ConfigFromJSON([]byte(clientCredentials), drive.DriveMetadataReadonlyScope)
 	if err != nil {
 		return errors.Wrap(err, "Unable to parse client secret file to config")
 	}
@@ -100,15 +114,15 @@ func queryRFCs(ctx context.Context, query string, orderBy string, pager func(r *
 	return list.Pages(ctx, pager)
 }
 
-func List(ctx context.Context, out *output.Output) error {
+func List(ctx context.Context, out *std.Output) error {
 	return queryRFCs(ctx, "", "createdTime,name", rfcTitlesPrinter(out), out)
 }
 
-func Search(ctx context.Context, query string, out *output.Output) error {
+func Search(ctx context.Context, query string, out *std.Output) error {
 	return queryRFCs(ctx, fmt.Sprintf("(name contains '%s' or fullText contains '%s')", query, query), "", rfcTitlesPrinter(out), out)
 }
 
-func Open(ctx context.Context, number string, out *output.Output) error {
+func Open(ctx context.Context, number string, out *std.Output) error {
 	return queryRFCs(ctx, fmt.Sprintf("name contains 'RFC %s'", number), "", func(r *drive.FileList) error {
 		for _, f := range r.Files {
 			open.URL(fmt.Sprintf("https://docs.google.com/document/d/%s/edit", f.Id))
@@ -119,7 +133,7 @@ func Open(ctx context.Context, number string, out *output.Output) error {
 
 var rfcTitleRegex = regexp.MustCompile(`RFC\s(\d+):*\s(\w+):\s(.*)$`)
 
-func rfcTitlesPrinter(out *output.Output) func(r *drive.FileList) error {
+func rfcTitlesPrinter(out *std.Output) func(r *drive.FileList) error {
 	return func(r *drive.FileList) error {
 		if len(r.Files) == 0 {
 			return nil

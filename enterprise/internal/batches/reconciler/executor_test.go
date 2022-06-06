@@ -22,12 +22,12 @@ import (
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -58,7 +58,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	defer func() { internalClient = internalapi.Client }()
 
 	githubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateOpen)
-	githubHeadRef := git.EnsureRefPrefix(githubPR.HeadRefName)
+	githubHeadRef := gitdomain.EnsureRefPrefix(githubPR.HeadRefName)
 	draftGithubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateDraft)
 	closedGitHubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateClosed)
 
@@ -227,7 +227,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			changeset: ct.TestChangesetOpts{
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalID:       "12345",
-				ExternalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
+				ExternalBranch:   gitdomain.EnsureRefPrefix("head-ref-on-github"),
 				ExternalState:    btypes.ChangesetExternalStateOpen,
 			},
 
@@ -274,7 +274,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				Closing:          false,
 
 				ExternalID:     closedGitHubPR.ID,
-				ExternalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
+				ExternalBranch: gitdomain.EnsureRefPrefix(closedGitHubPR.HeadRefName),
 				ExternalState:  btypes.ChangesetExternalStateClosed,
 
 				Title:    closedGitHubPR.Title,
@@ -309,7 +309,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				Closing:          false,
 
 				ExternalID:     closedGitHubPR.ID,
-				ExternalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
+				ExternalBranch: gitdomain.EnsureRefPrefix(closedGitHubPR.HeadRefName),
 				ExternalState:  btypes.ChangesetExternalStateClosed,
 			},
 		},
@@ -363,7 +363,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 
 				ExternalID:     draftGithubPR.ID,
-				ExternalBranch: git.EnsureRefPrefix(draftGithubPR.HeadRefName),
+				ExternalBranch: gitdomain.EnsureRefPrefix(draftGithubPR.HeadRefName),
 				ExternalState:  btypes.ChangesetExternalStateDraft,
 
 				Title:    draftGithubPR.Title,
@@ -426,7 +426,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				Closing:          false,
 
 				ExternalID:     closedGitHubPR.ID,
-				ExternalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
+				ExternalBranch: gitdomain.EnsureRefPrefix(closedGitHubPR.HeadRefName),
 				ExternalState:  btypes.ChangesetExternalStateClosed,
 
 				Title:    closedGitHubPR.Title,

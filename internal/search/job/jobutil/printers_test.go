@@ -251,7 +251,11 @@ func TestPrettyJSON(t *testing.T) {
                   },
                   "Repos": null,
                   "Indexed": false,
-                  "UseFullDeadline": true
+                  "UseFullDeadline": true,
+                  "Features": {
+                    "ContentBasedLangFilters": false,
+                    "HybridSearch": false
+                  }
                 }
               }
             },
@@ -282,7 +286,8 @@ func TestPrettyJSON(t *testing.T) {
                 "FilePatternsReposMustInclude": null,
                 "FilePatternsReposMustExclude": null,
                 "Features": {
-                  "ContentBasedLangFilters": false
+                  "ContentBasedLangFilters": false,
+                  "HybridSearch": false
                 },
                 "Mode": 0
               }

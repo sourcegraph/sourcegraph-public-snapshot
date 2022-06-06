@@ -17,6 +17,7 @@ func InferRepositoryAndRevision(pkg precise.Package) (repoName api.RepoName, git
 		inferGoRepositoryAndRevision,
 		inferJVMRepositoryAndRevision,
 		inferNpmRepositoryAndRevision,
+		inferRustRepositoryAndRevision,
 	} {
 		if repoName, gitTagOrCommit, ok := fn(pkg); ok {
 			return repoName, gitTagOrCommit, true
@@ -65,4 +66,18 @@ func inferNpmRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, b
 		return "", "", false
 	}
 	return npmPkg.RepoName(), "v" + pkg.Version, true
+}
+
+func inferRustRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
+	if pkg.Scheme != dependencies.RustPackagesScheme {
+		return "", "", false
+	}
+
+	rustPkg, err := reposource.ParseRustDependency(pkg.Name)
+	if err != nil {
+		log15.Error("invalid rust package name in database", "error", err, "pkg", pkg.Name)
+		return "", "", false
+	}
+
+	return rustPkg.RepoName(), "v" + pkg.Version, true
 }

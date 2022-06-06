@@ -25,8 +25,8 @@
   "activationEvents": [
     "*"
   ],
-  "main": "./dist/node/extension.js",
-  "browser": "./dist/webworker/extension.js",
+  "main": "./dist/node/main.js",
+  "browser": "./dist/webworker/main.js",
   "contributes": {
     "commands": [
       {
@@ -155,7 +155,9 @@
           "description": "The file path on the machine to the folder that is expected to contain all repositories.",
           "type": "string",
           "default": null,
-          "examples": ["/Users/USERNAME/Documents/"]
+          "examples": [
+            "/Users/USERNAME/Documents/"
+          ]
         }
       }
     },
@@ -219,16 +221,16 @@
     "test": "ts-node ./tests/runTests.ts",
     "package": "ts-node ./scripts/package.ts",
     "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
-    "build": "yarn run version:check && yarn task:gulp webpack",
+    "build": "NODE_ENV=production yarn task:gulp webpack",
     "build:node": "NODE_ENV=production TARGET_TYPE=node yarn task:gulp webpack",
     "build:web": "NODE_ENV=production TARGET_TYPE=webworker yarn task:gulp webpack",
     "build:test": "NODE_ENV=production TARGET_TYPE=webworker IS_TEST=true yarn task:gulp webpack",
-    "watch": "yarn task:gulp watchWebpack",
+    "watch": "yarn check:version && yarn task:gulp watchWebpack",
     "watch:node": "NODE_ENV=development TARGET_TYPE=node yarn task:gulp watchWebpack",
     "watch:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp watchWebpack",
     "watch:test": "NODE_ENV=development TARGET_TYPE=webworker IS_TEST=true yarn task:gulp watchWebpack",
     "test-integration": "TS_NODE_PROJECT=tests/tsconfig.json mocha --parallel=$CI --retries=2 ./tests/**/*.test.ts",
-    "version:check": "ts-node ./scripts/version-check.ts",
+    "check:version": "ts-node ./scripts/version-check.ts",
     "release": "ts-node ./scripts/release.ts"
   }
 }

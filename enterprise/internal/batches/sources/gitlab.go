@@ -9,11 +9,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -103,8 +103,8 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 	remoteProject := c.RemoteRepo.Metadata.(*gitlab.Project)
 	targetProject := c.TargetRepo.Metadata.(*gitlab.Project)
 	exists := false
-	source := git.AbbreviateRef(c.HeadRef)
-	target := git.AbbreviateRef(c.BaseRef)
+	source := gitdomain.AbbreviateRef(c.HeadRef)
+	target := gitdomain.AbbreviateRef(c.BaseRef)
 	targetProjectID := 0
 	if c.RemoteRepo != c.TargetRepo {
 		targetProjectID = c.TargetRepo.Metadata.(*gitlab.Project).ID
@@ -427,7 +427,7 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
 		Title:        title,
 		Description:  c.Body,
-		TargetBranch: git.AbbreviateRef(c.BaseRef),
+		TargetBranch: gitdomain.AbbreviateRef(c.BaseRef),
 	})
 	if err != nil {
 		return errors.Wrap(err, "updating GitLab merge request")

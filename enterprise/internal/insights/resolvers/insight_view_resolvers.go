@@ -7,6 +7,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 
 	"github.com/grafana/regexp"
@@ -17,7 +21,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -466,10 +469,14 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.Wrap(err, "CreateView")
 	}
 
+	var scoped []types.InsightSeries
 	for _, series := range args.Input.DataSeries {
-		err = createAndAttachSeries(ctx, insightTx, view, series)
+		c, err := createAndAttachSeries(ctx, insightTx, r.backfiller, view, series)
 		if err != nil {
 			return nil, errors.Wrap(err, "createAndAttachSeries")
+		}
+		if len(c.Repositories) > 0 {
+			scoped = append(scoped, *c)
 		}
 	}
 
@@ -555,7 +562,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 
 	for _, series := range args.Input.DataSeries {
 		if series.SeriesId == nil {
-			err = createAndAttachSeries(ctx, tx, view, series)
+			_, err = createAndAttachSeries(ctx, tx, r.backfiller, view, series)
 			if err != nil {
 				return nil, errors.Wrap(err, "createAndAttachSeries")
 			}
@@ -578,7 +585,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 				if err != nil {
 					return nil, errors.Wrap(err, "RemoveViewSeries")
 				}
-				err = createAndAttachSeries(ctx, tx, view, series)
+				_, err = createAndAttachSeries(ctx, tx, r.backfiller, view, series)
 				if err != nil {
 					return nil, errors.Wrap(err, "createAndAttachSeries")
 				}
@@ -641,7 +648,7 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 		CreatedAt:          time.Now(),
 		Repositories:       repos,
 		SampleIntervalUnit: string(types.Month),
-		JustInTime:         service.IsJustInTime(repos),
+		JustInTime:         len(repos) > 0,
 		// one might ask themselves why is the generation method a language stats method if this mutation is search insight? The answer is that search is ultimately the
 		// driver behind language stats, but global language stats behave differently than standard search. Long term the vision is that
 		// search will power this, and we can iterate over repos just like any other search insight. But for now, this is just something weird that we will have to live with.
@@ -962,7 +969,7 @@ func validateUserDashboardPermissions(ctx context.Context, store store.Dashboard
 	return nil
 }
 
-func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
+func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBackfiller *background.ScopedBackfiller, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) (*types.InsightSeries, error) {
 	var seriesToAdd, matchingSeries types.InsightSeries
 	var foundSeries bool
 	var err error
@@ -971,8 +978,8 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 		dynamic = *series.GeneratedFromCaptureGroups
 	}
 
-	// Don't try to match on just-in-time series, since they are not recorded
-	if !service.IsJustInTime(series.RepositoryScope.Repositories) {
+	// Don't try to match on non-global series, since they are always replaced
+	if len(series.RepositoryScope.Repositories) == 0 {
 		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
 			Query:                     series.Query,
 			StepIntervalUnit:          series.TimeScope.StepInterval.Unit,
@@ -980,9 +987,12 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 			GenerateFromCaptureGroups: dynamic,
 		})
 		if err != nil {
-			return errors.Wrap(err, "FindMatchingSeries")
+			return nil, errors.Wrap(err, "FindMatchingSeries")
 		}
 	}
+
+	flags := featureflag.FromContext(ctx)
+	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", true)
 
 	if !foundSeries {
 		repos := series.RepositoryScope.Repositories
@@ -994,11 +1004,22 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 			SampleIntervalUnit:         series.TimeScope.StepInterval.Unit,
 			SampleIntervalValue:        int(series.TimeScope.StepInterval.Value),
 			GeneratedFromCaptureGroups: dynamic,
-			JustInTime:                 service.IsJustInTime(repos),
-			GenerationMethod:           searchGenerationMethod(series),
+			JustInTime:                 len(repos) > 0 && !deprecateJustInTime,
+			// JustInTime:       false,
+			GenerationMethod: searchGenerationMethod(series),
 		})
 		if err != nil {
-			return errors.Wrap(err, "CreateSeries")
+			return nil, errors.Wrap(err, "CreateSeries")
+		}
+		if len(seriesToAdd.Repositories) > 0 && deprecateJustInTime {
+			err := scopedBackfiller.ScopedBackfill(ctx, []types.InsightSeries{seriesToAdd})
+			if err != nil {
+				return nil, errors.Wrap(err, "ScopedBackfill")
+			}
+			_, err = tx.StampBackfill(ctx, seriesToAdd) // note that this isn't transactional with the backfill above until the queue is migrated to the insights DB
+			if err != nil {
+				return nil, errors.Wrap(err, "StampBackfill")
+			}
 		}
 	} else {
 		seriesToAdd = matchingSeries
@@ -1012,9 +1033,10 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 		Stroke: emptyIfNil(series.Options.LineColor),
 	})
 	if err != nil {
-		return errors.Wrap(err, "AttachSeriesToView")
+		return nil, errors.Wrap(err, "AttachSeriesToView")
 	}
-	return nil
+
+	return &seriesToAdd, nil
 }
 
 func searchGenerationMethod(series graphqlbackend.LineChartSearchInsightDataSeriesInput) types.GenerationMethod {

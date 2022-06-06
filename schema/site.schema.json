@@ -1857,6 +1857,12 @@
           "default": "api",
           "enum": ["api", "read_api"]
         },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts via GitLab authentication. If false, users signing in via GitLab must have an existing Sourcegraph account, which will be linked to their GitLab identity after sign-in.",
+          "default": true,
+          "type": "boolean",
+          "!go": { "pointer": true }
+        },
         "allowGroups": {
           "description": "Restricts new logins to members of these GitLab groups. Existing sessions won't be invalidated. Make sure to inform the full path for groups or subgroups instead of their names. Leave empty or unset for no group restrictions.",
           "default": [],

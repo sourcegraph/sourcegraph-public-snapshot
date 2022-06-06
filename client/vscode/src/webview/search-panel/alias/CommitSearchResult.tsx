@@ -6,7 +6,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl } from '@sourcegraph/shared/src/search/stream'
 // eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Typography } from '@sourcegraph/wildcard'
+import { Code } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 interface Props extends PlatformContextProps<'requestGraphQL'> {
@@ -74,7 +74,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                     className="btn btn-text-link"
                     onClick={() => openCommit(getCommitMatchUrl(result))}
                 >
-                    <Typography.Code className={styles.commitOid}>{result.oid.slice(0, 7)}</Typography.Code>{' '}
+                    <Code className={styles.commitOid}>{result.oid.slice(0, 7)}</Code>{' '}
                     <Timestamp date={result.authorDate} noAbout={true} strict={true} />
                 </button>
             )}

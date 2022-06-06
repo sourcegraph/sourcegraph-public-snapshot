@@ -6,7 +6,7 @@ import { useLocation, useHistory } from 'react-router'
 import { ErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Link, Typography, Text } from '@sourcegraph/wildcard'
+import { Alert, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BrandLogo } from '../components/branding/BrandLogo'
@@ -143,7 +143,7 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
                                         <Link to={PageRoutes.Search}>skip to code search</Link>.
                                     </Alert>
                                 )}
-                                <Typography.H2>Get started with Sourcegraph</Typography.H2>
+                                <H2>Get started with Sourcegraph</H2>
                                 <Text className="text-muted pb-3">Follow these steps to set up your account</Text>
                             </div>
                             <div className="mt-2 pb-3 d-flex flex-column align-items-center w-100">
@@ -172,7 +172,7 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
                                         </StepPanel>
                                         <StepPanel>
                                             <div className={classNames('mt-3', styles.container)}>
-                                                <Typography.H3>Add repositories</Typography.H3>
+                                                <H3>Add repositories</H3>
                                                 <Text className="text-muted mb-4">
                                                     Choose repositories you own or collaborate on from your code hosts.
                                                     We’ll sync and index these repositories so you can search your code

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/amit7itz/goset"
 	"github.com/grafana/regexp"
 	"github.com/grafana/regexp/syntax"
 	"github.com/inconshreveable/log15"
@@ -15,13 +16,13 @@ import (
 	pg "github.com/lib/pq"
 	"github.com/segmentio/fasthash/fnv1"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *Service) Search(ctx context.Context, args types.SearchArgs) (result.Symbols, error) {
+func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ result.Symbols, err error) {
 	repo := string(args.Repo)
 	commitHash := string(args.CommitID)
 
@@ -30,6 +31,26 @@ func (s *Service) Search(ctx context.Context, args types.SearchArgs) (result.Sym
 		defer threadStatus.Tasklog.Print()
 	}
 	defer threadStatus.End()
+
+	if args.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(args.Timeout)*time.Second)
+		defer cancel()
+		defer func() {
+			if ctx.Err() == nil || !errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				return
+			}
+
+			err = errors.Newf("Processing symbols with [Rockskip](https://docs.sourcegraph.com/code_intelligence/explanations/rockskip) is taking a while, try again later.")
+			for _, status := range s.status.threadIdToThreadStatus {
+				fmt.Println(status.Name, fmt.Sprintf("indexing %s", args.Repo))
+				if strings.HasPrefix(status.Name, fmt.Sprintf("indexing %s", args.Repo)) {
+					err = errors.Newf("[Rockskip](https://docs.sourcegraph.com/code_intelligence/explanations/rockskip) is currently processing symbols. Estimated completion: %s.", status.Remaining())
+				}
+			}
+			return
+		}()
+	}
 
 	// Acquire a read lock on the repo.
 	locked, releaseRLock, err := tryRLock(ctx, s.db, threadStatus, repo)
@@ -94,7 +115,7 @@ func (s *Service) Search(ctx context.Context, args types.SearchArgs) (result.Sym
 	return symbols, nil
 }
 
-func mkIsMatch(args types.SearchArgs) (func(string) bool, error) {
+func mkIsMatch(args search.SymbolsParameters) (func(string) bool, error) {
 	if !args.IsRegExp {
 		if args.IsCaseSensitive {
 			return func(symbol string) bool { return strings.Contains(symbol, args.Query) }, nil
@@ -164,7 +185,7 @@ func (s *Service) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 
 const DEFAULT_LIMIT = 100
 
-func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoId int, commit int, threadStatus *ThreadStatus) (result.Symbols, error) {
+func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameters, repoId int, commit int, threadStatus *ThreadStatus) (result.Symbols, error) {
 	db := database.NewDB(s.db)
 	hops, err := getHops(ctx, db, commit, threadStatus.Tasklog)
 	if err != nil {
@@ -209,14 +230,14 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 		return nil, err
 	}
 
-	pathSet := map[string]struct{}{}
+	paths := goset.NewSet[string]()
 	for rows.Next() {
 		var path string
 		err = rows.Scan(&path)
 		if err != nil {
 			return nil, errors.Wrap(err, "Search: Scan")
 		}
-		pathSet[path] = struct{}{}
+		paths.Add(path)
 	}
 
 	stopErr := errors.New("stop iterating")
@@ -226,11 +247,7 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 	parse := s.createParser()
 
 	threadStatus.Tasklog.Start("ArchiveEach")
-	paths := []string{}
-	for path := range pathSet {
-		paths = append(paths, path)
-	}
-	err = s.git.ArchiveEach(string(args.Repo), string(args.CommitID), paths, func(path string, contents []byte) error {
+	err = s.git.ArchiveEach(string(args.Repo), string(args.CommitID), paths.Items(), func(path string, contents []byte) error {
 		defer threadStatus.Tasklog.Continue("ArchiveEach")
 
 		threadStatus.Tasklog.Start("parse")
@@ -286,7 +303,7 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 	return symbols, nil
 }
 
-func logQuery(ctx context.Context, db database.DB, args types.SearchArgs, q *sqlf.Query, duration time.Duration, symbols int) error {
+func logQuery(ctx context.Context, db database.DB, args search.SymbolsParameters, q *sqlf.Query, duration time.Duration, symbols int) error {
 	sb := &strings.Builder{}
 
 	fmt.Fprintf(sb, "Search args: %+v\n", args)
@@ -376,7 +393,7 @@ func sqlEscapeQuotes(s string) string {
 	return strings.ReplaceAll(s, "'", "''")
 }
 
-func convertSearchArgsToSqlQuery(args types.SearchArgs) *sqlf.Query {
+func convertSearchArgsToSqlQuery(args search.SymbolsParameters) *sqlf.Query {
 	// TODO support non regexp queries once the frontend supports it.
 
 	conjunctOrNils := []*sqlf.Query{}
