@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -euf -o pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 export GOBIN
 GOBIN="$(realpath "$(dirname "${BASH_SOURCE[0]}")/../.bin")"
