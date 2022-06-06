@@ -15,7 +15,7 @@ import { getFeatureFlagOverride } from './feature-flag-local-overrides'
 const fetchEvaluateFeatureFlag = (
     requestGraphQLFunc: typeof requestGraphQL,
     flagName: FeatureFlagName
-): Observable<boolean> =>
+): Observable<EvaluateFeatureFlagResult['evaluateFeatureFlag']> =>
     requestGraphQLFunc<EvaluateFeatureFlagResult>(
         gql`
             query EvaluateFeatureFlag($flagName: String!) {
@@ -34,7 +34,7 @@ const fetchEvaluateFeatureFlag = (
  * Feature flag client service. Should be used as singleton for the whole application.
  */
 export class FeatureFlagClient {
-    private flags = new Map<FeatureFlagName, Observable<boolean>>()
+    private flags = new Map<FeatureFlagName, Observable<EvaluateFeatureFlagResult['evaluateFeatureFlag']>>()
 
     /**
      * @param requestGraphQLFunction function to use for making GQL API calls
@@ -54,7 +54,7 @@ export class FeatureFlagClient {
     /**
      * Evaluates and returns feature flag value
      */
-    public get(flagName: FeatureFlagName): Observable<boolean> {
+    public get(flagName: FeatureFlagName): Observable<EvaluateFeatureFlagResult['evaluateFeatureFlag']> {
         if (!this.flags.has(flagName)) {
             const flag$ = iif(
                 () => typeof this.refetchInterval === 'number' && this.refetchInterval > 0,

@@ -10,9 +10,16 @@ import { FeatureFlagClient } from './FeatureFlagClient'
 describe('FeatureFlagClient', () => {
     const ENABLED_FLAG = 'enabled-flag' as FeatureFlagName
     const DISABLED_FLAG = 'disabled-flag' as FeatureFlagName
+    const NON_EXISTING_FLAG = 'non-existing-flag' as FeatureFlagName
 
     const mockRequestGraphQL = sinon.spy((query, variables) =>
-        of({ data: { evaluateFeatureFlag: [ENABLED_FLAG].includes(variables.flagName) }, errors: [] })
+        of({
+            data: {
+                evaluateFeatureFlag:
+                    variables.flagName === ENABLED_FLAG ? true : variables.flagName === DISABLED_FLAG ? false : null,
+            },
+            errors: [],
+        })
     ) as typeof requestGraphQL & SinonSpy
 
     beforeEach(() => mockRequestGraphQL.resetHistory())
@@ -46,6 +53,17 @@ describe('FeatureFlagClient', () => {
             complete: () => {
                 throw new Error('Should not complete when passing refetch interval')
             },
+        })
+    })
+
+    it('returns [defaultValue] correctly', done => {
+        const client = new FeatureFlagClient(mockRequestGraphQL)
+        expect.assertions(1)
+
+        client.get(NON_EXISTING_FLAG).subscribe(value => {
+            expect(value).toBeNull()
+            sinon.assert.calledOnce(mockRequestGraphQL)
+            done()
         })
     })
 

@@ -36,10 +36,10 @@ type flagSetFetcher struct {
 	// Actor is the actor that was used to populate flagSet
 	actor *actor.Actor
 	// flagSet is the once-populated set of flags for the actor at the time of population
-	flagSet FlagSet
+	flagSet *FlagSet
 }
 
-func (f *flagSetFetcher) fetch(ctx context.Context) FlagSet {
+func (f *flagSetFetcher) fetch(ctx context.Context) *FlagSet {
 	f.once.Do(func() {
 		f.actor = actor.FromContext(ctx)
 		f.flagSet = f.fetchForActor(ctx, f.actor)
@@ -55,11 +55,11 @@ func (f *flagSetFetcher) fetch(ctx context.Context) FlagSet {
 	return f.fetchForActor(ctx, currentActor)
 }
 
-func (f *flagSetFetcher) fetchForActor(ctx context.Context, a *actor.Actor) FlagSet {
+func (f *flagSetFetcher) fetchForActor(ctx context.Context, a *actor.Actor) *FlagSet {
 	if a.IsAuthenticated() {
 		flags, err := f.ffs.GetUserFlags(ctx, a.UID)
 		if err == nil {
-			return FlagSet(flags)
+			return &FlagSet{flags: flags, actor: f.actor}
 		}
 		// Continue if err != nil
 	}
@@ -67,24 +67,31 @@ func (f *flagSetFetcher) fetchForActor(ctx context.Context, a *actor.Actor) Flag
 	if a.AnonymousUID != "" {
 		flags, err := f.ffs.GetAnonymousUserFlags(ctx, a.AnonymousUID)
 		if err == nil {
-			return FlagSet(flags)
+			return &FlagSet{flags: flags, actor: f.actor}
 		}
 		// Continue if err != nil
 	}
 
 	flags, err := f.ffs.GetGlobalFeatureFlags(ctx)
 	if err == nil {
-		return FlagSet(flags)
+		return &FlagSet{flags: flags, actor: f.actor}
 	}
 
-	return FlagSet(make(map[string]bool))
+	return &FlagSet{actor: f.actor}
 }
 
 // FromContext retrieves the current set of flags from the current
 // request's context.
-func FromContext(ctx context.Context) FlagSet {
+func FromContext(ctx context.Context) *FlagSet {
 	if flags := ctx.Value(flagContextKey{}); flags != nil {
 		return flags.(*flagSetFetcher).fetch(ctx)
+	}
+	return nil
+}
+
+func GetEvaluatedFlagSet(ctx context.Context) EvaluatedFlagSet {
+	if flagSet := FromContext(ctx); flagSet != nil {
+		return getEvaluatedFlagSetFromCache(flagSet)
 	}
 	return nil
 }

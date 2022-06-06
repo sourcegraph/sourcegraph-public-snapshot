@@ -14,28 +14,28 @@ var (
 	pool = redispool.Store
 )
 
-func getEvaluatedFlagSetFromCache(flags []*FeatureFlag, a *actor.Actor) FlagSet {
-	flagSet := FlagSet{}
+func getEvaluatedFlagSetFromCache(flagsSet *FlagSet) EvaluatedFlagSet {
+	evaluatedFlagSet := EvaluatedFlagSet{}
 
 	c := pool.Get()
 	defer c.Close()
 
-	visitorID, err := getVisitorIDForActor(a)
+	visitorID, err := getVisitorIDForActor(flagsSet.actor)
 
 	if err != nil {
-		return flagSet
+		return evaluatedFlagSet
 	}
 
-	for _, flag := range flags {
-		if value, err := redis.Bool(c.Do("HGET", getFlagCacheKey(flag.Name), visitorID)); err == nil {
-			flagSet[flag.Name] = value
+	for k := range flagsSet.flags {
+		if value, err := redis.Bool(c.Do("HGET", getFlagCacheKey(k), visitorID)); err == nil {
+			evaluatedFlagSet[k] = value
 		}
 	}
 
-	return flagSet
+	return evaluatedFlagSet
 }
 
-func setEvaluatedFlagToCache(name string, a *actor.Actor, value bool) {
+func setEvaluatedFlagToCache(a *actor.Actor, flagName string, value bool) {
 	c := pool.Get()
 	defer c.Close()
 
@@ -47,14 +47,7 @@ func setEvaluatedFlagToCache(name string, a *actor.Actor, value bool) {
 		return
 	}
 
-	c.Do("HSET", getFlagCacheKey(name), visitorID, fmt.Sprintf("%v", value))
-}
-
-func ClearFlagFromCache(name string) {
-	c := pool.Get()
-	defer c.Close()
-
-	c.Do("DEL", getFlagCacheKey(name))
+	c.Do("HSET", getFlagCacheKey(flagName), visitorID, fmt.Sprintf("%v", value))
 }
 
 func getVisitorIDForActor(a *actor.Actor) (string, error) {
@@ -69,4 +62,12 @@ func getVisitorIDForActor(a *actor.Actor) (string, error) {
 
 func getFlagCacheKey(name string) string {
 	return "ff_" + name
+}
+
+// Clears stored evaluated feature flag from Redis
+func ClearEvaluatedFlagFromCache(flagName string) {
+	c := pool.Get()
+	defer c.Close()
+
+	c.Do("DEL", getFlagCacheKey(flagName))
 }

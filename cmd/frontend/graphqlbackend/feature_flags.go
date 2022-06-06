@@ -129,13 +129,16 @@ func (e *EvaluatedFeatureFlagResolver) Value() bool {
 
 func (r *schemaResolver) EvaluateFeatureFlag(ctx context.Context, args *struct {
 	FlagName string
-}) bool {
-	return featureflag.EvaluateForActorFromContext(ctx, args.FlagName)
+}) *bool {
+	flagSet := featureflag.FromContext(ctx)
+	if v, ok := flagSet.GetBool(args.FlagName); ok {
+		return &v
+	}
+	return nil
 }
 
 func (r *schemaResolver) EvaluatedFeatureFlags(ctx context.Context) []*EvaluatedFeatureFlagResolver {
-	f := featureflag.FromContext(ctx)
-	return evaluatedFlagsToResolvers(f)
+	return evaluatedFlagsToResolvers(featureflag.GetEvaluatedFlagSet(ctx))
 }
 
 func evaluatedFlagsToResolvers(input map[string]bool) []*EvaluatedFeatureFlagResolver {

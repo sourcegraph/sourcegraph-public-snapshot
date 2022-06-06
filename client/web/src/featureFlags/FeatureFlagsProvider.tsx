@@ -87,7 +87,7 @@ export const MockedFeatureFlagsProvider: React.FunctionComponent<MockedFeatureFl
             query: string,
             variables: any
         ): Observable<{
-            data: { evaluateFeatureFlag: boolean }
+            data: { evaluateFeatureFlag: boolean | null }
         }> => {
             const value = overrides[variables.flagName as FeatureFlagName]
             if (value instanceof Error) {
@@ -95,7 +95,7 @@ export const MockedFeatureFlagsProvider: React.FunctionComponent<MockedFeatureFl
             }
 
             return of({
-                data: { evaluateFeatureFlag: value ?? false },
+                data: { evaluateFeatureFlag: value ?? null },
             })
         },
         [overrides]
