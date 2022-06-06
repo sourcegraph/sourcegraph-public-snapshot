@@ -10,8 +10,8 @@ import (
 
 	sitter "github.com/smacker/go-tree-sitter"
 
-	symbolTypes "github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -383,7 +383,7 @@ func lazyNodeStringer(node **Node) func() fmt.Stringer {
 }
 
 func (s *SquirrelService) symbolSearchOne(ctx context.Context, repo string, commit string, include []string, ident string) (*Node, error) {
-	symbols, err := s.symbolSearch(ctx, symbolTypes.SearchArgs{
+	symbols, err := s.symbolSearch(ctx, search.SymbolsParameters{
 		Repo:            api.RepoName(repo),
 		CommitID:        api.CommitID(commit),
 		Query:           fmt.Sprintf("^%s$", ident),

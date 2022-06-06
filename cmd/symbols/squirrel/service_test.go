@@ -11,7 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
 
-	symbolTypes "github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -70,7 +70,7 @@ func TestNonLocalDefinition(t *testing.T) {
 		fatalIfErrorLabel(t, err, "walking a repo dir")
 	}
 
-	ss := func(ctx context.Context, args symbolTypes.SearchArgs) (result.Symbols, error) {
+	ss := func(ctx context.Context, args search.SymbolsParameters) (result.Symbols, error) {
 		results := result.Symbols{}
 	nextSymbol:
 		for _, s := range allSymbols {
