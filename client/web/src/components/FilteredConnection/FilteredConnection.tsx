@@ -484,6 +484,7 @@ export class FilteredConnection<
         //     this.props.hideControlsWhenEmpty
 
         const inputPlaceholder = this.props.inputPlaceholder || `Search ${this.props.pluralNoun}...`
+
         return (
             <ConnectionContainer compact={this.props.compact} className={this.props.className}>
                 {
