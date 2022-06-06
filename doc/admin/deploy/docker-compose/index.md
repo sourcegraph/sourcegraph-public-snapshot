@@ -19,11 +19,15 @@ Complete the following tasks before deploying Sourcegraph with Docker Compose:
     - Determine the number and size of the repos in your environment.
     - Determine the number of users and their engagement rate with the repos. 
     - Configure the server resources using the [resource estimator](../resource_estimator.md) to ensure it has sufficient CPUs, memory, and SSD capacity.
+
 >Note: Sourcegraph requires SSD backed storage. 
+
 - Configure ingress firewall rules to enable secure access to the server.
 - Configure access for the server to your deployment files, in the examples that follow a Personal Access Token for GitHub is required.   
 - Install [Docker Compose](https://docs.docker.com/compose/) on the server. Sourcegraph deployments should *not* be deployed with Docker Swarm
+
 >Note: Minimum Docker [v20.10.0](https://docs.docker.com/engine/release-notes/#20100) and Docker Compose [v1.29.0](https://docs.docker.com/compose/release-notes/#1290)
+
 - Obtain a [Sourcegraph license](https://about.sourcegraph.com/pricing/). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
 
 ## Installation Process Overview
@@ -47,26 +51,27 @@ The [`sourcegraph/deploy-sourcegraph-docker`](https://github.com/sourcegraph/dep
 
 > WARNING: In GitHub, forks of public repos are also public. Create a private fork if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository. However, a preferable approach would be to use a Secrets Management Service. 
 
-1. Use the GithHub GUI to [Create a fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) reference repository.
+1\. Use the GithHub GUI to [Create a fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) reference repository.
 
 *Alternatively*, if you are using GitHub and you want your fork to be private, create a private clone of the reference repository in your code host. This process can be performed on any machine with access to your code host:
 
-1. Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example `<you/private-repository>` in GitHub.
+1\. Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example `<you/private-repository>` in GitHub.
 
-2. Bare clone the reference repository. 
+2\. Bare clone the reference repository. 
 
   ```bash
   git clone --bare https://github.com/sourcegraph/deploy-sourcegraph-docker/
   ```
-  
-3. Navigate to the bare clone and mirror push it to your private repository.
+
+3\. Navigate to the bare clone and mirror push it to your private repository.
 
   ```bash
   cd deploy-sourcegraph-docker.git
   git push --mirror https://github.com/<you/private-repository>.git
   ```
 
-4. Remove your local bare clone. 
+4\. Remove your local bare clone. 
+
   ```bash
   cd ..
   rm -rf deploy-sourcegraph-docker.git
