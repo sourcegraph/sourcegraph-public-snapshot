@@ -12,12 +12,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func QueueOptions(db database.DB, accessToken func() string, observationContext *observation.Context) handler.QueueOptions {
+	logger := log.Scoped("executor-queue.batches", "The executor queue handlers for the batches queue")
 	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		batchesStore := store.New(db, observationContext, nil)
-		return transformRecord(ctx, batchesStore, record.(*btypes.BatchSpecWorkspaceExecutionJob), accessToken())
+		return transformRecord(ctx, logger, batchesStore, record.(*btypes.BatchSpecWorkspaceExecutionJob), accessToken())
 	}
 
 	store := store.NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext)

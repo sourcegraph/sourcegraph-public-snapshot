@@ -17,6 +17,7 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -111,7 +112,7 @@ func TestTransformRecord(t *testing.T) {
 	}
 
 	t.Run("with cache entry", func(t *testing.T) {
-		job, err := transformRecord(context.Background(), store, workspaceExecutionJob, "hunter2")
+		job, err := transformRecord(context.Background(), log.Scoped("test", "test logger"), store, workspaceExecutionJob, "hunter2")
 		if err != nil {
 			t.Fatalf("unexpected error transforming record: %s", err)
 		}
@@ -151,7 +152,7 @@ func TestTransformRecord(t *testing.T) {
 		// Set the no cache flag on the batch spec.
 		batchSpec.NoCache = true
 
-		job, err := transformRecord(context.Background(), store, workspaceExecutionJob, "hunter2")
+		job, err := transformRecord(context.Background(), log.Scoped("test", "test logger"), store, workspaceExecutionJob, "hunter2")
 		if err != nil {
 			t.Fatalf("unexpected error transforming record: %s", err)
 		}

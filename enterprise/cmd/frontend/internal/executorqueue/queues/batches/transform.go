@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -18,6 +16,7 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type BatchesStore interface {
@@ -29,7 +28,7 @@ type BatchesStore interface {
 }
 
 // transformRecord transforms a *btypes.BatchSpecWorkspaceExecutionJob into an apiclient.Job.
-func transformRecord(ctx context.Context, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob, accessToken string) (apiclient.Job, error) {
+func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob, accessToken string) (apiclient.Job, error) {
 	// MAYBE: We could create a view in which batch_spec and repo are joined
 	// against the batch_spec_workspace_job so we don't have to load them
 	// separately.
@@ -46,7 +45,7 @@ func transformRecord(ctx context.Context, s BatchesStore, job *btypes.BatchSpecW
 	// This should never happen. To get some easier debugging when a user sees strange
 	// behavior, we log some additional context.
 	if job.UserID != batchSpec.UserID {
-		log15.Error("bad DB state: batch spec workspace execution job had not the same user ID as the associated batch spec")
+		logger.Error("bad DB state: batch spec workspace execution job had not the same user ID as the associated batch spec")
 	}
 
 	// 🚨 SECURITY: Set the actor on the context so we check for permissions
