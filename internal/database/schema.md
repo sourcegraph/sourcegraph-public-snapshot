@@ -150,9 +150,12 @@ Foreign-key constraints:
  cancel                  | boolean                  |           | not null | false
  access_token_id         | bigint                   |           |          | 
  queued_at               | timestamp with time zone |           |          | now()
+ user_id                 | integer                  |           | not null | 
 Indexes:
     "batch_spec_workspace_execution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_workspace_execution_jobs_cancel" btree (cancel)
+    "batch_spec_workspace_execution_jobs_state" btree (state)
+    "batch_spec_workspace_execution_jobs_user_id" btree (user_id)
 Foreign-key constraints:
     "batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey" FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE
     "batch_spec_workspace_execution_jobs_access_token_id_fkey" FOREIGN KEY (access_token_id) REFERENCES access_tokens(id) ON DELETE SET NULL DEFERRABLE
@@ -2735,12 +2738,10 @@ Foreign-key constraints:
 
 ```sql
  WITH tenant_queues AS (
-         SELECT spec.user_id,
+         SELECT exec.user_id,
             max(exec.started_at) AS latest_dequeue
-           FROM ((batch_spec_workspace_execution_jobs exec
-             JOIN batch_spec_workspaces workspace ON ((workspace.id = exec.batch_spec_workspace_id)))
-             JOIN batch_specs spec ON ((spec.id = workspace.batch_spec_id)))
-          GROUP BY spec.user_id
+           FROM batch_spec_workspace_execution_jobs exec
+          GROUP BY exec.user_id
         ), materialized_queue_candidates AS MATERIALIZED (
          SELECT exec.id,
             exec.batch_spec_workspace_id,
@@ -2759,15 +2760,14 @@ Foreign-key constraints:
             exec.cancel,
             exec.access_token_id,
             exec.queued_at,
-            rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS tenant_queue_rank
-           FROM (((batch_spec_workspace_execution_jobs exec
-             JOIN batch_spec_workspaces workspace ON ((workspace.id = exec.batch_spec_workspace_id)))
-             JOIN batch_specs spec ON ((spec.id = workspace.batch_spec_id)))
-             JOIN tenant_queues queue ON ((queue.user_id = spec.user_id)))
+            exec.user_id,
+            rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS place_in_tenant_queue
+           FROM (batch_spec_workspace_execution_jobs exec
+             JOIN tenant_queues queue ON ((queue.user_id = exec.user_id)))
           WHERE (exec.state = 'queued'::text)
           ORDER BY (rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id)), queue.latest_dequeue NULLS FIRST
         )
- SELECT row_number() OVER () AS place_in_queue,
+ SELECT row_number() OVER () AS place_in_global_queue,
     materialized_queue_candidates.id,
     materialized_queue_candidates.batch_spec_workspace_id,
     materialized_queue_candidates.state,
@@ -2785,7 +2785,8 @@ Foreign-key constraints:
     materialized_queue_candidates.cancel,
     materialized_queue_candidates.access_token_id,
     materialized_queue_candidates.queued_at,
-    materialized_queue_candidates.tenant_queue_rank
+    materialized_queue_candidates.user_id,
+    materialized_queue_candidates.place_in_tenant_queue
    FROM materialized_queue_candidates;
 ```
 

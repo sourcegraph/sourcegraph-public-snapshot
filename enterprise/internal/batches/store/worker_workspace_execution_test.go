@@ -372,7 +372,7 @@ func setupBatchSpecAssociation(ctx context.Context, s *Store, t *testing.T, user
 		t.Fatal(err)
 	}
 
-	job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: workspace.ID}
+	job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: workspace.ID, UserID: user.ID}
 	if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 		t.Fatal(err)
 	}

@@ -1,14 +1,26 @@
-DROP VIEW IF EXISTS batch_spec_workspace_execution_queue;
+ALTER TABLE batch_spec_workspace_execution_jobs ADD COLUMN IF NOT EXISTS user_id INTEGER;
 
+UPDATE batch_spec_workspace_execution_jobs exec SET user_id = (
+    SELECT spec.user_id
+    FROM batch_spec_workspaces AS workspace
+    JOIN batch_specs spec ON spec.id = workspace.batch_spec_id
+    WHERE workspace.id = exec.batch_spec_workspace_id
+);
+
+ALTER TABLE batch_spec_workspace_execution_jobs ALTER COLUMN user_id SET NOT NULL;
+
+CREATE INDEX IF NOT EXISTS batch_spec_workspace_execution_jobs_user_id ON batch_spec_workspace_execution_jobs (user_id);
+
+CREATE INDEX IF NOT EXISTS batch_spec_workspace_execution_jobs_state ON batch_spec_workspace_execution_jobs (state);
+
+DROP VIEW IF EXISTS batch_spec_workspace_execution_queue;
 CREATE VIEW batch_spec_workspace_execution_queue AS
 WITH tenant_queues AS (
     SELECT
-        spec.user_id,
+        exec.user_id,
         MAX(exec.started_at) AS latest_dequeue
     FROM batch_spec_workspace_execution_jobs AS exec
-    JOIN batch_spec_workspaces AS workspace ON workspace.id = exec.batch_spec_workspace_id
-    JOIN batch_specs spec ON spec.id = workspace.batch_spec_id
-    GROUP BY spec.user_id
+    GROUP BY exec.user_id
 ),
 -- We are creating this materialized CTE because PostgreSQL doesn't allow `FOR UPDATE` with window functions.
 -- Materializing it makes sure that the view query is not inlined into the FOR UPDATE select the Dequeue method
@@ -20,22 +32,18 @@ materialized_queue_candidates AS MATERIALIZED (
             PARTITION BY queue.user_id
             -- Make sure the jobs are still fulfilled in timely order, and that the ordering is stable.
             ORDER BY exec.created_at ASC, exec.id ASC
-        ) AS tenant_queue_rank
+        ) AS place_in_tenant_queue
     FROM batch_spec_workspace_execution_jobs exec
-    -- Join workspaces, because we need to map exec->tenant_queue via exec_jobs->workspaces->batch_specs->tenant_queues, phew.
-    -- Optimization: Store the tenant on the job record directly, although it's a denormalization.
-    JOIN batch_spec_workspaces workspace ON workspace.id = exec.batch_spec_workspace_id
-    JOIN batch_specs spec ON spec.id = workspace.batch_spec_id
-    JOIN tenant_queues queue ON queue.user_id = spec.user_id
+    JOIN tenant_queues queue ON queue.user_id = exec.user_id
     WHERE
     	-- Only queued records should get a rank.
         exec.state = 'queued'
     ORDER BY
         -- Round-robin let tenants dequeue jobs.
-        tenant_queue_rank,
+        place_in_tenant_queue,
         -- And ensure the user who dequeued the longest ago is next.
         queue.latest_dequeue ASC NULLS FIRST
 )
 SELECT
-    ROW_NUMBER() OVER () AS place_in_queue, materialized_queue_candidates.*
+    ROW_NUMBER() OVER () AS place_in_global_queue, materialized_queue_candidates.*
 FROM materialized_queue_candidates;
