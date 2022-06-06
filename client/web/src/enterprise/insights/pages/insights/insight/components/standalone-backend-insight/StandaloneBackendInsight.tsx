@@ -98,6 +98,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
             variables: { id: insight.id, filters: filterInput, seriesDisplayOptions: displayInput },
             fetchPolicy: 'cache-and-network',
             pollInterval: pollingInterval,
+            context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
             skip: !wasVisble,
             onCompleted: data => {
                 const parsedData = createBackendInsightData(insight, data.insightViews.nodes[0])
