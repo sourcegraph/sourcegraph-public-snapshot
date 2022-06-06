@@ -85,10 +85,14 @@ func CombinedExec(ctx context.Context, cmd string) ([]byte, error) {
 	return Cmd(ctx, cmd).CombinedOutput()
 }
 
-// Run runs a command in a fresh shell environment, and returns run.Output for easy usage.
-func Run(ctx context.Context, cmd string) run.Output {
+// Command runs a command in a fresh shell environment, and returns run.Command.
+func Command(ctx context.Context, cmd string) *run.Command {
 	w := wrap(ctx, cmd)
 	return run.Cmd(ctx, w.ShellPath, strings.Join(w.ShellFlags, " "), run.Arg(w.Command)).
-		Environ(w.Environ).
-		Run()
+		Environ(w.Environ)
+}
+
+// Command runs a command in a fresh shell environment, runs it, and returns run.Output.
+func Run(ctx context.Context, cmd string) run.Output {
+	return Command(ctx, cmd).Run()
 }
