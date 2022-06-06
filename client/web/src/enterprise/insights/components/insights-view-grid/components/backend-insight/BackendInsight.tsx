@@ -212,10 +212,10 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
 
                 {resizing ? (
                     <InsightCardBanner>Resizing</InsightCardBanner>
-                ) : loading || !wasVisble || !insightData ? (
-                    <InsightCardLoading>Loading code insight</InsightCardLoading>
                 ) : error ? (
                     <BackendInsightErrorAlert error={error} />
+                ) : loading || !wasVisble || !insightData ? (
+                    <InsightCardLoading>Loading code insight</InsightCardLoading>
                 ) : (
                     <BackendInsightChart
                         {...insightData}

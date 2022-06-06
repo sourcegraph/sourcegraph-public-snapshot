@@ -198,7 +198,9 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                 </InsightCardHeader>
 
                 <VisibilitySensor active={true} onChange={dispatchVisibilityChange} partialVisibility={true}>
-                    {loading || !wasVisble || !insightData ? (
+                    {error ? (
+                        <BackendInsightErrorAlert error={error} />
+                    ) : loading || !wasVisble || !insightData ? (
                         <InsightCardLoading>Loading code insight</InsightCardLoading>
                     ) : error ? (
                         <BackendInsightErrorAlert error={error} />
