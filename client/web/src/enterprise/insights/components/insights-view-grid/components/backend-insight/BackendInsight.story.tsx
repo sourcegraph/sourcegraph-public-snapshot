@@ -6,8 +6,8 @@ import { Meta, Story } from '@storybook/react'
 import { Observable, of, throwError } from 'rxjs'
 import { delay } from 'rxjs/operators'
 
-import { MockedTestProvider } from '@sourcegraph/shared/out/src/testing/apollo'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../../components/WebStory'
