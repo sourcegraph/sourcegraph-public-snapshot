@@ -119,7 +119,11 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
     <>
         <div className="d-flex align-items-center justify-content-between mb-2">
             <H3 className={styles.workspaceName}>
-                <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />{' '}
+                <WorkspaceStateIcon
+                    cachedResultFound={workspace.cachedResultFound}
+                    state={workspace.state}
+                    className="flex-shrink-0"
+                />{' '}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace'
                     ? workspace.repository.name
                     : 'Workspace in hidden repository'}
