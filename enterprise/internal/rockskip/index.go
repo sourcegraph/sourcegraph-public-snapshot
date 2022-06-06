@@ -218,6 +218,9 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 					tasklog.Start("GetSymbol")
 					found := false
 					id, found, err = GetSymbol(ctx, tx, repoId, path, symbol, hops)
+					if err != nil {
+						return errors.Wrap(err, "GetSymbol")
+					}
 					if !found {
 						// We did not find the symbol that (supposedly) has been deleted, so ignore the
 						// deletion. This will probably lead to extra symbols in search results.
