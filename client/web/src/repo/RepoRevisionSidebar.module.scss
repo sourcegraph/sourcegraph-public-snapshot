@@ -4,7 +4,7 @@
 }
 
 .close-icon {
-    color: var(--link-color);
+    color: var(--body-color);
 }
 
 .toggle {
@@ -17,7 +17,7 @@
     isolation: isolate;
     border-bottom-left-radius: 0;
     border-top-left-radius: 0;
-    color: var(--icon-color);
+    color: var(--body-color);
     background-color: var(--body-bg);
 
     &:hover {
