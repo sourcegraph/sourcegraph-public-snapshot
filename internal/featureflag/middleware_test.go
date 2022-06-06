@@ -19,130 +19,53 @@ func TestMiddleware(t *testing.T) {
 	req = req.WithContext(actor.WithActor(context.Background(), actor.FromUser(1)))
 
 	mockStore := NewMockStore()
-	mockStore.GetUserFlagFunc.SetDefaultHook(func(ctx context.Context, uid int32, flag string) (*bool, error) {
-		if uid == 1 && flag == "test-flag" {
-			value := true
-
-			return &value, nil
-		}
-
-		return nil, nil
-	})
+	mockStore.GetUserFlagsFunc.SetDefaultReturn(map[string]bool{"user1": true}, nil)
 
 	handler := http.Handler(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		// After going through the middleware, a request with an actor should
 		// also have feature flags available.
-		require.True(t, EvaluateForActorFromContext(r.Context(), "test-flag"))
+		require.True(t, FromContext(r.Context())["user1"])
 	}))
 	handler = Middleware(mockStore, handler)
 
 	handler.ServeHTTP(httptest.NewRecorder(), req)
 }
 
-func TestEvaluateForActorFromContext(t *testing.T) {
-	t.Run("for authenticated user", func(t *testing.T) {
-		mockStore := NewMockStore()
-
-		mockStore.GetUserFlagFunc.SetDefaultHook(func(_ context.Context, uid int32, flag string) (*bool, error) {
-			if flag == "f1" {
-				value := false
-
-				if uid == 1 {
-					value = true
-				}
-
-				return &value, nil
-			}
-
-			if flag == "f2" {
-				value := false
-
-				if uid == 2 {
-					value = true
-				}
-
-				return &value, nil
-			}
-
-			return nil, nil
-		})
-
-		actor1 := actor.FromUser(1)
-		actor2 := actor.FromUser(2)
-
-		ctx := context.Background()
-		ctx = actor.WithActor(ctx, actor1)
-		ctx = WithFlags(ctx, mockStore)
-
-		// Make sure user1 flags are set
-		require.True(t, EvaluateForActorFromContext(ctx, "f1"))
-		require.False(t, EvaluateForActorFromContext(ctx, "f2"))
-
-		// With a new actor, the flag fetcher should re-fetch
-		ctx = actor.WithActor(ctx, actor2)
-		require.True(t, EvaluateForActorFromContext(ctx, "f2"))
-		require.False(t, EvaluateForActorFromContext(ctx, "f1"))
-
-		mockrequire.CalledN(t, mockStore.GetUserFlagFunc, 4)
+func TestContextFlags(t *testing.T) {
+	mockStore := NewMockStore()
+	mockStore.GetUserFlagsFunc.SetDefaultHook(func(_ context.Context, uid int32) (map[string]bool, error) {
+		switch uid {
+		case 1:
+			return map[string]bool{"user1": true}, nil
+		case 2:
+			return map[string]bool{"user2": true}, nil
+		default:
+			return map[string]bool{}, nil
+		}
 	})
 
-	t.Run("for anonymous user", func(t *testing.T) {
-		mockStore := NewMockStore()
+	actor1 := actor.FromUser(1)
+	actor2 := actor.FromUser(2)
 
-		mockStore.GetAnonymousUserFlagFunc.SetDefaultHook(func(_ context.Context, anonymousUID string, flag string) (*bool, error) {
-			if flag == "f1" {
-				value := false
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, actor1)
+	ctx = WithFlags(ctx, mockStore)
 
-				if anonymousUID == "t1" {
-					value = true
-				}
+	// Make sure user1 flags are set
+	flags := FromContext(ctx)
+	require.True(t, flags["user1"])
 
-				return &value, nil
-			}
+	// With a new actor, the flag fetcher should re-fetch
+	ctx = actor.WithActor(ctx, actor2)
+	flags = FromContext(ctx)
+	require.False(t, flags["user1"])
+	require.True(t, flags["user2"])
 
-			if flag == "f2" {
-				value := false
-
-				if anonymousUID == "t2" {
-					value = true
-				}
-
-				return &value, nil
-			}
-
-			return nil, nil
-		})
-
-		actor1 := actor.FromAnonymousUser("t1")
-		actor2 := actor.FromAnonymousUser("t2")
-
-		ctx := context.Background()
-		ctx = actor.WithActor(ctx, actor1)
-		ctx = WithFlags(ctx, mockStore)
-
-		// Make sure user1 flags are set
-		require.True(t, EvaluateForActorFromContext(ctx, "f1"))
-		require.False(t, EvaluateForActorFromContext(ctx, "f2"))
-
-		// With a new actor, the flag fetcher should re-fetch
-		ctx = actor.WithActor(ctx, actor2)
-		require.True(t, EvaluateForActorFromContext(ctx, "f2"))
-		require.False(t, EvaluateForActorFromContext(ctx, "f1"))
-
-		mockrequire.CalledN(t, mockStore.GetAnonymousUserFlagFunc, 4)
-	})
-
-	t.Run("for no user", func(t *testing.T) {
-		mockStore := NewMockStore()
-
-		flagValue := true
-		mockStore.GetGlobalFeatureFlagFunc.SetDefaultReturn(&flagValue, nil)
-
-		ctx := context.Background()
-		ctx = WithFlags(ctx, mockStore)
-
-		require.True(t, EvaluateForActorFromContext(ctx, "test-flag"))
-
-		mockrequire.CalledN(t, mockStore.GetGlobalFeatureFlagFunc, 1)
-	})
+	// With the first actor, we should return flags for the first actor and we
+	// should not call GetUserFlags again because the flags should be cached.
+	ctx = actor.WithActor(ctx, actor1)
+	flags = FromContext(ctx)
+	require.True(t, flags["user1"])
+	require.False(t, flags["user2"])
+	mockrequire.CalledN(t, mockStore.GetUserFlagsFunc, 2)
 }

@@ -341,8 +341,8 @@ func serveSignIn(db database.DB) handlerFunc {
 
 func serveEmbed(db database.DB) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		enabled := featureflag.EvaluateForActorFromContext(r.Context(), "enable-embed-route")
-		if !enabled {
+		flagSet := featureflag.FromContext(r.Context())
+		if enabled := flagSet["enable-embed-route"]; !enabled {
 			w.WriteHeader(http.StatusNotFound)
 			return nil
 		}
