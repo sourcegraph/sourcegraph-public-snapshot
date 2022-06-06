@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -63,16 +62,17 @@ func ListBranches(ctx context.Context, db database.DB, repo api.RepoName, opt Br
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
+	client := gitserver.NewClient(db)
 	f := make(branchFilter)
 	if opt.MergedInto != "" {
-		b, err := branches(ctx, db, repo, "--merged", opt.MergedInto)
+		b, err := branches(ctx, client, repo, "--merged", opt.MergedInto)
 		if err != nil {
 			return nil, err
 		}
 		f.add(b)
 	}
 	if opt.ContainsCommit != "" {
-		b, err := branches(ctx, db, repo, "--contains="+opt.ContainsCommit)
+		b, err := branches(ctx, client, repo, "--contains="+opt.ContainsCommit)
 		if err != nil {
 			return nil, err
 		}
@@ -99,7 +99,7 @@ func ListBranches(ctx context.Context, db database.DB, repo api.RepoName, opt Br
 			}
 		}
 		if opt.BehindAheadBranch != "" {
-			branch.Counts, err = GetBehindAhead(ctx, db, repo, "refs/heads/"+opt.BehindAheadBranch, "refs/heads/"+name)
+			branch.Counts, err = client.GetBehindAhead(ctx, repo, "refs/heads/"+opt.BehindAheadBranch, "refs/heads/"+name)
 			if err != nil {
 				return nil, err
 			}
@@ -111,8 +111,8 @@ func ListBranches(ctx context.Context, db database.DB, repo api.RepoName, opt Br
 
 // branches runs the `git branch` command followed by the given arguments and
 // returns the list of branches if successful.
-func branches(ctx context.Context, db database.DB, repo api.RepoName, args ...string) ([]string, error) {
-	cmd := gitserver.NewClient(db).GitCommand(repo, append([]string{"branch"}, args...)...)
+func branches(ctx context.Context, client gitserver.Client, repo api.RepoName, args ...string) ([]string, error) {
+	cmd := client.GitCommand(repo, append([]string{"branch"}, args...)...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, errors.Errorf("exec %v in %s failed: %v (output follows)\n\n%s", cmd.Args(), cmd.Repo(), err, out)
@@ -124,36 +124,6 @@ func branches(ctx context.Context, db database.DB, repo api.RepoName, args ...st
 		branches[i] = line[2:]
 	}
 	return branches, nil
-}
-
-// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
-// revspecs).
-func GetBehindAhead(ctx context.Context, db database.DB, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: BehindAhead")
-	defer span.Finish()
-
-	if err := checkSpecArgSafety(left); err != nil {
-		return nil, err
-	}
-	if err := checkSpecArgSafety(right); err != nil {
-		return nil, err
-	}
-
-	cmd := gitserver.NewClient(db).GitCommand(repo, "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
-	out, err := cmd.Output(ctx)
-	if err != nil {
-		return nil, err
-	}
-	behindAhead := strings.Split(strings.TrimSuffix(string(out), "\n"), "\t")
-	b, err := strconv.ParseUint(behindAhead[0], 10, 0)
-	if err != nil {
-		return nil, err
-	}
-	a, err := strconv.ParseUint(behindAhead[1], 10, 0)
-	if err != nil {
-		return nil, err
-	}
-	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }
 
 type byteSlices [][]byte
