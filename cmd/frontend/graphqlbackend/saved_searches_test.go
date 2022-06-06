@@ -221,6 +221,11 @@ func TestUpdateSavedSearch(t *testing.T) {
 			OrgID:       savedSearch.OrgID,
 		}, nil
 	})
+	ss.GetByIDFunc.SetDefaultReturn(&api.SavedQuerySpecAndConfig{
+		Config: api.ConfigSavedQuery{
+			UserID: &key,
+		},
+	}, nil)
 
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
