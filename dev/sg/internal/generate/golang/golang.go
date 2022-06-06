@@ -53,7 +53,6 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 	}
 
 	// Run go generate on the packages list
-	var goGenerateErr error
 	if len(args) == 0 {
 		// Grab the packages list
 		pkgPaths, err := findPackagesWithGenerate(wd, wd)
@@ -71,17 +70,19 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 		if verbosity != QuietOutput {
 			reportOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go generate ./... (excluding doc/cli/references)"))
 		}
-		goGenerateErr = runGoGenerate(ctx, filtered, progressBar, verbosity, &sb)
+		err = runGoGenerate(ctx, filtered, progressBar, verbosity, &sb)
+		if err != nil {
+			return &generate.Report{Output: sb.String(), Err: errors.Wrap(err, "go generate")}
+		}
 	} else {
 		// Use the given packages.
 		if verbosity != QuietOutput {
 			reportOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go generate %s", strings.Join(args, " ")))
 		}
-		goGenerateErr = runGoGenerate(ctx, args, progressBar, verbosity, &sb)
-	}
-
-	if goGenerateErr != nil {
-		return &generate.Report{Output: sb.String(), Err: errors.Wrap(err, "go generate")}
+		err = runGoGenerate(ctx, args, progressBar, verbosity, &sb)
+		if err != nil {
+			return &generate.Report{Output: sb.String(), Err: errors.Wrap(err, "go generate")}
+		}
 	}
 
 	// Run goimports -w
