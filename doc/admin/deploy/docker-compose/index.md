@@ -74,7 +74,7 @@ The [`sourcegraph/deploy-sourcegraph-docker`](https://github.com/sourcegraph/dep
 
 ```bash
   cd ..
-  m -rf deploy-sourcegraph-docker.git
+  rm -rf deploy-sourcegraph-docker.git
 ```
 
 ## Clone your fork
