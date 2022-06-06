@@ -1842,6 +1842,10 @@ extend type Query {
         Opaque pagination cursor.
         """
         after: String
+        """
+        Exclude batch specs with `created_from_raw` = false.
+        """
+        excludeNonSSBCSpecs: Boolean
     ): BatchSpecConnection!
 
     """
