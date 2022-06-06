@@ -2,12 +2,13 @@ import React, { useCallback, useContext, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import { useHistory } from 'react-router-dom'
 
 import { isExternalLink } from '@sourcegraph/common'
 import { ModalVideo } from '@sourcegraph/search-ui'
-import { Button, Icon, Link, Text } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { ItemPicker } from '../ItemPicker'
 
@@ -140,7 +141,7 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                     )}
                 >
                     {steps.map(step => (
-                        <li key={step.id} className={classNames(styles.stepListItem, 'd-flex align-items-start')}>
+                        <li key={step.id} className={classNames(styles.stepListItem, 'd-flex align-items-center')}>
                             {step.action.type === 'link' && (
                                 <Link
                                     className="flex-grow-1"
@@ -188,6 +189,17 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                                     src={getTourTaskStepActionValue(step, language)}
                                     onToggle={isOpen => handleVideoToggle(isOpen, step)}
                                 />
+                            )}
+                            {step.tooltip && (
+                                <Tooltip content={step.tooltip}>
+                                    <Icon
+                                        as={HelpCircleOutlineIcon}
+                                        role="img"
+                                        size="sm"
+                                        className={classNames('ml-1', styles.colorLink)}
+                                        aria-label={step.tooltip}
+                                    />
+                                </Tooltip>
                             )}
                             {(isMultiStep || !title) && step.isCompleted && (
                                 <Icon

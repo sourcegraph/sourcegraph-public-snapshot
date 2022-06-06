@@ -28,6 +28,7 @@ export interface TourTaskType {
 export interface TourTaskStepType {
     id: string
     label: string
+    tooltip?: string
     action:
         | {
               type: 'video'

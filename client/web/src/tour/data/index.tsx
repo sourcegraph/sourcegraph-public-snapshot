@@ -280,7 +280,9 @@ export const visitorsTasksWithNotebookExtraTask: TourTaskType = {
     steps: [
         {
             id: 'InstallOrSignUp',
-            label: 'Install or Sign Up',
+            label: 'Register for a Free Account',
+            tooltip:
+                'Registration unlocks additional features like IDE integrations, browser extensions, saved searches and more.',
             action: {
                 type: 'new-tab-link',
                 variant: 'button-primary',
