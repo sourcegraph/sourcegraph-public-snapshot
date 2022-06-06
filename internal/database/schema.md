@@ -150,7 +150,7 @@ Foreign-key constraints:
  cancel                  | boolean                  |           | not null | false
  access_token_id         | bigint                   |           |          | 
  queued_at               | timestamp with time zone |           |          | now()
- user_id                 | integer                  |           | not null | 
+ user_id                 | integer                  |           |          | 
 Indexes:
     "batch_spec_workspace_execution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_workspace_execution_jobs_cancel" btree (cancel)
