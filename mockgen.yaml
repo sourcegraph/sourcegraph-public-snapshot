@@ -1,5 +1,14 @@
 force: true
 mocks:
+  # To generate a new mock struct from an interface definition, add a new value to this
+  # list. You will need to supply three pieces of information:
+  #   1. `filename` is the repository root-relative path that will be written to.
+  #       Alternatively, `dirname` can be supplied and files matching the interface
+  #       names will be created.
+  #   2. `interfaces` is a lsit of interface names that should be mocked in the given
+  #      import path.
+  #   3. `path` is the Go import path that shoudl contain the given target interface
+  #      names.
   - filename: cmd/frontend/internal/auth/userpasswd/mocks.go
     interfaces:
       - LockoutStore
