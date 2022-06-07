@@ -112,7 +112,7 @@ func (s *PermsSyncer) ScheduleUsers(ctx context.Context, opts authz.FetchPermsOp
 }
 
 func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser) {
-	logger := s.logger.Scoped("PermsSyncer.scheduledUsers", "routine for adding users to a queue for sync")
+	logger := s.logger.Scoped("scheduledUsers", "routine for adding users to a queue for sync")
 	for _, u := range users {
 		select {
 		case <-ctx.Done():
@@ -142,7 +142,7 @@ func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) 
 	if numberOfRepos == 0 {
 		return
 	} else if s.isDisabled() {
-		s.logger.Warn("PermsSyncer.ScheduleRepos.disabled", log.Int("len(repoIDs)", len(repoIDs)))
+		s.logger.Warn("ScheduleRepos.disabled", log.Int("len(repoIDs)", len(repoIDs)))
 		return
 	}
 
@@ -161,7 +161,7 @@ func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) 
 }
 
 func (s *PermsSyncer) scheduleRepos(ctx context.Context, repos ...scheduledRepo) {
-	logger := s.logger.Scoped("PermSyncer.scheduleRepos", "")
+	logger := s.logger.Scoped("scheduleRepos", "")
 	for _, r := range repos {
 		select {
 		case <-ctx.Done():
@@ -258,7 +258,7 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 		return nil
 	}
 
-	logger := s.logger.Scoped("PermSyncer.maybeRefreshGitLabOAuthTokenFromAccount", "").With(log.Int32("externalAccountID", acct.ID))
+	logger := s.logger.Scoped("maybeRefreshGitLabOAuthTokenFromAccount", "").With(log.Int32("externalAccountID", acct.ID))
 
 	var oauthConfig *oauth2.Config
 	for _, authProvider := range conf.SiteConfig().AuthProviders {
