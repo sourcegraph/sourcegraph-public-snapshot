@@ -119,6 +119,7 @@ require (
 	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/common v0.32.1
 	github.com/qustavo/sqlhooks/v2 v2.1.0
+	github.com/rafaeljusto/redigomock v2.4.0+incompatible
 	github.com/rjeczalik/notify v0.9.2
 	github.com/russellhaering/gosaml2 v0.6.0
 	github.com/russellhaering/goxmldsig v1.1.1

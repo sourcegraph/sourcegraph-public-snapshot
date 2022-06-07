@@ -1,82 +1,89 @@
-import { from, Observable, ReplaySubject } from 'rxjs'
-import { distinctUntilChanged, map } from 'rxjs/operators'
+import { iif, Observable, timer } from 'rxjs'
+import { distinctUntilChanged, map, retry, shareReplay, switchMap } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import type { requestGraphQL } from '../../backend/graphql'
-import { FetchFeatureFlagsResult } from '../../graphql-operations'
+import { EvaluateFeatureFlagResult } from '../../graphql-operations'
 import { FeatureFlagName } from '../featureFlags'
 
 import { getFeatureFlagOverride } from './feature-flag-local-overrides'
 
 /**
- * Fetches the evaluated feature flags for the current user
+ * Evaluate feature flags for the current user
  */
-function fetchFeatureFlags(
-    requestGraphQLFunction: typeof requestGraphQL
-): Observable<FetchFeatureFlagsResult['viewerFeatureFlags']> {
-    return from(
-        requestGraphQLFunction<FetchFeatureFlagsResult>(
-            gql`
-                query FetchFeatureFlags {
-                    viewerFeatureFlags {
-                        name
-                        value
-                    }
-                }
-            `
-        )
+const fetchEvaluateFeatureFlag = (
+    requestGraphQLFunc: typeof requestGraphQL,
+    flagName: FeatureFlagName
+): Observable<EvaluateFeatureFlagResult['evaluateFeatureFlag']> =>
+    requestGraphQLFunc<EvaluateFeatureFlagResult>(
+        gql`
+            query EvaluateFeatureFlag($flagName: String!) {
+                evaluateFeatureFlag(flagName: $flagName)
+            }
+        `,
+        {
+            flagName,
+        }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.viewerFeatureFlags)
+        map(data => data.evaluateFeatureFlag)
     )
-}
 
 /**
- * A Map wrapper that first looks in localStorage.get when returning values.
+ * Feature flag client service. Should be used as singleton for the whole application.
  */
-class FeatureFlagsProxyMap extends Map<FeatureFlagName, boolean> {
-    public get(key: FeatureFlagName): boolean | undefined {
-        const overriddenValue = getFeatureFlagOverride(key)
+export class FeatureFlagClient {
+    private flags = new Map<FeatureFlagName, Observable<EvaluateFeatureFlagResult['evaluateFeatureFlag']>>()
 
-        if (overriddenValue !== null && ['true', 'false'].includes(overriddenValue)) {
-            return JSON.parse(overriddenValue) as boolean
-        }
+    /**
+     * @param requestGraphQLFunction function to use for making GQL API calls
+     * @param refetchInterval milliseconds to refetch each feature flag evaluation. Fetches once if undefined provided.
+     */
+    constructor(private requestGraphQLFunction: typeof requestGraphQL, private refetchInterval?: number) {}
 
-        return super.get(key)
-    }
-}
-
-export interface IFeatureFlagClient {
-    get(flagName: FeatureFlagName): Observable<boolean>
-}
-
-export class FeatureFlagClient implements IFeatureFlagClient {
-    private flags$ = new ReplaySubject<FeatureFlagsProxyMap>(1)
-    constructor(requestGraphQLFunction: typeof requestGraphQL) {
-        fetchFeatureFlags(requestGraphQLFunction)
-            .toPromise()
-            .then(flags =>
-                this.flags$.next(
-                    new FeatureFlagsProxyMap(flags.map(({ name, value }) => [name as FeatureFlagName, value]))
-                )
-            )
-            .catch(error => {
-                console.error(error)
-                this.flags$.error(error)
-            })
+    /**
+     * For mocking/testing purposes
+     *
+     * @see {MockedFeatureFlagsProvider}
+     */
+    public setRequestGraphQLFunction(requestGraphQLFunction: typeof requestGraphQL): void {
+        this.requestGraphQLFunction = requestGraphQLFunction
     }
 
     /**
-     * Calls callback function whenever a feature flag is changed
-     * NOTE: Will change to actual per flag evaluation and listeners on flag value change once backend is migrated to new API
-     *
-     * @returns a cleanup/unsubscribe function
+     * Evaluates and returns feature flag value
      */
-    public get(flagName: FeatureFlagName): Observable<boolean> {
-        return this.flags$.pipe(
-            map(flags => flags.get(flagName) || false),
-            distinctUntilChanged()
-        )
+    public get(flagName: FeatureFlagName): Observable<EvaluateFeatureFlagResult['evaluateFeatureFlag']> {
+        if (!this.flags.has(flagName)) {
+            const flag$ = iif(
+                () => typeof this.refetchInterval === 'number' && this.refetchInterval > 0,
+                timer(0, this.refetchInterval),
+                timer(0)
+            ).pipe(
+                switchMap(() => fetchEvaluateFeatureFlag(this.requestGraphQLFunction, flagName).pipe(retry(3))),
+                map(value => {
+                    // Use local feature flag override if exists
+                    const overriddenValue = getFeatureFlagOverride(flagName)
+                    if (overriddenValue === null) {
+                        return value
+                    }
+                    if (['true', 1].includes(overriddenValue)) {
+                        return true
+                    }
+                    if (['false', 0].includes(overriddenValue)) {
+                        return false
+                    }
+                    return value
+                }),
+                distinctUntilChanged(),
+                // shared between all subscribers to avoid multiple computations/API calls
+                shareReplay(1)
+            )
+
+            this.flags.set(flagName, flag$)
+        }
+
+        return this.flags.get(flagName)!
     }
 }
