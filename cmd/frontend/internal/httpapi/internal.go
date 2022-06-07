@@ -173,24 +173,6 @@ func serveSettingsGetForSubject(db database.DB) func(w http.ResponseWriter, r *h
 	}
 }
 
-func serveOrgsGetByName(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var orgName string
-		err := json.NewDecoder(r.Body).Decode(&orgName)
-		if err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-		org, err := db.Orgs().GetByName(r.Context(), orgName)
-		if err != nil {
-			return errors.Wrap(err, "Orgs.GetByName")
-		}
-		if err := json.NewEncoder(w).Encode(org.ID); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
-	}
-}
-
 func serveUserEmailsGetEmail(db database.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var userID int32

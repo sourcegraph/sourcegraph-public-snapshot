@@ -178,7 +178,6 @@ func TestInviteUserToOrganization(t *testing.T) {
 	orgs := database.NewMockOrgStore()
 	orgName := "acme"
 	mockedOrg := types.Org{ID: 1, Name: orgName}
-	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
 	orgInvitations := database.NewMockOrgInvitationStore()
@@ -361,7 +360,6 @@ func TestPendingInvitations(t *testing.T) {
 	//orgs := database.NewMockOrgStore()
 	//orgName := "acme"
 	//mockedOrg := types.Org{ID: 1, Name: orgName}
-	//orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 	//orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
 	invitations := []*database.OrgInvitation{
@@ -462,7 +460,6 @@ func TestInvitationByToken(t *testing.T) {
 	orgs := database.NewMockOrgStore()
 	orgName := "acme"
 	mockedOrg := types.Org{ID: 1, Name: orgName}
-	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
 	orgInvitations := database.NewMockOrgInvitationStore()
@@ -559,7 +556,6 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 	orgs := database.NewMockOrgStore()
 	orgName := "acme"
 	mockedOrg := types.Org{ID: 1, Name: orgName}
-	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
 	orgInvitations := database.NewMockOrgInvitationStore()
@@ -757,7 +753,6 @@ func TestResendOrganizationInvitationNotification(t *testing.T) {
 	orgs := database.NewMockOrgStore()
 	orgName := "acme"
 	mockedOrg := types.Org{ID: 1, Name: orgName}
-	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
 	orgInvitations := database.NewMockOrgInvitationStore()

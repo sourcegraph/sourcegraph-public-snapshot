@@ -34,7 +34,6 @@ func TestOrganization(t *testing.T) {
 
 	orgs := database.NewMockOrgStore()
 	mockedOrg := types.Org{ID: 1, Name: "acme"}
-	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
 	db := database.NewMockDB()
@@ -369,7 +368,6 @@ func TestAddOrganizationMember(t *testing.T) {
 	orgIDString := string(MarshalOrgID(orgID))
 
 	orgs := database.NewMockOrgStore()
-	orgs.GetByNameFunc.SetDefaultReturn(&types.Org{ID: orgID, Name: "acme"}, nil)
 
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
@@ -579,7 +577,6 @@ func TestOrganization_viewerNeedsCodeHostUpdate(t *testing.T) {
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 	orgs := database.NewMockOrgStore()
 	mockedOrg := types.Org{ID: 1, Name: "acme"}
-	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 	for name, test := range map[string]struct {
 		OrgServices  []*types.ExternalService

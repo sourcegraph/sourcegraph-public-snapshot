@@ -22,7 +22,6 @@ func TestOrganizationFeatureFlagOverrides(t *testing.T) {
 
 		orgs := database.NewMockOrgStore()
 		mockedOrg := types.Org{ID: 1, Name: "acme"}
-		orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 		orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
 		flags := database.NewMockFeatureFlagStore()
@@ -93,7 +92,6 @@ func TestOrganizationFeatureFlagOverrides(t *testing.T) {
 
 		orgs := database.NewMockOrgStore()
 		mockedOrg := types.Org{ID: 1, Name: "acme"}
-		orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 		orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
 		flags := database.NewMockFeatureFlagStore()
@@ -147,7 +145,6 @@ func TestOrganizationFeatureFlagOverrides(t *testing.T) {
 
 		orgs := database.NewMockOrgStore()
 		mockedOrg := types.Org{ID: 1, Name: "acme"}
-		orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 		orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
 		flags := database.NewMockFeatureFlagStore()

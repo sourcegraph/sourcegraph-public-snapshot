@@ -47,14 +47,6 @@ func (c *internalClient) SettingsGetForSubject(
 	return parsed, settings, err
 }
 
-func (c *internalClient) OrgsGetByName(ctx context.Context, orgName string) (orgID *int32, err error) {
-	err = c.postInternal(ctx, "orgs/get-by-name", orgName, &orgID)
-	if err != nil {
-		return nil, err
-	}
-	return orgID, nil
-}
-
 func (c *internalClient) UserEmailsGetEmail(ctx context.Context, userID int32) (email *string, err error) {
 	err = c.postInternal(ctx, "user-emails/get-email", userID, &email)
 	if err != nil {

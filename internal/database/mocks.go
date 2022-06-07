@@ -22878,9 +22878,6 @@ type MockOrgStore struct {
 	// GetByIDFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByID.
 	GetByIDFunc *OrgStoreGetByIDFunc
-	// GetByNameFunc is an instance of a mock function object controlling
-	// the behavior of the method GetByName.
-	GetByNameFunc *OrgStoreGetByNameFunc
 	// GetByUserIDFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByUserID.
 	GetByUserIDFunc *OrgStoreGetByUserIDFunc
