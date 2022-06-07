@@ -9,9 +9,8 @@ import (
 )
 
 var databases = map[string]string{
-	"":              "sourcegraph",
-	"CODEINTEL_":    "sourcegraph-codeintel",
-	"CODEINSIGHTS_": "sourcegraph-codeinsights",
+	"":           "sourcegraph",
+	"CODEINTEL_": "sourcegraph-codeintel",
 }
 
 func maybePostgresProcFile() (string, error) {
