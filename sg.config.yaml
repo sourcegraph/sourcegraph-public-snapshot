@@ -504,7 +504,7 @@ commands:
     # database:
     #
     #   env:
-    #       POSTGRES_HOST: localhost
+    #       PGHOST: localhost
     #       PGPASSWORD: sourcegraph
     #       PGUSER: sourcegraph
     #

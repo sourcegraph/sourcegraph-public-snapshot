@@ -669,8 +669,13 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "get user")
 	}
 
-	// Update tokens stored in external accounts:
-	accts, err := s.permsStore.ListExternalAccounts(ctx, user.ID)
+	// Update tokens stored in external accounts
+	accts, err := s.db.UserExternalAccounts().List(ctx,
+		database.ExternalAccountsListOptions{
+			UserID:         user.ID,
+			ExcludeExpired: true,
+		},
+	)
 	if err != nil {
 		return errors.Wrap(err, "list external accounts")
 	}

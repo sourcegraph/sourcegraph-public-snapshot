@@ -5,7 +5,9 @@ import HtmlWebpackPlugin, { TemplateParameter, Options } from 'html-webpack-plug
 import signale from 'signale'
 import { WebpackPluginInstance } from 'webpack'
 
-import { createJsContext, ENVIRONMENT_CONFIG, STATIC_ASSETS_PATH } from '../utils'
+import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
+
+import { createJsContext, ENVIRONMENT_CONFIG } from '../utils'
 
 const { SOURCEGRAPH_HTTPS_PORT, NODE_ENV } = ENVIRONMENT_CONFIG
 

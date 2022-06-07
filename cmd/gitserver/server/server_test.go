@@ -21,6 +21,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/inconshreveable/log15"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
@@ -542,18 +543,19 @@ func TestCloneRepo(t *testing.T) {
 	if err := db.Repos().Create(ctx, dbRepo); err != nil {
 		t.Fatal(err)
 	}
-	assertRepoState := func(status types.CloneStatus, size int64) {
+	assertRepoState := func(status types.CloneStatus, size int64, wantErr error) {
 		t.Helper()
 		fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if fromDB.CloneStatus != status {
-			t.Fatalf("Want %q, got %q", status, fromDB.CloneStatus)
+		assert.Equal(t, status, fromDB.CloneStatus)
+		assert.Equal(t, size, fromDB.RepoSizeBytes)
+		var errString string
+		if wantErr != nil {
+			errString = wantErr.Error()
 		}
-		if fromDB.RepoSizeBytes != size {
-			t.Fatalf("Want %d, got %d", size, fromDB.RepoSizeBytes)
-		}
+		assert.Equal(t, errString, fromDB.LastError)
 	}
 
 	gr := types.GitserverRepo{
@@ -561,10 +563,11 @@ func TestCloneRepo(t *testing.T) {
 		ShardID:     "test",
 		CloneStatus: types.CloneStatusNotCloned,
 	}
-	if err := db.GitserverRepos().Upsert(ctx, &gr); err != nil {
+	err := db.GitserverRepos().Upsert(ctx, &gr)
+	assertRepoState(types.CloneStatusNotCloned, 0, err)
+	if err != nil {
 		t.Fatal(err)
 	}
-	assertRepoState(types.CloneStatusNotCloned, 0)
 
 	repo := remote
 	cmd := func(name string, arg ...string) string {
@@ -578,7 +581,7 @@ func TestCloneRepo(t *testing.T) {
 	reposDir := t.TempDir()
 	s := makeTestServer(ctx, t, reposDir, remote, db)
 
-	_, err := s.cloneRepo(ctx, repoName, nil)
+	_, err = s.cloneRepo(ctx, repoName, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -595,7 +598,7 @@ func TestCloneRepo(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 	}
 	wantRepoSize := dirSize(dst.Path("."))
-	assertRepoState(types.CloneStatusCloned, wantRepoSize)
+	assertRepoState(types.CloneStatusCloned, wantRepoSize, err)
 
 	repo = filepath.Dir(string(dst))
 	gotCommit := cmd("git", "rev-parse", "HEAD")
@@ -608,7 +611,7 @@ func TestCloneRepo(t *testing.T) {
 	if !errors.Is(err, os.ErrExist) {
 		t.Fatalf("expected clone repo to fail with already exists: %s", err)
 	}
-	assertRepoState(types.CloneStatusCloned, wantRepoSize)
+	assertRepoState(types.CloneStatusCloned, wantRepoSize, err)
 
 	// Test blocking with overwrite. First add random file to GIT_DIR. If the
 	// file is missing after cloning we know the directory was replaced
@@ -617,7 +620,7 @@ func TestCloneRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertRepoState(types.CloneStatusCloned, wantRepoSize)
+	assertRepoState(types.CloneStatusCloned, wantRepoSize, err)
 
 	if _, err := os.Stat(dst.Path("HELLO")); !os.IsNotExist(err) {
 		t.Fatalf("expected clone to be overwritten: %s", err)
@@ -787,7 +790,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	s := makeTestServer(ctx, t, reposDir, remote, db)
 
-	// We need some of the side effects here
+	// We need the side effects here
 	_ = s.Handler()
 
 	rr := httptest.NewRecorder()
@@ -800,7 +803,11 @@ func TestHandleRepoUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// This will perform an initial clone
+	// Confirm that failing to clone the repo stores the error
+	oldRemoveURLFunc := s.GetRemoteURLFunc
+	s.GetRemoteURLFunc = func(ctx context.Context, name api.RepoName) (string, error) {
+		return "https://invalid.example.com/", nil
+	}
 	req := httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
@@ -808,15 +815,46 @@ func TestHandleRepoUpdate(t *testing.T) {
 	want := &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
 		ShardID:       "",
-		CloneStatus:   types.CloneStatusCloned,
+		CloneStatus:   types.CloneStatusNotCloned,
 		RepoSizeBytes: size,
+		LastError:     "",
 	}
 	fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt")
+	// We don't care exactly what the error is here
+	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "LastError")
+	// But we do care that it exists
+	if fromDB.LastError == "" {
+		t.Errorf("Expected an error when trying to clone from an invalid URL")
+	}
+
+	// We don't expect an error
+	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// This will perform an initial clone
+	s.GetRemoteURLFunc = oldRemoveURLFunc
+	req = httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
+	s.handleRepoUpdate(rr, req)
+
+	size = dirSize(s.dir(repoName).Path("."))
+	want = &types.GitserverRepo{
+		RepoID:        dbRepo.ID,
+		ShardID:       "",
+		CloneStatus:   types.CloneStatusCloned,
+		RepoSizeBytes: size,
+		LastError:     "",
+	}
+	fromDB, err = db.GitserverRepos().GetByID(ctx, dbRepo.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmpIgnored = cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt")
 
 	// We don't expect an error
 	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {

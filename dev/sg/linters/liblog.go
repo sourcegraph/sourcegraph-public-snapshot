@@ -32,6 +32,8 @@ func lintLoggingLibraries() lint.Runner {
 			"lib/log",
 			// We allow one usage of a direct zap import here
 			"internal/observation/fields.go",
+			// ctags only accepts a log.Logger struct
+			"cmd/symbols/parser/parser.go",
 		}
 	)
 

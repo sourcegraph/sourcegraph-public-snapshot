@@ -2,19 +2,17 @@ package com.sourcegraph.find;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.popup.ActiveIcon;
 import com.intellij.openapi.ui.popup.ComponentPopupBuilder;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
-import com.intellij.openapi.util.Disposer;
 import com.sourcegraph.Icons;
 import org.cef.browser.CefBrowser;
 import org.cef.handler.CefKeyboardHandler;
 import org.cef.misc.BoolRef;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -25,15 +23,13 @@ public class SourcegraphWindow implements Disposable {
     private final Project project;
     private final FindPopupPanel mainPanel;
     private JBPopup popup;
-    private static final Logger logger = LoggerFactory.getLogger(SourcegraphWindow.class);
+    private static final Logger logger = Logger.getInstance(SourcegraphWindow.class);
 
     public SourcegraphWindow(@NotNull Project project) {
         this.project = project;
 
         // Create main panel
         mainPanel = new FindPopupPanel(project);
-
-        Disposer.register(project, this);
     }
 
     synchronized public void showPopup() {
@@ -144,5 +140,7 @@ public class SourcegraphWindow implements Disposable {
         if (popup != null) {
             popup.dispose();
         }
+
+        mainPanel.dispose();
     }
 }

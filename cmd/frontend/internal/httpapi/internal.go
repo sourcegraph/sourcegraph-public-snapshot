@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -214,24 +213,6 @@ func serveOrgsGetByName(db database.DB) func(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func serveUsersGetByUsername(db database.DB) func(http.ResponseWriter, *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var username string
-		err := json.NewDecoder(r.Body).Decode(&username)
-		if err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-		user, err := database.Users(db).GetByUsername(r.Context(), username)
-		if err != nil {
-			return errors.Wrap(err, "Users.GetByUsername")
-		}
-		if err := json.NewEncoder(w).Encode(user.ID); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
-	}
-}
-
 func serveUserEmailsGetEmail(db database.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var userID int32
@@ -252,13 +233,6 @@ func serveUserEmailsGetEmail(db database.DB) func(http.ResponseWriter, *http.Req
 
 func serveExternalURL(w http.ResponseWriter, r *http.Request) error {
 	if err := json.NewEncoder(w).Encode(globals.ExternalURL().String()); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
-}
-
-func serveCanSendEmail(w http.ResponseWriter, r *http.Request) error {
-	if err := json.NewEncoder(w).Encode(conf.CanSendEmail()); err != nil {
 		return errors.Wrap(err, "Encode")
 	}
 	return nil

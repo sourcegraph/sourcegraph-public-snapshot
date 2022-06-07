@@ -92,17 +92,11 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
 
     const editorCreated = useCallback(
         (editor: EditorView) => {
-            // `role` set to fix accessibility issues
-            // https://github.com/sourcegraph/sourcegraph/issues/34733
-            editor.contentDOM.setAttribute('role', 'textbox')
-            // `aria-label` to fix accessibility audit
-            editor.contentDOM.setAttribute('aria-label', ariaLabel)
-
             setEditor(editor)
             editorReference.current = editor
             onEditorCreated?.(editor)
         },
-        [editorReference, onEditorCreated, ariaLabel]
+        [editorReference, onEditorCreated]
     )
 
     const autocompletion = useMemo(
@@ -121,6 +115,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
 
     const extensions = useMemo(() => {
         const extensions: Extension[] = [
+            EditorView.contentAttributes.of({ 'aria-label': ariaLabel }),
             EditorView.updateListener.of((update: ViewUpdate) => {
                 if (update.docChanged) {
                     onChange({
@@ -161,6 +156,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         }
         return extensions
     }, [
+        ariaLabel,
         autocompletion,
         onBlur,
         onChange,

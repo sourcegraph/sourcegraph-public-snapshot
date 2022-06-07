@@ -330,7 +330,7 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 func (r *GitCommitResolver) BehindAhead(ctx context.Context, args *struct {
 	Revspec string
 }) (*behindAheadCountsResolver, error) {
-	counts, err := git.GetBehindAhead(ctx, r.db, r.gitRepo, args.Revspec, string(r.oid))
+	counts, err := gitserver.NewClient(r.db).GetBehindAhead(ctx, r.gitRepo, args.Revspec, string(r.oid))
 	if err != nil {
 		return nil, err
 	}

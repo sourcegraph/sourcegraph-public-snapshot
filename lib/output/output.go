@@ -176,6 +176,11 @@ func (o *Output) WriteLine(line FancyLine) {
 	line.write(o.w, o.caps)
 }
 
+// WriteBytes writes bytes as a string line. It can be provided to run.Cmd(...).StreamLines()
+func (o *Output) WriteBytes(b []byte) {
+	o.Write(string(b))
+}
+
 // Block starts a new block context. This should not be invoked if there is an
 // active Pending or Progress context.
 func (o *Output) Block(summary FancyLine) *Block {

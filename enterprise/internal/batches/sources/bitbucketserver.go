@@ -9,11 +9,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -101,12 +101,12 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 	pr.ToRef.Repository.Slug = targetRepo.Slug
 	pr.ToRef.Repository.ID = targetRepo.ID
 	pr.ToRef.Repository.Project.Key = targetRepo.Project.Key
-	pr.ToRef.ID = git.EnsureRefPrefix(c.BaseRef)
+	pr.ToRef.ID = gitdomain.EnsureRefPrefix(c.BaseRef)
 
 	pr.FromRef.Repository.Slug = remoteRepo.Slug
 	pr.FromRef.Repository.ID = remoteRepo.ID
 	pr.FromRef.Repository.Project.Key = remoteRepo.Project.Key
-	pr.FromRef.ID = git.EnsureRefPrefix(c.HeadRef)
+	pr.FromRef.ID = gitdomain.EnsureRefPrefix(c.HeadRef)
 
 	err := s.client.CreatePullRequest(ctx, pr)
 	if err != nil {

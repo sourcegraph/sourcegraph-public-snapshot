@@ -65,13 +65,29 @@ func TestConvertMatches(t *testing.T) {
 					End:   Location{1, 1, 3},
 				}},
 			},
-			output: []*LineMatch{
-				{
-					Preview:          "line1",
-					LineNumber:       1,
-					OffsetAndLengths: [][2]int32{{1, 2}},
-				},
+			output: []*LineMatch{{
+				Preview:          "line1",
+				LineNumber:       1,
+				OffsetAndLengths: [][2]int32{{1, 2}},
+			}},
+		}, {
+			input: ChunkMatch{
+				Content:      "line1\nline2",
+				ContentStart: Location{Line: 1},
+				Ranges: Ranges{{
+					Start: Location{0, 1, 0},
+					End:   Location{6, 2, 0},
+				}},
 			},
+			output: []*LineMatch{{
+				Preview:          "line1",
+				LineNumber:       1,
+				OffsetAndLengths: [][2]int32{{0, 5}},
+			}, {
+				Preview:          "line2",
+				LineNumber:       2,
+				OffsetAndLengths: [][2]int32{},
+			}},
 		}}
 
 		for _, tc := range cases {

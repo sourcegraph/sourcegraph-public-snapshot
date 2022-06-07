@@ -10,6 +10,13 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <projectService serviceImplementation="com.sourcegraph.config.SourcegraphConfig"/>
+        <projectConfigurable
+            parentId="tools"
+            instance="com.sourcegraph.config.SettingsConfigurable"
+            id="com.sourcegraph.config.SettingsConfigurable"
+            displayName="Sourcegraph"
+            nonDefaultProject="false"
+        />
         <notificationGroup id="Sourcegraph" displayType="BALLOON"/>
         <projectService id="sourcegraph.JCEFService" serviceImplementation="com.sourcegraph.find.JCEFService"/>
     </extensions>

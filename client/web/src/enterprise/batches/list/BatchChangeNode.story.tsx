@@ -1,8 +1,9 @@
 import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
-import isChromatic from 'chromatic/isChromatic'
 import classNames from 'classnames'
 import { subDays } from 'date-fns'
+
+import { isChromatic } from '@sourcegraph/storybook'
 
 import { WebStory } from '../../../components/WebStory'
 
