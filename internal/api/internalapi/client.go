@@ -15,10 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", "sourcegraph-frontend-internal", "HTTP address for internal frontend HTTP API.")
@@ -35,17 +33,6 @@ var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Help:    "Time (in seconds) spent on request.",
 	Buckets: prometheus.DefBuckets,
 }, []string{"category", "code"})
-
-func (c *internalClient) SettingsGetForSubject(
-	ctx context.Context,
-	subject api.SettingsSubject,
-) (parsed *schema.Settings, settings *api.Settings, err error) {
-	err = c.postInternal(ctx, "settings/get-for-subject", subject, &settings)
-	if err == nil {
-		err = jsonc.Unmarshal(settings.Contents, &parsed)
-	}
-	return parsed, settings, err
-}
 
 func (c *internalClient) UserEmailsGetEmail(ctx context.Context, userID int32) (email *string, err error) {
 	err = c.postInternal(ctx, "user-emails/get-email", userID, &email)

@@ -28,7 +28,6 @@ const (
 	BitbucketServerWebhooks = "bitbucketServer.webhooks"
 	BitbucketCloudWebhooks  = "bitbucketCloud.webhooks"
 
-	SettingsGetForSubject  = "internal.settings.get-for-subject"
 	UserEmailsGetEmail     = "internal.user-emails.get-email"
 	ExternalURL            = "internal.app-url"
 	SendEmail              = "internal.send-email"
@@ -86,7 +85,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 
 	base.StrictSlash(true)
 	// Internal API endpoints should only be served on the internal Handler
-	base.Path("/settings/get-for-subject").Methods("POST").Name(SettingsGetForSubject)
 	base.Path("/user-emails/get-email").Methods("POST").Name(UserEmailsGetEmail)
 	base.Path("/app-url").Methods("POST").Name(ExternalURL)
 	base.Path("/send-email").Methods("POST").Name(SendEmail)

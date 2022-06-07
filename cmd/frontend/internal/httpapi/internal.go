@@ -117,23 +117,6 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveSettingsGetForSubject(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var subject api.SettingsSubject
-		if err := json.NewDecoder(r.Body).Decode(&subject); err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-		settings, err := db.Settings().GetLatest(r.Context(), subject)
-		if err != nil {
-			return errors.Wrap(err, "Settings.GetLatest")
-		}
-		if err := json.NewEncoder(w).Encode(settings); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
-	}
-}
-
 func serveUserEmailsGetEmail(db database.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var userID int32
