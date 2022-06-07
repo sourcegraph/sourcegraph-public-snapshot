@@ -329,7 +329,7 @@ actions necessary to accomodate the migrator.
 
 ### Using restricted permissions for pgsql (frontend DB)
 
-Sourcegraph requires some initial setup that requires `SUPERUSER` permissions. A database administrator needs to perform the necessary actions on behalf of Sourcegraph migrations as `SUPERUSER`.
+Sourcegraph requires some initial setup that requires `SUPERUSER` permissions. A database administrator needs to perform the necessary actions on behalf of Sourcegraph migrations as `SUPERUSER`. 
 
 Update these variables to match your deployment of the Sourcegraph _frontend_ database following [the guidance from the instructions section](#instructions). This database is called `pgsql` in the Docker Compose and Kubernetes deployments.
 
@@ -385,6 +385,9 @@ The `sg_service` database role is a legacy role that should be removed from all 
 ----
 
 ### Using restricted permissions for CodeIntel DB
+
+> NOTE: On AWS RDS, you will need to move your database account to the `rds_superuser` role group to perform the operations below because RDS doesn't grant SUPERUSER privileges to user database accounts.
+
 
 CodeIntel requires some initial setup that requires `SUPERUSER` permissions. A database administrator needs to perform the necessary actions on behalf of Sourcegraph migrations as `SUPERUSER`.
 
