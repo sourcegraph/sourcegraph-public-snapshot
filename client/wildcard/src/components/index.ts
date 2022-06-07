@@ -27,17 +27,7 @@ export { Tooltip as DeprecatedTooltip, TooltipController as DeprecatedTooltipCon
 export { Card, CardBody, CardHeader, CardList, CardSubtitle, CardText, CardTitle, CardFooter } from './Card'
 export { Icon } from './Icon'
 export { ButtonLink } from './ButtonLink'
-export {
-    Menu,
-    MenuButton,
-    MenuDisabledItem,
-    MenuDivider,
-    MenuHeader,
-    MenuItem,
-    MenuLink,
-    MenuList,
-    MenuText,
-} from './Menu'
+export { Menu, MenuButton, MenuDivider, MenuHeader, MenuItem, MenuLink, MenuList, MenuText } from './Menu'
 export { NavMenu } from './NavMenu'
 export { Text, Code, Heading, Label, H1, H2, H3, H4, H5, H6 } from './Typography'
 export { AnchorLink, RouterLink, setLinkComponent, Link } from './Link'

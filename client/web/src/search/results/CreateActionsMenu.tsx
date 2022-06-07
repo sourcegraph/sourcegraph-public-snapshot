@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 
-import { Position, Menu, MenuButton, MenuList, MenuLink, Icon, Link, MenuDisabledItem } from '@sourcegraph/wildcard'
+import { Position, Menu, MenuButton, MenuList, MenuLink, Icon, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 
@@ -48,40 +48,24 @@ export const CreateActionsMenu: React.FunctionComponent<CreateActionsMenuProps> 
                         </MenuLink>
                     ))}
                     {createCodeMonitorAction && (
-                        <>
-                            {!authenticatedUser || !canCreateMonitor ? (
-                                <MenuDisabledItem
-                                    data-tooltip={
-                                        authenticatedUser && !canCreateMonitor
-                                            ? 'Code monitors only support type:diff or type:commit searches.'
-                                            : undefined
-                                    }
-                                    aria-label={
-                                        authenticatedUser && !canCreateMonitor
-                                            ? 'Disabled button, Code monitors only support type:diff or type:commit searches.'
-                                            : undefined
-                                    }
-                                >
-                                    <Icon
-                                        role="img"
-                                        aria-hidden={true}
-                                        className="mr-1"
-                                        as={createCodeMonitorAction.icon}
-                                    />
-                                    Create Monitor
-                                </MenuDisabledItem>
-                            ) : (
-                                <MenuLink as={Link} to={createCodeMonitorAction.url} tabIndex={0}>
-                                    <Icon
-                                        role="img"
-                                        aria-hidden={true}
-                                        className="mr-1"
-                                        as={createCodeMonitorAction.icon}
-                                    />
-                                    Create Monitor
-                                </MenuLink>
-                            )}
-                        </>
+                        <MenuLink
+                            as={Link}
+                            disabled={!authenticatedUser || !canCreateMonitor}
+                            data-tooltip={
+                                authenticatedUser && !canCreateMonitor
+                                    ? 'Code monitors only support type:diff or type:commit searches.'
+                                    : undefined
+                            }
+                            aria-label={
+                                authenticatedUser && !canCreateMonitor
+                                    ? 'Code monitors only support type:diff or type:commit searches.'
+                                    : undefined
+                            }
+                            to={createCodeMonitorAction.url}
+                        >
+                            <Icon role="img" aria-hidden={true} className="mr-1" as={createCodeMonitorAction.icon} />
+                            Create Monitor
+                        </MenuLink>
                     )}
                 </MenuList>
             </>

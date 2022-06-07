@@ -518,7 +518,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         >
           <a
             aria-disabled="true"
-            aria-label="Disabled button, Code monitors only support type:diff or type:commit searches."
+            aria-label="Code monitors only support type:diff or type:commit searches."
             class="anchorLink btn btnOutlineSecondary btnSm text-decoration-none a11y-ignore create-code-monitor-button disabled"
             disabled=""
             href=""

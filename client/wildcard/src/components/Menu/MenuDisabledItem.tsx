@@ -1,31 +1,21 @@
+/* eslint-disable react/display-name */
 import React from 'react'
 
-import { MenuItem as ReachMenuItem, MenuItemProps as ReachMenuItemProps } from '@reach/menu-button'
-import classNames from 'classnames'
+import {
+    MenuItem as ReachMenuItem,
+    MenuLink as ReachMenuLink,
+    MenuItemProps as ReachMenuItemProps,
+    MenuLinkProps as ReachMenuLinkProps,
+} from '@reach/menu-button'
 import { noop } from 'lodash'
 
 import { ForwardReferenceComponent } from '../../types'
-
-import styles from './MenuItem.module.scss'
+import { AnchorLink } from '../Link/AnchorLink'
 
 export type MenuDisabledItemProps = Omit<ReachMenuItemProps, 'onSelect' | 'disabled'>
 
-/**
- * A `disabled` styled item within a `<Menu />` component.
- * This MenuItem does nothing on select and is styled as `disabled` MenuItem (included `aria-disabled=true`)
- * but is still focusable
- *
- * @see — Docs https://reach.tech/menu-button#menuitem
- */
-export const MenuDisabledItem = React.forwardRef(({ children, className, ...props }, reference) => (
-    <ReachMenuItem
-        ref={reference}
-        {...props}
-        onSelect={noop}
-        disabled={false}
-        as={AriaDisabledDiv}
-        className={classNames('dropdown-item', styles.item, className)}
-    >
+export const MenuDisabledItem = React.forwardRef(({ children, ...props }, reference) => (
+    <ReachMenuItem ref={reference} {...props} onSelect={noop} disabled={false} as={AriaDisabledDiv}>
         {children}
     </ReachMenuItem>
 )) as ForwardReferenceComponent<'div', MenuDisabledItemProps>
@@ -35,3 +25,23 @@ const AriaDisabledDiv = React.forwardRef(({ children, ...props }, reference) => 
         {children}
     </div>
 )) as ForwardReferenceComponent<'div', MenuDisabledItemProps>
+
+export type MenuDisabledLinkProps = Omit<ReachMenuLinkProps, 'onSelect' | 'disabled'>
+
+export const MenuDisabledLink = React.forwardRef((props, reference) => (
+    <ReachMenuLink ref={reference} {...props} onSelect={noop} disabled={false} as={AriaDisabledLink} />
+)) as ForwardReferenceComponent<'a', MenuDisabledItemProps>
+
+const AriaDisabledLink = React.forwardRef(({ children, as, onClick, ...props }, reference) => {
+    const handleOnClick: React.MouseEventHandler<HTMLAnchorElement> = event => {
+        event.preventDefault()
+
+        onClick?.(event)
+    }
+
+    return (
+        <AnchorLink ref={reference} {...props} onClick={handleOnClick} aria-disabled="true" to="">
+            {children}
+        </AnchorLink>
+    )
+}) as ForwardReferenceComponent<'a', MenuDisabledItemProps>

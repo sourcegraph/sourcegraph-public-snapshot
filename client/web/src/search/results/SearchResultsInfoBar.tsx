@@ -275,7 +275,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     onToggle={onCreateCodeMonitorButtonSelect}
                     ariaLabel={
                         props.authenticatedUser && !canCreateMonitorFromQuery
-                            ? 'Disabled button, Code monitors only support type:diff or type:commit searches.'
+                            ? 'Code monitors only support type:diff or type:commit searches.'
                             : undefined
                     }
                 />
