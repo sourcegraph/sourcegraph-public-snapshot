@@ -38,6 +38,7 @@ func (c *Check[Args]) RunCheck(ctx context.Context, cio IO, args Args) error {
 	return c.checkErr
 }
 
+// IsEnabled checks and writes some output based on whether or not this check is enabled.
 func (c *Check[Args]) IsEnabled(ctx context.Context, cio IO, args Args) bool {
 	if c.Enabled == nil {
 		return true
@@ -78,6 +79,14 @@ func (c *Category[Args]) HasFixable() bool {
 		}
 	}
 	return false
+}
+
+// CheckEnabled runs the Enabled check if it is set.
+func (c *Category[Args]) CheckEnabled(ctx context.Context, args Args) error {
+	if c.Enabled != nil {
+		return c.Enabled(ctx, args)
+	}
+	return nil
 }
 
 type CheckFunc func(context.Context) error
