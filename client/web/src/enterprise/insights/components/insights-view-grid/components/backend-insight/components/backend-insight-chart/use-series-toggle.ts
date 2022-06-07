@@ -14,15 +14,24 @@ interface UseSeriesToggleReturn {
 
 // Used when clicking legend items in a line chart. This hook manages the currently
 // selected data series as well as the currently hovered legend item.
-export const useSeriesToggle = (): UseSeriesToggleReturn => {
+/**
+ * @param availableSeriesIds {string[]} List of series ids that can be selected
+ * @returns helper tools for managing the currently selected and hovered series
+ */
+export const useSeriesToggle = (availableSeriesIds: string[]): UseSeriesToggleReturn => {
     const [selectedSeriesIds, setSelectedSeriesIds] = useState<string[]>([])
     const [hoveredId, setHoveredId] = useState<string | undefined>()
 
     const selectSeries = (seriesId: string): void => setSelectedSeriesIds([...selectedSeriesIds, seriesId])
     const deselectSeries = (seriesId: string): void =>
         setSelectedSeriesIds(selectedSeriesIds.filter(id => id !== seriesId))
-    const toggle = (seriesId: string): void =>
-        selectedSeriesIds.includes(seriesId) ? deselectSeries(seriesId) : selectSeries(seriesId)
+    const toggle = (seriesId: string): void => {
+        // Reset the selected series if the user is about to select all of them
+        if (selectedSeriesIds.length === availableSeriesIds.length - 1) {
+            return setSelectedSeriesIds([])
+        }
+        return selectedSeriesIds.includes(seriesId) ? deselectSeries(seriesId) : selectSeries(seriesId)
+    }
     const isSelected = (seriesId: string): boolean => {
         // Return true for all series if no series are selected
         // This is because we only want to hide series if something is
