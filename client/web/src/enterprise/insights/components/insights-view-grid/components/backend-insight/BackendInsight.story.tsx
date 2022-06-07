@@ -37,6 +37,7 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
     dashboardReferenceCount: 0,
     isFrozen: false,
     seriesDisplayOptions: {},
+    dashboards: [],
 }
 
 interface BackendInsightDatum {

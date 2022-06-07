@@ -31,7 +31,7 @@ func TestSearchContexts_Get(t *testing.T) {
 	db := NewDB(dbtest.NewDB(t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
-	u := Users(db)
+	u := db.Users()
 	o := db.Orgs()
 	sc := db.SearchContexts()
 
@@ -83,7 +83,7 @@ func TestSearchContexts_Update(t *testing.T) {
 	db := NewDB(dbtest.NewDB(t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
-	u := Users(db)
+	u := db.Users()
 	o := db.Orgs()
 	sc := db.SearchContexts()
 
@@ -155,7 +155,7 @@ func TestSearchContexts_List(t *testing.T) {
 	db := NewDB(dbtest.NewDB(t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
-	u := Users(db)
+	u := db.Users()
 	sc := db.SearchContexts()
 
 	user, err := u.Create(ctx, NewUser{Username: "u", Password: "p"})
@@ -202,7 +202,7 @@ func TestSearchContexts_PaginationAndCount(t *testing.T) {
 	db := NewDB(dbtest.NewDB(t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
-	u := Users(db)
+	u := db.Users()
 	o := db.Orgs()
 	sc := db.SearchContexts()
 
@@ -300,7 +300,7 @@ func TestSearchContexts_CaseInsensitiveNames(t *testing.T) {
 	db := NewDB(dbtest.NewDB(t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
-	u := Users(db)
+	u := db.Users()
 	o := db.Orgs()
 	sc := db.SearchContexts()
 
@@ -423,7 +423,7 @@ func TestSearchContexts_Permissions(t *testing.T) {
 	db := NewDB(dbtest.NewDB(t))
 	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
-	u := Users(db)
+	u := db.Users()
 	o := db.Orgs()
 	om := db.OrgMembers()
 	sc := db.SearchContexts()
@@ -676,7 +676,7 @@ func TestSearchContexts_OrderBy(t *testing.T) {
 	db := NewDB(dbtest.NewDB(t))
 	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
-	u := Users(db)
+	u := db.Users()
 	o := db.Orgs()
 	om := db.OrgMembers()
 	sc := db.SearchContexts()

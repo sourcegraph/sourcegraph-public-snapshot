@@ -103,7 +103,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     return null
                 }
 
-                return createInsightView(insightData) ?? null
+                return createInsightView(insightData)
             }),
             catchError(() => of(null))
         )

@@ -13,9 +13,13 @@ import {
     isErrorLike,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
-import { LastSyncedIcon, FileMatchChildrenStyles as styles } from '@sourcegraph/search-ui'
+import {
+    LastSyncedIcon,
+    FileMatchChildrenStyles as styles,
+    CodeExcerpt,
+    FetchFileParameters,
+} from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { CodeExcerpt, FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'

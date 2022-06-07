@@ -38,6 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
@@ -124,7 +125,7 @@ func main() {
 	}
 
 	gitserver := server.Server{
-		Logger:             log.Scoped("Server", "a gitserver server"),
+		Logger:             logger,
 		ReposDir:           reposDir,
 		DesiredPercentFree: wantPctFree2,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
@@ -469,6 +470,14 @@ func getVCSSyncer(
 		}
 		cli := pypi.NewClient(urn, c.Urls, httpcli.ExternalDoer)
 		return server.NewPythonPackagesSyncer(&c, depsSvc, cli), nil
+	case extsvc.TypeRustPackages:
+		var c schema.RustPackagesConnection
+		urn, err := extractOptions(&c)
+		if err != nil {
+			return nil, err
+		}
+		cli := crates.NewClient(urn, httpcli.ExternalDoer)
+		return server.NewRustPackagesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
 }

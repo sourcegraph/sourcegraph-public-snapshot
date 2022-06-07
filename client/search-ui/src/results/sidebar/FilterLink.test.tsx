@@ -66,8 +66,8 @@ describe('FilterLink', () => {
         expect(links).toHaveLength(2)
 
         const { asFragment } = renderWithBrandedContext(<>{links}</>)
-        expect(screen.getByTitle('github.com')).toBeInTheDocument()
-        expect(screen.getByTitle('gitlab.com')).toBeInTheDocument()
+        expect(screen.getByLabelText('github.com')).toBeInTheDocument()
+        expect(screen.getByLabelText('gitlab.com')).toBeInTheDocument()
         expect(asFragment()).toMatchSnapshot()
     })
 

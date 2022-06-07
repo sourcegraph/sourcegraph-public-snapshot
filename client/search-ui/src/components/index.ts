@@ -1,3 +1,4 @@
+export * from './CodeExcerpt'
 export * from './CodeHostIcon'
 export * from './CommitSearchResult'
 export * from './CommitSearchResultMatch'

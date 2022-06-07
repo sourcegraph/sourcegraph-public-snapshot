@@ -1422,9 +1422,15 @@ type Query {
     featureFlags: [FeatureFlag!]!
 
     """
-    Retrieve the values of all feature flags for the current user
+    Evaluates a feature flag for the current user
+    Returns null if feature flag does not exist
     """
-    viewerFeatureFlags: [EvaluatedFeatureFlag!]!
+    evaluateFeatureFlag(flagName: String!): Boolean
+
+    """
+    Retrieve all evaluated feature flags for the current user
+    """
+    evaluatedFeatureFlags: [EvaluatedFeatureFlag!]!
 
     """
     Retrieve the value of a feature flag for the organization
@@ -1852,6 +1858,7 @@ enum SearchPatternType {
     literal
     regexp
     structural
+    lucky
 }
 
 """
@@ -2299,6 +2306,7 @@ enum ExternalServiceKind {
     PERFORCE
     PHABRICATOR
     PYTHONPACKAGES
+    RUSTPACKAGES
 }
 
 """

@@ -7,7 +7,7 @@ import { useMergeRefs } from 'use-callback-ref'
 import { asError } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
+import { Link, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
 import { useFeatureFlag } from '../../../../../../featureFlags/useFeatureFlag'
 import {
@@ -171,6 +171,8 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
         insightType: getTrackingTypeByInsightType(insight.type),
     })
 
+    const shareableUrl = `${window.location.origin}/insights/insight/${insight.id}`
+
     return (
         <VisibilitySensor active={true} onChange={dispatchVisibilityChange} partialVisibility={true}>
             <InsightCard
@@ -181,7 +183,13 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                 onMouseEnter={trackMouseEnter}
                 onMouseLeave={trackMouseLeave}
             >
-                <InsightCardHeader title={insight.title}>
+                <InsightCardHeader
+                    title={
+                        <Link to={shareableUrl} target="_blank" rel="noopener noreferrer">
+                            insight.title
+                        </Link>
+                    }
+                >
                     {wasVisble && (
                         <>
                             <DrillDownFiltersPopover

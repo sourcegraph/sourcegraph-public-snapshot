@@ -17,7 +17,7 @@ var (
 		"blame":  {"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
 		"branch": {"-r", "-a", "--contains", "--merged", "--format"},
 
-		"rev-parse":    {"--abbrev-ref", "--symbolic-full-name"},
+		"rev-parse":    {"--abbrev-ref", "--symbolic-full-name", "--glob", "--exclude"},
 		"rev-list":     {"--first-parent", "--max-parents", "--reverse", "--max-count", "--count", "--after", "--before", "--", "-n", "--date-order", "--skip", "--left-right"},
 		"ls-remote":    {"--get-url"},
 		"symbolic-ref": {"--short"},

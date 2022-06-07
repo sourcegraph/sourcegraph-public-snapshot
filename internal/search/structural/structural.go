@@ -67,6 +67,7 @@ func (s *searchRepos) getJob(ctx context.Context) func() error {
 			Repos:           s.repoSet.AsList(),
 			Indexed:         s.repoSet.IsIndexed(),
 			UseFullDeadline: s.args.UseFullDeadline,
+			Features:        s.args.Features,
 		}
 
 		_, err := searcherJob.Run(ctx, s.clients, s.stream)
@@ -89,6 +90,7 @@ func streamStructuralSearch(ctx context.Context, clients job.RuntimeClients, arg
 		searcherArgs := &search.SearcherParameters{
 			PatternInfo:     args.PatternInfo,
 			UseFullDeadline: args.UseFullDeadline,
+			Features:        args.Features,
 		}
 
 		jobs = append(jobs, &searchRepos{clients: clients, args: searcherArgs, stream: stream, repoSet: repoSet})

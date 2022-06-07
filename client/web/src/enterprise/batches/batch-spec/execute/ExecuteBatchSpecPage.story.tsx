@@ -1,4 +1,5 @@
 import { storiesOf } from '@storybook/react'
+import { addMinutes } from 'date-fns'
 import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -111,17 +112,27 @@ const buildMocks = (
 
 add('executing', () => (
     <WebStory>
-        {props => (
-            <MockedTestProvider link={new WildcardMockLink(buildMocks(EXECUTING_BATCH_SPEC))}>
-                <ExecuteBatchSpecPage
-                    {...props}
-                    batchSpecID="spec1234"
-                    batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
-                    authenticatedUser={mockAuthenticatedUser}
-                    settingsCascade={SETTINGS_CASCADE}
-                />
-            </MockedTestProvider>
-        )}
+        {props => {
+            const mock = EXECUTING_BATCH_SPEC
+
+            // A true executing batch spec wouldn't have a finishedAt set, but
+            // we need to have one so that Chromatic doesn't exhibit flakiness
+            // based on how long it takes to actually take the snapshot, since
+            // the timer in ExecuteBatchSpecPage is live in that case.
+            mock.finishedAt = addMinutes(Date.parse(mock.startedAt!), 15).toISOString()
+
+            return (
+                <MockedTestProvider link={new WildcardMockLink(buildMocks({ ...EXECUTING_BATCH_SPEC }))}>
+                    <ExecuteBatchSpecPage
+                        {...props}
+                        batchSpecID="spec1234"
+                        batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
+                        authenticatedUser={mockAuthenticatedUser}
+                        settingsCascade={SETTINGS_CASCADE}
+                    />
+                </MockedTestProvider>
+            )
+        }}
     </WebStory>
 ))
 

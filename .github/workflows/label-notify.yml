@@ -18,10 +18,10 @@ jobs:
                   team/search-product=@benvenker @lguychard
                   team/search-core=@sourcegraph/search-core
                   team/code-insights=@joelkw @felixfbecker @vovakulikov @unclejustin
-                  team/distribution=@dan-mckean
-                  team/delivery=@caugustus-sourcegraph @kevinwojo @michaellzc
+                  team/delivery=@sourcegraph/delivery
                   team/security=@dcomas
-                  team/dev-experience=@taylorsperry @jhchabran @kstretch9
+                  team/dev-experience=@jhchabran @kstretch9
+                  team/frontend-platform=@taylorsperry @jasongornall
                   team/repo-management=@jplahn
                   team/devops=@sourcegraph/cloud-devops
                   team/iam-admin-experience=@sourcegraph/iam-and-admin-experience
