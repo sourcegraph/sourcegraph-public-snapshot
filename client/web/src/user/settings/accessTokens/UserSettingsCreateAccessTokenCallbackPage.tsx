@@ -20,6 +20,7 @@ import {
     Label,
     H5,
     Text,
+    Input,
 } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
@@ -165,17 +166,15 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
             {newToken && requester && (
                 <Form>
                     <Container className="mb-3">
-                        <div className="form-group">
-                            <Label htmlFor="user-settings-create-access-token-page__note">Token description</Label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                id="user-settings-create-access-token-page__note"
-                                placeholder={note}
-                                disabled={true}
-                                data-testid="test-create-access-token-description"
-                            />
-                        </div>
+                        <Input
+                            data-testid="test-create-access-token-description"
+                            id="user-settings-create-access-token-page__note"
+                            placeholder={note}
+                            disabled={true}
+                            label="Token description"
+                            className="form-group"
+                        />
+
                         <div className="form-group mb-0">
                             <Label htmlFor="user-settings-create-access-token-page__scope-user:all" className="mb-0">
                                 Token scope
