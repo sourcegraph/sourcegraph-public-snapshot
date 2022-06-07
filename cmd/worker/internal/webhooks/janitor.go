@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -44,7 +43,7 @@ func (j *janitor) Routines(ctx context.Context, logger log.Logger) ([]goroutine.
 		// operation more frequently than that, given it's purely a debugging
 		// tool.
 		goroutine.NewPeriodicGoroutine(context.Background(), 1*time.Hour, &handler{
-			store: database.WebhookLogs(db, keyring.Default().WebhookLogKey),
+			store: db.WebhookLogs(keyring.Default().WebhookLogKey),
 		}),
 	}, nil
 }
