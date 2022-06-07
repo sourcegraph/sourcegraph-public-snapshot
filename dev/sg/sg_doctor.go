@@ -16,12 +16,12 @@ var doctorCommand = &cli.Command{
 }
 
 func doctorExec(ctx *cli.Context) error {
-	args := ctx.Args()
-	if args.Len() == 0 {
+	args := ctx.Args().Slice()
+	if len(args) == 0 {
 		return runChecks(ctx.Context, checks)
 	}
 	checksToRun := map[string]check.CheckFunc{}
-	for _, arg := range args.Slice() {
+	for _, arg := range args {
 		c, ok := checks[arg]
 		if !ok {
 			return errors.Newf("check %q not found", arg)

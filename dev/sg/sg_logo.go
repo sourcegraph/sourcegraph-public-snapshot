@@ -68,9 +68,9 @@ func printLogo(out io.Writer) {
 	fmt.Fprintf(out, "%s", output.StyleReset)
 }
 
-func logoExec(cmd *cli.Context) error {
-	args := cmd.Args()
-	if args.Len() == 1 && args.First() == "classic" {
+func logoExec(ctx *cli.Context) error {
+	args := ctx.Args().Slice()
+	if len(args) == 1 && args[0] == "classic" {
 		var logoOut bytes.Buffer
 		printLogo(&logoOut)
 		std.Out.Write(logoOut.String())

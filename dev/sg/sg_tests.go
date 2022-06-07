@@ -58,19 +58,19 @@ func testExec(ctx *cli.Context) error {
 		return err
 	}
 
-	if ctx.Args().Len() == 0 {
+	args := ctx.Args().Slice()
+	if len(args) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "No test suite specified"))
 		return flag.ErrHelp
 	}
 
-	arg := ctx.Args().First()
-	cmd, ok := config.Tests[arg]
+	cmd, ok := config.Tests[args[0]]
 	if !ok {
-		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: test suite %q not found :(", arg))
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: test suite %q not found :(", args[0]))
 		return flag.ErrHelp
 	}
 
-	return run.Test(ctx.Context, cmd, ctx.Args().Tail(), config.Env)
+	return run.Test(ctx.Context, cmd, args[1:], config.Env)
 }
 
 func constructTestCmdLongHelp() string {
