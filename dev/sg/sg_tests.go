@@ -50,27 +50,28 @@ sg test backend-integration -run TestSearch
 		}
 		return
 	}),
-	Action: execAdapter(testExec),
+	Action: testExec,
 }
 
-func testExec(ctx context.Context, args []string) error {
+func testExec(ctx *cli.Context) error {
 	config, err := sgconf.Get(configFile, configOverwriteFile)
 	if err != nil {
 		return err
 	}
 
-	if len(args) == 0 {
+	if ctx.Args().Len() == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "No test suite specified"))
 		return flag.ErrHelp
 	}
 
-	cmd, ok := config.Tests[args[0]]
+	arg := ctx.Args().First()
+	cmd, ok := config.Tests[arg]
 	if !ok {
-		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: test suite %q not found :(", args[0]))
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: test suite %q not found :(", arg))
 		return flag.ErrHelp
 	}
 
-	return run.Test(ctx, cmd, args[1:], config.Env)
+	return run.Test(ctx.Context, cmd, ctx.Args().Tail(), config.Env)
 }
 
 func constructTestCmdLongHelp() string {
