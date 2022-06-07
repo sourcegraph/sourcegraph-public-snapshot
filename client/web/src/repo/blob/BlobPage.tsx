@@ -345,7 +345,11 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 />
             )}
             {!isSearchNotebook && blobInfoOrError.richHTML && renderMode === 'rendered' && (
-                <RenderedFile dangerousInnerHTML={blobInfoOrError.richHTML} location={props.location} />
+                <RenderedFile
+                    dangerousInnerHTML={blobInfoOrError.richHTML}
+                    location={props.location}
+                    className={styles.border}
+                />
             )}
             {!blobInfoOrError.richHTML && blobInfoOrError.aborted && (
                 <div>
@@ -360,7 +364,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
             {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
             {renderMode === 'code' && (
                 <Blob
-                    className={classNames('test-repo-blob', styles.blob)}
+                    className={classNames('test-repo-blob', styles.blob, styles.border)}
                     blobInfo={blobInfoOrError}
                     wrapCode={wrapCode}
                     platformContext={props.platformContext}
