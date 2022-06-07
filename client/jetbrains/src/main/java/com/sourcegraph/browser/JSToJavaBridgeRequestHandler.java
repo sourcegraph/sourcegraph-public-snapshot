@@ -6,7 +6,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.ui.jcef.JBCefJSQuery;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.ThemeUtil;
-import com.sourcegraph.find.BrowserAndLoadingPanel;
 import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.find.PreviewPanel;
 import com.sourcegraph.find.Search;
