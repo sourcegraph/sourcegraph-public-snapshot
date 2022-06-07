@@ -26,6 +26,10 @@ mocks:
     interfaces:
       - GitServerClient
     path: github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver
+  - filename: cmd/gitserver/server/vcs_syncer_mock_test.go
+    interfaces:
+      - VCSSyncer
+    path: github.com/sourcegraph/sourcegraph/cmd/gitserver/server
   - filename: docker-images/prometheus/cmd/prom-wrapper/mocks/prometheus_mock.go
     interfaces:
       - API
