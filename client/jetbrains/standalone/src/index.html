@@ -1,13 +1,21 @@
-<html lang="en">
+<html lang="en" class="light">
 <head>
     <title>Sourcegraph for JetBrains</title>
     <style>
         html, body {
             margin: 0;
-            background-color: #3c3f41;
-            color: #bbbbbb;
             font-size: 13px;
             font-family: 'DejaVu Sans', sans-serif;
+        }
+
+        html.dark, .dark body {
+            background-color: #3c3f41;
+            color: #bbbbbb;
+        }
+
+        html.light, .light body {
+            background-color: rgb(242, 242, 242);
+            color: rgb(8, 8, 8);
         }
 
         #modal {
@@ -20,21 +28,36 @@
         #webview {
             width: 960px;
             max-width: 100%;
-            border: 1px solid #616161;
             height: 400px;
             margin: 0;
-            border-top: 0;
+            border-top: 0 !important;
+        }
+
+        .dark #webview {
+            border: 1px solid #616161;
+        }
+
+        .light #webview {
+            border: 1px solid rgb(198, 198, 198);
         }
 
         #title {
             text-align: center;
-            background-color: #4a4e52;
-            border: 1px solid #616161;
             width: 960px;
             padding: 2px 0;
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .dark #title {
+            background-color: #4a4e52;
+            border: 1px solid #616161;
+        }
+
+        .light #title {
+            background-color: rgb(235, 235, 235);
+            border: 1px solid rgb(198, 198, 198);
         }
 
         #title > img {
@@ -44,9 +67,7 @@
         #code-details {
             width: calc(960px - 10px);
             max-width: 100%;
-            border: 1px solid #616161;
-            border-top: 0;
-            background-color: #2b2b2b;
+            border-top: 0 !important;
             height: 320px;
             margin: 0;
             padding: 5px;
@@ -55,10 +76,28 @@
             white-space: pre;
         }
 
+        .dark #code-details {
+            border: 1px solid #616161;
+            background-color: #2b2b2b;
+        }
+
+        .light #code-details {
+            border: 1px solid rgb(198, 198, 198);
+            background-color: #fff;
+        }
+
         #code-details-highlight {
+            border-radius: 2px;
+        }
+
+        .dark #code-details-highlight {
             background-color: #ebcb8b;
             color:#4f5b66;
-            border-radius: 2px;
+        }
+
+        .light #code-details-highlight {
+            background-color: #ebcb8b;
+            color:#4f5b66;
         }
     </style>
 </head>

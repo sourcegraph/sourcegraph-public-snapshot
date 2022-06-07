@@ -55,3 +55,11 @@ func (fields FieldsObjectEncoder) MarshalLogObject(enc zapcore.ObjectEncoder) er
 	}
 	return nil
 }
+
+type ErrorEncoder struct {
+	Source error
+}
+
+func (l *ErrorEncoder) Error() string {
+	return l.Source.Error()
+}
