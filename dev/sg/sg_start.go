@@ -132,7 +132,7 @@ func constructStartCmdLongHelp() string {
 	return out.String()
 }
 
-func startExec(ctx cli.Context) error {
+func startExec(ctx *cli.Context) error {
 	config, err := sgconf.Get(configFile, configOverwriteFile)
 	if err != nil {
 		return err
