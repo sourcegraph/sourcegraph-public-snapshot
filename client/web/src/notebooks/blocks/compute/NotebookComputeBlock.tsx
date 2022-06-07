@@ -17,25 +17,6 @@ interface ComputeBlockProps extends BlockProps<ComputeBlock>, ThemeProps {
     platformContext: Pick<PlatformContext, 'sourcegraphURL'>
 }
 
-interface ElmEvent {
-    data: string
-    eventType?: string
-    id?: string
-}
-
-interface ExperimentalOptions {}
-
-interface ComputeInput {
-    computeQueries: string[]
-    experimentalOptions: ExperimentalOptions
-}
-
-interface Ports {
-    receiveEvent: { send: (event: ElmEvent) => void }
-    openStream: { subscribe: (callback: (args: string[]) => void) => void }
-    emitInput: { subscribe: (callback: (input: ComputeInput) => void) => void }
-}
-
 const updateBlockInput = (id: string, onBlockInputChange: (id: string, blockInput: BlockInput) => void) => (
     blockInput: BlockInput
 ): void => {

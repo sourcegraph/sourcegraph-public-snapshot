@@ -3,3 +3,22 @@ declare module '*.elm' {
 }
 
 declare module 'react-elm-components'
+
+interface ElmEvent {
+    data: string
+    eventType?: string
+    id?: string
+}
+
+interface ExperimentalOptions {}
+
+interface ComputeInput {
+    computeQueries: string[]
+    experimentalOptions: ExperimentalOptions
+}
+
+interface Ports {
+    receiveEvent: { send: (event: ElmEvent) => void }
+    openStream: { subscribe: (callback: (args: string[]) => void) => void }
+    emitInput: { subscribe: (callback: (input: ComputeInput) => void) => void }
+}

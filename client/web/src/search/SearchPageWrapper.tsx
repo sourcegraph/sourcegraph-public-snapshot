@@ -3,7 +3,9 @@ import React from 'react'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { LayoutRouteComponentProps } from '../routes'
-import { useNavbarQueryState } from '../stores'
+import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
+
+import { ComputeSearchResults } from './results/ComputeSearchResults'
 
 const SearchPage = lazyComponent(() => import('./home/SearchPage'), 'SearchPage')
 const StreamingSearchResults = lazyComponent(() => import('./results/StreamingSearchResults'), 'StreamingSearchResults')
@@ -15,7 +17,19 @@ const StreamingSearchResults = lazyComponent(() => import('./results/StreamingSe
 export const SearchPageWrapper: React.FunctionComponent<
     React.PropsWithChildren<LayoutRouteComponentProps<any>>
 > = props => {
-    const hasSearchQuery = useNavbarQueryState(state => state.searchQueryFromURL !== '')
+    const searchQuery = useNavbarQueryState(state => state.searchQueryFromURL)
+    const isComputeEnabled = useExperimentalFeatures(state => state.showComputeComponent)
 
-    return hasSearchQuery ? <StreamingSearchResults {...props} /> : <SearchPage {...props} />
+    const hasSearchQuery = searchQuery !== ''
+    const showComputeResults = isComputeEnabled && hasSearchQuery && searchQuery.includes('content:output(') // Naive check
+
+    return hasSearchQuery ? (
+        showComputeResults ? (
+            <ComputeSearchResults {...props} />
+        ) : (
+            <StreamingSearchResults {...props} />
+        )
+    ) : (
+        <SearchPage {...props} />
+    )
 }
