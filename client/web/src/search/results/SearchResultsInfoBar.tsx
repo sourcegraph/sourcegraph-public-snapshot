@@ -414,6 +414,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                 <Button
                                     onClick={props.onExpandAllResultsToggle}
                                     className="text-decoration-none"
+                                    data-placement="bottom"
                                     data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
                                     aria-label={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
                                     aria-live="polite"

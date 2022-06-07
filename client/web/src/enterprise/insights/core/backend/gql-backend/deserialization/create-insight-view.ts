@@ -18,6 +18,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
         isFrozen: insight.isFrozen,
         dashboardReferenceCount: insight.dashboardReferenceCount,
         seriesDisplayOptions: parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
+        dashboards: insight.dashboards?.nodes ?? [],
         appliedSeriesDisplayOptions: insight.appliedSeriesDisplayOptions,
         defaultSeriesDisplayOptions: insight.defaultSeriesDisplayOptions,
     }

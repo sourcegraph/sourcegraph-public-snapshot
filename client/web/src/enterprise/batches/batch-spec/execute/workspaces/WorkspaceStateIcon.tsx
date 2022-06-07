@@ -1,5 +1,6 @@
 import React from 'react'
 
+import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CancelIcon from 'mdi-react/CancelIcon'
 import CheckBoldIcon from 'mdi-react/CheckBoldIcon'
@@ -14,11 +15,13 @@ import { BatchSpecWorkspaceState } from '../../../../../graphql-operations'
 export interface WorkspaceStateIconProps {
     state: BatchSpecWorkspaceState
     cachedResultFound: boolean
+    className?: string
 }
 
 export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren<WorkspaceStateIconProps>> = ({
     state,
     cachedResultFound,
+    className,
 }) => {
     switch (state) {
         case BatchSpecWorkspaceState.PENDING:
@@ -27,7 +30,7 @@ export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren
             return (
                 <Icon
                     role="img"
-                    className="text-muted"
+                    className={classNames('text-muted', className)}
                     data-tooltip="This workspace is queued for execution."
                     aria-label="This workspace is queued for execution."
                     as={TimerSandIcon}
@@ -37,7 +40,7 @@ export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren
             return (
                 <Icon
                     role="img"
-                    className="text-muted"
+                    className={classNames('text-muted', className)}
                     data-tooltip="This workspace is currently executing."
                     aria-label="This workspace is currently executing."
                     as={LoadingSpinner}
@@ -47,7 +50,7 @@ export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren
             return (
                 <Icon
                     role="img"
-                    className="text-muted"
+                    className={classNames('text-muted', className)}
                     data-tooltip="This workspace was skipped."
                     aria-label="This workspace was skipped."
                     as={LinkVariantRemoveIcon}
@@ -57,7 +60,7 @@ export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren
             return (
                 <Icon
                     role="img"
-                    className="text-muted"
+                    className={classNames('text-muted', className)}
                     data-tooltip="The execution for this workspace was canceled."
                     aria-label="The execution for this workspace was canceled."
                     as={CancelIcon}
@@ -67,7 +70,7 @@ export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren
             return (
                 <Icon
                     role="img"
-                    className="text-muted"
+                    className={classNames('text-muted', className)}
                     data-tooltip="The execution for this workspace is being canceled."
                     aria-label="The execution for this workspace is being canceled."
                     as={CancelIcon}

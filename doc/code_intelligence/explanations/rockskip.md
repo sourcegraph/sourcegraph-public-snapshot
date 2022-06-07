@@ -16,7 +16,7 @@ You can always try Rockskip for a while and if it doesn't help then you can disa
 
 ## How do I enable Rockskip?
 
-To enable it, set these environment variables on the `symbols` container:
+**Step 1:** Give your `codeintel-db` has a few extra GB of RAM and set environment variables on the `symbols` container:
 
 For Kubernetes:
 
@@ -28,31 +28,61 @@ spec:
       containers:
       - name: symbols
         env:
-        # Enables Rockskip
+        # 👇 Enables Rockskip
         - name: USE_ROCKSKIP
           value: "true"
-        # Uses Rockskip for the repositories in the comma separated list
+        # 👇 Uses Rockskip for the repositories in the comma separated list
         - name: ROCKSKIP_REPOS
           value: "github.com/torvalds/linux,github.com/pallets/flask"
+```
+
+```yaml
+# base/codeintel-db/codeintel-db.Deployment.yaml
+spec:
+  template:
+    spec:
+      containers:
+      - name: pgsql
+        resources:
+          limits:
+            memory: 8Gi # 👈 Increase RAM from 4g to 8g
+          requests:
+            memory: 8Gi # 👈 Increase RAM from 4g to 8g
 ```
 
 For Docker Compose:
 
 ```yaml
 services:
+
   symbols-0:
     environment:
-      # Enables Rockskip
+      # 👇 Enables Rockskip
       - USE_ROCKSKIP=true
-      # Uses Rockskip for the repositories in the comma separated list
+      # 👇 Uses Rockskip for the repositories in the comma separated list
       - ROCKSKIP_REPOS=github.com/torvalds/linux,github.com/pallets/flask
+
+  codeintel-db:
+    mem_limit: '8g' # 👈 Increase RAM from 2g to 8g
 ```
 
-For other deployments, make sure the `symbols` service has access to the codeintel DB then set the environment variables.
+For other deployments, make sure that:
 
-## How do I use Rockskip?
+- The `symbols` service has access to the codeintel DB
+- The `symbols` service has the environment variables set
+- The `codeintel-db` has a few extra GB of RAM
 
-Simply visit your repository in Sourcegraph and open the symbols sidebar to kick off indexing.
+**Step 2:** Kick off indexing
+
+1. Visit your repository in the Sourcegraph UI
+1. Click on the branch selector, click **Commits**, and select the second most recent commit (this avoids routing the request to Zoekt)
+1. Open the symbols sidebar to kick off indexing (it's ok to see a loading spinner, that probably means indexing is in progress)
+
+**Step 3:** Check the indexing status by following the [instructions below](#how-do-i-check-the-indexing-status).
+
+**Step 4:** Open the symbols sidebar again and the symbols should appear quickly. Hover popovers and jump-to-definition via search-based code intelligence should also respond quickly.
+
+That's it! New commits will be indexed automatically when users visit them.
 
 ## How long does indexing take?
 

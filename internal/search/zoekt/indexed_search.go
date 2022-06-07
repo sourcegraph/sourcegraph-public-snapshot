@@ -602,9 +602,9 @@ func (*GlobalTextSearchJob) Name() string {
 
 func (t *GlobalTextSearchJob) Tags() []log.Field {
 	return []log.Field{
-		trace.Stringer("query", t.GlobalZoektQuery.query),
-		trace.Printf("repoScope", "%q", t.GlobalZoektQuery.repoScope),
-		log.Bool("includePrivate", t.GlobalZoektQuery.includePrivate),
+		trace.Stringer("query", t.GlobalZoektQuery.Query),
+		trace.Printf("repoScope", "%q", t.GlobalZoektQuery.RepoScope),
+		log.Bool("includePrivate", t.GlobalZoektQuery.IncludePrivate),
 		log.String("type", string(t.ZoektArgs.Typ)),
 		log.Int32("fileMatchLimit", t.ZoektArgs.FileMatchLimit),
 		trace.Stringer("select", t.ZoektArgs.Select),

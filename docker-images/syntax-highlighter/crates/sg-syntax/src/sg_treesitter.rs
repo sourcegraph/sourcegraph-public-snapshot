@@ -338,11 +338,11 @@ impl LsifEmitter {
                     start: start_byte,
                     end: end_byte,
                 } => {
-                    let mut occurence = Occurrence::new();
-                    occurence.range = line_manager.range(start_byte, end_byte);
-                    occurence.syntax_kind = get_syntax_kind_for_hl(*highlights.last().unwrap());
+                    let mut occurrence = Occurrence::new();
+                    occurrence.range = line_manager.range(start_byte, end_byte);
+                    occurrence.syntax_kind = get_syntax_kind_for_hl(*highlights.last().unwrap());
 
-                    doc.occurrences.push(occurence);
+                    doc.occurrences.push(occurrence);
                 }
             }
         }
@@ -361,9 +361,9 @@ pub struct FileRange {
 }
 
 pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<FileRange>) -> String {
-    let mut occurences = doc.get_occurrences().to_owned();
-    occurences.sort_by_key(|o| PackedRange::from_vec(&o.range));
-    let mut occurences = VecDeque::from(occurences);
+    let mut occurrences = doc.get_occurrences().to_owned();
+    occurrences.sort_by_key(|o| PackedRange::from_vec(&o.range));
+    let mut occurrences = VecDeque::from(occurrences);
 
     let mut result = String::new();
 
@@ -383,7 +383,7 @@ pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<Fil
         result += &line.replace("\t", " ");
         result += "\n";
 
-        while let Some(occ) = occurences.pop_front() {
+        while let Some(occ) = occurrences.pop_front() {
             if occ.syntax_kind == SyntaxKind::UnspecifiedSyntaxKind {
                 continue;
             }
@@ -396,7 +396,7 @@ pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<Fil
             if range.start_line < idx as i32 {
                 continue;
             } else if range.start_line > idx as i32 {
-                occurences.push_front(occ);
+                occurrences.push_front(occ);
                 break;
             }
 

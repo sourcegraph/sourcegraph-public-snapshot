@@ -354,7 +354,7 @@ end
 					},
 				},
 				symbol: "(unused)",
-				kind:   "def",
+				tags:   []string{"def"},
 			})
 
 			for _, ref := range symbol.Refs {
@@ -367,7 +367,7 @@ end
 						},
 					},
 					symbol: "(unused)",
-					kind:   "ref",
+					tags:   []string{"ref"},
 				})
 			}
 		}
@@ -398,7 +398,7 @@ func getLocalCodeIntel(t *testing.T, path types.RepoCommitPath, contents string)
 type annotation struct {
 	repoCommitPathPoint types.RepoCommitPathPoint
 	symbol              string
-	kind                string
+	tags                []string
 }
 
 func collectAnnotations(repoCommitPath types.RepoCommitPath, contents string) []annotation {
@@ -406,15 +406,15 @@ func collectAnnotations(repoCommitPath types.RepoCommitPath, contents string) []
 
 	lines := strings.Split(contents, "\n")
 
-	// Annotation at the end of the line
+	// Annotation at the end of the line: < "x" x def
 	for i, line := range lines {
-		matchess := regexp.MustCompile(`([^<]+)< "([^"]+)" ([a-zA-Z0-9_.-]+) (def|ref)`).FindAllStringSubmatch(line, -1)
+		matchess := regexp.MustCompile(`([^<]+)< "([^"]+)" ([a-zA-Z0-9_.-/]+) ([a-z,]+)`).FindAllStringSubmatch(line, -1)
 		if matchess == nil {
 			continue
 		}
 
 		for _, matches := range matchess {
-			substr, symbol, kind := matches[2], matches[3], matches[4]
+			substr, symbol, tags := matches[2], matches[3], matches[4]
 
 			annotations = append(annotations, annotation{
 				repoCommitPathPoint: types.RepoCommitPathPoint{
@@ -425,7 +425,7 @@ func collectAnnotations(repoCommitPath types.RepoCommitPath, contents string) []
 					},
 				},
 				symbol: symbol,
-				kind:   kind,
+				tags:   strings.Split(tags, ","),
 			})
 		}
 	}
@@ -438,13 +438,13 @@ nextSourceLine:
 				break nextSourceLine
 			}
 
-			matches := regexp.MustCompile(`([^^]*)\^+ ([a-zA-Z0-9_.-]+) (def|ref)`).FindStringSubmatch(lines[annLine])
+			matches := regexp.MustCompile(`([^^]*)\^+ ([a-zA-Z0-9_.-/]+) ([a-z,]+)`).FindStringSubmatch(lines[annLine])
 			if matches == nil {
 				sourceLine = annLine
 				continue nextSourceLine
 			}
 
-			prefix, symbol, kind := matches[1], matches[2], matches[3]
+			prefix, symbol, tags := matches[1], matches[2], matches[3]
 
 			annotations = append(annotations, annotation{
 				repoCommitPathPoint: types.RepoCommitPathPoint{
@@ -455,7 +455,7 @@ nextSourceLine:
 					},
 				},
 				symbol: symbol,
-				kind:   kind,
+				tags:   strings.Split(tags, ","),
 			})
 		}
 	}
@@ -468,13 +468,13 @@ previousSourceLine:
 				break previousSourceLine
 			}
 
-			matches := regexp.MustCompile(`([^v]*)v+ ([a-zA-Z0-9_.-]+) (def|ref)`).FindStringSubmatch(lines[annLine])
+			matches := regexp.MustCompile(`([^v]*)v+ ([a-zA-Z0-9_.-/]+) ([a-z,]+)`).FindStringSubmatch(lines[annLine])
 			if matches == nil {
 				sourceLine = annLine
 				continue previousSourceLine
 			}
 
-			prefix, symbol, kind := matches[1], matches[2], matches[3]
+			prefix, symbol, tags := matches[1], matches[2], matches[3]
 
 			annotations = append(annotations, annotation{
 				repoCommitPathPoint: types.RepoCommitPathPoint{
@@ -485,7 +485,7 @@ previousSourceLine:
 					},
 				},
 				symbol: symbol,
-				kind:   kind,
+				tags:   strings.Split(tags, ","),
 			})
 		}
 	}
@@ -499,14 +499,19 @@ func sortAnnotations(annotations []annotation) {
 		rowj := annotations[j].repoCommitPathPoint.Point.Row
 		coli := annotations[i].repoCommitPathPoint.Point.Column
 		colj := annotations[j].repoCommitPathPoint.Point.Column
-		kindi := annotations[i].kind
-		kindj := annotations[j].kind
+		tagsi := annotations[i].tags
+		tagsj := annotations[j].tags
 		if rowi != rowj {
 			return rowi < rowj
 		} else if coli != colj {
 			return coli < colj
 		} else {
-			return kindi < kindj
+			for i := 0; i < len(tagsi) && i < len(tagsj); i++ {
+				if tagsi[i] != tagsj[i] {
+					return tagsi[i] < tagsj[i]
+				}
+			}
+			return len(tagsi) < len(tagsj)
 		}
 	})
 }
@@ -520,7 +525,7 @@ func printRowColumnKind(annotations []annotation) string {
 			"%d:%d %s",
 			annotation.repoCommitPathPoint.Row,
 			annotation.repoCommitPathPoint.Column,
-			annotation.kind,
+			annotation.tags,
 		))
 	}
 
@@ -537,8 +542,13 @@ var compareAnnotations = cmp.Comparer(func(a, b annotation) bool {
 	if a.repoCommitPathPoint.Point.Column != b.repoCommitPathPoint.Point.Column {
 		return false
 	}
-	if a.kind != b.kind {
+	if len(a.tags) != len(b.tags) {
 		return false
+	}
+	for i := range a.tags {
+		if a.tags[i] != b.tags[i] {
+			return false
+		}
 	}
 	return true
 })

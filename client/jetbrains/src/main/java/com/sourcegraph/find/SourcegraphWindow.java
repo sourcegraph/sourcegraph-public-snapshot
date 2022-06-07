@@ -2,19 +2,17 @@ package com.sourcegraph.find;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.popup.ActiveIcon;
 import com.intellij.openapi.ui.popup.ComponentPopupBuilder;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
-import com.intellij.openapi.util.Disposer;
 import com.sourcegraph.Icons;
 import org.cef.browser.CefBrowser;
 import org.cef.handler.CefKeyboardHandler;
 import org.cef.misc.BoolRef;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -25,15 +23,13 @@ public class SourcegraphWindow implements Disposable {
     private final Project project;
     private final FindPopupPanel mainPanel;
     private JBPopup popup;
-    private static final Logger logger = LoggerFactory.getLogger(SourcegraphWindow.class);
+    private static final Logger logger = Logger.getInstance(SourcegraphWindow.class);
 
     public SourcegraphWindow(@NotNull Project project) {
         this.project = project;
 
         // Create main panel
         mainPanel = new FindPopupPanel(project);
-
-        Disposer.register(project, this);
     }
 
     synchronized public void showPopup() {
@@ -93,7 +89,7 @@ public class SourcegraphWindow implements Disposable {
                     return false;
                 }
 
-                return handleKeyPress(e.getKeyCode(), e.getModifiersEx());
+                return handleKeyPress(false, e.getKeyCode(), e.getModifiersEx());
             });
     }
 
@@ -111,18 +107,19 @@ public class SourcegraphWindow implements Disposable {
 
             @Override
             public boolean onKeyEvent(CefBrowser browser, CefKeyEvent event) {
-                return handleKeyPress(event.windows_key_code, event.modifiers);
+                return handleKeyPress(true, event.windows_key_code, event.modifiers);
             }
         }, mainPanel.getBrowser().getCefBrowser());
     }
 
-    private boolean handleKeyPress(int keyCode, int modifiers) {
+    private boolean handleKeyPress(boolean isWebView, int keyCode, int modifiers) {
         if (keyCode == KeyEvent.VK_ESCAPE && modifiers == 0) {
             ApplicationManager.getApplication().invokeLater(this::hidePopup);
             return true;
         }
 
-        if (keyCode == KeyEvent.VK_ENTER && (modifiers & ALT_DOWN_MASK) == ALT_DOWN_MASK) {
+
+        if (!isWebView && keyCode == KeyEvent.VK_ENTER && (modifiers & ALT_DOWN_MASK) == ALT_DOWN_MASK) {
             if (mainPanel.getPreviewPanel() != null) {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     try {
@@ -143,5 +140,7 @@ public class SourcegraphWindow implements Disposable {
         if (popup != null) {
             popup.dispose();
         }
+
+        mainPanel.dispose();
     }
 }

@@ -39,7 +39,18 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 		}
 		children = append(children, child)
 	}
-	return NewAlertJob(inputs, NewOrJob(children...)), nil
+
+	jobTree := NewOrJob(children...)
+
+	if inputs.PatternType == query.SearchTypeLucky {
+		// generate opportunistic queries and run them after the usual jobTree
+		generatedChildren := NewFeelingLuckySearchJob(inputs, plan)
+		if len(generatedChildren) > 0 {
+			jobTree = NewSequentialJob(true, append([]job.Job{jobTree}, generatedChildren...)...)
+		}
+	}
+
+	return NewAlertJob(inputs, jobTree), nil
 }
 
 // NewBasicJob converts a query.Basic into its job tree representation.
@@ -126,7 +137,6 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				Query:                commit.QueryToGitQuery(b, diff),
 				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
-				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
 			})
@@ -229,12 +239,12 @@ func orderSearcherJob(j job.Job) job.Job {
 			if pager, ok := current.(*repoPagerJob); ok {
 				if _, ok := pager.child.(*zoekt.RepoSubsetTextSearchJob); ok && !seenZoektRepoSearch {
 					seenZoektRepoSearch = true
-					return NewSequentialJob(current, pagedSearcherJob)
+					return NewSequentialJob(false, current, pagedSearcherJob)
 				}
 			}
 			if _, ok := current.(*zoekt.GlobalTextSearchJob); ok && !seenZoektGlobalSearch {
 				seenZoektGlobalSearch = true
-				return NewSequentialJob(current, pagedSearcherJob)
+				return NewSequentialJob(false, current, pagedSearcherJob)
 			}
 			return current
 		},
@@ -288,6 +298,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 					PatternInfo:     patternInfo,
 					Indexed:         false,
 					UseFullDeadline: useFullDeadline,
+					Features:        features,
 				}
 
 				addJob(&repoPagerJob{
@@ -333,6 +344,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 			searcherArgs := &search.SearcherParameters{
 				PatternInfo:     patternInfo,
 				UseFullDeadline: useFullDeadline,
+				Features:        features,
 			}
 
 			addJob(&structural.SearchJob{
@@ -788,6 +800,7 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 
 	return search.Features{
 		ContentBasedLangFilters: flags.GetBoolOr("search-content-based-lang-detection", false),
+		HybridSearch:            flags.GetBoolOr("search-hybrid", false),
 	}
 }
 

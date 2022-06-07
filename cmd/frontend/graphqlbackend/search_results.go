@@ -378,6 +378,8 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 				types = append(types, "literal")
 			case si.PatternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
+			case si.PatternType == query.SearchTypeLucky:
+				types = append(types, "lucky")
 			}
 		}
 	}

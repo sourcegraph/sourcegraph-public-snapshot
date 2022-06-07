@@ -199,7 +199,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 					return nil, nil
 				}
 
-				// Repository is not clonable.
+				// Repository is not cloneable.
 				dangerouslyServeError(w, r, db, errors.New("repository could not be cloned"), http.StatusInternalServerError)
 				return nil, nil
 			}

@@ -18,7 +18,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	ctx := context.Background()
 
 	// Create user with initially verified email
-	user, err := database.Users(db).Create(ctx, database.NewUser{
+	user, err := db.Users().Create(ctx, database.NewUser{
 		Email:           "alice@example.com",
 		Username:        "alice",
 		EmailIsVerified: true,

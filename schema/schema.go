@@ -830,6 +830,8 @@ type GitHubWebhook struct {
 type GitLabAuthProvider struct {
 	// AllowGroups description: Restricts new logins to members of these GitLab groups. Existing sessions won't be invalidated. Make sure to inform the full path for groups or subgroups instead of their names. Leave empty or unset for no group restrictions.
 	AllowGroups []string `json:"allowGroups,omitempty"`
+	// AllowSignup description: Allows new visitors to sign up for accounts via GitLab authentication. If false, users signing in via GitLab must have an existing Sourcegraph account, which will be linked to their GitLab identity after sign-in.
+	AllowSignup *bool `json:"allowSignup,omitempty"`
 	// ApiScope description: The OAuth API scope that should be used
 	ApiScope string `json:"apiScope,omitempty"`
 	// ClientID description: The Client ID of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance).
@@ -1506,6 +1508,22 @@ type Responders struct {
 	Username string `json:"username,omitempty"`
 }
 
+// RustPackagesConnection description: Configuration for a connection to Rust packages
+type RustPackagesConnection struct {
+	// Dependencies description: An array of strings specifying Rust packages to mirror in Sourcegraph.
+	Dependencies []string `json:"dependencies,omitempty"`
+	// RateLimit description: Rate limit applied when making background API requests to the configured Rust repository APIs.
+	RateLimit *RustRateLimit `json:"rateLimit,omitempty"`
+}
+
+// RustRateLimit description: Rate limit applied when making background API requests to the configured Rust repository APIs.
+type RustRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
+	RequestsPerHour float64 `json:"requestsPerHour"`
+}
+
 // SAMLAuthProvider description: Configures the SAML authentication provider for SSO.
 //
 // Note: if you are using IdP-initiated login, you must have *at most one* SAMLAuthProvider in the `auth.providers` array.
@@ -1658,7 +1676,7 @@ type Settings struct {
 	SearchContextLines int `json:"search.contextLines,omitempty"`
 	// SearchDefaultCaseSensitive description: Whether query patterns are treated case sensitively. Patterns are case insensitive by default.
 	SearchDefaultCaseSensitive bool `json:"search.defaultCaseSensitive,omitempty"`
-	// SearchDefaultPatternType description: The default pattern type (literal or regexp) that search queries will be intepreted as.
+	// SearchDefaultPatternType description: The default pattern type (literal or regexp) that search queries will be intepreted as. `lucky` is an experimental mode that will interpret the query in multiple ways.
 	SearchDefaultPatternType string `json:"search.defaultPatternType,omitempty"`
 	// SearchGlobbing description: REMOVED. Previously an experimental setting to interpret file and repo patterns as glob syntax.
 	SearchGlobbing *bool `json:"search.globbing,omitempty"`
@@ -1721,6 +1739,8 @@ type SettingsExperimentalFeatures struct {
 	FuzzyFinderCaseInsensitiveFileCountThreshold *float64 `json:"fuzzyFinderCaseInsensitiveFileCountThreshold,omitempty"`
 	// GoCodeCheckerTemplates description: Shows a panel with code insights templates for go code checker results.
 	GoCodeCheckerTemplates *bool `json:"goCodeCheckerTemplates,omitempty"`
+	// HomePanelsComputeSuggestions description: Enable the home panels compute suggestions feature.
+	HomePanelsComputeSuggestions bool `json:"homePanelsComputeSuggestions,omitempty"`
 	// HomepageUserInvitation description: Shows a panel to invite collaborators to Sourcegraph on home page.
 	HomepageUserInvitation *bool `json:"homepageUserInvitation,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
