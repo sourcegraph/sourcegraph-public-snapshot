@@ -42,8 +42,11 @@ var setupCommandV2 = &cli.Command{
 			currentOS = overridesOS
 		}
 
-		// TODO
-		r := dependencies.NewRunner(cmd.App.Reader, std.Out, dependencies.OS(currentOS))
+		setup := dependencies.Setup(cmd.App.Reader, std.Out, dependencies.OS(currentOS))
+		setup.SetDescription(func(out *std.Output) {
+			printSgSetupWelcomeScreen(out)
+			out.WriteAlertf("                INFO: You can quit any time by typing ctrl-c.\n")
+		})
 
 		var inRepo bool
 		if _, err := root.RepositoryRoot(); err == nil {
@@ -61,13 +64,13 @@ var setupCommandV2 = &cli.Command{
 
 		switch {
 		case cmd.Bool("check"):
-			return r.Check(cmd.Context, args)
+			return setup.Check(cmd.Context, args)
 
 		case cmd.Bool("fix"):
-			return r.Fix(cmd.Context, func() dependencies.CheckArgs { return args })
+			return setup.Fix(cmd.Context, func() dependencies.CheckArgs { return args })
 
 		default:
-			return r.Interactive(cmd.Context, func() dependencies.CheckArgs { return args })
+			return setup.Interactive(cmd.Context, func() dependencies.CheckArgs { return args })
 		}
 	},
 }

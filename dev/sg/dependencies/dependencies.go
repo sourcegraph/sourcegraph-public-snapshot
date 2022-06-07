@@ -40,7 +40,8 @@ const (
 	OSUbuntu OS = "ubuntu"
 )
 
-func NewRunner(in io.Reader, out *std.Output, os OS) *check.Runner[CheckArgs] {
+// Setup instantiates a runner that can check and fix setup dependencies.
+func Setup(in io.Reader, out *std.Output, os OS) *check.Runner[CheckArgs] {
 	if os == OSMac {
 		return check.NewRunner(in, out, MacOS)
 	}

@@ -16,6 +16,8 @@ type Runner[Args any] struct {
 	in         io.Reader
 	out        *std.Output
 	categories []Category[Args]
+
+	renderDescription func(*std.Output)
 }
 
 func NewRunner[Args any](in io.Reader, out *std.Output, categories []Category[Args]) *Runner[Args] {
@@ -26,6 +28,11 @@ func NewRunner[Args any](in io.Reader, out *std.Output, categories []Category[Ar
 	}
 }
 
+func (r *Runner[Args]) SetDescription(render func(out *std.Output)) {
+	r.renderDescription = render
+}
+
+// Check executes all checks exactly once and exits.
 func (r *Runner[Args]) Check(
 	ctx context.Context,
 	args Args,
@@ -35,7 +42,7 @@ func (r *Runner[Args]) Check(
 		return err
 	}
 
-	results := r.run(ctx, args)
+	results := r.runAllCategoryChecks(ctx, args)
 	if len(results.failed) > 0 {
 		return errors.Newf("%d checks failed (%d skipped)", len(results.failed), len(results.skipped))
 	}
@@ -43,6 +50,7 @@ func (r *Runner[Args]) Check(
 	return nil
 }
 
+// Fix attempts to execute available fixes on checks that are not fulfilled.
 func (r *Runner[Args]) Fix(
 	ctx context.Context,
 	getArgs func() Args,
@@ -52,64 +60,63 @@ func (r *Runner[Args]) Fix(
 		return err
 	}
 
-	// Keep interactive runner up until all issues are fixed, or all remaining issues are unfixable
-	results := runResults{
-		failed: []int{1}, // initialize, this gets reset immediately
-	}
-	var unfixable map[int]bool
-	for len(results.failed) != len(unfixable) {
-		// Get state
-		args := getArgs()
-		results = r.run(ctx, args)
-		unfixable = make(map[int]bool)
+	// Get state
+	args := getArgs()
+	results := r.runAllCategoryChecks(ctx, args)
 
-		for _, idx := range results.failed {
-			category := r.categories[idx]
-			pending := r.out.Pending(output.Styledf(output.StylePending, "%d. %s - Determining status...", idx, category.Name))
-			if !category.HasFixable() {
-				pending.Complete(output.Styledf(output.StyleFailure, "%d. %s - Cannot be fixed automatically.", idx, category.Name))
-				unfixable[idx] = true
+	for _, idx := range results.failed {
+		category := r.categories[idx]
+		pending := r.out.Pending(output.Styledf(output.StylePending, "%d. %s - Determining status...", idx, category.Name))
+		if !category.HasFixable() {
+			pending.Complete(output.Styledf(output.StyleFailure, "%d. %s - Cannot be fixed automatically.", idx, category.Name))
+			continue
+		}
+
+		// Only run if dependents are fixed
+		for _, d := range category.DependsOn {
+			if met, exists := results.categories[d]; !exists {
+				return errors.Newf("Required check category %q for category %q not found", d, category.Name)
+			} else if !met {
+				pending.WriteLine(output.Styledf(output.StyleGrey, "%d. %s - Required category %q not met.",
+					idx, category.Name, d))
+				continue
+			}
+		}
+
+		for _, c := range category.Checks {
+			// If category is fixed, we are good to go
+			if c.IsMet() {
 				continue
 			}
 
-			for _, c := range category.Checks {
-				// If category is fixed, we are good to go
-				if c.IsMet() {
-					continue
-				}
-
-				// Otherwise, check if this is fixable at all
-				if c.Fix == nil {
-					pending.WriteLine(output.Styledf(output.StyleGrey, "%d. %s - %s cannot be fixed automatically.",
-						idx, category.Name, c.Name))
-					unfixable[idx] = true
-					continue
-				}
-
-				// TODO send pending
-				if err := c.Fix(ctx, IO{
-					Input:  r.in,
-					Writer: r.out,
-				}, args); err != nil {
-					pending.Complete(output.Styledf(output.StyleFailure, "%d. %s - Failed to fix %s: %s",
-						idx, category.Name, c.Name, err.Error()))
-					return err
-				}
-				pending.WriteLine(output.Styledf(output.StyleSuccess, "%d. %s - Fixed %s!",
+			// Otherwise, check if this is fixable at all
+			if c.Fix == nil {
+				pending.WriteLine(output.Styledf(output.StyleGrey, "%d. %s - %s cannot be fixed automatically.",
 					idx, category.Name, c.Name))
+				continue
 			}
 
-			pending.Complete(output.Styledf(output.StyleGrey, "%d. %s - Done", idx, category.Name))
+			// Attempt fix
+			if err := c.Fix(ctx, IO{
+				Input:  r.in,
+				Writer: pending,
+			}, args); err != nil {
+				pending.Complete(output.Styledf(output.StyleFailure, "%d. %s - Failed to fix %s: %s",
+					idx, category.Name, c.Name, err.Error()))
+				return err
+			}
+			pending.WriteLine(output.Styledf(output.StyleSuccess, "%d. %s - Fixed %s!",
+				idx, category.Name, c.Name))
 		}
-	}
 
-	if len(unfixable) > 0 {
-		return errors.Newf("%d categories could not be fixed", len(unfixable))
+		pending.Complete(output.Styledf(output.StyleGrey, "%d. %s - Done", idx, category.Name))
 	}
 
 	return nil
 }
 
+// Interactive runs both checks and fixes in an interactive manner, prompting the user for
+// input.
 func (r *Runner[Args]) Interactive(
 	ctx context.Context,
 	getArgs func() Args,
@@ -120,14 +127,14 @@ func (r *Runner[Args]) Interactive(
 	}
 
 	// Keep interactive runner up until all issues are fixed.
-	results := runResults{
+	results := runAllCategoryChecksResult{
 		failed: []int{1}, // initialize, this gets reset immediately
 	}
 	for len(results.failed) != 0 {
 		r.out.Output.ClearScreen()
 
 		// Get args when we run
-		results = r.run(ctx, getArgs())
+		results = r.runAllCategoryChecks(ctx, getArgs())
 		if len(results.failed) == 0 {
 			break
 		}
@@ -158,16 +165,23 @@ func (r *Runner[Args]) Interactive(
 	return nil
 }
 
-// runResults provides a summary of categories checks results.
-type runResults struct {
+// runAllCategoryChecksResult provides a summary of categories checks results.
+type runAllCategoryChecksResult struct {
 	all     []int
 	failed  []int
 	skipped []int
+
+	// Indicates whether each category succeeded or not
+	categories map[string]bool
 }
 
-// run is the main entrypoint for running the checks in this runner.
-func (r *Runner[Args]) run(ctx context.Context, args Args) runResults {
-	var results runResults
+// runAllCategoryChecks is the main entrypoint for running the checks in this runner.
+func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) runAllCategoryChecksResult {
+	if r.renderDescription != nil {
+		r.renderDescription(r.out)
+	}
+
+	var results runAllCategoryChecksResult
 	for i := range r.categories {
 		results.failed = append(results.failed, i)
 		results.all = append(results.all, i)
@@ -193,25 +207,14 @@ func (r *Runner[Args]) run(ctx context.Context, args Args) runResults {
 
 		pending := r.out.Pending(output.Styledf(output.StylePending, "%d. %s - Determining status...", idx, category.Name))
 
-		// Validate dependents
-		var failures []error
-		for _, d := range category.DependsOn {
-			if met, exists := categoryResults[d]; !exists {
-				failures = append(failures, errors.Newf("Required check category %q not found", d))
-			} else if !met {
-				failures = append(failures, errors.Newf("Required check category %q not met", d))
-			}
-		}
-
 		// Validate checks
-		if len(failures) == 0 {
-			for _, c := range category.Checks {
-				if err := c.RunCheck(ctx, IO{
-					Input:  r.in,
-					Writer: pending,
-				}, args); err != nil {
-					failures = append(failures, err)
-				}
+		var failures []error
+		for _, c := range category.Checks {
+			if err := c.RunCheck(ctx, IO{
+				Input:  r.in,
+				Writer: pending,
+			}, args); err != nil {
+				failures = append(failures, err)
 			}
 		}
 
