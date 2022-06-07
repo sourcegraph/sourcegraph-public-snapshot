@@ -32,7 +32,6 @@ const (
 	ExternalURL            = "internal.app-url"
 	SendEmail              = "internal.send-email"
 	Extension              = "internal.extension"
-	GitExec                = "internal.git.exec"
 	GitInfoRefs            = "internal.git.info-refs"
 	GitUploadPack          = "internal.git.upload-pack"
 	ReposIndex             = "internal.repos.index"
@@ -88,7 +87,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/app-url").Methods("POST").Name(ExternalURL)
 	base.Path("/send-email").Methods("POST").Name(SendEmail)
 	base.Path("/extension").Methods("POST").Name(Extension)
-	base.Path("/git/{RepoID:[0-9]+}/exec").Methods("POST").Name(GitExec)
 	base.Path("/git/{RepoName:.*}/info/refs").Methods("GET").Name(GitInfoRefs)
 	base.Path("/git/{RepoName:.*}/git-upload-pack").Methods("GET", "POST").Name(GitUploadPack)
 	base.Path("/external-services/configs").Methods("POST").Name(ExternalServiceConfigs)
