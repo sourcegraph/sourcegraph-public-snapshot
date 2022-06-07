@@ -342,6 +342,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     onCopyNotebook={onCopyNotebook}
                     showSearchContext={showSearchContext}
                     exportedFileName={basename(blobInfoOrError.filePath)}
+                    className={styles.border}
                 />
             )}
             {!isSearchNotebook && blobInfoOrError.richHTML && renderMode === 'rendered' && (
