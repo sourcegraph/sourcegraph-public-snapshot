@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 type Check[Args any] struct {
@@ -35,6 +36,18 @@ func (c *Check[Args]) RunCheck(ctx context.Context, cio IO, args Args) error {
 	c.checkRun = true
 	c.checkErr = c.Check(ctx, cio, args)
 	return c.checkErr
+}
+
+func (c *Check[Args]) IsEnabled(ctx context.Context, cio IO, args Args) bool {
+	if c.Enabled == nil {
+		return true
+	}
+	err := c.Enabled(ctx, args)
+	if err != nil {
+		cio.Writer.WriteLine(output.Styledf(output.StyleGrey, "Skipped %s: %s", c.Name, err.Error()))
+		c.checkRun = true // treat this as a run that succeeded
+	}
+	return err == nil
 }
 
 // IsMet indicates if this check has been run, and if it has errored. RunCheck should be

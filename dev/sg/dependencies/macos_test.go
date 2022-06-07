@@ -2,7 +2,7 @@ package dependencies
 
 import (
 	"context"
-	"strings"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,11 +12,11 @@ import (
 )
 
 func TestMacOS(t *testing.T) {
-	var output strings.Builder
-	runner := check.NewRunner(nil, std.NewFixedOutput(&output, false), MacOS)
+	runner := check.NewRunner(nil, std.NewFixedOutput(os.Stdout, false), MacOS)
 
-	err := runner.Check(context.Background(), CheckArgs{})
+	err := runner.Check(context.Background(), CheckArgs{
+		InRepo:   true,
+		Teammate: false,
+	})
 	assert.Nil(t, err)
-
-	t.Logf(output.String())
 }

@@ -69,9 +69,22 @@ func (r *Runner[Args]) Fix(
 
 	r.out.WriteNoticef("Attempting to fix %d checks", len(results.failed))
 
-	for _, idx := range results.failed {
-		category := r.categories[idx]
+	for _, i := range results.failed {
+		category := r.categories[i]
+		idx := i + 1
 		pending := r.out.Pending(output.Styledf(output.StylePending, "%d. %s - Determining status...", idx, category.Name))
+
+		cio := IO{
+			Input:  r.in,
+			Writer: pending,
+		}
+
+		if category.Enabled != nil {
+			if err := category.Enabled(ctx, args); err != nil {
+				pending.Complete(output.Styledf(output.StyleFailure, "%d. %s - Skipped: %s", idx, category.Name, err.Error()))
+				continue
+			}
+		}
 
 		// If nothing in this category is fixable, we are done
 		if !category.HasFixable() {
@@ -89,47 +102,51 @@ func (r *Runner[Args]) Fix(
 			}
 		}
 		if len(unmetDependencies) > 0 {
-			pending.Complete(output.Styledf(output.StyleWarning, "%d. %s - Required dependencies %s not met.",
+			pending.Complete(output.Styledf(output.StyleFailure, "%d. %s - Required dependencies %s not met.",
 				idx, category.Name, strings.Join(unmetDependencies, ", ")))
 			continue
 		}
 
+		var fixFailed bool
 		for _, c := range category.Checks {
 			// If category is fixed, we are good to go
 			if c.IsMet() {
 				continue
 			}
 
-			// Otherwise, check if this is fixable at all
-			if c.Fix == nil {
-				pending.WriteLine(output.Styledf(output.StyleGrey, "%d. %s - %s cannot be fixed automatically.",
-					idx, category.Name, c.Name))
+			if !c.IsEnabled(ctx, cio, args) {
 				continue
 			}
 
-			io := IO{
-				Input:  r.in,
-				Writer: pending,
+			// Otherwise, check if this is fixable at all
+			if c.Fix == nil {
+				pending.WriteLine(output.Styledf(output.StyleGrey, "%s cannot be fixed automatically.", c.Name))
+				continue
 			}
 
 			// Attempt fix. Get new args because things might have changed due to another
 			// fix being run.
-			if err := c.Fix(ctx, io, args); err != nil {
-				pending.Complete(output.Styledf(output.StyleFailure, "%d. %s - Failed to fix %s: %s",
-					idx, category.Name, c.Name, err.Error()))
-				return err
+			if err := c.Fix(ctx, cio, args); err != nil {
+				pending.WriteLine(output.Styledf(output.StyleWarning, "Failed to fix %s: %s", c.Name, err.Error()))
+				fixFailed = true
+				continue
 			}
-			pending.WriteLine(output.Styledf(output.StyleSuccess, "%d. %s - %s fix run!",
-				idx, category.Name, c.Name))
+
+			pending.WriteLine(output.Styledf(output.StylePending, "Ran fix for %s!", c.Name))
 
 			// Check is the fix worked
-			if err := c.RunCheck(ctx, io, args); err != nil {
-				pending.WriteLine(output.Styledf(output.StyleWarning, "%d. %s - %s check failed: %s",
+			if err := c.RunCheck(ctx, cio, args); err != nil {
+				pending.WriteLine(output.Styledf(output.StyleWarning, "Check %s still failing: %s",
 					idx, category.Name, c.Name, err.Error()))
 			}
 		}
 
-		pending.Complete(output.Styledf(output.StyleGrey, "%d. %s - Done", idx, category.Name))
+		if fixFailed {
+			pending.Complete(output.Styledf(output.StyleFailure, "%d. %s - Fixes failed", idx, category.Name))
+		} else {
+			pending.Complete(output.Styledf(output.StyleSuccess, "%d. %s - Done", idx, category.Name))
+			results.categories[category.Name] = true
+		}
 	}
 
 	// Report what is still bust
@@ -138,6 +155,7 @@ func (r *Runner[Args]) Fix(
 		for _, c := range category.Checks {
 			if !c.IsMet() {
 				failedCategories = append(failedCategories, category.Name)
+				break
 			}
 		}
 	}
@@ -239,14 +257,19 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) runA
 		}
 
 		pending := r.out.Pending(output.Styledf(output.StylePending, "%d. %s - Determining status...", idx, category.Name))
+		cio := IO{
+			Input:  r.in,
+			Writer: pending,
+		}
 
 		// Validate checks
 		var failures []error
 		for _, c := range category.Checks {
-			if err := c.RunCheck(ctx, IO{
-				Input:  r.in,
-				Writer: pending,
-			}, args); err != nil {
+			if !c.IsEnabled(ctx, cio, args) {
+				continue
+			}
+
+			if err := c.RunCheck(ctx, cio, args); err != nil {
 				failures = append(failures, err)
 			}
 		}
