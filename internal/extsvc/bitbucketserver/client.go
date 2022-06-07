@@ -790,6 +790,27 @@ func (c *Client) LoadPullRequestBuildStatuses(ctx context.Context, pr *PullReque
 	return nil
 }
 
+// ProjectRepos returns all repos of a project with a given projectKey
+func (c *Client) ProjectRepos(ctx context.Context, projectKey string) (repos []*Repo, err error) {
+	if projectKey == "" {
+		return nil, errors.New("project key empty")
+	}
+
+	path := fmt.Sprintf("rest/api/1.0/projects/%s/repos", projectKey)
+
+	pageToken := &PageToken{Limit: 1000}
+
+	for pageToken.HasMore() {
+		var page []*Repo
+		if pageToken, err = c.page(ctx, path, nil, pageToken, &page); err != nil {
+			return nil, err
+		}
+		repos = append(repos, page...)
+	}
+
+	return repos, nil
+}
+
 func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, error) {
 	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
 	req, err := http.NewRequest("GET", u, nil)
@@ -808,24 +829,8 @@ func (c *Client) Repos(ctx context.Context, pageToken *PageToken, searchQueries 
 	}
 
 	var repos []*Repo
-
-	emptyPageToken := PageToken{
-		Size:          0,
-		Limit:         1000,
-		IsLastPage:    true,
-		Start:         0,
-		NextPageStart: 0,
-	}
-
-	if _, ok := qry["projectName"]; ok || len(qry) == 0 {
-		next, err := c.page(ctx, "rest/api/1.0/repos", qry, pageToken, &repos)
-		return repos, next, err
-	} else if projectKey, ok := qry["projectKey"]; ok {
-		next, err := c.page(ctx, "rest/api/1.0/projects/"+projectKey[0]+"/repos", nil, pageToken, &repos)
-		return repos, next, err
-	}
-	return repos, &emptyPageToken, err
-
+	next, err := c.page(ctx, "rest/api/1.0/repos", qry, pageToken, &repos)
+	return repos, next, err
 }
 
 func (c *Client) LabeledRepos(ctx context.Context, pageToken *PageToken, label string) ([]*Repo, *PageToken, error) {
@@ -968,7 +973,6 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	if err != nil {
 		return nil, err
 	}
-	// fmt.Println("REQ:", req.URL, "\n RES:", string(bs))
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		return nil, errors.WithStack(&httpError{

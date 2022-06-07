@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -266,6 +265,20 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 		}(q)
 	}
 
+	for _, q := range s.config.ProjectKeys {
+		wg.Add(1)
+		go func(q string) {
+			defer wg.Done()
+
+			repos, err := s.client.ProjectRepos(ctx, q)
+			if err != nil {
+				ch <- batch{err: errors.Wrapf(err, "bitbucketserver.projectKeys: query=%q", q)}
+			}
+
+			ch <- batch{repos: repos}
+		}(q)
+	}
+
 	go func() {
 		wg.Wait()
 		close(ch)
@@ -273,23 +286,18 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 
 	seen := make(map[int]bool)
 	for r := range ch {
-		fmt.Println()
-		fmt.Println("======== NEW BATCH =======")
 		if r.err != nil {
 			results <- SourceResult{Source: s, Err: r.err}
 			continue
 		}
 
 		for _, repo := range r.repos {
-			fmt.Println("Repo:", repo.Name)
 			if !seen[repo.ID] && !s.excludes(repo) {
 				_, isArchived := archived[repo.ID]
 				results <- SourceResult{Source: s, Repo: s.makeRepo(repo, isArchived)}
 				seen[repo.ID] = true
 			}
 		}
-		fmt.Println("======== END BATCH =======")
-		fmt.Println()
 	}
 }
 
@@ -298,15 +306,11 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 	next := &bitbucketserver.PageToken{Limit: 1000}
 	for next.HasMore() {
 		repos, page, err := s.client.LabeledRepos(ctx, next, label)
-		if page == nil {
-			break
-		}
 		if err != nil {
 			// If the instance doesn't have the label then no repos are
 			// labeled. Older versions of bitbucket do not support labels, so
 			// they too have no labelled repos.
 			if bitbucketserver.IsNoSuchLabel(err) || bitbucketserver.IsNotFound(err) {
-				fmt.Println("EMPTY")
 				// treat as empty
 				return ids, nil
 			}
@@ -319,7 +323,6 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 
 		next = page
 	}
-
 	return ids, nil
 }
 
