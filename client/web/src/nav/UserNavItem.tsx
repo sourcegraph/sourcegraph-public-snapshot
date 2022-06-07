@@ -258,7 +258,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                             </MenuLink>
                         )}
                         <MenuLink className={styles.dropdownItem} as={Link} to="/help" target="_blank" rel="noopener">
-                            Help <Icon as={OpenInNewIcon} />
+                            Help <Icon role="img" as={OpenInNewIcon} aria-hidden={true} />
                         </MenuLink>
                         <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
 
@@ -276,7 +276,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                 target="_blank"
                                 rel="noopener"
                             >
-                                About Sourcegraph <Icon as={OpenInNewIcon} />
+                                About Sourcegraph <Icon role="img" as={OpenInNewIcon} aria-hidden={true} />
                             </MenuLink>
                         )}
                         {codeHostIntegrationMessaging === 'browser-extension' && (
