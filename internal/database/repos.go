@@ -419,8 +419,6 @@ func scanRepo(rows *sql.Rows, r *types.Repo, logger log.Logger) (err error) {
 	var metadata json.RawMessage
 	var blocked dbutil.NullJSONRawMessage
 
-	logger := log.Scoped("scanRepo", "scan the repo")
-
 	err = rows.Scan(
 		&r.ID,
 		&r.Name,
