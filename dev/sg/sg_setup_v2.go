@@ -67,10 +67,10 @@ var setupCommandV2 = &cli.Command{
 			return setup.Check(cmd.Context, args)
 
 		case cmd.Bool("fix"):
-			return setup.Fix(cmd.Context, func() dependencies.CheckArgs { return args })
+			return setup.Fix(cmd.Context, args)
 
 		default:
-			return setup.Interactive(cmd.Context, func() dependencies.CheckArgs { return args })
+			return setup.Interactive(cmd.Context, args)
 		}
 	},
 }

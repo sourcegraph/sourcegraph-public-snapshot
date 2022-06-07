@@ -53,7 +53,7 @@ func (r *Runner[Args]) Check(
 // Fix attempts to execute available fixes on checks that are not fulfilled.
 func (r *Runner[Args]) Fix(
 	ctx context.Context,
-	getArgs func() Args,
+	args Args,
 ) error {
 	ctx, err := usershell.Context(ctx)
 	if err != nil {
@@ -61,26 +61,37 @@ func (r *Runner[Args]) Fix(
 	}
 
 	// Get state
-	args := getArgs()
 	results := r.runAllCategoryChecks(ctx, args)
+
+	if len(results.failed) == 0 {
+		return nil
+	}
+
+	r.out.WriteNoticef("Attempting to fix %d checks", len(results.failed))
 
 	for _, idx := range results.failed {
 		category := r.categories[idx]
 		pending := r.out.Pending(output.Styledf(output.StylePending, "%d. %s - Determining status...", idx, category.Name))
+
+		// If nothing in this category is fixable, we are done
 		if !category.HasFixable() {
 			pending.Complete(output.Styledf(output.StyleFailure, "%d. %s - Cannot be fixed automatically.", idx, category.Name))
 			continue
 		}
 
 		// Only run if dependents are fixed
+		var unmetDependencies []string
 		for _, d := range category.DependsOn {
 			if met, exists := results.categories[d]; !exists {
 				return errors.Newf("Required check category %q for category %q not found", d, category.Name)
 			} else if !met {
-				pending.WriteLine(output.Styledf(output.StyleGrey, "%d. %s - Required category %q not met.",
-					idx, category.Name, d))
-				continue
+				unmetDependencies = append(unmetDependencies, d)
 			}
+		}
+		if len(unmetDependencies) > 0 {
+			pending.Complete(output.Styledf(output.StyleWarning, "%d. %s - Required dependencies %s not met.",
+				idx, category.Name, strings.Join(unmetDependencies, ", ")))
+			continue
 		}
 
 		for _, c := range category.Checks {
@@ -96,20 +107,42 @@ func (r *Runner[Args]) Fix(
 				continue
 			}
 
-			// Attempt fix
-			if err := c.Fix(ctx, IO{
+			io := IO{
 				Input:  r.in,
 				Writer: pending,
-			}, args); err != nil {
+			}
+
+			// Attempt fix. Get new args because things might have changed due to another
+			// fix being run.
+			if err := c.Fix(ctx, io, args); err != nil {
 				pending.Complete(output.Styledf(output.StyleFailure, "%d. %s - Failed to fix %s: %s",
 					idx, category.Name, c.Name, err.Error()))
 				return err
 			}
-			pending.WriteLine(output.Styledf(output.StyleSuccess, "%d. %s - Fixed %s!",
+			pending.WriteLine(output.Styledf(output.StyleSuccess, "%d. %s - %s fix run!",
 				idx, category.Name, c.Name))
+
+			// Check is the fix worked
+			if err := c.RunCheck(ctx, io, args); err != nil {
+				pending.WriteLine(output.Styledf(output.StyleWarning, "%d. %s - %s check failed: %s",
+					idx, category.Name, c.Name, err.Error()))
+			}
 		}
 
 		pending.Complete(output.Styledf(output.StyleGrey, "%d. %s - Done", idx, category.Name))
+	}
+
+	// Report what is still bust
+	failedCategories := []string{}
+	for _, category := range r.categories {
+		for _, c := range category.Checks {
+			if !c.IsMet() {
+				failedCategories = append(failedCategories, category.Name)
+			}
+		}
+	}
+	if len(failedCategories) > 0 {
+		return errors.Newf("Some categories are still unsatisfied: %s", strings.Join(failedCategories, ", "))
 	}
 
 	return nil
@@ -119,7 +152,7 @@ func (r *Runner[Args]) Fix(
 // input.
 func (r *Runner[Args]) Interactive(
 	ctx context.Context,
-	getArgs func() Args,
+	args Args,
 ) error {
 	ctx, err := usershell.Context(ctx)
 	if err != nil {
@@ -134,7 +167,7 @@ func (r *Runner[Args]) Interactive(
 		r.out.Output.ClearScreen()
 
 		// Get args when we run
-		results = r.runAllCategoryChecks(ctx, getArgs())
+		results = r.runAllCategoryChecks(ctx, args)
 		if len(results.failed) == 0 {
 			break
 		}
@@ -153,7 +186,7 @@ func (r *Runner[Args]) Interactive(
 		r.out.ClearScreen()
 
 		// GetArgs again here to make sure args are up to date
-		err = r.presentFailedCategoryWithOptions(ctx, idx, &selectedCategory, getArgs())
+		err = r.presentFailedCategoryWithOptions(ctx, idx, &selectedCategory, args)
 		if err != nil {
 			if err == io.EOF {
 				return nil
@@ -187,9 +220,9 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) runA
 		results.all = append(results.all, i)
 	}
 
-	categoryResults := make(map[string]bool)
+	results.categories = make(map[string]bool)
 	for _, category := range r.categories {
-		categoryResults[category.Name] = false
+		results.categories[category.Name] = false
 	}
 
 	for i, category := range r.categories {
@@ -219,8 +252,9 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) runA
 		}
 
 		// Report results
-		categoryResults[category.Name] = len(failures) == 0
-		if len(failures) == 0 {
+		succeeded := len(failures) == 0
+		results.categories[category.Name] = succeeded
+		if succeeded {
 			// If success, progress messages are not important
 			pending.Destroy()
 			r.out.WriteSuccessf("%d. %s", idx, category.Name)
