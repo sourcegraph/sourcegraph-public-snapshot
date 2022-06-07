@@ -1,6 +1,5 @@
 package com.sourcegraph.browser;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.jcef.JBCefJSQuery;
@@ -23,7 +22,6 @@ public class JSToJavaBridgeRequestHandler {
     public JBCefJSQuery.Response handle(@NotNull JsonObject request) {
         String action = request.get("action").getAsString();
         JsonObject arguments;
-        Gson gson = new Gson();
         PreviewContent previewContent;
         try {
             switch (action) {
@@ -64,7 +62,7 @@ public class JSToJavaBridgeRequestHandler {
                     return createSuccessResponse(lastSearchAsJson);
                 case "preview":
                     arguments = request.getAsJsonObject("arguments");
-                    previewContent = gson.fromJson(arguments, PreviewContent.class);
+                    previewContent = PreviewContent.fromJson(project, arguments);
                     previewPanel.setContent(previewContent);
                     return createSuccessResponse(null);
                 case "clearPreview":
@@ -72,9 +70,9 @@ public class JSToJavaBridgeRequestHandler {
                     return createSuccessResponse(null);
                 case "open":
                     arguments = request.getAsJsonObject("arguments");
-                    previewContent = gson.fromJson(arguments, PreviewContent.class);
+                    previewContent = PreviewContent.fromJson(project, arguments);
                     try {
-                        previewPanel.openInEditorOrBrowser(previewContent);
+                        previewContent.openInEditorOrBrowser();
                     } catch (Exception e) {
                         return createErrorResponse("Error while opening link: " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
                     }

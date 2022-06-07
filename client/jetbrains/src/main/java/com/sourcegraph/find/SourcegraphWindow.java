@@ -127,10 +127,10 @@ public class SourcegraphWindow implements Disposable {
 
 
         if (!isWebView && keyCode == KeyEvent.VK_ENTER && (modifiers & ALT_DOWN_MASK) == ALT_DOWN_MASK) {
-            if (mainPanel.getPreviewPanel() != null) {
+            if (mainPanel.getPreviewPanel() != null && mainPanel.getPreviewPanel().getPreviewContent() != null) {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     try {
-                        mainPanel.getPreviewPanel().openInEditorOrBrowser();
+                        mainPanel.getPreviewPanel().getPreviewContent().openInEditorOrBrowser();
                     } catch (Exception e) {
                         logger.error("Error opening file in editor", e);
                     }
