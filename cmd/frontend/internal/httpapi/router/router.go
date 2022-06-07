@@ -37,7 +37,6 @@ const (
 	GitInfoRefs            = "internal.git.info-refs"
 	GitResolveRevision     = "internal.git.resolve-revision"
 	GitUploadPack          = "internal.git.upload-pack"
-	ReposList              = "internal.repos.list"
 	ReposIndex             = "internal.repos.index"
 	Configuration          = "internal.configuration"
 	SearchConfiguration    = "internal.search-configuration"
@@ -98,7 +97,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/git/{RepoName:.*}/git-upload-pack").Methods("GET", "POST").Name(GitUploadPack)
 	base.Path("/external-services/configs").Methods("POST").Name(ExternalServiceConfigs)
 	base.Path("/external-services/list").Methods("POST").Name(ExternalServicesList)
-	base.Path("/repos/list").Methods("POST").Name(ReposList)
 	base.Path("/repos/index").Methods("POST").Name(ReposIndex)
 	base.Path("/configuration").Methods("POST").Name(Configuration)
 	base.Path("/search/configuration").Methods("GET", "POST").Name(SearchConfiguration)
