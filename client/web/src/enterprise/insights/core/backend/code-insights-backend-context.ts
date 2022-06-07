@@ -18,7 +18,6 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public hasInsights = errorMockMethod('hasInsight')
     public getActiveInsightsCount = errorMockMethod('getNonFrozenInsightsCount')
     public getAccessibleInsightsList = errorMockMethod('getReachableInsights')
-    public getBackendInsightData = errorMockMethod('getBackendInsightData')
     public getBuiltInInsightData = errorMockMethod('getBuiltInInsightData')
     public getInsightSubjects = errorMockMethod('getInsightSubjects')
     public getSubjectSettingsById = errorMockMethod('getSubjectSettingsById')
