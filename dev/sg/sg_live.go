@@ -30,7 +30,7 @@ sg live -help
 	`,
 	Category:    CategoryCompany,
 	Description: constructLiveCmdLongHelp(),
-	Action:      execAdapter(liveExec),
+	Action:      liveExec,
 	BashComplete: completeOptions(func() (options []string) {
 		return append(environmentNames(), `https\://...`)
 	}),
@@ -50,23 +50,24 @@ func constructLiveCmdLongHelp() string {
 	return out.String()
 }
 
-func liveExec(ctx context.Context, args []string) error {
-	if len(args) == 0 {
+func liveExec(ctx *cli.Context) error {
+	if ctx.Args().Len() == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: No environment specified"))
 		return flag.ErrHelp
 	}
 
-	if len(args) != 1 {
+	if ctx.Args().Len() != 1 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: Too many arguments"))
 		return flag.ErrHelp
 	}
 
-	e, ok := getEnvironment(args[0])
+	arg := ctx.Args().First()
+	e, ok := getEnvironment(ctx.Args().First())
 	if !ok {
-		if customURL, err := url.Parse(args[0]); err == nil && customURL.Scheme != "" {
+		if customURL, err := url.Parse(arg); err == nil && customURL.Scheme != "" {
 			e = environment{Name: customURL.Host, URL: customURL.String()}
 		} else {
-			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: Environment %q not found, or is not a valid URL :(", args[0]))
+			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: Environment %q not found, or is not a valid URL :(", arg))
 			return flag.ErrHelp
 		}
 	}
