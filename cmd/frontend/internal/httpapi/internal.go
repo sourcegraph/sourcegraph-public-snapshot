@@ -173,28 +173,6 @@ func serveSettingsGetForSubject(db database.DB) func(w http.ResponseWriter, r *h
 	}
 }
 
-func serveOrgsListUsers(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var orgID int32
-		err := json.NewDecoder(r.Body).Decode(&orgID)
-		if err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-		orgMembers, err := db.OrgMembers().GetByOrgID(r.Context(), orgID)
-		if err != nil {
-			return errors.Wrap(err, "OrgMembers.GetByOrgID")
-		}
-		users := make([]int32, 0, len(orgMembers))
-		for _, member := range orgMembers {
-			users = append(users, member.UserID)
-		}
-		if err := json.NewEncoder(w).Encode(users); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
-	}
-}
-
 func serveOrgsGetByName(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var orgName string
