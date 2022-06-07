@@ -412,7 +412,6 @@ github.com/caarlos0/ctrlc v1.0.0/go.mod h1:CdXpj4rmq0q/1Eb44M9zi2nKB0QraNKuRGYGr
 github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e/go.mod h1:9IOqJGCPMSc6E5ydlp5NIonxObaeu/Iub/X03EKPVYo=
 github.com/cavaliercoder/go-cpio v0.0.0-20180626203310-925f9528c45e/go.mod h1:oDpT4efm8tSYHXV5tHSdRvBet/b/QzxZ+XyyPehvm3A=
 github.com/cenkalti/backoff v1.1.1-0.20171020064038-309aa717adbf/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
-github.com/cenkalti/backoff v2.1.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
 github.com/cenkalti/backoff v2.2.1+incompatible h1:tNowT99t7UNflLxfYYSlKYsBpXdEet03Pg2g16Swow4=
 github.com/cenkalti/backoff v2.2.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
 github.com/cenkalti/backoff/v4 v4.1.1/go.mod h1:scbssz8iZGpm3xbr14ovlUdkxfGXNInqkPWOWmG2CLw=
@@ -631,11 +630,6 @@ github.com/derision-test/glock v1.0.0/go.mod h1:jKtLdBMrF+XQatqvg46wiWdDfDSSDjdh
 github.com/derision-test/go-mockgen v1.3.1 h1:2MgROy2nd+pPpKh/MVh8zl6WoDFZ/iss2m89lD2GY38=
 github.com/derision-test/go-mockgen v1.3.1/go.mod h1:/TXUePlhtHmDDCaDAi/a4g6xOHqMDz3Wf0r2NPGskB4=
 github.com/devigned/tab v0.1.1/go.mod h1:XG9mPq0dFghrYvoBF3xdRrJzSTX1b7IQrvaL9mzjeJY=
-github.com/dghubble/go-twitter v0.0.0-20190719072343-39e5462e111f/go.mod h1:xfg4uS5LEzOj8PgZV7SQYRHbG7jPUnelEiaAVJxmhJE=
-github.com/dghubble/gologin/v2 v2.3.0 h1:SMHahscgKmgrv4X+OAwFCJCuJ6mbLxOqB+FAVU+tOSA=
-github.com/dghubble/gologin/v2 v2.3.0/go.mod h1:qGAUHuIYV0WP3kwoPjLhG+YIlGqy8O13YjItosCBKdo=
-github.com/dghubble/oauth1 v0.6.0/go.mod h1:8pFdfPkv/jr8mkChVbNVuJ0suiHe278BtWI4Tk1ujxk=
-github.com/dghubble/sling v1.3.0/go.mod h1:XXShWaBWKzNLhu2OxikSNFrlsvowtz4kyRuXUG7oQKY=
 github.com/dgraph-io/badger v1.6.0/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
 github.com/dgraph-io/ristretto v0.1.0 h1:Jv3CGQHp9OjuMBSne1485aDpUkTKEcUqF+jm/LuerPI=
 github.com/dgraph-io/ristretto v0.1.0/go.mod h1:fux0lOrBhrVCJd3lcTHsIJhq1T2rokOu6v9Vcb3Q9ug=
@@ -2162,6 +2156,8 @@ github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d h1:afLbh+ltiygT
 github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d/go.mod h1:SULmZY7YNBsvNiQbrb/BEDdEJ84TGnfyUQxaHt8t8rY=
 github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d h1:uBLhh66Nf4BcRnvCkMVEuYZ/bQ9ok0rOlEJhfVUpJj4=
 github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d/go.mod h1:IhIP+gIbf0TKVMjcEEwUBjomZRjrPnlZbzT2Wac7XA0=
+github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8 h1:K7hzuWsJGoU8ILHJzrXxsuvXvLHpP/g4iUk7VFj2lY8=
+github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8/go.mod h1:0VfoEApmSPgPhnePllwhrB4vwCUkI0K0w8aueOgoJQI=
 github.com/sourcegraph/gosaml2 v0.6.1-0.20210128133756-84151d087b10 h1:lLSG41QZ5I81jSOakWLB1qEXZhJ65spo81f4SEd8Z20=
 github.com/sourcegraph/gosaml2 v0.6.1-0.20210128133756-84151d087b10/go.mod h1:CAOGXqoL6YYtu7kCSx69SZlbNZWbwUchYzOacZatJ3s=
 github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df h1:VaS8k40GiNVUxVx0ZUilU38NU6tWUHNQOX342DWtZUM=
