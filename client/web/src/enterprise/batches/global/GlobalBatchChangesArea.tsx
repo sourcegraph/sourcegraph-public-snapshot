@@ -14,7 +14,6 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../../components/HeroPage'
-import type { BatchSpecExecutionDetailsPageProps } from '../batch-spec/execute/BatchSpecExecutionDetailsPage'
 import type { BatchChangeClosePageProps } from '../close/BatchChangeClosePage'
 import type { CreateBatchChangePageProps } from '../create/CreateBatchChangePage'
 import type { BatchChangeDetailsPageProps } from '../detail/BatchChangeDetailsPage'
@@ -48,10 +47,6 @@ const BatchChangeClosePage = lazyComponent<BatchChangeClosePageProps, 'BatchChan
     () => import('../close/BatchChangeClosePage'),
     'BatchChangeClosePage'
 )
-const BatchSpecExecutionDetailsPage = lazyComponent<
-    BatchSpecExecutionDetailsPageProps,
-    'BatchSpecExecutionDetailsPage'
->(() => import('../batch-spec/execute/BatchSpecExecutionDetailsPage'), 'BatchSpecExecutionDetailsPage')
 const DotcomGettingStartedPage = lazyComponent<DotcomGettingStartedPageProps, 'DotcomGettingStartedPage'>(
     () => import('./DotcomGettingStartedPage'),
     'DotcomGettingStartedPage'
@@ -164,17 +159,3 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
         </Switch>
     </div>
 ))
-
-export interface ExecutionAreaProps extends NamespaceBatchChangesAreaProps<{ batchSpecID: string }> {}
-
-/**
- * This is just a dumb hack to work around the namespaces header that is preserved on
- * original, non-SSBC pages but omitted from newer, SSBC ones, which bring their own
- * header. Eventually all BC pages should supply their own header, at which point this can
- * be removed.
- */
-export const ExecutionArea = withAuthenticatedUser<ExecutionAreaProps & { authenticatedUser: AuthenticatedUser }>(
-    ({ match, namespaceID, ...outerProps }) => (
-        <BatchSpecExecutionDetailsPage {...outerProps} match={match} batchSpecID={match.params.batchSpecID} />
-    )
-)

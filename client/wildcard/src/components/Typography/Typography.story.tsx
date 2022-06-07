@@ -4,13 +4,9 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Typography } from '..'
-
 import { TYPOGRAPHY_ALIGNMENTS, TYPOGRAPHY_MODES } from './constants'
-import { H1, H2, H4, H5, H6 } from './Heading'
-import { Label } from './Label'
 
-import { Code, Text } from '.'
+import { Code, Label, H1, H2, H3, H4, H5, H6, Text } from '.'
 
 const decorator: DecoratorFn = story => <BrandedStory styles={webStyles}>{() => <div>{story()}</div>}</BrandedStory>
 
@@ -37,16 +33,16 @@ export default config
 
 export const Simple: Story = () => (
     <>
-        <h2>Headings</h2>
+        <H2>Headings</H2>
         <table className="table">
             <tbody>
                 <tr>
                     <td>
-                        <code>
+                        <Code>
                             {'<'}
                             H1
                             {'>'}
-                        </code>
+                        </Code>
                     </td>
                     <td>
                         <H1
@@ -59,11 +55,11 @@ export const Simple: Story = () => (
                 </tr>
                 <tr>
                     <td>
-                        <code>
+                        <Code>
                             {'<'}
                             H2
                             {'>'}
-                        </code>
+                        </Code>
                     </td>
                     <td>
                         <H2
@@ -76,28 +72,28 @@ export const Simple: Story = () => (
                 </tr>
                 <tr>
                     <td>
-                        <code>
+                        <Code>
                             {'<'}
                             H3
                             {'>'}
-                        </code>
+                        </Code>
                     </td>
                     <td>
-                        <Typography.H3
+                        <H3
                             mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                             alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                         >
                             This is H3
-                        </Typography.H3>
+                        </H3>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <code>
+                        <Code>
                             {'<'}
                             H4
                             {'>'}
-                        </code>
+                        </Code>
                     </td>
                     <td>
                         <H4
@@ -110,11 +106,11 @@ export const Simple: Story = () => (
                 </tr>
                 <tr>
                     <td>
-                        <code>
+                        <Code>
                             {'<'}
                             H5
                             {'>'}
-                        </code>
+                        </Code>
                     </td>
                     <td>
                         <H5
@@ -127,11 +123,11 @@ export const Simple: Story = () => (
                 </tr>
                 <tr>
                     <td>
-                        <code>
+                        <Code>
                             {'<'}
                             H6
                             {'>'}
-                        </code>
+                        </Code>
                     </td>
                     <td>
                         <H6
@@ -145,16 +141,16 @@ export const Simple: Story = () => (
             </tbody>
         </table>
 
-        <h2>Code</h2>
+        <H2>Code</H2>
         <table className="table">
             <tbody>
                 <tr>
                     <td>
-                        <code>
+                        <Code>
                             {'<'}
                             Code
                             {'>'}
-                        </code>
+                        </Code>
                     </td>
                     <td>
                         <div>
@@ -182,16 +178,16 @@ export const Simple: Story = () => (
             </tbody>
         </table>
 
-        <h2>Label</h2>
+        <H2>Label</H2>
         <table className="table">
             <tbody>
                 <tr>
                     <td>
-                        <code>
+                        <Code>
                             {'<'}
                             Label
                             {'>'}
-                        </code>
+                        </Code>
                     </td>
                     <td>
                         <div>
@@ -256,16 +252,16 @@ export const Simple: Story = () => (
             </tbody>
         </table>
 
-        <h2>Text</h2>
+        <H2>Text</H2>
         <table className="table">
             <tbody>
                 <tr>
                     <td>
-                        <code>
+                        <Code>
                             {'<'}
                             Text
                             {'>'}
-                        </code>
+                        </Code>
                     </td>
                     <td>
                         <Text

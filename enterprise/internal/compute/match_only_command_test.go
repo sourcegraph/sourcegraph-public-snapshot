@@ -34,12 +34,14 @@ func Test_matchOnly(t *testing.T) {
 			ID:   5,
 			Name: "codehost.com/myorg/myrepo",
 		}},
-		LineMatches: []*result.LineMatch{
-			{
-				Preview:    "abcdefgh",
-				LineNumber: 1,
-			},
-		},
+		ChunkMatches: result.ChunkMatches{{
+			Content:      "abcdefgh",
+			ContentStart: result.Location{Line: 1},
+			Ranges: result.Ranges{{
+				Start: result.Location{Line: 1},
+				End:   result.Location{Line: 1},
+			}},
+		}},
 	}
 
 	test := func(input string, serialize serializer) string {

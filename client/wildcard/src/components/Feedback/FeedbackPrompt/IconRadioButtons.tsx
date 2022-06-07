@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { Label } from '../../Typography/Label'
+import { Label } from '../..'
 
 import styles from './IconRadioButtons.module.scss'
 

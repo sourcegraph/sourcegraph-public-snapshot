@@ -1,5 +1,7 @@
 import { Optional } from 'utility-types'
 
+// eslint-disable-next-line no-restricted-imports
+import { TourListState } from '@sourcegraph/web/src/tour/components/Tour/useTour'
 import { MultiSelectState } from '@sourcegraph/wildcard'
 
 import { BatchChangeState } from '../../graphql-operations'
@@ -35,6 +37,9 @@ export interface TemporarySettingsSchema {
     'batches.defaultListFilters': MultiSelectState<BatchChangeState>
     'batches.downloadSpecModalDismissed': boolean
     'codeintel.badge.used': boolean
+    'codeintel.referencePanel.redesign.ctaDismissed': boolean
+    'codeintel.referencePanel.redesign.enabled': boolean
+    'onboarding.quickStartTour': TourListState
 }
 
 /**

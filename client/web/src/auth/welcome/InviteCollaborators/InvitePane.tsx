@@ -6,7 +6,7 @@ import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Icon, H3, H4, Text, Input } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CopyableText } from '../../../components/CopyableText'
@@ -109,24 +109,23 @@ export const InvitePane: React.FunctionComponent<React.PropsWithChildren<Props>>
     return (
         <div className={classNames(className, 'mx-2')}>
             <div className={styles.titleDescription}>
-                <Typography.H3>Introduce friends and colleagues to Sourcegraph</Typography.H3>
-                <p className="text-muted mb-4">
+                <H3>Introduce friends and colleagues to Sourcegraph</H3>
+                <Text className="text-muted mb-4">
                     We’ll look for a few collaborators you might want to invite to Sourcegraph. These users won’t be
                     able to see your code unless they have access to it on the code host and also add that code to
                     Sourcegraph.
-                </p>
+                </Text>
             </div>
             {isErrorLike(inviteError) && <ErrorAlert error={inviteError} />}
             <div className="border overflow-hidden rounded">
                 <header>
                     <div className="py-3 px-3 d-flex justify-content-between align-items-center">
-                        <Typography.H4 className="flex-1 m-0">Collaborators</Typography.H4>
+                        <H4 className="flex-1 m-0">Collaborators</H4>
                         <Form
                             onSubmit={preventSubmit}
                             className="flex-1 d-inline-flex justify-content-between flex-row"
                         >
-                            <input
-                                className="form-control"
+                            <Input
                                 type="search"
                                 placeholder="Filter by email or username"
                                 name="query"
@@ -230,7 +229,7 @@ export const InvitePane: React.FunctionComponent<React.PropsWithChildren<Props>>
             <div>
                 <header>
                     <div className="py-3 d-flex justify-content-between align-items-center">
-                        <Typography.H4 className="m-0">Or invite by sending a link</Typography.H4>
+                        <H4 className="m-0">Or invite by sending a link</H4>
                     </div>
                 </header>
                 <CopyableText

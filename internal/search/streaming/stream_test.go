@@ -141,28 +141,20 @@ func TestWithSelect(t *testing.T) {
 		return SearchEvent{
 			Results: []result.Match{
 				&result.FileMatch{
-					File: result.File{Path: "pokeman/charmandar"},
-					LineMatches: []*result.LineMatch{{
-						OffsetAndLengths: make([][2]int32, 1),
-					}},
+					File:         result.File{Path: "pokeman/charmandar"},
+					ChunkMatches: result.ChunkMatches{{Ranges: make(result.Ranges, 1)}},
 				},
 				&result.FileMatch{
-					File: result.File{Path: "pokeman/charmandar"},
-					LineMatches: []*result.LineMatch{{
-						OffsetAndLengths: make([][2]int32, 1),
-					}},
+					File:         result.File{Path: "pokeman/charmandar"},
+					ChunkMatches: result.ChunkMatches{{Ranges: make(result.Ranges, 1)}},
 				},
 				&result.FileMatch{
-					File: result.File{Path: "pokeman/bulbosaur"},
-					LineMatches: []*result.LineMatch{{
-						OffsetAndLengths: make([][2]int32, 1),
-					}},
+					File:         result.File{Path: "pokeman/bulbosaur"},
+					ChunkMatches: result.ChunkMatches{{Ranges: make(result.Ranges, 1)}},
 				},
 				&result.FileMatch{
-					File: result.File{Path: "digiman/ummm"},
-					LineMatches: []*result.LineMatch{{
-						OffsetAndLengths: make([][2]int32, 1),
-					}},
+					File:         result.File{Path: "digiman/ummm"},
+					ChunkMatches: result.ChunkMatches{{Ranges: make(result.Ranges, 1)}},
 				},
 			},
 		}
@@ -180,12 +172,12 @@ func TestWithSelect(t *testing.T) {
 	autogold.Want("dedupe paths for select:file.directory", `[
   {
     "Path": "pokeman/",
-    "LineMatches": null,
+    "ChunkMatches": null,
     "LimitHit": false
   },
   {
     "Path": "digiman/",
-    "LineMatches": null,
+    "ChunkMatches": null,
     "LimitHit": false
   }
 ]`).Equal(t, test("file.directory"))
@@ -193,17 +185,17 @@ func TestWithSelect(t *testing.T) {
 	autogold.Want("dedupe paths select:file", `[
   {
     "Path": "pokeman/charmandar",
-    "LineMatches": null,
+    "ChunkMatches": null,
     "LimitHit": false
   },
   {
     "Path": "pokeman/bulbosaur",
-    "LineMatches": null,
+    "ChunkMatches": null,
     "LimitHit": false
   },
   {
     "Path": "digiman/ummm",
-    "LineMatches": null,
+    "ChunkMatches": null,
     "LimitHit": false
   }
 ]`).Equal(t, test("file"))
@@ -211,74 +203,134 @@ func TestWithSelect(t *testing.T) {
 	autogold.Want("don't dedupe file matches for select:content", `[
   {
     "Path": "pokeman/charmandar",
-    "LineMatches": [
+    "ChunkMatches": [
       {
-        "Preview": "",
-        "OffsetAndLengths": [
-          [
-            0,
-            0
-          ]
+        "Content": "",
+        "ContentStart": [
+          0,
+          0,
+          0
         ],
-        "LineNumber": 0
+        "Ranges": [
+          {
+            "start": [
+              0,
+              0,
+              0
+            ],
+            "end": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
       },
       {
-        "Preview": "",
-        "OffsetAndLengths": [
-          [
-            0,
-            0
-          ]
+        "Content": "",
+        "ContentStart": [
+          0,
+          0,
+          0
         ],
-        "LineNumber": 0
+        "Ranges": [
+          {
+            "start": [
+              0,
+              0,
+              0
+            ],
+            "end": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
       }
     ],
     "LimitHit": false
   },
   {
     "Path": "pokeman/charmandar",
-    "LineMatches": [
+    "ChunkMatches": [
       {
-        "Preview": "",
-        "OffsetAndLengths": [
-          [
-            0,
-            0
-          ]
+        "Content": "",
+        "ContentStart": [
+          0,
+          0,
+          0
         ],
-        "LineNumber": 0
+        "Ranges": [
+          {
+            "start": [
+              0,
+              0,
+              0
+            ],
+            "end": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
       }
     ],
     "LimitHit": false
   },
   {
     "Path": "pokeman/bulbosaur",
-    "LineMatches": [
+    "ChunkMatches": [
       {
-        "Preview": "",
-        "OffsetAndLengths": [
-          [
-            0,
-            0
-          ]
+        "Content": "",
+        "ContentStart": [
+          0,
+          0,
+          0
         ],
-        "LineNumber": 0
+        "Ranges": [
+          {
+            "start": [
+              0,
+              0,
+              0
+            ],
+            "end": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
       }
     ],
     "LimitHit": false
   },
   {
     "Path": "digiman/ummm",
-    "LineMatches": [
+    "ChunkMatches": [
       {
-        "Preview": "",
-        "OffsetAndLengths": [
-          [
-            0,
-            0
-          ]
+        "Content": "",
+        "ContentStart": [
+          0,
+          0,
+          0
         ],
-        "LineNumber": 0
+        "Ranges": [
+          {
+            "start": [
+              0,
+              0,
+              0
+            ],
+            "end": [
+              0,
+              0,
+              0
+            ]
+          }
+        ]
       }
     ],
     "LimitHit": false

@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Card, CardBody, Typography } from '@sourcegraph/wildcard'
+import { Card, CardBody, H4, Text } from '@sourcegraph/wildcard'
 
 import { CodeInsightsBatchesIcon } from './CodeInsightsBatchesIcon'
 
@@ -14,7 +14,7 @@ interface InsightTemplatesBannerProps {
     className?: string
 }
 
-export const InsightTemplatesBanner: React.FunctionComponent<InsightTemplatesBannerProps> = ({
+export const InsightTemplatesBanner: React.FunctionComponent<React.PropsWithChildren<InsightTemplatesBannerProps>> = ({
     insightTitle,
     className,
     type,
@@ -39,8 +39,8 @@ export const InsightTemplatesBanner: React.FunctionComponent<InsightTemplatesBan
                 <div className="d-flex justify-content-between align-items-center">
                     <CodeInsightsBatchesIcon className="mr-4" />
                     <div className="flex-grow-1">
-                        <Typography.H4>{heading}</Typography.H4>
-                        <p className="mb-0">{paragraph}</p>
+                        <H4>{heading}</H4>
+                        <Text className="mb-0">{paragraph}</Text>
                     </div>
                 </div>
             </CardBody>

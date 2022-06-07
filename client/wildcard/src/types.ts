@@ -32,3 +32,5 @@ export interface ForwardReferenceComponent<
             : never
     ): React.ReactElement | null
 }
+
+export type ObservableStatus = 'initial' | 'next' | 'completed' | 'error'

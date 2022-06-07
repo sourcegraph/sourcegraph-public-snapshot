@@ -174,18 +174,18 @@ func TestPrettyJSON(t *testing.T) {
 			UserSettings: &schema.Settings{},
 			Protocol:     search.Streaming,
 		}
-		j, _ := ToSearchJob(inputs, b)
+		j, _ := NewBasicJob(inputs, b)
 		return PrettyJSONVerbose(j)
 	}
 
 	autogold.Want("full fidelity JSON output", `
 {
-  "PARALLEL": [
-    {
-      "REPOPAGER": {
-        "PARALLEL": [
-          {
-            "ZoektRepoSubsetSearchJob": {
+  "TIMEOUT": {
+    "LIMIT": {
+      "PARALLEL": [
+        {
+          "REPOPAGER": {
+            "ZoektRepoSubsetTextSearchJob": {
               "Repos": null,
               "Query": {
                 "Pattern": "bar",
@@ -197,90 +197,107 @@ func TestPrettyJSON(t *testing.T) {
               "FileMatchLimit": 500,
               "Select": []
             }
-          },
-          {
-            "SearcherJob": {
-              "PatternInfo": {
-                "Pattern": "bar",
-                "IsNegated": false,
-                "IsRegExp": true,
-                "IsStructuralPat": false,
-                "CombyRule": "",
-                "IsWordMatch": false,
-                "IsCaseSensitive": false,
-                "FileMatchLimit": 500,
-                "Index": "yes",
-                "Select": [],
-                "IncludePatterns": null,
-                "ExcludePattern": "",
-                "FilePatternsReposMustInclude": null,
-                "FilePatternsReposMustExclude": null,
-                "PathPatternsAreCaseSensitive": false,
-                "PatternMatchesContent": true,
-                "PatternMatchesPath": true,
-                "Languages": null
-              },
-              "Repos": null,
-              "Indexed": false,
-              "UseFullDeadline": true
+          }
+        },
+        {
+          "ReposComputeExcludedJob": {
+            "RepoOpts": {
+              "RepoFilters": [
+                "foo"
+              ],
+              "MinusRepoFilters": null,
+              "Dependencies": null,
+              "Dependents": null,
+              "CaseSensitiveRepoFilters": false,
+              "SearchContextSpec": "",
+              "CommitAfter": "",
+              "Visibility": "Any",
+              "Limit": 0,
+              "Cursors": null,
+              "ForkSet": false,
+              "NoForks": true,
+              "OnlyForks": false,
+              "OnlyCloned": false,
+              "ArchivedSet": false,
+              "NoArchived": true,
+              "OnlyArchived": false
             }
           }
-        ]
-      }
-    },
-    {
-      "RepoSearchJob": {
-        "RepoOpts": {
-          "RepoFilters": [
-            "foo",
-            "bar"
-          ],
-          "MinusRepoFilters": null,
-          "Dependencies": null,
-          "CaseSensitiveRepoFilters": false,
-          "SearchContextSpec": "",
-          "CommitAfter": "",
-          "Visibility": "Any",
-          "Limit": 0,
-          "Cursors": null,
-          "ForkSet": false,
-          "NoForks": true,
-          "OnlyForks": false,
-          "ArchivedSet": false,
-          "NoArchived": true,
-          "OnlyArchived": false
         },
-        "FilePatternsReposMustInclude": null,
-        "FilePatternsReposMustExclude": null,
-        "Features": {
-          "ContentBasedLangFilters": false
-        },
-        "Mode": 0
-      }
-    },
-    {
-      "ComputeExcludedReposJob": {
-        "RepoOpts": {
-          "RepoFilters": [
-            "foo"
-          ],
-          "MinusRepoFilters": null,
-          "Dependencies": null,
-          "CaseSensitiveRepoFilters": false,
-          "SearchContextSpec": "",
-          "CommitAfter": "",
-          "Visibility": "Any",
-          "Limit": 0,
-          "Cursors": null,
-          "ForkSet": false,
-          "NoForks": true,
-          "OnlyForks": false,
-          "ArchivedSet": false,
-          "NoArchived": true,
-          "OnlyArchived": false
+        {
+          "PARALLEL": [
+            {
+              "REPOPAGER": {
+                "SearcherTextSearchJob": {
+                  "PatternInfo": {
+                    "Pattern": "bar",
+                    "IsNegated": false,
+                    "IsRegExp": true,
+                    "IsStructuralPat": false,
+                    "CombyRule": "",
+                    "IsWordMatch": false,
+                    "IsCaseSensitive": false,
+                    "FileMatchLimit": 500,
+                    "Index": "yes",
+                    "Select": [],
+                    "IncludePatterns": null,
+                    "ExcludePattern": "",
+                    "FilePatternsReposMustInclude": null,
+                    "FilePatternsReposMustExclude": null,
+                    "PathPatternsAreCaseSensitive": false,
+                    "PatternMatchesContent": true,
+                    "PatternMatchesPath": true,
+                    "Languages": null
+                  },
+                  "Repos": null,
+                  "Indexed": false,
+                  "UseFullDeadline": true,
+                  "Features": {
+                    "ContentBasedLangFilters": false,
+                    "HybridSearch": false
+                  }
+                }
+              }
+            },
+            {
+              "RepoSearchJob": {
+                "RepoOpts": {
+                  "RepoFilters": [
+                    "foo",
+                    "bar"
+                  ],
+                  "MinusRepoFilters": null,
+                  "Dependencies": null,
+                  "Dependents": null,
+                  "CaseSensitiveRepoFilters": false,
+                  "SearchContextSpec": "",
+                  "CommitAfter": "",
+                  "Visibility": "Any",
+                  "Limit": 0,
+                  "Cursors": null,
+                  "ForkSet": false,
+                  "NoForks": true,
+                  "OnlyForks": false,
+                  "OnlyCloned": false,
+                  "ArchivedSet": false,
+                  "NoArchived": true,
+                  "OnlyArchived": false
+                },
+                "FilePatternsReposMustInclude": null,
+                "FilePatternsReposMustExclude": null,
+                "Features": {
+                  "ContentBasedLangFilters": false,
+                  "HybridSearch": false
+                },
+                "Mode": 0
+              }
+            }
+          ]
         }
-      }
-    }
-  ]
+      ]
+    },
+    "value": 500
+  },
+  "value": "20s"
 }`).Equal(t, fmt.Sprintf("\n%s", test("repo:foo bar")))
 }

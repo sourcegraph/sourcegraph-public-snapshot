@@ -24,7 +24,8 @@ import {
     Button,
     Link,
     Alert,
-    Typography,
+    H3,
+    Input,
 } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
@@ -98,17 +99,16 @@ const SearchContextRepositories: React.FunctionComponent<
         <>
             <div className="d-flex justify-content-between align-items-center mb-3">
                 {filteredRepositories.length > 0 && (
-                    <Typography.H3>
+                    <H3>
                         <span>
                             {filteredRepositories.length}{' '}
                             {pluralize('repository', filteredRepositories.length, 'repositories')}
                         </span>
-                    </Typography.H3>
+                    </H3>
                 )}
                 {repositories.length > 0 && (
-                    <input
-                        type="text"
-                        className="form-control form-control-md w-50"
+                    <Input
+                        className="w-50"
                         placeholder="Search repositories and revisions"
                         onChange={event => debouncedSetFilterQuery(event.target.value)}
                     />
@@ -166,37 +166,6 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
                             <PageTitle title={searchContextOrError.spec} />
                             <PageHeader
                                 className="mb-2"
-                                path={[
-                                    {
-                                        icon: MagnifyIcon,
-                                        to: '/search',
-                                        ariaLabel: 'Code Search',
-                                    },
-                                    {
-                                        to: '/contexts',
-                                        text: 'Contexts',
-                                    },
-                                    {
-                                        text: (
-                                            <div className="d-flex align-items-center">
-                                                <span>{searchContextOrError.spec}</span>
-                                                {!searchContextOrError.public && (
-                                                    <Badge
-                                                        variant="secondary"
-                                                        pill={true}
-                                                        className={classNames(
-                                                            'ml-2',
-                                                            styles.searchContextPagePrivateBadge
-                                                        )}
-                                                        as="div"
-                                                    >
-                                                        Private
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        ),
-                                    },
-                                ]}
                                 actions={
                                     searchContextOrError.viewerCanManage && (
                                         <Button
@@ -209,7 +178,27 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
                                         </Button>
                                     )
                                 }
-                            />
+                            >
+                                <PageHeader.Heading as="h2" styleAs="h1">
+                                    <PageHeader.Breadcrumb icon={MagnifyIcon} to="/search" aria-label="Code Search" />
+                                    <PageHeader.Breadcrumb to="/contexts">Contexts</PageHeader.Breadcrumb>
+                                    <PageHeader.Breadcrumb>
+                                        <div className="d-flex align-items-center">
+                                            <span>{searchContextOrError.spec}</span>
+                                            {!searchContextOrError.public && (
+                                                <Badge
+                                                    variant="secondary"
+                                                    pill={true}
+                                                    className={classNames('ml-2', styles.searchContextPagePrivateBadge)}
+                                                    as="div"
+                                                >
+                                                    Private
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    </PageHeader.Breadcrumb>
+                                </PageHeader.Heading>
+                            </PageHeader>
                             {!searchContextOrError.autoDefined && (
                                 <div className="text-muted">
                                     <span className="ml-1">

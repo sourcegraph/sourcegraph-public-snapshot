@@ -9,7 +9,6 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -36,7 +35,7 @@ var ErrIllegalBounds = errors.New("illegal bounds")
 type QueryResolver struct {
 	queryResolver    resolvers.QueryResolver
 	resolver         resolvers.Resolver
-	gitserver        policies.GitserverClient
+	gitserver        GitserverClient
 	locationResolver *CachedLocationResolver
 	errTracer        *observation.ErrCollector
 }
@@ -44,7 +43,7 @@ type QueryResolver struct {
 // NewQueryResolver creates a new QueryResolver with the given resolver that defines all code intel-specific
 // behavior. A cached location resolver instance is also given to the query resolver, which should be used
 // to resolve all location-related values.
-func NewQueryResolver(gitserver policies.GitserverClient, queryResolver resolvers.QueryResolver, resolver resolvers.Resolver, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.GitBlobLSIFDataResolver {
+func NewQueryResolver(gitserver GitserverClient, queryResolver resolvers.QueryResolver, resolver resolvers.Resolver, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.GitBlobLSIFDataResolver {
 	return &QueryResolver{
 		queryResolver:    queryResolver,
 		resolver:         resolver,
@@ -217,17 +216,4 @@ func (r *QueryResolver) Diagnostics(ctx context.Context, args *gql.LSIFDiagnosti
 	}
 
 	return NewDiagnosticConnectionResolver(diagnostics, totalCount, r.locationResolver), nil
-}
-
-func (r *QueryResolver) Documentation(ctx context.Context, args *gql.LSIFQueryPositionArgs) (_ gql.DocumentationResolver, err error) {
-	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "documentation"))
-
-	documentations, err := r.queryResolver.Documentation(ctx, int(args.Line), int(args.Character))
-	if err != nil {
-		return nil, err
-	}
-	if len(documentations) == 0 {
-		return nil, nil
-	}
-	return NewDocumentationResolver(documentations[0]), nil
 }

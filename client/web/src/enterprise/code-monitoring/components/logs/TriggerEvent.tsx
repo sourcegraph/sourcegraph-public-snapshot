@@ -61,12 +61,27 @@ export const TriggerEvent: React.FunctionComponent<
     return (
         <>
             <Button onClick={toggleExpanded} className={classNames('btn-icon d-block', styles.expandButton)}>
-                <Icon className="mr-2" as={expanded ? ChevronDownIcon : ChevronRightIcon} />
+                <Icon
+                    role="img"
+                    aria-hidden={true}
+                    className="mr-2"
+                    as={expanded ? ChevronDownIcon : ChevronRightIcon}
+                />
 
-                {hasError ? <Icon className={classNames(styles.errorIcon, 'mr-2')} as={AlertCircleIcon} /> : <span />}
+                {hasError ? (
+                    <Icon
+                        role="img"
+                        aria-hidden={true}
+                        className={classNames(styles.errorIcon, 'mr-2')}
+                        as={AlertCircleIcon}
+                    />
+                ) : (
+                    <span />
+                )}
 
                 <span>
-                    Run <Timestamp date={triggerEvent.timestamp} noAbout={true} now={now} />
+                    {triggerEvent.status === EventStatus.PENDING ? 'Scheduled' : 'Ran'}{' '}
+                    <Timestamp date={triggerEvent.timestamp} noAbout={true} now={now} />
                     {triggerEvent.query && (
                         <Link
                             to={`/search?${buildSearchURLQuery(triggerEvent.query, SearchPatternType.literal, false)}`}
@@ -75,7 +90,7 @@ export const TriggerEvent: React.FunctionComponent<
                             className="font-weight-normal ml-2"
                         >
                             {triggerEvent.resultCount} new {pluralize('result', triggerEvent.resultCount)}{' '}
-                            <Icon as={OpenInNewIcon} />
+                            <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />
                         </Link>
                     )}
                 </span>

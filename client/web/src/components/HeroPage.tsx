@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { H1, Link } from '@sourcegraph/wildcard'
+import { Link, H1 } from '@sourcegraph/wildcard'
 
 import styles from './HeroPage.module.scss'
 

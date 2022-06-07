@@ -197,6 +197,7 @@ extend type Query {
         id: ID
         isFrozen: Boolean
         filters: InsightViewFiltersInput
+        seriesDisplayOptions: SeriesDisplayOptionsInput
     ): InsightViewConnection!
 
     """
@@ -615,6 +616,83 @@ input InsightViewControlsInput {
     Input for the default filters for an insight.
     """
     filters: InsightViewFiltersInput!
+    """
+    Input for series' sort order.
+    """
+    seriesDisplayOptions: SeriesDisplayOptionsInput!
+}
+
+"""
+Options that affect which series to display for an insight.
+"""
+type SeriesDisplayOptions {
+    """
+    Sort options for the series.
+    """
+    sortOptions: SeriesSortOptions!
+    """
+    Max number of series to return.
+    """
+    limit: Int
+}
+
+"""
+Input type for series display options.
+"""
+input SeriesDisplayOptionsInput {
+    """
+    Sort options for the series.
+    """
+    sortOptions: SeriesSortOptionsInput
+    """
+    Max number of series to return.
+    """
+    limit: Int
+}
+
+"""
+Sort mode for series.
+"""
+enum SeriesSortMode {
+    RESULT_COUNT
+    LEXICOGRAPHICAL
+    DATE_ADDED
+}
+
+"""
+Sort direction for series.
+"""
+enum SeriesSortDirection {
+    ASC
+    DESC
+}
+
+"""
+Series sort options.
+"""
+type SeriesSortOptions {
+    """
+    Sort mode for series.
+    """
+    mode: SeriesSortMode
+    """
+    Sort direction for series.
+    """
+    direction: SeriesSortDirection
+}
+
+"""
+Input type for series sort options.
+"""
+input SeriesSortOptionsInput {
+    """
+    Sort mode for series.
+    """
+    mode: SeriesSortMode!
+    """
+    Sort direction for series.
+    """
+    direction: SeriesSortDirection!
 }
 
 """
@@ -822,6 +900,16 @@ type InsightView implements Node {
     Represents if this insight is in a frozen state or not. A frozen state is relevant when a license is downgraded and the number of insights exceed the free plan limits.
     """
     isFrozen: Boolean!
+
+    """
+    The default series display options saved on the insight. This will differ from the applied options if they are overwritten but not saved.
+    """
+    defaultSeriesDisplayOptions: SeriesDisplayOptions!
+
+    """
+    The series display options currently applied to the insight.
+    """
+    appliedSeriesDisplayOptions: SeriesDisplayOptions!
 
     """
     Dashboards this insight has been added to that the current user has permission to view

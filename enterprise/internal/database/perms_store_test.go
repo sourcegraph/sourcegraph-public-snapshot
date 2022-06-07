@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"sort"
 	"sync"
@@ -24,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -543,6 +543,61 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
+func testPermsStore_SetRepoPermissionsUnrestricted(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		assertUnrestricted := func(ctx context.Context, t *testing.T, s *permsStore, id int32, want bool) {
+			t.Helper()
+			p := &authz.RepoPermissions{
+				RepoID: id,
+				Perm:   authz.Read,
+			}
+			if err := s.LoadRepoPermissions(ctx, p); err != nil {
+				t.Fatalf("loading permissions for %d: %v", id, err)
+			}
+			if p.Unrestricted != want {
+				t.Fatalf("Want %v, got %v for %d", want, p.Unrestricted, id)
+			}
+		}
+
+		t.Run("test simple set", func(t *testing.T) {
+			ctx := context.Background()
+			s := setupTestPerms(t, db, clock)
+
+			// Add a couple of repos
+			for i := 0; i < 2; i++ {
+				rp := &authz.RepoPermissions{
+					RepoID:  int32(i + 1),
+					Perm:    authz.Read,
+					UserIDs: toMapset(2),
+				}
+				if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+					t.Fatal(err)
+				}
+			}
+			assertUnrestricted(ctx, t, s, 1, false)
+			assertUnrestricted(ctx, t, s, 2, false)
+
+			// Set them both to unrestricted
+			if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{1, 2}, true); err != nil {
+				t.Fatal(err)
+			}
+			assertUnrestricted(ctx, t, s, 1, true)
+			assertUnrestricted(ctx, t, s, 2, true)
+
+			// Set them back to false again, also checking that more than 65535 IDs
+			// can be processed without an error
+			var ids [66000]int32
+			ids[0] = 1
+			ids[65900] = 2
+			if err := s.SetRepoPermissionsUnrestricted(ctx, ids[:], false); err != nil {
+				t.Fatal(err)
+			}
+			assertUnrestricted(ctx, t, s, 1, false)
+			assertUnrestricted(ctx, t, s, 2, false)
+		})
+	}
+}
+
 func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 	tests := []struct {
 		name            string
@@ -674,6 +729,32 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 
 			if rp.SyncedAt.IsZero() {
 				t.Fatal("SyncedAt was not updated but supposed to")
+			}
+		})
+
+		t.Run("unrestricted columns should be set", func(t *testing.T) {
+			// TOOD: Use this in other tests
+			s := setupTestPerms(t, db, clock)
+
+			rp := &authz.RepoPermissions{
+				RepoID:       1,
+				Perm:         authz.Read,
+				UserIDs:      toMapset(2),
+				Unrestricted: true,
+			}
+			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+				t.Fatal(err)
+			}
+
+			rp = &authz.RepoPermissions{
+				RepoID: 1,
+				Perm:   authz.Read,
+			}
+			if err := s.LoadRepoPermissions(context.Background(), rp); err != nil {
+				t.Fatal(err)
+			}
+			if rp.Unrestricted != true {
+				t.Fatal("Want true")
 			}
 		})
 
@@ -2239,108 +2320,6 @@ func cleanupUsersTable(t *testing.T, s *permsStore) {
 	}
 }
 
-func testPermsStore_ListExternalAccounts(db *sql.DB) func(*testing.T) {
-	return func(t *testing.T) {
-		s := perms(db, time.Now)
-		t.Cleanup(func() {
-			cleanupUsersTable(t, s)
-		})
-
-		ctx := context.Background()
-
-		// Set up test users and external accounts
-		extSQL := `
-INSERT INTO
-	user_external_accounts(user_id, service_type, service_id, account_id, client_id, auth_data, created_at, updated_at, deleted_at, expired_at)
-VALUES
-	(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-`
-		qs := []*sqlf.Query{
-			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`), // ID=1
-			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
-
-			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", nil, clock(), clock(), nil, nil),                      // ID=1
-			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitHub, "https://github.com/", "alice_github", "alice_github_client_id", `{"access_token":"123"}`, clock(), clock(), nil, nil), // ID=2
-			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", nil, clock(), clock(), nil, nil),                          // ID=3
-			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitHub, "https://github.com/", "bob_github", "bob_github_client_id", nil, clock(), clock(), clock(), nil),                      // ID=4
-			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitHub, "https://github.com/", "expired", "expired_client_id", nil, clock(), clock(), nil, clock()),                            // ID=5
-		}
-		for _, q := range qs {
-			if err := s.execute(ctx, q); err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		{
-			// Check external accounts for "alice"
-			accounts, err := s.ListExternalAccounts(ctx, 1)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			aliceGitHubAuthData := json.RawMessage(`{"access_token":"123"}`)
-			expAccounts := []*extsvc.Account{
-				{
-					ID:     1,
-					UserID: 1,
-					AccountSpec: extsvc.AccountSpec{
-						ServiceType: extsvc.TypeGitLab,
-						ServiceID:   "https://gitlab.com/",
-						AccountID:   "alice_gitlab",
-						ClientID:    "alice_gitlab_client_id",
-					},
-					CreatedAt: clock(),
-					UpdatedAt: clock(),
-				},
-				{
-					ID:     2,
-					UserID: 1,
-					AccountSpec: extsvc.AccountSpec{
-						ServiceType: "github",
-						ServiceID:   "https://github.com/",
-						AccountID:   "alice_github",
-						ClientID:    "alice_github_client_id",
-					},
-					AccountData: extsvc.AccountData{
-						AuthData: &aliceGitHubAuthData,
-					},
-					CreatedAt: clock(),
-					UpdatedAt: clock(),
-				},
-			}
-			if diff := cmp.Diff(expAccounts, accounts); diff != "" {
-				t.Fatalf(diff)
-			}
-		}
-
-		{
-			// Check external accounts for "bob"
-			accounts, err := s.ListExternalAccounts(ctx, 2)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			expAccounts := []*extsvc.Account{
-				{
-					ID:     3,
-					UserID: 2,
-					AccountSpec: extsvc.AccountSpec{
-						ServiceType: extsvc.TypeGitLab,
-						ServiceID:   "https://gitlab.com/",
-						AccountID:   "bob_gitlab",
-						ClientID:    "bob_gitlab_client_id",
-					},
-					CreatedAt: clock(),
-					UpdatedAt: clock(),
-				},
-			}
-			if diff := cmp.Diff(expAccounts, accounts); diff != "" {
-				t.Fatalf(diff)
-			}
-		}
-	}
-}
-
 func testPermsStore_GetUserIDsByExternalAccounts(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, time.Now)
@@ -2880,6 +2859,7 @@ WHERE repo_id = 2`, clock().AddDate(-1, 0, 0))
 
 func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
+		db := database.NewDB(db)
 		s := perms(db, clock)
 		ctx := context.Background()
 		t.Cleanup(func() {
@@ -2897,7 +2877,7 @@ func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*tes
 		//  1. Is not a member of any organization
 		//  2. Is a member of an organization without a code host connection
 		//  3. Is a member of an organization with a code host connection
-		users := database.Users(db)
+		users := db.Users()
 		alice, err := users.Create(ctx,
 			database.NewUser{
 				Email:           "alice@example.com",
@@ -2923,19 +2903,19 @@ func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*tes
 		)
 		require.NoError(t, err)
 
-		orgs := database.Orgs(db)
+		orgs := db.Orgs()
 		bobOrg, err := orgs.Create(ctx, "bob-org", nil)
 		require.NoError(t, err)
 		cindyOrg, err := orgs.Create(ctx, "cindy-org", nil)
 		require.NoError(t, err)
 
-		orgMembers := database.OrgMembers(db)
+		orgMembers := db.OrgMembers()
 		_, err = orgMembers.Create(ctx, bobOrg.ID, bob.ID)
 		require.NoError(t, err)
 		_, err = orgMembers.Create(ctx, cindyOrg.ID, cindy.ID)
 		require.NoError(t, err)
 
-		err = database.ExternalServices(db).Create(ctx,
+		err = db.ExternalServices().Create(ctx,
 			func() *conf.Unified { return &conf.Unified{} },
 			&types.ExternalService{
 				Kind:           extsvc.KindGitHub,
@@ -3045,4 +3025,13 @@ func testPermsStore_Metrics(db *sql.DB) func(*testing.T) {
 			t.Fatalf("mismatch (-want +got):\n%s", diff)
 		}
 	}
+}
+
+func setupTestPerms(t *testing.T, db dbutil.DB, clock func() time.Time) *permsStore {
+	t.Helper()
+	s := perms(db, clock)
+	t.Cleanup(func() {
+		cleanupPermsTables(t, s)
+	})
+	return s
 }

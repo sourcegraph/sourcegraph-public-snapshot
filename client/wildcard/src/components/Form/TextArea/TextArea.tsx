@@ -2,7 +2,7 @@ import { forwardRef, ForwardRefExoticComponent, ReactNode, RefAttributes, Textar
 
 import classNames from 'classnames'
 
-import { Label } from '../../Typography/Label'
+import { Label } from '../..'
 import { FormFieldMessage } from '../internal/FormFieldMessage'
 import { getValidStyle } from '../internal/utils'
 

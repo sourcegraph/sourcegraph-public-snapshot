@@ -16,9 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -158,7 +158,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		getVersion := func(branch string) (string, error) {
 			metricGetVersion.Inc()
 			// Do not to trigger a repo-updater lookup since this is a batch job.
-			commitID, err := git.ResolveRevision(ctx, h.db, repo.Name, branch, git.ResolveRevisionOptions{
+			commitID, err := gitserver.NewClient(h.db).ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
 				NoEnsureRevision: true,
 			})
 			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
@@ -228,12 +228,13 @@ func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) 
 
 	if h.Indexers.Enabled() {
 		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, len(opt.IndexedIDs))
-		err = h.RepoStore.StreamMinimalRepos(r.Context(), database.ReposListOptions{
-			IDs: opt.IndexedIDs,
-		}, func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil })
-
-		if err != nil {
-			return err
+		if len(opt.IndexedIDs) > 0 {
+			err = h.RepoStore.StreamMinimalRepos(r.Context(), database.ReposListOptions{
+				IDs: opt.IndexedIDs,
+			}, func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil })
+			if err != nil {
+				return err
+			}
 		}
 
 		indexable, err = h.Indexers.ReposSubset(r.Context(), opt.Hostname, indexed, indexable)

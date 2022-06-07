@@ -12,11 +12,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -88,7 +88,7 @@ func main() {
 	}
 
 	// Connect to databases
-	db := mustInitializeDB()
+	db := database.NewDB(mustInitializeDB())
 	codeIntelDB := mustInitializeCodeIntelDB()
 
 	// Migrations may take a while, but after they're done we'll immediately
@@ -100,7 +100,7 @@ func main() {
 	dbStore := dbstore.NewWithDB(db, observationContext)
 	workerStore := dbstore.WorkerutilUploadStore(dbStore, makeObservationContext(observationContext, false))
 	lsifStore := lsifstore.NewStore(codeIntelDB, conf.Get(), observationContext)
-	gitserverClient := gitserver.New(database.NewDB(db), dbStore, observationContext)
+	gitserverClient := gitserver.New(db, dbStore, observationContext)
 
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
@@ -111,7 +111,7 @@ func main() {
 	}
 
 	// Initialize sub-repo permissions client
-	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
 		logger.Fatal("Failed to create sub-repo client", log.Error(err))
 	}
@@ -158,9 +158,10 @@ func mustInitializeDB() *sql.DB {
 	// START FLAILING
 
 	ctx := context.Background()
+	db := database.NewDB(sqlDB)
 	go func() {
 		for range time.NewTicker(eiauthz.RefreshInterval()).C {
-			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(sqlDB), database.NewDB(sqlDB))
+			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

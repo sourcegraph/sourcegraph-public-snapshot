@@ -1,18 +1,17 @@
 import { FunctionComponent, useContext, useMemo } from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
-
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
-import { HeroPage } from '../../../../../components/HeroPage'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../insights/Icons'
 import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
 import { CodeInsightsBackendContext } from '../../../core'
 
 import { CodeInsightIndependentPageActions } from './components/actions/CodeInsightIndependentPageActions'
+import { StandaloneInsightDashboardPills } from './components/dashboard-pills/StandaloneInsightDashboardPills'
 import { SmartStandaloneInsight } from './components/SmartStandaloneInsight'
+import { Standalone404Insight } from './components/standalone-404-insight/Standalone404Insight'
 
 import styles from './CodeInsightIndependentPage.module.scss'
 
@@ -31,7 +30,7 @@ export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependen
     }
 
     if (!insight) {
-        return <HeroPage icon={MapSearchIcon} title="Oops, we couldn't find that insight" />
+        return <Standalone404Insight />
     }
 
     return (
@@ -40,6 +39,12 @@ export const CodeInsightIndependentPage: FunctionComponent<CodeInsightIndependen
             <PageHeader
                 path={[{ to: '/insights/dashboards/all', icon: CodeInsightsIcon }, { text: insight.title }]}
                 actions={<CodeInsightIndependentPageActions insight={insight} />}
+            />
+
+            <StandaloneInsightDashboardPills
+                dashboards={insight.dashboards}
+                insightId={insight.id}
+                className={styles.dashboards}
             />
 
             <div className={styles.content}>

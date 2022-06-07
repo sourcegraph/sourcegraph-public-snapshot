@@ -13,6 +13,7 @@ import * as prettier from 'prettier'
 import { Subject, Subscription, throwError } from 'rxjs'
 import { first, timeoutWith } from 'rxjs/operators'
 
+import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 import { asError, keyExistsIn } from '@sourcegraph/common'
 import { ErrorGraphQLResult, SuccessGraphQLResult } from '@sourcegraph/http-client'
 // eslint-disable-next-line no-restricted-imports
@@ -30,8 +31,6 @@ util.inspect.defaultOptions.maxStringLength = 80
 
 Polly.register(CdpAdapter as any)
 Polly.register(FSPersister)
-
-const ASSETS_DIRECTORY = path.resolve(__dirname, '../../../../../ui/assets')
 
 const checkPollyMode = (mode: string): MODE => {
     if (mode === 'record' || mode === 'replay' || mode === 'passthrough' || mode === 'stopped') {
@@ -179,7 +178,7 @@ export const createSharedIntegrationTestContext = async <
         // Cache all responses for the entire lifetime of the test run
         response.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
         try {
-            const content = await readFile(path.join(ASSETS_DIRECTORY, asset), {
+            const content = await readFile(path.join(STATIC_ASSETS_PATH, asset), {
                 // Polly doesn't support Buffers or streams at the moment
                 encoding: 'utf-8',
             })

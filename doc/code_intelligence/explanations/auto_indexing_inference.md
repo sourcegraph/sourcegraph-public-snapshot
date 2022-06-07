@@ -52,14 +52,14 @@ For each directory excluding `node_modules/` directories and their children cont
 indexing_jobs:
   - steps:
       - root: <ancestor(dir)>
-        image: sourcegraph/lsif-node:autoindex
+        image: sourcegraph/scip-typescript:autoindex
         commands:
           # Yarn is used to resolve dependencies in an ancestor directory
           # when lerna.json configuration specifies "yarn" as the npmClient
           # or if the directory contains a yarn.lock file.
           - yarn --ignore-engines
       - root: <ancestor(dir)>
-        image: sourcegraph/lsif-node:autoindex
+        image: sourcegraph/scip-typescript:autoindex
         commands:
           # npm is used to resolve dependencies otherwise.
           - npm install
@@ -72,11 +72,10 @@ indexing_jobs:
       #   - .n-node-version
       - N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl autol
     root: <dir>
-    indexer: sourcegraph/lsif-node:autoindex
+    indexer: sourcegraph/scip-typescript:autoindex
     indexer_args:
-      - lsif-tsc
-      - -p
-      - .
+      - scip-typescript
+      - index
 ```
 
 ## Rust
@@ -95,17 +94,17 @@ indexing_jobs:
 
 ## Java
 
-> NOTE: Inference for languages supported by [lsif-java](https://github.com/sourcegraph/lsif-java) is currently restricted to Sourcegraph Cloud.
+> NOTE: Inference for languages supported by [scip-java](https://github.com/sourcegraph/scip-java) is currently restricted to Sourcegraph Cloud.
 
 If the repository contains both a `lsif-java.json` file as well as `*.java`, `*.scala`, or `*.kt` files, the following index job is scheduled.
 
 ```yaml
 indexing_jobs:
   - root: ''
-    indexer: sourcegraph/lsif-java
+    indexer: sourcegraph/scip-java
     indexer_args:
-      - lsif-java
+      - scip-java
       - index
       - --build-tool=lsif
-    outfile: dump.lsif
+    outfile: index.scip
 ```

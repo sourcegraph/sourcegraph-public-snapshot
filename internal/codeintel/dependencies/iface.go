@@ -5,16 +5,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/lockfiles"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
-
-type Store interface {
-	ListDependencyRepos(ctx context.Context, opts store.ListDependencyReposOpts) ([]Repo, error)
-	UpsertDependencyRepos(ctx context.Context, deps []Repo) ([]Repo, error)
-	DeleteDependencyReposByID(ctx context.Context, ids ...int) error
-}
 
 type localGitService interface {
 	GetCommits(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool) ([]*gitdomain.Commit, error)

@@ -4,19 +4,16 @@ import classNames from 'classnames'
 import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import FileIcon from 'mdi-react/FileIcon'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import { useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
-import { CommitSearchResult, RepoSearchResult } from '@sourcegraph/search-ui'
+import { CommitSearchResult, RepoSearchResult, FileSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { FileSearchResult } from '@sourcegraph/shared/src/components/FileSearchResult'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
@@ -135,9 +132,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 case 'commit':
                     return (
                         <CommitSearchResult
-                            icon={SourceCommitIcon}
                             result={result}
-                            repoName={result.repository}
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'commit')}
                             openInNewTab={openMatchesInNewTab}
@@ -148,7 +143,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                     return (
                         <RepoSearchResult
                             result={result}
-                            repoName={result.repository}
                             onSelect={() => logSearchResultClicked(index, 'repo')}
                             containerClassName={resultClassName}
                         />

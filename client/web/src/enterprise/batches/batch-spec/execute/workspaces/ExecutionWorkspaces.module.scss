@@ -1,0 +1,22 @@
+.container {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    // Default of min-height: auto when this element is display: flex allows children to
+    // set its height. We want to keep this fixed and have children overflow: auto
+    // instead.
+    min-height: 0;
+    width: 100%;
+    margin-top: 1.5rem;
+}
+
+.errors {
+    margin-bottom: 1.5rem;
+    flex-shrink: 0;
+}
+
+.inner {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}

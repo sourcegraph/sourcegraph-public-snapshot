@@ -158,7 +158,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 		}
 	}
 
-	usr, err := database.Users(db).Create(r.Context(), newUserData)
+	usr, err := db.Users().Create(r.Context(), newUserData)
 	if err != nil {
 		var (
 			message    string
@@ -190,7 +190,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 		return
 	}
 
-	if err = database.Authz(db).GrantPendingPermissions(r.Context(), &database.GrantPendingPermissionsArgs{
+	if err = db.Authz().GrantPendingPermissions(r.Context(), &database.GrantPendingPermissionsArgs{
 		UserID: usr.ID,
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,
@@ -201,7 +201,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
 		if err := backend.SendUserEmailVerificationEmail(r.Context(), usr.Username, creds.Email, newUserData.EmailVerificationCode); err != nil {
 			log15.Error("failed to send email verification (continuing, user's email will be unverified)", "email", creds.Email, "err", err)
-		} else if err = database.UserEmails(db).SetLastVerification(r.Context(), usr.ID, creds.Email, newUserData.EmailVerificationCode); err != nil {
+		} else if err = db.UserEmails().SetLastVerification(r.Context(), usr.ID, creds.Email, newUserData.EmailVerificationCode); err != nil {
 			log15.Error("failed to set email last verification sent at (user's email is verified)", "email", creds.Email, "err", err)
 		}
 	}
@@ -408,7 +408,7 @@ func HandleCheckUsernameTaken(db database.DB) func(w http.ResponseWriter, r *htt
 			return
 		}
 
-		_, err = database.Namespaces(db).GetByName(r.Context(), username)
+		_, err = db.Namespaces().GetByName(r.Context(), username)
 		if err == database.ErrNamespaceNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return

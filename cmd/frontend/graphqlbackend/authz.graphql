@@ -16,6 +16,21 @@ extend type Mutation {
         userPermissions: [UserPermission!]!
     ): EmptyResponse!
     """
+    Set 'unrestricted' to true or false on a set of repositories. Repositories with
+    'unrestricted' true will be visible to all users on the Sourcegraph instance.
+    """
+    setRepositoryPermissionsUnrestricted(
+        """
+        The repository ids we want to set unrestricted permissions on.
+        """
+        repositories: [ID!]!
+        """
+        true: Any user can view the repo
+        false: Use existing repo permissions
+        """
+        unrestricted: Boolean!
+    ): EmptyResponse!
+    """
     Schedule a permissions sync for given repository. This queries the repository's code host for
     all users' permissions associated with the repository, so that the current permissions apply
     to all users' operations on that repository on Sourcegraph.
@@ -188,6 +203,11 @@ type PermissionsInfo {
     change to the database row (i.e. incremental update).
     """
     updatedAt: DateTime!
+    """
+    If true for a repo, it indicates access to the repo is allowed for all users.
+    It will always be false for users.
+    """
+    unrestricted: Boolean!
 }
 
 """

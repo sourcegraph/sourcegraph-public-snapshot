@@ -60,9 +60,9 @@ query NotebookStars($id: ID!, $first: Int!, $after: String) {
 `, notebookStarFields)
 
 func TestCreateAndDeleteNotebookStars(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	internalCtx := actor.WithInternalActor(context.Background())
-	u := database.Users(db)
+	u := db.Users()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
 	if err != nil {
@@ -136,9 +136,9 @@ func createAPINotebookStars(t *testing.T, schema *graphql.Schema, notebookID int
 }
 
 func TestListNotebookStars(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	internalCtx := actor.WithInternalActor(context.Background())
-	u := database.Users(db)
+	u := db.Users()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
 	if err != nil {

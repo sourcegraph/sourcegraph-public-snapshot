@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,11 +13,11 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint/linters"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/linters"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -26,10 +27,26 @@ var lintGenerateAnnotations bool
 
 var lintCommand = &cli.Command{
 	Name:        "lint",
-	ArgsUsage:   "[target]",
-	Usage:       "Run all or specified linter on the codebase",
-	Description: `Run all or specified linter on the codebase and display failures, if any. To run all checks, don't provide an argument.`,
-	Category:    CategoryDev,
+	ArgsUsage:   "[targets...]",
+	Usage:       "Run all or specified linters on the codebase",
+	Description: `To run all checks, don't provide an argument. You can also provide multiple arguments to run linters for multiple targets.`,
+	UsageText: `
+# Run all possible checks
+sg lint
+
+# Run only go related checks
+sg lint go
+
+# Run only shell related checks
+sg lint shell
+
+# Run only client related checks
+sg lint client
+
+# List all available check groups
+sg lint --help
+`,
+	Category: CategoryDev,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:        "annotations",
@@ -72,51 +89,53 @@ var lintCommand = &cli.Command{
 		}
 
 		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
-		return runCheckScriptsAndReport(cmd.Context, fns...)
+		return runCheckScriptsAndReport(cmd.Context, cmd.App.Writer, fns...)
 	},
 	Subcommands: lintTargets(linters.Targets).Commands(),
 }
 
 // runCheckScriptsAndReport concurrently runs all fns and report as each check finishes. Returns an error
 // if any of the fns fails.
-func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
+func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Runner) error {
 	_, err := root.RepositoryRoot()
 	if err != nil {
 		return err
 	}
 
-	// Get currently checked out branch so linters can optimize
-	branch, err := run.TrimResult(run.GitCmd("branch", "--show-current"))
+	// Get currently checked out ref and merge base so linters can optimize
+	repoState, err := repo.GetState(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "repo.GetState")
 	}
-	repoState := &repo.State{Branch: branch}
 
 	// We need the Verbose flag to print above the pending indicator.
-	out := output.NewOutput(os.Stdout, output.OutputOpts{
-		ForceColor: true,
-		ForceTTY:   true,
-		Verbose:    true,
-	})
+	out := std.NewOutput(dst, true)
 
-	// Spawn a goroutine for each check and increment count to report completion. We use
-	// a single start time for the sake of simplicity.
-	start := time.Now()
+	// Spawn a goroutine for each check and increment count to report completion.
 	var count int64
 	total := len(fns)
 	pending := out.Pending(output.Styledf(output.StylePending, "Running linters (done: 0/%d)", total))
 	var wg sync.WaitGroup
 	reportsCh := make(chan *lint.Report)
 	wg.Add(total)
+
+	// We use a single start time for the sake of simplicity.
+	start := time.Now()
+
+	// linterTimeout sets the very long time for a linter to run for. We definitely do not
+	// want to allow linters to take any longer.
+	linterTimeout := 5 * time.Minute
+	runnerCtx, cancelRunners := context.WithTimeout(ctx, linterTimeout)
 	for _, fn := range fns {
 		go func(fn lint.Runner) {
-			reportsCh <- fn(ctx, repoState)
+			reportsCh <- fn(runnerCtx, repoState)
 			wg.Done()
 		}(fn)
 	}
 	go func() {
 		wg.Wait()
 		close(reportsCh)
+		cancelRunners()
 	}()
 
 	// consume check reports
@@ -129,6 +148,17 @@ func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
 		if report.Err != nil {
 			messages = append(messages, report.Header)
 			hasErr = true
+		}
+
+		// Log analytics for each linter
+		const eventName = "lint_runner"
+		labels := []string{report.Header}
+		if runnerCtx.Err() == context.DeadlineExceeded {
+			analytics.LogEvent(ctx, eventName, labels, start, "deadline exceeded")
+		} else if report.Err != nil {
+			analytics.LogEvent(ctx, eventName, labels, start, "failed")
+		} else {
+			analytics.LogEvent(ctx, eventName, labels, start, "succeeded")
 		}
 	}
 
@@ -160,7 +190,11 @@ func printLintReport(pending output.Pending, start time.Time, report *lint.Repor
 		}
 		return
 	}
+
 	pending.VerboseLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, msg))
+	if verbose {
+		pending.Verbose(report.Summary())
+	}
 }
 
 type lintTargets []lint.Target
@@ -178,7 +212,7 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 					return flag.ErrHelp
 				}
 				std.Out.WriteNoticef("Running checks from target: %s", c.Name)
-				return runCheckScriptsAndReport(cmd.Context, c.Linters...)
+				return runCheckScriptsAndReport(cmd.Context, cmd.App.Writer, c.Linters...)
 			},
 			// Completions to chain multiple commands
 			BashComplete: completeOptions(func() (options []string) {

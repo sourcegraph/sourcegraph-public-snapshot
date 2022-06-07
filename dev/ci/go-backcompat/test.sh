@@ -143,7 +143,7 @@ if ! ./dev/ci/go-test.sh "$@"; then
 This commit contains database schema definitions that caused an unexpected
 failure of one or more unit tests at tagged commit \`${latest_minor_release_tag}\`.
 Rewrite these schema changes to be backwards compatible. For help,
-see [the migrations guide](docs.sourcegraph.com/dev/background-information/sql/migrations).
+see [the migrations guide](https://docs.sourcegraph.com/dev/background-information/sql/migrations).
 
 If this backwards incompatibility is intentional or if the test is flaky,
 an exception for this test can be added to the following flakefile:
@@ -152,6 +152,9 @@ an exception for this test can be added to the following flakefile:
 ${flakefile}
 \`\`\`
 
+⚠️ If by the time you are adding an exception, the release has already been cut, but it has not
+been published yet, the best course of action is to postpone merging the commit creating the issue
+until the release process is complete.
 EOF
   )
   mkdir -p ./annotations/

@@ -120,15 +120,15 @@ func (d *db) FeatureFlags() FeatureFlagStore {
 }
 
 func (d *db) GitserverRepos() GitserverRepoStore {
-	return NewGitserverReposWith(d.Store)
+	return GitserverReposWith(d.Store)
 }
 
 func (d *db) GitserverLocalClone() GitserverLocalCloneStore {
-	return NewGitserverLocalCloneStoreWith(d.Store)
+	return GitserverLocalCloneStoreWith(d.Store)
 }
 
 func (d *db) GlobalState() GlobalStateStore {
-	return &globalStateStore{Store: basestore.NewWithHandle(d.Handle())}
+	return GlobalStateWith(d.Store)
 }
 
 func (d *db) Namespaces() NamespaceStore {
@@ -176,7 +176,7 @@ func (d *db) SubRepoPerms() SubRepoPermsStore {
 }
 
 func (d *db) TemporarySettings() TemporarySettingsStore {
-	return &temporarySettingsStore{Store: basestore.NewWithHandle(d.Store.Handle())}
+	return TemporarySettingsWith(d.Store)
 }
 
 func (d *db) UserCredentials(key encryption.Key) UserCredentialsStore {

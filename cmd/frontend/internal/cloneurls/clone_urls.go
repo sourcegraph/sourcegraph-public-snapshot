@@ -31,7 +31,7 @@ func ReposourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL 
 	}
 
 	// Fast path for repos we already have in our database
-	name, err := db.Repos().GetFirstRepoNamesByCloneURL(ctx, cloneURL)
+	name, err := db.Repos().GetFirstRepoNameByCloneURL(ctx, cloneURL)
 	if err != nil {
 		return "", err
 	}

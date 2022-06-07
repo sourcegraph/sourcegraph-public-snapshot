@@ -12,7 +12,7 @@ import { createAggregateError, pluralize } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Typography } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Code, H3 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
@@ -84,24 +84,24 @@ const TextSearchIndexedReference: React.FunctionComponent<
     return (
         <li className={styles.ref}>
             <Icon
+                role="img"
                 className={classNames(styles.refIcon, isCurrent && styles.refIconCurrent)}
                 as={isCurrent ? CheckCircleIcon : LoadingSpinner}
+                aria-hidden={true}
             />
             <LinkOrSpan to={indexedRef.ref.url}>
-                <strong>
-                    <code>{indexedRef.ref.displayName}</code>
-                </strong>
+                <Code weight="bold">{indexedRef.ref.displayName}</Code>
             </LinkOrSpan>{' '}
             {indexedRef.indexed ? (
                 <span>
                     &nbsp;&mdash; indexed at{' '}
-                    <code>
+                    <Code>
                         <LinkOrSpan
                             to={indexedRef.indexedCommit?.commit ? indexedRef.indexedCommit.commit.url : repo.url}
                         >
                             {indexedRef.indexedCommit!.abbreviatedOID}
                         </LinkOrSpan>
-                    </code>{' '}
+                    </Code>{' '}
                     {indexedRef.current ? '(up to date)' : '(index update in progress)'}
                 </span>
             ) : (
@@ -200,7 +200,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                 )}
                                 {this.state.textSearchIndex.status && (
                                     <>
-                                        <Typography.H3>Statistics</Typography.H3>
+                                        <H3>Statistics</H3>
                                         <table className={classNames('table mb-0', styles.stats)}>
                                             <tbody>
                                                 <tr>

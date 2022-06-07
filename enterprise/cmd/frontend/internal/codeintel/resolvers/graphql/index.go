@@ -9,16 +9,15 @@ import (
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type IndexResolver struct {
 	db               database.DB
-	gitserver        policies.GitserverClient
+	gitserver        GitserverClient
 	resolver         resolvers.Resolver
 	index            store.Index
 	prefetcher       *Prefetcher
@@ -26,7 +25,7 @@ type IndexResolver struct {
 	traceErrs        *observation.ErrCollector
 }
 
-func NewIndexResolver(db database.DB, gitserver policies.GitserverClient, resolver resolvers.Resolver, index store.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTrace *observation.ErrCollector) gql.LSIFIndexResolver {
+func NewIndexResolver(db database.DB, gitserver GitserverClient, resolver resolvers.Resolver, index store.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTrace *observation.ErrCollector) gql.LSIFIndexResolver {
 	if index.AssociatedUploadID != nil {
 		// Request the next batch of upload fetches to contain the record's associated
 		// upload id, if one exists it exists. This allows the prefetcher.GetUploadByID
@@ -58,6 +57,17 @@ func (r *IndexResolver) Steps() gql.IndexStepsResolver {
 	return &indexStepsResolver{db: r.db, index: r.index}
 }
 func (r *IndexResolver) PlaceInQueue() *int32 { return toInt32(r.index.Rank) }
+
+func (r *IndexResolver) Tags(ctx context.Context) (tagsNames []string, err error) {
+	tags, err := r.gitserver.ListTags(ctx, api.RepoName(r.index.RepositoryName), r.index.Commit)
+	if err != nil {
+		return nil, err
+	}
+	for _, tag := range tags {
+		tagsNames = append(tagsNames, tag.Name)
+	}
+	return
+}
 
 func (r *IndexResolver) State() string {
 	state := strings.ToUpper(r.index.State)

@@ -6,9 +6,13 @@ import { Observable } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
-import { SearchSidebar, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import {
+    SearchSidebar,
+    StreamingProgress,
+    StreamingSearchResultsList,
+    FetchFileParameters,
+} from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -27,7 +31,6 @@ import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { SearchBetaIcon } from '../../components/CtaIcons'
 import { PageTitle } from '../../components/PageTitle'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { usePersistentCadence } from '../../hooks'
 import { useIsActiveIdeIntegrationUser } from '../../IdeExtensionTracker'
 import { CodeInsightsProps } from '../../insights/types'
@@ -64,8 +67,7 @@ export interface StreamingSearchResultsProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'requestGraphQL'>,
         TelemetryProps,
         ThemeProps,
-        CodeInsightsProps,
-        FeatureFlagProps {
+        CodeInsightsProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -118,7 +120,7 @@ function useCtaAlert(
         if (!areResultsFound) {
             return
         }
-        if (tourQueryParameters?.isTour) {
+        if (tourQueryParameters.isTour) {
             return
         }
 
@@ -366,7 +368,6 @@ export const StreamingSearchResults: React.FunctionComponent<
                         isSourcegraphDotCom={props.isSourcegraphDotCom}
                         telemetryService={props.telemetryService}
                         isAuthenticated={!!props.authenticatedUser}
-                        featureFlags={props.featureFlags}
                     />
                 }
                 buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}

@@ -38,6 +38,7 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
     id: 'specid',
     url: '/users/alice/batch-changes/awesome-batch-change',
     namespace: {
+        id: '1234',
         namespaceName: 'alice',
         url: '/users/alice',
     },
