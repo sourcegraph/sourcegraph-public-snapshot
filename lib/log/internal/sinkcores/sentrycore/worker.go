@@ -86,6 +86,10 @@ func (w *worker) flush() {
 	go w.consume()
 }
 
+func (w *worker) stop() {
+	w.done <- struct{}{}
+}
+
 // capture submits an ErrorContext to Sentry.
 func (w *worker) capture(errCtx *errorContext) {
 	if w.hub.hub == nil {

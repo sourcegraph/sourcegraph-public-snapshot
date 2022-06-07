@@ -178,3 +178,8 @@ func (c *Core) Enabled(level zapcore.Level) bool {
 func (c *Core) Sync() error {
 	return c.w.Flush()
 }
+
+// Stop permanently shuts down the core. Only for testing purposes.
+func (c *Core) Stop() {
+	c.w.stop()
+}

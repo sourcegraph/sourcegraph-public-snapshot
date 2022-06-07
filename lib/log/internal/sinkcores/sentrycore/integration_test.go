@@ -202,6 +202,19 @@ func TestConcurrentLogging(t *testing.T) {
 	})
 }
 
+func TestNeverBlock(t *testing.T) {
+	go withTimeout(t, 2*time.Second)
+
+	e := errors.New("test error")
+	hub, _ := newTestHub(t)
+	c := sentrycore.NewCore(hub)
+	c.Stop()
+
+	for i := 0; i < 2048; i++ {
+		c.Write(zapcore.Entry{Level: zapcore.ErrorLevel, Message: "should not block"}, []zapcore.Field{log.Error(e)})
+	}
+}
+
 // TestFlush ensures that even with a huge backlog of events, the Flush functions returns.
 func TestFlush(t *testing.T) {
 	go withTimeout(t, 10*time.Second)
