@@ -94,15 +94,6 @@ func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string
 	}, &result)
 }
 
-// ExternalServicesList returns all external services of the given kind.
-func (c *internalClient) ExternalServicesList(
-	ctx context.Context,
-	opts api.ExternalServicesListRequest,
-) ([]*api.ExternalService, error) {
-	var extsvcs []*api.ExternalService
-	return extsvcs, c.postInternal(ctx, "external-services/list", &opts, &extsvcs)
-}
-
 func (c *internalClient) LogTelemetry(ctx context.Context, reqBody any) error {
 	return c.postInternal(ctx, "telemetry", reqBody, nil)
 }

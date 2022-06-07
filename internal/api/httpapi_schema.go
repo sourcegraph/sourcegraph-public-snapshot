@@ -44,12 +44,3 @@ type ExternalServiceConfigsRequest struct {
 	Limit   int    `json:"limit"`
 	AfterID int    `json:"after_id"`
 }
-
-type ExternalServicesListRequest struct {
-	// NOTE(tsenart): We must keep this field in addition to the
-	// Kinds field until after we roll-out this change, for backwards compatibility.
-	Kind    string   `json:"kind"`
-	Kinds   []string `json:"kinds"`
-	Limit   int      `json:"limit"`
-	AfterID int      `json:"after_id"`
-}

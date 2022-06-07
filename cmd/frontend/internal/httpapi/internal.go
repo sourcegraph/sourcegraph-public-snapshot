@@ -67,38 +67,6 @@ func serveExternalServiceConfigs(db database.DB) func(w http.ResponseWriter, r *
 	}
 }
 
-// serveExternalServicesList serves a JSON response that is an array of all external services
-// of the given kind
-func serveExternalServicesList(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var req api.ExternalServicesListRequest
-		err := json.NewDecoder(r.Body).Decode(&req)
-		if err != nil {
-			return err
-		}
-
-		if len(req.Kinds) == 0 {
-			req.Kinds = append(req.Kinds, req.Kind)
-		}
-
-		options := database.ExternalServicesListOptions{
-			Kinds:   []string{req.Kind},
-			AfterID: int64(req.AfterID),
-		}
-		if req.Limit > 0 {
-			options.LimitOffset = &database.LimitOffset{
-				Limit: req.Limit,
-			}
-		}
-
-		services, err := db.ExternalServices().List(r.Context(), options)
-		if err != nil {
-			return err
-		}
-		return json.NewEncoder(w).Encode(services)
-	}
-}
-
 func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 	raw, err := globals.ConfigurationServerFrontendOnly.Source.Read(r.Context())
 	if err != nil {
