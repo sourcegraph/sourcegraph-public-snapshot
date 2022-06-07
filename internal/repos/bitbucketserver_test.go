@@ -355,8 +355,8 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 	}
 
 	type Results struct {
-		*bitbucketserver.PageToken `json:"pageToken"`
-		Values                     any `json:"values"`
+		*bitbucketserver.PageToken
+		Values any `json:"values"`
 	}
 
 	pageToken := bitbucketserver.PageToken{
@@ -491,8 +491,8 @@ func TestBitbucketServerSource_ListByProjectKey(t *testing.T) {
 	}
 
 	type Results struct {
-		*bitbucketserver.PageToken `json:"pageToken"`
-		Values                     any `json:"values"`
+		*bitbucketserver.PageToken
+		Values any `json:"values"`
 	}
 
 	pageToken := bitbucketserver.PageToken{
