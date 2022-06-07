@@ -73,20 +73,20 @@ extend type Mutation {
     project key and all the users that have access to each repository.
     """
     setRepositoryPermissionsForBitbucketProject(
-      """
-      Bitbucket project key of which all repository permissions will be updated.
-      """
-      projectKey: String!
-      """
-      The bitbucket code host's GraphQL ID where this project is located.
-      """
-      codeHost: ID!
-      """
-      A list of user identifiers and their repository permissions, which defines the set of
-      users who may view the repository. All users not included in the list will not be
-      permitted to view the repository on Sourcegraph.
-      """
-      userPermissions: [UserPermission!]!
+        """
+        Bitbucket project key of which all repository permissions will be updated.
+        """
+        projectKey: String!
+        """
+        The bitbucket code host's GraphQL ID where this project is located.
+        """
+        codeHost: ID!
+        """
+        A list of user identifiers and their repository permissions, which defines the set of
+        users who may view the repository. All users not included in the list will not be
+        permitted to view the repository on Sourcegraph.
+        """
+        userPermissions: [UserPermission!]!
     ): EmptyResponse!
 }
 
