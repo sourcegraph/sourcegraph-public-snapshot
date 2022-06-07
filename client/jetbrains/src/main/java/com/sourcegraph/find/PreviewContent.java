@@ -7,16 +7,18 @@ import java.util.Objects;
 
 public class PreviewContent {
     private final String fileName;
+    private final String repoUrl;
     private final String path;
     private final String content;
     private final int lineNumber;
     private final int[][] absoluteOffsetAndLengths;
     private final String relativeUrl;
 
-    public PreviewContent(String fileName, String path, String content, int lineNumber, int[][] absoluteOffsetAndLengths, String relativeUrl) {
+    public PreviewContent(String fileName, String repoUrl, String path, String content, int lineNumber, int[][] absoluteOffsetAndLengths, String relativeUrl) {
         // It seems like the constructor is not called when we use the JSON parser to create instances of this class, so
         // avoid adding any computation here.
         this.fileName = fileName;
+        this.repoUrl = repoUrl;
         this.path = path;
         this.content = content;
         this.lineNumber = lineNumber;
@@ -26,6 +28,10 @@ public class PreviewContent {
 
     public String getFileName() {
         return fileName;
+    }
+
+    public String getRepoUrl() {
+        return repoUrl;
     }
 
     public String getPath() {
@@ -65,6 +71,7 @@ public class PreviewContent {
 
     private boolean equals(PreviewContent other) {
         return fileName.equals(other.fileName)
+            && repoUrl.equals(other.repoUrl)
             && path.equals(other.path)
             && content.equals(other.content)
             && lineNumber == other.lineNumber

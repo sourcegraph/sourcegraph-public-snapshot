@@ -14,6 +14,7 @@ import { PluginConfig, Search, Theme } from './types'
 
 export interface PreviewContent {
     fileName: string
+    repoUrl: string
     path: string
     content: string | null
     lineNumber: number
@@ -159,6 +160,7 @@ export async function createPreviewContent(
         )
         return {
             fileName: '',
+            repoUrl: '',
             path: '',
             content,
             lineNumber: -1,
@@ -178,6 +180,7 @@ export async function createPreviewContent(
     if (match.type === 'repo') {
         return {
             fileName: '',
+            repoUrl: '',
             path: '',
             content: null,
             lineNumber: -1,
@@ -196,6 +199,7 @@ export async function createPreviewContent(
 
     return {
         fileName: '',
+        repoUrl: '',
         path: '',
         content: null,
         lineNumber: -1,
@@ -218,6 +222,7 @@ async function createPreviewContentForContentMatch(
 
     return {
         fileName,
+        repoUrl: match.repository,
         path: match.path,
         content: prepareContent(content),
         lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
@@ -232,6 +237,7 @@ async function createPreviewContentForPathMatch(match: PathMatch): Promise<Previ
 
     return {
         fileName,
+        repoUrl: match.repository,
         path: match.path,
         content: prepareContent(content),
         lineNumber: -1,
@@ -252,6 +258,7 @@ async function createPreviewContentForSymbolMatch(
 
     return {
         fileName,
+        repoUrl: match.repository,
         path: match.path,
         content: prepareContent(content),
         lineNumber: getLineFromSourcegraphUrl(symbolMatch.url),
