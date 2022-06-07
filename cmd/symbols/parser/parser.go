@@ -255,7 +255,7 @@ func SpawnCtags(logger log.Logger, ctagsConfig types.CtagsConfig) (ctags.Parser,
 		PatternLengthLimit: ctagsConfig.PatternLengthLimit,
 	}
 	if ctagsConfig.LogErrors {
-		options.Info = std.NewLogger(logger, log.LevelError)
+		options.Info = std.NewLogger(logger, log.LevelInfo)
 	}
 	if ctagsConfig.DebugLogs {
 		options.Debug = std.NewLogger(logger, log.LevelDebug)
