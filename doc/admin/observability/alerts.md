@@ -160,19 +160,19 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> frontend: 2s+ 90th percentile page load latency over all routes over 10m
+- <span class="badge badge-warning">warning</span> frontend: 2s+ 90th percentile page load latency over all routes over 10m
 
 **Next steps**
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
-- Explore the data returned by the query in the dashboard panel and filter by different labels to identify any patterns
+- Investigate potential sources of latency by selecting Explore and modifying the `sum by(le)` section to include additional labels: for example, `sum by(le, job)` or `sum by (le, instance)`.
 - Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-page-load-latency).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-page-load-latency).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "critical_frontend_page_load_latency"
+  "warning_frontend_page_load_latency"
 ]
 ```
 
