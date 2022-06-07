@@ -35,6 +35,7 @@ import { fetchSettingsAreaRepository } from './backend'
 import { ActionContainer, BaseActionContainer } from './components/ActionContainer'
 
 import styles from './RepoSettingsMirrorPage.module.scss'
+import { TerminalLine, TerminalTitle } from '../../auth/Terminal'
 
 interface UpdateMirrorRepositoryActionContainerProps {
     repo: SettingsAreaRepositoryFields
@@ -379,6 +380,12 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                                     <FeedbackText headerText="Questions?" />
                                 </li>
                             </ul>
+                        </Alert>
+                    )}
+                    {this.state.repo.mirrorInfo.lastError && (
+                        <Alert variant="warning">
+                            <TerminalLine>Error updating repo:</TerminalLine>
+                            <TerminalLine>{this.state.repo.mirrorInfo.lastError}</TerminalLine>
                         </Alert>
                     )}
                 </Container>

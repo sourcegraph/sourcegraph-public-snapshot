@@ -20,6 +20,7 @@ import { RepositoriesResult, SiteAdminRepositoryFields } from '../graphql-operat
 import { refreshSiteFlags } from '../site/backend'
 
 import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
+import { Collapsible } from '../components/Collapsible'
 
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
@@ -48,6 +49,7 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                     </small>
                 )}
             </div>
+
             <div className="repository-node__actions">
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
                     <Button to={node.url} variant="secondary" size="sm" as={Link}>
@@ -67,6 +69,11 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                 }{' '}
             </div>
         </div>
+        {node.mirrorInfo.lastError && (
+            <Collapsible title="Error details" titleAtStart={true} defaultExpanded={true}>
+                {node.mirrorInfo.lastError}
+            </Collapsible>
+        )}
     </li>
 )
 

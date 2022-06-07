@@ -161,6 +161,7 @@ const siteAdminRepositoryFieldsFragment = gql`
             cloned
             cloneInProgress
             updatedAt
+            lastError
         }
         externalRepository {
             serviceType
