@@ -2,7 +2,7 @@ import { FunctionComponent, MutableRefObject, PropsWithChildren, useCallback, us
 
 import { noop } from 'lodash'
 
-import { PopoverContext } from './context'
+import { PopoverContext } from './contexts/internal-context'
 
 export enum PopoverOpenEventReason {
     TriggerClick = 'TriggerClick',
