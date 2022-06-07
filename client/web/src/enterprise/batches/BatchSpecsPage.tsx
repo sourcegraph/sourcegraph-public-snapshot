@@ -30,7 +30,7 @@ export const BatchSpecsPage: React.FunctionComponent<React.PropsWithChildren<Bat
             className="mb-3"
         />
         <Container>
-            <BatchSpecList {...props} />
+            <BatchSpecList {...props} includeLocallyExecutedSpecs={false} />
         </Container>
     </>
 )
@@ -61,6 +61,7 @@ export const BatchChangeBatchSpecList: React.FunctionComponent<
             queryBatchSpecs={query}
             isLightTheme={isLightTheme}
             currentSpecID={currentSpecID}
+            includeLocallyExecutedSpecs={true}
             now={now}
         />
     )
@@ -69,6 +70,7 @@ export const BatchChangeBatchSpecList: React.FunctionComponent<
 export interface BatchSpecListProps extends ThemeProps, Pick<RouteComponentProps, 'history' | 'location'> {
     currentSpecID?: Scalars['ID']
     queryBatchSpecs?: typeof _queryBatchSpecs
+    includeLocallyExecutedSpecs: Scalars['Boolean']
     /** For testing purposes only. Sets the current date */
     now?: () => Date
 }
@@ -79,6 +81,7 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
     currentSpecID,
     isLightTheme,
     queryBatchSpecs = _queryBatchSpecs,
+    includeLocallyExecutedSpecs,
     now,
 }) => {
     const query = useCallback(
@@ -86,11 +89,11 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
             const passedArguments = {
                 first: args.first ?? null,
                 after: args.after ?? null,
-                excludeNonSSBCSpecs: true,
+                includeLocallyExecutedSpecs,
             }
             return queryBatchSpecs(passedArguments)
         },
-        [queryBatchSpecs]
+        [queryBatchSpecs, includeLocallyExecutedSpecs]
     )
     return (
         <FilteredConnection<BatchSpecListFields, Omit<BatchSpecNodeProps, 'node'>>

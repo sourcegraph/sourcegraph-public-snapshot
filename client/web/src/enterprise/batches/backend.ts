@@ -16,12 +16,12 @@ import {
 export const queryBatchSpecs = ({
     first,
     after,
-    excludeNonSSBCSpecs,
+    includeLocallyExecutedSpecs,
 }: BatchSpecsVariables): Observable<BatchSpecListConnectionFields> =>
     requestGraphQL<BatchSpecsResult, BatchSpecsVariables>(
         gql`
-            query BatchSpecs($first: Int, $after: String, $excludeNonSSBCSpecs: Boolean) {
-                batchSpecs(first: $first, after: $after, excludeNonSSBCSpecs: $excludeNonSSBCSpecs) {
+            query BatchSpecs($first: Int, $after: String, $includeLocallyExecutedSpecs: Boolean) {
+                batchSpecs(first: $first, after: $after, includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) {
                     ...BatchSpecListConnectionFields
                 }
             }
@@ -31,7 +31,7 @@ export const queryBatchSpecs = ({
         {
             first,
             after,
-            excludeNonSSBCSpecs,
+            includeLocallyExecutedSpecs,
         }
     ).pipe(
         map(dataOrThrowErrors),
@@ -41,14 +41,19 @@ export const queryBatchSpecs = ({
 export const queryBatchChangeBatchSpecs = (id: Scalars['ID']) => ({
     first,
     after,
+    includeLocallyExecutedSpecs,
 }: Omit<BatchChangeBatchSpecsVariables, 'id'>): Observable<BatchSpecListConnectionFields> =>
     requestGraphQL<BatchChangeBatchSpecsResult, BatchChangeBatchSpecsVariables>(
         gql`
-            query BatchChangeBatchSpecs($id: ID!, $first: Int, $after: String) {
+            query BatchChangeBatchSpecs($id: ID!, $first: Int, $after: String, $includeLocallyExecutedSpecs: Boolean) {
                 node(id: $id) {
                     __typename
                     ... on BatchChange {
-                        batchSpecs(first: $first, after: $after) {
+                        batchSpecs(
+                            first: $first
+                            after: $after
+                            includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs
+                        ) {
                             ...BatchSpecListConnectionFields
                         }
                     }
@@ -61,6 +66,7 @@ export const queryBatchChangeBatchSpecs = (id: Scalars['ID']) => ({
             id,
             first,
             after,
+            includeLocallyExecutedSpecs,
         }
     ).pipe(
         map(dataOrThrowErrors),

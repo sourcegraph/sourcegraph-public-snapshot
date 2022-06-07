@@ -1485,8 +1485,8 @@ func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatc
 		NewestFirst: true,
 	}
 
-	if args.ExcludeNonSSBCSpecs != nil {
-		opts.ExcludeNonSSBCSpecs = *args.ExcludeNonSSBCSpecs
+	if args.IncludeLocallyExecutedSpecs != nil {
+		opts.IncludeLocallyExecutedSpecs = *args.IncludeLocallyExecutedSpecs
 	}
 
 	// 🚨 SECURITY: If the user is not an admin, we don't want to include

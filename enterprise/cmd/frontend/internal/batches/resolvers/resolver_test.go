@@ -2063,9 +2063,9 @@ func TestListBatchSpecs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Run("include non SSBC Batch Specs", func(t *testing.T) {
+	t.Run("include locally executed batch specs", func(t *testing.T) {
 		input := map[string]any{
-			"excludeNonSSBCSpecs": false,
+			"includeLocallyExecutedSpecs": true,
 		}
 		var response struct{ BatchSpecs apitest.BatchSpecConnection }
 		apitest.MustExec(ctx, t, s, input, &response, queryListBatchSpecs)
@@ -2074,9 +2074,9 @@ func TestListBatchSpecs(t *testing.T) {
 		assert.Len(t, response.BatchSpecs.Nodes, len(batchSpecs))
 	})
 
-	t.Run("exclude non SSBC Batch Specs", func(t *testing.T) {
+	t.Run("exclude locally executed batch specs", func(t *testing.T) {
 		input := map[string]any{
-			"excludeNonSSBCSpecs": true,
+			"includeLocallyExecutedSpecs": false,
 		}
 		var response struct{ BatchSpecs apitest.BatchSpecConnection }
 		apitest.MustExec(ctx, t, s, input, &response, queryListBatchSpecs)
@@ -2087,8 +2087,8 @@ func TestListBatchSpecs(t *testing.T) {
 }
 
 const queryListBatchSpecs = `
-query($excludeNonSSBCSpecs: Boolean!) {
-	batchSpecs(excludeNonSSBCSpecs: $excludeNonSSBCSpecs) { nodes { id } }
+query($includeLocallyExecutedSpecs: Boolean!) {
+	batchSpecs(includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) { nodes { id } }
 }
 `
 

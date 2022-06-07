@@ -1843,9 +1843,9 @@ extend type Query {
         """
         after: String
         """
-        Exclude batch specs created with the `src-cli` workflow.
+        Include locally executed batch specs in the list of specs returned.
         """
-        excludeNonSSBCSpecs: Boolean
+        includeLocallyExecutedSpecs: Boolean
     ): BatchSpecConnection!
 
     """
@@ -2703,6 +2703,10 @@ type BatchChange implements Node {
         Opaque pagination cursor.
         """
         after: String
+        """
+        Include locally executed batch specs in the list of specs returned.
+        """
+        includeLocallyExecutedSpecs: Boolean
     ): BatchSpecConnection!
 }
 
