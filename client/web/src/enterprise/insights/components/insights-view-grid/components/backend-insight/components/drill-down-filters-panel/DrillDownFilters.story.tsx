@@ -1,5 +1,7 @@
-import { Meta, Story } from '@storybook/react'
 import { useRef } from 'react'
+
+import { Meta, Story } from '@storybook/react'
+
 import { WebStory } from '../../../../../../../../components/WebStory'
 import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../../graphql-operations'
 import { BackendInsight, InsightExecutionType, InsightFilters, InsightType } from '../../../../../../core'
@@ -56,8 +58,10 @@ export const DrillDownPopover: Story = () => {
     )
 }
 
+// eslint-disable-next-line arrow-body-style
 const log = (methodName: string) => {
     return function (args: unknown) {
+        // eslint-disable-next-line prefer-rest-params
         console.log(methodName, [...arguments])
     }
 }
