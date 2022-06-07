@@ -12,7 +12,7 @@ import { Icon, Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { SelectableSearchResult } from './SelectableSearchResult'
 
-import styles from './SearchResult.module.scss'
+import styles from './RepoSearchResult.module.scss'
 
 export interface RepoSearchResultProps {
     match: RepositoryMatch

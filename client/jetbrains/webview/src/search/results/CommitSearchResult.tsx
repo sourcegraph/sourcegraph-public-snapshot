@@ -9,7 +9,7 @@ import { Code, Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { SelectableSearchResult } from './SelectableSearchResult'
 
-import styles from './SearchResult.module.scss'
+import styles from './CommitSearchResult.module.scss'
 
 interface Props {
     match: CommitMatch
