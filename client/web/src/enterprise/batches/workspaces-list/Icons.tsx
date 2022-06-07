@@ -18,7 +18,7 @@ export const CachedIcon: React.FunctionComponent<React.PropsWithChildren<unknown
 )
 
 export const PartiallyCachedIcon: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({ count }) => {
-    const label = `A partial cache result was found for ${count} ${pluralize('step', count)} in this workspace.`
+    const label = `This workspace contains cached results for ${count} ${pluralize('step', count)}.`
     return (
         <Icon
             role="img"
