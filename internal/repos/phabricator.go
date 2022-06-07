@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"sync"
 	"time"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
