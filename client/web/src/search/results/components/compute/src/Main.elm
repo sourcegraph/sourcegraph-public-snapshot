@@ -18,7 +18,6 @@ import Json.Decode.Pipeline
 import Process
 import Set exposing (Set)
 import Task
-import Url.Builder
 import Url.Parser exposing (..)
 
 
@@ -42,8 +41,7 @@ placeholderQuery =
 
 
 type alias Flags =
-    { sourcegraphURL : String
-    , isLightTheme : Maybe Bool
+    { isLightTheme : Maybe Bool
     , computeInput : Maybe ComputeInput
     }
 
@@ -86,8 +84,7 @@ type Theme
 
 
 type alias Model =
-    { sourcegraphURL : String
-    , query : String
+    { query : String
     , debounce : Int
     , dataFilter : DataFilter
     , selectedTab : Tab
@@ -110,8 +107,7 @@ init json =
 
                 Err _ ->
                     -- no initial flags
-                    { sourcegraphURL = ""
-                    , isLightTheme = Nothing
+                    { isLightTheme = Nothing
                     , computeInput =
                         Just
                             { computeQueries = [ placeholderQuery ]
@@ -137,8 +133,7 @@ init json =
                     , activeTab = Chart
                     }
     in
-    ( { sourcegraphURL = flags.sourcegraphURL
-      , query =
+    ( { query =
             case Maybe.map .computeQueries flags.computeInput of
                 Just (query :: _) ->
                     query
@@ -202,7 +197,7 @@ type alias ComputeInput =
 port receiveEvent : (RawEvent -> msg) -> Sub msg
 
 
-port openStream : ( String, Maybe String ) -> Cmd msg
+port openStream : ( String ) -> Cmd msg
 
 
 port emitInput : ComputeInput -> Cmd msg
@@ -358,14 +353,7 @@ update msg model =
                 in
                 ( { model | resultsMap = Dict.empty, alerts = alerts }
                 , Cmd.batch
-                    [ openStream
-                        ( Url.Builder.crossOrigin
-                            model.sourcegraphURL
-                            [ ".api", "compute", "stream" ]
-                            [ Url.Builder.string "q" model.query ]
-                        , Nothing
-                        )
-                    ]
+                    [ openStream model.query ]
                 )
 
         OnResults r ->
@@ -843,7 +831,6 @@ type alias Alert =
 flagsDecoder : Decoder Flags
 flagsDecoder =
     Decode.succeed Flags
-        |> Json.Decode.Pipeline.required "sourcegraphURL" Decode.string
         |> Json.Decode.Pipeline.optional "isLightTheme" (Decode.maybe Decode.bool) Nothing
         |> Json.Decode.Pipeline.required "computeInput" (Decode.nullable computeInputDecoder)
 
