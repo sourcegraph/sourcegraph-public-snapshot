@@ -23,7 +23,9 @@ func (s Sinks) Update(get SinksConfigGetter) func() {
 
 		for _, sink := range s {
 			if err := sink.update(updated); err != nil {
-				// TODO
+				logger := Scoped("conf", "configuration").
+					Scoped("sentry-sink", "Logger extension that capture errors into Sentry")
+				logger.Error("failed to update", Error(err))
 			}
 		}
 	}
