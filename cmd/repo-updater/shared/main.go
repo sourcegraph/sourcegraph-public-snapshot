@@ -82,7 +82,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		InstanceID: hostname.Get(),
 	}, log.NewSentrySink())
 	defer cb.Sync()
-	conf.Watch(cb.Update(conf.GetSinks))
+	conf.Watch(cb.Update(conf.GetLogSinks))
 
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient()) // TODO JH

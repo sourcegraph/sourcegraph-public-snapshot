@@ -69,7 +69,7 @@ func main() {
 
 	defer cb.Sync()
 	conf.Init()
-	conf.Watch(cb.Update(conf.GetSinks))
+	conf.Watch(cb.Update(conf.GetLogSinks))
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
