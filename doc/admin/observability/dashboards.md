@@ -11550,7 +11550,7 @@ Query: `max(src_repoupdater_errored_sync_jobs_percentage)`
 
 <p class="subtitle">Remaining calls to GitHub graphql API before hitting the rate limit</p>
 
-Refer to the [alerts reference](./alerts.md#repo-updater-github-graphql-rate-limit-remaining) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-github-graphql-rate-limit-remaining) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100220` on your Sourcegraph instance.
 
@@ -11569,7 +11569,7 @@ Query: `max by (name) (src_github_rate_limit_remaining_v2{resource="graphql"})`
 
 <p class="subtitle">Remaining calls to GitHub rest API before hitting the rate limit</p>
 
-Refer to the [alerts reference](./alerts.md#repo-updater-github-rest-rate-limit-remaining) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-github-rest-rate-limit-remaining) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100221` on your Sourcegraph instance.
 
@@ -11588,7 +11588,7 @@ Query: `max by (name) (src_github_rate_limit_remaining_v2{resource="rest"})`
 
 <p class="subtitle">Remaining calls to GitHub search API before hitting the rate limit</p>
 
-Refer to the [alerts reference](./alerts.md#repo-updater-github-search-rate-limit-remaining) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#repo-updater-github-search-rate-limit-remaining) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100222` on your Sourcegraph instance.
 
