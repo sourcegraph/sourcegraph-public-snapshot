@@ -269,7 +269,7 @@ You can use the following filters to control how users can create accounts and s
 
   Allows anyone with a GitLab account to create their accounts.
 
-  When `false`, sign-up with GitLab will be blocked. In this case, new users can only sign in after an admin creates their account on Sourcegraph. The user account email should match their GitLab email.
+  When `false`, sign-up with GitLab will be blocked. In this case, new users can only sign in after an admin creates their account on Sourcegraph. The user account email should match their primary emails on GitLab (which are always verified).
 
   *If not set, unliked with GitHub, it defaults to `true`, allowing any GitLab user with access to your instance to sign up*.
 
