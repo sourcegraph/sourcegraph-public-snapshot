@@ -13,7 +13,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -23,23 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func serveReposGetByName(db database.DB) func(http.ResponseWriter, *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		repoName := api.RepoName(mux.Vars(r)["RepoName"])
-		repo, err := backend.NewRepos(db).GetByName(r.Context(), repoName)
-		if err != nil {
-			return err
-		}
-		data, err := json.Marshal(repo)
-		if err != nil {
-			return err
-		}
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(data)
-		return nil
-	}
-}
 
 func servePhabricatorRepoCreate(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {

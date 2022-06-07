@@ -152,7 +152,6 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(indexer.serveConfiguration)))
 	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(indexer.serveList)))
 
-	m.Get(apirouter.ReposGetByName).Handler(trace.Route(handler(serveReposGetByName(db))))
 	m.Get(apirouter.SettingsGetForSubject).Handler(trace.Route(handler(serveSettingsGetForSubject(db))))
 	m.Get(apirouter.UserEmailsGetEmail).Handler(trace.Route(handler(serveUserEmailsGetEmail(db))))
 	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))

@@ -86,15 +86,6 @@ func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnifie
 	return cfg, err
 }
 
-func (c *internalClient) ReposGetByName(ctx context.Context, repoName api.RepoName) (*api.Repo, error) {
-	var repo api.Repo
-	err := c.postInternal(ctx, "repos/"+string(repoName), nil, &repo)
-	if err != nil {
-		return nil, err
-	}
-	return &repo, nil
-}
-
 func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, repo api.RepoName, callsign, url string) error {
 	return c.postInternal(ctx, "phabricator/repo-create", api.PhabricatorRepoCreateRequest{
 		RepoName: repo,

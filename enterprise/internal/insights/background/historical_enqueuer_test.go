@@ -30,7 +30,6 @@ type testParams struct {
 
 type testResults struct {
 	allReposIteratorCalls int
-	reposGetByName        int
 	operations            []string
 }
 
@@ -98,7 +97,6 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 		}
 	}
 	repoStore.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-		r.reposGetByName++
 		return repos[name], nil
 	})
 
