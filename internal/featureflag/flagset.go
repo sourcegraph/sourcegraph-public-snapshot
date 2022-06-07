@@ -7,6 +7,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
+// Current feature flags requested by backend/frontend for the current actor
+//
+// For telemetry/tracking purposes
 type EvaluatedFlagSet map[string]bool
 
 func (f EvaluatedFlagSet) String() string {
@@ -19,11 +22,13 @@ func (f EvaluatedFlagSet) String() string {
 	return sb.String()
 }
 
+// Feature flags for the current actor
 type FlagSet struct {
 	flags map[string]bool
 	actor *actor.Actor
 }
 
+// Returns (flagValue, true) if flag exist, otherwise (false, false)
 func (f *FlagSet) GetBool(flag string) (bool, bool) {
 	if f == nil {
 		return false, false
@@ -35,6 +40,7 @@ func (f *FlagSet) GetBool(flag string) (bool, bool) {
 	return v, ok
 }
 
+// Returns "flagValue" or "defaultVal" if flag doesn't not exist
 func (f *FlagSet) GetBoolOr(flag string, defaultVal bool) bool {
 	if v, ok := f.GetBool(flag); ok {
 		return v
