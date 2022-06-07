@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
-	"github.com/inconshreveable/log15"
+	logger "github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/keegancsmith/rpc"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
@@ -39,6 +39,8 @@ func NewMeteredSearcher(hostname string, z zoekt.Streamer) zoekt.Streamer {
 }
 
 func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c zoekt.Sender) (err error) {
+	slogger := logger.Scoped("StreamSearch", "Stream search ")
+
 	start := time.Now()
 
 	// isLeaf is true if this is a zoekt.Searcher which does a network
@@ -100,7 +102,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			newOpts.SpanContext = spanContext
 			opts = &newOpts
 		} else {
-			log15.Warn("meteredSearcher: Error injecting new span context into map: %s", err)
+			slogger.Warn("meteredSearcher: Error injecting new span context into map: %s", logger.Error(err))
 		}
 	}
 

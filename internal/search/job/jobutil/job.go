@@ -1,11 +1,13 @@
 package jobutil
 
 import (
+	"github.com/inconshreveable/log15"
+	logger "github.com/sourcegraph/sourcegraph/lib/log"
 	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -780,10 +782,11 @@ func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSou
 }
 
 func toFeatures(flags featureflag.FlagSet) search.Features {
+	slogger := logger.Scoped("toFeatures", "To features ")
 	if flags == nil {
 		flags = featureflag.FlagSet{}
 		metricFeatureFlagUnavailable.Inc()
-		log15.Warn("search feature flags are not available")
+		slogger.Warn("search feature flags are not available")
 	}
 
 	return search.Features{

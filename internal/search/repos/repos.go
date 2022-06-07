@@ -10,7 +10,7 @@ import (
 
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
-	"github.com/inconshreveable/log15"
+	logger "github.com/sourcegraph/sourcegraph/lib/log"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -794,6 +794,9 @@ func (MissingRepoRevsError) Error() string { return "missing repo revs" }
 // only the repos directly added by the user. Otherwise it's all repos the user has
 // access to on all connected code hosts / external services.
 func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
+
+	slogger := logger.Scoped("PrivateReposForActor", "Get all private repos for the current actor")
+
 	tr, ctx := trace.New(ctx, "PrivateReposForActor", "")
 	defer tr.Finish()
 
@@ -823,7 +826,7 @@ func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions searc
 	})
 
 	if err != nil {
-		log15.Error("doResults: failed to list user private repos", "error", err, "user-id", userID)
+		slogger.Error("doResults: failed to list user private repos", logger.String("error", err.Error()), logger.Int("user-id" , int(userID)) )
 		tr.LazyPrintf("error resolving user private repos: %v", err)
 	}
 	return userPrivateRepos

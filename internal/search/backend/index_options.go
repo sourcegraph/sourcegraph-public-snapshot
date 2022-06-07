@@ -3,11 +3,11 @@ package backend
 import (
 	"bytes"
 	"encoding/json"
+	logger "github.com/sourcegraph/sourcegraph/lib/log"
 	"sort"
 
 	"github.com/google/zoekt"
 	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -202,6 +202,8 @@ func getIndexOptions(
 type revsRuleFunc func(*RepoIndexOptions) (revs []string)
 
 func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration) revsRuleFunc {
+	slogger := logger.Scoped("siteConfigRevisionsRuleFunc", "Site config revisions rule function")
+
 	if c == nil || c.ExperimentalFeatures == nil {
 		return nil
 	}
@@ -213,7 +215,7 @@ func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration) revsRuleFunc {
 		case rule.Name != "":
 			namePattern, err := regexp.Compile(rule.Name)
 			if err != nil {
-				log15.Error("error compiling regex from search.index.revisions", "regex", rule.Name, "err", err)
+				slogger.Error("error compiling regex from search.index.revisions", logger.String("regex", rule.Name), logger.String("err", err.Error()))
 				continue
 			}
 
