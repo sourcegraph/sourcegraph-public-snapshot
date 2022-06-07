@@ -10,6 +10,7 @@ import GitLabIcon from 'mdi-react/GitlabIcon'
 import LanguageGoIcon from 'mdi-react/LanguageGoIcon'
 import LanguageJavaIcon from 'mdi-react/LanguageJavaIcon'
 import LanguagePythonIcon from 'mdi-react/LanguagePythonIcon'
+import LanguageRustIcon from 'mdi-react/LanguageRustIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
@@ -30,6 +31,7 @@ import pagureSchemaJSON from '../../../../../schema/pagure.schema.json'
 import perforceSchemaJSON from '../../../../../schema/perforce.schema.json'
 import phabricatorSchemaJSON from '../../../../../schema/phabricator.schema.json'
 import pythonPackagesJSON from '../../../../../schema/python-packages.schema.json'
+import rustPackagesJSON from '../../../../../schema/rust-packages.schema.json'
 import { ExternalServiceKind } from '../../graphql-operations'
 import { EditorAction } from '../../site-admin/configHelpers'
 import { PerforceIcon } from '../PerforceIcon'
@@ -1372,6 +1374,30 @@ const PYTHON_PACKAGES = {
     editorActions: [],
 }
 
+const RUST_PACKAGES = {
+    kind: ExternalServiceKind.RUSTPACKAGES,
+    title: 'Rust Dependencies',
+    icon: LanguageRustIcon,
+    jsonSchema: rustPackagesJSON,
+    defaultDisplayName: 'Rust Dependencies',
+    defaultConfig: `{
+  "dependencies": []
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <Field>dependencies</Field> to the list of packages that you want to
+                    manually add. For example, <Code>"tokio@18.0.0"</Code>.
+                </li>
+            </ol>
+            <Text>⚠️ Rust package repositories are visible by all users of the Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one Rust packages code host per Sourcegraph instance.</Text>
+        </div>
+    ),
+    editorActions: [],
+}
+
 export const codeHostExternalServices: Record<string, AddExternalServiceOptions> = {
     github: GITHUB_DOTCOM,
     ghe: GITHUB_ENTERPRISE,
@@ -1385,6 +1411,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     git: GENERIC_GIT,
     goModules: GO_MODULES,
     pythonPackages: PYTHON_PACKAGES,
+    rustPackages: RUST_PACKAGES,
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.jvmPackages === 'disabled' ? {} : { jvmPackages: JVM_PACKAGES }),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
@@ -1417,4 +1444,5 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
     [ExternalServiceKind.PAGURE]: PAGURE,
     [ExternalServiceKind.NPMPACKAGES]: NPM_PACKAGES,
     [ExternalServiceKind.PYTHONPACKAGES]: PYTHON_PACKAGES,
+    [ExternalServiceKind.RUSTPACKAGES]: RUST_PACKAGES,
 }

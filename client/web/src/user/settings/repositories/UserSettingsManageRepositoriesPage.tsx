@@ -650,7 +650,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
                 </Select>
             </div>
             <FilterInput
-                className="form-control"
                 type="search"
                 placeholder="Filter repositories..."
                 name="query"
@@ -879,7 +878,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
                                 <Text className="text-muted">Public repositories on GitHub and GitLab</Text>
                                 <Checkbox
                                     id="add-public-repos"
-                                    className="mr-2 mt-2"
+                                    className="mr-2 mt-0"
+                                    wrapperClassName="d-flex align-items-center"
                                     label="Sync specific public repositories by URL"
                                     onChange={toggleTextArea}
                                     checked={publicRepoState.enabled}

@@ -1852,6 +1852,7 @@ enum SearchPatternType {
     literal
     regexp
     structural
+    lucky
 }
 
 """
@@ -2299,6 +2300,7 @@ enum ExternalServiceKind {
     PERFORCE
     PHABRICATOR
     PYTHONPACKAGES
+    RUSTPACKAGES
 }
 
 """

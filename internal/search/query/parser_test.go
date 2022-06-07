@@ -291,7 +291,7 @@ func parseAndOrGrammar(in string) ([]Node, error) {
 	if parser.balanced != 0 {
 		return nil, errors.New("unbalanced expression: unmatched closing parenthesis )")
 	}
-	return newOperator(nodes, And), nil
+	return NewOperator(nodes, And), nil
 }
 
 func TestParse(t *testing.T) {
@@ -743,7 +743,7 @@ func Test_newOperator(t *testing.T) {
 			q, err := ParseRegexp(tc.query)
 			require.NoError(t, err)
 
-			got := newOperator(q, And)
+			got := NewOperator(q, And)
 			tc.want.Equal(t, Q(got).String())
 		})
 	}

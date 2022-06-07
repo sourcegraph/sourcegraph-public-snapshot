@@ -371,7 +371,6 @@ export const SelectAffiliatedRepos: FunctionComponent<React.PropsWithChildren<Pr
                 </Select>
             </div>
             <FilterInput
-                className="form-control"
                 type="search"
                 placeholder="Filter..."
                 name="query"

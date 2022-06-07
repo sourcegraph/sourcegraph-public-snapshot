@@ -59,7 +59,6 @@ public class SourcegraphWindow implements Disposable {
             }
         }
 
-
         // If the popup is already shown, hitting alt + a gain should behave the same as the native find in files
         // feature and focus the search field.
         if (mainPanel.getBrowser() != null) {
