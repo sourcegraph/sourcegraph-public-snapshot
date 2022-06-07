@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 
 	"github.com/urfave/cli/v2"
@@ -55,11 +54,12 @@ var (
 				Destination: &opsUpdateImagesPinTagFlag,
 			},
 		},
-		Action: execAdapter(opsUpdateImage),
+		Action: opsUpdateImage,
 	}
 )
 
-func opsUpdateImage(ctx context.Context, args []string) error {
+func opsUpdateImage(ctx *cli.Context) error {
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "No path provided"))
 		return flag.ErrHelp
