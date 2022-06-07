@@ -88,8 +88,10 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, graph 
 	  linkType: hard
 	*/
 
-	var byName = map[string]*reposource.NpmDependency{}
-	var dependencyNames = map[*reposource.NpmDependency][]string{}
+	var (
+		byName          = map[string]*reposource.NpmDependency{}
+		dependencyNames = map[*reposource.NpmDependency][]string{}
+	)
 
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
