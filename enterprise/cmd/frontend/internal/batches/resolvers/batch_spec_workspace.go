@@ -224,6 +224,16 @@ func (r *batchSpecWorkspaceResolver) CachedResultFound() bool {
 	return r.workspace.CachedResultFound
 }
 
+func (r *batchSpecWorkspaceResolver) StepCacheResultCount() (count int32) {
+	for idx := range r.batchSpec.Steps {
+		if _, ok := r.workspace.StepCacheResult(idx + 1); ok {
+			count++
+		}
+	}
+
+	return count
+}
+
 func (r *batchSpecWorkspaceResolver) Stages() graphqlbackend.BatchSpecWorkspaceStagesResolver {
 	if r.execution == nil {
 		return nil

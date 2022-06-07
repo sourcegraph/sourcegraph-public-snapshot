@@ -3,7 +3,10 @@ import React from 'react'
 import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 
+import { pluralize } from '@sourcegraph/common'
 import { Icon } from '@sourcegraph/wildcard'
+
+import styles from './Icons.module.scss'
 
 export const CachedIcon: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <Icon
@@ -13,6 +16,19 @@ export const CachedIcon: React.FunctionComponent<React.PropsWithChildren<unknown
         as={ContentSaveIcon}
     />
 )
+
+export const PartiallyCachedIcon: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({ count }) => {
+    const label = `A partial cache result was found for ${count} ${pluralize('step', count)} in this workspace.`
+    return (
+        <Icon
+            role="img"
+            className={styles.partiallyCachedIcon}
+            data-tooltip={label}
+            aria-label={label}
+            as={ContentSaveIcon}
+        />
+    )
+}
 
 export const ExcludeIcon: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <Icon
