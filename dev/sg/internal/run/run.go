@@ -325,15 +325,7 @@ var installFuncs = map[string]installFunc{
 			return err
 		}
 
-		var os string
-		switch runtime.GOOS {
-		case "linux":
-			os = "linux"
-		case "darwin":
-			os = "darwin"
-		}
-
-		archiveName := fmt.Sprintf("jaeger-%s-%s-%s", version, os, runtime.GOARCH)
+		archiveName := fmt.Sprintf("jaeger-%s-%s-%s", version, runtime.GOOS, runtime.GOARCH)
 		url := fmt.Sprintf("https://github.com/jaegertracing/jaeger/releases/download/v%s/%s.tar.gz", version, archiveName)
 
 		target := filepath.Join(root, fmt.Sprintf(".bin/jaeger-all-in-one-%s", version))
