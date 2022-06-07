@@ -65,7 +65,7 @@ func getFlagCacheKey(name string) string {
 	return "ff_" + name
 }
 
-// Clears stored evaluated feature flag from Redis
+// Clears stored evaluated feature flags from Redis
 func ClearEvaluatedFlagFromCache(flagName string) {
 	c := pool.Get()
 	defer c.Close()
