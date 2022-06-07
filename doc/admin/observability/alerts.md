@@ -3807,7 +3807,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Next steps**
 
-- Consider creating a new token under a dedicated machine user to reduce rate limit pressure.
+- Consider creating a new token for the indicated resource (the `name` label for series below the threshold in the dashboard) under a dedicated machine user to reduce rate limit pressure.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-github-graphql-rate-limit-remaining).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -3833,7 +3833,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Next steps**
 
-- Consider creating a new token under a dedicated machine user to reduce rate limit pressure.
+- Consider creating a new token for the indicated resource (the `name` label for series below the threshold in the dashboard) under a dedicated machine user to reduce rate limit pressure.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-github-rest-rate-limit-remaining).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -3859,7 +3859,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Next steps**
 
-- Consider creating a new token under a dedicated machine user to reduce rate limit pressure.
+- Consider creating a new token for the indicated resource (the `name` label for series below the threshold in the dashboard) under a dedicated machine user to reduce rate limit pressure.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-github-search-rate-limit-remaining).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
