@@ -1,22 +1,17 @@
 import React from 'react'
 
+import { MockedResponse } from '@apollo/client/testing'
 import { Meta, Story } from '@storybook/react'
-import { Observable, of, throwError } from 'rxjs'
-import { delay } from 'rxjs/operators'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
-import { BackendInsightData, SearchBasedInsight, SeriesChartContent } from '../../../../core'
+import { SearchBasedInsight, SeriesChartContent } from '../../../../core'
+import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
-import {
-    BackendInsight as BackendInsightType,
-    InsightExecutionType,
-    InsightType,
-    isCaptureGroupInsight,
-} from '../../../../core/types'
+import { InsightExecutionType, InsightType } from '../../../../core/types'
 
 import { BackendInsightView } from './BackendInsight'
 
@@ -31,7 +26,10 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
     id: 'searchInsights.insight.mock_backend_insight_id',
     title: 'Backend Insight Mock',
     repositories: [],
-    series: [],
+    series: [
+        { id: 'series_001', query: '', name: 'A metric', stroke: 'var(--warning)' },
+        { id: 'series_002', query: '', name: 'B metric', stroke: 'var(--warning)' },
+    ],
     type: InsightType.SearchBased,
     executionType: InsightExecutionType.Backend,
     step: { weeks: 2 },
@@ -107,27 +105,103 @@ const LINE_CHART_CONTENT_MOCK_EMPTY: SeriesChartContent<BackendInsightDatum> = {
     ],
 }
 
-const mockInsightAPI = ({
+function generateSeries(chartContent: SeriesChartContent<BackendInsightDatum>, isFetchingHistoricalData: boolean) {
+    return chartContent.series.map(series => ({
+        seriesId: series.id,
+        label: series.name,
+        points: series.data.map(point => ({
+            dateTime: new Date(point.x).toUTCString(),
+            value: point.value,
+            __typename: 'InsightDataPoint',
+        })),
+        status: {
+            backfillQueuedAt: '2021-06-06T15:48:11Z',
+            completedJobs: 0,
+            pendingJobs: isFetchingHistoricalData ? 10 : 0,
+            failedJobs: 0,
+            __typename: 'InsightSeriesStatus',
+        },
+        __typename: 'InsightsSeries',
+    }))
+}
+
+const mockInsightAPIResponse = ({
     isFetchingHistoricalData = false,
     delayAmount = 0,
     throwProcessingError = false,
     hasData = true,
-} = {}) => ({
-    getBackendInsightData: (insight: BackendInsightType): Observable<BackendInsightData> => {
-        if (isCaptureGroupInsight(insight)) {
-            throw new Error('This demo does not support capture group insight')
-        }
+} = {}): MockedResponse[] => {
+    if (throwProcessingError) {
+        return [
+            {
+                request: {
+                    query: GET_INSIGHT_VIEW_GQL,
+                    variables: {
+                        id: 'searchInsights.insight.mock_backend_insight_id',
+                        filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
+                        seriesDisplayOptions: {
+                            limit: undefined,
+                            sortOptions: undefined,
+                        },
+                    },
+                },
+                error: new InsightInProcessError(),
+            },
+        ]
+    }
 
-        if (throwProcessingError) {
-            return throwError(new InsightInProcessError())
-        }
-
-        return of({
-            content: hasData ? LINE_CHART_CONTENT_MOCK : LINE_CHART_CONTENT_MOCK_EMPTY,
-            isFetchingHistoricalData,
-        }).pipe(delay(delayAmount))
-    },
-})
+    return [
+        {
+            request: {
+                query: GET_INSIGHT_VIEW_GQL,
+                variables: {
+                    id: 'searchInsights.insight.mock_backend_insight_id',
+                    filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
+                    seriesDisplayOptions: {
+                        limit: undefined,
+                        sortOptions: undefined,
+                    },
+                },
+            },
+            result: {
+                data: {
+                    insightViews: {
+                        nodes: [
+                            {
+                                id: 'searchInsights.insight.mock_backend_insight_id',
+                                appliedSeriesDisplayOptions: {
+                                    limit: 20,
+                                    sortOptions: {
+                                        mode: 'RESULT_COUNT',
+                                        direction: 'DESC',
+                                        __typename: 'SeriesSortOptions',
+                                    },
+                                    __typename: 'SeriesDisplayOptions',
+                                },
+                                defaultSeriesDisplayOptions: {
+                                    limit: null,
+                                    sortOptions: {
+                                        mode: null,
+                                        direction: null,
+                                        __typename: 'SeriesSortOptions',
+                                    },
+                                    __typename: 'SeriesDisplayOptions',
+                                },
+                                dataSeries: generateSeries(
+                                    hasData ? LINE_CHART_CONTENT_MOCK : LINE_CHART_CONTENT_MOCK_EMPTY,
+                                    isFetchingHistoricalData
+                                ),
+                                __typename: 'InsightView',
+                            },
+                        ],
+                        __typename: 'InsightViewConnection',
+                    },
+                },
+            },
+            delay: delayAmount,
+        },
+    ]
+}
 
 const TestBackendInsight: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <BackendInsightView
@@ -142,44 +216,44 @@ export const BackendInsight: Story = () => (
     <section>
         <article>
             <H2>Card</H2>
-            <CodeInsightsBackendStoryMock mocks={mockInsightAPI()}>
+            <MockedTestProvider addTypename={true} mocks={mockInsightAPIResponse()}>
                 <TestBackendInsight />
-            </CodeInsightsBackendStoryMock>
+            </MockedTestProvider>
         </article>
         <article className="mt-3">
             <H2>Card with delay API</H2>
-            <CodeInsightsBackendStoryMock mocks={mockInsightAPI({ delayAmount: 2000 })}>
+            <MockedTestProvider mocks={mockInsightAPIResponse({ delayAmount: 2000 })}>
                 <TestBackendInsight />
-            </CodeInsightsBackendStoryMock>
+            </MockedTestProvider>
         </article>
         <article className="mt-3">
             <H2>Card backfilling data</H2>
-            <CodeInsightsBackendStoryMock mocks={mockInsightAPI({ isFetchingHistoricalData: true })}>
+            <MockedTestProvider addTypename={true} mocks={mockInsightAPIResponse({ isFetchingHistoricalData: true })}>
                 <TestBackendInsight />
-            </CodeInsightsBackendStoryMock>
+            </MockedTestProvider>
         </article>
         <article className="mt-3">
             <H2>Card no data</H2>
-            <CodeInsightsBackendStoryMock mocks={mockInsightAPI({ hasData: false })}>
+            <MockedTestProvider addTypename={true} mocks={mockInsightAPIResponse({ hasData: false })}>
                 <TestBackendInsight />
-            </CodeInsightsBackendStoryMock>
+            </MockedTestProvider>
         </article>
         <article className="mt-3">
             <H2>Card insight syncing</H2>
-            <CodeInsightsBackendStoryMock mocks={mockInsightAPI({ throwProcessingError: true })}>
+            <MockedTestProvider addTypename={true} mocks={mockInsightAPIResponse({ throwProcessingError: true })}>
                 <TestBackendInsight />
-            </CodeInsightsBackendStoryMock>
+            </MockedTestProvider>
         </article>
         <article className="mt-3">
             <H2>Locked Card insight</H2>
-            <CodeInsightsBackendStoryMock mocks={mockInsightAPI()}>
+            <MockedTestProvider addTypename={true} mocks={mockInsightAPIResponse()}>
                 <BackendInsightView
                     style={{ width: 400, height: 400 }}
                     insight={{ ...INSIGHT_CONFIGURATION_MOCK, isFrozen: true }}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     innerRef={() => {}}
                 />
-            </CodeInsightsBackendStoryMock>
+            </MockedTestProvider>
         </article>
     </section>
 )

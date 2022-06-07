@@ -8,7 +8,7 @@ export type FeatureFlagName =
     | 'open-beta-enabled'
     | 'quick-start-tour-for-authenticated-users'
     | 'new-repo-page'
-    | 'disable-insight-polling'
+    | 'insight-polling-enabled'
 
 interface OrgFlagOverride {
     orgID: string

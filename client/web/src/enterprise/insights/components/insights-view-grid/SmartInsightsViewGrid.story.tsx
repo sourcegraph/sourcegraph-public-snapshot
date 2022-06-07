@@ -559,24 +559,6 @@ const LINE_CHART_TESTS_CASES_EXAMPLE: SeriesChartContent<SeriesDatum> = {
     ],
 }
 
-// const codeInsightsApiWithManyLines = {
-//     getBackendInsightData: (insight: BackendInsight): Observable<BackendInsightData> => {
-//         if (isCaptureGroupInsight(insight)) {
-//             throw new Error('This demo does not support capture group insight')
-//         }
-
-//         return of({
-//             content:
-//                 insight.series.length >= 6
-//                     ? insight.series.length >= 15
-//                         ? LINE_CHART_WITH_HUGE_NUMBER_OF_LINES
-//                         : LINE_CHART_WITH_MANY_LINES
-//                     : LINE_CHART_TESTS_CASES_EXAMPLE,
-//             isFetchingHistoricalData: false,
-//         })
-//     },
-// }
-
 function generateSeries(insight: SearchBasedInsight) {
     let seriesData = LINE_CHART_TESTS_CASES_EXAMPLE
     if (insight.series.length >= 15) {

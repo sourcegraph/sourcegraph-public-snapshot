@@ -62,8 +62,8 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const { toggle, isSeriesSelected, isSeriesHovered, setHoveredId } = useSeriesToggle()
     const [wasVisble, dispatchVisibilityChange] = useReducer(wasEverVisible, false)
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
-    const [disablePolling] = useFeatureFlag('disable-insight-polling')
-    const pollingInterval = disablePolling ? 0 : insightPollingInterval(insight)
+    const [enablePolling] = useFeatureFlag('insight-polling-enabled')
+    const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
