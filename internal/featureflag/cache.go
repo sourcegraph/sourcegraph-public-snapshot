@@ -3,6 +3,7 @@ package featureflag
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/gomodule/redigo/redis"
 
@@ -47,7 +48,7 @@ func setEvaluatedFlagToCache(a *actor.Actor, flagName string, value bool) {
 		return
 	}
 
-	c.Do("HSET", getFlagCacheKey(flagName), visitorID, fmt.Sprintf("%v", value))
+	c.Do("HSET", getFlagCacheKey(flagName), visitorID, strconv.FormatBool(value))
 }
 
 func getVisitorIDForActor(a *actor.Actor) (string, error) {
