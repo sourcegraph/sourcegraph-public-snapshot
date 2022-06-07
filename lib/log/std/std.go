@@ -10,7 +10,11 @@ import (
 // NewLogger creates a standard library logger that writes to logger at the designated
 // level. This is useful for providing loggers to libraries that only accept logging
 func NewLogger(logger log.Logger, level log.Level) *stdlog.Logger {
-	return stdlog.New(&logWriter{logger: logger, level: level}, "", 0)
+	return stdlog.New(&logWriter{
+		// stdlogger.Print -> stdlogger.Output -> Write -> logger
+		logger: logger.AddCallerSkip(3),
+		level:  level,
+	}, "", 0)
 }
 
 // logWriter is an io.Writer that doesn't really implement io.Writer correctly, but
