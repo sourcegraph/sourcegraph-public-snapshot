@@ -68,7 +68,7 @@ export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<G
                 data-testid="git-ref-node"
             >
                 <span className="d-flex align-items-center">
-                    {ReferenceIcon && <Icon className="mr-1" as={ReferenceIcon} />}
+                    {ReferenceIcon && <Icon role="img" className="mr-1" as={ReferenceIcon} aria-hidden={true} />}
                     {/*
                     a11y-ignore
                     Rule: "color-contrast" (Elements must have sufficient color contrast)

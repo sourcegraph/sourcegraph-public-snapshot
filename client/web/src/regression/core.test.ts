@@ -164,7 +164,7 @@ describe('Core functionality regression test suite', () => {
         await driver.findElementWithText('Generate new token', { action: 'click', wait: { timeout: 5000 } })
         await driver.findElementWithText('New access token', { wait: { timeout: 1000 } })
         await driver.replaceText({
-            selector: '.test-create-access-token-description',
+            selector: '[data-testid=test-create-access-token-description]',
             newText: 'test-regression',
         })
         await driver.findElementWithText('Generate token', { action: 'click', wait: { timeout: 1000 } })

@@ -202,7 +202,7 @@ func TestHoist(t *testing.T) {
 					leafParser: SearchTypeRegex,
 				}
 				nodes, _ := parser.parseOr()
-				return newOperator(nodes, And)
+				return NewOperator(nodes, And)
 			}
 			query := parse(c.input)
 			hoistedQuery, err := Hoist(query)

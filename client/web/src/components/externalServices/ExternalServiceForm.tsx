@@ -8,7 +8,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, Alert, Typography } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Alert, H4, Text, Input } from '@sourcegraph/wildcard'
 
 import { AddExternalServiceInput } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -67,19 +67,14 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
             {error && <ErrorAlert error={error} />}
             {warning && (
                 <Alert variant="warning">
-                    <Typography.H4>Warning</Typography.H4>
+                    <H4>Warning</H4>
                     <ErrorMessage error={warning} />
                 </Alert>
             )}
             {hideDisplayNameField || (
                 <div className="form-group">
-                    <Typography.Label weight="bold" htmlFor="test-external-service-form-display-name">
-                        Display name:
-                    </Typography.Label>
-                    <input
+                    <Input
                         id="test-external-service-form-display-name"
-                        type="text"
-                        className="form-control"
                         required={true}
                         autoCorrect="off"
                         autoComplete="off"
@@ -88,6 +83,8 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                         value={input.displayName}
                         onChange={onDisplayNameChange}
                         disabled={loading}
+                        label="Display name:"
+                        className="mb-0"
                     />
                 </div>
             )}
@@ -109,9 +106,9 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                     className="test-external-service-editor"
                     telemetryService={telemetryService}
                 />
-                <p className="form-text text-muted">
+                <Text className="form-text text-muted">
                     <small>Use Ctrl+Space for completion, and hover over JSON properties for documentation.</small>
-                </p>
+                </Text>
             </div>
             <Button
                 type="submit"

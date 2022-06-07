@@ -11,7 +11,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { LoadingSpinner, Button, Link, Alert, Icon, Typography } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon, Input, Text, Code } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -104,13 +104,9 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
     return (
         <div>
             <div className={styles.container}>
-                <Typography.Label htmlFor="invite-form__username">
-                    {viewerCanAddUserToOrganization ? 'Add or invite member' : 'Invite member'}
-                </Typography.Label>
-                <Form className="form-inline align-items-start" onSubmit={onSubmit}>
-                    <input
-                        type="text"
-                        className="form-control mb-2 mr-sm-2"
+                <Form className="form-inline align-items-end" onSubmit={onSubmit}>
+                    <Input
+                        inputClassName="mb-2 mr-sm-2"
                         id="invite-form__username"
                         placeholder="Username"
                         onChange={onUsernameChange}
@@ -121,8 +117,10 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
                         required={true}
                         spellCheck={false}
                         size={30}
+                        className="mb-0 w-auto flex-column align-items-start"
+                        label={viewerCanAddUserToOrganization ? 'Add or invite member' : 'Invite member'}
                     />
-                    <div className="d-block d-md-inline">
+                    <div className="d-block d-md-inline mb-sm-2">
                         {viewerCanAddUserToOrganization && (
                             <Button
                                 type="submit"
@@ -169,11 +167,10 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
             </div>
             {authenticatedUser?.siteAdmin && !emailInvitesEnabled && (
                 <DismissibleAlert variant="info" partialStorageKey="org-invite-email-config">
-                    <p className=" mb-0">
-                        Set <Typography.Code>email.smtp</Typography.Code> in{' '}
-                        <Link to="/site-admin/configuration">site configuration</Link> to send email notifications about
-                        invitations.
-                    </p>
+                    <Text className="mb-0">
+                        Set <Code>email.smtp</Code> in <Link to="/site-admin/configuration">site configuration</Link> to
+                        send email notifications about invitations.
+                    </Text>
                 </DismissibleAlert>
             )}
             {invited && isInviteShown && (

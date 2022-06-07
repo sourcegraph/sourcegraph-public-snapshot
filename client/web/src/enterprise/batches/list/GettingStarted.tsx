@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Container, CardBody, Card, Link, Typography } from '@sourcegraph/wildcard'
+import { Container, CardBody, Card, Link, Code, H2, H3, H4, Text } from '@sourcegraph/wildcard'
 
 import styles from './GettingStarted.module.scss'
 
@@ -40,13 +40,13 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                     </video>
                 </div>
                 <div className="col-12 col-md-5">
-                    <Typography.H2>Automate large-scale code changes</Typography.H2>
-                    <p>
+                    <H2>Automate large-scale code changes</H2>
+                    <Text>
                         Batch Changes gives you a declarative structure for finding and modifying code across all of
                         your repositories. Its simple UI makes it easy to track and manage all of your changesets
                         through checks and code reviews until each change is merged.
-                    </p>
-                    <Typography.H3>Common use cases</Typography.H3>
+                    </Text>
+                    <H3>Common use cases</H3>
                     <ul className={classNames(styles.narrowList, 'mb-0')}>
                         <li>Update configuration files across many repositories</li>
                         <li>Update libraries which call your APIs</li>
@@ -57,25 +57,25 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                 </div>
             </div>
         </Container>
-        <Typography.H3 className="mb-3">Tutorials to help with your first batch change</Typography.H3>
+        <H3 className="mb-3">Tutorials to help with your first batch change</H3>
         <div className="row">
             <div className="col-12 col-md-6 mb-2">
                 <Card className="h-100">
                     <CardBody className="d-flex">
                         <FindReplaceIcon className="mr-3" />
                         <div>
-                            <Typography.H4>
+                            <H4>
                                 <Link
                                     to="/help/batch_changes/tutorials/search_and_replace_specific_terms"
                                     rel="noopener"
                                 >
                                     Finding and replacing exclusionary terms
                                 </Link>
-                            </Typography.H4>
-                            <p className="text-muted mb-0">
-                                A Sourcegraph query plus a simple <Typography.Code>sed</Typography.Code> command creates
-                                changesets required to manage a large scale change.
-                            </p>
+                            </H4>
+                            <Text className="text-muted mb-0">
+                                A Sourcegraph query plus a simple <Code>sed</Code> command creates changesets required
+                                to manage a large scale change.
+                            </Text>
                         </div>
                     </CardBody>
                 </Card>
@@ -85,47 +85,47 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                     <CardBody className="d-flex">
                         <RefactorCombyIcon className="mr-3" />
                         <div>
-                            <Typography.H4>
+                            <H4>
                                 <Link to="/help/batch_changes/tutorials/updating_go_import_statements" rel="noopener">
                                     Refactoring with language aware search
                                 </Link>
-                            </Typography.H4>
-                            <p className="text-muted mb-0">
+                            </H4>
+                            <Text className="text-muted mb-0">
                                 Using{' '}
                                 <Link to="https://comby.dev/" rel="noopener">
                                     Comby's
                                 </Link>{' '}
                                 language-aware structural search to refactor Go statements to a semantically equivalent,
                                 but clearer execution.
-                            </p>
+                            </Text>
                         </div>
                     </CardBody>
                 </Card>
             </div>
             <div className="col-12 mb-4 text-right">
-                <p>
+                <Text>
                     <Link to="/help/batch_changes/tutorials" rel="noopener">
                         More tutorials
                     </Link>
-                </p>
+                </Text>
             </div>
         </div>
 
         <div className="row mb-5">
             <div className="col-12 col-md-4 mt-3">
-                <p>
+                <Text>
                     <strong>Quickstart</strong>
-                </p>
-                <p>Create your first Sourcegraph batch change in 10 minutes or less.</p>
+                </Text>
+                <Text>Create your first Sourcegraph batch change in 10 minutes or less.</Text>
                 <Link to="/help/batch_changes/quickstart" rel="noopener">
                     Batch Changes quickstart
                 </Link>
             </div>
             <div className="col-12 col-md-4 mt-3">
-                <p>
+                <Text>
                     <strong>Documentation</strong>
-                </p>
-                <p>
+                </Text>
+                <Text>
                     Learn about the batch spec{' '}
                     <Link to="/help/batch_changes/references/batch_spec_yaml_reference" rel="noopener">
                         YAML reference
@@ -140,18 +140,18 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                         Batch Changes documentation
                     </Link>
                     .
-                </p>
+                </Text>
             </div>
             <div className="col-12 col-md-4">
                 <Card className={styles.overviewCard}>
                     <CardBody>
-                        <p>
+                        <Text>
                             <strong>Overview</strong>
-                        </p>
-                        <p>
+                        </Text>
+                        <Text>
                             View the product marketing page for a high-level overview of benefits and customer use
                             cases.
-                        </p>
+                        </Text>
                         {/*
                             a11y-ignore
                             Rule: "color-contrast" (Elements must have sufficient color contrast)
@@ -164,11 +164,11 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                 </Card>
             </div>
         </div>
-        <Typography.H2>Batch changes demo</Typography.H2>
-        <p>
+        <H2>Batch changes demo</H2>
+        <Text>
             This 2 minute demo provides an overview of batch changes from editing a specification to managing
             changesets.
-        </p>
+        </Text>
         <Container className="mb-3">
             <iframe
                 title="Batch Changes demo"

@@ -41,10 +41,10 @@ The following table outlines the kinds of dependency repositories that dependenc
 
 Kind                                  | How                       | Direct | Transitive
 -------------------------------       |-------------------------- |------- | ----------
-[npm](../../integration/npm.md)       | scip-typescript uploads   | ✅     | ✅
+[npm](../../integration/npm.md)       | scip-typescript uploads   | ❌     | ❌
 [npm](../../integration/npm.md)       | `package-lock.json`       | ✅     | ✅
 [npm](../../integration/npm.md)       | `yarn.lock`               | ✅     | ✅
-[Python](../../integration/python.md) | lsif-python uploads       | ❌     | ❌
+[Python](../../integration/python.md) | scip-python uploads       | ❌     | ❌
 [Python](../../integration/python.md) | `poetry.lock`             | ✅     | ✅
 [Python](../../integration/python.md) | `Pipfile.lock`            | ✅     | ✅
 [Go](../../integration/go.md)         | lsif-go uploads           | ❌     | ❌

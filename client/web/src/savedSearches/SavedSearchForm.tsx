@@ -14,7 +14,9 @@ import {
     Link,
     Alert,
     Checkbox,
-    Typography,
+    Input,
+    Code,
+    Label,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -90,51 +92,44 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
     return (
         <div className="saved-search-form" data-testid="saved-search-form">
             <PageHeader
-                path={[{ text: props.title }]}
-                headingElement="h2"
                 description="Get notifications when there are new results for specific search queries."
                 className="mb-3"
-            />
+            >
+                <PageHeader.Heading as="h3" styleAs="h2">
+                    <PageHeader.Breadcrumb>{props.title}</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
             <Form onSubmit={handleSubmit}>
                 <Container className="mb-3">
-                    <div className="form-group">
-                        <Typography.Label className={styles.label} htmlFor="saved-search-form-input-description">
-                            Description
-                        </Typography.Label>
-                        <input
-                            id="saved-search-form-input-description"
-                            type="text"
-                            name="description"
-                            className="form-control test-saved-search-form-input-description"
-                            placeholder="Description"
-                            required={true}
-                            value={description}
-                            onChange={createInputChangeHandler('description')}
-                        />
-                    </div>
-                    <div className="form-group">
-                        <Typography.Label className={styles.label} htmlFor="saved-search-form-input-query">
-                            Query
-                        </Typography.Label>
-                        <input
-                            id="saved-search-form-input-query"
-                            type="text"
-                            name="query"
-                            className="form-control test-saved-search-form-input-query"
-                            placeholder="Query"
-                            required={true}
-                            value={query}
-                            onChange={createInputChangeHandler('query')}
-                        />
-                    </div>
+                    <Input
+                        id="saved-search-form-input-description"
+                        name="description"
+                        placeholder="Description"
+                        required={true}
+                        value={description}
+                        onChange={createInputChangeHandler('description')}
+                        className={classNames('form-group', styles.label)}
+                        label="Description"
+                        autoFocus={true}
+                    />
+                    <Input
+                        id="saved-search-form-input-query"
+                        name="query"
+                        placeholder="Query"
+                        required={true}
+                        value={query}
+                        onChange={createInputChangeHandler('query')}
+                        className={classNames('form-group', styles.label)}
+                        label="Query"
+                    />
 
                     {props.defaultValues?.notify && (
                         <div className="form-group mb-0">
                             {/* Label is for visual benefit, input has more specific label attached */}
                             {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <Typography.Label className={styles.label} id="saved-search-form-email-notifications">
+                            <Label className={styles.label} id="saved-search-form-email-notifications">
                                 Email notifications
-                            </Typography.Label>
+                            </Label>
                             <div aria-labelledby="saved-search-form-email-notifications">
                                 <Checkbox
                                     name="Notify owner"
@@ -168,29 +163,21 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                     )}
 
                     {notifySlack && slackWebhookURL && (
-                        <div className="form-group mt-3 mb-0">
-                            <Typography.Label className={styles.label} htmlFor="saved-search-form-input-slack">
-                                Slack notifications
-                            </Typography.Label>
-                            <input
-                                id="saved-search-form-input-slack"
-                                type="text"
-                                name="Slack webhook URL"
-                                className="form-control"
-                                value={slackWebhookURL}
-                                disabled={true}
-                                onChange={createInputChangeHandler('slackWebhookURL')}
-                            />
-                            <small>
-                                Slack webhooks are deprecated and will be removed in a future Sourcegraph version.
-                            </small>
-                        </div>
+                        <Input
+                            id="saved-search-form-input-slack"
+                            name="Slack webhook URL"
+                            value={slackWebhookURL}
+                            disabled={true}
+                            onChange={createInputChangeHandler('slackWebhookURL')}
+                            className={classNames('mt-3 mb-0', styles.label)}
+                            label="Slack notifications"
+                            message="Slack webhooks are deprecated and will be removed in a future Sourcegraph version."
+                        />
                     )}
                     {isUnsupportedNotifyQuery && (
                         <Alert className="mt-3 mb-0" variant="warning">
                             <strong>Warning:</strong> non-commit searches do not currently support notifications.
-                            Consider adding <Typography.Code>type:diff</Typography.Code> or{' '}
-                            <Typography.Code>type:commit</Typography.Code> to your query.
+                            Consider adding <Code>type:diff</Code> or <Code>type:commit</Code> to your query.
                         </Alert>
                     )}
                     {notify && !window.context.emailEnabled && !isUnsupportedNotifyQuery && (

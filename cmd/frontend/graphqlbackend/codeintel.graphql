@@ -609,6 +609,31 @@ type SymbolLocation {
     path: String!
 
     """
+    The range.
+    """
+    range: LineRange
+
+    """
+    The line.
+    """
+    line: Int! @deprecated(reason: "use range.line instead")
+
+    """
+    The character.
+    """
+    character: Int! @deprecated(reason: "use range.character instead")
+
+    """
+    The length.
+    """
+    length: Int! @deprecated(reason: "use range.length instead")
+}
+
+"""
+LineRange is a span within a line.
+"""
+type LineRange {
+    """
     The line.
     """
     line: Int!
@@ -936,6 +961,11 @@ type LSIFUpload implements Node {
     inputCommit: String!
 
     """
+    The tags, if any, associated with this commit.
+    """
+    tags: [String!]!
+
+    """
     The original root supplied at upload time.
     """
     inputRoot: String!
@@ -1106,6 +1136,11 @@ type LSIFIndex implements Node {
     The original 40-character commit commit supplied at index time.
     """
     inputCommit: String!
+
+    """
+    The tags, if any, associated with this commit.
+    """
+    tags: [String!]!
 
     """
     The original root supplied at index schedule time.

@@ -81,11 +81,16 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
                     title={this.props.compact ? 'Delete extension' : ''}
                     variant="danger"
                 >
-                    <Icon as={DeleteIcon} /> {!this.props.compact && 'Delete extension'}
+                    <Icon role="img" aria-hidden={true} as={DeleteIcon} /> {!this.props.compact && 'Delete extension'}
                 </Button>
                 {isErrorLike(this.state.deletionOrError) && (
-                    <Button disabled={true} title={upperFirst(this.state.deletionOrError.message)} variant="danger">
-                        <Icon as={WarningIcon} />
+                    <Button
+                        aria-label={upperFirst(this.state.deletionOrError.message)}
+                        disabled={true}
+                        title={upperFirst(this.state.deletionOrError.message)}
+                        variant="danger"
+                    >
+                        <Icon role="img" aria-hidden={true} as={WarningIcon} />
                     </Button>
                 )}
             </ButtonGroup>

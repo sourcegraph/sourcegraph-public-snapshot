@@ -86,7 +86,7 @@ func (f *fakeVersionSource) Version(context.Context) (string, error) {
 }
 
 func newFakeSourcer(fakeSource *fakeVersionSource) repos.Sourcer {
-	return func(e *types.ExternalService) (repos.Source, error) {
+	return func(context.Context, *types.ExternalService) (repos.Source, error) {
 		return fakeSource, nil
 	}
 }

@@ -220,7 +220,7 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 	commitSearchJobCount := 0
 	return jobutil.MapAtom(in, func(atom job.Job) job.Job {
 		switch typedAtom := atom.(type) {
-		case *commit.CommitSearchJob:
+		case *commit.SearchJob:
 			commitSearchJobCount++
 			if commitSearchJobCount > 1 && err == nil {
 				err = ErrInvalidMonitorQuery
@@ -228,8 +228,8 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 			jobCopy := *typedAtom
 			jobCopy.CodeMonitorSearchWrapper = hook
 			return &jobCopy
-		case *repos.ComputeExcludedReposJob, *jobutil.NoopJob:
-			// ComputeExcludedReposJob is fine for code monitor jobs
+		case *repos.ComputeExcludedJob, *jobutil.NoopJob:
+			// ComputeExcludedJob is fine for code monitor jobs
 			return atom
 		default:
 			if err == nil {

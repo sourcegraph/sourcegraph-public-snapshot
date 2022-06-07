@@ -10,7 +10,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -67,11 +66,6 @@ type UserEmailsStore interface {
 // userEmailsStore provides access to the `user_emails` table.
 type userEmailsStore struct {
 	*basestore.Store
-}
-
-// UserEmails instantiates and returns a new UserEmailsStore with prepared statements.
-func UserEmails(db dbutil.DB) UserEmailsStore {
-	return &userEmailsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // UserEmailsWith instantiates and returns a new UserEmailsStore using the other store handle.

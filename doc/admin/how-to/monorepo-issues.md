@@ -48,7 +48,7 @@ _Learn more about managing resources in [docker-compose](../deploy/docker-compos
 
 ## Slow hover tooltip results
 
-Hovering over a symbol results in a query for the definition. If the symbol is defined in a repo that has been indexed via LSIF, then Sourcegraph should respond with results quickly. However, if no LSIF index exists, the definition query will have the same performance characteristics as above in [symbols sidebar](#symbols-sidebar---processing-symbols) because it uses a `type:symbol` search.
+Hovering over a symbol results in a query for the definition. If the symbol is defined in a repo that has precise code intel, then Sourcegraph should respond with results quickly. Otherwise, the definition query will have the same performance characteristics as above in [symbols sidebar](#symbols-sidebar---processing-symbols) because it uses a `type:symbol` search.
 
 ## Slow history tab and git blame results
 
@@ -58,7 +58,7 @@ Selecting the Show History button while viewing a file initiates a request to [f
 
 ## Common alerts
 
-The following alerts are common to instances underprovisioned in relation to their monorepos, [learn more about alerts](https://docs.sourcegraph.com/admin/observability/alert_solutions):
+The following alerts are common to instances underprovisioned in relation to their monorepos, [learn more about alerts](https://docs.sourcegraph.com/admin/observability/alerts):
 
 - frontend: 20s+ 99th percentile code-intel successful search request duration over 5m
 - frontend: 15s+ 90th percentile code-intel successful search request duration over 5m

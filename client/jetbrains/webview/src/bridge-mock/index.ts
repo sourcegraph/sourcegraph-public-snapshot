@@ -1,17 +1,23 @@
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
-import { Request } from '../search/jsToJavaBridgeUtil'
+import type { PreviewRequest, Request } from '../search/js-to-java-bridge'
 import type { Search } from '../search/types'
 
-let savedSearch: Search = {
-    query: 'r:github.com/sourcegraph/sourcegraph jetbrains',
-    caseSensitive: false,
-    patternType: SearchPatternType.literal,
-    selectedSearchContextSpec: 'global',
-}
+const instanceURL = 'https://sourcegraph.com'
 
 const codeDetailsNode = document.querySelector('#code-details') as HTMLPreElement
 const iframeNode = document.querySelector('#webview') as HTMLIFrameElement
+
+const savedSearchFromLocalStorage = localStorage.getItem('savedSearch')
+let savedSearch: Search = savedSearchFromLocalStorage
+    ? (JSON.parse(savedSearchFromLocalStorage) as Search)
+    : {
+          query: 'r:github.com/sourcegraph/sourcegraph jetbrains',
+          caseSensitive: false,
+          patternType: SearchPatternType.literal,
+          selectedSearchContextSpec: 'global',
+      }
+let previewContent: PreviewRequest['arguments'] | null = null
 
 function callJava(request: Request): Promise<object> {
     return new Promise((resolve, reject) => {
@@ -37,7 +43,7 @@ function handleRequest(
         case 'getConfig': {
             onSuccessCallback(
                 JSON.stringify({
-                    instanceURL: 'https://sourcegraph.com',
+                    instanceURL,
                     isGlobbingEnabled: true,
                     accessToken: null,
                 })
@@ -62,41 +68,54 @@ function handleRequest(
         }
 
         case 'preview': {
-            const { content, absoluteOffsetAndLengths } = request.arguments
+            previewContent = request.arguments
 
-            const start = absoluteOffsetAndLengths[0][0]
-            const length = absoluteOffsetAndLengths[0][1]
+            const start =
+                previewContent.absoluteOffsetAndLengths.length > 0 ? previewContent.absoluteOffsetAndLengths[0][0] : 0
+            const length =
+                previewContent.absoluteOffsetAndLengths.length > 0 ? previewContent.absoluteOffsetAndLengths[0][1] : 0
 
-            let htmlContent: string = escapeHTML(content.slice(0, start))
-            htmlContent += `<span id="code-details-highlight">${escapeHTML(
-                content.slice(start, start + length)
-            )}</span>`
-            htmlContent += escapeHTML(content.slice(start + length))
+            let htmlContent: string
+            if (previewContent.content === null) {
+                htmlContent = '(No preview available)'
+            } else {
+                const decodedContent = atob(previewContent.content)
+                htmlContent = escapeHTML(decodedContent.slice(0, start))
+                htmlContent += `<span id="code-details-highlight">${escapeHTML(
+                    decodedContent.slice(start, start + length)
+                )}</span>`
+                htmlContent += escapeHTML(decodedContent.slice(start + length))
+            }
 
             codeDetailsNode.innerHTML = htmlContent
 
             document.querySelector('#code-details-highlight')?.scrollIntoView({ block: 'center', inline: 'center' })
 
-            onSuccessCallback('{}')
+            onSuccessCallback('null')
             break
         }
 
         case 'clearPreview': {
             codeDetailsNode.textContent = ''
-            onSuccessCallback('{}')
+            onSuccessCallback('null')
             break
         }
 
         case 'open': {
-            const { path } = request.arguments
-            alert(`Opening ${path}`)
-            onSuccessCallback('{}')
+            previewContent = request.arguments
+            if (previewContent.fileName) {
+                alert(`Now the IDE would open ${previewContent.path} in the editor...`)
+            } else {
+                window.open(instanceURL + previewContent.relativeUrl, '_blank')
+            }
+            onSuccessCallback('null')
             break
         }
 
         case 'saveLastSearch': {
             savedSearch = request.arguments
-            onSuccessCallback('{}')
+            localStorage.setItem('savedSearch', JSON.stringify(savedSearch))
+            onSuccessCallback('null')
             break
         }
 
@@ -106,7 +125,7 @@ function handleRequest(
         }
 
         case 'indicateFinishedLoading': {
-            onSuccessCallback('{}')
+            onSuccessCallback('null')
             break
         }
 
@@ -122,7 +141,10 @@ iframeNode.addEventListener('load', () => {
     const iframeWindow = iframeNode.contentWindow
     if (iframeWindow !== null) {
         iframeWindow.callJava = callJava
-        iframeWindow.initializeSourcegraph()
+        iframeWindow
+            .initializeSourcegraph()
+            .then(() => {})
+            .catch(() => {})
     }
 })
 

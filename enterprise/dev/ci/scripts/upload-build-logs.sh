@@ -29,7 +29,7 @@ echo "~~~ :go: Building sg"
 (
   set -x
   pushd dev/sg
-  go build -o ../../sg -ldflags "-X main.BuildCommit=$BUILDKITE_COMMIT" -mod=mod .
+  go build -o ../../sg -mod=mod .
   popd
 )
 

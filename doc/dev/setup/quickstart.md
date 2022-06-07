@@ -35,13 +35,11 @@ Open a terminal and run the following command:
 sg setup
 ```
 
-Follow the printed instructions.
+Follow the printed instructions, which will guide you through the installation of all the necessary dependencies to start the local development environment.
 
-They will guide you through the installation of all the necessary dependencies to start the local development environment.
+## Run databases
 
-## Starting the databases
-
-If you chose to run PostgreSQL and Redis **without Docker** (recommended) they should already be running. You can jump the next section.
+If you chose to run PostgreSQL and Redis **without Docker** (recommended) they should already be running. You can jump to the next section.
 
 If you chose to run Redis and PostgreSQL **with Docker** to then we need to run them:
 
@@ -51,15 +49,15 @@ sg run redis-postgres
 
 Keep this process running in a terminal window to keep the databases running. Follow the rest of the instructions in another terminal.
 
-## Start the server
+## Start Sourcegraph
 
-**If you are a Sourcegraph employee**: start the local development server for Sourcegraph Enterprise with the following command:
+**If you are a Sourcegraph employee**, start the local development server for Sourcegraph Enterprise with the following command:
 
 ```sh
 sg start
 ```
 
-**If you are not a Sourcegraph employee and don't have access to [the `dev-private` repository](https://github.com/sourcegraph/dev-private)**: you want to start Sourcegraph OSS, do this:
+**If you are not a Sourcegraph employee and don't have access to [the `dev-private` repository](https://github.com/sourcegraph/dev-private)**, you want to start Sourcegraph OSS instead:
 
 ```sh
 sg start oss
@@ -71,9 +69,9 @@ Navigate your browser to https://sourcegraph.test:3443 to see if everything work
 
 Congratulations on making it to the end of the quickstart guide!
 
-## Running the server in different configurations
+### Running Sourcegraph in different configurations
 
-If you want to run the server in different configurations (with the monitoring stack, with code insights enabled, Sourcegraph OSS, ...), run the following:
+If you want to run Sourcegraph in different configurations (with the monitoring stack, with code insights enabled, Sourcegraph OSS, ...), run the following:
 
 ```sh
 sg start -help
@@ -97,6 +95,7 @@ sg start monitoring
 
 Here are some additional resources to help you go further:
 
+- [Full `sg` reference](../background-information/sg/reference.md)
 - [Troubleshooting local development](troubleshooting.md)
 - [Continuous integration](../background-information/ci/index.md)
 - [Background information](../background-information/index.md) for more context on various topics.

@@ -42,6 +42,8 @@ const insightsWithManyLines: Insight[] = [
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
+        seriesDisplayOptions: {},
+        dashboards: [],
     },
     {
         id: 'searchInsights.insight.Backend_2',
@@ -54,6 +56,8 @@ const insightsWithManyLines: Insight[] = [
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
+        seriesDisplayOptions: {},
+        dashboards: [],
     },
     {
         id: 'searchInsights.insight.Backend_3',
@@ -73,6 +77,8 @@ const insightsWithManyLines: Insight[] = [
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
+        seriesDisplayOptions: {},
+        dashboards: [],
     },
     {
         id: 'searchInsights.insight.Backend_4',
@@ -85,6 +91,8 @@ const insightsWithManyLines: Insight[] = [
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
+        seriesDisplayOptions: {},
+        dashboards: [],
     },
     {
         id: 'searchInsights.insight.Backend_5',
@@ -118,6 +126,8 @@ const insightsWithManyLines: Insight[] = [
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
+        seriesDisplayOptions: {},
+        dashboards: [],
     },
     {
         id: 'searchInsights.insight.Backend_6',
@@ -130,6 +140,8 @@ const insightsWithManyLines: Insight[] = [
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
+        seriesDisplayOptions: {},
+        dashboards: [],
     },
     {
         id: 'searchInsights.insight.Backend_7',
@@ -142,6 +154,8 @@ const insightsWithManyLines: Insight[] = [
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
+        seriesDisplayOptions: {},
+        dashboards: [],
     },
 ]
 

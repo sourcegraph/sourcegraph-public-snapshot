@@ -12,7 +12,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -154,14 +153,18 @@ func (r *changesetDescriptionResolver) BaseRepository() *graphqlbackend.Reposito
 	return r.repoResolver
 }
 func (r *changesetDescriptionResolver) ExternalID() string { return r.desc.ExternalID }
-func (r *changesetDescriptionResolver) BaseRef() string    { return git.AbbreviateRef(r.desc.BaseRef) }
-func (r *changesetDescriptionResolver) BaseRev() string    { return r.desc.BaseRev }
+func (r *changesetDescriptionResolver) BaseRef() string {
+	return gitdomain.AbbreviateRef(r.desc.BaseRef)
+}
+func (r *changesetDescriptionResolver) BaseRev() string { return r.desc.BaseRev }
 func (r *changesetDescriptionResolver) HeadRepository() *graphqlbackend.RepositoryResolver {
 	return r.repoResolver
 }
-func (r *changesetDescriptionResolver) HeadRef() string { return git.AbbreviateRef(r.desc.HeadRef) }
-func (r *changesetDescriptionResolver) Title() string   { return r.desc.Title }
-func (r *changesetDescriptionResolver) Body() string    { return r.desc.Body }
+func (r *changesetDescriptionResolver) HeadRef() string {
+	return gitdomain.AbbreviateRef(r.desc.HeadRef)
+}
+func (r *changesetDescriptionResolver) Title() string { return r.desc.Title }
+func (r *changesetDescriptionResolver) Body() string  { return r.desc.Body }
 func (r *changesetDescriptionResolver) Published() *batcheslib.PublishedValue {
 	if published := r.desc.Published; !published.Nil() {
 		return &published

@@ -46,7 +46,9 @@ import {
     Collapse,
     CollapseHeader,
     CollapsePanel,
-    Typography,
+    Code,
+    H4,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
@@ -188,7 +190,7 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
     if (!tokenResult?.searchToken) {
         return (
             <div>
-                <p className="text-danger">Could not find hovered token.</p>
+                <Text className="text-danger">Could not find hovered token.</Text>
             </div>
         )
     }
@@ -532,7 +534,7 @@ const CollapsibleLocationList: React.FunctionComponent<
                         ) : (
                             <Icon role="img" aria-label="Expand" as={ChevronRightIcon} />
                         )}{' '}
-                        <Typography.H4 className="mb-0">{capitalize(props.name)}</Typography.H4>
+                        <H4 className="mb-0">{capitalize(props.name)}</H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
                             ({props.locations.length} displayed{props.hasMore ? ', more available)' : ')'}
                         </span>
@@ -552,7 +554,7 @@ const CollapsibleLocationList: React.FunctionComponent<
                             isOpen={id => props.isOpen(props.name + id)}
                         />
                     ) : (
-                        <p className="text-muted pl-2">
+                        <Text className="text-muted pl-2">
                             {props.filter ? (
                                 <i>
                                     No {props.name} matching <strong>{props.filter}</strong> found
@@ -560,7 +562,7 @@ const CollapsibleLocationList: React.FunctionComponent<
                             ) : (
                                 <i>No {props.name} found</i>
                             )}
-                        </p>
+                        </Text>
                     )}
 
                     {props.hasMore &&
@@ -614,11 +616,11 @@ const SideBlob: React.FunctionComponent<
         return (
             <>
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
-                <p className="text-muted text-center">
+                <Text alignment="center" className="text-muted">
                     <i>
-                        Loading <Typography.Code>{props.activeLocation.file}</Typography.Code>...
+                        Loading <Code>{props.activeLocation.file}</Code>...
                     </i>
-                </p>
+                </Text>
             </>
         )
     }
@@ -627,9 +629,9 @@ const SideBlob: React.FunctionComponent<
     if (error && !data) {
         return (
             <div>
-                <p className="text-danger">
-                    Loading <Typography.Code>{props.activeLocation.file}</Typography.Code> failed:
-                </p>
+                <Text className="text-danger">
+                    Loading <Code>{props.activeLocation.file}</Code> failed:
+                </Text>
                 <pre>{error.message}</pre>
             </div>
         )
@@ -643,11 +645,11 @@ const SideBlob: React.FunctionComponent<
     const { html, aborted } = data?.repository?.commit?.blob?.highlight
     if (aborted) {
         return (
-            <p className="text-warning text-center">
+            <Text alignment="center" className="text-warning">
                 <i>
-                    Highlighting <Typography.Code>{props.activeLocation.file}</Typography.Code> failed
+                    Highlighting <Code>{props.activeLocation.file}</Code> failed
                 </i>
-            </p>
+            </Text>
         )
     }
 
@@ -843,7 +845,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                             </Link>
                             <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
                                 ({group.locations.length}{' '}
-                                {pluralize('occurrence', group.locations.length, 'occurences')})
+                                {pluralize('occurrence', group.locations.length, 'occurrences')})
                             </span>
                         </span>
                         <Badge small={true} variant="secondary" className="ml-4">
@@ -858,25 +860,25 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                             {group.locations.map(reference => {
                                 const className = isActiveLocation(reference) ? styles.locationActive : ''
 
-                                const locationLine = getPrePostLineContent(reference)
+                                const locationLine = getLineContent(reference)
                                 const lineWithHighlightedToken = locationLine.prePostToken ? (
                                     <>
                                         {locationLine.prePostToken.pre === '' ? (
                                             <></>
                                         ) : (
-                                            <Typography.Code>{locationLine.prePostToken.pre}</Typography.Code>
+                                            <Code>{locationLine.prePostToken.pre}</Code>
                                         )}
                                         <mark className="p-0 selection-highlight sourcegraph-document-highlight">
-                                            <Typography.Code>{searchToken}</Typography.Code>
+                                            <Code>{locationLine.prePostToken.token}</Code>
                                         </mark>
                                         {locationLine.prePostToken.post === '' ? (
                                             <></>
                                         ) : (
-                                            <Typography.Code>{locationLine.prePostToken.post}</Typography.Code>
+                                            <Code>{locationLine.prePostToken.post}</Code>
                                         )}
                                     </>
                                 ) : locationLine.line ? (
-                                    <Typography.Code>{locationLine.line}</Typography.Code>
+                                    <Code>{locationLine.line}</Code>
                                 ) : (
                                     ''
                                 )
@@ -913,11 +915,11 @@ const CollapsibleLocationGroup: React.FunctionComponent<
 }
 
 interface LocationLine {
-    prePostToken?: { pre: string; post: string }
+    prePostToken?: { pre: string; token: string; post: string }
     line?: string
 }
 
-const getPrePostLineContent = (location: Location): LocationLine => {
+export const getLineContent = (location: Location): LocationLine => {
     const range = location.range
     if (range !== undefined) {
         const line = location.lines[range.start.line]
@@ -926,13 +928,18 @@ const getPrePostLineContent = (location: Location): LocationLine => {
             return {
                 prePostToken: {
                     pre: line.slice(0, range.start.character).trimStart(),
+                    token: line.slice(range.start.character, range.end.character),
                     post: line.slice(range.end.character),
                 },
                 line: line.trimStart(),
             }
         }
         return {
-            prePostToken: { pre: line.slice(0, range.start.character).trim(), post: '' },
+            prePostToken: {
+                pre: line.slice(0, range.start.character).trimStart(),
+                token: line.slice(range.start.character),
+                post: '',
+            },
             line: line.trimStart(),
         }
     }
@@ -942,16 +949,16 @@ const getPrePostLineContent = (location: Location): LocationLine => {
 const LoadingCodeIntel: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <>
         <LoadingSpinner inline={false} className="mx-auto my-4" />
-        <p className="text-muted text-center">
+        <Text alignment="center" className="text-muted">
             <i>Loading code intel ...</i>
-        </p>
+        </Text>
     </>
 )
 
 const LoadingCodeIntelFailed: React.FunctionComponent<React.PropsWithChildren<{ error: ErrorLike }>> = props => (
     <>
         <div>
-            <p className="text-danger">Loading code intel failed:</p>
+            <Text className="text-danger">Loading code intel failed:</Text>
             <pre>{props.error.message}</pre>
         </div>
     </>

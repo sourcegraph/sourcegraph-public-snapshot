@@ -35,10 +35,19 @@ func TestToResultResolverList(t *testing.T) {
 
 	nonNilMatches := []result.Match{
 		&result.FileMatch{
-			MultilineMatches: []result.MultilineMatch{
-				{Preview: "a"},
-				{Preview: "b"},
-			},
+			ChunkMatches: result.ChunkMatches{{
+				Content: "a",
+				Ranges: result.Ranges{{
+					Start: result.Location{Line: 1, Column: 0},
+					End:   result.Location{Line: 1, Column: 1},
+				}},
+			}, {
+				Content: "b",
+				Ranges: result.Ranges{{
+					Start: result.Location{Line: 2, Column: 0},
+					End:   result.Location{Line: 2, Column: 1},
+				}},
+			}},
 		},
 	}
 	autogold.Want("resolver copies all match results", `["a","b"]`).Equal(t, test("a|b", nonNilMatches))

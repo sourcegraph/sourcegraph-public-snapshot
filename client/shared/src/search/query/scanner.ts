@@ -489,6 +489,11 @@ export const scanSearchQuery = (
         case SearchPatternType.structural:
             patternKind = PatternKind.Structural
             break
+        case SearchPatternType.lucky:
+            // A `lucky` search pattern can be interpreted in multiple ways
+            // (e.g., literal _or_ regexp), so effectively scan and label patterns as literals.
+            patternKind = PatternKind.Literal
+            break
     }
     const scanner = createScanner(patternKind, interpretComments)
     return scanner(query, 0)

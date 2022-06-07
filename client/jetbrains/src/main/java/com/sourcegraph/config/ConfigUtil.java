@@ -36,17 +36,17 @@ public class ConfigUtil {
         return url.endsWith("/") ? url : url + "/";
     }
 
-    @NotNull
+    @Nullable
     public static Search getLastSearch(@NotNull Project project) {
         return getProjectLevelConfig(project).getLastSearch();
     }
 
     public static void setLastSearch(@NotNull Project project, @NotNull Search lastSearch) {
-        SourcegraphConfig config = getProjectLevelConfig(project);
-        config.lastSearchQuery = lastSearch.getQuery() != null ? lastSearch.getQuery() : "";
-        config.lastSearchCaseSensitive = lastSearch.isCaseSensitive();
-        config.lastSearchPatternType = lastSearch.getPatternType() != null ? lastSearch.getPatternType() : "literal";
-        config.lastSearchContextSpec = lastSearch.getSelectedSearchContextSpec() != null ? lastSearch.getSelectedSearchContextSpec() : "global";
+        SourcegraphConfig settings = getProjectLevelConfig(project);
+        settings.lastSearchQuery = lastSearch.getQuery() != null ? lastSearch.getQuery() : "";
+        settings.lastSearchCaseSensitive = lastSearch.isCaseSensitive();
+        settings.lastSearchPatternType = lastSearch.getPatternType() != null ? lastSearch.getPatternType() : "literal";
+        settings.lastSearchContextSpec = lastSearch.getSelectedSearchContextSpec() != null ? lastSearch.getSelectedSearchContextSpec() : "global";
     }
 
     public static boolean isGlobbingEnabled(@NotNull Project project) {

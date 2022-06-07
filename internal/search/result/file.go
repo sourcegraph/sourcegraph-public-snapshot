@@ -43,8 +43,8 @@ func (f *File) URL() *url.URL {
 type FileMatch struct {
 	File
 
-	MultilineMatches []MultilineMatch
-	Symbols          []*SymbolMatch `json:"-"`
+	ChunkMatches ChunkMatches
+	Symbols      []*SymbolMatch `json:"-"`
 
 	LimitHit bool
 }
@@ -56,7 +56,7 @@ func (fm *FileMatch) RepoName() types.MinimalRepo {
 func (fm *FileMatch) searchResultMarker() {}
 
 func (fm *FileMatch) ResultCount() int {
-	rc := len(fm.Symbols) + len(fm.MultilineMatches)
+	rc := len(fm.Symbols) + fm.ChunkMatches.MatchCount()
 	if rc == 0 {
 		return 1 // 1 to count "empty" results like type:path results
 	}
@@ -67,7 +67,7 @@ func (fm *FileMatch) ResultCount() int {
 // the absence of a true `PathMatch` type, we use this function as a proxy
 // signal to drive `select:file` logic that deduplicates path results.
 func (fm *FileMatch) IsPathMatch() bool {
-	return len(fm.MultilineMatches) == 0 && len(fm.Symbols) == 0
+	return len(fm.ChunkMatches) == 0 && len(fm.Symbols) == 0
 }
 
 func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
@@ -78,7 +78,7 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 			ID:   fm.Repo.ID,
 		}
 	case filter.File:
-		fm.MultilineMatches = nil
+		fm.ChunkMatches = nil
 		fm.Symbols = nil
 		if len(selectPath) > 1 && selectPath[1] == "directory" {
 			fm.Path = path.Clean(path.Dir(fm.Path)) + "/" // Add trailing slash for clarity.
@@ -86,7 +86,7 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 		return fm
 	case filter.Symbol:
 		if len(fm.Symbols) > 0 {
-			fm.MultilineMatches = nil // Only return symbol match if symbols exist
+			fm.ChunkMatches = nil // Only return symbol match if symbols exist
 			if len(selectPath) > 1 {
 				filteredSymbols := SelectSymbolKind(fm.Symbols, selectPath[1])
 				if len(filteredSymbols) == 0 {
@@ -99,7 +99,7 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 		return nil
 	case filter.Content:
 		// Only return file match if line matches exist
-		if len(fm.MultilineMatches) > 0 {
+		if len(fm.ChunkMatches) > 0 {
 			fm.Symbols = nil
 			return fm
 		}
@@ -113,7 +113,8 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 // AppendMatches appends the line matches from src as well as updating match
 // counts and limit.
 func (fm *FileMatch) AppendMatches(src *FileMatch) {
-	fm.MultilineMatches = append(fm.MultilineMatches, src.MultilineMatches...)
+	// TODO merge hunk matches smartly
+	fm.ChunkMatches = append(fm.ChunkMatches, src.ChunkMatches...)
 	fm.Symbols = append(fm.Symbols, src.Symbols...)
 	fm.LimitHit = fm.LimitHit || src.LimitHit
 }
@@ -124,7 +125,7 @@ func (fm *FileMatch) AppendMatches(src *FileMatch) {
 //   if limit >= ResultCount then nothing is done and we return limit - ResultCount.
 //   if limit < ResultCount then ResultCount becomes limit and we return 0.
 func (fm *FileMatch) Limit(limit int) int {
-	matchCount := len(fm.MultilineMatches)
+	matchCount := fm.ChunkMatches.MatchCount()
 	symbolCount := len(fm.Symbols)
 
 	// An empty FileMatch should still count against the limit -- see *FileMatch.ResultCount()
@@ -133,7 +134,7 @@ func (fm *FileMatch) Limit(limit int) int {
 	}
 
 	if limit < matchCount {
-		fm.MultilineMatches = fm.MultilineMatches[:limit]
+		fm.ChunkMatches.Limit(limit)
 		limit = 0
 		fm.LimitHit = true
 	} else {
@@ -165,54 +166,111 @@ func (fm *FileMatch) Key() Key {
 	return k
 }
 
-// LineColumn is a subset of the fields on Location because we don't
-// have the rune offset necessary to build a full Location yet.
-// Eventually, the two structs should be merged.
-type LineColumn struct {
-	// Line is the count of newlines before the offset in the matched text.
-	// Line is 0-based.
-	Line int32
+// ChunkMatch stores the smallest (and contiguous) line range of file content
+// corresponding to the set of ranges. We represent it this way so we always
+// have the complete line available to clients for display purposes and we
+// aways have the complete content of the matched range available for further
+// computation.
+type ChunkMatch struct {
+	// Content contains the lines overlapped by Ranges. Content will always
+	// contain full lines. This means the slice of file content contained
+	// in Content will always be:
+	// 1) preceded by the beginning of the file or a newline, and
+	// 2) succeeded by the end of the file or a newline.
+	Content string
 
-	// Column is the count of unicode code points after the last newline in the matched text
-	Column int32
+	// ContentStart is the location of the first character in Content. Since
+	// Content always starts at the beginning of a line, Column should always
+	// be set to zero.
+	ContentStart Location
+
+	// Ranges is the set of matches for this hunk. Each represents a range of
+	// the matched file that is fully contained by the range represented by
+	// Content. Ranges are relative to the beginning of the file, not the
+	// beginning of Content. This type provides no guarantees about the
+	// ordering of ranges, and also does not guarantee that the ranges are
+	// non-overlapping.
+	Ranges Ranges
 }
 
-type MultilineMatch struct {
-	// Preview is a possibly-multiline string that contains all the
-	// lines that the match overlaps.
-	// The number of lines in Preview should be End.Line - Start.Line + 1
-	Preview string
-	Start   LineColumn
-	End     LineColumn
-}
-
-func MultilineSliceAsLineMatchSlice(matches []MultilineMatch) []*LineMatch {
-	lineMatches := make([]*LineMatch, 0, len(matches))
-	for _, m := range matches {
-		lineMatches = append(lineMatches, m.AsLineMatches()...)
+// MatchedContent returns the content matched by the ranges in this ChunkMatch.
+func (h ChunkMatch) MatchedContent() []string {
+	// Create a new set of ranges whose offsets are
+	// relative to the start of the content.
+	relRanges := h.Ranges.Sub(h.ContentStart)
+	res := make([]string, 0, len(relRanges))
+	for _, rr := range relRanges {
+		res = append(res, h.Content[rr.Start.Offset:rr.End.Offset])
 	}
-	return lineMatches
+	return res
 }
 
-func (m MultilineMatch) AsLineMatches() []*LineMatch {
-	lines := strings.Split(m.Preview, "\n")
-	lineMatches := make([]*LineMatch, 0, len(lines))
+// AsLineMatches facilitates converting from ChunkMatch to a set of LineMatches.
+// This loses information like byte offsets and the logical relationship
+// between lines in a multiline match, but it allows us to keep providing the
+// LineMatch representation for clients without breaking backwards compatibility.
+func (h ChunkMatch) AsLineMatches() []*LineMatch {
+	lines := strings.Split(h.Content, "\n")
+	lineMatches := make([]*LineMatch, len(lines))
 	for i, line := range lines {
-		offset := int32(0)
-		if i == 0 {
-			offset = m.Start.Column
+		lineNumber := h.ContentStart.Line + i
+		offsetAndLengths := [][2]int32{}
+		for _, rr := range h.Ranges {
+			for rangeLine := rr.Start.Line; rangeLine <= rr.End.Line; rangeLine++ {
+				if rangeLine == lineNumber {
+					start := 0
+					if rangeLine == rr.Start.Line {
+						start = rr.Start.Column
+					}
+
+					end := utf8.RuneCountInString(line)
+					if rangeLine == rr.End.Line {
+						end = rr.End.Column
+					}
+
+					if start != end {
+						offsetAndLengths = append(offsetAndLengths, [2]int32{int32(start), int32(end - start)})
+					}
+				}
+			}
 		}
-		length := int32(utf8.RuneCountInString(line)) - offset
-		if i == len(lines)-1 {
-			length = m.End.Column - offset
-		}
-		lineMatches = append(lineMatches, &LineMatch{
+		lineMatches[i] = &LineMatch{
 			Preview:          line,
-			LineNumber:       m.Start.Line + int32(i),
-			OffsetAndLengths: [][2]int32{{offset, length}},
-		})
+			LineNumber:       int32(lineNumber),
+			OffsetAndLengths: offsetAndLengths,
+		}
 	}
 	return lineMatches
+}
+
+type ChunkMatches []ChunkMatch
+
+func (hs ChunkMatches) AsLineMatches() []*LineMatch {
+	res := make([]*LineMatch, 0, len(hs))
+	for _, h := range hs {
+		res = append(res, h.AsLineMatches()...)
+	}
+	return res
+}
+
+func (hs ChunkMatches) MatchCount() int {
+	count := 0
+	for _, h := range hs {
+		count += len(h.Ranges)
+	}
+	return count
+}
+
+func (hs *ChunkMatches) Limit(limit int) {
+	matches := *hs
+	for i, match := range matches {
+		if len(match.Ranges) >= limit {
+			matches[i].Ranges = match.Ranges[:limit]
+			*hs = matches[:i+1]
+			return
+		}
+		limit -= len(match.Ranges)
+	}
 }
 
 type LineMatch struct {
@@ -220,17 +278,4 @@ type LineMatch struct {
 	Preview          string
 	OffsetAndLengths [][2]int32
 	LineNumber       int32
-}
-
-func (m LineMatch) AsMultilineMatches() []MultilineMatch {
-	multilineMatches := make([]MultilineMatch, 0, len(m.OffsetAndLengths))
-	for _, offsetAndLength := range m.OffsetAndLengths {
-		offset, length := offsetAndLength[0], offsetAndLength[1]
-		multilineMatches = append(multilineMatches, MultilineMatch{
-			Preview: m.Preview,
-			Start:   LineColumn{Line: m.LineNumber, Column: offset},
-			End:     LineColumn{Line: m.LineNumber, Column: offset + length},
-		})
-	}
-	return multilineMatches
 }

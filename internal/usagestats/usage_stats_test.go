@@ -23,7 +23,7 @@ func TestGetArchive(t *testing.T) {
 	now := time.Now().UTC()
 	ctx := context.Background()
 
-	user, err := database.Users(db).Create(ctx, database.NewUser{
+	user, err := db.Users().Create(ctx, database.NewUser{
 		Email:           "foo@bar.com",
 		Username:        "admin",
 		EmailIsVerified: true,
@@ -45,7 +45,7 @@ func TestGetArchive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	dates, err := database.Users(db).ListDates(ctx)
+	dates, err := db.Users().ListDates(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

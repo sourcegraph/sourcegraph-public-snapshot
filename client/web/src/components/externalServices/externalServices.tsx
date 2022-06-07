@@ -10,10 +10,11 @@ import GitLabIcon from 'mdi-react/GitlabIcon'
 import LanguageGoIcon from 'mdi-react/LanguageGoIcon'
 import LanguageJavaIcon from 'mdi-react/LanguageJavaIcon'
 import LanguagePythonIcon from 'mdi-react/LanguagePythonIcon'
+import LanguageRustIcon from 'mdi-react/LanguageRustIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { Link, Typography } from '@sourcegraph/wildcard'
+import { Link, Code, Text } from '@sourcegraph/wildcard'
 
 import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../../schema/bitbucket_cloud.schema.json'
@@ -30,6 +31,7 @@ import pagureSchemaJSON from '../../../../../schema/pagure.schema.json'
 import perforceSchemaJSON from '../../../../../schema/perforce.schema.json'
 import phabricatorSchemaJSON from '../../../../../schema/phabricator.schema.json'
 import pythonPackagesJSON from '../../../../../schema/python-packages.schema.json'
+import rustPackagesJSON from '../../../../../schema/rust-packages.schema.json'
 import { ExternalServiceKind } from '../../graphql-operations'
 import { EditorAction } from '../../site-admin/configHelpers'
 import { PerforceIcon } from '../PerforceIcon'
@@ -117,11 +119,11 @@ const editorActionComments = {
 }
 
 const Field = (props: { children: React.ReactChildren | string | string[] }): JSX.Element => (
-    <Typography.Code className="hljs-type">{props.children}</Typography.Code>
+    <Code className="hljs-type">{props.children}</Code>
 )
 
 const Value = (props: { children: React.ReactChildren | string | string[] }): JSX.Element => (
-    <Typography.Code className="hljs-attr">{props.children}</Typography.Code>
+    <Code className="hljs-attr">{props.children}</Code>
 )
 
 const githubInstructions = (isEnterprise: boolean): JSX.Element => (
@@ -168,7 +170,7 @@ const githubInstructions = (isEnterprise: boolean): JSX.Element => (
                 </ul>
             </li>
         </ol>
-        <p>
+        <Text>
             See{' '}
             <Link
                 rel="noopener noreferrer"
@@ -178,7 +180,7 @@ const githubInstructions = (isEnterprise: boolean): JSX.Element => (
                 the docs for more options
             </Link>
             , or try one of the buttons below.
-        </p>
+        </Text>
     </div>
 )
 
@@ -236,7 +238,7 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
                 </ul>
             </li>
         </ol>
-        <p>
+        <Text>
             See{' '}
             <Link
                 rel="noopener noreferrer"
@@ -246,7 +248,7 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
                 the docs for more options
             </Link>
             , or try one of the buttons below.
-        </p>
+        </Text>
     </div>
 )
 
@@ -594,7 +596,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
                     You can optionally exclude repositories using the <Field>exclude</Field> field.
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -604,7 +606,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
                     the docs for more options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -732,7 +734,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
                     index.
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -742,7 +744,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
                     the docs for more options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
 }
@@ -821,7 +823,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
                     </ul>
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -831,7 +833,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
                     the docs for more options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -954,16 +956,16 @@ const SRC_SERVE_GIT: AddExternalServiceOptions = {
 }`,
     instructions: (
         <div>
-            <p>
+            <Text>
                 In the configuration below, set <Field>url</Field> to be the URL of src serve-git.
-            </p>
-            <p>
+            </Text>
+            <Text>
                 Install the{' '}
                 <Link rel="noopener noreferrer" target="_blank" to="https://github.com/sourcegraph/src-cli">
                     Sourcegraph CLI (src)
                 </Link>
                 . src serve-git allows you to serve any git repositories that you have on disk.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -1000,7 +1002,7 @@ const GITOLITE: AddExternalServiceOptions = {
                     Sourcegraph. This is typically the hostname of the Gitolite server.
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -1010,7 +1012,7 @@ const GITOLITE: AddExternalServiceOptions = {
                     the docs for more advanced options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -1105,7 +1107,7 @@ const GENERIC_GIT: AddExternalServiceOptions = {
                     appended to the host URL to obtain the repository clone URLs.
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -1115,7 +1117,7 @@ const GENERIC_GIT: AddExternalServiceOptions = {
                     the docs for more options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -1164,7 +1166,7 @@ const PERFORCE: AddExternalServiceOptions = {
                     Set the <Field>p4.passwd</Field> field to be the ticket value of the authenticated user.
                 </li>
             </ol>
-            <p>
+            <Text>
                 See{' '}
                 <Link
                     rel="noopener noreferrer"
@@ -1174,7 +1176,7 @@ const PERFORCE: AddExternalServiceOptions = {
                     the docs for more advanced options
                 </Link>
                 , or try one of the buttons below.
-            </p>
+            </Text>
         </div>
     ),
     editorActions: [
@@ -1216,17 +1218,17 @@ const JVM_PACKAGES: AddExternalServiceOptions = {
                 <li>
                     In the configuration below, set <Field>maven.repositories</Field> to the list of Maven repositories.
                     For example,
-                    <Typography.Code>"https://maven.google.com"</Typography.Code>.
+                    <Code>"https://maven.google.com"</Code>.
                 </li>
                 <li>
                     In the configuration below, set <Field>maven.dependencies</Field> to the list of artifacts that you
                     want to manually add. For example,
-                    <Typography.Code>"junit:junit:4.13.2"</Typography.Code> or
-                    <Typography.Code>"org.hamcrest:hamcrest-core:1.3:default"</Typography.Code>.
+                    <Code>"junit:junit:4.13.2"</Code> or
+                    <Code>"org.hamcrest:hamcrest-core:1.3:default"</Code>.
                 </li>
             </ol>
-            <p>⚠️ JVM dependency repositories are visible by all users of the Sourcegraph instance.</p>
-            <p>⚠️ It is only possible to register one JVM dependency code host per Sourcegraph instance.</p>
+            <Text>⚠️ JVM dependency repositories are visible by all users of the Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one JVM dependency code host per Sourcegraph instance.</Text>
         </div>
     ),
     editorActions: [],
@@ -1289,22 +1291,21 @@ const NPM_PACKAGES: AddExternalServiceOptions = {
             <ol>
                 <li>
                     In the configuration below, set <Field>registry</Field> to the applicable npm registry. For example,
-                    <Typography.Code>"https://registry.npmjs.mycompany.com"</Typography.Code> or{' '}
-                    <Typography.Code>"https://registry.npmjs.org"</Typography.Code>. Note that this URL may not be the
-                    same as where packages can be searched (such as{' '}
-                    <Typography.Code>https://www.npmjs.org</Typography.Code>). If you're unsure about the exact URL URL
-                    for a custom registry, check the URLs for packages that have already been resolved, such as those in
-                    existing lock files like <Typography.Code>yarn.lock</Typography.Code>.
+                    <Code>"https://registry.npmjs.mycompany.com"</Code> or <Code>"https://registry.npmjs.org"</Code>.
+                    Note that this URL may not be the same as where packages can be searched (such as{' '}
+                    <Code>https://www.npmjs.org</Code>). If you're unsure about the exact URL URL for a custom registry,
+                    check the URLs for packages that have already been resolved, such as those in existing lock files
+                    like <Code>yarn.lock</Code>.
                 </li>
                 <li>
                     In the configuration below, set <Field>dependencies</Field> to the list of packages that you want to
                     manually add. For example,
-                    <Typography.Code>"react@17.0.2"</Typography.Code> or{' '}
-                    <Typography.Code>"@types/lodash@4.14.177"</Typography.Code>. Version ranges are not supported.
+                    <Code>"react@17.0.2"</Code> or <Code>"@types/lodash@4.14.177"</Code>. Version ranges are not
+                    supported.
                 </li>
             </ol>
-            <p>⚠️ npm package repositories are visible by all users of the Sourcegraph instance.</p>
-            <p>⚠️ It is only possible to register one npm package code host per Sourcegraph instance.</p>
+            <Text>⚠️ npm package repositories are visible by all users of the Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one npm package code host per Sourcegraph instance.</Text>
         </div>
     ),
     editorActions: [],
@@ -1325,18 +1326,17 @@ const GO_MODULES = {
             <ol>
                 <li>
                     In the configuration below, set <Field>urls</Field> to the Go module proxies you want to sync
-                    dependency repositories from. For example,{' '}
-                    <Typography.Code>"https://user:pass@athens.mycompany.com"</Typography.Code> or{' '}
-                    <Typography.Code>"https://proxy.golang.org"</Typography.Code>. A module will be synced from the
-                    first proxy that has it, trying the next when it's not found.
+                    dependency repositories from. For example, <Code>"https://user:pass@athens.mycompany.com"</Code> or{' '}
+                    <Code>"https://proxy.golang.org"</Code>. A module will be synced from the first proxy that has it,
+                    trying the next when it's not found.
                 </li>
                 <li>
                     In the configuration below, set <Field>dependencies</Field> to the list of packages that you want to
-                    manually add. For example, <Typography.Code>"cloud.google.com/go/kms@v1.1.0"</Typography.Code>.
+                    manually add. For example, <Code>"cloud.google.com/go/kms@v1.1.0"</Code>.
                 </li>
             </ol>
-            <p>⚠️ go module repositories are visible by all users of the Sourcegraph instance.</p>
-            <p>⚠️ It is only possible to register one go modules code host per Sourcegraph instance.</p>
+            <Text>⚠️ go module repositories are visible by all users of the Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one go modules code host per Sourcegraph instance.</Text>
         </div>
     ),
     editorActions: [],
@@ -1358,17 +1358,41 @@ const PYTHON_PACKAGES = {
                 <li>
                     In the configuration below, set <Field>urls</Field> to the simple repository APIs you want to sync
                     dependency repositories from. For example,{' '}
-                    <Typography.Code>"https://user:pass@artifactory.mycompany.com/simple"</Typography.Code> or{' '}
-                    <Typography.Code>"https://pypi.org/simple"</Typography.Code>. A package will be synced from the
-                    first API that has it, trying the next when it's not found.
+                    <Code>"https://user:pass@artifactory.mycompany.com/simple"</Code> or{' '}
+                    <Code>"https://pypi.org/simple"</Code>. A package will be synced from the first API that has it,
+                    trying the next when it's not found.
                 </li>
                 <li>
                     In the configuration below, set <Field>dependencies</Field> to the list of packages that you want to
-                    manually add. For example, <Typography.Code>"numpy==1.22.3"</Typography.Code>.
+                    manually add. For example, <Code>"numpy==1.22.3"</Code>.
                 </li>
             </ol>
-            <p>⚠️ Python package repositories are visible by all users of the Sourcegraph instance.</p>
-            <p>⚠️ It is only possible to register one Python packages code host per Sourcegraph instance.</p>
+            <Text>⚠️ Python package repositories are visible by all users of the Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one Python packages code host per Sourcegraph instance.</Text>
+        </div>
+    ),
+    editorActions: [],
+}
+
+const RUST_PACKAGES = {
+    kind: ExternalServiceKind.RUSTPACKAGES,
+    title: 'Rust Dependencies',
+    icon: LanguageRustIcon,
+    jsonSchema: rustPackagesJSON,
+    defaultDisplayName: 'Rust Dependencies',
+    defaultConfig: `{
+  "dependencies": []
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <Field>dependencies</Field> to the list of packages that you want to
+                    manually add. For example, <Code>"tokio@18.0.0"</Code>.
+                </li>
+            </ol>
+            <Text>⚠️ Rust package repositories are visible by all users of the Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one Rust packages code host per Sourcegraph instance.</Text>
         </div>
     ),
     editorActions: [],
@@ -1387,6 +1411,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     git: GENERIC_GIT,
     goModules: GO_MODULES,
     pythonPackages: PYTHON_PACKAGES,
+    rustPackages: RUST_PACKAGES,
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.jvmPackages === 'disabled' ? {} : { jvmPackages: JVM_PACKAGES }),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
@@ -1419,4 +1444,5 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
     [ExternalServiceKind.PAGURE]: PAGURE,
     [ExternalServiceKind.NPMPACKAGES]: NPM_PACKAGES,
     [ExternalServiceKind.PYTHONPACKAGES]: PYTHON_PACKAGES,
+    [ExternalServiceKind.RUSTPACKAGES]: RUST_PACKAGES,
 }
