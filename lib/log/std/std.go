@@ -8,7 +8,8 @@ import (
 )
 
 // NewLogger creates a standard library logger that writes to logger at the designated
-// level. This is useful for providing loggers to libraries that only accept logging
+// level. This is useful for providing loggers to libraries that only accept the standard
+// library logger.
 func NewLogger(logger log.Logger, level log.Level) *stdlog.Logger {
 	return stdlog.New(&logWriter{
 		// stdlogger.Print -> stdlogger.Output -> Write -> logger
