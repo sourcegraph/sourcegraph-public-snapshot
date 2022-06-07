@@ -93,7 +93,7 @@ func (s *PermsSyncer) ScheduleUsers(ctx context.Context, opts authz.FetchPermsOp
 	if len(userIDs) == 0 {
 		return
 	} else if s.isDisabled() {
-		s.logger.Warn("PermsSyncer.ScheduleUsers.disabled", log.Int32s("userIDs", userIDs))
+		s.logger.Warn("PermsSyncer.ScheduleUsers.disabled", log.Int("userIDs", len(userIDs)))
 		return
 	}
 
@@ -112,7 +112,7 @@ func (s *PermsSyncer) ScheduleUsers(ctx context.Context, opts authz.FetchPermsOp
 }
 
 func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser) {
-	logger := s.logger.Scoped("PermsSyncer.scheduledUsers", "")
+	logger := s.logger.Scoped("PermsSyncer.scheduledUsers", "routine for adding users to a queue for sync")
 	for _, u := range users {
 		select {
 		case <-ctx.Done():
@@ -336,11 +336,12 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 	byServiceID := s.providersByServiceID()
 	accounts := s.db.UserExternalAccounts()
-	logger := s.logger.Scoped("fetchUserPermsViaExternalServices", "").With(log.Int32("userID", user.ID))
+	logger := s.logger.Scoped("fetchUserPermsViaExternalServices", "sync permissions using external accounts (loging connections)").With(log.Int32("userID", user.ID))
 
 	// Check if the user has an external account for every authz provider respectively,
 	// and try to fetch the account when not.
 	for _, provider := range byServiceID {
+		providerLogger := logger.With(log.String("authzProvider", provider.ServiceID()))
 		_, ok := serviceToAccounts[provider.ServiceType()+":"+provider.ServiceID()]
 		if ok {
 			continue
@@ -348,10 +349,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 		acct, err := provider.FetchAccount(ctx, user, accts, emails)
 		if err != nil {
-			logger.Error("could not fetch account from authz provider",
-				log.String("authzProvider", provider.ServiceID()),
-				log.Error(err),
-			)
+			providerLogger.Error("could not fetch account from authz provider", log.Error(err))
 			continue
 		}
 
@@ -363,10 +361,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 		err = accounts.AssociateUserAndSave(ctx, user.ID, acct.AccountSpec, acct.AccountData)
 		if err != nil {
-			logger.Error("could not associate external account to user",
-				log.String("authzProvider", provider.ServiceID()),
-				log.Error(err),
-			)
+			providerLogger.Error("could not associate external account to user", log.Error(err))
 			continue
 		}
 
@@ -377,6 +372,8 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	subRepoPerms = make(map[api.ExternalRepoSpec]*authz.SubRepoPermissions)
 
 	for _, acct := range accts {
+		acctLogger := logger.With(log.Int32("acct.ID", acct.ID))
+
 		provider := byServiceID[acct.ServiceID]
 		if provider == nil {
 			// We have no authz provider configured for this external account
@@ -403,14 +400,12 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 					return nil, nil, errors.Wrapf(err, "set expired for external account %d", acct.ID)
 				}
 				if unauthorized {
-					logger.Warn("setExternalAccountExpired, token is revoked",
-						log.Int32("id", acct.ID),
+					acctLogger.Warn("setExternalAccountExpired, token is revoked",
 						log.Bool("unauthorized", unauthorized),
 					)
 					continue
 				}
-				logger.Debug("setExternalAccountExpired",
-					log.Int32("id", acct.ID),
+				acctLogger.Debug("setExternalAccountExpired",
 					log.Bool("unauthorized", unauthorized),
 					log.Bool("accountSuspended", accountSuspended),
 					log.Bool("forbidden", forbidden),
@@ -422,7 +417,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 			// Skip this external account if unimplemented
 			if errors.Is(err, &authz.ErrUnimplemented{}) {
-				logger.Debug("unimplemented", log.Int32("id", acct.ID), log.Error(err))
+				acctLogger.Debug("unimplemented", log.Error(err))
 				continue
 			}
 
@@ -430,7 +425,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			if !noPerms {
 				return nil, nil, errors.Wrapf(err, "fetch user permissions for external account %d", acct.ID)
 			}
-			logger.Warn("proceedWithPartialResults", log.Error(err))
+			acctLogger.Warn("proceedWithPartialResults", log.Error(err))
 		} else {
 			err = accounts.TouchLastValid(ctx, acct.ID)
 			if err != nil {
@@ -516,6 +511,8 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 // fetchUserPermsViaExternalServices uses user code connections to list all
 // accessible private repositories on code hosts for the given user.
 func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, userID int32, fetchOpts authz.FetchPermsOptions) (repoIDs []uint32, err error) {
+	logger := s.logger.Scoped("fetchUserPermsViaExternalAccounts", "sync permissions using code host connections").With(log.Int32("userID", userID))
+
 	has, err := s.permsStore.UserIsMemberOfOrgHasCodeHostConnection(ctx, userID)
 	if err != nil {
 		return nil, errors.Wrap(err, "check user organization membership with a code host connection")
@@ -539,9 +536,10 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 		return nil, errors.Wrap(err, "list user external services")
 	}
 
-	logger := s.logger.Scoped("fetchUserPermsViaExternalAccounts", "").With(log.Int32("userID", userID))
 	var repoSpecs, includeContainsSpecs, excludeContainsSpecs []api.ExternalRepoSpec
 	for _, svc := range svcs {
+		svcLogger := logger.With(log.Int32("svc.ID", int32(svc.ID)))
+
 		provider, err := eauthz.ProviderFromExternalService(s.db.ExternalServices(), conf.Get().SiteConfiguration, svc, s.db)
 		if err != nil {
 			return nil, errors.Wrapf(err, "new provider from external service %d", svc.ID)
@@ -550,7 +548,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 			// NOTE: User code host connection can only be added on sourcegraph.com, and
 			//  authorization is enforced for everything, it does not make sense that we cannot
 			//  derive an `authz.Provider` from it.
-			logger.Warn("noAuthzProvider", log.Int32("id", int32(svc.ID)))
+			svcLogger.Warn("noAuthzProvider")
 			continue
 		}
 
@@ -577,8 +575,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 			accountSuspended := errcode.IsAccountSuspended(err)
 
 			if unauthorized || accountSuspended || forbidden {
-				logger.Warn("expiredExternalService",
-					log.Int32("id", int32(svc.ID)),
+				svcLogger.Warn("expiredExternalService",
 					log.Bool("unauthorized", unauthorized),
 					log.Bool("accountSuspended", accountSuspended),
 					log.Bool("forbidden", forbidden),
@@ -590,7 +587,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 
 			// Skip this external account if unimplemented
 			if errors.Is(err, &authz.ErrUnimplemented{}) {
-				logger.Debug("unimplemented", log.Int32("id", int32(svc.ID)), log.Error(err))
+				svcLogger.Debug("unimplemented", log.Error(err))
 				continue
 			}
 
@@ -662,6 +659,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 // syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
 // the method will use partial results to update permissions tables even when error occurs.
 func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (err error) {
+	logger := s.logger.Scoped("syncUserPerms", "processes permissions sync request in user-centric way").With(log.Int32("userID", userID))
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
@@ -676,7 +674,6 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "list external accounts")
 	}
 
-	logger := s.logger.Scoped("syncUserPerms", "").With(log.Int32("userID", userID))
 	for _, acct := range accts {
 		logger.Info("maybe refresh account")
 		if err := s.maybeRefreshGitLabOAuthTokenFromAccount(ctx, acct); err != nil {
@@ -787,7 +784,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		}
 	}
 
-	logger := s.logger.Scoped("syncRepoPerms", "").With(
+	logger := s.logger.Scoped("syncRepoPerms", "processes permissions syncing request in a repo-centric way").With(
 		log.Object("repo",
 			log.Int32("ID", int32(repo.ID)),
 			log.String("name", string(repo.Name)),
@@ -969,7 +966,7 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) error
 }
 
 func (s *PermsSyncer) runSync(ctx context.Context) {
-	logger := s.logger.Scoped("rynSync", "")
+	logger := s.logger.Scoped("runSync", "routine to start processing the sync request queue")
 	logger.Debug("started")
 	defer logger.Info("stopped")
 
@@ -1215,7 +1212,7 @@ func (s *PermsSyncer) isDisabled() bool {
 // runSchedule periodically looks for least updated records and schedule syncs
 // for them.
 func (s *PermsSyncer) runSchedule(ctx context.Context) {
-	logger := s.logger.Scoped("runSchedule", "")
+	logger := s.logger.Scoped("runSchedule", "periodically queue old records for sync")
 
 	logger.Debug("started")
 	defer logger.Info("stopped")
