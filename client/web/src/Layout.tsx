@@ -152,6 +152,8 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         props.location.pathname === PageRoutes.SignIn ||
         props.location.pathname === PageRoutes.SignUp ||
         props.location.pathname === PageRoutes.PasswordReset ||
+        props.location.pathname === PageRoutes.DeploymentOptions ||
+        props.location.pathname === PageRoutes.SelfHostedDeploymentOption ||
         props.location.pathname === PageRoutes.Welcome
 
     // TODO Change this behavior when we have global focus management system

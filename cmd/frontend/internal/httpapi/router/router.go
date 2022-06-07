@@ -11,6 +11,8 @@ const (
 	LSIFUpload = "lsif.upload"
 	GraphQL    = "graphql"
 
+	GetStarted = "get-started"
+
 	SearchStream  = "search.stream"
 	ComputeStream = "compute.stream"
 
@@ -72,6 +74,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
 	base.Path("/src-cli/version").Methods("GET").Name(SrcCliVersion)
 	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCliDownload)
+	base.Path("/get-started").Methods("GET").Name(GetStarted)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo

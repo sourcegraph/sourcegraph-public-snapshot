@@ -78,10 +78,24 @@ export function getReturnTo(location: H.Location): string {
     return newURL.pathname + newURL.search + newURL.hash
 }
 
-export function maybeAddPostSignUpRedirect(url?: string): string {
+export function shouldRedirectToWelcome(): boolean {
     const enablePostSignupFlow = window.context?.experimentalFeatures?.enablePostSignupFlow
     const isDotCom = window.context?.sourcegraphDotComMode
-    const shouldAddRedirect = isDotCom && enablePostSignupFlow
+
+    return isDotCom && enablePostSignupFlow
+}
+
+export function maybeAddPostSignUpRedirect(url?: string): string {
+    const returnToParam = new URLSearchParams(window.location.search).get('returnTo')
+
+    if (url && returnToParam) {
+        const urlObject = new URL(url, window.location.href)
+
+        urlObject.searchParams.append('redirect', returnToParam)
+        return urlObject.toString()
+    }
+
+    const shouldAddRedirect = shouldRedirectToWelcome()
 
     if (url) {
         if (shouldAddRedirect) {

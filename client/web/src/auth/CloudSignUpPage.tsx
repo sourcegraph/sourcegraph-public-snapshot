@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import { useLocation } from 'react-router-dom'
 
+import { PageRoutes } from '../routes.constants'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -202,7 +203,10 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                     <hr className={styles.separator} />
 
                     <div>
-                        Already have an account? <Link to={`/sign-in${location.search}`}>Log in</Link>
+                        Already have an account?{' '}
+                        <Link to={`/sign-in${location.search.replace(`returnTo=${PageRoutes.DeploymentOptions}`, '')}`}>
+                            Log in
+                        </Link>
                     </div>
                 </div>
             </div>

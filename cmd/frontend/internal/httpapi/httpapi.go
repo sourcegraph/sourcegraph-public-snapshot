@@ -96,6 +96,7 @@ func NewHandler(
 
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.Handler)))
+		m.Get(apirouter.GetStarted).Handler(trace.Route(handler(getStartedRedirect)))
 	}
 
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(schema, rateLimiter, false))))

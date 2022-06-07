@@ -7,6 +7,7 @@ import { ButtonLink } from '@sourcegraph/wildcard'
 import styles from './styles.module.scss'
 import { PageRoutes } from '../routes.constants'
 import { PageTitle } from '../components/PageTitle'
+import { shouldRedirectToWelcome } from '../auth/SignInSignUpCommon'
 
 export const BestForTitle: FunctionComponent = () => (
     <div className={`text-uppercase font-weight-bolder mb-1 ${styles.bestForTitle}`}>Best For</div>
@@ -63,7 +64,10 @@ export const DeploymentOptions: FunctionComponent<IProps> = ({ history }) => (
                             manage a deployment.
                         </p>
 
-                        <ButtonLink variant="merged" to={PageRoutes.Welcome}>
+                        <ButtonLink
+                            variant="merged"
+                            to={shouldRedirectToWelcome() ? PageRoutes.Welcome : PageRoutes.Search}
+                        >
                             Continue with Cloud <ArrowRightIcon />
                         </ButtonLink>
                     </section>
