@@ -6,10 +6,11 @@ import postcss from 'postcss'
 import postcssModules from 'postcss-modules'
 import sass from 'sass'
 
+import { ROOT_PATH } from '@sourcegraph/build-config'
+
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import postcssConfig from '../../../../postcss.config'
-import { ROOT_PATH } from '../utils'
 
 /**
  * An esbuild plugin that builds .css and .scss stylesheets (including support for CSS modules).
