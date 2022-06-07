@@ -66,7 +66,7 @@ import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext, PinOptions } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
@@ -190,7 +190,18 @@ const STATUS_BAR_VERTICAL_GAP_VAR = '--blob-status-bar-vertical-gap'
  * in this state, hovers can lead to errors like `DocumentNotFoundError`.
  */
 export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> = props => {
-    const { location, isLightTheme, extensionsController, blobInfo, platformContext } = props
+    const { location, isLightTheme, extensionsController, blobInfo, platformContext, settingsCascade } = props
+
+    const settingsChanges = useMemo(() => new BehaviorSubject<Settings | null>(null), [])
+    useEffect(() => {
+        if (
+            settingsCascade.final &&
+            !isErrorLike(settingsCascade.final) &&
+            (!settingsChanges.value || !isEqual(settingsChanges.value, settingsCascade.final))
+        ) {
+            settingsChanges.next(settingsCascade.final)
+        }
+    }, [settingsCascade, settingsChanges])
 
     // Element reference subjects passed to `hoverifier`
     const blobElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
@@ -449,6 +460,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     // Don't want to create new viewers on position change
                     locationPositions.pipe(first()),
                     from(extensionsController.extHostAPI),
+                    settingsChanges,
                 ]).pipe(
                     concatMap(([blobInfo, initialPosition, extensionHostAPI]) => {
                         const uri = toURIWithPath(blobInfo)
@@ -485,7 +497,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     }),
                     mapTo(undefined)
                 ),
-            [blobInfoChanges, locationPositions, viewerUpdates, extensionsController]
+            [blobInfoChanges, locationPositions, extensionsController.extHostAPI, settingsChanges, viewerUpdates]
         )
     )
 

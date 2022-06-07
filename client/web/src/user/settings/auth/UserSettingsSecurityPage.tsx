@@ -7,7 +7,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike, asError } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Container, PageHeader, LoadingSpinner, Button, Link, Alert, Label, H3 } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, Link, Alert, H3, Input, Label } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
@@ -283,8 +283,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                         <Container>
                             <Form onSubmit={this.handleSubmit}>
                                 {/* Include a username field as a hint for password managers to update the saved password. */}
-                                <input
-                                    type="text"
+                                <Input
                                     value={this.props.user.username}
                                     name="username"
                                     autoComplete="username"

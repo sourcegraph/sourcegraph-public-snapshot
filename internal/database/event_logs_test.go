@@ -76,7 +76,7 @@ func TestEventLogs_CountUsersWithSetting(t *testing.T) {
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
-	usersStore := Users(db)
+	usersStore := db.Users()
 	settingsStore := db.TemporarySettings()
 	eventLogsStore := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 

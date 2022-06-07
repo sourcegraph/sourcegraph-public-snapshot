@@ -70,6 +70,10 @@ const config = {
             message:
               'Please use components from the Wildcard component library instead. We work on removing `reactstrap` dependency.',
           },
+          {
+            name: 'chromatic/isChromatic',
+            message: 'Please use `isChromatic` from the `@sourcegraph/storybook` package.',
+          },
         ],
         patterns: [
           {

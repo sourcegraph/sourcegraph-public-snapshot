@@ -506,6 +506,8 @@ func scanRepo(rows *sql.Rows, r *types.Repo, logger log.Logger) (err error) {
 		r.Metadata = &struct{}{}
 	case extsvc.TypePythonPackages:
 		r.Metadata = &struct{}{}
+	case extsvc.TypeRustPackages:
+		r.Metadata = &struct{}{}
 	default:
 		logger.Warn("unknown service type", log.String("type", typ))
 		return nil

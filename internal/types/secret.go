@@ -70,6 +70,8 @@ func (e *ExternalService) RedactedConfig() (string, error) {
 				return "", err
 			}
 		}
+	case *schema.RustPackagesConnection:
+		// Nothing to redact
 	case *schema.JVMPackagesConnection:
 		if c.Maven != nil {
 			es.redactString(c.Maven.Credentials, "maven", "credentials")
@@ -156,6 +158,8 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 		if err != nil {
 			return err
 		}
+	case *schema.RustPackagesConnection:
+		// Nothing to unredact
 	case *schema.JVMPackagesConnection:
 		o := oldCfg.(*schema.JVMPackagesConnection)
 		if c.Maven != nil && o.Maven != nil {

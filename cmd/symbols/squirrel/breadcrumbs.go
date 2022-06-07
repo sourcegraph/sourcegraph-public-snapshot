@@ -3,6 +3,7 @@ package squirrel
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/fatih/color"
@@ -15,37 +16,32 @@ import (
 type Breadcrumb struct {
 	types.RepoCommitPathRange
 	length  int
-	message string
+	message func() string
+	number  int
+	depth   int
+	file    string
+	line    int
 }
 
-// addBreadcrumb adds a breadcrumb to the given slice.
-func addBreadcrumb(breadcrumbs *[]Breadcrumb, node Node, message string) {
-	*breadcrumbs = append(*breadcrumbs, Breadcrumb{
-		RepoCommitPathRange: types.RepoCommitPathRange{
-			RepoCommitPath: node.RepoCommitPath,
-			Range:          nodeToRange(node.Node),
-		},
-		length:  nodeLength(node.Node),
-		message: message,
-	})
-}
+// Breadcrumbs is a slice of Breadcrumb.
+type Breadcrumbs []Breadcrumb
 
 // Prints breadcrumbs like this:
 //
 //             v some breadcrumb
 //               vvv other breadcrumb
 // 78 | func f(f Foo) {
-func prettyPrintBreadcrumbs(w *strings.Builder, breadcrumbs []Breadcrumb, readFile ReadFileFunc) {
+func (bs *Breadcrumbs) pretty(w *strings.Builder, readFile ReadFileFunc) {
 	// First collect all the breadcrumbs in a map (path -> line -> breadcrumb) for easier printing.
 	pathToLineToBreadcrumbs := map[types.RepoCommitPath]map[int][]Breadcrumb{}
-	for _, breadcrumb := range breadcrumbs {
+	for _, breadcrumb := range *bs {
 		path := breadcrumb.RepoCommitPath
 
 		if _, ok := pathToLineToBreadcrumbs[path]; !ok {
 			pathToLineToBreadcrumbs[path] = map[int][]Breadcrumb{}
 		}
 
-		pathToLineToBreadcrumbs[path][int(breadcrumb.Row)] = append(pathToLineToBreadcrumbs[path][int(breadcrumb.Row)], breadcrumb)
+		pathToLineToBreadcrumbs[path][breadcrumb.Row] = append(pathToLineToBreadcrumbs[path][breadcrumb.Row], breadcrumb)
 	}
 
 	// Loop over each path, printing the breadcrumbs for each line.
@@ -77,24 +73,24 @@ func prettyPrintBreadcrumbs(w *strings.Builder, breadcrumbs []Breadcrumb, readFi
 
 			columnToMessage := map[int]string{}
 			for _, breadcrumb := range breadcrumbs {
-				for column := int(breadcrumb.Column); column < int(breadcrumb.Column)+breadcrumb.length; column++ {
-					columnToMessage[lengthInSpaces(line[:column])] = breadcrumb.message
+				for column := breadcrumb.Column; column < breadcrumb.Column+breadcrumb.length; column++ {
+					columnToMessage[lengthInSpaces(line[:column])] = breadcrumb.message()
 				}
 
 				gutterPadding := strings.Repeat(" ", len(gutter))
 
 				space := strings.Repeat(" ", lengthInSpaces(line[:breadcrumb.Column]))
 
-				arrows := messageColor(breadcrumb.message)(strings.Repeat("v", breadcrumb.length))
+				arrows := color.HiMagentaString(strings.Repeat("v", breadcrumb.length))
 
-				fmt.Fprintf(w, "%s%s%s %s\n", gutterPadding, space, arrows, messageColor(breadcrumb.message)(breadcrumb.message))
+				fmt.Fprintf(w, "%s%s%s %s %s\n", gutterPadding, space, arrows, color.RedString("%d", breadcrumb.number), breadcrumb.message())
 			}
 
 			fmt.Fprint(w, grey(gutter))
 			lineWithSpaces := strings.ReplaceAll(line, "\t", "    ")
 			for c := 0; c < len(lineWithSpaces); c++ {
-				if message, ok := columnToMessage[c]; ok {
-					fmt.Fprint(w, messageColor(message)(string(lineWithSpaces[c])))
+				if _, ok := columnToMessage[c]; ok {
+					fmt.Fprint(w, color.HiMagentaString(string(lineWithSpaces[c])))
 				} else {
 					fmt.Fprint(w, grey(string(lineWithSpaces[c])))
 				}
@@ -102,33 +98,50 @@ func prettyPrintBreadcrumbs(w *strings.Builder, breadcrumbs []Breadcrumb, readFi
 			fmt.Fprintln(w)
 		}
 	}
+
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Breadcrumbs by call tree:")
+	fmt.Fprintln(w)
+
+	for _, b := range *bs {
+		fmt.Fprintf(w, "%s%s%s %s\n", strings.Repeat("| ", b.depth), itermSource(b.file, b.line, "src"), color.RedString("%d", b.number), b.message())
+	}
+}
+
+func itermSource(absPath string, line int, msg string) string {
+	if os.Getenv("SRC_LOG_SOURCE_LINK") == "true" {
+		// Link to open the file:line in VS Code.
+		url := fmt.Sprintf("vscode://file%s:%d", absPath, line)
+
+		// Constructs an escape sequence that iTerm recognizes as a link.
+		// See https://iterm2.com/documentation-escape-codes.html
+		link := fmt.Sprintf("\x1B]8;;%s\x07%s\x1B]8;;\x07", url, "src")
+
+		return fmt.Sprintf(color.New(color.Faint).Sprint(link) + " ")
+	}
+
+	return ""
+}
+
+func (bs *Breadcrumbs) prettyPrint(readFile ReadFileFunc) {
+	sb := &strings.Builder{}
+	bs.pretty(sb, readFile)
+
+	fmt.Println(" ")
+	fmt.Println(bracket(sb.String()))
+	fmt.Println(" ")
 }
 
 // Returns breadcrumbs that have one of the given messages.
 func pickBreadcrumbs(breadcrumbs []Breadcrumb, messages []string) []Breadcrumb {
 	var picked []Breadcrumb
-	for _, breadcrumb := range breadcrumbs {
+	for _, b := range breadcrumbs {
 		for _, message := range messages {
-			if strings.Contains(breadcrumb.message, message) {
-				picked = append(picked, breadcrumb)
+			if strings.Contains(b.message(), message) {
+				picked = append(picked, b)
 				break
 			}
 		}
 	}
 	return picked
-}
-
-// Returns the color to be used to print a message.
-func messageColor(message string) colorSprintfFunc {
-	if message == "start" {
-		return color.New(color.FgHiCyan).SprintFunc()
-	} else if message == "found" {
-		return color.New(color.FgRed).SprintFunc()
-	} else if message == "correct" {
-		return color.New(color.FgGreen).SprintFunc()
-	} else if strings.Contains(message, "scope") {
-		return color.New(color.FgHiYellow).SprintFunc()
-	} else {
-		return color.New(color.FgHiMagenta).SprintFunc()
-	}
 }

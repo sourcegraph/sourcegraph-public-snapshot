@@ -37,5 +37,7 @@ tree-sitter-sql = { git = "https://github.com/sourcegraph/tree-sitter-sql" }
 # is picked by tree-sitter-c-sharp, whereas tree-sitter-go picks 0.20.x
 tree-sitter-c-sharp = { git = "https://github.com/tree-sitter/tree-sitter-c-sharp" }
 
+tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonnet" }
+
 [dev-dependencies]
 insta = "1.11.0"

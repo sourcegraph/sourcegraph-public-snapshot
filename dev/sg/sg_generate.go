@@ -27,6 +27,7 @@ sg --verbose generate ... # Enable verbose output
 `,
 	Usage:       "Run code and docs generation tasks",
 	Description: "If no target is provided, all target are run with default arguments.",
+	Aliases:     []string{"gen"},
 	Category:    CategoryDev,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
@@ -61,7 +62,7 @@ func runGenerateAndReport(ctx context.Context, t generate.Target, args []string)
 	report := t.Runner(ctx, args)
 	fmt.Printf(report.Output)
 	std.Out.WriteSuccessf("Target %q done (%ds)", t.Name, report.Duration/time.Second)
-	return nil
+	return report.Err
 }
 
 type generateTargets []generate.Target

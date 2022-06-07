@@ -1,7 +1,7 @@
 package query
 
 type Visitor struct {
-	Operator  func(kind operatorKind, operands []Node)
+	Operator  func(kind OperatorKind, operands []Node)
 	Parameter func(field, value string, negated bool, annotation Annotation)
 	Pattern   func(value string, negated bool, annotation Annotation)
 }
@@ -36,7 +36,7 @@ func (v *Visitor) Visit(node Node) {
 
 // VisitOperator is a convenience function that calls `f` on all operators `f`
 // supplies the node's kind and operands.
-func VisitOperator(nodes []Node, f func(kind operatorKind, operands []Node)) {
+func VisitOperator(nodes []Node, f func(kind OperatorKind, operands []Node)) {
 	v := &Visitor{Operator: f}
 	for _, n := range nodes {
 		v.Visit(n)

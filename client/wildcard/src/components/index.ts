@@ -39,6 +39,7 @@ export {
     PopoverContent,
     Position,
     PopoverTail,
+    PopoverRoot,
     PopoverOpenEventReason,
     EMPTY_RECTANGLE,
     createRectangle,

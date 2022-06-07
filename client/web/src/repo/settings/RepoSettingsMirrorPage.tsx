@@ -19,9 +19,9 @@ import {
     Link,
     Alert,
     Icon,
-    Code,
-    Label,
+    Input,
     Text,
+    Code,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -314,16 +314,19 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                     {this.state.loading && <LoadingSpinner />}
                     {this.state.error && <ErrorAlert error={this.state.error} />}
                     <div className="form-group">
-                        <Label>
-                            Remote repository URL{' '}
-                            <small className="text-info">
-                                <Icon role="img" as={LockIcon} aria-hidden={true} /> Only visible to site admins
-                            </small>
-                        </Label>
-                        <input
-                            className="form-control"
+                        <Input
                             value={this.props.repo.mirrorInfo.remoteURL || '(unknown)'}
                             readOnly={true}
+                            className="mb-0"
+                            label={
+                                <>
+                                    {' '}
+                                    Remote repository URL{' '}
+                                    <small className="text-info">
+                                        <Icon role="img" as={LockIcon} aria-hidden={true} /> Only visible to site admins
+                                    </small>
+                                </>
+                            }
                         />
                         {this.state.repo.viewerCanAdminister && (
                             <small className="form-text text-muted">

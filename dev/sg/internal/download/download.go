@@ -3,6 +3,7 @@ package download
 import (
 	"bytes"
 	"context"
+	"io"
 	"io/fs"
 	"net/http"
 	"os"
@@ -89,7 +90,7 @@ func ArchivedExecutable(ctx context.Context, url, targetFile, fileInArchive stri
 		return errors.Newf("expected %s to exist in extracted archive at %s, but does not", fileInArchivePath, tmpDirName)
 	}
 
-	if err := os.Rename(fileInArchivePath, targetFile); err != nil {
+	if err := safeRename(fileInArchivePath, targetFile); err != nil {
 		return err
 	}
 
@@ -105,4 +106,34 @@ func fileExists(path string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+// safeRename copies src into dst before finally removing src.
+// This is needed because in some cause, the tmp folder is living
+// on a different filesystem.
+func safeRename(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	inStat, err := in.Stat()
+	perm := inStat.Mode() & os.ModePerm
+	if err != nil {
+		return err
+	}
+	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
+	if err != nil {
+		return err
+	}
+	if err != nil {
+		closeErr := in.Close()
+		return errors.Append(err, closeErr)
+	}
+	defer out.Close()
+	_, err = io.Copy(out, in)
+	closeErr := in.Close()
+	if err != nil {
+		return errors.Append(err, closeErr)
+	}
+	return os.Remove(src)
 }

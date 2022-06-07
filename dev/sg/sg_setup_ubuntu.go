@@ -297,6 +297,7 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 			{
 				name:          "1password",
 				onlyTeammates: true,
+				check:         check1password(),
 				// Convoluted directions from https://developer.1password.com/docs/cli/get-started/#install
 				instructionsCommands: `
 curl -sS https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg
@@ -308,7 +309,6 @@ curl -sS https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --d
 sudo apt update && sudo apt install 1password-cli
 eval $(op account add --address team-sourcegraph.1password.com --signin)
 `,
-				check: check1password,
 			},
 		},
 	},

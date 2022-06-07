@@ -86,6 +86,7 @@ const (
 	KindGoModules       = "GOMODULES"
 	KindJVMPackages     = "JVMPACKAGES"
 	KindPythonPackages  = "PYTHONPACKAGES"
+	KindRustPackages    = "RUSTPACKAGES"
 	KindPagure          = "PAGURE"
 	KindNpmPackages     = "NPMPACKAGES"
 	KindOther           = "OTHER"
@@ -142,6 +143,9 @@ const (
 	// TypePythonPackages is the (api.ExternalRepoSpec).ServiceType value for Python packages.
 	TypePythonPackages = "pythonPackages"
 
+	// TypeRustPackages is the (api.ExternalRepoSpec).ServiceType value for Python packages.
+	TypeRustPackages = "rustPackages"
+
 	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	TypeOther = "other"
 )
@@ -172,6 +176,8 @@ func KindToType(kind string) string {
 		return TypeJVMPackages
 	case KindPythonPackages:
 		return TypePythonPackages
+	case KindRustPackages:
+		return TypeRustPackages
 	case KindNpmPackages:
 		return TypeNpmPackages
 	case KindGoModules:
@@ -213,6 +219,8 @@ func TypeToKind(t string) string {
 		return KindJVMPackages
 	case TypePythonPackages:
 		return KindPythonPackages
+	case TypeRustPackages:
+		return KindRustPackages
 	case TypeGoModules:
 		return KindGoModules
 	case TypePagure:
@@ -232,6 +240,7 @@ var (
 	npmLower    = strings.ToLower(TypeNpmPackages)
 	goLower     = strings.ToLower(TypeGoModules)
 	pythonLower = strings.ToLower(TypePythonPackages)
+	rustLower   = strings.ToLower(TypeRustPackages)
 )
 
 // ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
@@ -264,6 +273,8 @@ func ParseServiceType(s string) (string, bool) {
 		return TypeNpmPackages, true
 	case pythonLower:
 		return TypePythonPackages, true
+	case rustLower:
+		return TypeRustPackages, true
 	case TypePagure:
 		return TypePagure, true
 	case TypeOther:
@@ -301,6 +312,8 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindJVMPackages, true
 	case KindPythonPackages:
 		return KindPythonPackages, true
+	case KindRustPackages:
+		return KindRustPackages, true
 	case KindPagure:
 		return KindPagure, true
 	case KindOther:
@@ -354,6 +367,8 @@ func ParseConfig(kind, config string) (cfg any, _ error) {
 		cfg = &schema.NpmPackagesConnection{}
 	case KindPythonPackages:
 		cfg = &schema.PythonPackagesConnection{}
+	case KindRustPackages:
+		cfg = &schema.RustPackagesConnection{}
 	case KindOther:
 		cfg = &schema.OtherExternalServiceConnection{}
 	default:
@@ -501,6 +516,12 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
+	case *schema.RustPackagesConnection:
+		// 1 request per second is default policy for crates.io
+		limit = rate.Limit(1)
+		if c != nil && c.RateLimit != nil {
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+		}
 	default:
 		return limit, ErrRateLimitUnsupported{codehostKind: kind}
 	}
@@ -606,6 +627,8 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 		return KindNpmPackages, nil
 	case *schema.PythonPackagesConnection:
 		return KindPythonPackages, nil
+	case *schema.RustPackagesConnection:
+		return KindRustPackages, nil
 	case *schema.PagureConnection:
 		rawURL = c.Url
 	default:
