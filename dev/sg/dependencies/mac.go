@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -23,7 +25,7 @@ var Mac = []category{
 		},
 	},
 	{
-		Name:      "Base utilities (git, docker, ...)",
+		Name:      "Base utilities",
 		DependsOn: []string{"Homebrew"},
 		Checks: []*dependency{
 			{
@@ -87,19 +89,25 @@ var Mac = []category{
 		},
 	},
 	{
-		Name: "Clone repositories",
+		Name:      "Clone repositories",
+		DependsOn: []string{"Base utilities"},
 		Checks: []*dependency{
 			{
 				Name: "SSH authentication with GitHub.com",
-				Check: checkAction(check.CommandOutputContains(
-					"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -T git@github.com",
-					"successfully authenticated")),
-				// 				instructionsComment: `` +
-				// 					`Make sure that you can clone git repositories from GitHub via SSH.
-				// See here on how to set that up:
+				Description: `Make sure that you can clone git repositories from GitHub via SSH.
+See here on how to set that up:
 
-				// https://docs.github.com/en/authentication/connecting-to-github-with-ssh
-				// `,
+https://docs.github.com/en/authentication/connecting-to-github-with-ssh`,
+				Check: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if args.Teammate {
+						return check.CommandOutputContains(
+							"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -T git@github.com",
+							"successfully authenticated")(ctx)
+					}
+					// otherwise, we don't need auth set up at all, since everything is OSS
+					return nil
+				},
+				// TODO we might be able to automate this fix
 			},
 			{
 				Name:        "github.com/sourcegraph/sourcegraph",
@@ -115,7 +123,15 @@ var Mac = []category{
 					}
 					return nil
 				},
-				Fix: cmdAction(`git clone git@github.com:sourcegraph/sourcegraph.git`),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					var cmd *run.Command
+					if args.Teammate {
+						cmd = run.Cmd(ctx, `git clone git@github.com:sourcegraph/sourcegraph.git`)
+					} else {
+						cmd = run.Cmd(ctx, `git clone https://github.com/sourcegraph/sourcegraph.git`)
+					}
+					return cmd.Run().Wait()
+				},
 			},
 			{
 				Name: "github.com/sourcegraph/dev-private",
@@ -131,14 +147,8 @@ so they sit alongside each other, like this:
 |-- dev-private
 +-- sourcegraph
 
-NOTE: You can ignore this if you're not a Sourcegraph teammate.
-`,
-				Enabled: func(ctx context.Context, args CheckArgs) error {
-					if !args.Teammate {
-						return errors.New("Disabled if not a Sourcegraph teammate")
-					}
-					return nil
-				},
+NOTE: You can ignore this if you're not a Sourcegraph teammate.`,
+				Enabled: teammatesOnly(),
 				Check: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					ok, err := pathExists("dev-private")
 					if ok && err == nil {

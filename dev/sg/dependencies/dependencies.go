@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type CheckArgs struct {
@@ -30,6 +31,15 @@ func cmdAction(cmd string) check.ActionFunc[CheckArgs] {
 		out, err := usershell.CombinedExec(ctx, cmd)
 		cio.Write(string(out))
 		return err
+	}
+}
+
+func teammatesOnly() check.EnableFunc[CheckArgs] {
+	return func(ctx context.Context, args CheckArgs) error {
+		if !args.Teammate {
+			return errors.New("Disabled if not a Sourcegraph teammate")
+		}
+		return nil
 	}
 }
 
