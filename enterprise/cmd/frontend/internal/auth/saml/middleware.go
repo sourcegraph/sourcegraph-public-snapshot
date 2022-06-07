@@ -142,7 +142,7 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 			}
 
 			if !allowSignin(p, info.groups) {
-				log15.Warn("Error authorizing SAML-authenticated user.", "Expected groups", p.config.AllowGroups, "Got", info.groups)
+				log15.Warn("Error authorizing SAML-authenticated user.", "AccountID", info.spec.AccountID, "Expected groups", p.config.AllowGroups, "Got", info.groups)
 				http.Error(w, "Error authorizing SAML-authenticated user. The user does not belong to one of the configured groups.", http.StatusForbidden)
 				return
 			}
@@ -282,7 +282,7 @@ func (s *relayState) decode(encoded string) {
 }
 
 func allowSignin(p *provider, groups map[string]bool) bool {
-	if len(p.config.AllowGroups) == 0 {
+	if p.config.AllowGroups == nil {
 		return true
 	}
 
