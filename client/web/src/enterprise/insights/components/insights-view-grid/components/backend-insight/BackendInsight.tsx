@@ -155,7 +155,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
             <InsightCardHeader
                 title={
                     <Link to={shareableUrl} target="_blank" rel="noopener noreferrer">
-                        insight.title
+                        {insight.title}
                     </Link>
                 }
             >
