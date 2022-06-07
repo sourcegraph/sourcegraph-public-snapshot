@@ -50,6 +50,38 @@ func newService(
 	}
 }
 
+// func (s *Service) preciseDependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependencyRevs map[api.RepoName]types.RevSpecSet, err error) {
+//
+// 	dependencyRevs = map[api.RepoName]types.RevSpecSet{}
+// 	for k, v := range repoRevs {
+// 		// Resolve the revhashes for the source repo-commit pairs.
+// 		// TODO - Process unresolved commits.
+// 		thisDependencyRevs := make(map[api.RepoName]types.RevSpecSet)
+// 		repoCommits, _, err := s.resolveRepoCommits(ctx, map[api.RepoName]types.RevSpecSet{k: v})
+// 		if err != nil {
+// 			return nil, err
+// 		}
+//
+// 		for _, repoCommit := range repoCommits {
+// 			// TODO - batch these requests in the store layer
+// 			preciseDeps, err := s.dependenciesStore.PreciseDependencies(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit)
+// 			if err != nil {
+// 				return nil, errors.Wrap(err, "store.PreciseDependencies")
+// 			}
+//
+// 			for repoName, commits := range preciseDeps {
+// 				if _, ok := thisDependencyRevs[repoName]; !ok {
+// 					thisDependencyRevs[repoName] = types.RevSpecSet{}
+// 				}
+// 				for commit := range commits {
+// 					thisDependencyRevs[repoName][commit] = struct{}{}
+// 				}
+// 			}
+// 		}
+// 		dependencyRevs = intersect(dependencyRevs, thisDependencyRevs)
+// 	}
+// }
+
 // Dependencies resolves the (transitive) dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
 func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependencyRevs map[api.RepoName]types.RevSpecSet, err error) {
@@ -60,17 +92,37 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		}})
 	}()
 
-	// Resolve the revhashes for the source repo-commit pairs.
-	// TODO - Process unresolved commits.
-	repoCommits, _, err := s.resolveRepoCommits(ctx, repoRevs)
-	if err != nil {
-		return nil, err
+	intersect := func(a []shared.PackageDependency, b []shared.PackageDependency) (res []shared.PackageDependency) {
+		if a == nil {
+			return b
+		}
+		if b == nil {
+			return a
+		}
+		depSet := make(map[string]struct{}, len(a))
+		for _, aa := range a {
+			depSet[aa.PackageSyntax()+aa.PackageVersion()] = struct{}{}
+		}
+		for _, bb := range b {
+			if _, ok := depSet[bb.PackageSyntax()+bb.PackageVersion()]; ok {
+				res = append(res, bb)
+			}
+		}
+		return res
 	}
 
-	// Parse lockfile contents for the given repository and revision pairs
-	deps, err := s.lockfileDependencies(ctx, repoCommits)
-	if err != nil {
-		return nil, err
+	var deps []shared.PackageDependency
+	for k, v := range repoRevs {
+		// Resolve the revhashes for the source repo-commit pairs.
+		// TODO - Process unresolved commits.
+		repoCommits, _, err := s.resolveRepoCommits(ctx, map[api.RepoName]types.RevSpecSet{k: v})
+		if err != nil {
+			return nil, err
+		}
+
+		// Parse lockfile contents for the given repository and revision pairs
+		d, err := s.lockfileDependencies(ctx, repoCommits)
+		deps = intersect(deps, d)
 	}
 
 	hash := func(dep Repo) string {
@@ -131,22 +183,22 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		return dependencyRevs, nil
 	}
 
-	for _, repoCommit := range repoCommits {
-		// TODO - batch these requests in the store layer
-		preciseDeps, err := s.dependenciesStore.PreciseDependencies(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit)
-		if err != nil {
-			return nil, errors.Wrap(err, "store.PreciseDependencies")
-		}
-
-		for repoName, commits := range preciseDeps {
-			if _, ok := dependencyRevs[repoName]; !ok {
-				dependencyRevs[repoName] = types.RevSpecSet{}
-			}
-			for commit := range commits {
-				dependencyRevs[repoName][commit] = struct{}{}
-			}
-		}
-	}
+	// for _, repoCommit := range repoCommits {
+	// 	// TODO - batch these requests in the store layer
+	// 	preciseDeps, err := s.dependenciesStore.PreciseDependencies(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit)
+	// 	if err != nil {
+	// 		return nil, errors.Wrap(err, "store.PreciseDependencies")
+	// 	}
+	//
+	// 	for repoName, commits := range preciseDeps {
+	// 		if _, ok := dependencyRevs[repoName]; !ok {
+	// 			dependencyRevs[repoName] = types.RevSpecSet{}
+	// 		}
+	// 		for commit := range commits {
+	// 			dependencyRevs[repoName][commit] = struct{}{}
+	// 		}
+	// 	}
+	// }
 
 	return dependencyRevs, nil
 }
