@@ -88,22 +88,28 @@ var _ RepoStore = (*repoStore)(nil)
 
 // repoStore handles access to the repo table
 type repoStore struct {
+	// logger is a standardized, strongly-typed, and structured logging interface
+	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
+	logger log.Logger
 	*basestore.Store
 }
 
 // ReposWith instantiates and returns a new RepoStore using the other
 // store handle.
 func ReposWith(other basestore.ShareableStore) RepoStore {
-	return &repoStore{Store: basestore.NewWithHandle(other.Handle())}
+	return &repoStore{
+		logger: log.Scoped("ReposWith", ""),
+		Store:  basestore.NewWithHandle(other.Handle()),
+	}
 }
 
 func (s *repoStore) With(other basestore.ShareableStore) RepoStore {
-	return &repoStore{Store: s.Store.With(other)}
+	return &repoStore{logger: s.logger, Store: s.Store.With(other)}
 }
 
 func (s *repoStore) Transact(ctx context.Context) (RepoStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &repoStore{Store: txBase}, err
+	return &repoStore{logger: s.logger, Store: txBase}, err
 }
 
 // Get finds and returns the repo with the given repository ID from the database.
@@ -408,12 +414,10 @@ var repoColumns = []string{
 	"repo.blocked",
 }
 
-func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
+func scanRepo(rows *sql.Rows, r *types.Repo, logger log.Logger) (err error) {
 	var sources dbutil.NullJSONRawMessage
 	var metadata json.RawMessage
 	var blocked dbutil.NullJSONRawMessage
-
-	logger := log.Scoped("scanRepo", "scan the repo")
 
 	err = rows.Scan(
 		&r.ID,
@@ -781,7 +785,7 @@ func (s *repoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 	var privateIDs []api.RepoID
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		var r types.Repo
-		if err := scanRepo(rows, &r); err != nil {
+		if err := scanRepo(rows, &r, s.logger); err != nil {
 			return err
 		}
 

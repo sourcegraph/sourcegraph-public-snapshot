@@ -37,7 +37,7 @@ var globalReposCache = reposCache{}
 
 func NewIndexableReposLister(store database.RepoStore) *IndexableReposLister {
 	return &IndexableReposLister{
-		logger:     log.Scoped("NewIndexableReposLister", "List indexable repos"),
+		logger:     log.Scoped("IndexableReposLister", "List indexable repos"),
 		store:      store,
 		reposCache: &globalReposCache,
 	}

@@ -12,7 +12,7 @@ import (
 )
 
 func AddLog(commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
-	logger := log.Scoped("AddLog", "Add an entry to the migration log")
+	logger := log.Scoped("command.db", "Add an entry to the migration log")
 	schemaNameFlag := &cli.StringFlag{
 		Name:     "db",
 		Usage:    "The target `schema` to modify.",

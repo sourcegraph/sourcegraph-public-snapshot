@@ -6,6 +6,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // ConnectInternal connects to the given data source and return the handle.
@@ -20,7 +21,8 @@ import (
 // Note: github.com/jackc/pgx parses the environment as well. This function will also use the value
 // of PGDATASOURCE if supplied and dataSource is the empty string.
 func ConnectInternal(dsn, appName, dbName string) (_ *sql.DB, err error) {
-	cfg, err := buildConfig(dsn, appName)
+	logger := log.Scoped("ConnectInternal", "connects to the given data source and return the handle")
+	cfg, err := buildConfig(dsn, appName, logger)
 	if err != nil {
 		return nil, err
 	}

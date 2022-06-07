@@ -97,21 +97,27 @@ var _ UserStore = (*userStore)(nil)
 
 // Users instantiates and returns a new RepoStore with prepared statements.
 func Users(db dbutil.DB) UserStore {
-	return &userStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	return &userStore{
+		logger: log.Scoped("Users", ""),
+		Store:  basestore.NewWithDB(db, sql.TxOptions{}),
+	}
 }
 
 // UsersWith instantiates and returns a new RepoStore using the other store handle.
 func UsersWith(other basestore.ShareableStore) UserStore {
-	return &userStore{Store: basestore.NewWithHandle(other.Handle())}
+	return &userStore{
+		logger: log.Scoped("UsersWith", ""),
+		Store:  basestore.NewWithHandle(other.Handle()),
+	}
 }
 
 func (u *userStore) With(other basestore.ShareableStore) UserStore {
-	return &userStore{Store: u.Store.With(other)}
+	return &userStore{logger: u.logger, Store: u.Store.With(other)}
 }
 
 func (u *userStore) Transact(ctx context.Context) (UserStore, error) {
 	txBase, err := u.Store.Transact(ctx)
-	return &userStore{Store: txBase}, err
+	return &userStore{logger: u.logger, Store: txBase}, err
 }
 
 // userNotFoundErr is the error that is returned when a user is not found.

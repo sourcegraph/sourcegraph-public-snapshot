@@ -154,7 +154,7 @@ func (e *externalServiceStore) copy() *externalServiceStore {
 // ExternalServicesWith instantiates and returns a new ExternalServicesStore with prepared statements.
 func ExternalServicesWith(other basestore.ShareableStore) ExternalServiceStore {
 	return &externalServiceStore{
-		logger: log.Scoped("External service store", "ExternalServicesWith instantiates and returns a new ExternalServicesStore with prepared statements"),
+		logger: log.Scoped("externalServiceStore", ""),
 		Store:  basestore.NewWithHandle(other.Handle()),
 	}
 }

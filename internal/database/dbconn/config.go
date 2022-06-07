@@ -20,8 +20,7 @@ var (
 
 // buildConfig takes either a Postgres connection string or connection URI,
 // parses it, and returns a config with additional parameters.
-func buildConfig(dataSource, app string) (*pgx.ConnConfig, error) {
-	logger := log.Scoped("Build config", "takes either a Postgres connection string or connection URI parses it, and returns a config with additional parameters.")
+func buildConfig(dataSource, app string, logger log.Logger) (*pgx.ConnConfig, error) {
 	if dataSource == "" {
 		dataSource = defaultDataSource
 	}

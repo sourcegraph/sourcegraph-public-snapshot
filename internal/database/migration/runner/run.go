@@ -87,14 +87,12 @@ func (r *Runner) runSchema(
 
 	logger := r.logger.With(
 		log.String("schema", schemaContext.schema.Name),
-		log.Ints("appliedVersions", extractIDs(byState.applied)),
-		log.Ints("pendingVersions", extractIDs(byState.pending)),
-		log.Ints("failedVersions", extractIDs(byState.failed)),
 	)
 
-	slogger := r.logger.With(log.String("schema", schemaContext.schema.Name))
-
-	logger.Info("Checked current schema state")
+	logger.Info("Checked current schema state",
+		log.Ints("appliedVersions", extractIDs(byState.applied)),
+		log.Ints("pendingVersions", extractIDs(byState.pending)),
+		log.Ints("failedVersions", extractIDs(byState.failed)))
 
 	// Before we commit to performing an upgrade (which takes locks), determine if there is anything to do
 	// and early out if not. We'll no-op if there are no definitions with pending or failed attempts, and
@@ -102,20 +100,26 @@ func (r *Runner) runSchema(
 
 	if len(byState.pending)+len(byState.failed) == 0 {
 		if operation.Type == MigrationOperationTypeTargetedUp && len(byState.applied) == len(definitions) {
-			slogger.Info("Schema is in the expected state")
+			logger.Info("Schema is in the expected state")
 
 			return nil
 		}
 
 		if operation.Type == MigrationOperationTypeTargetedDown && len(byState.applied) == 0 {
-			slogger.Info("Schema is in the expected state")
+			logger.Info("Schema is in the expected state")
 
 			return nil
 		}
 	}
 
-	logger.Warn("Schema not in expected state", log.Ints("targetDefinitions", extractIDs(definitions)))
-	slogger.Info("Checking for active migrations")
+	logger.Warn("Schema not in expected state",
+		log.Ints("targetDefinitions", extractIDs(definitions)),
+		log.Ints("appliedVersions", extractIDs(byState.applied)),
+		log.Ints("pendingVersions", extractIDs(byState.pending)),
+		log.Ints("failedVersions", extractIDs(byState.failed)),
+	)
+
+	logger.Info("Checking for active migrations")
 
 	for {
 		// Attempt to apply as many migrations as possible. We do this iteratively in chunks as we are unable

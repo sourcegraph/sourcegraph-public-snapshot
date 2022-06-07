@@ -29,7 +29,7 @@ func NewRunner(storeFactories map[string]StoreFactory) *Runner {
 
 func NewRunnerWithSchemas(storeFactories map[string]StoreFactory, schemas []*schemas.Schema) *Runner {
 	return &Runner{
-		logger:         log.Scoped("NewRunnerWithSchemas", "create new runner with schema"),
+		logger:         log.Scoped("Runner", ""),
 		storeFactories: storeFactories,
 		schemas:        schemas,
 	}
@@ -432,16 +432,14 @@ func getAndLogIndexStatus(ctx context.Context, schemaContext schemaContext, tabl
 func logIndexStatus(schemaContext schemaContext, tableName, indexName string, indexStatus storetypes.IndexStatus, exists bool) {
 	schemaContext.logger.Info(
 		"Checked progress of index creation",
-		append(
-			[]log.Field{
-				log.String("schema", schemaContext.schema.Name),
-				log.String("tableName", tableName),
-				log.String("indexName", indexName),
-				log.Bool("exists", exists),
-				log.Bool("isValid", indexStatus.IsValid),
-			},
-			renderIndexStatus(indexStatus)...,
-		)...,
+		log.Object("result",
+			log.String("schema", schemaContext.schema.Name),
+			log.String("tableName", tableName),
+			log.String("indexName", indexName),
+			log.Bool("exists", exists),
+			log.Bool("isValid", indexStatus.IsValid),
+			renderIndexStatus(indexStatus),
+		),
 	)
 
 }
@@ -449,11 +447,9 @@ func logIndexStatus(schemaContext schemaContext, tableName, indexName string, in
 // renderIndexStatus returns a slice of interface pairs describing the given index status for use in a
 // call to logger. If the index is currently being created, the progress of the create operation will be
 // summarized.
-func renderIndexStatus(progress storetypes.IndexStatus) []log.Field {
+func renderIndexStatus(progress storetypes.IndexStatus) log.Field {
 	if progress.Phase == nil {
-		return []log.Field{
-			log.Bool("in-progress", false),
-		}
+		return log.Object("progress-hase", log.Bool("in-progress", false))
 	}
 
 	index := -1
@@ -464,12 +460,13 @@ func renderIndexStatus(progress storetypes.IndexStatus) []log.Field {
 		}
 	}
 
-	return []log.Field{
-		log.Bool("in-progress", false),
+	return log.Object(
+		"index status",
+		log.Bool("in-progress", true),
 		log.String("phase", *progress.Phase),
 		log.String("phases", fmt.Sprintf("%d of %d", index, len(storetypes.CreateIndexConcurrentlyPhases))),
 		log.String("lockers", fmt.Sprintf("%d of %d", progress.LockersDone, progress.LockersTotal)),
 		log.String("blocks", fmt.Sprintf("%d of %d", progress.BlocksDone, progress.BlocksTotal)),
 		log.String("tuples", fmt.Sprintf("%d of %d", progress.TuplesDone, progress.TuplesTotal)),
-	}
+	)
 }
