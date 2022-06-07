@@ -906,8 +906,8 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 
 	var next PageToken
 	_, err = c.do(ctx, req, &struct {
-		*PageToken `json:"pageToken"`
-		Values     any `json:"values"`
+		*PageToken
+		Values any `json:"values"`
 	}{
 		PageToken: &next,
 		Values:    results,
