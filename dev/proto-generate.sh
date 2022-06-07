@@ -9,7 +9,7 @@ echo "--- yarn in root"
 yarn --mutex network --frozen-lockfile --network-timeout 60000
 
 echo "--- cargo install rust-protobuf"
-which ./.bin/bin/protoc-gen-rust || cargo install --root .bin protobuf-codegen
+which ./.bin/bin/protoc-gen-rust || cargo install --root .bin --version 2.27.1 protobuf-codegen
 
 echo "--- buf"
 
