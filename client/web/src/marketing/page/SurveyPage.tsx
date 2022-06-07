@@ -4,13 +4,13 @@ import { useLocation, useParams } from 'react-router'
 
 import { FeedbackText } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { HeroPage } from '../components/HeroPage'
-import { PageTitle } from '../components/PageTitle'
-import { eventLogger } from '../tracking/eventLogger'
+import { AuthenticatedUser } from '../../auth'
+import { HeroPage } from '../../components/HeroPage'
+import { PageTitle } from '../../components/PageTitle'
+import { eventLogger } from '../../tracking/eventLogger'
+import { TweetFeedback } from '../components/TweetFeedback'
 
 import { SurveyForm, SurveyFormLocationState } from './SurveyForm'
-import { TweetFeedback } from './TweetFeedback'
 
 import styles from './SurveyPage.module.scss'
 

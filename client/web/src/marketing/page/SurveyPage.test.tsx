@@ -63,7 +63,7 @@ describe('SurveyPage', () => {
             const otherUseCaseCheckbox = renderResult.getByLabelText('Other')
             fireEvent.click(otherUseCaseCheckbox)
 
-            const otherUseCaseInput = renderResult.getByLabelText('What else are you using sourcegraph to do?')
+            const otherUseCaseInput = renderResult.getByLabelText('What else are you using Sourcegraph to do?')
             expect(otherUseCaseInput).toBeVisible()
 
             fireEvent.change(otherUseCaseInput, { target: { value: mockVariables.otherUseCase } })

@@ -2,12 +2,13 @@ import React from 'react'
 
 import { Button, Checkbox } from '@sourcegraph/wildcard'
 
-import { SurveyRatingRadio } from './SurveyRatingRadio'
+import { SurveyRatingRadio } from '../components/SurveyRatingRadio'
+
 import { Toast } from './Toast'
 
-import styles from './SurveyUserRatingForm.module.scss'
+import styles from './SurveyUserRatingToast.module.scss'
 
-export interface SurveyUserRatingFormProps {
+export interface SurveyUserRatingToastProps {
     onChange?: (score: number) => void
     toggleErrorMessage: boolean
     onContinue: () => void
@@ -16,7 +17,7 @@ export interface SurveyUserRatingFormProps {
     toggleShouldPermanentlyDismiss: (value: boolean) => void
 }
 
-export const SurveyUserRatingForm: React.FunctionComponent<SurveyUserRatingFormProps> = ({
+export const SurveyUserRatingToast: React.FunctionComponent<SurveyUserRatingToastProps> = ({
     onChange,
     toggleErrorMessage,
     onDismiss,

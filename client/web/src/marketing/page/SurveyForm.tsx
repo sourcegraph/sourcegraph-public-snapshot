@@ -6,12 +6,11 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation, gql } from '@sourcegraph/http-client'
 import { Button, LoadingSpinner, Label, Text } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { SubmitSurveyResult, SubmitSurveyVariables, SurveyUseCase } from '../graphql-operations'
-import { eventLogger } from '../tracking/eventLogger'
-
-import { SurveyRatingRadio } from './SurveyRatingRadio'
-import { SurveyUseCaseForm } from './SurveyUseCaseForm'
+import { AuthenticatedUser } from '../../auth'
+import { SubmitSurveyResult, SubmitSurveyVariables, SurveyUseCase } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
+import { SurveyRatingRadio } from '../components/SurveyRatingRadio'
+import { SurveyUseCaseForm } from '../components/SurveyUseCaseForm'
 
 import styles from './SurveyPage.module.scss'
 

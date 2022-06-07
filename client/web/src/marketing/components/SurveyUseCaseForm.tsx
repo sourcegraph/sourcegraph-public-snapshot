@@ -4,8 +4,8 @@ import classNames from 'classnames'
 
 import { FlexTextArea, H4, Input } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { SurveyUseCase } from '../graphql-operations'
+import { AuthenticatedUser } from '../../auth'
+import { SurveyUseCase } from '../../graphql-operations'
 
 import { SurveyUseCaseCheckbox } from './SurveyUseCaseCheckbox'
 
@@ -105,7 +105,7 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                     containerClassName="mt-3"
                     label={
                         <span className={classNames(styles.textareaLabel, formLabelClassName)}>
-                            What else are you using sourcegraph to do?
+                            What else are you using Sourcegraph to do?
                         </span>
                     }
                     name="other"

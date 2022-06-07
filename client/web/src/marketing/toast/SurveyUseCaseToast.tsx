@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react'
 
 import { Button } from '@sourcegraph/wildcard'
 
-import { SurveyUseCase } from '../graphql-operations'
+import { AuthenticatedUser } from '../../auth'
+import { SurveyUseCase } from '../../graphql-operations'
+import { SurveyUseCaseForm } from '../components/SurveyUseCaseForm'
 
-import { SurveyUseCaseForm } from './SurveyUseCaseForm'
 import { Toast } from './Toast'
 
 import styles from './SurveyUseCaseToast.module.scss'
@@ -16,23 +17,23 @@ interface FormStateType {
     email: string
 }
 
-interface SurveyUseCaseFormToast {
+interface SurveyUseCaseFormToastProps {
     onDismiss: () => void
     onDone: () => Promise<void>
     onChange: (props: FormStateType) => void
+    authenticatedUser: AuthenticatedUser | null
 }
 
-export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToast> = ({
+export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastProps> = ({
     onDismiss,
     onDone,
     onChange,
+    authenticatedUser,
 }) => {
     const [useCases, setUseCases] = useState<SurveyUseCase[]>([])
     const [otherUseCase, setOtherUseCase] = useState<string>('')
     const [additionalInformation, setAdditionalInformation] = useState<string>('')
     const [email, setEmail] = useState<string>('')
-
-    const handleSubmit = (): Promise<void> => onDone()
 
     useEffect(() => {
         onChange({
@@ -51,6 +52,7 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToast>
             cta={
                 <SurveyUseCaseForm
                     title="You are using sourcegraph to..."
+                    authenticatedUser={authenticatedUser}
                     onChangeUseCases={setUseCases}
                     otherUseCase={otherUseCase}
                     onChangeOtherUseCase={setOtherUseCase}
@@ -62,7 +64,7 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToast>
             }
             footer={
                 <div className="d-flex justify-content-end">
-                    <Button variant="primary" size="sm" onClick={handleSubmit}>
+                    <Button variant="primary" size="sm" onClick={onDone}>
                         Done
                     </Button>
                 </div>

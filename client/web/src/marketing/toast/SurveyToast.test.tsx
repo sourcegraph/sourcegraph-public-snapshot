@@ -12,9 +12,17 @@ import {
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { mockVariables, submitSurveyMock } from './SurveyPage.mocks'
+import { AuthenticatedUser } from '../../auth'
+import { OPTIONS } from '../components/SurveyUseCaseForm'
+import { mockVariables, submitSurveyMock } from '../page/SurveyPage.mocks'
+
 import { SurveyToast } from './SurveyToast'
-import { OPTIONS } from './SurveyUseCaseForm'
+
+export const mockAuthenticatedUser: AuthenticatedUser = {
+    id: 'userID',
+    username: 'username',
+    email: 'user@me.com',
+} as AuthenticatedUser
 
 describe('SurveyToast', () => {
     let renderResult: RenderWithBrandedContextResult
@@ -43,7 +51,7 @@ describe('SurveyToast', () => {
         return renderWithBrandedContext(
             <MockedTestProvider mocks={[submitSurveyMock]}>
                 <TemporarySettingsContext.Provider value={settingsStorage}>
-                    <SurveyToast />
+                    <SurveyToast authenticatedUser={mockAuthenticatedUser} />
                 </TemporarySettingsContext.Provider>
             </MockedTestProvider>
         )
@@ -212,11 +220,12 @@ describe('SurveyToast', () => {
             }
             expect(renderResult.getByLabelText('Anything else you would like to share with us?')).toBeVisible()
         })
+
         it('Should allow user to provide arbitrary use case', () => {
-            const otherUseCaseElement = renderResult.getByLabelText('other')
+            const otherUseCaseElement = renderResult.getByLabelText('Other')
             fireEvent.click(otherUseCaseElement)
 
-            expect(renderResult.getByLabelText('What else are you using sourcegraph to do?')).toBeVisible()
+            expect(renderResult.getByLabelText('What else are you using Sourcegraph to do?')).toBeVisible()
         })
 
         it('Should show some gratitude after usecase submission', async () => {
@@ -228,10 +237,10 @@ describe('SurveyToast', () => {
             expect(respondToIncidentCheck).toBeVisible()
             fireEvent.click(respondToIncidentCheck)
 
-            const otherUseCaseCheckbox = renderResult.getByLabelText('other')
+            const otherUseCaseCheckbox = renderResult.getByLabelText('Other')
             fireEvent.click(otherUseCaseCheckbox)
 
-            const otherUseCaseInput = renderResult.getByLabelText('What else are you using sourcegraph to do?')
+            const otherUseCaseInput = renderResult.getByLabelText('What else are you using Sourcegraph to do?')
             expect(otherUseCaseInput).toBeVisible()
 
             fireEvent.change(otherUseCaseInput, { target: { value: mockVariables.otherUseCase } })
@@ -243,6 +252,7 @@ describe('SurveyToast', () => {
             await waitFor(() => {
                 expect(renderResult.getByText('Thank you for your feedback!')).toBeVisible()
             })
+            expect(await getTemporarySetting('npsSurvey.hasTemporarilyDismissed')).toBe(true)
         })
     })
 })

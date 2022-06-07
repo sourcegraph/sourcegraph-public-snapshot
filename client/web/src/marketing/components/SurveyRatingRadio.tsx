@@ -5,7 +5,7 @@ import { range } from 'lodash'
 
 import { Button } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../tracking/eventLogger'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import radioStyles from './SurveyRatingRadio.module.scss'
 
