@@ -132,7 +132,6 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		InstanceID: hostname.Get(),
 	}, sglog.NewSentrySink())
 	defer cb.Sync()
-	conf.Watch(cb.Update(conf.GetLogSinks))
 
 	logger := sglog.Scoped("server", "the frontend server program")
 
@@ -167,6 +166,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{db: db})
 	conf.Init()
 	conf.MustValidateDefaults()
+	conf.Watch(cb.Update(conf.GetLogSinks))
 
 	// now we can init the keyring, as it depends on site config
 	if err := keyring.Init(ctx); err != nil {
