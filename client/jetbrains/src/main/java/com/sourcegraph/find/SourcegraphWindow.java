@@ -8,6 +8,9 @@ import com.intellij.openapi.ui.popup.ActiveIcon;
 import com.intellij.openapi.ui.popup.ComponentPopupBuilder;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
+import com.intellij.openapi.wm.ex.WindowManagerEx;
+import com.intellij.ui.popup.AbstractPopup;
+import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.Icons;
 import org.cef.browser.CefBrowser;
 import org.cef.handler.CefKeyboardHandler;
@@ -16,8 +19,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
 
 import static java.awt.event.InputEvent.ALT_DOWN_MASK;
+import static java.awt.event.WindowEvent.WINDOW_GAINED_FOCUS;
 
 public class SourcegraphWindow implements Disposable {
     private final Project project;
@@ -36,6 +41,7 @@ public class SourcegraphWindow implements Disposable {
         if (popup == null || popup.isDisposed()) {
             popup = createPopup();
             popup.showCenteredInCurrentWindow(project);
+            registerOutsideClickListener();
         }
 
         popup.setUiVisible(true);
@@ -56,21 +62,19 @@ public class SourcegraphWindow implements Disposable {
         ComponentPopupBuilder builder = JBPopupFactory.getInstance().createComponentPopupBuilder(mainPanel, mainPanel)
             .setTitle("Sourcegraph")
             .setTitleIcon(new ActiveIcon(Icons.Logo))
-            .setCancelOnClickOutside(true)
-            .setResizable(true)
+            .setProject(project)
             .setModalContext(false)
+            .setCancelOnClickOutside(true)
             .setRequestFocus(true)
-            .setFocusable(true)
+            .setCancelKeyEnabled(false)
+            .setResizable(true)
             .setMovable(true)
+            .setLocateWithinScreenBounds(false)
+            .setFocusable(true)
+            .setCancelOnWindowDeactivation(false)
+            .setCancelOnClickOutside(true)
             .setBelongsToGlobalPopupStack(true)
-            .setCancelOnOtherWindowOpen(true)
-            .setCancelKeyEnabled(true)
-            .setNormalWindowLevel(true)
-            .setCancelCallback(() -> {
-                hidePopup();
-                // We return false to prevent the default cancellation behavior.
-                return false;
-            });
+            .setNormalWindowLevel(true);
 
         // For some reason, adding a cancelCallback will prevent the cancel event to fire when using the escape key. To
         // work around this, we add a manual listener to both the global key handler (since the editor component seems
@@ -133,6 +137,49 @@ public class SourcegraphWindow implements Disposable {
         }
 
         return false;
+    }
+
+    private void registerOutsideClickListener() {
+        Window projectParentWindow = getParentWindow(null);
+
+        Toolkit.getDefaultToolkit().addAWTEventListener(event -> {
+            if (event instanceof WindowEvent) {
+                WindowEvent windowEvent = (WindowEvent) event;
+
+                // We only care for focus events
+                if (windowEvent.getID() != WINDOW_GAINED_FOCUS) {
+                    return;
+                }
+
+                // Detect if we're focusing the Sourcegraph popup
+                if (popup instanceof AbstractPopup) {
+                    Window sourcegraphPopupWindow = ((AbstractPopup) popup).getPopupWindow();
+
+                    if (windowEvent.getWindow().equals(sourcegraphPopupWindow)) {
+                        return;
+                    }
+                }
+
+                // Detect if the newly focused window is a parent of the project root window
+                Window currentProjectParentWindow = getParentWindow(windowEvent.getComponent());
+                if (currentProjectParentWindow.equals(projectParentWindow)) {
+                    hidePopup();
+                }
+            }
+        }, AWTEvent.WINDOW_EVENT_MASK);
+    }
+
+    // https://sourcegraph.com/github.com/JetBrains/intellij-community@27fee7320a01c58309a742341dd61deae57c9005/-/blob/platform/platform-impl/src/com/intellij/ui/popup/AbstractPopup.java?L475-493
+    private Window getParentWindow(Component component) {
+        Window window = null;
+        Component parent = UIUtil.findUltimateParent(component == null ? WindowManagerEx.getInstanceEx().getFocusedComponent(project) : component);
+        if (parent instanceof Window) {
+            window = (Window) parent;
+        }
+        if (window == null) {
+            window = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusedWindow();
+        }
+        return window;
     }
 
     @Override
