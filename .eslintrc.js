@@ -191,6 +191,7 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
         schema: 'always',
       },
     ],
+    'react/display-name': 'off'
   },
   overrides: [
     {

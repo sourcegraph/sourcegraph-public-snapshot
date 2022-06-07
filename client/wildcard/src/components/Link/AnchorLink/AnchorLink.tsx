@@ -11,7 +11,9 @@ import type { LinkProps } from '../Link'
 
 import styles from './AnchorLink.module.scss'
 
-export type AnchorLinkProps = LinkProps
+export interface AnchorLinkProps extends LinkProps {
+    to: string
+}
 
 export const AnchorLink = React.forwardRef(({ to, as: Component, children, className, ...rest }, reference) => {
     const { isBranded } = useWildcardTheme()
