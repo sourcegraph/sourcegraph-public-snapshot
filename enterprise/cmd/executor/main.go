@@ -24,6 +24,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+
+	// This import is required to force a binary hash change when the src-cli version is bumped.
+	_ "github.com/sourcegraph/sourcegraph/internal/src-cli"
 )
 
 func main() {
