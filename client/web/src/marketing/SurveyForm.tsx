@@ -4,7 +4,7 @@ import { useHistory } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation, gql } from '@sourcegraph/http-client'
-import { Button, LoadingSpinner, Label, Text, Input } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Label, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SubmitSurveyResult, SubmitSurveyVariables, SurveyUseCase } from '../graphql-operations'
@@ -102,25 +102,18 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
                 How likely is it that you would recommend Sourcegraph to a friend?
             </Label>
             <SurveyRatingRadio ariaLabelledby="survey-form-scores" onChange={handleScoreChange} score={score} />
-            {!authenticatedUser && (
-                <div className="form-group">
-                    <Input
-                        placeholder="Email"
-                        onChange={event => setEmail(event.target.value)}
-                        value={email}
-                        disabled={response.loading}
-                    />
-                </div>
-            )}
             <SurveyUseCaseForm
                 className="my-2"
+                authenticatedUser={authenticatedUser}
                 formLabelClassName={styles.label}
                 title="You are using sourcegraph to..."
-                onChangeUseCases={value => setUseCases(value)}
+                onChangeUseCases={setUseCases}
                 otherUseCase={otherUseCase}
-                onChangeOtherUseCase={others => setOtherUseCase(others)}
+                onChangeOtherUseCase={setOtherUseCase}
                 additionalInformation={additionalInformation}
-                onChangeMoreShareInfo={moreInfo => setAdditionalInformation(moreInfo)}
+                onChangeAdditionalInformation={setAdditionalInformation}
+                email={email}
+                onChangeEmail={setEmail}
             />
             <div className="form-group">
                 <Button display="block" variant="primary" type="submit" disabled={response.loading}>

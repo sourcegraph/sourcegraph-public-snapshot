@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { FlexTextArea, H4, TextArea } from '@sourcegraph/wildcard'
+import { FlexTextArea, H4, Input } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../auth'
 import { SurveyUseCase } from '../graphql-operations'
 
 import { SurveyUseCaseCheckbox } from './SurveyUseCaseCheckbox'
@@ -36,23 +37,29 @@ export const OPTIONS = [
 interface SurveyUseCaseFormProps {
     onChangeUseCases: (useCases: SurveyUseCase[]) => void
     onChangeOtherUseCase: (others: string) => void
-    onChangeMoreShareInfo: (moreInfo: string) => void
+    onChangeAdditionalInformation: (additionalInformation: string) => void
+    onChangeEmail: (email: string) => void
     formLabelClassName?: string
     additionalInformation: string
     otherUseCase: string
+    email: string
     className?: string
     title: string
+    authenticatedUser?: AuthenticatedUser | null
 }
 
 export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> = ({
-    onChangeMoreShareInfo,
+    onChangeAdditionalInformation,
     onChangeOtherUseCase,
     onChangeUseCases,
+    onChangeEmail,
     formLabelClassName,
     additionalInformation,
     otherUseCase,
+    email,
     className,
     title,
+    authenticatedUser,
 }) => {
     const [useCases, setUseCases] = useState<SurveyUseCase[]>([])
     const [showOtherInput, setShowOtherInput] = useState<boolean>(false)
@@ -75,7 +82,7 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
             <H4 id="usecase-group" className={classNames('d-flex', styles.title, formLabelClassName)}>
                 {title}
             </H4>
-            <div className={styles.checkWrap}>
+            <fieldset className={styles.checkWrap} aria-labelledby="usecase-group">
                 {OPTIONS.map(({ id, labelValue }) => (
                     <SurveyUseCaseCheckbox
                         onChange={() => handleSelectUseCase(id)}
@@ -83,7 +90,6 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                         id={id}
                         checked={useCases.includes(id)}
                         label={labelValue}
-                        aria-labelledby="usecase-group"
                     />
                 ))}
                 <SurveyUseCaseCheckbox
@@ -91,10 +97,9 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                     key="other"
                     id="other"
                     checked={showOtherInput}
-                    label="other"
-                    aria-labelledby="usecase-group"
+                    label="Other"
                 />
-            </div>
+            </fieldset>
             {showOtherInput && (
                 <FlexTextArea
                     containerClassName="mt-3"
@@ -109,18 +114,29 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                     value={otherUseCase}
                 />
             )}
-            <TextArea
-                className="mt-3"
-                size="small"
-                name="more"
-                onChange={event => onChangeMoreShareInfo(event.target.value)}
-                value={additionalInformation}
+            <FlexTextArea
+                containerClassName="mt-3"
                 label={
                     <span className={classNames(styles.textareaLabel, formLabelClassName)}>
                         Anything else you would like to share with us?
                     </span>
                 }
+                name="more"
+                onChange={event => onChangeAdditionalInformation(event.target.value)}
+                value={additionalInformation}
             />
+            {!authenticatedUser && (
+                <Input
+                    className="mt-3"
+                    label={
+                        <span className={classNames(styles.textareaLabel, formLabelClassName)}>
+                            What is your email?
+                        </span>
+                    }
+                    onChange={event => onChangeEmail(event.target.value)}
+                    value={email}
+                />
+            )}
         </div>
     )
 }

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, FeedbackText, H4 } from '@sourcegraph/wildcard'
 
 import { Toast } from './Toast'
 
@@ -10,29 +10,10 @@ interface SurveySuccessProps {
     onDismiss: () => void
 }
 
-const LINKS = [
-    { label: 'How Ebay uses search notebooks to onboard new teammates', link: 'ebay.com' },
-    { label: 'Embedding search notebooks in documentation, for the win', link: 'ebay.com' },
-    { label: 'How to link to multiple lines of code', link: 'ebay.com' },
-]
-
 export const SurveySuccess: React.FunctionComponent<SurveySuccessProps> = ({ onDismiss }) => (
     <Toast
-        subtitle={<span className={styles.toastSubtitle}>Thank you for your feedback!</span>}
-        cta={
-            <div>
-                <div className="mb-4">
-                    You can learn more about using Sourcegraph to onboard to a new code base with these resources:{' '}
-                </div>
-                <ul className={styles.refLinkList}>
-                    {LINKS.map(link => (
-                        <li key={link.link}>
-                            <Link to={link.link}>{link.label}</Link>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-        }
+        subtitle={<H4 className={styles.toastSubtitle}>Thank you for your feedback!</H4>}
+        cta={<FeedbackText headerText="Anything else?" />}
         footer={
             <div className="d-flex justify-content-end">
                 <Button variant="primary" size="sm" onClick={onDismiss}>
@@ -40,6 +21,7 @@ export const SurveySuccess: React.FunctionComponent<SurveySuccessProps> = ({ onD
                 </Button>
             </div>
         }
+        className="text-center"
         onDismiss={onDismiss}
     />
 )

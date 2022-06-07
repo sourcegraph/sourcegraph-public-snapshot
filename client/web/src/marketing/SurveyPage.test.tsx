@@ -60,7 +60,7 @@ describe('SurveyPage', () => {
             expect(respondToIncidentCheck).toBeVisible()
             fireEvent.click(respondToIncidentCheck)
 
-            const otherUseCaseCheckbox = renderResult.getByLabelText('other')
+            const otherUseCaseCheckbox = renderResult.getByLabelText('Other')
             fireEvent.click(otherUseCaseCheckbox)
 
             const otherUseCaseInput = renderResult.getByLabelText('What else are you using sourcegraph to do?')

@@ -31,6 +31,7 @@ interface UserFeedbackProps {
     useCases: SurveyUseCase[]
     additionalInformation: string
     otherUseCase: string
+    email: string
 }
 
 enum ToastSteps {
@@ -41,6 +42,7 @@ enum ToastSteps {
 
 export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<SurveyToastProps>> = ({ forceVisible }) => {
     const [shouldPermanentlyDismiss, setShouldPermanentlyDismiss] = useState(false)
+    const [shouldTemporarilyDismiss, setShouldTemporarilyDismiss] = useState(false)
     const [temporarilyDismissed, setTemporarilyDismissed] = useTemporarySetting(
         'npsSurvey.hasTemporarilyDismissed',
         false
@@ -61,6 +63,7 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
         useCases: [],
         otherUseCase: '',
         additionalInformation: '',
+        email: '',
     })
 
     const [submitSurvey] = useMutation<SubmitSurveyResult, SubmitSurveyVariables>(SUBMIT_SURVEY)
@@ -68,10 +71,7 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
     const handleSubmit = async (): Promise<void> => {
         await submitSurvey({
             variables: {
-                input: {
-                    ...userFeedback,
-                    email: '',
-                },
+                input: userFeedback,
             },
         })
     }
@@ -101,6 +101,16 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
         }
     }, [visible])
 
+    useEffect(
+        () => () => {
+            // Support delaying temporarily dismissing until unmount to allow showing the "Thank you" screen
+            if (shouldTemporarilyDismiss) {
+                setTemporarilyDismissed(true)
+            }
+        },
+        [setTemporarilyDismissed, shouldTemporarilyDismiss]
+    )
+
     useEffect(() => {
         if (!loadingTemporarySettings && daysActiveCount % 30 === 0) {
             // Reset toast dismissal 3 days before it will be shown
@@ -123,6 +133,7 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
 
     const handleUseCaseDone = async (): Promise<void> => {
         await handleSubmit()
+        setShouldTemporarilyDismiss(true)
         handleContinue()
     }
 
@@ -131,18 +142,6 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
     }
 
     switch (activeStep) {
-        case ToastSteps.useCase:
-            return (
-                <SurveyUseCaseToast
-                    onDone={handleUseCaseDone}
-                    onChange={formState => {
-                        setUserFeedback(current => ({ ...current, ...formState }))
-                    }}
-                    onDismiss={onDismiss}
-                />
-            )
-        case ToastSteps.thankYou:
-            return <SurveySuccess onDismiss={onDismiss} />
         case ToastSteps.rate:
             return (
                 <SurveyUserRatingForm
@@ -154,6 +153,16 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
                     toggleErrorMessage={toggleErrorMessage}
                 />
             )
+        case ToastSteps.useCase:
+            return (
+                <SurveyUseCaseToast
+                    onChange={formState => setUserFeedback(current => ({ ...current, ...formState }))}
+                    onDismiss={onDismiss}
+                    onDone={handleUseCaseDone}
+                />
+            )
+        case ToastSteps.thankYou:
+            return <SurveySuccess onDismiss={onDismiss} />
         default:
             throw new Error('Invalid survey step!')
     }

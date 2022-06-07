@@ -13,6 +13,7 @@ interface FormStateType {
     additionalInformation: string
     otherUseCase: string
     useCases: SurveyUseCase[]
+    email: string
 }
 
 interface SurveyUseCaseFormToast {
@@ -29,6 +30,7 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToast>
     const [useCases, setUseCases] = useState<SurveyUseCase[]>([])
     const [otherUseCase, setOtherUseCase] = useState<string>('')
     const [additionalInformation, setAdditionalInformation] = useState<string>('')
+    const [email, setEmail] = useState<string>('')
 
     const handleSubmit = (): Promise<void> => onDone()
 
@@ -37,6 +39,7 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToast>
             useCases,
             otherUseCase,
             additionalInformation,
+            email,
         })
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [useCases, otherUseCase, additionalInformation])
@@ -48,11 +51,13 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToast>
             cta={
                 <SurveyUseCaseForm
                     title="You are using sourcegraph to..."
-                    onChangeUseCases={value => setUseCases(value)}
+                    onChangeUseCases={setUseCases}
                     otherUseCase={otherUseCase}
-                    onChangeOtherUseCase={others => setOtherUseCase(others)}
+                    onChangeOtherUseCase={setOtherUseCase}
                     additionalInformation={additionalInformation}
-                    onChangeMoreShareInfo={moreInfo => setAdditionalInformation(moreInfo)}
+                    onChangeAdditionalInformation={setAdditionalInformation}
+                    email={email}
+                    onChangeEmail={setEmail}
                 />
             }
             footer={
