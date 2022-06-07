@@ -227,13 +227,13 @@ const BatchSpecJSON = `{
               "properties": {
                 "path": {
                   "type": "string",
-                  "description": "The path on the local machine of a file to mount.",
-                  "examples": ["local/path/to/file.text"]
+                  "description": "The path on the local machine to mount. The path must be in the same directory or a subdirectory of the batch spec.",
+                  "examples": ["local/path/to/file.text", "local/path/to/directory"]
                 },
                 "mountpoint": {
                   "type": "string",
-                  "description": "The path to mount the local file to.",
-                  "examples": ["path/to/file.txt"]
+                  "description": "The path in the container to mount the path on the local machine to.",
+                  "examples": ["path/to/file.txt", "path/to/directory"]
                 }
               }
             }

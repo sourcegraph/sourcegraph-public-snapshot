@@ -1093,9 +1093,9 @@ type MavenRateLimit struct {
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 type Mount struct {
-	// Mountpoint description: The path on the container to mount the path on the local machine to.
+	// Mountpoint description: The path in the container to mount the path on the local machine to.
 	Mountpoint string `json:"mountpoint"`
-	// Path description: The path on the local machine to mount. The path must be in the same directory or a subdirectory of the Batch Change Specification.
+	// Path description: The path on the local machine to mount. The path must be in the same directory or a subdirectory of the batch spec.
 	Path string `json:"path"`
 }
 
