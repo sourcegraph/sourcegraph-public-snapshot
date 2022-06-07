@@ -73,7 +73,10 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         [yAxisElement, xAxisReference, outerWidth, outerHeight]
     )
 
-    const selectedSeries = useMemo(() => series.filter(({ id }) => isSeriesSelected(id)), [series, isSeriesSelected])
+    const selectedSeries = useMemo(() => series.filter(({ id }) => isSeriesSelected(`${id}`)), [
+        series,
+        isSeriesSelected,
+    ])
     const dataSeries = useMemo(() => getSeriesData({ series, stacked }), [series, stacked])
 
     const { minX, maxX, minY, maxY } = useMemo(() => getMinMaxBoundaries({ dataSeries, zeroYAxisMin }), [
