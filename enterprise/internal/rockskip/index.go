@@ -74,7 +74,10 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 		return nil
 	}
 
-	parse := s.createParser()
+	parse, err := s.createParser()
+	if err != nil {
+		return errors.Wrap(err, "createParser")
+	}
 
 	symbolCache := lru.New(s.symbolsCacheSize)
 	pathSymbolsCache := lru.New(s.pathSymbolsCacheSize)

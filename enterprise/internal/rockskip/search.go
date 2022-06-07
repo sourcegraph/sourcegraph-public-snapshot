@@ -109,7 +109,7 @@ func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ 
 	// Finally search.
 	symbols, err := s.querySymbols(ctx, args, repoId, commit, threadStatus)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "querySymbols")
 	}
 
 	return symbols, nil
@@ -244,7 +244,10 @@ func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameter
 
 	symbols := []result.Symbol{}
 
-	parse := s.createParser()
+	parse, err := s.createParser()
+	if err != nil {
+		return nil, errors.Wrap(err, "create parser")
+	}
 
 	threadStatus.Tasklog.Start("ArchiveEach")
 	err = s.git.ArchiveEach(string(args.Repo), string(args.CommitID), paths.Items(), func(path string, contents []byte) error {

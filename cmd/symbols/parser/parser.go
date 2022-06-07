@@ -2,15 +2,18 @@ package parser
 
 import (
 	"context"
+	"log"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
 
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-ctags"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -51,11 +54,11 @@ func NewParser(
 }
 
 func (p *parser) Parse(ctx context.Context, args search.SymbolsParameters, paths []string) (_ <-chan SymbolOrError, err error) {
-	ctx, _, endObservation := p.operations.parse.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repo", string(args.Repo)),
-		log.String("commitID", string(args.CommitID)),
-		log.Int("paths", len(paths)),
-		log.String("paths", strings.Join(paths, ":")),
+	ctx, _, endObservation := p.operations.parse.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("repo", string(args.Repo)),
+		otlog.String("commitID", string(args.CommitID)),
+		otlog.Int("paths", len(paths)),
+		otlog.String("paths", strings.Join(paths, ":")),
 	}})
 	// NOTE: We call endObservation synchronously within this function when we
 	// return an error. Once we get on the success-only path, we install it to
@@ -89,9 +92,9 @@ func (p *parser) Parse(ctx context.Context, args search.SymbolsParameters, paths
 
 		go func() {
 			defer func() {
-				endObservation(1, observation.Args{LogFields: []log.Field{
-					log.Int("numRequests", int(totalRequests)),
-					log.Int("numSymbols", int(totalSymbols)),
+				endObservation(1, observation.Args{LogFields: []otlog.Field{
+					otlog.Int("numRequests", int(totalRequests)),
+					otlog.Int("numSymbols", int(totalSymbols)),
 				}})
 			}()
 
@@ -131,9 +134,9 @@ func min(a, b int) int {
 }
 
 func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- SymbolOrError, parseRequest fetcher.ParseRequest, totalSymbols *uint32) (err error) {
-	ctx, trace, endObservation := p.operations.handleParseRequest.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("path", parseRequest.Path),
-		log.Int("fileSize", len(parseRequest.Data)),
+	ctx, trace, endObservation := p.operations.handleParseRequest.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("path", parseRequest.Path),
+		otlog.Int("fileSize", len(parseRequest.Data)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -141,7 +144,7 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	if err != nil {
 		return err
 	}
-	trace.Log(log.Event("acquired parser from pool"))
+	trace.Log(otlog.Event("acquired parser from pool"))
 
 	defer func() {
 		if err == nil {
@@ -168,7 +171,7 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	if err != nil {
 		return errors.Wrap(err, "parser.Parse")
 	}
-	trace.Log(log.Int("numEntries", len(entries)))
+	trace.Log(otlog.Int("numEntries", len(entries)))
 
 	lines := strings.Split(string(parseRequest.Data), "\n")
 
@@ -244,4 +247,24 @@ func shouldPersistEntry(e *ctags.Entry) bool {
 	}
 
 	return true
+}
+
+func SpawnCtags(ctagsConfig types.CtagsConfig) (ctags.Parser, error) {
+	options := ctags.Options{
+		Bin:                ctagsConfig.Command,
+		PatternLengthLimit: ctagsConfig.PatternLengthLimit,
+	}
+	if ctagsConfig.LogErrors {
+		options.Info = log.New(os.Stderr, "ctags: ", log.LstdFlags)
+	}
+	if ctagsConfig.DebugLogs {
+		options.Debug = log.New(os.Stderr, "DBUG ctags: ", log.LstdFlags)
+	}
+
+	parser, err := ctags.New(options)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create new ctags parser")
+	}
+
+	return NewFilteringParser(parser, ctagsConfig.MaxFileSize, ctagsConfig.MaxSymbols), nil
 }

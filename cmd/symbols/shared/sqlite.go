@@ -9,6 +9,8 @@ import (
 
 	"golang.org/x/sync/semaphore"
 
+	"github.com/sourcegraph/go-ctags"
+
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api"
@@ -46,9 +48,8 @@ func SetupSqlite(observationContext *observation.Context, gitserverClient gitser
 		os.Exit(0)
 	}
 
-	ctagsParserFactory := parser.NewCtagsParserFactory(config.Ctags)
-
-	parserPool, err := parser.NewParserPool(ctagsParserFactory, config.NumCtagsProcesses)
+	parserFactory := func() (ctags.Parser, error) { return parser.SpawnCtags(config.Ctags) }
+	parserPool, err := parser.NewParserPool(parserFactory, config.NumCtagsProcesses)
 	if err != nil {
 		log.Fatalf("Failed to create parser pool: %s", err)
 	}
