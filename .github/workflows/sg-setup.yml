@@ -20,5 +20,10 @@ jobs:
         with:
           go-version: 1.18
 
+      - name: "Git setup"
+        run: gh auth setup-git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Test dependencies (${{ matrix.os }})
         run: go test -v ./dev/sg/dependencies/... -sg-setup=${{ matrix.os }}
