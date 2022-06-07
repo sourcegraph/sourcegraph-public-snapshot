@@ -78,7 +78,7 @@ if [ $? -ne 0 ]; then
   echo "^^^ +++"
   echo "$URL was not accessible within 120s."
   docker inspect "$CONTAINER"
-  exit 1s
+  exit 1
 fi
 set -e
 echo "Waiting for $URL... done"
