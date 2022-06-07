@@ -46,15 +46,16 @@ sg teammate handbook asdine
 			Name:      "time",
 			ArgsUsage: "<nickname>",
 			Usage:     "Get the current time of a Sourcegraph teammate",
-			Action: func(cmd *cli.Context) error {
-				if cmd.Args().Len() == 0 {
+			Action: func(ctx *cli.Context) error {
+				args := ctx.Args().Slice()
+				if len(args) == 0 {
 					return errors.New("no nickname provided")
 				}
-				resolver, err := getTeamResolver(cmd.Context)
+				resolver, err := getTeamResolver(ctx.Context)
 				if err != nil {
 					return err
 				}
-				teammate, err := resolver.ResolveByName(cmd.Context, strings.Join(cmd.Args().Slice(), " "))
+				teammate, err := resolver.ResolveByName(ctx.Context, strings.Join(args, " "))
 				if err != nil {
 					return err
 				}
@@ -66,15 +67,16 @@ sg teammate handbook asdine
 			Name:      "handbook",
 			ArgsUsage: "<nickname>",
 			Usage:     "Open the handbook page of a Sourcegraph teammate",
-			Action: func(cmd *cli.Context) error {
-				if cmd.Args().Len() == 0 {
+			Action: func(ctx *cli.Context) error {
+				args := ctx.Args().Slice()
+				if len(args) == 0 {
 					return errors.New("no nickname provided")
 				}
-				resolver, err := getTeamResolver(cmd.Context)
+				resolver, err := getTeamResolver(ctx.Context)
 				if err != nil {
 					return err
 				}
-				teammate, err := resolver.ResolveByName(cmd.Context, strings.Join(cmd.Args().Slice(), " "))
+				teammate, err := resolver.ResolveByName(ctx.Context, strings.Join(args, " "))
 				if err != nil {
 					return err
 				}

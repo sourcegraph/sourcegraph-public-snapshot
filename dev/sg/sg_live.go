@@ -50,23 +50,23 @@ func constructLiveCmdLongHelp() string {
 }
 
 func liveExec(ctx *cli.Context) error {
-	if ctx.Args().Len() == 0 {
+	args := ctx.Args().Slice()
+	if len(args) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: No environment specified"))
 		return flag.ErrHelp
 	}
 
-	if ctx.Args().Len() != 1 {
+	if len(args) != 1 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: Too many arguments"))
 		return flag.ErrHelp
 	}
 
-	arg := ctx.Args().First()
-	e, ok := getEnvironment(ctx.Args().First())
+	e, ok := getEnvironment(args[0])
 	if !ok {
-		if customURL, err := url.Parse(arg); err == nil && customURL.Scheme != "" {
+		if customURL, err := url.Parse(args[0]); err == nil && customURL.Scheme != "" {
 			e = environment{Name: customURL.Host, URL: customURL.String()}
 		} else {
-			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: Environment %q not found, or is not a valid URL :(", arg))
+			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: Environment %q not found, or is not a valid URL :(", args[0]))
 			return flag.ErrHelp
 		}
 	}

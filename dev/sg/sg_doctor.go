@@ -15,10 +15,10 @@ var doctorCommand = &cli.Command{
 	Action:    doctorExec,
 }
 
-func doctorExec(cmd *cli.Context) error {
-	args := cmd.Args()
+func doctorExec(ctx *cli.Context) error {
+	args := ctx.Args()
 	if args.Len() == 0 {
-		return runChecks(cmd.Context, checks)
+		return runChecks(ctx.Context, checks)
 	}
 	checksToRun := map[string]check.CheckFunc{}
 	for _, arg := range args.Slice() {
@@ -28,5 +28,5 @@ func doctorExec(cmd *cli.Context) error {
 		}
 		checksToRun[arg] = c
 	}
-	return runChecks(cmd.Context, checksToRun)
+	return runChecks(ctx.Context, checksToRun)
 }
