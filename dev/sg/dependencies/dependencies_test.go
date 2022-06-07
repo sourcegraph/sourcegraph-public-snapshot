@@ -6,14 +6,15 @@ import (
 	"testing"
 )
 
-var sgSetupTests = flag.Bool("sg-setup", false, "run sg setup tests")
+var sgSetupTests = flag.String("sg-setup", "", "run sg setup tests for the designated platform")
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	if *sgSetupTests {
-		println("running sg setup tests")
-		os.Exit(m.Run())
-	} else {
-		println("skipping sg dependencies test (use -sg-setup to enable)")
-	}
+	os.Exit(m.Run())
+}
+
+var testArgs = CheckArgs{
+	InRepo:     true,
+	Teammate:   false,
+	ConfigFile: "../../../sg.config.yaml",
 }

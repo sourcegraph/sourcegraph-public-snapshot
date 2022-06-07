@@ -9,8 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// MacOS declares MacOS dependencies.
-var MacOS = []category{
+// Mac declares Mac dependencies.
+var Mac = []category{
 	{
 		Name: "Homebrew",
 		Checks: []*dependency{

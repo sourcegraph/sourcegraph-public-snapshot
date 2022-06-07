@@ -6,7 +6,11 @@ on:
       - 'dev/sg/internal/check/**.go'
 jobs:
   test:
-    runs-on: macos-12
+    strategy:
+      matrix:
+        os: [macos-12, ubuntu-12]
+
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -16,5 +20,5 @@ jobs:
         with:
           go-version: 1.18
 
-      - name: Test dependencies
-        run: go test -v ./dev/sg/dependencies/... -sg-setup
+      - name: Test dependencies (${{ matrix.os }})
+        run: go test -v ./dev/sg/dependencies/... -sg-setup=${{ matrix.os }}
