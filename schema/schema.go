@@ -1092,6 +1092,12 @@ type MavenRateLimit struct {
 	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
+type Mount struct {
+	// Mountpoint description: The path in the container to mount the path on the local machine to.
+	Mountpoint string `json:"mountpoint"`
+	// Path description: The path on the local machine to mount. The path must be in the same directory or a subdirectory of the batch spec.
+	Path string `json:"path"`
+}
 
 // MountedEncryptionKey description: This encryption key is mounted from a given file path or an environment variable.
 type MountedEncryptionKey struct {
@@ -2003,6 +2009,8 @@ type Step struct {
 	Files map[string]string `json:"files,omitempty"`
 	// If description: A condition to check before executing steps. Supports templating. The value 'true' is interpreted as true.
 	If interface{} `json:"if,omitempty"`
+	// Mount description: Files that are mounted to the Docker container.
+	Mount []*Mount `json:"mount,omitempty"`
 	// Outputs description: Output variables of this step that can be referenced in the changesetTemplate or other steps via outputs.<name-of-output>
 	Outputs map[string]OutputVariable `json:"outputs,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
