@@ -1872,6 +1872,18 @@
             "minLength": 1
           },
           "examples": [["group", "group/subgroup", "group/subgroup/subgroup"]]
+        },
+        "webhook": {
+          "description": "Custom webhook",
+          "type": "object",
+          "required": ["type", "url"],
+          "properties": {
+            "type": {
+                "type": "string",
+                "const": "webhook"
+            },
+            "url": { "type": "string" }
+          }
         }
       }
     },

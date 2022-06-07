@@ -20,11 +20,12 @@ import (
 var MockGetAndSaveUser func(ctx context.Context, op GetAndSaveUserOp) (userID int32, safeErrMsg string, err error)
 
 type GetAndSaveUserOp struct {
-	UserProps           database.NewUser
-	ExternalAccount     extsvc.AccountSpec
-	ExternalAccountData extsvc.AccountData
-	CreateIfNotExist    bool
-	LookUpByUsername    bool
+	UserProps              database.NewUser
+	ExternalAccount        extsvc.AccountSpec
+	ExternalAccountData    extsvc.AccountData
+	CreateIfNotExist       bool
+	LookUpByUsername       bool
+	SetAccountActiveStatus bool
 }
 
 // GetAndSaveUser accepts authentication information associated with a given user, validates and applies
@@ -130,6 +131,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 
 		return userID, true, true, "", nil
 	}()
+
 	if err != nil {
 		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, op.ExternalAccount.ServiceType))
 		if logErr := usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, deviceid.FromContext(ctx), "ExternalAuthSignupFailed", serviceTypeArg, serviceTypeArg, featureflag.FromContext(ctx), nil); logErr != nil {

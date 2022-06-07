@@ -29,6 +29,7 @@ type sessionIssuerHelper struct {
 	db          database.DB
 	allowSignup *bool
 	allowGroups []string
+	webhook     map[string]string
 }
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
@@ -60,6 +61,21 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	// AllowSignup defaults to true when not set to preserve the existing behavior.
 	signupAllowed := s.allowSignup == nil || *s.allowSignup
 
+	hasWebhook, err := s.webhookExists(ctx)
+	if err != nil {
+		message := "Error verifying webhook configuration."
+		return nil, message, err
+	}
+
+	var accountIsActive bool
+	if hasWebhook {
+		accountIsActive, err = s.isAccountActive(ctx, gUser.Email)
+		if err != nil {
+			message := "Error requesting webhook information."
+			return nil, message, err
+		}
+	}
+
 	var data extsvc.AccountData
 	gitlab.SetExternalAccountData(&data, gUser, token)
 
@@ -80,9 +96,13 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			ClientID:    s.clientID,
 			AccountID:   strconv.FormatInt(int64(gUser.ID), 10),
 		},
-		ExternalAccountData: data,
-		CreateIfNotExist:    signupAllowed,
+		ExternalAccountData:    data,
+		CreateIfNotExist:       signupAllowed,
+		SetAccountActiveStatus: accountIsActive,
+		// WIP - TODO
+		// In handle when account should be set to active or to inactive...
 	})
+
 	if err != nil {
 		return nil, safeErrMsg, err
 	}
@@ -234,4 +254,37 @@ func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gi
 	}
 
 	return false, nil
+}
+
+func (s *sessionIssuerHelper) webhookExists(ctx context.Context) (bool, error) {
+	url := s.webhook["url"]
+
+	if len(s.webhook) > 0 && url != "" {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func (s *sessionIssuerHelper) isAccountActive(ctx context.Context, userEmail string) (bool, error) {
+	urlFromConfig, ok := s.webhook["url"]
+
+	if !ok {
+		return false, errors.New("Error retrieving user information from webhook url")
+	}
+
+	userStatus, err := UserStatusFromWebhook(urlFromConfig, userEmail)
+	if err != nil {
+		return false, err
+	}
+
+	if userStatus == 200 {
+		return true, nil
+	}
+
+	if userStatus == 403 {
+		return false, nil
+	}
+
+	return false, errors.New("Error: user information from webhook doesn't match any expected value")
 }

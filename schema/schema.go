@@ -842,6 +842,8 @@ type GitLabAuthProvider struct {
 	Type         string `json:"type"`
 	// Url description: URL of the GitLab instance, such as https://gitlab.com or https://gitlab.example.com.
 	Url string `json:"url,omitempty"`
+	// Webhook description: Custom webhook
+	Webhook *Webhook `json:"webhook,omitempty"`
 }
 
 // GitLabAuthorization description: If non-null, enforces GitLab repository permissions. This requires that there be an item in the `auth.providers` field of type "gitlab" with the same `url` field as specified in this `GitLabConnection`.
@@ -2069,6 +2071,12 @@ type VersionContextRevision struct {
 	Repo string `json:"repo"`
 	// Rev description: Branch, tag, or commit hash. "HEAD" or "" can be used for the default branch.
 	Rev string `json:"rev"`
+}
+
+// Webhook description: Custom webhook
+type Webhook struct {
+	Type string `json:"type"`
+	Url  string `json:"url"`
 }
 
 // WebhookLogging description: Configuration for logging incoming webhooks.
