@@ -151,25 +151,6 @@ func serveSendEmail(w http.ResponseWriter, r *http.Request) error {
 	return txemail.Send(r.Context(), msg)
 }
 
-func serveGitResolveRevision(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		// used by zoekt-sourcegraph-mirror
-		vars := mux.Vars(r)
-		name := api.RepoName(vars["RepoName"])
-		spec := vars["Spec"]
-
-		// Do not to trigger a repo-updater lookup since this is a batch job.
-		commitID, err := gitserver.NewClient(db).ResolveRevision(r.Context(), name, spec, gitserver.ResolveRevisionOptions{})
-		if err != nil {
-			return err
-		}
-
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(commitID))
-		return nil
-	}
-}
-
 func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		defer r.Body.Close()
