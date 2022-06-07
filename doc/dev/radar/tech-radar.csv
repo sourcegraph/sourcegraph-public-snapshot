@@ -2,10 +2,11 @@
 Go,Adopt,Languages,TRUE,
 GRPC ,Trial,Backend,TRUE,
 Datadog,Trial,Tooling,TRUE,
-Buf,Assess,Backend,TRUE,<p>We expect this will help us remove cumbersome, manual Protobuf setup</p>
+Buf,Assess,Backend,TRUE,"<p>We expect this will help us remove cumbersome, manual Protobuf setup</p>"
 Mocha,Hold,Frontend,TRUE,
 Jest,Adopt,Frontend,TRUE,
 Typescript,Adopt,Languages,TRUE,
+React,Adopt,Frontend,TRUE
 Buildkite ,Adopt,Tooling,TRUE,
 GitHub Actions,Adopt,Tooling,TRUE,
 log15,Hold,Backend,TRUE,<p>It's confusing</p>
@@ -17,22 +18,31 @@ tree-sitter,Adopt,Backend,TRUE,
 Elm,Trial,Languages,TRUE,"compute notebooks, codestat.dev, doctree"
 Next.js,Adopt,Frontend,TRUE,
 Tailwind CSS,Adopt,Frontend,TRUE,
-Ruttl,Trial,Frontend,TRUE,
+Ruttl,Hold,Frontend,TRUE,
+Markup,Trial,Frontend,TRUE,
+Contentful CMS,Hold,Frontend,TRUE,
+Strapi CMS,Adopt,Frontend,TRUE,
+Netlify,Adopt,Frontend,TRUE,
 Svelte,Hold,Frontend,TRUE,
 SvelteKit,Hold,Frontend,TRUE,
 CSS modules,Adopt,Frontend,TRUE,
 Apollo Client,Adopt,Frontend,TRUE,
+Monaco,Adopt,Frontend,TRUE,"used for search query and settings editor, want to get rid of it in favor of CodeMirror"
+CodeMirror,Trial,Frontend,TRUE,"used for search query and Notebooks Markdown editor, under an experimental feature flag"
 @testing-library/react,Adopt,Frontend,TRUE,
 esbuild,Trial,Frontend,TRUE,
 Playwright,Trial,Frontend,TRUE,
 Sentry,Hold,Tooling,TRUE,
 Bootstrap,Hold,Frontend,TRUE,
 Enzyme,Hold,Frontend,TRUE,
+Honeycomb,Adopt,Tooling,TRUE,
 Elastic,Adopt,Tooling,TRUE,
 Trivy,Adopt,Tooling,TRUE,
 HackerOne,Adopt,Tooling,FALSE,
 Executors,Adopt,Backend,TRUE,
 stretchr/testify,Trial,Backend,TRUE,"mostly using for better assertions at this point"
+Java,Adopt,Language,True,"JetBrains extension"
+Gradle,Adopt,Tooling,TRUE,"JetBrains extension"
 Buildkite Analytics,Trial,Tooling,TRUE
 sourcegraph/run,Trial,Backend,TRUE,
 sourcegraph/lib/log,Adopt,Backend,TRUE, Standardized logging package
