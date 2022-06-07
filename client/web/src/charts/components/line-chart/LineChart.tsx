@@ -21,7 +21,6 @@ import {
     generatePointsField,
     getChartContentSizes,
     getMinMaxBoundaries,
-    SeriesWithData,
 } from './utils'
 
 import styles from './LineChart.module.scss'
@@ -144,16 +143,16 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         }
     }
 
-    const sortedSeries = useMemo(() => {
-        return (
+    const sortedSeries = useMemo(
+        () =>
             [...dataSeries]
                 // resorts array based on hover state
                 // this is to make sure the hovered series is always rendered on top
                 // since SVGs do not support z-index, we have to render the hovered
                 // series last
-                .sort(series => sortByDataKey(series.id, activePoint?.seriesId || ''))
-        )
-    }, [dataSeries, activePoint])
+                .sort(series => sortByDataKey(series.id, activePoint?.seriesId || '')),
+        [dataSeries, activePoint]
+    )
 
     return (
         <svg
