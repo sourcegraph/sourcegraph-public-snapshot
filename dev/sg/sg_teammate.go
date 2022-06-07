@@ -46,41 +46,41 @@ sg teammate handbook asdine
 			Name:      "time",
 			ArgsUsage: "<nickname>",
 			Usage:     "Get the current time of a Sourcegraph teammate",
-			Action: execAdapter(func(ctx context.Context, args []string) error {
-				if len(args) == 0 {
+			Action: func(cmd *cli.Context) error {
+				if cmd.Args().Len() == 0 {
 					return errors.New("no nickname provided")
 				}
-				resolver, err := getTeamResolver(ctx)
+				resolver, err := getTeamResolver(cmd.Context)
 				if err != nil {
 					return err
 				}
-				teammate, err := resolver.ResolveByName(ctx, strings.Join(args, " "))
+				teammate, err := resolver.ResolveByName(cmd.Context, strings.Join(cmd.Args().Slice(), " "))
 				if err != nil {
 					return err
 				}
 				std.Out.Writef("%s's current time is %s",
 					teammate.Name, timeAtLocation(teammate.SlackTimezone))
 				return nil
-			}),
+			},
 		}, {
 			Name:      "handbook",
 			ArgsUsage: "<nickname>",
 			Usage:     "Open the handbook page of a Sourcegraph teammate",
-			Action: execAdapter(func(ctx context.Context, args []string) error {
-				if len(args) == 0 {
+			Action: func(cmd *cli.Context) error {
+				if cmd.Args().Len() == 0 {
 					return errors.New("no nickname provided")
 				}
-				resolver, err := getTeamResolver(ctx)
+				resolver, err := getTeamResolver(cmd.Context)
 				if err != nil {
 					return err
 				}
-				teammate, err := resolver.ResolveByName(ctx, strings.Join(args, " "))
+				teammate, err := resolver.ResolveByName(cmd.Context, strings.Join(cmd.Args().Slice(), " "))
 				if err != nil {
 					return err
 				}
 				std.Out.Writef("Opening handbook link for %s: %s", teammate.Name, teammate.HandbookLink)
 				return open.URL(teammate.HandbookLink)
-			}),
+			},
 		}},
 	}
 )
