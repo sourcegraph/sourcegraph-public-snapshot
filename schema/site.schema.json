@@ -1730,6 +1730,19 @@
           "description": "Allows new visitors to sign up for accounts via SAML authentication. If false, users signing in via SAML must have an existing Sourcegraph account, which will be linked to their SAML identity after sign-in.",
           "type": "boolean",
           "!go": { "pointer": true }
+        },
+        "allowGroups": {
+          "description": "Restrict login to members of these groups",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "groupsAttributeName": {
+          "description": "Name of the SAML assertion attribute that holds group membership for allowGroups setting",
+          "type": "string",
+          "default": "groups"
         }
       }
     },

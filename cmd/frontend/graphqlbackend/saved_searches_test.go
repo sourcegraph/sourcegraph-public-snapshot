@@ -7,7 +7,9 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -219,6 +221,11 @@ func TestUpdateSavedSearch(t *testing.T) {
 			OrgID:       savedSearch.OrgID,
 		}, nil
 	})
+	ss.GetByIDFunc.SetDefaultReturn(&api.SavedQuerySpecAndConfig{
+		Config: api.ConfigSavedQuery{
+			UserID: &key,
+		},
+	}, nil)
 
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
@@ -233,7 +240,13 @@ func TestUpdateSavedSearch(t *testing.T) {
 		NotifySlack bool
 		OrgID       *graphql.ID
 		UserID      *graphql.ID
-	}{ID: marshalSavedSearchID(key), Description: "updated query description", Query: "test type:diff patternType:regexp", OrgID: nil, UserID: &userID})
+	}{
+		ID:          marshalSavedSearchID(key),
+		Description: "updated query description",
+		Query:       "test type:diff patternType:regexp",
+		OrgID:       nil,
+		UserID:      &userID,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -264,6 +277,106 @@ func TestUpdateSavedSearch(t *testing.T) {
 	}{ID: marshalSavedSearchID(key), Description: "updated query description", Query: "test type:diff", NotifyOwner: true, NotifySlack: false, OrgID: nil, UserID: &userID})
 	if err == nil {
 		t.Error("Expected error for updateSavedSearch when query does not provide a patternType: field.")
+	}
+}
+
+func TestUpdateSavedSearchPermissions(t *testing.T) {
+	user1 := &types.User{ID: 42}
+	user2 := &types.User{ID: 43}
+	admin := &types.User{ID: 44, SiteAdmin: true}
+	org1 := &types.Org{ID: 42}
+	org2 := &types.Org{ID: 43}
+
+	cases := []struct {
+		execUser *types.User
+		ssUserID *int32
+		ssOrgID  *int32
+		errIs    error
+	}{{
+		execUser: user1,
+		ssUserID: &user1.ID,
+		errIs:    nil,
+	}, {
+		execUser: user1,
+		ssUserID: &user2.ID,
+		errIs:    &backend.InsufficientAuthorizationError{},
+	}, {
+		execUser: user1,
+		ssOrgID:  &org1.ID,
+		errIs:    nil,
+	}, {
+		execUser: user1,
+		ssOrgID:  &org2.ID,
+		errIs:    backend.ErrNotAnOrgMember,
+	}, {
+		execUser: admin,
+		ssOrgID:  &user1.ID,
+		errIs:    nil,
+	}, {
+		execUser: admin,
+		ssOrgID:  &org1.ID,
+		errIs:    nil,
+	}}
+
+	for _, tt := range cases {
+		t.Run("", func(t *testing.T) {
+			ctx := actor.WithActor(context.Background(), actor.FromUser(tt.execUser.ID))
+			users := database.NewMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+				switch actor.FromContext(ctx).UID {
+				case user1.ID:
+					return user1, nil
+				case user2.ID:
+					return user2, nil
+				case admin.ID:
+					return admin, nil
+				default:
+					panic("bad actor")
+				}
+			})
+
+			savedSearches := database.NewMockSavedSearchStore()
+			savedSearches.UpdateFunc.SetDefaultHook(func(_ context.Context, ss *types.SavedSearch) (*types.SavedSearch, error) {
+				return ss, nil
+			})
+			savedSearches.GetByIDFunc.SetDefaultReturn(&api.SavedQuerySpecAndConfig{
+				Config: api.ConfigSavedQuery{
+					UserID: tt.ssUserID,
+					OrgID:  tt.ssOrgID,
+				},
+			}, nil)
+
+			orgMembers := database.NewMockOrgMemberStore()
+			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
+				if orgID == userID {
+					return &types.OrgMembership{}, nil
+				}
+				return nil, nil
+			})
+
+			db := database.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.SavedSearchesFunc.SetDefaultReturn(savedSearches)
+			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+
+			_, err := (&schemaResolver{db: db}).UpdateSavedSearch(ctx, &struct {
+				ID          graphql.ID
+				Description string
+				Query       string
+				NotifyOwner bool
+				NotifySlack bool
+				OrgID       *graphql.ID
+				UserID      *graphql.ID
+			}{
+				ID:    marshalSavedSearchID(1),
+				Query: "patterntype:literal",
+			})
+			if tt.errIs == nil {
+				require.NoError(t, err)
+			} else {
+				require.ErrorAs(t, err, &tt.errIs)
+			}
+		})
 	}
 }
 

@@ -126,12 +126,14 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Ru
 	// want to allow linters to take any longer.
 	linterTimeout := 5 * time.Minute
 	runnerCtx, cancelRunners := context.WithTimeout(ctx, linterTimeout)
-	for _, fn := range fns {
-		go func(fn lint.Runner) {
+	go func() {
+		for _, fn := range fns {
+			// go func(fn lint.Runner) {
 			reportsCh <- fn(runnerCtx, repoState)
 			wg.Done()
-		}(fn)
-	}
+			// }(fn)
+		}
+	}()
 	go func() {
 		wg.Wait()
 		close(reportsCh)
