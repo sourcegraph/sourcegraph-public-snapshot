@@ -1,4 +1,4 @@
-package com.sourcegraph.find;
+package com.sourcegraph.browser;
 
 import com.intellij.ui.components.JBPanelWithEmptyText;
 import org.jetbrains.annotations.NotNull;

@@ -9,6 +9,7 @@ import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.util.ui.JBUI;
+import com.sourcegraph.browser.BrowserAndLoadingPanel;
 import com.sourcegraph.browser.JSToJavaBridgeRequestHandler;
 import com.sourcegraph.browser.SourcegraphJBCefBrowser;
 import org.jetbrains.annotations.NotNull;
