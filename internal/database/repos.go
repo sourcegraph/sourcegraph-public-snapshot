@@ -98,7 +98,7 @@ type repoStore struct {
 // store handle.
 func ReposWith(other basestore.ShareableStore) RepoStore {
 	return &repoStore{
-		logger: log.Scoped("ReposWith", ""),
+		logger: log.Scoped("repoStore", ""),
 		Store:  basestore.NewWithHandle(other.Handle()),
 	}
 }
@@ -414,7 +414,7 @@ var repoColumns = []string{
 	"repo.blocked",
 }
 
-func scanRepo(rows *sql.Rows, r *types.Repo, logger log.Logger) (err error) {
+func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 	var sources dbutil.NullJSONRawMessage
 	var metadata json.RawMessage
 	var blocked dbutil.NullJSONRawMessage
@@ -787,7 +787,7 @@ func (s *repoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 	var privateIDs []api.RepoID
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		var r types.Repo
-		if err := scanRepo(rows, &r, s.logger); err != nil {
+		if err := scanRepo(s.logger, rows, &r); err != nil {
 			return err
 		}
 

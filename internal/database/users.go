@@ -98,7 +98,7 @@ var _ UserStore = (*userStore)(nil)
 // Users instantiates and returns a new RepoStore with prepared statements.
 func Users(db dbutil.DB) UserStore {
 	return &userStore{
-		logger: log.Scoped("Users", ""),
+		logger: log.Scoped("userStore", ""),
 		Store:  basestore.NewWithDB(db, sql.TxOptions{}),
 	}
 }
@@ -106,7 +106,7 @@ func Users(db dbutil.DB) UserStore {
 // UsersWith instantiates and returns a new RepoStore using the other store handle.
 func UsersWith(other basestore.ShareableStore) UserStore {
 	return &userStore{
-		logger: log.Scoped("UsersWith", ""),
+		logger: log.Scoped("userStore", ""),
 		Store:  basestore.NewWithHandle(other.Handle()),
 	}
 }

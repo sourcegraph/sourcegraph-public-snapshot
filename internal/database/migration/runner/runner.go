@@ -449,7 +449,7 @@ func logIndexStatus(schemaContext schemaContext, tableName, indexName string, in
 // summarized.
 func renderIndexStatus(progress storetypes.IndexStatus) log.Field {
 	if progress.Phase == nil {
-		return log.Object("progress-hase", log.Bool("in-progress", false))
+		return log.Object("index status", log.Bool("in-progress", false))
 	}
 
 	index := -1

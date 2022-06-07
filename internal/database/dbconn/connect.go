@@ -23,7 +23,7 @@ import (
 func ConnectInternal(dsn, appName, dbName string) (_ *sql.DB, err error) {
 	logger := log.Scoped("ConnectInternal", "connects to the given data source and return the handle")
 
-	cfg, err := buildConfig(dsn, appName, logger)
+	cfg, err := buildConfig(logger, dsn, appName)
 	if err != nil {
 		return nil, err
 	}
