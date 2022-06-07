@@ -130,7 +130,7 @@ https://docs.github.com/en/authentication/connecting-to-github-with-ssh`,
 					} else {
 						cmd = run.Cmd(ctx, `git clone https://github.com/sourcegraph/sourcegraph.git`)
 					}
-					return cmd.Run().Wait()
+					return cmd.Run().StreamLines(cio.Write)
 				},
 			},
 			{
