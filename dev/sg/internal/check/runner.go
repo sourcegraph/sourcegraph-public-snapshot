@@ -193,6 +193,8 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 				}
 
 				if !c.IsEnabled(ctx, cio, args) {
+					// Mark as done anyway
+					progress.SetValue(i, float64(ci+1))
 					continue
 				}
 

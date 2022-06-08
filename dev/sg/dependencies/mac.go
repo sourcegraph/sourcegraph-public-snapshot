@@ -81,6 +81,13 @@ var Mac = []category{
 			},
 			{
 				Name: "docker",
+				Enabled: func(ctx context.Context, args CheckArgs) error {
+					// Docker is quite funky in CI
+					if os.Getenv("CI") == "true" {
+						return errors.New("skipping Docker in CI")
+					}
+					return nil
+				},
 				Check: checkAction(check.Combine(
 					check.WrapErrMessage(check.InPath("docker"),
 						"if Docker is installed and the check fails, you might need to restart terminal and 'sg setup'"),
