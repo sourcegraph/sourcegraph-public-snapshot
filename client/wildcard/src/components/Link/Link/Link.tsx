@@ -1,7 +1,5 @@
 import React from 'react'
 
-import * as H from 'history'
-
 import { AnchorLink } from '../AnchorLink'
 
 export interface LinkProps
@@ -9,7 +7,7 @@ export interface LinkProps
         React.AnchorHTMLAttributes<HTMLAnchorElement>,
         Exclude<keyof React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>
     > {
-    to: string | H.LocationDescriptor<any>
+    to: string
     ref?: React.Ref<HTMLAnchorElement>
 }
 
