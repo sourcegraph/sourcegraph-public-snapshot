@@ -83,9 +83,12 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
         }
     }
 
-    const [submitSurvey] = useMutation<SubmitSurveyResult, SubmitSurveyVariables>(SUBMIT_SURVEY, {
-        onCompleted: updateDismissalState,
-    })
+    const [submitSurvey, { loading: isSubmitting }] = useMutation<SubmitSurveyResult, SubmitSurveyVariables>(
+        SUBMIT_SURVEY,
+        {
+            onCompleted: updateDismissalState,
+        }
+    )
 
     useEffect(() => {
         if (!loadingTemporarySettings) {
@@ -170,10 +173,11 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
         case ToastSteps.useCase:
             return (
                 <SurveyUseCaseToast
-                    authenticatedUser={authenticatedUser}
+                    isSubmitting={isSubmitting}
                     onChange={formState => setUserFeedback(current => ({ ...current, ...formState }))}
                     onDismiss={handleDismiss}
                     onDone={handleUseCaseDone}
+                    authenticatedUser={authenticatedUser}
                 />
             )
         case ToastSteps.thankYou:

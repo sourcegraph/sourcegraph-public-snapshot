@@ -31,9 +31,7 @@ export const SurveyUseCaseCheckbox: React.FunctionComponent<SurveyUseCaseCheckbo
                 'd-flex align-items-center mb-0',
                 styles.checkButton,
                 checked && styles.checkButtonActive,
-                {
-                    focus: focused,
-                }
+                focused && 'focus'
             )}
             as="label"
             {...props}
@@ -48,7 +46,7 @@ export const SurveyUseCaseCheckbox: React.FunctionComponent<SurveyUseCaseCheckbo
                 onChange={onChange}
                 className={styles.usecaseCheck}
             />
-            <span id={id} className={classNames('ml-1', styles.checkboxLabel, checked && styles.checkboxLabelActive)}>
+            <span className={classNames('ml-1', styles.checkboxLabel, checked && styles.checkboxLabelActive)}>
                 {label}
             </span>
         </Button>

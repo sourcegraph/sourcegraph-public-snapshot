@@ -32,7 +32,7 @@ export const OPTIONS = [
         id: SurveyUseCase.IMPROVE_CODE_QUALITY,
         labelValue: 'Improve code quality',
     },
-]
+] as const
 
 interface SurveyUseCaseFormProps {
     onChangeUseCases: (useCases: SurveyUseCase[]) => void
@@ -85,19 +85,18 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
             <fieldset className={styles.checkWrap} aria-labelledby="usecase-group">
                 {OPTIONS.map(({ id, labelValue }) => (
                     <SurveyUseCaseCheckbox
+                        label={labelValue}
                         onChange={() => handleSelectUseCase(id)}
                         key={id}
                         id={id}
                         checked={useCases.includes(id)}
-                        label={labelValue}
                     />
                 ))}
                 <SurveyUseCaseCheckbox
-                    onChange={() => setShowOtherInput(!showOtherInput)}
-                    key="other"
-                    id="other"
-                    checked={showOtherInput}
                     label="Other"
+                    onChange={() => setShowOtherInput(!showOtherInput)}
+                    id="survey_checkbox_other"
+                    checked={showOtherInput}
                 />
             </fieldset>
             {showOtherInput && (
@@ -108,7 +107,6 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                             What else are you using Sourcegraph to do?
                         </span>
                     }
-                    name="other"
                     onChange={event => onChangeOtherUseCase(event.target.value)}
                     value={otherUseCase}
                 />
@@ -120,7 +118,6 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                         Anything else you would like to share with us?
                     </span>
                 }
-                name="more"
                 onChange={event => onChangeAdditionalInformation(event.target.value)}
                 value={additionalInformation}
             />

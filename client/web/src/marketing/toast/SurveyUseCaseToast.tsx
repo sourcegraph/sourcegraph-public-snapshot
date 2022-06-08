@@ -18,6 +18,7 @@ interface FormStateType {
 }
 
 interface SurveyUseCaseFormToastProps {
+    isSubmitting?: boolean
     onDismiss: () => void
     onDone: () => Promise<void>
     onChange: (props: FormStateType) => void
@@ -25,6 +26,7 @@ interface SurveyUseCaseFormToastProps {
 }
 
 export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastProps> = ({
+    isSubmitting,
     onDismiss,
     onDone,
     onChange,
@@ -43,7 +45,7 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastP
             email,
         })
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [useCases, otherUseCase, additionalInformation])
+    }, [useCases, otherUseCase, additionalInformation, email])
 
     return (
         <Toast
@@ -64,7 +66,7 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastP
             }
             footer={
                 <div className="d-flex justify-content-end">
-                    <Button variant="primary" size="sm" onClick={onDone}>
+                    <Button variant="primary" size="sm" onClick={onDone} disabled={isSubmitting}>
                         Done
                     </Button>
                 </div>
