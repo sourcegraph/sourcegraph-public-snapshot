@@ -203,7 +203,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 					}
 
 					if err := check.IsEnabled(ctx, cio, args); err != nil {
-						progress.VerboseLine(output.Styledf(output.StyleGrey, "%s: Check skipped: %s", category.Name, err.Error()))
+						progress.VerboseLine(output.Styledf(output.StyleGrey, "%s: Check skipped: %s", check.Name, err.Error()))
 						// Mark as done anyway
 						progress.SetValue(i, float64(ci+1))
 						return
@@ -468,7 +468,8 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 
 	// Make sure to call this with a final message before returning!
 	complete := func(emoji string, style output.Style, fmtStr string, args ...any) {
-		pending.Complete(output.Linef(emoji, style, "%d. %s - "+fmtStr, append([]any{categoryIdx, category.Name}, args...)...))
+		pending.Complete(output.Linef(emoji, output.CombineStyles(style, output.StyleBold),
+			"%d. %s - "+fmtStr, append([]any{categoryIdx, category.Name}, args...)...))
 	}
 
 	if err := category.CheckEnabled(ctx, args); err != nil {
