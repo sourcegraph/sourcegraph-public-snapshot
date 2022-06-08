@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"hash/crc32"
+	"io/fs"
 	"log"
 	"math"
 	"os"
@@ -20,6 +21,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Options are configurables for Combine.
@@ -342,6 +344,7 @@ func runGit(dir string, args ...string) error {
 	log.Printf("starting git %s", strings.Join(args, " "))
 	err := cmd.Run()
 	log.Printf("finished git in %s", time.Since(start))
+
 	return err
 }
 
@@ -356,6 +359,11 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 	}
 
 	opt.SetDefaults()
+
+	err := cleanupStaleLockFiles(dir)
+	if err != nil {
+		return fmt.Errorf("removing stale git lock files: %w", err)
+	}
 
 	for {
 		// convenient way to stop the daemon to do manual operations like add
@@ -438,6 +446,47 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+// cleanupStaleLockFiles removes any Git lock files that might have been left behind
+// by a crashed git-combine process
+func cleanupStaleLockFiles(gitDir string) error {
+	var lockFiles []string
+	for _, f := range []string{"git.pid.lock", "index.lock"} {
+		lockFiles = append(lockFiles, filepath.Join(gitDir, f))
+	}
+
+	refsDir := filepath.Join(gitDir, "refs")
+
+	// discover lock files that look like refs/remotes/origin/main.lock
+	err := filepath.WalkDir(refsDir, func(path string, d fs.DirEntry, err error) error {
+		if d.IsDir() || !strings.HasSuffix(path, ".lock") {
+			return nil
+		}
+
+		lockFiles = append(lockFiles, path)
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("finding stale lockfiles in %q: %w", refsDir, err)
+	}
+
+	// remove all stale lockfiles
+	for _, f := range lockFiles {
+		err := os.Remove(f)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				continue
+			}
+
+			return fmt.Errorf("removing stale lock file %q", f)
+		}
+
+		log.Printf("removed stale lock file %q", f)
+	}
+
+	return nil
 }
 
 // remoteHead returns the HEAD commit for the given remote.
