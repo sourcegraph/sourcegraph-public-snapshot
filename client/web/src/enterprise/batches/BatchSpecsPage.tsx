@@ -30,7 +30,7 @@ export const BatchSpecsPage: React.FunctionComponent<React.PropsWithChildren<Bat
             className="mb-3"
         />
         <Container>
-            <BatchSpecList {...props} includeLocallyExecutedSpecs={false} />
+            <BatchSpecList {...props} includeLocallyExecutedSpecs={props.includeLocallyExecutedSpecs} />
         </Container>
     </>
 )

@@ -42,6 +42,7 @@ export interface SiteAdminAreaRouteContext
     authenticatedUser: AuthenticatedUser
     isLightTheme: boolean
     isSourcegraphDotCom: boolean
+    includeLocallyExecutedSpecs: boolean
 
     /** This property is only used by {@link SiteAdminOverviewPage}. */
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
@@ -93,6 +94,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         site: { __typename: 'Site' as const, id: window.context.siteGQLID },
         overviewComponents: props.overviewComponents,
         telemetryService: props.telemetryService,
+        includeLocallyExecutedSpecs: false,
     }
 
     return (
