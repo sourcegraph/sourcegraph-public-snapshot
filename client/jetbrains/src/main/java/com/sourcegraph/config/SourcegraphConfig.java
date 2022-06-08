@@ -11,8 +11,7 @@ import org.jetbrains.annotations.Nullable;
 @State(
     name = "Config",
     storages = {@Storage("sourcegraph.xml")})
-public
-class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
+public class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
     public String url;
     public String defaultBranch;
     public String remoteUrlReplacements;
@@ -23,7 +22,7 @@ class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
     public boolean isGlobbingEnabled;
     public String accessToken;
 
-    @Nullable
+    @NotNull
     public static SourcegraphConfig getInstance(@NotNull Project project) {
         return project.getService(SourcegraphConfig.class);
     }
@@ -68,15 +67,15 @@ class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
     }
 
     @Override
-    public void loadState(@NotNull SourcegraphConfig config) {
-        this.url = config.url;
-        this.defaultBranch = config.defaultBranch;
-        this.remoteUrlReplacements = config.remoteUrlReplacements;
-        this.lastSearchQuery = config.lastSearchQuery != null ? config.lastSearchQuery : "";
-        this.lastSearchCaseSensitive = config.lastSearchCaseSensitive;
-        this.lastSearchPatternType = config.lastSearchPatternType != null ? config.lastSearchPatternType : "literal";
-        this.lastSearchContextSpec = config.lastSearchContextSpec != null ? config.lastSearchContextSpec : "global";
-        this.isGlobbingEnabled = config.isGlobbingEnabled;
-        this.accessToken = config.accessToken;
+    public void loadState(@NotNull SourcegraphConfig settings) {
+        this.url = settings.url;
+        this.defaultBranch = settings.defaultBranch;
+        this.remoteUrlReplacements = settings.remoteUrlReplacements;
+        this.lastSearchQuery = settings.lastSearchQuery != null ? settings.lastSearchQuery : "";
+        this.lastSearchCaseSensitive = settings.lastSearchCaseSensitive;
+        this.lastSearchPatternType = settings.lastSearchPatternType != null ? settings.lastSearchPatternType : "literal";
+        this.lastSearchContextSpec = settings.lastSearchContextSpec != null ? settings.lastSearchContextSpec : "global";
+        this.isGlobbingEnabled = settings.isGlobbingEnabled;
+        this.accessToken = settings.accessToken;
     }
 }

@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Container, CardBody, Card, Link, Typography, Text } from '@sourcegraph/wildcard'
+import { Container, CardBody, Card, Link, Code, H2, H3, H4, Text } from '@sourcegraph/wildcard'
 
 import styles from './GettingStarted.module.scss'
 
@@ -40,13 +40,13 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                     </video>
                 </div>
                 <div className="col-12 col-md-5">
-                    <Typography.H2>Automate large-scale code changes</Typography.H2>
+                    <H2>Automate large-scale code changes</H2>
                     <Text>
                         Batch Changes gives you a declarative structure for finding and modifying code across all of
                         your repositories. Its simple UI makes it easy to track and manage all of your changesets
                         through checks and code reviews until each change is merged.
                     </Text>
-                    <Typography.H3>Common use cases</Typography.H3>
+                    <H3>Common use cases</H3>
                     <ul className={classNames(styles.narrowList, 'mb-0')}>
                         <li>Update configuration files across many repositories</li>
                         <li>Update libraries which call your APIs</li>
@@ -57,24 +57,24 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                 </div>
             </div>
         </Container>
-        <Typography.H3 className="mb-3">Tutorials to help with your first batch change</Typography.H3>
+        <H3 className="mb-3">Tutorials to help with your first batch change</H3>
         <div className="row">
             <div className="col-12 col-md-6 mb-2">
                 <Card className="h-100">
                     <CardBody className="d-flex">
                         <FindReplaceIcon className="mr-3" />
                         <div>
-                            <Typography.H4>
+                            <H4>
                                 <Link
                                     to="/help/batch_changes/tutorials/search_and_replace_specific_terms"
                                     rel="noopener"
                                 >
                                     Finding and replacing exclusionary terms
                                 </Link>
-                            </Typography.H4>
+                            </H4>
                             <Text className="text-muted mb-0">
-                                A Sourcegraph query plus a simple <Typography.Code>sed</Typography.Code> command creates
-                                changesets required to manage a large scale change.
+                                A Sourcegraph query plus a simple <Code>sed</Code> command creates changesets required
+                                to manage a large scale change.
                             </Text>
                         </div>
                     </CardBody>
@@ -85,11 +85,11 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                     <CardBody className="d-flex">
                         <RefactorCombyIcon className="mr-3" />
                         <div>
-                            <Typography.H4>
+                            <H4>
                                 <Link to="/help/batch_changes/tutorials/updating_go_import_statements" rel="noopener">
                                     Refactoring with language aware search
                                 </Link>
-                            </Typography.H4>
+                            </H4>
                             <Text className="text-muted mb-0">
                                 Using{' '}
                                 <Link to="https://comby.dev/" rel="noopener">
@@ -164,7 +164,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                 </Card>
             </div>
         </div>
-        <Typography.H2>Batch changes demo</Typography.H2>
+        <H2>Batch changes demo</H2>
         <Text>
             This 2 minute demo provides an overview of batch changes from editing a specification to managing
             changesets.

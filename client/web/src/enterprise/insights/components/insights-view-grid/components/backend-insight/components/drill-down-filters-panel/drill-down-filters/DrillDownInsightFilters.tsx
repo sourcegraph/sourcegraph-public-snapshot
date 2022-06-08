@@ -8,7 +8,7 @@ import ArrowExpandIcon from 'mdi-react/ArrowExpandIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Icon, Link, Typography } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, H4 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
 import { SeriesDisplayOptionsInput } from '../../../../../../../../../graphql-operations'
@@ -101,12 +101,11 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     })
 
     const client = useApolloClient()
-    const contextValidator = useMemo(() => createSearchContextValidator(client), [client])
 
     const contexts = useField({
         name: 'context',
         formApi: formAPI,
-        validators: { async: contextValidator },
+        validators: { async: useMemo(() => createSearchContextValidator(client), [client]) },
     })
 
     const includeRegex = useField({
@@ -123,7 +122,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
 
     const currentRepositoriesFilters = { include: includeRegex.input.value, exclude: excludeRegex.input.value }
     const hasFiltersChanged = !isEqual(originalValues, values)
-    const hasAppliedFilters = hasActiveFilters(originalValues)
+    const hasAppliedFilters = hasActiveFilters(originalValues) && !hasFiltersChanged
     const hasSeriesDisplayOptionsChanged = !isEqual(originalSeriesDisplayOptions, seriesDisplayOptions)
 
     const handleCollapseState = (section: FilterSection, opened: boolean): void => {
@@ -152,7 +151,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     if (isPreviewMode) {
         return (
             <header className={classNames(className, styles.header)}>
-                <Typography.H4 className={styles.heading}>Filter repositories</Typography.H4>
+                <H4 className={styles.heading}>Filter repositories</H4>
 
                 <FilterPreviewPill text={getSerializedSearchContextFilter(contexts.input.value, true)} />
                 <FilterPreviewPill text={getSerializedRepositoriesFilter(currentRepositoriesFilters)} />
@@ -172,9 +171,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         // eslint-disable-next-line react/forbid-elements
         <form ref={ref} onSubmit={handleSubmit} className={className}>
             <header className={styles.header}>
-                <Typography.H4 className={classNames(styles.heading, styles.headingWithExpandedContent)}>
-                    Filter repositories
-                </Typography.H4>
+                <H4 className={classNames(styles.heading, styles.headingWithExpandedContent)}>Filter repositories</H4>
 
                 <Button
                     disabled={!hasActiveFilters(values) && !hasSeriesDisplayOptionsChanged}
@@ -203,6 +200,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     <FilterCollapseSection
                         open={isHorizontalMode || activeSection === FilterSection.SortFilter}
                         title="Sort & Limit"
+                        aria-label="sort and limit filter section"
                         preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
                         hasActiveFilter={false}
                         withSeparators={!isHorizontalMode}
@@ -219,6 +217,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                 <FilterCollapseSection
                     open={isHorizontalMode || activeSection === FilterSection.SearchContext}
                     title="Search context"
+                    aria-label="search context filter section"
                     preview={getSerializedSearchContextFilter(contexts.input.value)}
                     hasActiveFilter={hasActiveUnaryFilter(contexts.input.value)}
                     withSeparators={!isHorizontalMode}
@@ -250,6 +249,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                 <FilterCollapseSection
                     open={isHorizontalMode || activeSection === FilterSection.RegularExpressions}
                     title="Regular expression"
+                    aria-label="regular expressions filter section"
                     preview={getSerializedRepositoriesFilter(currentRepositoriesFilters)}
                     hasActiveFilter={
                         hasActiveUnaryFilter(includeRegex.input.value) || hasActiveUnaryFilter(excludeRegex.input.value)

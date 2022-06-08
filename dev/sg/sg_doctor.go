@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
@@ -14,12 +12,13 @@ var doctorCommand = &cli.Command{
 	ArgsUsage: "[...checks]",
 	Usage:     "Run checks to test whether system is in correct state to run Sourcegraph",
 	Category:  CategoryEnv,
-	Action:    execAdapter(doctorExec),
+	Action:    doctorExec,
 }
 
-func doctorExec(ctx context.Context, args []string) error {
+func doctorExec(ctx *cli.Context) error {
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
-		return runChecks(ctx, checks)
+		return runChecks(ctx.Context, checks)
 	}
 	checksToRun := map[string]check.CheckFunc{}
 	for _, arg := range args {
@@ -29,5 +28,5 @@ func doctorExec(ctx context.Context, args []string) error {
 		}
 		checksToRun[arg] = c
 	}
-	return runChecks(ctx, checksToRun)
+	return runChecks(ctx.Context, checksToRun)
 }

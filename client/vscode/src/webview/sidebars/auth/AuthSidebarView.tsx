@@ -4,10 +4,9 @@ import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert, Typography, Text, Link } from '@sourcegraph/wildcard'
+import { Alert, Text, Link, Input, H5 } from '@sourcegraph/wildcard'
 
 import {
     VSCE_LINK_DOTCOM,
@@ -131,7 +130,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
         <div className={classNames(styles.ctaContainer)}>
             <Form onSubmit={validateAccessToken}>
                 <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
-                    <Typography.H5 className="flex-grow-1">Search your private code</Typography.H5>
+                    <H5 className="flex-grow-1">Search your private code</H5>
                 </button>
                 {content}
             </Form>
@@ -164,6 +163,13 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                 </VSCodeLink>
             </>
         )
+    }
+
+    enum InputStates {
+        initial = 'initial',
+        validating = 'loading',
+        success = 'valid',
+        failure = 'error',
     }
 
     return renderCommon(
@@ -200,40 +206,40 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                 </Text>
             )}
             <Text className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
-                <LoaderInput loading={state === 'validating'}>
-                    <Typography.Label htmlFor="access-token-input">Access Token</Typography.Label>
-                    <input
-                        className={classNames('input form-control', styles.ctaInput)}
-                        id="access-token-input"
-                        value={accessToken}
-                        type="text"
-                        onChange={onTokenInputChange}
-                        name="token"
+                <Input
+                    inputClassName={classNames('input', styles.ctaInput)}
+                    id="access-token-input"
+                    value={accessToken}
+                    onChange={onTokenInputChange}
+                    name="token"
+                    required={true}
+                    autoFocus={true}
+                    spellCheck={false}
+                    disabled={state === 'validating'}
+                    placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
+                    label="Access Token"
+                    className="mb-0"
+                    status={InputStates[state]}
+                />
+            </Text>
+            {usePrivateInstance && (
+                <Text className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
+                    <Input
+                        inputClassName={classNames('input', styles.ctaInput)}
+                        id="instance-url-input"
+                        value={endpointUrl}
+                        type="url"
+                        name="instance-url"
+                        onChange={onInstanceURLInputChange}
                         required={true}
                         autoFocus={true}
                         spellCheck={false}
                         disabled={state === 'validating'}
-                        placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
+                        placeholder="ex https://sourcegraph.example.com"
+                        label="Sourcegraph Instance URL"
+                        className="mb-0"
+                        status={InputStates[state]}
                     />
-                </LoaderInput>
-            </Text>
-            {usePrivateInstance && (
-                <Text className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
-                    <LoaderInput loading={state === 'validating'}>
-                        <Typography.Label htmlFor="instance-url-input">Sourcegraph Instance URL</Typography.Label>
-                        <input
-                            className={classNames('input form-control', styles.ctaInput)}
-                            id="instance-url-input"
-                            type="url"
-                            name="instance-url"
-                            onChange={onInstanceURLInputChange}
-                            required={true}
-                            autoFocus={true}
-                            spellCheck={false}
-                            disabled={state === 'validating'}
-                            placeholder="ex https://sourcegraph.example.com"
-                        />
-                    </LoaderInput>
                 </Text>
             )}
             <VSCodeButton
@@ -272,7 +278,7 @@ export const AuthSidebarCta: React.FunctionComponent<React.PropsWithChildren<Aut
     return (
         <div>
             <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
-                <Typography.H5 className="flex-grow-1">Welcome</Typography.H5>
+                <H5 className="flex-grow-1">Welcome</H5>
             </button>
             <Text className={classNames(styles.ctaParagraph)}>
                 The Sourcegraph extension allows you to search millions of open source repositories without cloning them

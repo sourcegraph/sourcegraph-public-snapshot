@@ -3,8 +3,8 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
+import { FetchFileParameters } from '@sourcegraph/search-ui'
 
-import { FetchFileParameters } from '../components/CodeExcerpt'
 import { HighlightedFileResult, HighlightedFileVariables } from '../graphql-operations'
 import { PlatformContext } from '../platform/context'
 import { makeRepoURI } from '../util/url'

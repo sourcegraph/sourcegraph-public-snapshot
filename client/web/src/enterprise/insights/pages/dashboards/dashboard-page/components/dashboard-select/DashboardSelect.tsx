@@ -4,7 +4,7 @@ import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopo
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { Input, Typography, Text } from '@sourcegraph/wildcard'
+import { Input, H3, Text } from '@sourcegraph/wildcard'
 
 import {
     CodeInsightsBackendContext,
@@ -85,7 +85,10 @@ export const DashboardSelect: React.FunctionComponent<React.PropsWithChildren<Da
                 <MenuButton dashboards={rawDashboards} />
 
                 <ListboxPopover className={classNames(styles.popover)} portal={true}>
-                    <ListboxList className={classNames(styles.list, 'dropdown-menu')}>
+                    <ListboxList
+                        id="insights-dashboard-select-content"
+                        className={classNames(styles.list, 'dropdown-menu')}
+                    >
                         <Input
                             name="filter"
                             value={filter}
@@ -160,7 +163,7 @@ export const DashboardSelect: React.FunctionComponent<React.PropsWithChildren<Da
                                 <hr />
 
                                 <div className={classNames(styles.limitedAccess)}>
-                                    <Typography.H3>Limited access</Typography.H3>
+                                    <H3>Limited access</H3>
                                     <Text>Unlock for unlimited custom dashboards.</Text>
                                 </div>
                             </ListboxGroup>

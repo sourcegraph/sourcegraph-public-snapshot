@@ -12,7 +12,7 @@ import (
 )
 
 func TestAlertSolutionsURL(t *testing.T) {
-	defaultURL := fmt.Sprintf("%s/%s", docsURL, alertSolutionsPagePath)
+	defaultURL := fmt.Sprintf("%s/%s", docsURL, alertsDocsPathPath)
 	tests := []struct {
 		name         string
 		mockVersion  string
@@ -39,7 +39,7 @@ func TestAlertSolutionsURL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			version.Mock(tt.mockVersion)
-			if got := alertSolutionsURL(); !strings.Contains(got, tt.wantIncludes) {
+			if got := alertsReferenceURL(); !strings.Contains(got, tt.wantIncludes) {
 				t.Errorf("alertSolutionsURL() = %q, should include %q", got, tt.wantIncludes)
 			}
 		})

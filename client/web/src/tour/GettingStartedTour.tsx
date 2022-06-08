@@ -34,7 +34,7 @@ const TourWithErrorBoundary = withErrorBoundary(
 )
 
 // Show for enabled control group
-export const TourAuthenticated = withFeatureFlag(Tour, 'quick-start-tour-for-authenticated-users')
+export const TourAuthenticated = withFeatureFlag('quick-start-tour-for-authenticated-users', Tour)
 
 export const GettingStartedTour = Object.assign(TourWithErrorBoundary, {
     Info: TourInfo,

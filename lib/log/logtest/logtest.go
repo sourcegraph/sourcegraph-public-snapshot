@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/globallogger"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
+	"github.com/stretchr/testify/assert"
 )
 
 // Init can be used to instantiate the log package for running tests, to be called in
@@ -45,7 +46,7 @@ func InitWithLevel(_ *testing.M, level log.Level) {
 
 func initGlobal(level zapcore.Level) {
 	// use an empty resource, we don't log output Resource in dev mode anyway
-	globallogger.Init(otfields.Resource{}, level, encoders.OutputConsole, true)
+	globallogger.Init(otfields.Resource{}, level, encoders.OutputConsole, true, nil)
 }
 
 // configurableAdapter exposes internal APIs on zapAdapter.
@@ -111,16 +112,31 @@ func ScopedWith(t testing.TB, options LoggerOptions) log.Logger {
 
 // Captured retrieves a logger from scoped to the the given test, and returns a callback,
 // dumpLogs, which flushes the logger buffer and returns log entries.
-func Captured(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog) {
+func Captured(t testing.TB, s ...log.Sink) (logger log.Logger, exportLogs func() []CapturedLog) {
 	// Cast into internal APIs
 	configurable := scopedTestLogger(t, LoggerOptions{}).(configurableAdapter)
 
 	observerCore, entries := observer.New(zap.DebugLevel) // capture all levels
+	var cores []zapcore.Core
+
+	sinks := log.Sinks(s)
+	cores, err := sinks.Build()
+	if err != nil {
+		assert.NoError(t, err)
+	}
+
 	logger = configurable.WithCore(func(c zapcore.Core) zapcore.Core {
-		return zapcore.NewTee(observerCore, c)
+		return zapcore.NewTee(append(cores, observerCore, c)...)
 	})
 
 	return logger, func() []CapturedLog {
+		for _, c := range cores {
+			err := c.Sync()
+			if err != nil {
+				t.Logf("core %t failed to Sync(): %q", c, err)
+				t.Fail()
+			}
+		}
 		entries := entries.TakeAll()
 		logs := make([]CapturedLog, len(entries))
 		for i, e := range entries {
@@ -137,15 +153,6 @@ func Captured(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog)
 }
 
 // NoOp returns a no-op Logger, useful for silencing all output in a specific test.
-func NoOp() log.Logger {
-	return &noopAdapter{zap.NewNop()}
+func NoOp(t *testing.T) log.Logger {
+	return Scoped(t).IncreaseLevel("noop", "no-op logger", log.LevelNone)
 }
-
-type noopAdapter struct{ *zap.Logger }
-
-var _ log.Logger = &noopAdapter{}
-
-func (n *noopAdapter) Scoped(string, string) log.Logger      { return n }
-func (n *noopAdapter) With(...log.Field) log.Logger          { return n }
-func (n *noopAdapter) WithTrace(log.TraceContext) log.Logger { return n }
-func (n *noopAdapter) AddCallerSkip(int) log.Logger          { return n }

@@ -119,7 +119,7 @@ func newWebhookLogConnectionResolver(
 	return &webhookLogConnectionResolver{
 		args:              args,
 		externalServiceID: externalServiceID,
-		store:             database.WebhookLogs(db, keyring.Default().WebhookLogKey),
+		store:             db.WebhookLogs(keyring.Default().WebhookLogKey),
 	}, nil
 }
 
@@ -203,7 +203,7 @@ func webhookLogByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*web
 		return nil, err
 	}
 
-	log, err := database.WebhookLogs(db, keyring.Default().WebhookLogKey).GetByID(ctx, id)
+	log, err := db.WebhookLogs(keyring.Default().WebhookLogKey).GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}

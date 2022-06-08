@@ -1843,6 +1843,11 @@ extend type Query {
         """
         after: String
     ): BatchSpecConnection!
+
+    """
+    Determines if a batch change credential is authorized for a code host.
+    """
+    checkBatchChangesCredential(batchChangesCredential: ID!): EmptyResponse!
 }
 
 """

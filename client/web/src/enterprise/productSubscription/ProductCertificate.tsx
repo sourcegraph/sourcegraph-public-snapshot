@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { CardBody, Card, Typography, Text } from '@sourcegraph/wildcard'
+import { CardBody, Card, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import styles from './ProductCertificate.module.scss'
 
@@ -44,8 +44,8 @@ export const ProductCertificate: React.FunctionComponent<React.PropsWithChildren
                 alt="Sourcegraph logo"
             />
             <div>
-                <Typography.H2 className="font-weight-normal mb-1">{title}</Typography.H2>
-                {subtitle && <Typography.H3 className="text-muted font-weight-normal">{subtitle}</Typography.H3>}
+                <H2 className="font-weight-normal mb-1">{title}</H2>
+                {subtitle && <H3 className="text-muted font-weight-normal">{subtitle}</H3>}
                 {detail && <Text className="text-muted mb-0">{detail}</Text>}
             </div>
         </CardBody>

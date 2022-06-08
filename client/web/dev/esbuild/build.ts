@@ -3,9 +3,9 @@ import path from 'path'
 import * as esbuild from 'esbuild'
 import signale from 'signale'
 
-import { MONACO_LANGUAGES_AND_FEATURES } from '@sourcegraph/build-config'
+import { MONACO_LANGUAGES_AND_FEATURES, ROOT_PATH, STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 
-import { ENVIRONMENT_CONFIG, ROOT_PATH, STATIC_ASSETS_PATH } from '../utils'
+import { ENVIRONMENT_CONFIG } from '../utils'
 
 import { manifestPlugin } from './manifestPlugin'
 import { monacoPlugin } from './monacoPlugin'

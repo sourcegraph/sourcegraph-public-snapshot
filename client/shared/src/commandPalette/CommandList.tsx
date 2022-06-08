@@ -19,7 +19,7 @@ import { Key } from 'ts-key-enum'
 
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
 import { memoizeObservable } from '@sourcegraph/common'
-import { Button, ButtonProps, LoadingSpinner, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, ButtonProps, LoadingSpinner, Icon, Label, Input } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -91,8 +91,6 @@ interface State {
 
     /** Recently invoked actions, which should be sorted first in the list. */
     recentActions: string[] | null
-
-    autoFocus?: boolean
 
     settingsCascade?: SettingsCascadeOrError
 }
@@ -167,12 +165,6 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
         this.subscriptions.add(
             this.props.platformContext.settings.subscribe(settingsCascade => this.setState({ settingsCascade }))
         )
-
-        // Only focus input after it has been rendered in the DOM
-        // Workaround for Firefox and Safari where preventScroll isn't compatible
-        setTimeout(() => {
-            this.setState({ autoFocus: true })
-        })
     }
 
     public componentDidUpdate(_previousProps: CommandListProps, previousState: State): void {
@@ -212,17 +204,16 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                 <header>
                     {/* eslint-disable-next-line react/forbid-elements */}
                     <form className={this.props.formClassName} onSubmit={this.onSubmit}>
-                        <Typography.Label className="sr-only" htmlFor="command-list-input">
+                        <Label className="sr-only" htmlFor="command-list-input">
                             Command
-                        </Typography.Label>
-                        <input
+                        </Label>
+                        <Input
                             id="command-list-input"
-                            ref={input => input && this.state.autoFocus && input.focus({ preventScroll: true })}
-                            type="text"
-                            className={this.props.inputClassName}
+                            inputClassName={this.props.inputClassName}
                             value={this.state.input}
                             placeholder="Run Sourcegraph action..."
                             spellCheck={false}
+                            autoFocus={true}
                             autoCorrect="off"
                             autoComplete="off"
                             onChange={this.onInputChange}

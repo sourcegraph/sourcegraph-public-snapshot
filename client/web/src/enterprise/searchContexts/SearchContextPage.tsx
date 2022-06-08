@@ -24,8 +24,8 @@ import {
     Button,
     Link,
     Alert,
+    H3,
     Input,
-    Typography,
 } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
@@ -99,12 +99,12 @@ const SearchContextRepositories: React.FunctionComponent<
         <>
             <div className="d-flex justify-content-between align-items-center mb-3">
                 {filteredRepositories.length > 0 && (
-                    <Typography.H3>
+                    <H3>
                         <span>
                             {filteredRepositories.length}{' '}
                             {pluralize('repository', filteredRepositories.length, 'repositories')}
                         </span>
-                    </Typography.H3>
+                    </H3>
                 )}
                 {repositories.length > 0 && (
                     <Input

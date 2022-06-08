@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/squirrel"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -36,7 +37,7 @@ const maxNumSymbolResults = 500
 
 func handleSearchWith(searchFunc types.SearchFunc) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var args types.SearchArgs
+		var args search.SymbolsParameters
 		if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -54,11 +55,13 @@ func handleSearchWith(searchFunc types.SearchFunc) func(w http.ResponseWriter, r
 			}
 
 			log15.Error("Symbol search failed", "args", args, "error", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			if err := json.NewEncoder(w).Encode(search.SymbolsResponse{Err: err.Error()}); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
 			return
 		}
 
-		if err := json.NewEncoder(w).Encode(result); err != nil {
+		if err := json.NewEncoder(w).Encode(search.SymbolsResponse{Symbols: result}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
