@@ -242,7 +242,6 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	var (
 		mErr *searchrepos.MissingRepoRevsError
 		oErr *errOverRepoLimit
-		lErr *ErrLuckyQueries
 	)
 
 	if errors.HasType(err, authz.ErrStalePermissions{}) {
@@ -279,15 +278,6 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		}
 		a.Priority = 6
 		return a, nil
-	}
-
-	if errors.As(err, &lErr) {
-		return &search.Alert{
-			PrometheusType:  "lucky_search_notice",
-			Title:           "Showing additional results for similar queries",
-			Description:     "We returned all the results for your query. We also added results you might be interested in for similar queries. Below are similar queries we ran.",
-			ProposedQueries: lErr.ProposedQueries,
-		}, nil
 	}
 
 	if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
@@ -363,14 +353,6 @@ type errOverRepoLimit struct {
 
 func (e *errOverRepoLimit) Error() string {
 	return "Too many matching repositories"
-}
-
-type ErrLuckyQueries struct {
-	ProposedQueries []*search.ProposedQuery
-}
-
-func (e *ErrLuckyQueries) Error() string {
-	return "We were able to find more results by slightly modifying your query"
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err

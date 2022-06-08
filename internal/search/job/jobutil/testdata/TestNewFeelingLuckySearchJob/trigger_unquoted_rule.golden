@@ -153,17 +153,6 @@
         "value": "20s"
       },
       {
-        "AlternateQueriesAlertJob": {
-          "AlternateQueries": [
-            {
-              "Description": "unquote patterns",
-              "Query": "lucky",
-              "PatternType": 1
-            }
-          ]
-        }
-      },
-      {
         "TIMEOUT": {
           "LIMIT": {
             "PARALLEL": [

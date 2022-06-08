@@ -153,17 +153,6 @@
         "value": "20s"
       },
       {
-        "AlternateQueriesAlertJob": {
-          "AlternateQueries": [
-            {
-              "Description": "AND patterns together",
-              "Query": "(parse and func)",
-              "PatternType": 1
-            }
-          ]
-        }
-      },
-      {
         "TIMEOUT": {
           "LIMIT": {
             "PARALLEL": [
