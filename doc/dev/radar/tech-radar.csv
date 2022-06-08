@@ -9,7 +9,7 @@ Typescript,Adopt,Languages,TRUE,
 React,Adopt,Frontend,TRUE
 Buildkite ,Adopt,Tooling,TRUE,
 GitHub Actions,Adopt,Tooling,TRUE,
-log15,Hold,Backend,TRUE,<p>It's confusing</p>
+log15,Hold,Backend,TRUE,<p>Unmaintained, poor semantics, lackluster performance, limited extensibility</p>
 cockroachdb/errors,Adopt,Backend,TRUE,<p>Used internally by the lib/errors package</p>
 Preprod Application tests,Trial,Tooling,TRUE,
 Buildkite: stateless agents,Adopt,Tooling,TRUE,
