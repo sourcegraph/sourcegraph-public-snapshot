@@ -503,14 +503,9 @@ func (s *permsStore) SetRepoPermissionsUnrestricted(ctx context.Context, ids []i
 	const format = `
 UPDATE repo_permissions
 SET unrestricted = %s
-WHERE repo_id IN (%s)
+WHERE repo_id = ANY (%s::int[])
 `
-	idqs := make([]*sqlf.Query, len(ids))
-	for i := range ids {
-		idqs[i] = sqlf.Sprintf("%s", ids[i])
-	}
-
-	q := sqlf.Sprintf(format, unrestricted, sqlf.Join(idqs, ","))
+	q := sqlf.Sprintf(format, unrestricted, pq.Array(ids))
 
 	return errors.Wrap(s.Exec(ctx, q), "setting unrestricted flag")
 }

@@ -214,6 +214,17 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 	})
 }
 
+<<<<<<< HEAD
+=======
+func TestBitbucketServerSource_ListRepos(t *testing.T) {
+	TestBitbucketServerSource_ListByReposOnly(t)
+	TestBitbucketServerSource_ListByRepositoryQueryDefault(t)
+	TestBitbucketServerSource_ListByRepositoryQueryAll(t)
+	TestBitbucketServerSource_ListByRepositoryQueryNone(t)
+	TestBitbucketServerSource_ListByProjectKey(t)
+}
+
+>>>>>>> e5f547a2de1b8768c56fc0f17a808a9ed0fbb395
 func TestBitbucketServerSource_ListByReposOnly(t *testing.T) {
 	repos := GetReposFromTestdata(t)
 

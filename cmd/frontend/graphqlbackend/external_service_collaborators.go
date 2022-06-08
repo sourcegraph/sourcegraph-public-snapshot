@@ -102,7 +102,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 		return nil, err
 	}
 
-	authUserEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{
+	authUserEmails, err := r.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 		UserID: a.UID,
 	})
 	if err != nil {

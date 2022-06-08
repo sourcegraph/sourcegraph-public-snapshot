@@ -18,6 +18,7 @@ const executionLogPrototype: ExecutionLogEntryFields = {
 const indexPrototype: Omit<LsifIndexFields, 'id' | 'state' | 'queuedAt'> = {
     __typename: 'LSIFIndex',
     inputCommit: '',
+    tags: [],
     inputRoot: 'web/',
     inputIndexer: 'scip-typescript',
     indexer: { name: 'scip-typescript', url: '' },
@@ -74,6 +75,7 @@ const testIndexes: LsifIndexFields[] = [
         ...indexPrototype,
         id: '2',
         state: LSIFIndexState.COMPLETED,
+        tags: ['v0.4.2'],
         queuedAt: '2020-06-14T12:20:30+00:00',
         startedAt: '2020-06-14T12:25:30+00:00',
         finishedAt: '2020-06-14T12:30:30+00:00',

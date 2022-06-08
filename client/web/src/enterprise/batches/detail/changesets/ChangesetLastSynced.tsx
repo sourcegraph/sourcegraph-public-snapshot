@@ -75,13 +75,20 @@ export const ChangesetLastSynced: React.FunctionComponent<React.PropsWithChildre
         <small className="text-muted">
             {changeset.__typename === 'ExternalChangeset' && changeset.syncerError ? (
                 <span data-tooltip="Expand to see details.">
-                    <Icon className="text-danger" as={AlertCircleIcon} /> Syncing from code host failed.
+                    <Icon role="img" aria-hidden={true} className="text-danger" as={AlertCircleIcon} /> Syncing from
+                    code host failed.
                 </span>
             ) : (
                 <>Last synced {formatDistance(parseISO(changeset.updatedAt), _now ?? new Date())} ago.</>
             )}{' '}
             {isErrorLike(lastUpdatedAt) && (
-                <Icon data-tooltip={lastUpdatedAt.message} className="ml-2 small" as={AlertCircleIcon} />
+                <Icon
+                    role="img"
+                    data-tooltip={lastUpdatedAt.message}
+                    aria-label={lastUpdatedAt.message}
+                    className="ml-2 small"
+                    as={AlertCircleIcon}
+                />
             )}
             <span data-tooltip={tooltipText}>
                 <UpdateLoaderIcon
@@ -108,8 +115,16 @@ const UpdateLoaderIcon: React.FunctionComponent<
     }
 
     if (viewerCanAdminister) {
-        return <Icon className="cursor-pointer" onClick={onEnqueueChangeset} role="button" as={SyncIcon} />
+        return (
+            <Icon
+                aria-label="Refresh"
+                className="cursor-pointer"
+                onClick={onEnqueueChangeset}
+                role="button"
+                as={SyncIcon}
+            />
+        )
     }
 
-    return <Icon as={InfoCircleOutlineIcon} />
+    return <Icon role="img" aria-hidden={true} as={InfoCircleOutlineIcon} />
 }

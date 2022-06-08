@@ -31,6 +31,7 @@ export const LegendItem: React.FunctionComponent<React.PropsWithChildren<LegendI
     selected = true,
     hovered,
     className,
+    children,
     ...attributes
 }) => (
     <li {...attributes} className={classNames({ 'text-muted': !selected && !hovered }, styles.legendItem, className)}>
@@ -39,6 +40,6 @@ export const LegendItem: React.FunctionComponent<React.PropsWithChildren<LegendI
             style={{ backgroundColor: selected || hovered ? color : undefined }}
             className={classNames([styles.legendMark, { [styles.unselected]: !selected }])}
         />
-        {name}
+        {children || name}
     </li>
 )

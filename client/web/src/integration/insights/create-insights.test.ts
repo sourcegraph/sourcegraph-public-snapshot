@@ -170,6 +170,7 @@ describe('Code insight create insight page', () => {
                                 __typename: 'InsightViewFilters',
                             },
                             dashboardReferenceCount: 0,
+                            dashboards: { nodes: [] },
                             presentation: {
                                 __typename: 'LineChartInsightViewPresentation',
                                 title: 'Test insight title',
@@ -222,6 +223,20 @@ describe('Code insight create insight page', () => {
                                     __typename: 'SearchInsightDataSeriesDefinition',
                                 },
                             ],
+                            appliedSeriesDisplayOptions: {
+                                limit: null,
+                                sortOptions: {
+                                    direction: null,
+                                    mode: null,
+                                },
+                            },
+                            defaultSeriesDisplayOptions: {
+                                limit: null,
+                                sortOptions: {
+                                    direction: null,
+                                    mode: null,
+                                },
+                            },
                             __typename: 'InsightView',
                         },
                         __typename: 'InsightViewPayload',

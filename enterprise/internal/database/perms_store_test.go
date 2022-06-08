@@ -585,8 +585,12 @@ func testPermsStore_SetRepoPermissionsUnrestricted(db *sql.DB) func(*testing.T) 
 			assertUnrestricted(ctx, t, s, 1, true)
 			assertUnrestricted(ctx, t, s, 2, true)
 
-			// Set them back to false again
-			if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{1, 2}, false); err != nil {
+			// Set them back to false again, also checking that more than 65535 IDs
+			// can be processed without an error
+			var ids [66000]int32
+			ids[0] = 1
+			ids[65900] = 2
+			if err := s.SetRepoPermissionsUnrestricted(ctx, ids[:], false); err != nil {
 				t.Fatal(err)
 			}
 			assertUnrestricted(ctx, t, s, 1, false)
@@ -2976,7 +2980,7 @@ func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*tes
 		//  1. Is not a member of any organization
 		//  2. Is a member of an organization without a code host connection
 		//  3. Is a member of an organization with a code host connection
-		users := database.Users(db)
+		users := db.Users()
 		alice, err := users.Create(ctx,
 			database.NewUser{
 				Email:           "alice@example.com",

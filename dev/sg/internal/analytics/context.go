@@ -32,9 +32,16 @@ func getStore(ctx context.Context) *eventStore {
 // LogEvent tracks an event in the per-run analytics store, if analytics are enabled,
 // in the context of a command.
 //
-// Events can also be provided to indicate that something happened - for example, and
-// error or cancellation. These are treated as metrics with a count of 1.
-func LogEvent(ctx context.Context, name string, labels []string, startedAt time.Time, events ...string) {
+// In general, usage should be as follows:
+//
+// - category denotes the category of the event, such as "lint_runner:.
+// - labels denote subcategories this event belongs to, such as the specific lint runner.
+// - events denote what happened as part of this logged event, such as "failed" or
+//   "succeeded". These are treated as metrics with a count of 1.
+//
+// Events are automatically created with a duration relative to the provided start time,
+// and persisted to disk at the end of command execution.
+func LogEvent(ctx context.Context, category string, labels []string, startedAt time.Time, events ...string) {
 	store := getStore(ctx)
 	if store == nil {
 		return
@@ -48,7 +55,7 @@ func LogEvent(ctx context.Context, name string, labels []string, startedAt time.
 	}
 
 	store.events = append(store.events, &okay.Event{
-		Name:      name,
+		Name:      category,
 		Labels:    labels,
 		Timestamp: startedAt, // Timestamp as start of event
 		Metrics:   metrics,

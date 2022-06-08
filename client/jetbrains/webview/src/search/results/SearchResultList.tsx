@@ -1,60 +1,81 @@
 import React, { createRef, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { ContentMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
+import { CommitSearchResult } from './CommitSearchResult'
 import { FileSearchResult } from './FileSearchResult'
-import { decodeLineId, getElementFromId, getFirstResultId, getIdForMatch, getSiblingResult } from './utils'
+import { PathSearchResult } from './PathSearchResult'
+import { RepoSearchResult } from './RepoSearchResult'
+import {
+    getFirstResultId,
+    getLineMatchIndexOrSymbolIndexForFileResult,
+    getMatchId,
+    getMatchIdForResult,
+    getSearchResultElement,
+    getSiblingResultElement,
+} from './utils'
 
 import styles from './SearchResultList.module.scss'
 
 interface Props {
-    onPreviewChange: (result: ContentMatch, lineMatchIndex: number) => void
-    onPreviewClear: () => void
-    onOpen: (result: ContentMatch, lineMatchIndex: number) => void
-    results: SearchMatch[]
+    onPreviewChange: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => Promise<void>
+    onPreviewClear: () => Promise<void>
+    onOpen: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => Promise<void>
+    matches: SearchMatch[]
 }
 
 export const SearchResultList: React.FunctionComponent<Props> = ({
-    results,
+    matches,
     onPreviewChange,
     onPreviewClear,
     onOpen,
 }) => {
     const scrollViewReference = createRef<HTMLDivElement>()
-    const [selectedResult, setSelectedResult] = useState<null | string>(null)
+    const [selectedResultId, setSelectedResultId] = useState<null | string>(null)
 
-    const resultMap = useMemo((): Map<string, ContentMatch> => {
-        const map = new Map<string, ContentMatch>()
-        for (const result of results) {
-            if (result.type === 'content') {
-                map.set(getIdForMatch(result), result)
+    const matchIdToMatchMap = useMemo((): Map<string, SearchMatch> => {
+        const map = new Map<string, SearchMatch>()
+        for (const match of matches) {
+            if (['commit', 'content', 'path', 'repo', 'symbol'].includes(match.type)) {
+                map.set(getMatchId(match), match)
             }
         }
         return map
-    }, [results])
+    }, [matches])
 
-    const selectResultFromId = useCallback(
-        (id: null | string) => {
-            if (id !== null) {
-                getElementFromId(id)?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-                const [matchId, lineMatchIndex] = decodeLineId(id)
-                const match = resultMap.get(matchId)
+    const selectResult = useCallback(
+        (resultId: null | string) => {
+            if (resultId !== null) {
+                getSearchResultElement(resultId)?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+                const matchId = getMatchIdForResult(resultId)
+                const match = matchIdToMatchMap.get(matchId)
                 if (match) {
-                    onPreviewChange(match, lineMatchIndex)
+                    onPreviewChange(
+                        match,
+                        match.type === 'content' || match.type === 'symbol'
+                            ? getLineMatchIndexOrSymbolIndexForFileResult(resultId)
+                            : undefined
+                    )
+                        .then(() => {})
+                        .catch(() => {})
+                } else {
+                    console.log(`No match found for result id: ${resultId}`)
                 }
             } else {
                 onPreviewClear()
+                    .then(() => {})
+                    .catch(() => {})
             }
-            setSelectedResult(id)
+            setSelectedResultId(resultId)
         },
-        [onPreviewChange, onPreviewClear, resultMap]
+        [onPreviewChange, onPreviewClear, matchIdToMatchMap]
     )
 
     useEffect(() => {
-        if (selectedResult === null) {
-            selectResultFromId(getFirstResultId(results))
+        if (selectedResultId === null) {
+            selectResult(getFirstResultId(matches))
         }
-    }, [selectedResult, results, selectResultFromId])
+    }, [selectedResultId, matches, selectResult])
 
     const onKeyDown = useCallback(
         (event: KeyboardEvent) => {
@@ -74,28 +95,35 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                 return
             }
 
-            if (selectedResult === null) {
+            if (selectedResultId === null) {
                 return
             }
 
-            const currentElement = getElementFromId(selectedResult)
+            const currentElement = getSearchResultElement(selectedResultId)
             if (currentElement === null) {
                 return
             }
 
             if (event.key === 'Enter' && event.altKey) {
-                const [matchId, lineMatchIndex] = decodeLineId(selectedResult)
-                const match = resultMap.get(matchId)
+                const matchId = getMatchIdForResult(selectedResultId)
+                const match = matchIdToMatchMap.get(matchId)
                 if (match) {
-                    onOpen(match, lineMatchIndex)
+                    onOpen(
+                        match,
+                        match.type === 'content' || match.type === 'symbol'
+                            ? getLineMatchIndexOrSymbolIndexForFileResult(selectedResultId)
+                            : undefined
+                    )
+                        .then(() => {})
+                        .catch(() => {})
                 }
                 return
             }
 
             if (event.key === 'ArrowDown') {
-                const next = getSiblingResult(currentElement, 'next')
-                if (next) {
-                    selectResultFromId(next)
+                const nextElement = getSiblingResultElement(currentElement, 'next')
+                if (nextElement) {
+                    selectResult(nextElement.id.replace('search-result-list-item-', ''))
                 }
                 event.preventDefault()
                 event.stopPropagation()
@@ -103,9 +131,9 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
             }
 
             if (event.key === 'ArrowUp') {
-                const previous = getSiblingResult(currentElement, 'previous')
-                if (previous) {
-                    selectResultFromId(previous)
+                const previousElement = getSiblingResultElement(currentElement, 'previous')
+                if (previousElement) {
+                    selectResult(previousElement.id.replace('search-result-list-item-', ''))
                 } else if (scrollViewReference.current) {
                     // If we're already at the first item, we want to set the scroll view to the top
                     // so that the user can see the header.
@@ -116,7 +144,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                 return
             }
         },
-        [selectedResult, resultMap, onOpen, selectResultFromId, scrollViewReference]
+        [selectedResultId, matchIdToMatchMap, onOpen, selectResult, scrollViewReference]
     )
 
     useEffect(() => {
@@ -126,16 +154,60 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
 
     return (
         <div className={styles.list} ref={scrollViewReference}>
-            {results.map((match: SearchMatch) =>
-                match.type === 'content' ? (
-                    <FileSearchResult
-                        key={`${match.repository}-${match.path}`}
-                        result={match}
-                        selectResultFromId={selectResultFromId}
-                        selectedResult={selectedResult}
-                    />
-                ) : null
-            )}
+            {matches.map((match: SearchMatch) => {
+                switch (match.type) {
+                    case 'commit':
+                        return (
+                            <CommitSearchResult
+                                key={`${match.repository}-${match.url}`}
+                                match={match}
+                                selectedResult={selectedResultId}
+                                selectResult={selectResult}
+                            />
+                        )
+                    case 'content':
+                        return (
+                            <FileSearchResult
+                                key={`${match.repository}-${match.path}`}
+                                match={match}
+                                selectedResult={selectedResultId}
+                                selectResult={selectResult}
+                            />
+                        )
+                    case 'symbol':
+                        return (
+                            <FileSearchResult
+                                key={`${match.repository}-${match.path}`}
+                                match={match}
+                                selectedResult={selectedResultId}
+                                selectResult={selectResult}
+                            />
+                        )
+                    case 'repo':
+                        return (
+                            <RepoSearchResult
+                                key={`${match.repository}`}
+                                match={match}
+                                selectedResult={selectedResultId}
+                                selectResult={selectResult}
+                            />
+                        )
+                    case 'path':
+                        return (
+                            <PathSearchResult
+                                key={`${match.repository}-${match.path}`}
+                                match={match}
+                                selectedResult={selectedResultId}
+                                selectResult={selectResult}
+                            />
+                        )
+                    default:
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-ignore This is here in preparation for future match types
+                        console.log('Unknown search result type:', match.type)
+                        return null
+                }
+            })}
         </div>
     )
 }

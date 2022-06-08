@@ -12,6 +12,12 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "homePanelsComputeSuggestions": {
+          "type": "boolean",
+          "default": false,
+          "deprecated": false,
+          "description": "Enable the home panels compute suggestions feature."
+        },
         "codeInsights": {
           "description": "Enables code insights on directory pages.",
           "type": "boolean",
@@ -467,6 +473,7 @@
         "title": "Notice",
         "type": "object",
         "required": ["message", "location"],
+        "additionalProperties": false,
         "properties": {
           "message": {
             "description": "The message to display. Markdown formatting is supported.",

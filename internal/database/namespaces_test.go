@@ -17,7 +17,7 @@ func TestNamespaces(t *testing.T) {
 	ctx := context.Background()
 
 	// Create user and organization to test lookups.
-	user, err := Users(db).Create(ctx, NewUser{Username: "alice"})
+	user, err := db.Users().Create(ctx, NewUser{Username: "alice"})
 	if err != nil {
 		t.Fatal(err)
 	}

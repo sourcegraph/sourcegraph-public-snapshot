@@ -1,31 +1,36 @@
 package com.sourcegraph.find;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.popup.ActiveIcon;
 import com.intellij.openapi.ui.popup.ComponentPopupBuilder;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
-import com.intellij.openapi.util.Disposer;
+import com.sourcegraph.Icons;
 import org.cef.browser.CefBrowser;
 import org.cef.handler.CefKeyboardHandler;
 import org.cef.misc.BoolRef;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.awt.event.KeyAdapter;
+import java.awt.*;
 import java.awt.event.KeyEvent;
+
+import static java.awt.event.InputEvent.ALT_DOWN_MASK;
 
 public class SourcegraphWindow implements Disposable {
     private final Project project;
     private final FindPopupPanel mainPanel;
     private JBPopup popup;
+    private static final Logger logger = LoggerFactory.getLogger(SourcegraphWindow.class);
 
     public SourcegraphWindow(@NotNull Project project) {
         this.project = project;
 
         // Create main panel
         mainPanel = new FindPopupPanel(project);
-
-        Disposer.register(project, this);
     }
 
     synchronized public void showPopup() {
@@ -34,9 +39,7 @@ public class SourcegraphWindow implements Disposable {
             popup.showCenteredInCurrentWindow(project);
         }
 
-        if (shouldHideInsteadOfCancel()) {
-            popup.setUiVisible(true);
-        }
+        popup.setUiVisible(true);
 
         // If the popup is already shown, hitting alt + a gain should behave the same as the native find in files
         // feature and focus the search field.
@@ -45,21 +48,15 @@ public class SourcegraphWindow implements Disposable {
         }
     }
 
-    /**
-     * This is a workaround for #34773: On Mac OS, the web view is empty after opening and closing the popover
-     * repeatedly.
-     *
-     * We work around the issue by forcing hiding the Popover instead of clearing it on Mac OS. This slightly increases
-     * resources consumption but allows us to reuse the JCEF window on this platform.
-     */
-    private boolean shouldHideInsteadOfCancel() {
-        return System.getProperty("os.name").equals("Mac OS X");
+    public void hidePopup() {
+        popup.setUiVisible(false);
     }
 
     @NotNull
     private JBPopup createPopup() {
         ComponentPopupBuilder builder = JBPopupFactory.getInstance().createComponentPopupBuilder(mainPanel, mainPanel)
-            .setTitle("Find on Sourcegraph")
+            .setTitle("Sourcegraph")
+            .setTitleIcon(new ActiveIcon(Icons.Logo))
             .setCancelOnClickOutside(true)
             .setResizable(true)
             .setModalContext(false)
@@ -69,41 +66,74 @@ public class SourcegraphWindow implements Disposable {
             .setBelongsToGlobalPopupStack(true)
             .setCancelOnOtherWindowOpen(true)
             .setCancelKeyEnabled(true)
-            .setNormalWindowLevel(true);
-
-        if (shouldHideInsteadOfCancel()) {
-            builder = builder.setCancelCallback(() -> {
-                popup.setUiVisible(false);
+            .setNormalWindowLevel(true)
+            .setCancelCallback(() -> {
+                hidePopup();
                 // We return false to prevent the default cancellation behavior.
                 return false;
             });
 
-            // For some reason, adding a cancelCallback will prevent the cancel event to fire when using the escape
-            // key. To work around this, we add a manual listener to both the popup panel and the browser panel for this
-            // scenario.
-            mainPanel.addKeyListener(new KeyAdapter() {
-                public void keyPressed(KeyEvent event) {
-                    if (event.getKeyCode() == KeyEvent.VK_ESCAPE) {
-                        popup.setUiVisible(false);
-                    }
-                }
-            });
-            mainPanel.getBrowser().getJBCefClient().addKeyboardHandler(new CefKeyboardHandler() {
-                @Override
-                public boolean onPreKeyEvent(CefBrowser browser, CefKeyEvent event, BoolRef is_keyboard_shortcut) {
-                    return false;
-                }
-                @Override
-                public boolean onKeyEvent(CefBrowser browser, CefKeyEvent event) {
-                    if (event.windows_key_code == KeyEvent.VK_ESCAPE) {
-                        popup.setUiVisible(false);
-                    }
-                    return false;
-                }
-            }, mainPanel.getBrowser().getCefBrowser());
-        }
+        // For some reason, adding a cancelCallback will prevent the cancel event to fire when using the escape key. To
+        // work around this, we add a manual listener to both the global key handler (since the editor component seems
+        // to work around the default swing event hands long) and the browser panel which seems to handle events in a
+        // separate queue.
+        registerGlobalKeyListeners();
+        registerJBCefClientKeyListeners();
 
         return builder.createPopup();
+    }
+
+    private void registerGlobalKeyListeners() {
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+            .addKeyEventDispatcher(e -> {
+                if (e.getID() != KeyEvent.KEY_PRESSED || popup.isDisposed() || !popup.isVisible() || !popup.isFocused()) {
+                    return false;
+                }
+
+                return handleKeyPress(false, e.getKeyCode(), e.getModifiersEx());
+            });
+    }
+
+    private void registerJBCefClientKeyListeners() {
+        if (mainPanel.getBrowser() == null) {
+            logger.error("Browser panel is null");
+            return;
+        }
+
+        mainPanel.getBrowser().getJBCefClient().addKeyboardHandler(new CefKeyboardHandler() {
+            @Override
+            public boolean onPreKeyEvent(CefBrowser browser, CefKeyEvent event, BoolRef is_keyboard_shortcut) {
+                return false;
+            }
+
+            @Override
+            public boolean onKeyEvent(CefBrowser browser, CefKeyEvent event) {
+                return handleKeyPress(true, event.windows_key_code, event.modifiers);
+            }
+        }, mainPanel.getBrowser().getCefBrowser());
+    }
+
+    private boolean handleKeyPress(boolean isWebView, int keyCode, int modifiers) {
+        if (keyCode == KeyEvent.VK_ESCAPE && modifiers == 0) {
+            ApplicationManager.getApplication().invokeLater(this::hidePopup);
+            return true;
+        }
+
+
+        if (!isWebView && keyCode == KeyEvent.VK_ENTER && (modifiers & ALT_DOWN_MASK) == ALT_DOWN_MASK) {
+            if (mainPanel.getPreviewPanel() != null) {
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    try {
+                        mainPanel.getPreviewPanel().openInEditorOrBrowser();
+                    } catch (Exception e) {
+                        logger.error("Error opening file in editor", e);
+                    }
+                });
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override
@@ -111,5 +141,7 @@ public class SourcegraphWindow implements Disposable {
         if (popup != null) {
             popup.dispose();
         }
+
+        mainPanel.dispose();
     }
 }

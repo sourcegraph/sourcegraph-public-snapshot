@@ -5,7 +5,7 @@ import * as H from 'history'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
-import { Button, LoadingSpinner, Link, Typography } from '@sourcegraph/wildcard'
+import { Label, Button, LoadingSpinner, Link, Text, Input } from '@sourcegraph/wildcard'
 
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
@@ -94,30 +94,26 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
     return (
         <>
             <Form onSubmit={handleSubmit}>
-                <div className="form-group d-flex flex-column align-content-start">
-                    <Typography.Label htmlFor="username-or-email" className="align-self-start">
-                        Username or email
-                    </Typography.Label>
-                    <input
-                        id="username-or-email"
-                        className="form-control"
-                        type="text"
-                        onChange={onUsernameOrEmailFieldChange}
-                        required={true}
-                        value={usernameOrEmail}
-                        disabled={loading}
-                        autoCapitalize="off"
-                        autoFocus={true}
-                        // There is no well supported way to declare username OR email here.
-                        // Using username seems to be the best approach and should still support this behaviour.
-                        // See: https://github.com/whatwg/html/issues/4445
-                        autoComplete="username"
-                    />
-                </div>
+                <Input
+                    id="username-or-email"
+                    label={<Text alignment="left">Username or email</Text>}
+                    onChange={onUsernameOrEmailFieldChange}
+                    required={true}
+                    value={usernameOrEmail}
+                    disabled={loading}
+                    autoCapitalize="off"
+                    autoFocus={true}
+                    className="form-group"
+                    // There is no well supported way to declare username OR email here.
+                    // Using username seems to be the best approach and should still support this behaviour.
+                    // See: https://github.com/whatwg/html/issues/4445
+                    autoComplete="username"
+                />
+
                 <div className="form-group d-flex flex-column align-content-start position-relative">
-                    <Typography.Label htmlFor="password" className="align-self-start">
+                    <Label htmlFor="password" className="align-self-start">
                         Password
-                    </Typography.Label>
+                    </Label>
                     <PasswordInput
                         onChange={onPasswordFieldChange}
                         value={password}
@@ -132,6 +128,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
                         </small>
                     )}
                 </div>
+
                 <div
                     className={classNames('form-group', {
                         'mb-0': noThirdPartyProviders,
