@@ -127,9 +127,18 @@ func (e *EvaluatedFeatureFlagResolver) Value() bool {
 	return e.value
 }
 
-func (r *schemaResolver) ViewerFeatureFlags(ctx context.Context) []*EvaluatedFeatureFlagResolver {
-	f := featureflag.FromContext(ctx)
-	return evaluatedFlagsToResolvers(f)
+func (r *schemaResolver) EvaluateFeatureFlag(ctx context.Context, args *struct {
+	FlagName string
+}) *bool {
+	flagSet := featureflag.FromContext(ctx)
+	if v, ok := flagSet.GetBool(args.FlagName); ok {
+		return &v
+	}
+	return nil
+}
+
+func (r *schemaResolver) EvaluatedFeatureFlags(ctx context.Context) []*EvaluatedFeatureFlagResolver {
+	return evaluatedFlagsToResolvers(featureflag.GetEvaluatedFlagSet(ctx))
 }
 
 func evaluatedFlagsToResolvers(input map[string]bool) []*EvaluatedFeatureFlagResolver {

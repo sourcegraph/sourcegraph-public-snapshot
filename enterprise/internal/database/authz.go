@@ -43,7 +43,12 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *database
 	}
 
 	// Gather external accounts associated to the user.
-	extAccounts, err := s.store.ListExternalAccounts(ctx, args.UserID)
+	extAccounts, err := database.ExternalAccountsWith(s.store).List(ctx,
+		database.ExternalAccountsListOptions{
+			UserID:         args.UserID,
+			ExcludeExpired: true,
+		},
+	)
 	if err != nil {
 		return errors.Wrap(err, "list external accounts")
 	}

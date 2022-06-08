@@ -46,12 +46,13 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB *sql.DB
 	}
 
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
+	featureFlagStore := database.NewDB(mainAppDB).FeatureFlags()
 
 	// Start background goroutines for all of our workers.
 	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
 	routines := []goroutine.BackgroundRoutine{
 		// Register the background goroutine which discovers and enqueues insights work.
-		newInsightEnqueuer(ctx, workerBaseStore, insightsMetadataStore, observationContext),
+		newInsightEnqueuer(ctx, workerBaseStore, insightsMetadataStore, featureFlagStore, observationContext),
 
 		// TODO(slimsag): future: register another worker here for webhook querying.
 	}
@@ -92,6 +93,7 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 	// Create a base store to be used for storing worker state. We store this in the main app Postgres
 	// DB, not the insights DB (which we use only for storing insights data.)
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
+	repoStore := database.NewDB(mainAppDB).Repos()
 
 	// Create basic metrics for recording information about background jobs.
 	observationContext := &observation.Context{
@@ -106,7 +108,7 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 	return []goroutine.BackgroundRoutine{
 		// Register the query-runner worker and resetter, which executes search queries and records
 		// results to the insights DB.
-		queryrunner.NewWorker(ctx, logger, workerStore, insightsStore, queryRunnerWorkerMetrics),
+		queryrunner.NewWorker(ctx, logger, workerStore, insightsStore, repoStore, queryRunnerWorkerMetrics),
 		queryrunner.NewResetter(ctx, workerStore, queryRunnerResetterMetrics),
 		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
 	}

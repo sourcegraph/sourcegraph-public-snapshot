@@ -38,6 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
@@ -83,12 +84,15 @@ func main() {
 
 	conf.Init()
 	logging.Init()
-	syncLogs := log.Init(log.Resource{
+
+	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	})
-	defer syncLogs()
+	}, log.NewSentrySink())
+	defer liblog.Sync()
+	go conf.Watch(liblog.Update(conf.GetLogSinks))
+
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
@@ -158,7 +162,7 @@ func main() {
 	// TODO: Why do we set server state as a side effect of creating our handler?
 	handler := gitserver.Handler()
 	handler = actor.HTTPMiddleware(handler)
-	handler = ot.HTTPMiddleware(trace.HTTPMiddleware(handler, conf.DefaultClient()))
+	handler = ot.HTTPMiddleware(trace.HTTPMiddleware(logger, handler, conf.DefaultClient()))
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -469,6 +473,14 @@ func getVCSSyncer(
 		}
 		cli := pypi.NewClient(urn, c.Urls, httpcli.ExternalDoer)
 		return server.NewPythonPackagesSyncer(&c, depsSvc, cli), nil
+	case extsvc.TypeRustPackages:
+		var c schema.RustPackagesConnection
+		urn, err := extractOptions(&c)
+		if err != nil {
+			return nil, err
+		}
+		cli := crates.NewClient(urn, httpcli.ExternalDoer)
+		return server.NewRustPackagesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
 }

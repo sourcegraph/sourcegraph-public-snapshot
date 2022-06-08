@@ -34,20 +34,43 @@ of your deployment environment.
 We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference repository](./index.md#reference-repository) to track your configuration changes in Git.
 **This will make upgrades far easier** and is a good practice not just for Sourcegraph, but for any Kubernetes application.
 
-- Create a fork of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository.
-
-    > WARNING: Set your fork to **private** if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository.
+    > WARNING: Forks of public repos are also public. If you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository you should duplicate the reference repository and make your copy private.
 
     <span class="virtual-br"></span>
 
     > NOTE: We do not recommend storing secrets in the repository itself - instead, consider leveraging [Kubernetes's Secret objects](https://kubernetes.io/docs/concepts/configuration/secret).
+
+- Create a fork or private duplicate
+  
+  [Create a public fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository.
+
+  Alternatively, create a [private duplicate](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository#mirroring-a-repository) of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository as follows:
+
+  Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example `<you/private-repository>` in GitHub, then bare clone the reference repository. 
+
+    ```bash
+  git clone --bare https://github.com/sourcegraph/deploy-sourcegraph/
+  ```
+  
+  Navigate to the bare clone and mirror push it to your private repository.
+
+    ```bash
+  cd deploy-sourcegraph.git
+  git push --mirror https://github.com/<you/private-repository>.git
+  ```
+
+  Remove your local bare clone. 
+    ```bash
+  cd ..
+  rm -rf deploy-sourcegraph.git
+  ```
 
 - Clone your fork using the repository's URL.
 
     > NOTE: The `docker-compose.yaml` file currently depends on configuration files which live in the repository, so you must have the entire repository cloned onto your server.
 
   ```bash
-  git clone $FORK_URL
+  git clone https://github.com/<you/private-repository>.git
   ```
 
 - Add the [reference repository](./index.md#reference-repository) as an `upstream` remote so that you can [get updates](update.md).

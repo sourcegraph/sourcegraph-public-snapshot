@@ -7,6 +7,7 @@ require (
 	github.com/cockroachdb/errors v1.9.0
 	github.com/derision-test/go-mockgen v1.1.2
 	github.com/fatih/color v1.13.0
+	github.com/getsentry/sentry-go v0.13.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.5.7
@@ -44,7 +45,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
-	github.com/getsentry/sentry-go v0.13.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect

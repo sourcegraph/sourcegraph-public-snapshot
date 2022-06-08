@@ -396,7 +396,7 @@ func TestRepos_ListMinimalRepos_userID(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Create a user
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a1@example.com",
 		Username:              "u1",
 		Password:              "p",
@@ -2160,7 +2160,7 @@ func TestRepos_ListRepos_UserPublicRepos(t *testing.T) {
 	_, otherRepo := initUserAndRepo(t, ctx, db)
 
 	// register our interest in the other user's repo
-	err := UserPublicRepos(db).SetUserRepo(ctx, UserPublicRepo{UserID: user.ID, RepoURI: otherRepo.URI, RepoID: otherRepo.ID})
+	err := db.UserPublicRepos().SetUserRepo(ctx, UserPublicRepo{UserID: user.ID, RepoURI: otherRepo.URI, RepoID: otherRepo.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2232,7 +2232,7 @@ func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 
 func initUserAndRepo(t *testing.T, ctx context.Context, db DB) (*types.User, *types.Repo) {
 	id := rand.String(8)
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 id + "@example.com",
 		Username:              "u" + id,
 		Password:              "p",

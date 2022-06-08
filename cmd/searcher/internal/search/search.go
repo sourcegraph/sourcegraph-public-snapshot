@@ -27,6 +27,7 @@ import (
 	nettrace "golang.org/x/net/trace"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -46,6 +47,13 @@ const (
 type Service struct {
 	Store *Store
 	Log   log.Logger
+
+	// GitOutput returns the stdout of running git with args against the repo.
+	//
+	// TODO pick a design which doesn't directly depend on Command. Probably
+	// adding a relevant function to the gitserver client. This is only used
+	// by FeatHybrid.
+	GitOutput func(ctx context.Context, repo api.RepoName, args ...string) ([]byte, error)
 }
 
 // ServeHTTP handles HTTP based search requests
@@ -214,6 +222,38 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		}
 		zf, err := s.Store.zipCache.Get(path)
 		return path, zf, err
+	}
+
+	hybrid := !p.IsStructuralPat && p.FeatHybrid
+	if hybrid {
+		unsearched, ok, err := s.hybrid(ctx, p, sender)
+		if err != nil {
+			s.Log.Error("hybrid search failed",
+				log.String("repo", string(p.Repo)),
+				log.String("commit", string(p.Commit)),
+				log.Error(err))
+			return errors.Wrap(err, "hybrid search failed")
+		}
+		if !ok {
+			s.Log.Warn("hybrid search is falling back to normal unindexed search",
+				log.String("repo", string(p.Repo)),
+				log.String("commit", string(p.Commit)))
+		} else {
+			// now we only need to search unsearched
+			if len(unsearched) == 0 {
+				// indexed search did it all
+				return nil
+			}
+
+			getZf = func() (string, *zipFile, error) {
+				path, err := s.Store.PrepareZipPaths(prepareCtx, p.Repo, p.Commit, unsearched)
+				if err != nil {
+					return "", nil, err
+				}
+				zf, err := s.Store.zipCache.Get(path)
+				return path, zf, err
+			}
+		}
 	}
 
 	zipPath, zf, err := getZipFileWithRetry(getZf)

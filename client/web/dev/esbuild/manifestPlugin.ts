@@ -3,7 +3,8 @@ import path from 'path'
 
 import * as esbuild from 'esbuild'
 
-import { STATIC_ASSETS_PATH } from '../utils'
+import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
+
 import { WebpackManifest } from '../webpack/get-html-webpack-plugins'
 
 export const assetPathPrefix = '/.assets'

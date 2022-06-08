@@ -1,6 +1,4 @@
-import React, { useCallback } from 'react'
-
-import classNames from 'classnames'
+import React from 'react'
 
 import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -9,9 +7,9 @@ import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Code, Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
 
-import { getResultId } from './utils'
+import { SelectableSearchResult } from './SelectableSearchResult'
 
-import styles from './SearchResult.module.scss'
+import styles from './CommitSearchResult.module.scss'
 
 interface Props {
     match: CommitMatch
@@ -24,21 +22,8 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({ match, sele
 
     const formattedRepositoryStarCount = formatRepositoryStarCount(match.repoStars)
 
-    const resultId = getResultId(match)
-    const onClick = useCallback((): void => selectResult(resultId), [selectResult, resultId])
-
     return (
-        // The below element's accessibility is handled via a document level event listener.
-        //
-        // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
-        <div
-            id={`search-result-list-item-${resultId}`}
-            className={classNames(styles.line, {
-                [styles.lineActive]: resultId === selectedResult,
-            })}
-            onClick={onClick}
-            key={resultId}
-        >
+        <SelectableSearchResult match={match} selectResult={selectResult} selectedResult={selectedResult}>
             <CodeHostIcon repoName={match.repository} className="text-muted flex-shrink-0" />
             <Tooltip content={(truncated && `${match.authorName}: ${match.message.split('\n', 1)[0]}`) || null}>
                 <span onMouseEnter={checkTruncation} ref={titleReference}>
@@ -55,6 +40,6 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({ match, sele
                     {formattedRepositoryStarCount}
                 </>
             )}
-        </div>
+        </SelectableSearchResult>
     )
 }

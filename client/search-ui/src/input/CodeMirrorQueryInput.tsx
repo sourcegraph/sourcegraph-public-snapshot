@@ -12,6 +12,7 @@ import {
     Prec,
     RangeSetBuilder,
     MapMode,
+    ChangeSpec,
 } from '@codemirror/state'
 import {
     EditorView,
@@ -48,7 +49,7 @@ import { MonacoQueryInputProps } from './MonacoQueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'
 
-const replacePattern = /[\n\r↵]/g
+const replacePattern = /[\n\r↵]+/g
 
 /**
  * This component provides a drop-in replacement for MonacoQueryInput. It
@@ -92,17 +93,11 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
 
     const editorCreated = useCallback(
         (editor: EditorView) => {
-            // `role` set to fix accessibility issues
-            // https://github.com/sourcegraph/sourcegraph/issues/34733
-            editor.contentDOM.setAttribute('role', 'textbox')
-            // `aria-label` to fix accessibility audit
-            editor.contentDOM.setAttribute('aria-label', ariaLabel)
-
             setEditor(editor)
             editorReference.current = editor
             onEditorCreated?.(editor)
         },
-        [editorReference, onEditorCreated, ariaLabel]
+        [editorReference, onEditorCreated]
     )
 
     const autocompletion = useMemo(
@@ -121,6 +116,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
 
     const extensions = useMemo(() => {
         const extensions: Extension[] = [
+            EditorView.contentAttributes.of({ 'aria-label': ariaLabel }),
             EditorView.updateListener.of((update: ViewUpdate) => {
                 if (update.docChanged) {
                     onChange({
@@ -161,6 +157,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         }
         return extensions
     }, [
+        ariaLabel,
         autocompletion,
         onBlur,
         onChange,
@@ -362,9 +359,35 @@ const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<Code
 // Sometimes it's not always obvious which type of extension to use to achieve a
 // certain goal (and I don't claim that the implementation below is optimal).
 
-// Enforces that the input won't split over multiple lines (basically prevents
-// Enter from inserting a new line)
-const singleLine = EditorState.transactionFilter.of(transaction => (transaction.newDoc.lines > 1 ? [] : transaction))
+// Enforces that the input won't span over multiple lines by replacing or
+// removing line breaks.
+// NOTE: If a submit handler is assigned to the query input then the pressing
+// enter won't insert a line break anyway. In that case, this filter ensures
+// that line breaks are stripped from pasted input.
+const singleLine = EditorState.transactionFilter.of(transaction => {
+    if (!transaction.docChanged) {
+        return transaction
+    }
+
+    const newText = transaction.newDoc.sliceString(0)
+    const changes: ChangeSpec[] = []
+
+    // new RegExp(...) creates a copy of the regular expression so that we have
+    // our own stateful copy for using `exec` below.
+    const lineBreakPattern = new RegExp(replacePattern)
+    let match: RegExpExecArray | null = null
+    while ((match = lineBreakPattern.exec(newText))) {
+        // Insert space for line breaks following non-whitespace characters
+        if (match.index > 0 && !/\s/.test(newText[match.index - 1])) {
+            changes.push({ from: match.index, to: match.index + match[0].length, insert: ' ' })
+        } else {
+            // Otherwise remove it
+            changes.push({ from: match.index, to: match.index + match[0].length })
+        }
+    }
+
+    return changes.length > 0 ? [transaction, { changes, sequential: true }] : transaction
+})
 
 // Binds a function to the Enter key. Instead of using keymap directly, this is
 // configured via a state field that contains the event handler. This way the

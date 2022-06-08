@@ -8,18 +8,7 @@ import { RouteComponentProps } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import {
-    Alert,
-    AlertLink,
-    Button,
-    Checkbox,
-    Input,
-    Link,
-    LoadingSpinner,
-    PageHeader,
-    H4,
-    Label,
-} from '@sourcegraph/wildcard'
+import { Alert, AlertLink, Button, Checkbox, Input, Link, LoadingSpinner, PageHeader, H4 } from '@sourcegraph/wildcard'
 
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
 import { Page } from '../../components/Page'
@@ -210,26 +199,23 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<React.PropsWithChildren
             <PageHeader path={[{ text: 'Set up your organization' }]} className="mb-4 mt-4" />
             <Form className="mb-3" onSubmit={onSubmit}>
                 {error && <ErrorAlert className="mb-3" error={getError(error)} />}
-                <div className={classNames('form-group', styles.formItem)}>
-                    <Label htmlFor="new-org-page__form-name">Organization name</Label>
-                    <input
-                        id="new-org-page__form-name"
-                        type="text"
-                        className="form-control test-new-org-name-input mb-2"
-                        maxLength={ORG_NAME_MAX_LENGTH}
-                        required={true}
-                        autoCorrect="off"
-                        autoComplete="off"
-                        autoFocus={true}
-                        value={displayName}
-                        onChange={onDisplayNameChange}
-                        disabled={loading}
-                        aria-describedby="new-org-page__form-name-help"
-                    />
-                    <small id="new-org-page__form-name-help" className="form-text text-muted">
-                        This will be your organization’s name on Sourcegraph. You can change this any time.
-                    </small>
-                </div>
+                <Input
+                    id="new-org-page__form-name"
+                    inputClassName="mb-2"
+                    data-testid="test-new-org-name-input"
+                    maxLength={ORG_NAME_MAX_LENGTH}
+                    required={true}
+                    autoCorrect="off"
+                    autoComplete="off"
+                    autoFocus={true}
+                    value={displayName}
+                    onChange={onDisplayNameChange}
+                    disabled={loading}
+                    aria-describedby="new-org-page__form-name-help"
+                    label="Organization name"
+                    message="This will be your organization’s name on Sourcegraph. You can change this any time."
+                    className={styles.formItem}
+                />
 
                 <div className={classNames('form-group', styles.formItem)}>
                     <Input
@@ -238,6 +224,7 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<React.PropsWithChildren
                         autoCorrect="off"
                         value={orgId}
                         label="Organization ID"
+                        className="mb-0"
                         required={true}
                         pattern={VALID_ORG_NAME_REGEXP}
                         maxLength={ORG_NAME_MAX_LENGTH}

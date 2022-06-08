@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -167,3 +168,66 @@ type Tags []*Tag
 func (p Tags) Len() int           { return len(p) }
 func (p Tags) Less(i, j int) bool { return p[i].Name < p[j].Name }
 func (p Tags) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+// Ref describes a Git ref.
+type Ref struct {
+	Name     string // the full name of the ref (e.g., "refs/heads/mybranch")
+	CommitID api.CommitID
+}
+
+// BehindAhead is a set of behind/ahead counts.
+type BehindAhead struct {
+	Behind uint32 `json:"Behind,omitempty"`
+	Ahead  uint32 `json:"Ahead,omitempty"`
+}
+
+// A Branch is a git branch.
+type Branch struct {
+	// Name is the name of this branch.
+	Name string `json:"Name,omitempty"`
+	// Head is the commit ID of this branch's head commit.
+	Head api.CommitID `json:"Head,omitempty"`
+	// Commit optionally contains commit information for this branch's head commit.
+	// It is populated if IncludeCommit option is set.
+	Commit *Commit `json:"Commit,omitempty"`
+	// Counts optionally contains the commit counts relative to specified branch.
+	Counts *BehindAhead `json:"Counts,omitempty"`
+}
+
+// EnsureRefPrefix checks whether the ref is a full ref and contains the
+// "refs/heads" prefix (i.e. "refs/heads/master") or just an abbreviated ref
+// (i.e. "master") and adds the "refs/heads/" prefix if the latter is the case.
+func EnsureRefPrefix(ref string) string {
+	return "refs/heads/" + strings.TrimPrefix(ref, "refs/heads/")
+}
+
+// AbbreviateRef removes the "refs/heads/" prefix from a given ref. If the ref
+// doesn't have the prefix, it returns it unchanged.
+func AbbreviateRef(ref string) string {
+	return strings.TrimPrefix(ref, "refs/heads/")
+}
+
+// Branches is a sortable slice of type Branch
+type Branches []*Branch
+
+func (p Branches) Len() int           { return len(p) }
+func (p Branches) Less(i, j int) bool { return p[i].Name < p[j].Name }
+func (p Branches) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+// ByAuthorDate sorts by author date. Requires full commit information to be included.
+type ByAuthorDate []*Branch
+
+func (p ByAuthorDate) Len() int { return len(p) }
+func (p ByAuthorDate) Less(i, j int) bool {
+	return p[i].Commit.Author.Date.Before(p[j].Commit.Author.Date)
+}
+func (p ByAuthorDate) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+
+var invalidBranch = lazyregexp.New(`\.\.|/\.|\.lock$|[\000-\037\177 ~^:?*[]+|^/|/$|//|\.$|@{|^@$|\\`)
+
+// ValidateBranchName returns false if the given string is not a valid branch name.
+// It follows the rules here: https://git-scm.com/docs/git-check-ref-format
+// NOTE: It does not require a slash as mentioned in point 2.
+func ValidateBranchName(branch string) bool {
+	return !(invalidBranch.MatchString(branch) || strings.EqualFold(branch, "head"))
+}

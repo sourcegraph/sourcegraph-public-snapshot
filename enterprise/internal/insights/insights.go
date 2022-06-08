@@ -32,11 +32,7 @@ func IsEnabled() bool {
 		return false
 	}
 	if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
-		// Code insights is not supported in single-container Docker demo deployments unless explicity
-		// allowed, (for example by backend integration tests.)
-		if v, _ := strconv.ParseBool(os.Getenv("ALLOW_SINGLE_DOCKER_CODE_INSIGHTS")); v {
-			return true
-		}
+		// Code insights is not supported in single-container Docker demo deployments
 		return false
 	}
 	return true

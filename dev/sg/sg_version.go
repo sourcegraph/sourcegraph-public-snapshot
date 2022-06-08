@@ -26,7 +26,7 @@ var (
 	versionCommand = &cli.Command{
 		Name:     "version",
 		Usage:    "View details for this installation of sg",
-		Action:   execAdapter(versionExec),
+		Action:   versionExec,
 		Category: CategoryUtil,
 		Subcommands: []*cli.Command{
 			{
@@ -46,18 +46,18 @@ var (
 						Destination: &versionChangelogEntries,
 					},
 				},
-				Action: execAdapter(changelogExec),
+				Action: changelogExec,
 			},
 		},
 	}
 )
 
-func versionExec(ctx context.Context, args []string) error {
+func versionExec(ctx *cli.Context) error {
 	std.Out.Write(BuildCommit)
 	return nil
 }
 
-func changelogExec(ctx context.Context, args []string) error {
+func changelogExec(ctx *cli.Context) error {
 	if _, err := run.GitCmd("fetch", "origin", "main"); err != nil {
 		return errors.Newf("failed to update main: %s", err)
 	}

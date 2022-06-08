@@ -2,6 +2,7 @@ package com.sourcegraph.find;
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.codeInsight.highlighting.HighlightManager;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.colors.EditorColors;
@@ -25,12 +26,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Objects;
 
-public class PreviewPanel extends JBPanelWithEmptyText {
+public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
     private final Project project;
     private JComponent editorComponent;
 
     private PreviewContent previewContent;
     private VirtualFile virtualFile;
+    private Editor editor;
 
     public PreviewPanel(Project project) {
         super(new BorderLayout());
@@ -61,7 +63,7 @@ public class PreviewPanel extends JBPanelWithEmptyText {
             virtualFile = new LightVirtualFile(this.previewContent.getFileName(), fileContent);
             Document document = editorFactory.createDocument(fileContent);
             document.setReadOnly(true);
-            Editor editor = editorFactory.createEditor(document, project, virtualFile, true, EditorKind.MAIN_EDITOR);
+            editor = editorFactory.createEditor(document, project, virtualFile, true, EditorKind.MAIN_EDITOR);
 
             EditorSettings settings = editor.getSettings();
             settings.setLineMarkerAreaShown(true);
@@ -134,6 +136,13 @@ public class PreviewPanel extends JBPanelWithEmptyText {
                 editorComponent = null;
                 virtualFile = null;
             });
+        }
+    }
+
+    @Override
+    public void dispose() {
+        if (editor != null) {
+            EditorFactory.getInstance().releaseEditor(editor);
         }
     }
 }

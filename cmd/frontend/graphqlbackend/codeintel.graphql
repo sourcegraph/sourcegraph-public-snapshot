@@ -609,6 +609,31 @@ type SymbolLocation {
     path: String!
 
     """
+    The range.
+    """
+    range: LineRange
+
+    """
+    The line.
+    """
+    line: Int! @deprecated(reason: "use range.line instead")
+
+    """
+    The character.
+    """
+    character: Int! @deprecated(reason: "use range.character instead")
+
+    """
+    The length.
+    """
+    length: Int! @deprecated(reason: "use range.length instead")
+}
+
+"""
+LineRange is a span within a line.
+"""
+type LineRange {
+    """
     The line.
     """
     line: Int!

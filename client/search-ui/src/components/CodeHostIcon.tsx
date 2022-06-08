@@ -24,11 +24,7 @@ export const CodeHostIcon: React.FunctionComponent<
     const CodehostIcon: React.ComponentType<React.PropsWithChildren<MdiReactIconProps>> | undefined = iconMap[hostName]
 
     if (CodehostIcon) {
-        return (
-            <span role="img" aria-label={hostName} title={hostName}>
-                <Icon role="img" className={className} as={CodehostIcon} aria-hidden={true} />
-            </span>
-        )
+        return <Icon role="img" aria-label={hostName} data-tooltip={hostName} className={className} as={CodehostIcon} />
     }
 
     return null

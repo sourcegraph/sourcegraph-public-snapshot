@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -53,6 +55,7 @@ type Resolver struct {
 	timeSeriesStore      store.Interface
 	insightMetadataStore store.InsightMetadataStore
 	dataSeriesStore      store.DataSeriesStore
+	backfiller           *background.ScopedBackfiller
 
 	baseInsightResolver
 }
@@ -71,6 +74,7 @@ func newWithClock(db dbutil.DB, postgres database.DB, clock func() time.Time) *R
 		timeSeriesStore:      base.timeSeriesStore,
 		insightMetadataStore: base.insightStore,
 		dataSeriesStore:      base.insightStore,
+		backfiller:           background.NewScopedBackfiller(base.workerBaseStore, base.timeSeriesStore),
 	}
 }
 

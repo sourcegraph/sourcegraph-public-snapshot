@@ -30,7 +30,7 @@ func NewNpmPackagesSyncer(
 	}
 
 	return &vcsDependenciesSyncer{
-		logger:      log.Scoped("vcs syncer", "csDependenciesSyncer implements the VCSSyncer interface for dependency repos"),
+		logger:      log.Scoped("vcs syncer", "vcsDependenciesSyncer implements the VCSSyncer interface for dependency repos"),
 		typ:         "npm_packages",
 		scheme:      dependencies.NpmPackagesScheme,
 		placeholder: placeholder,

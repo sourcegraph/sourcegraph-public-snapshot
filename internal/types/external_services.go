@@ -27,3 +27,9 @@ type PerforceConnection struct {
 	URN string
 	*schema.PerforceConnection
 }
+
+type GerritConnection struct {
+	// The unique resource identifier of the external service.
+	URN string
+	*schema.GerritConnection
+}
