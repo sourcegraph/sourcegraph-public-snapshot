@@ -50,6 +50,7 @@ func SexpFormat(j job.Job, sep, indent string) string {
 			*commit.SearchJob,
 			*zoekt.GlobalSymbolSearchJob,
 			*repos.ComputeExcludedJob,
+			*alternateQueriesAlertJob,
 			*NoopJob:
 			b.WriteString(j.Name())
 
@@ -210,6 +211,7 @@ func PrettyMermaid(j job.Job) string {
 			*commit.SearchJob,
 			*zoekt.GlobalSymbolSearchJob,
 			*repos.ComputeExcludedJob,
+			*alternateQueriesAlertJob,
 			*NoopJob:
 			writeNode(b, depth, RoundedStyle, &id, j.Name())
 
@@ -328,6 +330,7 @@ func toJSON(j job.Job, verbose bool) any {
 			*commit.SearchJob,
 			*zoekt.GlobalSymbolSearchJob,
 			*repos.ComputeExcludedJob,
+			*alternateQueriesAlertJob,
 			*NoopJob:
 			if verbose {
 				return map[string]any{j.Name(): j}

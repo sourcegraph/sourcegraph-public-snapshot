@@ -42,6 +42,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 3.40.2
+
+### Fixed
+
+- Fix issue with OAuth login using a Github code host by reverting gologin dependency update [#36685](https://github.com/sourcegraph/sourcegraph/pull/36685)
+- Fix issue with single-container docker image where codeinsights-db was being incorrectly created [#36678](https://github.com/sourcegraph/sourcegraph/pull/36678)
+
 ## 3.40.1
 
 ### Fixed
