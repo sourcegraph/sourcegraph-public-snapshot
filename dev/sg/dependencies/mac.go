@@ -4,10 +4,12 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -80,11 +82,29 @@ var Mac = []category{
 			},
 			{
 				Name: "docker",
-				Check: checkAction(
+				Check: checkAction(check.Combine(
 					check.WrapErrMessage(check.InPath("docker"),
-						"if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
-				),
-				Fix: cmdAction(`brew install --cask docker`),
+						"if Docker is installed and the check fails, you might need to restart terminal and 'sg setup'"),
+					check.WrapErrMessage(check.CommandOutputContains("docker ps", "CONTAINER ID"),
+						"you may need to start Docker.app"),
+				)),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					// TODO stream lines
+					if err := usershell.Cmd(ctx, `brew install --cask docker`).Run(); err != nil {
+						return err
+					}
+
+					cio.Verbose("Docker installed - attempting to start docker")
+
+					err := usershell.Cmd(ctx, "open --hide -a /Applications/Docker.app").Run()
+					if err != nil {
+						return err
+					}
+
+					cio.Verbose("Waiting for docker to start up...")
+					time.Sleep(10 * time.Second)
+					return nil
+				},
 			},
 		},
 	},
