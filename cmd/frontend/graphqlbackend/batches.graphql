@@ -2097,6 +2097,11 @@ interface BatchSpecWorkspace {
     cachedResultFound: Boolean!
 
     """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
+
+    """
     The time when the workspace was enqueued for processing. Null, if not yet enqueued.
     """
     queuedAt: DateTime
@@ -2179,6 +2184,11 @@ type VisibleBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     Whether we found a task cache result.
     """
     cachedResultFound: Boolean!
+
+    """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
 
     """
     Executor stages of running in this workspace. Null, if the execution hasn't
@@ -2288,6 +2298,11 @@ type HiddenBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     Whether we found a task cache result.
     """
     cachedResultFound: Boolean!
+
+    """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
 
     """
     The time when the workspace was enqueued for processing. Null, if not yet enqueued.

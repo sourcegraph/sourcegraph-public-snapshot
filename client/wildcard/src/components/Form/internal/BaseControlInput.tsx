@@ -26,6 +26,7 @@ export type ControlInputProps = AccessibleFieldProps<React.InputHTMLAttributes<H
 export const BaseControlInput: React.FunctionComponent<React.PropsWithChildren<ControlInputProps>> = React.forwardRef(
     ({ children, className, message, isValid, type, wrapperClassName, ...props }, reference) => (
         <div className={classNames('form-check', wrapperClassName)}>
+            {/* eslint-disable-next-line react/forbid-elements */}
             <input
                 ref={reference}
                 type={type}

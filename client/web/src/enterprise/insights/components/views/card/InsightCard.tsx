@@ -23,7 +23,7 @@ const InsightCard = forwardRef((props, reference) => {
 }) as ForwardReferenceComponent<'section'>
 
 export interface InsightCardTitleProps {
-    title: string
+    title: ReactNode
     subtitle?: ReactNode
 
     /**
@@ -39,7 +39,12 @@ const InsightCardHeader = forwardRef((props, reference) => {
     return (
         <Component {...attributes} ref={reference} className={classNames(styles.header, className)}>
             <div className={styles.headerContent}>
-                <H4 as={H2} title={title} className={styles.title}>
+                <H4
+                    // We have to cast this element to H2 because having h4 without h3 and h2
+                    // higher in the hierarchy violates a11y rules about headings structure.
+                    as={H2}
+                    className={styles.title}
+                >
                     {title}
                 </H4>
 

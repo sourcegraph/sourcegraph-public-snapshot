@@ -3,6 +3,7 @@
 ## Documentation
 
 - [How to write great docs](https://documentation.divio.com/) (watch the video)
+- [How to maintain the Tech Radar](maintain-tech-radar.md)
 
 ## New features
 

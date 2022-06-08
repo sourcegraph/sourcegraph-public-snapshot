@@ -9,12 +9,13 @@ const DEFAULT_SERIES_DISPLAY_OPTIONS = {
 }
 
 interface InsightOptions {
+    id?: string
     type: 'calculated' | 'just-in-time'
 }
 
 export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOptions): InsightViewNode => ({
     __typename: 'InsightView',
-    id: '001',
+    id: options.id ?? '001',
     appliedSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     defaultSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     dashboardReferenceCount: 0,
