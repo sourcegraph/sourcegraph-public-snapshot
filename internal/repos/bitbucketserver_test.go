@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -29,11 +28,6 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 	var repos []*bitbucketserver.Repo
 	if err := json.Unmarshal(b, &repos); err != nil {
 		t.Fatal(err)
-	}
-
-	fmt.Println("Printing repos...")
-	for _, repo := range repos {
-		fmt.Printf("%+v\n", repo)
 	}
 
 	cases := map[string]*schema.BitbucketServerConnection{
@@ -64,17 +58,13 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
-			fmt.Println("Name:", name)
-			// fmt.Printf("Config: %+v\n", config)
 			s, err := newBitbucketServerSource(&svc, config, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			var got []*types.Repo
-			fmt.Println("Repos:")
 			for _, r := range repos {
-				// fmt.Println("R:", r)
 				got = append(got, s.makeRepo(r, false))
 			}
 
@@ -255,9 +245,7 @@ func TestBitbucketServerSource_ListByReposOnly(t *testing.T) {
 	defer server.Close()
 
 	cases, svc := GetConfig(t, server)
-	for name, config := range cases {
-		fmt.Println("Name:", name)
-
+	for _, config := range cases {
 		s, err := newBitbucketServerSource(&svc, config, nil)
 		if err != nil {
 			t.Fatal(err)
@@ -328,9 +316,7 @@ func TestBitbucketServerSource_ListByRepositoryQueryDefault(t *testing.T) {
 	defer server.Close()
 
 	cases, svc := GetConfig(t, server)
-	for name, config := range cases {
-		fmt.Println("Name:", name)
-
+	for _, config := range cases {
 		s, err := newBitbucketServerSource(&svc, config, nil)
 		if err != nil {
 			t.Fatal(err)
@@ -401,9 +387,7 @@ func TestBitbucketServerSource_ListByRepositoryQueryAll(t *testing.T) {
 	defer server.Close()
 
 	cases, svc := GetConfig(t, server)
-	for name, config := range cases {
-		fmt.Println("Name:", name)
-
+	for _, config := range cases {
 		s, err := newBitbucketServerSource(&svc, config, nil)
 		if err != nil {
 			t.Fatal(err)
@@ -470,9 +454,7 @@ func TestBitbucketServerSource_ListByRepositoryQueryNone(t *testing.T) {
 	defer server.Close()
 
 	cases, svc := GetConfig(t, server)
-	for name, config := range cases {
-		fmt.Println("Name:", name)
-
+	for _, config := range cases {
 		s, err := newBitbucketServerSource(&svc, config, nil)
 		if err != nil {
 			t.Fatal(err)
@@ -534,9 +516,7 @@ func TestBitbucketServerSource_ListByProjectKey(t *testing.T) {
 	defer server.Close()
 
 	cases, svc := GetConfig(t, server)
-	for name, config := range cases {
-		fmt.Println("Name:", name)
-
+	for _, config := range cases {
 		s, err := newBitbucketServerSource(&svc, config, nil)
 		if err != nil {
 			t.Fatal(err)
@@ -623,10 +603,8 @@ func VerifyData(t *testing.T, ctx context.Context, numExpectedResults int, resul
 		case res := <-results:
 			repoNameArr := strings.Split(string(res.Repo.Name), "/")
 			repoName := repoNameArr[1] + "/" + repoNameArr[2]
-			fmt.Print("Repo:", repoName, ", ")
 			if _, ok := repoNameMap[repoName]; ok {
 				numReceivedFromResults++
-				fmt.Println("verified")
 			} else {
 				t.Fatal(errors.New("wrong repo returned"))
 			}
