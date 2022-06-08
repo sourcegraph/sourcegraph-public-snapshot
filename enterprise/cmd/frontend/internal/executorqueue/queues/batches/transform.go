@@ -45,7 +45,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	// This should never happen. To get some easier debugging when a user sees strange
 	// behavior, we log some additional context.
 	if job.UserID != batchSpec.UserID {
-		logger.Error("bad DB state: batch spec workspace execution job had not the same user ID as the associated batch spec")
+		logger.Error("bad DB state: batch spec workspace execution job did not have the same user ID as the associated batch spec")
 	}
 
 	// 🚨 SECURITY: Set the actor on the context so we check for permissions
