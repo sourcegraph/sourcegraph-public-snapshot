@@ -25,7 +25,8 @@ jobs:
           go-version: 1.18
 
       - name: Test dependencies (${{ matrix.os }})
-        # Yes it really can be very slow
+        # Yes it really can be very slow. This is more an optional check than anything
+        # else so it should be okay
         run: |
           go test -timeout=30m -v \
             ./dev/sg/dependencies/... -sg-setup=${{ matrix.os }}
