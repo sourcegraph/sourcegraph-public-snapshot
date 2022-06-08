@@ -34,6 +34,20 @@ func cmdAction(cmd string) check.ActionFunc[CheckArgs] {
 	}
 }
 
+func cmdsAction(cmds ...string) check.ActionFunc[CheckArgs] {
+	return func(ctx context.Context, cio check.IO, args CheckArgs) error {
+		for _, cmd := range cmds {
+			// TODO send to cio, and pipe stdin in
+			out, err := usershell.CombinedExec(ctx, cmd)
+			cio.Write(string(out))
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
 func teammatesOnly() check.EnableFunc[CheckArgs] {
 	return func(ctx context.Context, args CheckArgs) error {
 		if !args.Teammate {

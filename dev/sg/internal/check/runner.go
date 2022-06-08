@@ -201,9 +201,10 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 				if err := c.Update(ctx, cio, args); err != nil {
 					outStr := out.String()
 					if len(outStr) > 0 {
+						progress.VerboseLine(output.Styledf(output.StyleWarning, "%s: Check failed, output:", c.Name))
 						progress.Verbose(outStr)
 					}
-					progress.WriteLine(output.Styled(output.StyleWarning, err.Error()))
+					progress.VerboseLine(output.Styledf(output.StyleWarning, "%s: %s", err.Error(), c.Name))
 				}
 				progress.SetValue(i, float64(ci+1))
 			}

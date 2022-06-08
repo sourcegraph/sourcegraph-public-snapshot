@@ -13,6 +13,8 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/jackc/pgx/v4"
 
+	"github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
@@ -203,39 +205,113 @@ func checkGitVersion(versionConstraint string) func(context.Context) error {
 	}
 }
 
-func checkGoVersion(versionConstraint string) func(context.Context) error {
-	return func(ctx context.Context) error {
-		cmd := "go version"
-		out, err := usershell.CombinedExec(ctx, "go version")
-		if err != nil {
-			return errors.Wrapf(err, "failed to run %q", cmd)
-		}
-
-		elems := strings.Split(string(out), " ")
-		if len(elems) != 4 {
-			return errors.Newf("unexpected output from %q: %s", out)
-		}
-
-		haveVersion := strings.TrimPrefix(elems[2], "go")
-
-		return check.Version("go", haveVersion, versionConstraint)
+func getToolVersionConstraint(ctx context.Context, tool string) (string, error) {
+	tools, err := root.Run(run.Cmd(ctx, "cat .tool-versions")).Lines()
+	if err != nil {
+		return "", err
 	}
+	var version string
+	for _, t := range tools {
+		parts := strings.Split(t, " ")
+		if parts[0] == tool {
+			version = parts[1]
+			break
+		}
+	}
+	if version == "" {
+		return "", errors.Newf("tool %q not found in .tool-versions", tool)
+	}
+	return fmt.Sprintf("~> %s", version), nil
 }
 
-func checkYarnVersion(versionConstraint string) func(context.Context) error {
-	return func(ctx context.Context) error {
-		cmd := "yarn --version"
-		out, err := usershell.CombinedExec(ctx, cmd)
-		if err != nil {
-			return errors.Wrapf(err, "failed to run %q", cmd)
-		}
-
-		elems := strings.Split(string(out), "\n")
-		if len(elems) == 0 {
-			return errors.Newf("no output from %q", cmd)
-		}
-
-		trimmed := strings.TrimSpace(elems[0])
-		return check.Version("yarn", trimmed, versionConstraint)
+func checkGoVersion(ctx context.Context, cio check.IO, args CheckArgs) error {
+	if err := check.InPath("go")(ctx); err != nil {
+		return err
 	}
+
+	constraint, err := getToolVersionConstraint(ctx, "golang")
+	if err != nil {
+		return err
+	}
+
+	cmd := "go version"
+	out, err := usershell.CombinedExec(ctx, cmd)
+	if err != nil {
+		return errors.Wrapf(err, "failed to run %q", cmd)
+	}
+	parts := strings.Split(strings.TrimSpace(string(out)), " ")
+	if len(parts) == 0 {
+		return errors.Newf("no output from %q", cmd)
+	}
+
+	return check.Version("go", strings.TrimPrefix(parts[2], "go"), constraint)
+}
+
+func checkYarnVersion(ctx context.Context, cio check.IO, args CheckArgs) error {
+	if err := check.InPath("yarn")(ctx); err != nil {
+		return err
+	}
+
+	constraint, err := getToolVersionConstraint(ctx, "yarn")
+	if err != nil {
+		return err
+	}
+
+	cmd := "yarn --version"
+	out, err := usershell.CombinedExec(ctx, cmd)
+	if err != nil {
+		return errors.Wrapf(err, "failed to run %q", cmd)
+	}
+	trimmed := strings.TrimSpace(string(out))
+	if len(trimmed) == 0 {
+		return errors.Newf("no output from %q", cmd)
+	}
+
+	return check.Version("yarn", trimmed, constraint)
+}
+
+func checkNodeVersion(ctx context.Context, cio check.IO, args CheckArgs) error {
+	if err := check.InPath("node")(ctx); err != nil {
+		return err
+	}
+
+	constraint, err := getToolVersionConstraint(ctx, "nodejs")
+	if err != nil {
+		return err
+	}
+
+	cmd := "node --version"
+	out, err := usershell.CombinedExec(ctx, cmd)
+	if err != nil {
+		return errors.Wrapf(err, "failed to run %q", cmd)
+	}
+	trimmed := strings.TrimSpace(string(out))
+	if len(trimmed) == 0 {
+		return errors.Newf("no output from %q", cmd)
+	}
+
+	return check.Version("yarn", trimmed, constraint)
+}
+
+func checkRustVersion(ctx context.Context, cio check.IO, args CheckArgs) error {
+	if err := check.InPath("cargo")(ctx); err != nil {
+		return err
+	}
+
+	constraint, err := getToolVersionConstraint(ctx, "rust")
+	if err != nil {
+		return err
+	}
+
+	cmd := "cargo --version"
+	out, err := usershell.CombinedExec(ctx, cmd)
+	if err != nil {
+		return errors.Wrapf(err, "failed to run %q", cmd)
+	}
+	parts := strings.Split(strings.TrimSpace(string(out)), " ")
+	if len(parts) == 0 {
+		return errors.Newf("no output from %q", cmd)
+	}
+
+	return check.Version("cargo", parts[1], constraint)
 }
