@@ -12,13 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 )
 
-func TestUbuntu(t *testing.T) {
+func TestUbuntuFix(t *testing.T) {
 	if !strings.Contains(*sgSetupTests, string(OSUbuntu)) {
 		t.Skip("Skipping Ubuntu sg setup tests")
 	}
 
 	runner := check.NewRunner(nil, std.NewFixedOutput(os.Stdout, true), Ubuntu)
 
-	err := runner.Check(context.Background(), testArgs)
+	err := runner.Fix(context.Background(), testArgs)
 	assert.Nil(t, err)
 }

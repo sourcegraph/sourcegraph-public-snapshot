@@ -4,11 +4,15 @@ on:
     paths:
       - 'dev/sg/dependencies/**.go'
       - 'dev/sg/internal/check/**.go'
+
 jobs:
   test:
     strategy:
       matrix:
-        os: [macos-12, ubuntu-12]
+        # See https://github.com/actions/virtual-environments#available-environments for
+        # available environments.
+        os: [macos-11, ubuntu-20.04]
+      fail-fast: false
 
     runs-on: ${{ matrix.os }}
     steps:
