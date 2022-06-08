@@ -22,7 +22,11 @@ func TestNewFeelingLuckySearchJob(t *testing.T) {
 		return PrettyJSONVerbose(job)
 	}
 
-	t.Run("default rules", func(t *testing.T) {
+	t.Run("trigger unquoted rule", func(t *testing.T) {
 		autogold.Equal(t, autogold.Raw(test(`"lucky"`)))
+	})
+
+	t.Run("trigger unordered patterns", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`context:global parse func`)))
 	})
 }

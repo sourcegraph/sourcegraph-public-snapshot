@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	githublogin "github.com/dghubble/gologin/v2/github"
+	githublogin "github.com/dghubble/gologin/github"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-github/github"
 	"github.com/stretchr/testify/assert"

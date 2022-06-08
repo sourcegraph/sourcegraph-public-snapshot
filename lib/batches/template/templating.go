@@ -243,6 +243,10 @@ func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 				"path":           tmplCtx.Steps.Path,
 			}
 		},
+		// Leave batch_change_link alone; it will be rendered during the reconciler phase instead.
+		"batch_change_link": func() string {
+			return "${{ batch_change_link }}"
+		},
 	}
 }
 

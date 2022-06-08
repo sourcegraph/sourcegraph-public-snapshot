@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/amit7itz/goset"
 	"github.com/grafana/regexp"
 	"github.com/grafana/regexp/syntax"
 	"github.com/inconshreveable/log15"
@@ -108,7 +109,7 @@ func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ 
 	// Finally search.
 	symbols, err := s.querySymbols(ctx, args, repoId, commit, threadStatus)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "querySymbols")
 	}
 
 	return symbols, nil
@@ -229,28 +230,27 @@ func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameter
 		return nil, err
 	}
 
-	pathSet := map[string]struct{}{}
+	paths := goset.NewSet[string]()
 	for rows.Next() {
 		var path string
 		err = rows.Scan(&path)
 		if err != nil {
 			return nil, errors.Wrap(err, "Search: Scan")
 		}
-		pathSet[path] = struct{}{}
+		paths.Add(path)
 	}
 
 	stopErr := errors.New("stop iterating")
 
 	symbols := []result.Symbol{}
 
-	parse := s.createParser()
+	parse, err := s.createParser()
+	if err != nil {
+		return nil, errors.Wrap(err, "create parser")
+	}
 
 	threadStatus.Tasklog.Start("ArchiveEach")
-	paths := []string{}
-	for path := range pathSet {
-		paths = append(paths, path)
-	}
-	err = s.git.ArchiveEach(string(args.Repo), string(args.CommitID), paths, func(path string, contents []byte) error {
+	err = s.git.ArchiveEach(string(args.Repo), string(args.CommitID), paths.Items(), func(path string, contents []byte) error {
 		defer threadStatus.Tasklog.Continue("ArchiveEach")
 
 		threadStatus.Tasklog.Start("parse")

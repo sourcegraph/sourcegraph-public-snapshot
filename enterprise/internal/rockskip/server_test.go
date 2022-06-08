@@ -104,7 +104,7 @@ func TestIndex(t *testing.T) {
 	db := dbtest.NewDB(t)
 	defer db.Close()
 
-	createParser := func() ParseSymbolsFunc { return simpleParse }
+	createParser := func() (ParseSymbolsFunc, error) { return simpleParse, nil }
 
 	service, err := NewService(db, git, createParser, 1, 1, false, 1, 1, 1)
 	fatalIfError(err, "NewService")

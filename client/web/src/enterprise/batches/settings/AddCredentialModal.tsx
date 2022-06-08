@@ -180,17 +180,18 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                             <div className="form-group">
                                 {requiresUsername && (
                                     <>
-                                        <Label htmlFor="username">Username</Label>
-                                        <input
+                                        <Input
                                             id="username"
                                             name="username"
                                             autoComplete="off"
-                                            className="mb-2"
+                                            inputClassName="mb-2"
+                                            className="mb-0"
                                             required={true}
                                             spellCheck="false"
                                             minLength={1}
                                             value={username}
                                             onChange={onChangeUsername}
+                                            label="Username"
                                         />
                                     </>
                                 )}

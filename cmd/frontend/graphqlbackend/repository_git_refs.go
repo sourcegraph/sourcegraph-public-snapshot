@@ -36,7 +36,7 @@ func (r *RepositoryResolver) Tags(ctx context.Context, args *refsArgs) (*gitRefC
 }
 
 func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitRefConnectionResolver, error) {
-	var branches []*git.Branch
+	var branches []*gitdomain.Branch
 	db := r.db
 	if args.Type == nil || *args.Type == gitRefTypeBranch {
 		var err error
@@ -150,7 +150,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	}, nil
 }
 
-func hydrateBranchCommits(ctx context.Context, db database.DB, repo api.RepoName, interactive bool, branches []*git.Branch) (ok bool, err error) {
+func hydrateBranchCommits(ctx context.Context, db database.DB, repo api.RepoName, interactive bool, branches []*gitdomain.Branch) (ok bool, err error) {
 	parentCtx := ctx
 	if interactive {
 		if len(branches) > 1000 {
