@@ -32,7 +32,6 @@ func TestRunnerFix(t *testing.T) {
 					},
 				},
 			},
-
 			{
 				Name: "required",
 				Checks: []*check.Check[any]{
@@ -44,13 +43,12 @@ func TestRunnerFix(t *testing.T) {
 					},
 				},
 			},
-
 			{
 				Name:      "has requirements",
 				DependsOn: []string{"required"},
 				Checks: []*check.Check[any]{
 					{
-						Name: "should not be fixed due to requirements",
+						Name: "should not be fixed due to requirements that cannot be satisfied",
 						Check: func(ctx context.Context, cio check.IO, args any) error {
 							return errors.New("i need to be fixed")
 						},
@@ -61,7 +59,6 @@ func TestRunnerFix(t *testing.T) {
 					},
 				},
 			},
-
 			{
 				Name: "fix doesnt work",
 				Checks: []*check.Check[any]{
@@ -80,7 +77,15 @@ func TestRunnerFix(t *testing.T) {
 
 		err := runner.Fix(context.Background(), nil)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "skipped, required, has requirements")
+		for _, c := range []string{
+			"Some categories are still unsatisfied",
+			// Categories that should be failing
+			"skipped",
+			"required",
+			"has requirements",
+		} {
+			assert.Contains(t, err.Error(), c)
+		}
 	})
 
 	t.Run("fix all in order", func(t *testing.T) {

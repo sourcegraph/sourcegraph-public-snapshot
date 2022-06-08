@@ -63,18 +63,17 @@ func (r *Runner[Args]) Fix(
 
 	// Get state
 	results := r.runAllCategoryChecks(ctx, args)
-
 	if len(results.failed) == 0 {
+		// Nothing failed, we're good to go!
 		return nil
 	}
 
-	r.out.WriteNoticef("Attempting to fix %d checks", len(results.failed))
-
+	r.out.WriteNoticef("Attempting to fix %d failed categories", len(results.failed))
 	for _, i := range results.failed {
 		category := r.categories[i]
 
-		ok := r.fixCategoryAutomatically(ctx, &category, args, results)
-		results.categories[category.Name] = !ok
+		ok := r.fixCategoryAutomatically(ctx, i+1, &category, args, results)
+		results.categories[category.Name] = ok
 	}
 
 	// Report what is still bust
@@ -82,7 +81,7 @@ func (r *Runner[Args]) Fix(
 	for _, category := range r.categories {
 		for _, c := range category.Checks {
 			if !c.IsMet() {
-				failedCategories = append(failedCategories, category.Name)
+				failedCategories = append(failedCategories, fmt.Sprintf("%q", category.Name))
 				break
 			}
 		}
@@ -196,11 +195,10 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 				return
 			}
 
-			var out strings.Builder
-
 			// Validate checks
 			var failed bool
 			for ci, c := range category.Checks {
+				var out strings.Builder
 				cio := IO{
 					Input:  r.in,
 					Writer: std.NewFixedOutput(&out, true),
@@ -212,7 +210,10 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 				if err := c.RunCheck(ctx, cio, args); err != nil {
 					failed = true
-					progress.Verbose(out.String())
+					outStr := out.String()
+					if len(outStr) > 0 {
+						progress.Verbose(outStr)
+					}
 					progress.WriteLine(output.Styled(output.StyleWarning, err.Error()))
 				}
 				progress.SetValue(i, float64(ci+1))
@@ -302,7 +303,7 @@ func (r *Runner[Args]) presentFailedCategoryWithOptions(ctx context.Context, cat
 	case 2:
 		if fixableCategory {
 			r.out.ClearScreen()
-			if !r.fixCategoryAutomatically(ctx, category, args, results) {
+			if !r.fixCategoryAutomatically(ctx, categoryIdx, category, args, results) {
 				err = errors.Newf("%s: failed to fix category automatically", category.Name)
 			}
 		}
@@ -421,21 +422,26 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 	return nil
 }
 
-func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, category *Category[Args], args Args, results *runAllCategoryChecksResult) (ok bool) {
+func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx int, category *Category[Args], args Args, results *runAllCategoryChecksResult) (ok bool) {
 	pending := r.out.Pending(output.Styledf(output.StylePending, "Trying my hardest to fix %q automatically...", category.Name))
 	cio := IO{
 		Input:  r.in,
 		Writer: pending,
 	}
 
+	// Make sure to call this with a final message before returning!
+	complete := func(emoji string, style output.Style, fmtStr string, args ...any) {
+		pending.Complete(output.Linef(emoji, style, "%d. %s - "+fmtStr, append([]any{categoryIdx, category.Name}, args...)...))
+	}
+
 	if err := category.CheckEnabled(ctx, args); err != nil {
-		pending.Complete(output.Styledf(output.StyleFailure, "%s - Skipped: %s", category.Name, err.Error()))
+		complete(output.EmojiQuestionMark, output.StyleGrey, "Skipped: %s", err.Error())
 		return true
 	}
 
 	// If nothing in this category is fixable, we are done
 	if !category.HasFixable() {
-		pending.Complete(output.Styledf(output.StyleFailure, "%s - Cannot be fixed automatically.", category.Name))
+		complete(output.EmojiFailure, output.StyleFailure, "Cannot be fixed automatically.")
 		return false
 	}
 
@@ -443,15 +449,14 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, category *C
 	var unmetDependencies []string
 	for _, d := range category.DependsOn {
 		if met, exists := results.categories[d]; !exists {
-			pending.Complete(output.Styledf(output.StyleFailure, "%s - Required check category %q not found", category.Name, d))
+			complete(output.EmojiFailure, output.StyleFailure, "Required check category %q not found", d)
 			return false
 		} else if !met {
-			unmetDependencies = append(unmetDependencies, d)
+			unmetDependencies = append(unmetDependencies, fmt.Sprintf("%q", d))
 		}
 	}
 	if len(unmetDependencies) > 0 {
-		pending.Complete(output.Styledf(output.StyleFailure, "%s - Required dependencies %s not met.",
-			category.Name, strings.Join(unmetDependencies, ", ")))
+		complete(output.EmojiFailure, output.StyleFailure, "Required dependencies %s not met.", strings.Join(unmetDependencies, ", "))
 		return false
 	}
 
@@ -470,36 +475,34 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, category *C
 
 		// Otherwise, check if this is fixable at all
 		if c.Fix == nil {
-			pending.WriteLine(output.Styledf(output.StyleGrey, "%s cannot be fixed automatically.", c.Name))
+			pending.WriteLine(output.Styledf(output.StyleGrey, "%q cannot be fixed automatically.", c.Name))
 			continue
 		}
 
 		// Attempt fix. Get new args because things might have changed due to another
 		// fix being run.
-		pending.VerboseLine(output.Styledf(output.StylePending, "Trying to fix %s...", c.Name))
+		pending.VerboseLine(output.Styledf(output.StylePending, "Trying to fix %q...", c.Name))
 		if err := c.Fix(ctx, cio, args); err != nil {
-			pending.WriteLine(output.Styledf(output.StyleWarning, "Failed to fix %s: %s", c.Name, err.Error()))
+			pending.WriteLine(output.Styledf(output.StyleWarning, "Failed to fix %q: %s", c.Name, err.Error()))
 			fixFailed = true
 			continue
 		}
 
-		pending.WriteLine(output.Styledf(output.StylePending, "Ran fix for %s!", c.Name))
-
 		// Check is the fix worked
 		if err := c.RunCheck(ctx, cio, args); err != nil {
-			pending.WriteLine(output.Styledf(output.StyleWarning, "Check %s still failing: %s",
-				category.Name, c.Name, err.Error()))
+			pending.WriteLine(output.Styledf(output.StyleWarning, "Check %q still failing: %s",
+				c.Name, err.Error()))
 			fixFailed = true
 		}
 	}
 
 	if fixFailed {
-		pending.Complete(output.Styledf(output.StyleFailure, "%s - Fixes failed", category.Name))
+		complete(output.EmojiFailure, output.StyleFailure, "Fixes failed")
 	} else {
-		pending.Complete(output.Styledf(output.StyleSuccess, "%s - Done", category.Name))
+		complete(output.EmojiSuccess, output.StyleSuccess, "Done!")
 	}
 
-	return fixFailed
+	return !fixFailed
 }
 
 func waitForReturn() { fmt.Scanln() }
