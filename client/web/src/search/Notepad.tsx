@@ -11,7 +11,7 @@ import React, {
 } from 'react'
 
 import classNames from 'classnames'
-import type {LocationDescriptorObject} from 'history'
+import type { LocationDescriptorObject } from 'history'
 import BookPlusOutlineIcon from 'mdi-react/BookPlusOutlineIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
@@ -624,7 +624,12 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
 
 function getUIComponentsForEntry(
     entry: NotepadEntry | NotepadEntryInput
-): { icon: React.ReactElement; title: React.ReactElement; location: LocationDescriptorObject | string; body?: React.ReactElement } {
+): {
+    icon: React.ReactElement
+    title: React.ReactElement
+    location: LocationDescriptorObject | string
+    body?: React.ReactElement
+} {
     switch (entry.type) {
         case 'search':
             return {
