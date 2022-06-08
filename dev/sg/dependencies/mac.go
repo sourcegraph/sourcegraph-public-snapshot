@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/sourcegraph/run"
 
@@ -85,8 +84,6 @@ var Mac = []category{
 				Check: checkAction(check.Combine(
 					check.WrapErrMessage(check.InPath("docker"),
 						"if Docker is installed and the check fails, you might need to restart terminal and 'sg setup'"),
-					check.WrapErrMessage(check.CommandOutputContains("docker ps", "CONTAINER ID"),
-						"you may need to start Docker.app"),
 				)),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					// TODO stream lines
@@ -96,32 +93,7 @@ var Mac = []category{
 
 					cio.Verbose("Docker installed - attempting to start docker")
 
-					err := usershell.Cmd(ctx, "open --hide --background /Applications/Docker.app").Run()
-					if err != nil {
-						return err
-					}
-
-					cio.Verbose("Waiting for docker to start up...")
-					t := time.NewTicker(3 * time.Second)
-					var iters int
-					waitCtx, cancel := context.WithTimeout(ctx, 3*time.Minute)
-					defer cancel()
-					for {
-						select {
-						case <-waitCtx.Done():
-							return waitCtx.Err()
-						case <-t.C:
-							iters += 1
-							err := check.CommandOutputContains("docker ps", "CONTAINER ID")(ctx)
-							if err == nil {
-								return nil
-							}
-
-							if iters%3 == 0 {
-								cio.Verbosef("Docker not yet started: %s", err.Error())
-							}
-						}
-					}
+					return usershell.Cmd(ctx, "open --hide --background /Applications/Docker.app").Run()
 				},
 			},
 		},
