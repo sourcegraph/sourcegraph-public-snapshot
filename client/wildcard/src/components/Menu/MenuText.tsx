@@ -13,7 +13,7 @@ export interface MenuTextProps {}
  * in and/or outside the Menu context.
  */
 export const MenuText = React.forwardRef(({ children, as: Component = 'div', className, ...props }, reference) => (
-    <Component ref={reference} {...props} className={classNames(styles.dropdownItem, className)}>
+    <Component role="menuitem" ref={reference} {...props} className={classNames(styles.dropdownItem, className)}>
         {children}
     </Component>
 )) as ForwardReferenceComponent<'div', MenuTextProps>
