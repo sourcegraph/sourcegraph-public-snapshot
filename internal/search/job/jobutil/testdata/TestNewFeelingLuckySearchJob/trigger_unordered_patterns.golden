@@ -157,7 +157,7 @@
           "AlternateQueries": [
             {
               "Description": "AND patterns together",
-              "Query": "(parse and func)",
+              "Query": "(parse AND func)",
               "PatternType": 1
             }
           ]
