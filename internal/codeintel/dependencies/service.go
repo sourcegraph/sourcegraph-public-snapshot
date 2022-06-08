@@ -50,38 +50,6 @@ func newService(
 	}
 }
 
-// func (s *Service) preciseDependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependencyRevs map[api.RepoName]types.RevSpecSet, err error) {
-//
-// 	dependencyRevs = map[api.RepoName]types.RevSpecSet{}
-// 	for k, v := range repoRevs {
-// 		// Resolve the revhashes for the source repo-commit pairs.
-// 		// TODO - Process unresolved commits.
-// 		thisDependencyRevs := make(map[api.RepoName]types.RevSpecSet)
-// 		repoCommits, _, err := s.resolveRepoCommits(ctx, map[api.RepoName]types.RevSpecSet{k: v})
-// 		if err != nil {
-// 			return nil, err
-// 		}
-//
-// 		for _, repoCommit := range repoCommits {
-// 			// TODO - batch these requests in the store layer
-// 			preciseDeps, err := s.dependenciesStore.PreciseDependencies(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit)
-// 			if err != nil {
-// 				return nil, errors.Wrap(err, "store.PreciseDependencies")
-// 			}
-//
-// 			for repoName, commits := range preciseDeps {
-// 				if _, ok := thisDependencyRevs[repoName]; !ok {
-// 					thisDependencyRevs[repoName] = types.RevSpecSet{}
-// 				}
-// 				for commit := range commits {
-// 					thisDependencyRevs[repoName][commit] = struct{}{}
-// 				}
-// 			}
-// 		}
-// 		dependencyRevs = intersect(dependencyRevs, thisDependencyRevs)
-// 	}
-// }
-
 // Dependencies resolves the (transitive) dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
 func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependencyRevs map[api.RepoName]types.RevSpecSet, err error) {
@@ -92,12 +60,9 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		}})
 	}()
 
-	intersect := func(a []shared.PackageDependency, b []shared.PackageDependency) (res []shared.PackageDependency) {
-		if a == nil {
-			return b
-		}
-		if b == nil {
-			return a
+	intersectPackageDependencies := func(a []shared.PackageDependency, b []shared.PackageDependency) (res []shared.PackageDependency) {
+		if a == nil || b == nil {
+			return nil
 		}
 		depSet := make(map[string]struct{}, len(a))
 		for _, aa := range a {
@@ -112,6 +77,7 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 	}
 
 	var deps []shared.PackageDependency
+	first := true
 	for k, v := range repoRevs {
 		// Resolve the revhashes for the source repo-commit pairs.
 		// TODO - Process unresolved commits.
@@ -122,7 +88,12 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 
 		// Parse lockfile contents for the given repository and revision pairs
 		d, err := s.lockfileDependencies(ctx, repoCommits)
-		deps = intersect(deps, d)
+		if first {
+			first = false
+			deps = d
+		} else {
+			deps = intersectPackageDependencies(deps, d)
+		}
 	}
 
 	hash := func(dep Repo) string {
@@ -183,24 +154,87 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		return dependencyRevs, nil
 	}
 
-	// for _, repoCommit := range repoCommits {
-	// 	// TODO - batch these requests in the store layer
-	// 	preciseDeps, err := s.dependenciesStore.PreciseDependencies(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit)
-	// 	if err != nil {
-	// 		return nil, errors.Wrap(err, "store.PreciseDependencies")
-	// 	}
-	//
-	// 	for repoName, commits := range preciseDeps {
-	// 		if _, ok := dependencyRevs[repoName]; !ok {
-	// 			dependencyRevs[repoName] = types.RevSpecSet{}
-	// 		}
-	// 		for commit := range commits {
-	// 			dependencyRevs[repoName][commit] = struct{}{}
-	// 		}
-	// 	}
-	// }
+	var preciseDependencyRevs map[api.RepoName]types.RevSpecSet
+	first = true
+	for k, v := range repoRevs {
+
+		d := make(map[api.RepoName]types.RevSpecSet)
+
+		// Resolve the revhashes for the source repo-commit pairs.
+		// TODO - Process unresolved commits.
+		repoCommits, _, err := s.resolveRepoCommits(ctx, map[api.RepoName]types.RevSpecSet{k: v})
+		if err != nil {
+			return nil, err
+		}
+
+		for _, repoCommit := range repoCommits {
+			// TODO - batch these requests in the store layer
+			preciseDeps, err := s.dependenciesStore.PreciseDependencies(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit)
+			if err != nil {
+				return nil, errors.Wrap(err, "store.PreciseDependencies")
+			}
+
+			for repoName, commits := range preciseDeps {
+				if _, ok := d[repoName]; !ok {
+					d[repoName] = types.RevSpecSet{}
+				}
+				for commit := range commits {
+					d[repoName][commit] = struct{}{}
+				}
+			}
+			if first {
+				preciseDependencyRevs = d
+			} else {
+				preciseDependencyRevs = intersectDependencyRevs(preciseDependencyRevs, d)
+			}
+		}
+	}
+
+	// enrich the dependency revs coming from the lockfiles with the dependency revs
+	// coming from precise indexing. This operation is purely additive. The
+	// assumption is that precise indexing might have found transitive dependencies
+	// that lockfiles parsing didn't.
+	for k, v := range preciseDependencyRevs {
+		if _, ok := dependencyRevs[k]; ok {
+			for revSpecs := range v {
+				dependencyRevs[k][revSpecs] = struct{}{}
+			}
+		} else {
+			dependencyRevs[k] = v
+		}
+	}
 
 	return dependencyRevs, nil
+}
+
+func intersectDependencyRevs(a map[api.RepoName]types.RevSpecSet, b map[api.RepoName]types.RevSpecSet) (c map[api.RepoName]types.RevSpecSet) {
+	c = make(map[api.RepoName]types.RevSpecSet)
+
+	intersectRevSpecSet := func(a types.RevSpecSet, b types.RevSpecSet) (c types.RevSpecSet) {
+		c = make(map[api.RevSpec]struct{})
+		for bb := range b {
+			if _, ok := a[bb]; ok {
+				c[bb] = struct{}{}
+			}
+		}
+		return c
+	}
+
+	if a == nil {
+		return b
+	}
+	if b == nil {
+		return a
+	}
+
+	for bb := range b {
+		if v, ok := a[bb]; ok {
+			if intersection := intersectRevSpecSet(v, b[bb]); len(intersection) > 0 {
+				c[bb] = intersection
+			}
+		}
+	}
+	return c
 }
 
 type repoCommitResolvedCommit struct {

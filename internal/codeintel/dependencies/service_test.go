@@ -45,13 +45,13 @@ func TestDependencies(t *testing.T) {
 
 	mockStore.PreciseDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName, commit string) (map[api.RepoName]types.RevSpecSet, error) {
 		switch repoName {
-		case "github.com/example/baz":
+		case "github.com/example/foo":
 			return map[api.RepoName]types.RevSpecSet{
 				api.RepoName(fmt.Sprintf("%s-depA", repoName)): {"deadbeef1": struct{}{}},
 				api.RepoName(fmt.Sprintf("%s-depB", repoName)): {"deadbeef2": struct{}{}},
 				api.RepoName(fmt.Sprintf("%s-depC", repoName)): {"deadbeef3": struct{}{}},
 			}, nil
-		case "github.com/example/quux":
+		case "github.com/example/bar":
 			return map[api.RepoName]types.RevSpecSet{
 				api.RepoName(fmt.Sprintf("%s-depA", repoName)): {"deadbeef1": struct{}{}},
 				api.RepoName(fmt.Sprintf("%s-depB", repoName)): {"deadbeef2": struct{}{}},
@@ -77,18 +77,18 @@ func TestDependencies(t *testing.T) {
 		return filtered, nil
 	})
 
-	// Return canned dependencies for repo `baz`
-	mockStore.LockfileDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName, commit string) ([]shared.PackageDependency, bool, error) {
-		if repoName != "github.com/example/baz" {
-			return nil, false, nil
-		}
-
-		return []shared.PackageDependency{
-			shared.TestPackageDependencyLiteral("npm/leftpad", "1", "2", "3", "4"),
-			shared.TestPackageDependencyLiteral("npm/rightpad", "2", "3", "4", "5"),
-			shared.TestPackageDependencyLiteral("npm/centerpad", "3", "4", "5", "6"),
-		}, true, nil
-	})
+	// // Return canned dependencies for repo `baz`
+	// mockStore.LockfileDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName, commit string) ([]shared.PackageDependency, bool, error) {
+	// 	if repoName != "github.com/example/baz" {
+	// 		return nil, false, nil
+	// 	}
+	//
+	// 	return []shared.PackageDependency{
+	// 		shared.TestPackageDependencyLiteral("npm/leftpad", "1", "2", "3", "4"),
+	// 		shared.TestPackageDependencyLiteral("npm/rightpad", "2", "3", "4", "5"),
+	// 		shared.TestPackageDependencyLiteral("npm/centerpad", "3", "4", "5", "6"),
+	// 	}, true, nil
+	// })
 
 	// GetCommits returns the same values as input; no errors
 	gitService.GetCommitsFunc.SetDefaultHook(func(ctx context.Context, repoCommits []api.RepoCommit, _ bool) (commits []*gitdomain.Commit, _ error) {
@@ -100,15 +100,20 @@ func TestDependencies(t *testing.T) {
 
 	// Return archive dependencies for repos `foo` and `bar`
 	lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]reposource.PackageDependency, error) {
-		if repoName != "github.com/example/foo" && repoName != "github.com/example/bar" {
-			return nil, nil
+		switch repoName {
+		case "github.com/example/foo":
+			return []reposource.PackageDependency{
+				&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g1", ArtifactID: "a1"}, Version: "1"},
+				&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g2", ArtifactID: "a2"}, Version: "2"},
+				&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g3", ArtifactID: "a3"}, Version: "3"},
+			}, nil
+		case "github.com/example/bar":
+			return []reposource.PackageDependency{
+				&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g1", ArtifactID: "a1"}, Version: "1"},
+				&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g2", ArtifactID: "a2"}, Version: "4"},
+			}, nil
 		}
-
-		return []reposource.PackageDependency{
-			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g1", ArtifactID: "a1"}, Version: fmt.Sprintf("1-%s-%s", repoName, rev)},
-			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g2", ArtifactID: "a2"}, Version: fmt.Sprintf("2-%s-%s", repoName, rev)},
-			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g3", ArtifactID: "a3"}, Version: fmt.Sprintf("3-%s-%s", repoName, rev)},
-		}, nil
+		return nil, nil
 	})
 
 	repoRevs := map[api.RepoName]types.RevSpecSet{
@@ -120,10 +125,10 @@ func TestDependencies(t *testing.T) {
 			api.RevSpec("deadbeef3"): struct{}{},
 			api.RevSpec("deadbeef4"): struct{}{},
 		},
-		api.RepoName("github.com/example/baz"): {
-			api.RevSpec("deadbeef5"): struct{}{},
-			api.RevSpec("deadbeef6"): struct{}{},
-		},
+		// api.RepoName("github.com/example/baz"): {
+		// 	api.RevSpec("deadbeef5"): struct{}{},
+		// 	api.RevSpec("deadbeef6"): struct{}{},
+		// },
 	}
 	dependencies, err := service.Dependencies(ctx, repoRevs)
 	if err != nil {
@@ -132,33 +137,18 @@ func TestDependencies(t *testing.T) {
 
 	expectedDepencies := map[api.RepoName]types.RevSpecSet{
 		// From precise dependencies
-		"github.com/example/baz-depA": {"deadbeef1": struct{}{}},
-		"github.com/example/baz-depB": {"deadbeef2": struct{}{}},
-		"github.com/example/baz-depC": {"deadbeef3": struct{}{}},
+		"github.com/example/foo-depA": {"deadbeef1": struct{}{}},
+		"github.com/example/foo-depB": {"deadbeef2": struct{}{}},
+		"github.com/example/foo-depC": {"deadbeef3": struct{}{}},
 
 		// From store
-		("npm/leftpad"):   {"1": struct{}{}},
-		("npm/rightpad"):  {"2": struct{}{}},
-		("npm/centerpad"): {"3": struct{}{}},
-
+		// ("npm/leftpad"):   {"1": struct{}{}},
+		// ("npm/rightpad"):  {"2": struct{}{}},
+		// ("npm/centerpad"): {"3": struct{}{}},
+		//
 		// From lockfiles
 		"maven/g1/a1": {
-			"v1-github.com/example/bar-deadbeef3": struct{}{},
-			"v1-github.com/example/bar-deadbeef4": struct{}{},
-			"v1-github.com/example/foo-deadbeef1": struct{}{},
-			"v1-github.com/example/foo-deadbeef2": struct{}{},
-		},
-		"maven/g2/a2": {
-			"v2-github.com/example/bar-deadbeef3": struct{}{},
-			"v2-github.com/example/bar-deadbeef4": struct{}{},
-			"v2-github.com/example/foo-deadbeef1": struct{}{},
-			"v2-github.com/example/foo-deadbeef2": struct{}{},
-		},
-		"maven/g3/a3": {
-			"v3-github.com/example/bar-deadbeef3": struct{}{},
-			"v3-github.com/example/bar-deadbeef4": struct{}{},
-			"v3-github.com/example/foo-deadbeef1": struct{}{},
-			"v3-github.com/example/foo-deadbeef2": struct{}{},
+			"1": struct{}{},
 		},
 	}
 	if diff := cmp.Diff(expectedDepencies, dependencies); diff != "" {
@@ -399,4 +389,55 @@ func testService(store store.Store, gitService localGitService, lockfilesService
 		semaphore.NewWeighted(100),
 		&observation.TestContext,
 	)
+}
+
+func TestIntersectDependencyRevs(t *testing.T) {
+	mkRevSpecSet := func(revSpecs ...string) types.RevSpecSet {
+		out := make(map[api.RevSpec]struct{}, len(revSpecs))
+		for _, rs := range revSpecs {
+			out[api.RevSpec(rs)] = struct{}{}
+		}
+		return out
+	}
+
+	tests := []struct {
+		a    map[api.RepoName]types.RevSpecSet
+		b    map[api.RepoName]types.RevSpecSet
+		want map[api.RepoName]types.RevSpecSet
+	}{
+		{
+			a:    map[api.RepoName]types.RevSpecSet{"repoA": mkRevSpecSet("a", "b", "c")},
+			b:    map[api.RepoName]types.RevSpecSet{"repoA": mkRevSpecSet("b", "d", "e")},
+			want: map[api.RepoName]types.RevSpecSet{"repoA": mkRevSpecSet("b")},
+		},
+		{
+			a:    map[api.RepoName]types.RevSpecSet{"repoA": mkRevSpecSet("a"), "repoB": mkRevSpecSet("b", "c"), "repoC": mkRevSpecSet("a")},
+			b:    map[api.RepoName]types.RevSpecSet{"repoA": mkRevSpecSet("b"), "repoB": mkRevSpecSet("a", "b"), "repoD": mkRevSpecSet("a")},
+			want: map[api.RepoName]types.RevSpecSet{"repoB": mkRevSpecSet("b")},
+		},
+		{
+			a:    nil,
+			b:    map[api.RepoName]types.RevSpecSet{"repoA": mkRevSpecSet("a"), "repoB": mkRevSpecSet("b", "c"), "repoC": mkRevSpecSet("a")},
+			want: map[api.RepoName]types.RevSpecSet{"repoA": mkRevSpecSet("a"), "repoB": mkRevSpecSet("b", "c"), "repoC": mkRevSpecSet("a")},
+		},
+		{
+			a:    map[api.RepoName]types.RevSpecSet{"repoA": mkRevSpecSet("a"), "repoB": mkRevSpecSet("b", "c"), "repoC": mkRevSpecSet("a")},
+			b:    nil,
+			want: map[api.RepoName]types.RevSpecSet{"repoA": mkRevSpecSet("a"), "repoB": mkRevSpecSet("b", "c"), "repoC": mkRevSpecSet("a")},
+		},
+		{
+			a:    nil,
+			b:    nil,
+			want: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
+			got := intersectDependencyRevs(tt.a, tt.b)
+			if h := cmp.Diff(tt.want, got); h != "" {
+				t.Fatalf("-want, +got:\n%s", h)
+			}
+		})
+	}
 }
