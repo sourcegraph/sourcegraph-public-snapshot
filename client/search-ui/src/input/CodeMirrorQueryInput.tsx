@@ -49,7 +49,7 @@ import { MonacoQueryInputProps } from './MonacoQueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'
 
-const replacePattern = /[\n\r↵]/g
+const replacePattern = /[\n\r↵]+/g
 
 /**
  * This component provides a drop-in replacement for MonacoQueryInput. It
@@ -379,10 +379,10 @@ const singleLine = EditorState.transactionFilter.of(transaction => {
     while ((match = lineBreakPattern.exec(newText))) {
         // Insert space for line breaks following non-whitespace characters
         if (match.index > 0 && !/\s/.test(newText[match.index - 1])) {
-            changes.push({ from: match.index, to: match.index + 1, insert: ' ' })
+            changes.push({ from: match.index, to: match.index + match[0].length, insert: ' ' })
         } else {
             // Otherwise remove it
-            changes.push({ from: match.index, to: match.index + 1 })
+            changes.push({ from: match.index, to: match.index + match[0].length })
         }
     }
 
