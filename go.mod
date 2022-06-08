@@ -20,12 +20,12 @@ require (
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/sourcegraph/scip v0.1.0
-	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220603221327-79226578ec33
+	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220607233325-c482e0e3d7a1
 	github.com/stretchr/testify v1.7.1
 	golang.org/x/net v0.0.0-20220526153639-5463443f8c37
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	google.golang.org/protobuf v1.28.0
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	gopkg.in/yaml.v3 v3.0.1
 	jaytaylor.com/html2text v0.0.0-20200412013138-3577fbdbcff7
 )
 
@@ -101,7 +101,7 @@ require (
 	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.10 // indirect
-	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
+	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
 	google.golang.org/genproto v0.0.0-20220414192740-2d67ff6cf2b4 // indirect
 	google.golang.org/grpc v1.45.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
