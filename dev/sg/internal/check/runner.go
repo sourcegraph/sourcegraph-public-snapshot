@@ -506,28 +506,35 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 
 		// Skip
 		if err := c.IsEnabled(ctx, cio, args); err != nil {
-			pending.WriteLine(output.Styledf(output.StyleGrey, "%q skipped: %s", c.Name, err.Error()))
+			pending.WriteLine(output.Linef(output.EmojiQuestionMark, output.CombineStyles(output.StyleGrey, output.StyleBold),
+				"%q skipped: %s", c.Name, err.Error()))
 			continue
 		}
 
 		// Otherwise, check if this is fixable at all
 		if c.Fix == nil {
-			pending.WriteLine(output.Styledf(output.StyleGrey, "%q cannot be fixed automatically.", c.Name))
+			pending.WriteLine(output.Linef(output.EmojiShrug, output.CombineStyles(output.StyleWarning, output.StyleBold),
+				"%q cannot be fixed automatically.", c.Name))
 			continue
 		}
 
 		// Attempt fix. Get new args because things might have changed due to another
 		// fix being run.
-		pending.VerboseLine(output.Styledf(output.StylePending, "Fixing %q...", c.Name))
+		pending.VerboseLine(output.Linef(output.EmojiAsterisk, output.StylePending,
+			"Fixing %q...", c.Name))
 		if err := c.Fix(ctx, cio, args); err != nil {
-			pending.WriteLine(output.Linef(output.EmojiWarning, output.StyleFailure, "Failed to fix %q: %s", c.Name, err.Error()))
+			pending.WriteLine(output.Linef(output.EmojiWarning, output.CombineStyles(output.StyleFailure, output.StyleBold),
+				"Failed to fix %q: %s", c.Name, err.Error()))
 			continue
 		}
 
 		// Check is the fix worked
 		if err := c.Update(ctx, cio, args); err != nil {
-			pending.WriteLine(output.Styledf(output.StyleWarning, "Check %q still failing: %s",
+			pending.WriteLine(output.Styledf(output.CombineStyles(output.StyleWarning, output.StyleBold), "Check %q still failing: %s",
 				c.Name, err.Error()))
+		} else {
+			pending.WriteLine(output.Styledf(output.CombineStyles(output.StyleSuccess, output.StyleBold),
+				"Check %q is satisfied now!", c.Name))
 		}
 	}
 
