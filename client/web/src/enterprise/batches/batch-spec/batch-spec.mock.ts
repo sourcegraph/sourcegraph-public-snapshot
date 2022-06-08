@@ -24,6 +24,7 @@ import {
 import { EXECUTORS, IMPORTING_CHANGESETS, WORKSPACES, WORKSPACE_RESOLUTION_STATUS } from '../create/backend'
 
 import helloWorldSample from './edit/library/hello-world.batch.yaml'
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 
 const now = new Date()
 
@@ -70,6 +71,7 @@ export const mockFullBatchSpec = (batchSpec?: Partial<BatchSpecExecutionFields>)
     __typename: 'BatchSpec',
     id: '1',
     state: BatchSpecState.PENDING,
+    source: BatchSpecSource.REMOTE,
     originalInput: 'name: my-batch-change',
     createdAt: now.toISOString(),
     startedAt: null,
