@@ -21,10 +21,14 @@ var (
 
 	// Int constructs a field with the given key and value.
 	Int = zap.Int
-	// Ints constructs a field that carries a slice of integers.
-	Ints = zap.Ints
+	// Int32 constructs a field with the given key and value.
+	Int32 = zap.Int32
 	// Int64 constructs a field with the given key and value.
 	Int64 = zap.Int64
+	// Ints constructs a field that carries a slice of integers.
+	Ints = zap.Ints
+	// Int32s constructs a field that carries a slice of 32 bit integers.
+	Int32s = zap.Int32s
 
 	// Uint constructs a field with the given key and value.
 	Uint = zap.Uint
@@ -75,5 +79,5 @@ func NamedError(key string, err error) Field {
 	if err == nil {
 		return String(key, "<nil>")
 	}
-	return String(key, err.Error())
+	return zap.NamedError(key, &encoders.ErrorEncoder{Source: err})
 }

@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func SetupSqlite(observationContext *observation.Context, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
@@ -48,7 +49,9 @@ func SetupSqlite(observationContext *observation.Context, gitserverClient gitser
 		os.Exit(0)
 	}
 
-	parserFactory := func() (ctags.Parser, error) { return parser.SpawnCtags(config.Ctags) }
+	parserFactory := func() (ctags.Parser, error) {
+		return parser.SpawnCtags(sglog.Scoped("ctags", "ctags processes"), config.Ctags)
+	}
 	parserPool, err := parser.NewParserPool(parserFactory, config.NumCtagsProcesses)
 	if err != nil {
 		log.Fatalf("Failed to create parser pool: %s", err)

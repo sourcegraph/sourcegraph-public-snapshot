@@ -504,8 +504,18 @@ func testUserFlags(t *testing.T) {
 		f1 := mkFFBool("f1", true)
 		mkUserOverride(u1.ID, "f1", false)
 
+		called := false
+		oldClearRedisCache := clearRedisCache
+		clearRedisCache = func(flagName string) {
+			if flagName == f1.Name {
+				called = true
+			}
+		}
+		t.Cleanup(func() { clearRedisCache = oldClearRedisCache })
+
 		err := flagStore.DeleteFeatureFlag(ctx, f1.Name)
 		require.NoError(t, err)
+		require.True(t, called)
 
 		flags, err := flagStore.GetFeatureFlags(ctx)
 		require.NoError(t, err)
