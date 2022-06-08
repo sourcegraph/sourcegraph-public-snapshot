@@ -14,17 +14,19 @@ import (
 
 var setupCommandV2 = &cli.Command{
 	Name:     "setupv2",
-	Usage:    "Set up your local dev environment!",
+	Usage:    "Validate and set up your local dev environment!",
 	Category: CategoryEnv,
 	Hidden:   true, // experimental
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
-			Name:  "check",
-			Usage: "Run checks and report setup state",
+			Name:    "check",
+			Aliases: []string{"c"},
+			Usage:   "Run checks and report setup state",
 		},
 		&cli.BoolFlag{
-			Name:  "fix",
-			Usage: "Fix all checks",
+			Name:    "fix",
+			Aliases: []string{"f"},
+			Usage:   "Fix all checks",
 		},
 		&cli.BoolFlag{
 			Name:  "oss",
@@ -68,12 +70,12 @@ var setupCommandV2 = &cli.Command{
 		default:
 			// Prompt for details if flags are not set
 			if !cmd.IsSet("oss") {
-				std.Out.WriteNoticef("Are you a Sourcegraph teammate? (Y/n) ")
+				std.Out.Promptf("Are you a Sourcegraph teammate? (y/n)")
 				var s string
 				if _, err := fmt.Scan(&s); err != nil {
 					return err
 				}
-				args.Teammate = s == "Y"
+				args.Teammate = s == "y"
 			}
 			return setup.Interactive(cmd.Context, args)
 		}

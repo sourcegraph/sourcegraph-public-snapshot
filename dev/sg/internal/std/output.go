@@ -144,3 +144,10 @@ func (o *Output) WriteAlertf(fmtStr string, args ...any) {
 func (o *Output) WriteNoticef(fmtStr string, args ...any) {
 	o.writeExpanded(output.Linef(output.EmojiFingerPointRight, output.StyleBold, fmtStr, args...))
 }
+
+// Promptf prints a prompt for user input, and should be followed by an fmt.Scan or similar.
+func (o *Output) Promptf(fmtStr string, args ...any) {
+	l := output.Linef(output.EmojiFingerPointRight, output.StyleBold, fmtStr, args...)
+	l.Prompt = true
+	o.WriteLine(l)
+}

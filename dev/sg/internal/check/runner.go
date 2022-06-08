@@ -288,7 +288,7 @@ func (r *Runner[Args]) getNumberOutOf(numbers []int) (int, error) {
 	}
 
 	for {
-		r.out.Writef("[%s]: ", strings.Join(strs, ","))
+		r.out.Promptf("[%s]:", strings.Join(strs, ","))
 		var num int
 		_, err := fmt.Fscan(r.in, &num)
 		if err != nil {
@@ -368,7 +368,7 @@ func (r *Runner[Args]) getChoice(choices map[int]string) (int, error) {
 			r.out.Writef("%s[%d]%s: %s", output.StyleBold, num, output.StyleReset, desc)
 		}
 
-		r.out.Write("Enter choice: ")
+		r.out.Promptf("Enter choice:")
 		var s int
 		_, err := fmt.Fscan(r.in, &s)
 		if err != nil {
