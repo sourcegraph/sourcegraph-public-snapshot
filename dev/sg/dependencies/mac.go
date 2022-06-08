@@ -2,11 +2,14 @@ package dependencies
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -275,10 +278,37 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 			{
 				Name:  "1password",
 				Check: checkAction(check1password()),
-				Fix: cmdFixes(
-					"brew install --cask 1password/tap/1password-cli",
-					"eval $(op account add --address team-sourcegraph.1password.com --signin)",
-				),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if err := usershell.Run(ctx, "brew install --cask 1password/tap/1password-cli").StreamLines(cio.Verbose); err != nil {
+						return err
+					}
+					if cio.Input == nil {
+						return errors.New("interactive input required")
+					}
+
+					cio.Write("Enter secret key:")
+					var key string
+					if _, err := fmt.Fscan(cio.Input, &key); err != nil {
+						return err
+					}
+					cio.Write("Enter account email:")
+					var email string
+					if _, err := fmt.Fscan(cio.Input, &email); err != nil {
+						return err
+					}
+					cio.Write("Enter account password:")
+					var password string
+					if _, err := fmt.Fscan(cio.Input, &password); err != nil {
+						return err
+					}
+
+					return usershell.Command(ctx,
+						"op account add --signin --address team-sourcegraph.1password.com --email", email).
+						Env(map[string]string{"OP_SECRET_KEY": key}).
+						Input(strings.NewReader(password)).
+						Run().
+						StreamLines(cio.Verbose)
+				},
 			},
 		},
 	},
