@@ -41,7 +41,7 @@ Trivy,Adopt,Tooling,TRUE,
 HackerOne,Adopt,Tooling,FALSE,
 Executors,Adopt,Backend,TRUE,
 stretchr/testify,Trial,Backend,TRUE,"mostly using for better assertions at this point"
-Java,Adopt,Language,True,"JetBrains extension"
+Java,Adopt,Languages,TRUE,"JetBrains extension"
 Gradle,Adopt,Tooling,TRUE,"JetBrains extension"
 RxJS,Adopt,Frontend,TRUE,
 Yarn,Adopt,Frontend,TRUE,
