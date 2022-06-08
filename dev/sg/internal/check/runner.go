@@ -79,11 +79,8 @@ func (r *Runner[Args]) Fix(
 	// Report what is still bust
 	failedCategories := []string{}
 	for _, category := range r.categories {
-		for _, c := range category.Checks {
-			if !c.IsMet() {
-				failedCategories = append(failedCategories, fmt.Sprintf("%q", category.Name))
-				break
-			}
+		if !category.IsSatisfied() {
+			failedCategories = append(failedCategories, fmt.Sprintf("%q", category.Name))
 		}
 	}
 	if len(failedCategories) > 0 {
@@ -208,7 +205,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 					continue
 				}
 
-				if err := c.RunCheck(ctx, cio, args); err != nil {
+				if err := c.Update(ctx, cio, args); err != nil {
 					failed = true
 					outStr := out.String()
 					if len(outStr) > 0 {
@@ -320,7 +317,7 @@ func (r *Runner[Args]) printCategoryHeaderAndDependencies(categoryIdx int, categ
 
 	for i, dep := range category.Checks {
 		idx := i + 1
-		if dep.IsMet() {
+		if dep.IsSatisfied() {
 			r.out.WriteSuccessf("%d. %s", idx, dep.Name)
 		} else {
 			if dep.checkErr != nil {
@@ -366,7 +363,7 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 		toFix := []int{}
 
 		for i, dep := range category.Checks {
-			if dep.IsMet() {
+			if dep.IsSatisfied() {
 				continue
 			}
 
@@ -409,7 +406,7 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 		pending := r.out.Pending(output.Styled(output.StylePending, "Determining status..."))
 		for _, dep := range category.Checks {
 			// update check state
-			_ = dep.RunCheck(ctx, IO{
+			_ = dep.Update(ctx, IO{
 				Input:  r.in,
 				Writer: pending,
 			}, args)
@@ -464,7 +461,7 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 	var fixFailed bool
 	for _, c := range category.Checks {
 		// If category is fixed, we are good to go
-		if c.IsMet() {
+		if c.IsSatisfied() {
 			continue
 		}
 
@@ -489,7 +486,7 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 		}
 
 		// Check is the fix worked
-		if err := c.RunCheck(ctx, cio, args); err != nil {
+		if err := c.Update(ctx, cio, args); err != nil {
 			pending.WriteLine(output.Styledf(output.StyleWarning, "Check %q still failing: %s",
 				c.Name, err.Error()))
 			fixFailed = true
