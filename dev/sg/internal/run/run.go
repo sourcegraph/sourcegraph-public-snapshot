@@ -307,6 +307,31 @@ var installFuncs = map[string]installFunc{
 
 		return download.ArchivedExecutable(ctx, url, target, "caddy")
 	},
+	"installJaeger": func(ctx context.Context, env map[string]string) error {
+		version := env["JAEGER_VERSION"]
+
+		// Make sure the data folder exists.
+		disk := env["JAEGER_DISK"]
+		if err := os.MkdirAll(disk, 0755); err != nil {
+			return err
+		}
+
+		if version == "" {
+			return errors.New("could not find JAEGER_VERSION in env")
+		}
+
+		root, err := root.RepositoryRoot()
+		if err != nil {
+			return err
+		}
+
+		archiveName := fmt.Sprintf("jaeger-%s-%s-%s", version, runtime.GOOS, runtime.GOARCH)
+		url := fmt.Sprintf("https://github.com/jaegertracing/jaeger/releases/download/v%s/%s.tar.gz", version, archiveName)
+
+		target := filepath.Join(root, fmt.Sprintf(".bin/jaeger-all-in-one-%s", version))
+
+		return download.ArchivedExecutable(ctx, url, target, fmt.Sprintf("%s/jaeger-all-in-one", archiveName))
+	},
 }
 
 func runWatch(

@@ -54,6 +54,7 @@ import {
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
+import { enableExtensionsDecorationsColumnViewFromSettings } from '../util/settings'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { findLanguageSpec } from './language-specs/languages'
@@ -660,6 +661,7 @@ const SideBlob: React.FunctionComponent<
             history={props.history}
             location={props.location}
             disableStatusBar={true}
+            disableDecorations={enableExtensionsDecorationsColumnViewFromSettings(props.settingsCascade)}
             wrapCode={true}
             className={styles.sideBlobCode}
             blobInfo={{

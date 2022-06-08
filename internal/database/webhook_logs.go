@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -32,13 +31,6 @@ type webhookLogStore struct {
 }
 
 var _ WebhookLogStore = &webhookLogStore{}
-
-func WebhookLogs(db dbutil.DB, key encryption.Key) *webhookLogStore {
-	return &webhookLogStore{
-		Store: basestore.NewWithDB(db, sql.TxOptions{}),
-		key:   key,
-	}
-}
 
 func WebhookLogsWith(other basestore.ShareableStore, key encryption.Key) *webhookLogStore {
 	return &webhookLogStore{

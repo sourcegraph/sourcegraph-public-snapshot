@@ -791,16 +791,16 @@ func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSou
 	return repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos
 }
 
-func toFeatures(flags featureflag.FlagSet) search.Features {
-	if flags == nil {
-		flags = featureflag.FlagSet{}
+func toFeatures(flagSet *featureflag.FlagSet) search.Features {
+	if flagSet == nil {
+		flagSet = &featureflag.FlagSet{}
 		metricFeatureFlagUnavailable.Inc()
 		log15.Warn("search feature flags are not available")
 	}
 
 	return search.Features{
-		ContentBasedLangFilters: flags.GetBoolOr("search-content-based-lang-detection", false),
-		HybridSearch:            flags.GetBoolOr("search-hybrid", false),
+		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
+		HybridSearch:            flagSet.GetBoolOr("search-hybrid", false),
 	}
 }
 

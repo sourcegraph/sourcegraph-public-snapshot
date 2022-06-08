@@ -22,7 +22,7 @@ export const MenuItem = React.forwardRef(({ children, className, disabled, ...pr
     const Component = disabled ? MenuDisabledItem : ReachMenuItem
 
     return (
-        <Component ref={reference} {...props} className={classNames('dropdown-item', styles.item, className)}>
+        <Component ref={reference} {...props} className={classNames(styles.dropdownItem, className)}>
             {children}
         </Component>
     )

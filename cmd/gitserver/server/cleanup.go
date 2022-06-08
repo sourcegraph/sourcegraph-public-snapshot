@@ -116,8 +116,9 @@ var (
 		Help: "whether git prune was a success (true/false) and whether it was skipped (true/false)",
 	}, []string{"success", "skipped"})
 	janitorTimer = promauto.NewHistogram(prometheus.HistogramOpts{
-		Name: "src_gitserver_janitor_duration_seconds",
-		Help: "Duration of gitserver janitor background job",
+		Name:    "src_gitserver_janitor_duration_seconds",
+		Help:    "Duration of gitserver janitor background job",
+		Buckets: []float64{0.1, 1, 10, 60, 300, 3600, 7200},
 	})
 )
 
@@ -144,10 +145,18 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	}()
 	defer janitorRunning.Set(0)
 	cleanupLogger := s.Logger.Scoped("cleanup", "cleanup operation")
-	gitServerAddressSet := map[string]struct{}{}
-	for _, server := range gitServerAddrs {
-		gitServerAddressSet[server] = struct{}{}
+
+	isKnownGitServerShard := false
+	for _, addr := range gitServerAddrs {
+		if s.hostnameMatch(addr) {
+			isKnownGitServerShard = true
+			break
+		}
 	}
+	if !isKnownGitServerShard {
+		s.Logger.Warn("current shard is not included in the list of known gitserver shards, will not delete repos", log.String("current-hostname", s.Hostname), log.Strings("all-shards", gitServerAddrs))
+	}
+
 	bCtx, bCancel := s.serverContext()
 	defer bCancel()
 
@@ -184,11 +193,7 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		if !s.hostnameMatch(addr) {
 			wrongShardRepoCount++
 			wrongShardRepoSize += size
-			if wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
-				if _, ok := gitServerAddressSet[s.Hostname]; !ok {
-					s.Logger.Warn("current shard is not included in the list of known gitserver shards, skipping", log.String("dir", string(dir)), log.String("current-shard", addr), log.Strings("all-shards", gitServerAddrs))
-					return false, nil
-				}
+			if isKnownGitServerShard && wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
 				s.Logger.Info("removing repo cloned on the wrong shard", log.String("dir", string(dir)), log.String("target-shard", addr), log.String("current-shard", s.Hostname), log.Int64("size-bytes", size))
 				if err := s.removeRepoDirectory(dir); err != nil {
 					return false, err

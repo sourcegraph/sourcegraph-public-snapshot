@@ -15,9 +15,11 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import TimelineClockOutlineIcon from 'mdi-react/TimelineClockOutlineIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
+import indicator from 'ordinal/indicator'
 import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Badge,
@@ -118,7 +120,11 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
     <>
         <div className="d-flex align-items-center justify-content-between mb-2">
             <H3 className={styles.workspaceName}>
-                <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />{' '}
+                <WorkspaceStateIcon
+                    cachedResultFound={workspace.cachedResultFound}
+                    state={workspace.state}
+                    className="flex-shrink-0"
+                />{' '}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace'
                     ? workspace.repository.name
                     : 'Workspace in hidden repository'}
@@ -319,29 +325,12 @@ const UnsupportedWorkspaceDetails: React.FunctionComponent<
     </>
 )
 
-const NumberInQueue: React.FunctionComponent<React.PropsWithChildren<{ number: number }>> = ({ number }) => {
-    let suffix: string
-    console.log('NumberInQueue', number, number % 10)
-    switch (number % 10) {
-        case 1:
-            suffix = 'st'
-            break
-        case 2:
-            suffix = 'nd'
-            break
-        case 3:
-            suffix = 'rd'
-            break
-        default:
-            suffix = 'th'
-    }
-    return (
-        <>
-            {number}
-            <sup>{suffix}</sup>
-        </>
-    )
-}
+const NumberInQueue: React.FunctionComponent<React.PropsWithChildren<{ number: number }>> = ({ number }) => (
+    <>
+        {number}
+        <sup>{indicator(number)}</sup>
+    </>
+)
 
 interface ChangesetSpecNodeProps extends ThemeProps {
     node: BatchSpecWorkspaceChangesetSpecFields
@@ -494,9 +483,11 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                     {step.diffStat && (
                         <DiffStat className={styles.stepDiffStat} {...step.diffStat} expandedCounts={true} />
                     )}
-                    <span className={classNames('text-monospace text-muted', styles.stepTime)}>
-                        <StepTimer step={step} />
-                    </span>
+                    {step.startedAt && (
+                        <span className={classNames('text-monospace text-muted', styles.stepTime)}>
+                            <StepTimer startedAt={step.startedAt} finishedAt={step.finishedAt} />
+                        </span>
+                    )}
                 </>
             }
         >
@@ -571,7 +562,11 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                         <Text className="mb-0">
                             <strong>
                                 Step has been skipped
-                                {cachedResultFound && <> because a cached result was found for this workspace</>}.
+                                {cachedResultFound && <> because a cached result was found for this workspace</>}
+                                {!cachedResultFound && step.cachedResultFound && (
+                                    <> because a cached result was found for this step</>
+                                )}
+                                .
                             </strong>
                         </Text>
                     )}
@@ -589,7 +584,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
         return (
             <Icon
                 role="img"
-                className="text-success"
+                className="text-success flex-shrink-0"
                 aria-label="A cached result for this step has been found"
                 data-tooltip="A cached result for this step has been found"
                 as={ContentSaveIcon}
@@ -600,7 +595,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
         return (
             <Icon
                 role="img"
-                className="text-muted"
+                className="text-muted flex-shrink-0"
                 aria-label="The step has been skipped"
                 data-tooltip="The step has been skipped"
                 as={LinkVariantRemoveIcon}
@@ -611,7 +606,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
         return (
             <Icon
                 role="img"
-                className="text-muted"
+                className="text-muted flex-shrink-0"
                 aria-label="This step is waiting to be processed"
                 data-tooltip="This step is waiting to be processed"
                 as={TimerSandIcon}
@@ -622,7 +617,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
         return (
             <Icon
                 role="img"
-                className="text-muted"
+                className="text-muted flex-shrink-0"
                 aria-label="This step is currently running"
                 data-tooltip="This step is currently running"
                 as={LoadingSpinner}
@@ -633,7 +628,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
         return (
             <Icon
                 role="img"
-                className="text-success"
+                className="text-success flex-shrink-0"
                 aria-label="This step ran successfully"
                 data-tooltip="This step ran successfully"
                 as={CheckBoldIcon}
@@ -643,7 +638,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
     return (
         <Icon
             role="img"
-            className="text-danger"
+            className="text-danger flex-shrink-0"
             aria-label={`This step failed with exit code ${String(step.exitCode)}`}
             data-tooltip={`This step failed with exit code ${String(step.exitCode)}`}
             as={AlertCircleIcon}
@@ -651,14 +646,10 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
     )
 }
 
-const StepTimer: React.FunctionComponent<React.PropsWithChildren<{ step: BatchSpecWorkspaceStepFields }>> = ({
-    step,
-}) => {
-    if (!step.startedAt) {
-        return null
-    }
-    return <Duration start={step.startedAt} end={step.finishedAt ?? undefined} />
-}
+const StepTimer: React.FunctionComponent<React.PropsWithChildren<{ startedAt: string; finishedAt: Maybe<string> }>> = ({
+    startedAt,
+    finishedAt,
+}) => <Duration start={startedAt} end={finishedAt ?? undefined} />
 
 interface WorkspaceStepFileDiffConnectionProps extends ThemeProps {
     workspaceID: Scalars['ID']

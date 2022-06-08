@@ -103,28 +103,28 @@ const getTemplates = () => {
     const releaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
-        path: 'content/departments/product-engineering/engineering/process/releases/release_issue_template.md',
+        path: 'content/departments/engineering/dev/process/releases/release_issue_template.md',
         titleSuffix: IssueTitleSuffix.RELEASE_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.RELEASE],
     }
     const patchReleaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
-        path: 'content/departments/product-engineering/engineering/process/releases/patch_release_issue_template.md',
+        path: 'content/departments/engineering/dev/process/releases/patch_release_issue_template.md',
         titleSuffix: IssueTitleSuffix.PATCH_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.PATCH],
     }
     const upgradeManagedInstanceIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
-        path: 'content/departments/product-engineering/engineering/process/releases/upgrade_managed_issue_template.md',
+        path: 'content/departments/engineering/dev/process/releases/upgrade_managed_issue_template.md',
         titleSuffix: IssueTitleSuffix.MANAGED_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED, IssueLabel.DEVOPS_TEAM],
     }
     const securityAssessmentIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
-        path: 'content/departments/product-engineering/engineering/process/releases/security_assessment.md',
+        path: 'content/departments/engineering/dev/process/releases/security_assessment.md',
         titleSuffix: IssueTitleSuffix.SECURITY_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.SECURITY_TEAM, IssueLabel.RELEASE_BLOCKER],
     }

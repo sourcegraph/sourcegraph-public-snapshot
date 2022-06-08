@@ -6,7 +6,8 @@ import { useCallbackRef, useMergeRefs } from 'use-callback-ref'
 
 import { useKeyboard, useOnClickOutside } from '../../../../hooks'
 import { ForwardReferenceComponent } from '../../../../types'
-import { PopoverContext } from '../../context'
+import { PopoverContext } from '../../contexts/internal-context'
+import { PopoverRoot } from '../../contexts/public-context'
 import { PopoverOpenEventReason } from '../../Popover'
 import { FloatingPanel, FloatingPanelProps } from '../floating-panel/FloatingPanel'
 
@@ -31,6 +32,8 @@ export const PopoverContent = forwardRef((props, reference) => {
     } = props
 
     const { isOpen: isOpenContext, targetElement, tailElement, anchor, setOpen } = useContext(PopoverContext)
+    const { renderRoot } = useContext(PopoverRoot)
+
     const [focusLock, setFocusLock] = useState(false)
 
     const [tooltipElement, setTooltipElement] = useState<HTMLDivElement | null>(null)
@@ -78,6 +81,7 @@ export const PopoverContent = forwardRef((props, reference) => {
             marker={tailElement}
             role={role}
             aria-modal={ariaModel}
+            rootRender={renderRoot}
             className={classNames(styles.popover, otherProps.className)}
         >
             {focusLocked ? (
