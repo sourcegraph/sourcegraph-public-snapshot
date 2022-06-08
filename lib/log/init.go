@@ -39,19 +39,7 @@ type PostInitializationCallbacks struct {
 // For testing, you can use 'logtest.Init' to initialize the logging library.
 //
 // If Init is not called, Get will panic.
-func Init(r Resource) (sync func() error) {
-	if globallogger.IsInitialized() {
-		panic("log.Init initialized multiple times")
-	}
-
-	level := zap.NewAtomicLevelAt(Level(os.Getenv(envSrcLogLevel)).Parse())
-	format := encoders.ParseOutputFormat(os.Getenv(envSrcLogFormat))
-	development := os.Getenv(envSrcDevelopment) == "true"
-
-	return globallogger.Init(r, level, format, development, nil)
-}
-
-func InitWithSinks(r Resource, s ...Sink) *PostInitializationCallbacks {
+func Init(r Resource, s ...Sink) *PostInitializationCallbacks {
 	if globallogger.IsInitialized() {
 		panic("log.Init initialized multiple times")
 	}

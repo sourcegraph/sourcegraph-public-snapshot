@@ -52,13 +52,13 @@ func main() {
 	env.HandleHelpFlag()
 	conf.Init()
 	logging.Init()
-	cb := log.InitWithSinks(log.Resource{
+	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	})
-	defer cb.Sync()
-	conf.Watch(cb.Update(conf.GetLogSinks))
+	defer liblog.Sync()
+	conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()

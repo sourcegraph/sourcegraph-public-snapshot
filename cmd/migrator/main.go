@@ -48,12 +48,12 @@ func main() {
 }
 
 func mainErr(ctx context.Context, args []string) error {
-	syncLogs := log.Init(log.Resource{
+	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	})
-	defer syncLogs()
+	defer liblog.Sync()
 
 	runnerFactory := newRunnerFactory()
 	outputFactory := func() *output.Output { return out }
