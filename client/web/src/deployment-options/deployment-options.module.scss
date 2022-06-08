@@ -5,7 +5,7 @@
 
 // Global page paragraphs
 .root,
-.selfHostedRoot {
+.self-hosted-root {
     p {
         font-size: 1.125rem;
         line-height: 1.375rem;
@@ -13,7 +13,7 @@
     }
 }
 
-.selfHostedRoot {
+.self-hosted-root {
     background: linear-gradient(90deg, #d5e6f7, #e8d1ff);
     h1 {
         font-size: 2.75rem;
@@ -24,7 +24,7 @@
 }
 
 // Get started page index specific
-.getStartedPage {
+.get-started-page {
     background: linear-gradient(90deg, #d5e6f7, #e8d1ff 50%, #d5e6f7 0, #bceee9);
 
     section h1 {
@@ -35,7 +35,7 @@
     color: #343a4d;
 }
 
-.bestForTitle {
+.best-for-title {
     font-size: 0.875rem;
     line-height: 1.125rem;
 }

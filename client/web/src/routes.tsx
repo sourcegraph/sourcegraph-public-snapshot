@@ -31,7 +31,7 @@ const UnlockAccountPage = lazyComponent(() => import('./auth/UnlockAccount'), 'U
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
 const DeploymentOptions = lazyComponent(() => import('./deployment-options'), 'DeploymentOptions')
-const SelfHostedDeploymentOption = lazyComponent(() => import('./deployment-options/self-hosted'), 'SelfHosted')
+const SelfHostedDeploymentOption = lazyComponent(() => import('./deployment-options/SelfHosted'), 'SelfHosted')
 
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
@@ -123,7 +123,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             const { showSearchNotebook, showSearchContext } = useExperimentalFeatures.getState()
 
             return showSearchNotebook ? (
-                <NotebookPage {...props} showSearchConcontexttext={showSearchContext ?? false} />
+                <NotebookPage {...props} showSearchContext={showSearchContext ?? false} />
             ) : (
                 <Redirect to={PageRoutes.Search} />
             )

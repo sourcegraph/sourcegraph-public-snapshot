@@ -9,7 +9,7 @@ import { PageTitle } from '../components/PageTitle'
 import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
 
-import styles from './styles.module.scss'
+import styles from './deployment-options.module.scss'
 
 interface IProps {
     history: H.History

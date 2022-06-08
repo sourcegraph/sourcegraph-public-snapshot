@@ -1,7 +1,8 @@
 import { FunctionComponent, useEffect, useState } from 'react'
 import classNames from 'classnames'
+import copyToClipboard from 'copy-to-clipboard'
 
-import CopyIcon from './copy-icon'
+import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import { ButtonLink } from '@sourcegraph/wildcard'
 
 import styles from './install.module.scss'
@@ -13,22 +14,7 @@ const Install: FunctionComponent = () => {
     const [copied, setCopied] = useState(false)
 
     const copy = async (): Promise<void> => {
-        if (navigator.clipboard) {
-            await navigator.clipboard.writeText(installText)
-        } else {
-            /**
-             * Warning: execCommand is deprecated but we use it as a fallback.
-             * See: https://developer.mozilla.org/en-US/docs/Web/API/Document/execCommand
-             */
-            const element = document.createElement('textarea')
-            document.body.append(element)
-            element.value = installText
-            element.select()
-            // eslint-disable-next-line etc/no-deprecated
-            document.execCommand('copy')
-            element.remove()
-        }
-
+        copyToClipboard(installText)
         setCopied(true)
     }
 
@@ -55,7 +41,7 @@ const Install: FunctionComponent = () => {
                         className={classNames(styles.icon, 'icon-inline ml-4 align-text-top')}
                         tabIndex={0}
                     >
-                        <CopyIcon />
+                        <ContentCopyIcon />
                     </span>
                 </h3>
 
