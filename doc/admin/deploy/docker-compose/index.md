@@ -99,8 +99,6 @@ Add the reference repository as an `upstream` remote so that you can get updates
 
 Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](#upgrade-and-migration) and install your Sourcegraph instance.
 
->NOTE: Ensure that you are on the `master` branch. 
-
 ```bash
   # Specify the version you want to install
   export SOURCEGRAPH_VERSION="v3.40.1"
