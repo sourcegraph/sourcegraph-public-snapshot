@@ -83,6 +83,10 @@ func (r *Runner[Args]) Fix(
 	// Report what is still bust
 	failedCategories := []string{}
 	for _, category := range r.categories {
+		if err := category.CheckEnabled(ctx, args); err != nil {
+			continue
+		}
+
 		if !category.IsSatisfied() {
 			failedCategories = append(failedCategories, fmt.Sprintf("%q", category.Name))
 		}
