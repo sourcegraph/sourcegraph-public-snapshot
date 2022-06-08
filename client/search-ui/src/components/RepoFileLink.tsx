@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { appendSubtreeQueryParameter } from '@sourcegraph/common'
 import { displayRepoName, splitPath } from '@sourcegraph/shared/src/components/RepoLink'
-import { useIsTruncated, Link } from '@sourcegraph/wildcard'
+import { useIsTruncated, Link, Tooltip } from '@sourcegraph/wildcard'
 
 interface Props {
     repoName: string
@@ -36,17 +36,14 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
     const [titleReference, truncated, checkTruncation] = useIsTruncated()
 
     return (
-        <div
-            ref={titleReference}
-            onMouseEnter={checkTruncation}
-            className={classNames(className)}
-            data-tooltip={truncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}
-        >
-            <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link> ›{' '}
-            <Link to={appendSubtreeQueryParameter(fileURL)}>
-                {fileBase ? `${fileBase}/` : null}
-                <strong>{fileName}</strong>
-            </Link>
-        </div>
+        <Tooltip content={truncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}>
+            <div ref={titleReference} onMouseEnter={checkTruncation} className={classNames(className)}>
+                <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link> ›{' '}
+                <Link to={appendSubtreeQueryParameter(fileURL)}>
+                    {fileBase ? `${fileBase}/` : null}
+                    <strong>{fileName}</strong>
+                </Link>
+            </div>
+        </Tooltip>
     )
 }
