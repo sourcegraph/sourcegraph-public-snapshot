@@ -10,6 +10,12 @@ Not sure if the Docker Compose deployment type is the right for you? Learn more 
 
 This section provides instruction for how to install Sourcegraph with Docker Compose on a server, which could be the local machine, a server on a local network, or cloud-hosted server. 
 
+Alternatively, follow these links for cloud-specific guides on preparing the environment and installing Sourcegraph:
+
+- [Deploy Sourcegraph with Docker Compose on Amazon Web Services](../../deploy/docker-compose/aws.md)
+- [Deploy Sourcegraph with Docker Compose on Google Cloud](../../deploy/docker-compose/google_cloud.md)
+- [Deploy Sourcegraph with Docker Compose on DigitalOcean](../../deploy/docker-compose/digitalocean.md)
+
 ### Prerequisites
 Complete the following tasks before deploying Sourcegraph with Docker Compose:
 
@@ -28,11 +34,6 @@ Complete the following tasks before deploying Sourcegraph with Docker Compose:
 
 - Obtain a [Sourcegraph license](https://about.sourcegraph.com/pricing/). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
 
-Follow these links for cloud-specific guides on preparing the environment for installing Sourcegraph:
-
-- [Deploy Sourcegraph with Docker Compose on Amazon Web Services](../../deploy/docker-compose/aws.md)
-- [Deploy Sourcegraph with Docker Compose on Google Cloud](../../deploy/docker-compose/google_cloud.md)
-- [Deploy Sourcegraph with Docker Compose on DigitalOcean](../../deploy/docker-compose/digitalocean.md)
 
 ### Installation Process Overview
 
