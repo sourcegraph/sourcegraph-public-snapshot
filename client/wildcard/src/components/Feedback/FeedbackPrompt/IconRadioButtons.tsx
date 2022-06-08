@@ -42,6 +42,7 @@ export const IconRadioButtons: React.FunctionComponent<React.PropsWithChildren<P
             {Object.values(icons).map(({ icon: Icon, name: iconName, value }) => (
                 <li key={iconName} className="d-flex">
                     <Label className={styles.label}>
+                        {/* eslint-disable-next-line react/forbid-elements */}
                         <input
                             disabled={disabled}
                             type="radio"

@@ -13,7 +13,7 @@
       "type": "googlecompute",
       "project_id": "sourcegraph-ci",
       "source_image_project_id": "ubuntu-os-cloud",
-      "source_image_family": "ubuntu-2004-lts",
+      "source_image": "ubuntu-2004-focal-v20220606",
       "disk_size": "10",
       "ssh_username": "packer",
       "zone": "us-central1-c",
