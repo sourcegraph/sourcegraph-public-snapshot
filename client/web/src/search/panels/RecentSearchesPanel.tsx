@@ -235,6 +235,7 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
                         <th>
                             <small>Date</small>
                         </th>
+
                     </tr>
                 </thead>
                 <tbody>
