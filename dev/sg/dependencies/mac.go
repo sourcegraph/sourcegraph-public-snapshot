@@ -239,7 +239,7 @@ We recommend installing it with Homebrew and starting it as a system service.`,
 		},
 	},
 	{
-		Name: "Set up proxy for local development",
+		Name: "sourcegraph.test development proxy",
 		Checks: []*dependency{
 			{
 				Name: "/etc/hosts contains sourcegraph.test",
@@ -265,7 +265,7 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 	},
 	categoryAdditionalSGConfiguration(),
 	{
-		Name:      "Set up cloud services",
+		Name:      "Cloud services",
 		DependsOn: []string{depsHomebrew},
 		Enabled:   teammatesOnly(),
 		Checks: []*dependency{
