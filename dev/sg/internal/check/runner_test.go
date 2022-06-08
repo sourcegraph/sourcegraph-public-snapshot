@@ -80,7 +80,6 @@ func TestRunnerFix(t *testing.T) {
 		for _, c := range []string{
 			"Some categories are still unsatisfied",
 			// Categories that should be failing
-			"skipped",
 			"required",
 			"has requirements",
 		} {

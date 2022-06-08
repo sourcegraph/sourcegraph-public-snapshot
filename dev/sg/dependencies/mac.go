@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/run"
-
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -98,8 +96,7 @@ var Mac = []category{
 						"if Docker is installed and the check fails, you might need to restart terminal and 'sg setup'"),
 				)),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					// TODO stream lines
-					if err := usershell.Cmd(ctx, `brew install --cask docker`).Run(); err != nil {
+					if err := usershell.Run(ctx, `brew install --cask docker`).StreamLines(cio.Verbose); err != nil {
 						return err
 					}
 
@@ -112,9 +109,12 @@ var Mac = []category{
 				Name:  "asdf",
 				Check: checkAction(check.CommandOutputContains("asdf", "version")),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					// Uses `&&` to avoid appending the shell config on failed installations attempts.
-					cmd := `brew install asdf && echo ". ${HOMEBREW_PREFIX:-/usr/local}/opt/asdf/libexec/asdf.sh" >> ` + usershell.ShellConfigPath(ctx)
-					return usershell.Cmd(ctx, cmd).Run()
+					if err := usershell.Run(ctx, "brew install asdf").StreamLines(cio.Verbose); err != nil {
+						return err
+					}
+					return usershell.Run(ctx,
+						`echo ". ${HOMEBREW_PREFIX:-/usr/local}/opt/asdf/libexec/asdf.sh" >>`, usershell.ShellConfigPath(ctx),
+					).Wait()
 				},
 			},
 		},
@@ -161,7 +161,8 @@ var Mac = []category{
 		},
 	},
 	{
-		Name: "Postgres database",
+		Name:      "Postgres database",
+		DependsOn: []string{depsHomebrew},
 		Checks: []*dependency{
 			{
 				Name: "Install Postgres",
@@ -221,7 +222,8 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 		},
 	},
 	{
-		Name: "Redis database",
+		Name:      "Redis database",
+		DependsOn: []string{depsHomebrew},
 		Checks: []*dependency{
 			{
 				Name: "Start Redis",
@@ -236,7 +238,8 @@ We recommend installing it with Homebrew and starting it as a system service.`,
 		},
 	},
 	{
-		Name: "sourcegraph.test development proxy",
+		Name:      "sourcegraph.test development proxy",
+		DependsOn: []string{depsBaseUtilities},
 		Checks: []*dependency{
 			{
 				Name: "/etc/hosts contains sourcegraph.test",
@@ -244,7 +247,7 @@ We recommend installing it with Homebrew and starting it as a system service.`,
 To do that, we need to add sourcegraph.test to the /etc/hosts file.`,
 				Check: checkAction(check.FileContains("/etc/hosts", "sourcegraph.test")),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					return root.Run(run.Cmd(ctx, `./dev/add_https_domain_to_hosts.sh`)).StreamLines(cio.Verbose)
+					return root.Run(usershell.Command(ctx, `./dev/add_https_domain_to_hosts.sh`)).StreamLines(cio.Verbose)
 				},
 			},
 			{
@@ -256,7 +259,7 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 				Enabled: disableInCI(), // Can't seem to get this working
 				Check:   checkAction(checkCaddyTrusted),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					return root.Run(run.Cmd(ctx, `./dev/caddy.sh trust`)).StreamLines(cio.Verbose)
+					return root.Run(usershell.Command(ctx, `./dev/caddy.sh trust`)).StreamLines(cio.Verbose)
 				},
 			},
 		},

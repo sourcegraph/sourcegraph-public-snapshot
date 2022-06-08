@@ -516,7 +516,7 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 
 		// Attempt fix. Get new args because things might have changed due to another
 		// fix being run.
-		pending.VerboseLine(output.Styledf(output.StylePending, "Trying to fix %q...", c.Name))
+		pending.VerboseLine(output.Styledf(output.StylePending, "Fixing %q...", c.Name))
 		if err := c.Fix(ctx, cio, args); err != nil {
 			pending.WriteLine(output.Styledf(output.StyleWarning, "Failed to fix %q: %s", c.Name, err.Error()))
 			fixFailed = true
