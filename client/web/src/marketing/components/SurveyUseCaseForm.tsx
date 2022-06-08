@@ -109,7 +109,6 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                         </span>
                     }
                     name="other"
-                    placeholder="Find..."
                     onChange={event => onChangeOtherUseCase(event.target.value)}
                     value={otherUseCase}
                 />
