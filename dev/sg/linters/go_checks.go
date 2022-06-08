@@ -50,7 +50,9 @@ func lintSGExit() lint.Runner {
 		}
 
 		mErr := diff.IterateHunks(func(file string, hunk repo.DiffHunk) error {
-			if strings.HasPrefix(file, "dev/sg/interrupt") || file == "dev/sg/linters/go_checks.go" {
+			if strings.HasPrefix(file, "dev/sg/interrupt") ||
+				strings.HasSuffix(file, "_test.go") ||
+				file == "dev/sg/linters/go_checks.go" {
 				return nil
 			}
 

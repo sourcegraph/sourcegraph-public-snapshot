@@ -22,6 +22,7 @@ type Runner[Args any] struct {
 	renderDescription func(*std.Output)
 }
 
+// NewRunner creates a Runner for executing checks and applying fixes in a variety of ways.
 func NewRunner[Args any](in io.Reader, out *std.Output, categories []Category[Args]) *Runner[Args] {
 	return &Runner[Args]{
 		in:         in,
@@ -30,6 +31,8 @@ func NewRunner[Args any](in io.Reader, out *std.Output, categories []Category[Ar
 	}
 }
 
+// SetDescription sets a description to render before core check loops, such as a massive
+// ASCII art thing.
 func (r *Runner[Args]) SetDescription(render func(out *std.Output)) {
 	r.renderDescription = render
 }
@@ -52,7 +55,7 @@ func (r *Runner[Args]) Check(
 	return nil
 }
 
-// Fix attempts to execute available fixes on checks that are not fulfilled.
+// Fix attempts to applies available fixes on checks that are not satisfied.
 func (r *Runner[Args]) Fix(
 	ctx context.Context,
 	args Args,
@@ -92,7 +95,7 @@ func (r *Runner[Args]) Fix(
 }
 
 // Interactive runs both checks and fixes in an interactive manner, prompting the user for
-// input.
+// decisions about which fixes to apply.
 func (r *Runner[Args]) Interactive(
 	ctx context.Context,
 	args Args,
@@ -346,10 +349,9 @@ func (r *Runner[Args]) getChoice(choices map[int]string) (int, error) {
 			r.out.Writef("%s[%d]%s: %s", output.StyleBold, num, output.StyleReset, desc)
 		}
 
-		fmt.Printf("Enter choice: ")
-
+		r.out.Write("Enter choice: ")
 		var s int
-		_, err := fmt.Scan(&s)
+		_, err := fmt.Fscan(r.in, &s)
 		if err != nil {
 			return 0, err
 		}
@@ -504,5 +506,3 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 
 	return !fixFailed
 }
-
-func waitForReturn() { fmt.Scanln() }
