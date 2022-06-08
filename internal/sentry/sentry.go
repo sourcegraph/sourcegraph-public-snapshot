@@ -10,11 +10,12 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var sentryDebug, _ = strconv.ParseBool(env.Get("SENTRY_DEBUG", "false", "print debug messages for Sentry"))
