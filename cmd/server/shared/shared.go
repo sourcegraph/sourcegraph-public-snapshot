@@ -76,12 +76,12 @@ var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL")
 func Main() {
 	flag.Parse()
 	log.SetFlags(0)
-	syncLogs := sglog.Init(sglog.Resource{
+	liblog := sglog.Init(sglog.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	})
-	defer syncLogs()
+	defer liblog.Sync()
 
 	// Ensure CONFIG_DIR and DATA_DIR
 
