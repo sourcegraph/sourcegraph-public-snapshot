@@ -226,21 +226,14 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 
 func TestBitbucketServerSource_ListRepos(t *testing.T) {
 	TestBitbucketServerSource_ListByReposOnly(t)
-	TestBitbucketServerSource_ListByRepositoryQuery(t)
+	TestBitbucketServerSource_ListByRepositoryQueryDefault(t)
+	TestBitbucketServerSource_ListByRepositoryQueryAll(t)
+	TestBitbucketServerSource_ListByRepositoryQueryNone(t)
 	TestBitbucketServerSource_ListByProjectKey(t)
 }
 
 func TestBitbucketServerSource_ListByReposOnly(t *testing.T) {
-	fmt.Println("Listing config repos")
-	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var repos []bitbucketserver.Repo
-	if err := json.Unmarshal(b, &repos); err != nil {
-		t.Fatal(err)
-	}
+	repos := GetReposFromTestdata(t)
 
 	mux := http.NewServeMux()
 
@@ -261,32 +254,7 @@ func TestBitbucketServerSource_ListByReposOnly(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	cases := map[string]*schema.BitbucketServerConnection{
-		"simple": {
-			Url:   server.URL,
-			Token: "secret",
-		},
-		"ssh": {
-			Url:                         server.URL,
-			Token:                       "secret",
-			InitialRepositoryEnablement: true,
-			GitURLType:                  "ssh",
-		},
-		"path-pattern": {
-			Url:                   server.URL,
-			Token:                 "secret",
-			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
-		},
-		"username": {
-			Url:                   server.URL,
-			Username:              "foo",
-			Token:                 "secret",
-			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
-		},
-	}
-
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
-
+	cases, svc := GetConfig(t, server)
 	for name, config := range cases {
 		fmt.Println("Name:", name)
 
@@ -310,49 +278,12 @@ func TestBitbucketServerSource_ListByReposOnly(t *testing.T) {
 		defer close(results)
 
 		s.ListRepos(ctxWithTimeout, results)
-
-		repoNameMap := map[string]struct{}{
-			"SG/go-langserver":          {},
-			"SG/python-langserver":      {},
-			"SG/python-langserver-fork": {},
-			"~KEEGAN/rgp":               {},
-			"~KEEGAN/rgp-unavailable":   {},
-		}
-
-	verify:
-		for {
-			select {
-			case res := <-results:
-				repoNameArr := strings.Split(string(res.Repo.Name), "/")
-				repoName := repoNameArr[1] + "/" + repoNameArr[2]
-				fmt.Print("Repo:", repoName, ", ")
-				if _, ok := repoNameMap[repoName]; ok {
-					fmt.Println("verified")
-				} else {
-					t.Fatal(err)
-				}
-			case <-ctxWithTimeout.Done():
-				fmt.Println("Timeout")
-				t.Fatal(err)
-			default:
-				break verify
-			}
-		}
+		VerifyData(t, ctxWithTimeout, 4, results)
 	}
-
 }
 
-func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
-	fmt.Println("Listing repos by repository query")
-	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var repos []bitbucketserver.Repo
-	if err := json.Unmarshal(b, &repos); err != nil {
-		t.Fatal(err)
-	}
+func TestBitbucketServerSource_ListByRepositoryQueryDefault(t *testing.T) {
+	repos := GetReposFromTestdata(t)
 
 	type Results struct {
 		*bitbucketserver.PageToken
@@ -396,32 +327,7 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	cases := map[string]*schema.BitbucketServerConnection{
-		"simple": {
-			Url:   server.URL,
-			Token: "secret",
-		},
-		"ssh": {
-			Url:                         server.URL,
-			Token:                       "secret",
-			InitialRepositoryEnablement: true,
-			GitURLType:                  "ssh",
-		},
-		"path-pattern": {
-			Url:                   server.URL,
-			Token:                 "secret",
-			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
-		},
-		"username": {
-			Url:                   server.URL,
-			Username:              "foo",
-			Token:                 "secret",
-			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
-		},
-	}
-
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
-
+	cases, svc := GetConfig(t, server)
 	for name, config := range cases {
 		fmt.Println("Name:", name)
 
@@ -436,7 +342,74 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 			"?projectName=python-langserver-fork",
 			"?projectName=rgp",
 			"?projectName=rgp-unavailable",
-			"none",
+		}
+
+		ctxWithTimeout, cancelFunction := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancelFunction()
+
+		results := make(chan SourceResult, 20)
+		defer close(results)
+
+		s.ListRepos(ctxWithTimeout, results)
+		VerifyData(t, ctxWithTimeout, 4, results)
+	}
+}
+
+func TestBitbucketServerSource_ListByRepositoryQueryAll(t *testing.T) {
+	repos := GetReposFromTestdata(t)
+
+	type Results struct {
+		*bitbucketserver.PageToken
+		Values any `json:"values"`
+	}
+
+	pageToken := bitbucketserver.PageToken{
+		Size:          1,
+		Limit:         1000,
+		IsLastPage:    true,
+		Start:         1,
+		NextPageStart: 1,
+	}
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/rest/api/1.0/repos", func(w http.ResponseWriter, r *http.Request) {
+		projectName := r.URL.Query().Get("projectName")
+
+		if projectName == "" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(Results{
+				PageToken: &pageToken,
+				Values:    repos,
+			})
+		} else {
+			for _, repo := range repos {
+				if projectName == repo.Name {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusOK)
+					json.NewEncoder(w).Encode(Results{
+						PageToken: &pageToken,
+						Values:    []bitbucketserver.Repo{repo},
+					})
+				}
+			}
+		}
+	})
+
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	cases, svc := GetConfig(t, server)
+	for name, config := range cases {
+		fmt.Println("Name:", name)
+
+		s, err := newBitbucketServerSource(&svc, config, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		s.config.RepositoryQuery = []string{
 			"all",
 		}
 
@@ -447,48 +420,81 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 		defer close(results)
 
 		s.ListRepos(ctxWithTimeout, results)
+		VerifyData(t, ctxWithTimeout, 4, results)
+	}
+}
 
-		repoNameMap := map[string]struct{}{
-			"SG/go-langserver":          {},
-			"SG/python-langserver":      {},
-			"SG/python-langserver-fork": {},
-			"~KEEGAN/rgp":               {},
-			"~KEEGAN/rgp-unavailable":   {},
-		}
+func TestBitbucketServerSource_ListByRepositoryQueryNone(t *testing.T) {
+	repos := GetReposFromTestdata(t)
 
-	verify:
-		for {
-			select {
-			case res := <-results:
-				repoNameArr := strings.Split(string(res.Repo.Name), "/")
-				repoName := repoNameArr[1] + "/" + repoNameArr[2]
-				fmt.Print("Repo:", repoName, ", ")
-				if _, ok := repoNameMap[repoName]; ok {
-					fmt.Println("verified")
-				} else {
-					t.Fatal(err)
+	type Results struct {
+		*bitbucketserver.PageToken
+		Values any `json:"values"`
+	}
+
+	pageToken := bitbucketserver.PageToken{
+		Size:          1,
+		Limit:         1000,
+		IsLastPage:    true,
+		Start:         1,
+		NextPageStart: 1,
+	}
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/rest/api/1.0/repos", func(w http.ResponseWriter, r *http.Request) {
+		projectName := r.URL.Query().Get("projectName")
+
+		if projectName == "" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(Results{
+				PageToken: &pageToken,
+				Values:    repos,
+			})
+		} else {
+			for _, repo := range repos {
+				if projectName == repo.Name {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusOK)
+					json.NewEncoder(w).Encode(Results{
+						PageToken: &pageToken,
+						Values:    []bitbucketserver.Repo{repo},
+					})
 				}
-			case <-ctxWithTimeout.Done():
-				fmt.Println("Timeout")
-				t.Fatal(err)
-			default:
-				break verify
 			}
 		}
-	}
+	})
 
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	cases, svc := GetConfig(t, server)
+	for name, config := range cases {
+		fmt.Println("Name:", name)
+
+		s, err := newBitbucketServerSource(&svc, config, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		s.config.RepositoryQuery = []string{
+			"none",
+		}
+
+		ctxWithTimeout, cancelFunction := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancelFunction()
+
+		results := make(chan SourceResult, 20)
+		defer close(results)
+
+		s.ListRepos(ctxWithTimeout, results)
+		VerifyData(t, ctxWithTimeout, 0, results)
+	}
 }
-func TestBitbucketServerSource_ListByProjectKey(t *testing.T) {
-	fmt.Println("Listing repos by project key")
-	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	var repos []bitbucketserver.Repo
-	if err := json.Unmarshal(b, &repos); err != nil {
-		t.Fatal(err)
-	}
+func TestBitbucketServerSource_ListByProjectKey(t *testing.T) {
+	repos := GetReposFromTestdata(t)
 
 	type Results struct {
 		*bitbucketserver.PageToken
@@ -527,6 +533,46 @@ func TestBitbucketServerSource_ListByProjectKey(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
+	cases, svc := GetConfig(t, server)
+	for name, config := range cases {
+		fmt.Println("Name:", name)
+
+		s, err := newBitbucketServerSource(&svc, config, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		s.config.ProjectKeys = []string{
+			"SG",
+			"~KEEGAN",
+		}
+
+		ctxWithTimeout, cancelFunction := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancelFunction()
+
+		results := make(chan SourceResult, 20)
+		defer close(results)
+
+		s.ListRepos(ctxWithTimeout, results)
+		VerifyData(t, ctxWithTimeout, 4, results)
+	}
+}
+
+func GetReposFromTestdata(t *testing.T) []bitbucketserver.Repo {
+	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var repos []bitbucketserver.Repo
+	if err := json.Unmarshal(b, &repos); err != nil {
+		t.Fatal(err)
+	}
+
+	return repos
+}
+
+func GetConfig(t *testing.T, server *httptest.Server) (map[string]*schema.BitbucketServerConnection, types.ExternalService) {
 	cases := map[string]*schema.BitbucketServerConnection{
 		"simple": {
 			Url:   server.URL,
@@ -553,54 +599,43 @@ func TestBitbucketServerSource_ListByProjectKey(t *testing.T) {
 
 	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
 
-	for name, config := range cases {
-		fmt.Println("Name:", name)
+	return cases, svc
+}
 
-		s, err := newBitbucketServerSource(&svc, config, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
+func VerifyData(t *testing.T, ctx context.Context, numExpectedResults int, results chan SourceResult) {
+	numTotalResults := len(results)
+	numReceivedFromResults := 0
 
-		s.config.ProjectKeys = []string{
-			"SG",
-			"~KEEGAN",
-		}
+	if numTotalResults != numExpectedResults {
+		t.Fatal(errors.New("wrong number of results"))
+	}
 
-		ctxWithTimeout, cancelFunction := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancelFunction()
+	repoNameMap := map[string]struct{}{
+		"SG/go-langserver":          {},
+		"SG/python-langserver":      {},
+		"SG/python-langserver-fork": {},
+		"~KEEGAN/rgp":               {},
+		"~KEEGAN/rgp-unavailable":   {},
+	}
 
-		results := make(chan SourceResult, 20)
-		defer close(results)
-
-		s.ListRepos(ctxWithTimeout, results)
-
-		repoNameMap := map[string]struct{}{
-			"SG/go-langserver":          {},
-			"SG/python-langserver":      {},
-			"SG/python-langserver-fork": {},
-			"~KEEGAN/rgp":               {},
-			"~KEEGAN/rgp-unavailable":   {},
-		}
-
-	verify:
-		for {
-			select {
-			case res := <-results:
-				repoNameArr := strings.Split(string(res.Repo.Name), "/")
-				repoName := repoNameArr[1] + "/" + repoNameArr[2]
-				fmt.Print("Repo:", repoName, ", ")
-				if _, ok := repoNameMap[repoName]; ok {
-					fmt.Println("verified")
-				} else {
-					t.Fatal(err)
-				}
-			case <-ctxWithTimeout.Done():
-				fmt.Println("Timeout")
-				t.Fatal(err)
-			default:
-				break verify
+	for {
+		select {
+		case res := <-results:
+			repoNameArr := strings.Split(string(res.Repo.Name), "/")
+			repoName := repoNameArr[1] + "/" + repoNameArr[2]
+			fmt.Print("Repo:", repoName, ", ")
+			if _, ok := repoNameMap[repoName]; ok {
+				numReceivedFromResults++
+				fmt.Println("verified")
+			} else {
+				t.Fatal(errors.New("wrong repo returned"))
+			}
+		case <-ctx.Done():
+			t.Fatal(errors.New("timeout!"))
+		default:
+			if numReceivedFromResults == numExpectedResults {
+				return
 			}
 		}
 	}
-
 }
