@@ -15,6 +15,7 @@ func TestMain(m *testing.M) {
 }
 
 var testArgs = CheckArgs{
-	Teammate:   false,
-	ConfigFile: "../../../sg.config.yaml",
+	Teammate:            false,
+	ConfigFile:          "../../../sg.config.yaml",
+	ConfigOverwriteFile: "../../../sg.config.overwrite.yaml",
 }
