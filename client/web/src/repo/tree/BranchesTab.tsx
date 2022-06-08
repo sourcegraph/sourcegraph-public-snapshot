@@ -90,7 +90,6 @@ export const RepositoryBranchesAllTab: React.FunctionComponent<React.PropsWithCh
         <div>
             <PageTitle title="All branches" />
             <FilteredConnection<GitRefFields>
-                className=""
                 listClassName="list-group list-group-flush"
                 noun="branch"
                 pluralNoun="branches"

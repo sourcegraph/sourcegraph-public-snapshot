@@ -4,7 +4,7 @@ import { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Link, Alert, Typography, Text } from '@sourcegraph/wildcard'
+import { Link, Alert, H3, H4, Code, Text } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../../routes.constants'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -76,7 +76,7 @@ export const ActivityPane: React.FunctionComponent<React.PropsWithChildren<Props
     return (
         <div className={classNames(className, 'mx-2')}>
             <div className={styles.titleDescription}>
-                <Typography.H3>Fetching repositories...</Typography.H3>
+                <H3>Fetching repositories...</H3>
                 <Text className="text-muted mb-4">
                     We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first search!
                 </Text>
@@ -84,31 +84,27 @@ export const ActivityPane: React.FunctionComponent<React.PropsWithChildren<Props
             <div className="border overflow-hidden rounded">
                 <header>
                     <div className="py-4 px-3 d-flex justify-content-between align-items-center">
-                        <Typography.H4 className="m-0">Activity log</Typography.H4>
+                        <H4 className="m-0">Activity log</H4>
                         <small className="m-0 text-muted">{statusSummary}</small>
                     </div>
                 </header>
                 <Terminal>
                     {!isDoneCloning && (
                         <TerminalLine>
-                            <Typography.Code className={classNames('mb-2', styles.loading)}>
-                                Cloning Repositories
-                            </Typography.Code>
+                            <Code className={classNames('mb-2', styles.loading)}>Cloning Repositories</Code>
                         </TerminalLine>
                     )}
                     {isLoading && (
                         <TerminalLine>
                             <TerminalTitle>
-                                <Typography.Code className={classNames('mb-2', styles.loading)}>
-                                    Loading
-                                </Typography.Code>
+                                <Code className={classNames('mb-2', styles.loading)}>Loading</Code>
                             </TerminalTitle>
                         </TerminalLine>
                     )}
                     {fetchError && (
                         <TerminalLine>
                             <TerminalTitle>
-                                <Typography.Code className="mb-2">Unexpected error</Typography.Code>
+                                <Code className="mb-2">Unexpected error</Code>
                             </TerminalTitle>
                         </TerminalLine>
                     )}

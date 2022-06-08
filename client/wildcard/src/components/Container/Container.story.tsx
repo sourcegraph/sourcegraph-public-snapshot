@@ -3,7 +3,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Typography, Text } from '..'
+import { H1, H2, H3, Text, Input } from '..'
 import { Alert } from '../Alert'
 import { Button } from '../Button'
 
@@ -42,19 +42,19 @@ export const Overview: Story = () => (
             </ul>
         </Alert>
         <hr />
-        <Typography.H1>Example 1</Typography.H1>
-        <Typography.H2>Some page explanation</Typography.H2>
+        <H1>Example 1</H1>
+        <H2>Some page explanation</H2>
         <Text className="text-muted">Optional: Add some descriptive text about what this page does.</Text>
         <Container className="mb-3">
-            <Typography.H3>Section I</Typography.H3>
+            <H3>Section I</H3>
             <Text>Here you change the username.</Text>
             <div className="form-group">
-                <input type="text" className="form-control" />
+                <Input />
             </div>
-            <Typography.H3>Section II</Typography.H3>
+            <H3>Section II</H3>
             <Text>Here you change your email.</Text>
             <div className="form-group mb-0">
-                <input type="text" className="form-control" />
+                <Input type="email" />
             </div>
         </Container>
         <div className="mb-3">
@@ -64,23 +64,23 @@ export const Overview: Story = () => (
             <Button variant="secondary">Cancel</Button>
         </div>
         <hr />
-        <Typography.H1>Example 2</Typography.H1>
-        <Typography.H2>Some page explanation</Typography.H2>
+        <H1>Example 2</H1>
+        <H2>Some page explanation</H2>
         <Text className="text-muted">Optional: Add some descriptive text about what this page does.</Text>
         <Container className="mb-3">
-            <Typography.H3>Section I</Typography.H3>
+            <H3>Section I</H3>
             <Text>Here you change the username.</Text>
             <div className="form-group">
-                <input type="text" className="form-control" />
+                <Input />
             </div>
             <Button className="mb-2" variant="secondary">
                 Save
             </Button>
             <hr className="mb-2" />
-            <Typography.H3>Section II</Typography.H3>
+            <H3>Section II</H3>
             <Text>Here you change your email.</Text>
             <div className="form-group">
-                <input type="text" className="form-control" />
+                <Input type="email" />
             </div>
             <Button variant="secondary">Save</Button>
         </Container>

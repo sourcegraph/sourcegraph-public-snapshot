@@ -53,7 +53,7 @@ public class JSToJavaBridgeRequestHandler {
                 case "loadLastSearch":
                     Search lastSearch = ConfigUtil.getLastSearch(this.project);
 
-                    if (lastSearch != null) {
+                    if (lastSearch == null) {
                         return createSuccessResponse(null);
                     }
 
@@ -66,7 +66,7 @@ public class JSToJavaBridgeRequestHandler {
                 case "preview":
                     arguments = request.getAsJsonObject("arguments");
                     previewContent = gson.fromJson(arguments, PreviewContent.class);
-                    previewPanel.setContent(previewContent, false);
+                    previewPanel.setContent(previewContent);
                     return createSuccessResponse(null);
                 case "clearPreview":
                     previewPanel.clearContent();
@@ -74,13 +74,17 @@ public class JSToJavaBridgeRequestHandler {
                 case "open":
                     arguments = request.getAsJsonObject("arguments");
                     previewContent = gson.fromJson(arguments, PreviewContent.class);
-                    previewPanel.setContent(previewContent, true);
+                    try {
+                        previewPanel.openInEditorOrBrowser(previewContent);
+                    } catch (Exception e) {
+                        return createErrorResponse("Error while opening link: " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
+                    }
                     return createSuccessResponse(null);
                 case "indicateFinishedLoading":
                     topPanel.setBrowserVisible(true);
                     return createSuccessResponse(null);
                 default:
-                    return createErrorResponse("Unknown action: “" + action + "”.", "No stack trace");
+                    return createErrorResponse("Unknown action: '" + action + "'.", "No stack trace");
             }
         } catch (Exception e) {
             return createErrorResponse(action + ": " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));

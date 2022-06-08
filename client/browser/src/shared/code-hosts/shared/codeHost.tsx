@@ -517,8 +517,8 @@ function initCodeIntelligence({
                                 return EMPTY
                             }
 
-                            const def = urlForClientCommandOpen(action.action, window.location.hash)
-                            if (!def) {
+                            const defer = urlForClientCommandOpen(action.action, window.location.hash)
+                            if (!defer) {
                                 return EMPTY
                             }
 
@@ -534,7 +534,7 @@ function initCodeIntelligence({
 
                                     const actionType = action === definitionAction ? 'definition' : 'reference'
                                     telemetryService.log(`${actionType}CodeHost.click`)
-                                    window.location.href = def
+                                    window.location.href = defer
                                 }),
                                 finalize(() => (token.style.cursor = oldCursor))
                             )

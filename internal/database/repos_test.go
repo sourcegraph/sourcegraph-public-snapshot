@@ -555,8 +555,8 @@ func TestRepoStore_Metadata(t *testing.T) {
 	r := db.Repos()
 	require.NoError(t, r.Create(ctx, repos...))
 
-	d1 := time.Unix(1627945150, 0)
-	d2 := time.Unix(1628945150, 0)
+	d1 := time.Unix(1627945150, 0).UTC()
+	d2 := time.Unix(1628945150, 0).UTC()
 	gitserverRepos := []*types.GitserverRepo{
 		{
 			RepoID:      1,

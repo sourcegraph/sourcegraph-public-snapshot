@@ -1,10 +1,7 @@
 package main
 
 import (
-	"context"
 	"flag"
-	"fmt"
-	"strings"
 
 	"github.com/urfave/cli/v2"
 
@@ -20,7 +17,7 @@ var (
 	opsCommand = &cli.Command{
 		Name:        "ops",
 		Usage:       "Commands used by operations teams to perform common tasks",
-		Description: constructOpsCmdLongHelp(),
+		Description: "Supports internal deploy-sourcegraph repos (non-customer facing)",
 		Category:    CategoryCompany,
 		Subcommands: []*cli.Command{opsUpdateImagesCommand},
 	}
@@ -57,24 +54,12 @@ var (
 				Destination: &opsUpdateImagesPinTagFlag,
 			},
 		},
-		Action: execAdapter(opsUpdateImage),
+		Action: opsUpdateImage,
 	}
 )
 
-func constructOpsCmdLongHelp() string {
-	var out strings.Builder
-
-	fmt.Fprintf(&out, "Commands used by operations teams to perform common tasks")
-	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "Supported subcommands")
-	fmt.Fprintf(&out, "update-images -> Updates images when run from the root of a 'deploy-sourcegraph-*' repo")
-	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "Supports internal deploy Sourcegraph repos (non-customer facing)")
-
-	return out.String()
-}
-
-func opsUpdateImage(ctx context.Context, args []string) error {
+func opsUpdateImage(ctx *cli.Context) error {
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "No path provided"))
 		return flag.ErrHelp

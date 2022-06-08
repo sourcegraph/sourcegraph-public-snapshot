@@ -13,6 +13,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -28,8 +29,24 @@ var lintCommand = &cli.Command{
 	Name:        "lint",
 	ArgsUsage:   "[targets...]",
 	Usage:       "Run all or specified linters on the codebase",
-	Description: `Run all or specified linters on the codebase and display failures, if any. To run all checks, don't provide an argument.`,
-	Category:    CategoryDev,
+	Description: `To run all checks, don't provide an argument. You can also provide multiple arguments to run linters for multiple targets.`,
+	UsageText: `
+# Run all possible checks
+sg lint
+
+# Run only go related checks
+sg lint go
+
+# Run only shell related checks
+sg lint shell
+
+# Run only client related checks
+sg lint client
+
+# List all available check groups
+sg lint --help
+`,
+	Category: CategoryDev,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:        "annotations",
@@ -92,30 +109,33 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Ru
 	}
 
 	// We need the Verbose flag to print above the pending indicator.
-	out := output.NewOutput(dst, output.OutputOpts{
-		ForceColor: true,
-		ForceTTY:   true,
-		Verbose:    true,
-	})
+	out := std.NewOutput(dst, true)
 
-	// Spawn a goroutine for each check and increment count to report completion. We use
-	// a single start time for the sake of simplicity.
-	start := time.Now()
+	// Spawn a goroutine for each check and increment count to report completion.
 	var count int64
 	total := len(fns)
 	pending := out.Pending(output.Styledf(output.StylePending, "Running linters (done: 0/%d)", total))
 	var wg sync.WaitGroup
 	reportsCh := make(chan *lint.Report)
 	wg.Add(total)
+
+	// We use a single start time for the sake of simplicity.
+	start := time.Now()
+
+	// linterTimeout sets the very long time for a linter to run for. We definitely do not
+	// want to allow linters to take any longer.
+	linterTimeout := 5 * time.Minute
+	runnerCtx, cancelRunners := context.WithTimeout(ctx, linterTimeout)
 	for _, fn := range fns {
 		go func(fn lint.Runner) {
-			reportsCh <- fn(ctx, repoState)
+			reportsCh <- fn(runnerCtx, repoState)
 			wg.Done()
 		}(fn)
 	}
 	go func() {
 		wg.Wait()
 		close(reportsCh)
+		cancelRunners()
 	}()
 
 	// consume check reports
@@ -128,6 +148,17 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Ru
 		if report.Err != nil {
 			messages = append(messages, report.Header)
 			hasErr = true
+		}
+
+		// Log analytics for each linter
+		const eventName = "lint_runner"
+		labels := []string{report.Header}
+		if runnerCtx.Err() == context.DeadlineExceeded {
+			analytics.LogEvent(ctx, eventName, labels, start, "deadline exceeded")
+		} else if report.Err != nil {
+			analytics.LogEvent(ctx, eventName, labels, start, "failed")
+		} else {
+			analytics.LogEvent(ctx, eventName, labels, start, "succeeded")
 		}
 	}
 

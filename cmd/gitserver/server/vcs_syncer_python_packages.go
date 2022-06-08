@@ -9,27 +9,33 @@ import (
 	"path"
 	"strings"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func assertPythonParsesPlaceholder() *reposource.PythonDependency {
+	placeholder, err := reposource.ParsePythonDependency("sourcegraph.com/placeholder@v0.0.0")
+	if err != nil {
+		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
+	}
+
+	return placeholder
+}
 
 func NewPythonPackagesSyncer(
 	connection *schema.PythonPackagesConnection,
 	svc *dependencies.Service,
 	client *pypi.Client,
 ) VCSSyncer {
-	placeholder, err := reposource.ParsePythonDependency("sourcegraph.com/placeholder@v0.0.0")
-	if err != nil {
-		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
-	}
+	placeholder := assertPythonParsesPlaceholder()
 
 	return &vcsDependenciesSyncer{
+		logger:      log.Scoped("vcs syncer", "vcsDependenciesSyncer implements the VCSSyncer interface for dependency repos"),
 		typ:         "python_packages",
 		scheme:      dependencies.PythonPackagesScheme,
 		placeholder: placeholder,
@@ -39,6 +45,7 @@ func NewPythonPackagesSyncer(
 	}
 }
 
+// pythonPackagesSyncer implements dependenciesSource
 type pythonPackagesSyncer struct {
 	client *pypi.Client
 }
@@ -70,7 +77,7 @@ func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep rep
 	}
 
 	if err = unpackPythonPackage(pkg, packageURL, dir); err != nil {
-		return errors.Wrap(err, "failed to unzip go module")
+		return errors.Wrap(err, "failed to unzip python module")
 	}
 
 	return nil
@@ -80,6 +87,7 @@ func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep rep
 // files that aren't valid or that are potentially malicious. It detects the kind of archive
 // and compression used with the given packageURL.
 func unpackPythonPackage(pkg []byte, packageURL, workDir string) error {
+	logger := log.Scoped("unpackPythonPackages", "unpackPythonPackages unpacks the given python package archive into workDir")
 	u, err := url.Parse(packageURL)
 	if err != nil {
 		return errors.Wrap(err, "bad python package URL")
@@ -94,12 +102,13 @@ func unpackPythonPackage(pkg []byte, packageURL, workDir string) error {
 			size := file.Size()
 
 			const sizeLimit = 15 * 1024 * 1024
+			slogger := logger.With(
+				log.String("path", file.Name()),
+				log.Int64("size", size),
+				log.Float64("limit", sizeLimit),
+			)
 			if size >= sizeLimit {
-				log15.Warn("skipping large file in npm package",
-					"path", file.Name(),
-					"size", size,
-					"limit", sizeLimit,
-				)
+				slogger.Warn("skipping large file in npm package")
 				return false
 			}
 

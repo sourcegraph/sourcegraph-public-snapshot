@@ -76,7 +76,7 @@ func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) er
 
 		// Nil info indicates no license, thus Free tier
 		if info == nil {
-			store := database.Users(tx)
+			store := tx.Users()
 			user.SiteAdmin = true
 			if err := store.SetIsSiteAdmin(ctx, user.ID, user.SiteAdmin); err != nil {
 				return err

@@ -12,7 +12,8 @@ import {
     MenuList,
     Position,
     MenuItem,
-    Typography,
+    MenuDivider,
+    H4,
     Text,
 } from '@sourcegraph/wildcard'
 
@@ -152,7 +153,7 @@ export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Pro
                         {actions.map((action, index) => (
                             <React.Fragment key={action.type}>
                                 <DropdownItem action={action} setSelectedType={onSelectedTypeSelect} />
-                                {index !== actions.length - 1 && <div className="dropdown-divider" />}
+                                {index !== actions.length - 1 && <MenuDivider />}
                             </React.Fragment>
                         ))}
                     </MenuList>
@@ -176,7 +177,7 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
     }, [setSelectedType, action.type])
     return (
         <MenuItem className={styles.menuListItem} onSelect={onSelect} disabled={action.disabled}>
-            <Typography.H4 className="mb-1">
+            <H4 className="mb-1">
                 {action.dropdownTitle}
                 {action.experimental && (
                     <>
@@ -184,7 +185,7 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
                         <ProductStatusBadge status="experimental" as="small" />
                     </>
                 )}
-            </Typography.H4>
+            </H4>
             <Text className="text-wrap text-muted mb-0">
                 <small>{action.dropdownDescription}</small>
             </Text>

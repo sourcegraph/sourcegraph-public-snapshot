@@ -26,7 +26,7 @@ const NULL CommitId = 0
 type Service struct {
 	db                   *sql.DB
 	git                  Git
-	createParser         func() ParseSymbolsFunc
+	createParser         func() (ParseSymbolsFunc, error)
 	status               *ServiceStatus
 	repoUpdates          chan struct{}
 	maxRepos             int
@@ -41,7 +41,7 @@ type Service struct {
 func NewService(
 	db *sql.DB,
 	git Git,
-	createParser func() ParseSymbolsFunc,
+	createParser func() (ParseSymbolsFunc, error),
 	maxConcurrentlyIndexing int,
 	maxRepos int,
 	logQueries bool,

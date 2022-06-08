@@ -504,7 +504,7 @@ commands:
     # database:
     #
     #   env:
-    #       POSTGRES_HOST: localhost
+    #       PGHOST: localhost
     #       PGPASSWORD: sourcegraph
     #       PGUSER: sourcegraph
     #
@@ -516,20 +516,7 @@ commands:
   jaeger:
     cmd: |
       .bin/jaeger-all-in-one-${JAEGER_VERSION} --log-level ${JAEGER_LOG_LEVEL}
-    install: |
-      set -e
-      mkdir -p "${JAEGER_DISK}"
-      suffix="${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH)"
-      target="$PWD/.bin/jaeger-all-in-one-${JAEGER_VERSION}"
-      url="https://github.com/jaegertracing/jaeger/releases/download/v${JAEGER_VERSION}/jaeger-${suffix}.tar.gz"
-
-      if [ ! -f "${target}" ]; then
-        echo "downloading ${url}" 1>&2
-        curl -sS -L -f "${url}" | tar -xz --to-stdout "jaeger-${suffix}/jaeger-all-in-one" >"${target}.tmp"
-        mv "${target}.tmp" "${target}"
-      fi
-
-      chmod +x "${target}"
+    install_func: installJaeger
     env:
       JAEGER_VERSION: 1.30.0
       JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger

@@ -16,7 +16,6 @@ import (
 
 	"github.com/golang/gddo/httputil"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -59,7 +58,7 @@ var stateHTMLTemplate string
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
+type EnterpriseInit func(logger log.Logger, db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
 
 type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc
@@ -120,7 +119,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	repos.MustRegisterMetrics(db, envvar.SourcegraphDotComMode())
 
-	store := repos.NewStore(db, sql.TxOptions{Isolation: sql.LevelDefault})
+	store := repos.NewStore(logger.Scoped("store", "repo store"), db, sql.TxOptions{Isolation: sql.LevelDefault})
 	{
 		m := repos.NewStoreMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
@@ -135,8 +134,8 @@ func Main(enterpriseInit EnterpriseInit) {
 		m.MustRegister(prometheus.DefaultRegisterer)
 
 		depsSvc := livedependencies.GetService(db, nil)
-		// TODO(burmudar): update repos.ObservedSource to use lib/log
-		src = repos.NewSourcer(db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(log15.Root(), m))
+		obsLogger := logger.Scoped("ObservedSource", "")
+		src = repos.NewSourcer(db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(obsLogger, m))
 	}
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
@@ -159,7 +158,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	// All dependencies ready
 	var debugDumpers []debugserver.Dumper
 	if enterpriseInit != nil {
-		debugDumpers = enterpriseInit(db, store, keyring.Default(), cf, server)
+		debugDumpers = enterpriseInit(logger, db, store, keyring.Default(), cf, server)
 	}
 
 	syncer := &repos.Syncer{
@@ -195,10 +194,12 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 
-	if !envvar.SourcegraphDotComMode() {
-		// git-server repos purging thread
-		go repos.RunRepositoryPurgeWorker(ctx, db)
+	// git-server repos purging thread
+	var purgeTTL time.Duration
+	if envvar.SourcegraphDotComMode() {
+		purgeTTL = 14 * 24 * time.Hour // two weeks
 	}
+	go repos.RunRepositoryPurgeWorker(ctx, db, purgeTTL)
 
 	// Git fetches scheduler
 	go repos.RunScheduler(ctx, logger, updateScheduler)
@@ -535,7 +536,7 @@ func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateSc
 			IncludePrivate: true,
 		}
 		if u, err := baseRepoStore.ListIndexableRepos(ctx, opts); err != nil {
-			logger.Error("Listing indexable repos", log.Error(err))
+			logger.Error("listing indexable repos", log.Error(err))
 			return
 		} else {
 			// Ensure that uncloned indexable repos are known to the scheduler

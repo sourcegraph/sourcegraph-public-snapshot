@@ -74,11 +74,20 @@ func ContextFromSpan(span opentracing.Span) *otfields.TraceContext {
 	return nil
 }
 
-// Logger will set the TraceContext on l if ctx has one. This is a
-// convenience function around l.WithTrace for the common case.
+// Logger will set the TraceContext on l if ctx has one, and also assign the trace
+// family as a scope if a trace family is found. This is an expanded convenience function
+// around l.WithTrace for the common case.
+//
+// If you already set the family manually on the logger scope, then you might want to use
+// trace.Context(ctx) instead.
 func Logger(ctx context.Context, l sglog.Logger) sglog.Logger {
-	if tc := Context(ctx); tc != nil {
-		return l.WithTrace(*tc)
+	if t := TraceFromContext(ctx); t != nil {
+		if t.family != "" {
+			l = l.Scoped(t.family, "trace family")
+		}
+		if tc := ContextFromSpan(t.span); tc != nil {
+			l = l.WithTrace(*tc)
+		}
 	}
 	return l
 }

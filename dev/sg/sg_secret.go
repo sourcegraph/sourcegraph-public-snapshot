@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"strings"
 
@@ -17,16 +16,22 @@ var (
 	secretListViewFlag bool
 
 	secretCommand = &cli.Command{
-		Name:      "secret",
-		ArgsUsage: "<...subcommand>",
-		Usage:     "Manipulate secrets stored in memory and in file",
-		Category:  CategoryEnv,
+		Name:  "secret",
+		Usage: "Manipulate secrets stored in memory and in file",
+		UsageText: `
+# List all secrets stored in your local configuration.
+sg secret list
+
+# Remove the secrets associated with buildkite (sg ci build)
+sg secret reset buildkite
+`,
+		Category: CategoryEnv,
 		Subcommands: []*cli.Command{
 			{
 				Name:      "reset",
 				ArgsUsage: "<...key>",
 				Usage:     "Remove a specific secret from secrets file",
-				Action:    execAdapter(resetSecretExec),
+				Action:    resetSecretExec,
 			},
 			{
 				Name:  "list",
@@ -40,18 +45,19 @@ var (
 						Destination: &secretListViewFlag,
 					},
 				},
-				Action: execAdapter(listSecretExec),
+				Action: listSecretExec,
 			},
 		},
 	}
 )
 
-func resetSecretExec(ctx context.Context, args []string) error {
+func resetSecretExec(ctx *cli.Context) error {
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		return errors.New("no key provided to reset")
 	}
 
-	secretsStore, err := secrets.FromContext(ctx)
+	secretsStore, err := secrets.FromContext(ctx.Context)
 	if err != nil {
 		return err
 	}
@@ -67,8 +73,8 @@ func resetSecretExec(ctx context.Context, args []string) error {
 	return nil
 }
 
-func listSecretExec(ctx context.Context, args []string) error {
-	secretsStore, err := secrets.FromContext(ctx)
+func listSecretExec(ctx *cli.Context) error {
+	secretsStore, err := secrets.FromContext(ctx.Context)
 	if err != nil {
 		return err
 	}

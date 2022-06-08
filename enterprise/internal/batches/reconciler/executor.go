@@ -1,11 +1,13 @@
 package reconciler
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/url"
 	"strings"
 	"sync"
+	"text/template"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -416,47 +418,29 @@ func (e *executor) changesetSource(ctx context.Context) (sources.ChangesetSource
 }
 
 func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
-	// This is a changeset source using the external service config for authentication,
-	// based on our heuristic in the sources package.
+	// This is a ChangesetSource authenticated with the external service
+	// token.
 	css, err := sourcer.ForRepo(ctx, s, repo)
 	if err != nil {
 		return nil, err
 	}
-	if ch.OwnedByBatchChangeID != 0 {
-		// If the changeset is owned by a batch change, we want to reconcile using
-		// the user's credentials, which means we need to know which user last
-		// applied the owning batch change. Let's go find out.
-		batchChange, err := loadBatchChange(ctx, s, ch.OwnedByBatchChangeID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to load owning batch change")
-		}
-		css, err = sources.WithAuthenticatorForUser(ctx, s, css, batchChange.LastApplierID, repo)
-		if err != nil {
-			switch err {
-			case sources.ErrMissingCredentials:
-				return nil, &errMissingCredentials{repo: string(repo.Name)}
-			case sources.ErrNoSSHCredential:
-				return nil, &errNoSSHCredential{}
-			default:
-				var e sources.ErrNoPushCredentials
-				if errors.As(err, &e) {
-					return nil, &errNoPushCredentials{credentialsType: e.CredentialsType}
-				}
-				return nil, err
+
+	css, err = sources.WithAuthenticatorForChangeset(ctx, s, css, ch, repo, false)
+	if err != nil {
+		switch err {
+		case sources.ErrMissingCredentials:
+			return nil, &errMissingCredentials{repo: string(repo.Name)}
+		case sources.ErrNoSSHCredential:
+			return nil, &errNoSSHCredential{}
+		default:
+			var e sources.ErrNoPushCredentials
+			if errors.As(err, &e) {
+				return nil, &errNoPushCredentials{credentialsType: e.CredentialsType}
 			}
-		}
-	} else {
-		// This retains the external service token, when no site credential is found.
-		// Unowned changesets are imported, and therefore don't need to use a user
-		// credential, since reconciliation isn't a mutating process. We try to use
-		// a site-credential, but it's ok if it doesn't exist.
-		// TODO: This code-path will fail once the site credentials are the only
-		// fallback we want to use.
-		css, err = sources.WithSiteAuthenticator(ctx, s, css, repo)
-		if err != nil {
 			return nil, err
 		}
 	}
+
 	return css, nil
 }
 
@@ -610,10 +594,27 @@ func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getN
 		return errors.Wrap(err, "building URL")
 	}
 
-	cs.Body = fmt.Sprintf(
-		"%s\n\n[_Created by Sourcegraph batch change `%s/%s`._](%s)",
-		cs.Body, ns.Name, batchChange.Name, u,
-	)
+	bcl := fmt.Sprintf("[_Created by Sourcegraph batch change `%s/%s`._](%s)", ns.Name, batchChange.Name, u)
+
+	// Check if the batch change link template variable is present in the changeset
+	// template body.
+	if strings.Contains(cs.Body, "batch_change_link") {
+		// Since we already ran this template before, `cs.Body` should only contain valid templates for `batch_change_link` at this point.
+		t, err := template.New("changeset_template").Delims("${{", "}}").Funcs(template.FuncMap{"batch_change_link": func() string { return bcl }}).Parse(cs.Body)
+		if err != nil {
+			return errors.Wrap(err, "handling batch_change_link: parsing changeset template")
+		}
+
+		var out bytes.Buffer
+		if err := t.Execute(&out, nil); err != nil {
+			return errors.Wrap(err, "handling batch_change_link: executing changeset template")
+		}
+
+		cs.Body = out.String()
+	} else {
+		// Otherwise, append to the end of the body.
+		cs.Body = fmt.Sprintf("%s\n\n%s", cs.Body, bcl)
+	}
 
 	return nil
 }

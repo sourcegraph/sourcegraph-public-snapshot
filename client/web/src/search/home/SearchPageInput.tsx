@@ -134,6 +134,13 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         [submitSearchOnChange]
     )
 
+    // We want to prevent autofocus by default on devices with touch as their only input method.
+    // Touch only devices result in the onscreen keyboard not showing until the input loses focus and
+    // gets focused again by the user. The logic is not fool proof, but should rule out majority of cases
+    // where a touch enabled device has a physical keyboard by relying on detection of a fine pointer with hover ability.
+    const isTouchOnlyDevice =
+        !window.matchMedia('(any-pointer:fine)').matches && window.matchMedia('(any-hover:none)').matches
+
     return (
         <div className="d-flex flex-row flex-shrink-past-contents">
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
@@ -155,7 +162,11 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         queryState={userQueryState}
                         onChange={setUserQueryState}
                         onSubmit={onSubmit}
-                        autoFocus={props.showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
+                        autoFocus={
+                            props.showOnboardingTour
+                                ? shouldFocusQueryInput
+                                : !isTouchOnlyDevice && props.autoFocus !== false
+                        }
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
                     />

@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { Input } from '@sourcegraph/wildcard'
 
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
@@ -33,10 +34,10 @@ export const PlainQueryInput: React.FunctionComponent<
         [onChange]
     )
     return (
-        <input
-            type="text"
+        <Input
             autoFocus={autoFocus}
-            className={classNames('form-control text-code', styles.lazyMonacoQueryInputIntermediateInput, className)}
+            inputClassName={classNames('text-code', styles.lazyMonacoQueryInputIntermediateInput, className)}
+            className="w-100"
             value={queryState.query}
             onChange={onInputChange}
             spellCheck={false}

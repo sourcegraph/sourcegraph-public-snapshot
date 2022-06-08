@@ -5,7 +5,7 @@ import express from 'express'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import signale from 'signale'
 
-import { STATIC_ASSETS_PATH } from '../utils'
+import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 
 import { buildMonaco, BUILD_OPTIONS } from './build'
 import { assetPathPrefix } from './manifestPlugin'
@@ -43,6 +43,7 @@ export const esbuildDevelopmentServer = async (
     configureProxy(proxyApp)
 
     const proxyServer = proxyApp.listen(listenAddress)
+    // eslint-disable-next-line @typescript-eslint/return-await
     return await new Promise<void>((resolve, reject) => {
         proxyServer.once('listening', () => {
             signale.success('esbuild server is ready')

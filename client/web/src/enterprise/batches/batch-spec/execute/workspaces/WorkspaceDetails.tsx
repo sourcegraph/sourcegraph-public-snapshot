@@ -15,9 +15,11 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import TimelineClockOutlineIcon from 'mdi-react/TimelineClockOutlineIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
+import indicator from 'ordinal/indicator'
 import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Badge,
@@ -32,7 +34,10 @@ import {
     CardBody,
     Card,
     Icon,
-    Typography,
+    Code,
+    H1,
+    H3,
+    H4,
     Text,
 } from '@sourcegraph/wildcard'
 
@@ -114,8 +119,12 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
 }) => (
     <>
         <div className="d-flex align-items-center justify-content-between mb-2">
-            <Typography.H3 className={styles.workspaceName}>
-                <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />{' '}
+            <H3 className={styles.workspaceName}>
+                <WorkspaceStateIcon
+                    cachedResultFound={workspace.cachedResultFound}
+                    state={workspace.state}
+                    className="flex-shrink-0"
+                />{' '}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace'
                     ? workspace.repository.name
                     : 'Workspace in hidden repository'}
@@ -124,7 +133,7 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                         <Icon role="img" aria-hidden={true} as={ExternalLinkIcon} />
                     </Link>
                 )}
-            </Typography.H3>
+            </H3>
             <Button className="p-0 ml-2" onClick={deselectWorkspace} variant="icon">
                 <VisuallyHidden>Deselect Workspace</VisuallyHidden>
                 <Icon role="img" aria-hidden={true} as={CloseIcon} />
@@ -176,10 +185,10 @@ const HiddenWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<Hi
 }) => (
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
-        <Typography.H1 className="text-center text-muted mt-5">
+        <H1 className="text-center text-muted mt-5">
             <Icon role="img" aria-hidden={true} as={EyeOffOutlineIcon} />
             <VisuallyHidden>Hidden Workspace</VisuallyHidden>
-        </Typography.H1>
+        </H1>
         <Text alignment="center">This workspace is hidden due to permissions.</Text>
         <Text alignment="center">Contact the owner of this batch change for more information.</Text>
     </>
@@ -286,13 +295,13 @@ const IgnoredWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<I
 }) => (
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
-        <Typography.H1 className="text-center text-muted mt-5">
+        <H1 className="text-center text-muted mt-5">
             <Icon role="img" aria-hidden={true} as={LinkVariantRemoveIcon} />
             <VisuallyHidden>Ignored Workspace</VisuallyHidden>
-        </Typography.H1>
+        </H1>
         <Text alignment="center">
-            This workspace has been skipped because a <Typography.Code>.batchignore</Typography.Code> file is present in
-            the workspace repository.
+            This workspace has been skipped because a <Code>.batchignore</Code> file is present in the workspace
+            repository.
         </Text>
         <Text alignment="center">Enable the execution option to "allow ignored" to override.</Text>
     </>
@@ -307,38 +316,21 @@ const UnsupportedWorkspaceDetails: React.FunctionComponent<
 > = ({ workspace, deselectWorkspace }) => (
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
-        <Typography.H1 className="text-center text-muted mt-5">
+        <H1 className="text-center text-muted mt-5">
             <Icon role="img" aria-hidden={true} as={LinkVariantRemoveIcon} />
             <VisuallyHidden>Unsupported Workspace</VisuallyHidden>
-        </Typography.H1>
+        </H1>
         <Text alignment="center">This workspace has been skipped because it is from an unsupported codehost.</Text>
         <Text alignment="center">Enable the execution option to "allow unsupported" to override.</Text>
     </>
 )
 
-const NumberInQueue: React.FunctionComponent<React.PropsWithChildren<{ number: number }>> = ({ number }) => {
-    let suffix: string
-    console.log('NumberInQueue', number, number % 10)
-    switch (number % 10) {
-        case 1:
-            suffix = 'st'
-            break
-        case 2:
-            suffix = 'nd'
-            break
-        case 3:
-            suffix = 'rd'
-            break
-        default:
-            suffix = 'th'
-    }
-    return (
-        <>
-            {number}
-            <sup>{suffix}</sup>
-        </>
-    )
-}
+const NumberInQueue: React.FunctionComponent<React.PropsWithChildren<{ number: number }>> = ({ number }) => (
+    <>
+        {number}
+        <sup>{indicator(number)}</sup>
+    </>
+)
 
 interface ChangesetSpecNodeProps extends ThemeProps {
     node: BatchSpecWorkspaceChangesetSpecFields
@@ -357,7 +349,7 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
         return (
             <Card>
                 <CardBody>
-                    <Typography.H4>Changeset in a hidden repo</Typography.H4>
+                    <H4>Changeset in a hidden repo</H4>
                 </CardBody>
             </Card>
         )
@@ -373,14 +365,14 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
             title={
                 <div className="d-flex justify-content-between">
                     <div>
-                        <Typography.H4 className="mb-0 d-inline-block mr-2">
-                            <Typography.H3 className={styles.result}>Result</Typography.H3>
+                        <H4 className="mb-0 d-inline-block mr-2">
+                            <H3 className={styles.result}>Result</H3>
                             {node.description.published !== null && (
                                 <Badge className="text-uppercase">
                                     {publishBadgeLabel(node.description.published)}
                                 </Badge>
                             )}{' '}
-                        </Typography.H4>
+                        </H4>
                         <span className="text-muted">
                             <Icon role="img" aria-hidden={true} as={SourceBranchIcon} /> {node.description.headRef}
                         </span>
@@ -394,14 +386,14 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
         >
             <Card className={classNames('mt-2', styles.resultCard)}>
                 <CardBody>
-                    <Typography.H3>Changeset template</Typography.H3>
-                    <Typography.H4>{node.description.title}</Typography.H4>
+                    <H3>Changeset template</H3>
+                    <H4>{node.description.title}</H4>
                     <Text className="mb-0">{node.description.body}</Text>
                     <Text>
                         <strong>Published:</strong> <PublishedValue published={node.description.published} />
                     </Text>
                     <Collapsible
-                        title={<Typography.H3 className="mb-0">Changes</Typography.H3>}
+                        title={<H3 className="mb-0">Changes</H3>}
                         titleClassName="flex-grow-1"
                         defaultExpanded={true}
                     >
@@ -485,15 +477,17 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                 <>
                     <div className={classNames(styles.stepHeader, step.skipped && 'text-muted')}>
                         <StepStateIcon step={step} />
-                        <Typography.H3 className={styles.stepNumber}>Step {step.number}</Typography.H3>
+                        <H3 className={styles.stepNumber}>Step {step.number}</H3>
                         <span className={classNames('text-monospace text-muted', styles.stepCommand)}>{step.run}</span>
                     </div>
                     {step.diffStat && (
                         <DiffStat className={styles.stepDiffStat} {...step.diffStat} expandedCounts={true} />
                     )}
-                    <span className={classNames('text-monospace text-muted', styles.stepTime)}>
-                        <StepTimer step={step} />
-                    </span>
+                    {step.startedAt && (
+                        <span className={classNames('text-monospace text-muted', styles.stepTime)}>
+                            <StepTimer startedAt={step.startedAt} finishedAt={step.finishedAt} />
+                        </span>
+                    )}
                 </>
             }
         >
@@ -552,13 +546,13 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                 <TabPanel className="pt-2" key="command-container">
                                     {step.ifCondition !== null && (
                                         <>
-                                            <Typography.H4>If condition</Typography.H4>
+                                            <H4>If condition</H4>
                                             <LogOutput text={step.ifCondition} className="mb-2" />
                                         </>
                                     )}
-                                    <Typography.H4>Command</Typography.H4>
+                                    <H4>Command</H4>
                                     <LogOutput text={step.run} className="mb-2" />
-                                    <Typography.H4>Container</Typography.H4>
+                                    <H4>Container</H4>
                                     <Text className="text-monospace mb-0">{step.container}</Text>
                                 </TabPanel>
                             </TabPanels>
@@ -586,7 +580,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
         return (
             <Icon
                 role="img"
-                className="text-success"
+                className="text-success flex-shrink-0"
                 aria-label="A cached result for this step has been found"
                 data-tooltip="A cached result for this step has been found"
                 as={ContentSaveIcon}
@@ -597,7 +591,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
         return (
             <Icon
                 role="img"
-                className="text-muted"
+                className="text-muted flex-shrink-0"
                 aria-label="The step has been skipped"
                 data-tooltip="The step has been skipped"
                 as={LinkVariantRemoveIcon}
@@ -608,7 +602,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
         return (
             <Icon
                 role="img"
-                className="text-muted"
+                className="text-muted flex-shrink-0"
                 aria-label="This step is waiting to be processed"
                 data-tooltip="This step is waiting to be processed"
                 as={TimerSandIcon}
@@ -619,7 +613,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
         return (
             <Icon
                 role="img"
-                className="text-muted"
+                className="text-muted flex-shrink-0"
                 aria-label="This step is currently running"
                 data-tooltip="This step is currently running"
                 as={LoadingSpinner}
@@ -630,7 +624,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
         return (
             <Icon
                 role="img"
-                className="text-success"
+                className="text-success flex-shrink-0"
                 aria-label="This step ran successfully"
                 data-tooltip="This step ran successfully"
                 as={CheckBoldIcon}
@@ -640,7 +634,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
     return (
         <Icon
             role="img"
-            className="text-danger"
+            className="text-danger flex-shrink-0"
             aria-label={`This step failed with exit code ${String(step.exitCode)}`}
             data-tooltip={`This step failed with exit code ${String(step.exitCode)}`}
             as={AlertCircleIcon}
@@ -648,14 +642,10 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
     )
 }
 
-const StepTimer: React.FunctionComponent<React.PropsWithChildren<{ step: BatchSpecWorkspaceStepFields }>> = ({
-    step,
-}) => {
-    if (!step.startedAt) {
-        return null
-    }
-    return <Duration start={step.startedAt} end={step.finishedAt ?? undefined} />
-}
+const StepTimer: React.FunctionComponent<React.PropsWithChildren<{ startedAt: string; finishedAt: Maybe<string> }>> = ({
+    startedAt,
+    finishedAt,
+}) => <Duration start={startedAt} end={finishedAt ?? undefined} />
 
 interface WorkspaceStepFileDiffConnectionProps extends ThemeProps {
     workspaceID: Scalars['ID']
