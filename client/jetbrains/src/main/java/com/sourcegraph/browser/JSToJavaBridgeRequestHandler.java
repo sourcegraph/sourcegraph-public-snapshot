@@ -19,6 +19,12 @@ public class JSToJavaBridgeRequestHandler {
     private final PreviewPanel previewPanel;
     private final BrowserAndLoadingPanel topPanel;
 
+    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull PreviewPanel previewPanel, @NotNull BrowserAndLoadingPanel topPanel) {
+        this.project = project;
+        this.previewPanel = previewPanel;
+        this.topPanel = topPanel;
+    }
+
     public JBCefJSQuery.Response handle(@NotNull JsonObject request) {
         String action = request.get("action").getAsString();
         JsonObject arguments;
@@ -86,12 +92,6 @@ public class JSToJavaBridgeRequestHandler {
         } catch (Exception e) {
             return createErrorResponse(action + ": " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
         }
-    }
-
-    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull PreviewPanel previewPanel, @NotNull BrowserAndLoadingPanel topPanel) {
-        this.project = project;
-        this.previewPanel = previewPanel;
-        this.topPanel = topPanel;
     }
 
     public JBCefJSQuery.Response handleInvalidRequest(Exception e) {
