@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dghubble/gologin/v2/github"
+	"github.com/dghubble/gologin/github"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
 

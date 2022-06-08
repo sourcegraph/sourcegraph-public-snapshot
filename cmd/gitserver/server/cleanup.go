@@ -83,6 +83,9 @@ var sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "-1", "the maximum n
 // SRC_ENABLE_SG_MAINTENANCE.
 var enableSGMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "true", "Use sg maintenance during janitorial cleanup phases"))
 
+// The limit of repos cloned on the wrong shard to delete in one janitor run - value <=0 disables delete.
+var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "0", "the maximum number of repos not assigned to this shard we delete in one run"))
+
 var (
 	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_removed",
@@ -112,6 +115,11 @@ var (
 		Name: "src_gitserver_prune_status",
 		Help: "whether git prune was a success (true/false) and whether it was skipped (true/false)",
 	}, []string{"success", "skipped"})
+	janitorTimer = promauto.NewHistogram(prometheus.HistogramOpts{
+		Name:    "src_gitserver_janitor_duration_seconds",
+		Help:    "Duration of gitserver janitor background job",
+		Buckets: []float64{0.1, 1, 10, 60, 300, 3600, 7200},
+	})
 )
 
 const reposStatsName = "repos-stats.json"
@@ -131,8 +139,23 @@ const reposStatsName = "repos-stats.json"
 // 11. Only during first run: Set sizes of repos which don't have it in a database.
 func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	janitorRunning.Set(1)
+	janitorStart := time.Now()
+	defer func() {
+		janitorTimer.Observe(time.Since(janitorStart).Seconds())
+	}()
 	defer janitorRunning.Set(0)
 	cleanupLogger := s.Logger.Scoped("cleanup", "cleanup operation")
+
+	isKnownGitServerShard := false
+	for _, addr := range gitServerAddrs {
+		if s.hostnameMatch(addr) {
+			isKnownGitServerShard = true
+			break
+		}
+	}
+	if !isKnownGitServerShard {
+		s.Logger.Warn("current shard is not included in the list of known gitserver shards, will not delete repos", log.String("current-hostname", s.Hostname), log.Strings("all-shards", gitServerAddrs))
+	}
 
 	bCtx, bCancel := s.serverContext()
 	defer bCancel()
@@ -150,21 +173,34 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		wrongShardReposSizeTotalBytes.Set(float64(wrongShardRepoSize))
 	}()
 
-	computeStats := func(dir GitDir) (done bool, err error) {
+	var wrongShardReposDeleted int64
+	defer func() {
+		// We want to set the gauge only when wrong shard clean-up is enabled
+		if wrongShardReposDeleteLimit > 0 {
+			wrongShardReposDeletedCounter.Add(float64(wrongShardReposDeleted))
+		}
+	}()
+
+	maybeDeleteWrongShardRepos := func(dir GitDir) (done bool, err error) {
 		size := dirSize(dir.Path("."))
 		stats.GitDirBytes += size
 		name := s.name(dir)
 		repoToSize[name] = size
 
 		// Record the number and disk usage used of repos that should
-		// not belong on this instance. This is in preparation to a job that
-		// will actually remove these repos.
+		// not belong on this instance and remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
 		addr := addrForKey(name, gitServerAddrs)
 		if !s.hostnameMatch(addr) {
 			wrongShardRepoCount++
 			wrongShardRepoSize += size
+			if isKnownGitServerShard && wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
+				s.Logger.Info("removing repo cloned on the wrong shard", log.String("dir", string(dir)), log.String("target-shard", addr), log.String("current-shard", s.Hostname), log.Int64("size-bytes", size))
+				if err := s.removeRepoDirectory(dir); err != nil {
+					return false, err
+				}
+				wrongShardReposDeleted++
+			}
 		}
-
 		return false, nil
 	}
 
@@ -342,7 +378,7 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	}
 	cleanups := []cleanupFn{
 		// Compute the amount of space used by the repo
-		{"compute statistics", computeStats},
+		{"compute stats and delete wrong shard repos", maybeDeleteWrongShardRepos},
 		// Do some sanity checks on the repository.
 		{"maybe remove corrupt", maybeRemoveCorrupt},
 		// If git is interrupted it can leave lock files lying around. It does not clean
@@ -446,12 +482,15 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 
 // setRepoSizes uses calculated sizes of repos to update database entries of repos with repo_size_bytes = NULL
 func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]int64) error {
+	logger := s.Logger.Scoped("cleanup.setRepoSizes", "setRepoSizes does cleanup of database entries")
+
 	if len(repoToSize) == 0 {
-		s.Logger.Info("cleanup: file system walk didn't yield any directory sizes")
+		logger.Info("file system walk didn't yield any directory sizes")
 		return nil
 	}
 
-	s.Logger.With(log.Int("repoToSize", len(repoToSize))).Info("cleanup: directory sizes calculated during file system walk")
+	logger.Info("directory sizes calculated during file system walk",
+		log.Int("repoToSize", len(repoToSize)))
 
 	db := s.DB
 	gitserverRepos := db.GitserverRepos()
@@ -461,7 +500,7 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 		return err
 	}
 	if len(reposWithoutSize) == 0 {
-		s.Logger.Info("cleanup: all repos in the DB have their sizes")
+		logger.Info("all repos in the DB have their sizes")
 		return nil
 	}
 
@@ -478,7 +517,9 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 	if err != nil {
 		return err
 	}
-	s.Logger.With(log.Int("reposToUpdate", len(reposToUpdate))).Info("cleanup: repos had their sizes updated")
+	logger.Info("repos had their sizes updated",
+		log.Int("reposToUpdate", len(reposToUpdate)))
+
 	return nil
 }
 
@@ -508,13 +549,10 @@ func (s *Server) howManyBytesToFree() (int64, error) {
 	}
 	const G = float64(1024 * 1024 * 1024)
 
-	logger := s.Logger.With(
+	s.Logger.Debug("howManyBytesToFree",
 		log.Int("desired percent free", s.DesiredPercentFree),
 		log.Float64("actual percent free", float64(actualFreeBytes)/float64(diskSizeBytes)*100.0),
-		log.Float64("amount to free in GiB", float64(howManyBytesToFree)/G),
-	)
-
-	logger.Debug("cleanup")
+		log.Float64("amount to free in GiB", float64(howManyBytesToFree)/G))
 
 	return howManyBytesToFree, nil
 }
@@ -545,6 +583,8 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 	if howManyBytesToFree <= 0 {
 		return nil
 	}
+
+	logger := s.Logger.Scoped("cleanup.freeUpSpace", "removes git directories under ReposDir")
 
 	// Get the git directories and their mod times.
 	gitDirs, err := s.findGitDirs()
@@ -589,16 +629,14 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 		}
 		G := float64(1024 * 1024 * 1024)
 
-		logger := s.Logger.With(
+		logger.Warn("removed least recently used repo",
 			log.String("repo", string(d)),
 			log.Duration("how old", time.Since(dirModTimes[d])),
 			log.Float64("free space in GiB", float64(actualFreeBytes)/G),
 			log.Float64("actual percent of disk space free", float64(actualFreeBytes)/float64(diskSizeBytes)*100.0),
 			log.Float64("desired percent of disk space free", float64(s.DesiredPercentFree)),
 			log.Float64("space freed in GiB", float64(spaceFreed)/G),
-			log.Float64("how much space to free in GiB", float64(howManyBytesToFree)/G),
-		)
-		logger.Warn("cleanup: removed least recently used repo")
+			log.Float64("how much space to free in GiB", float64(howManyBytesToFree)/G))
 	}
 
 	// Check.
@@ -763,6 +801,8 @@ func (s *Server) cleanTmpFiles(dir GitDir) {
 // SetupAndClearTmp sets up the the tempdir for ReposDir as well as clearing it
 // out. It returns the temporary directory location.
 func (s *Server) SetupAndClearTmp() (string, error) {
+	logger := s.Logger.Scoped("cleanup.SetupAndClearTmp", "sets up the the tempdir for ReposDir as well as clearing it out")
+
 	// Additionally we create directories with the prefix .tmp-old which are
 	// asynchronously removed. We do not remove in place since it may be a
 	// slow operation to block on. Our tmp dir will be ${s.ReposDir}/.tmp
@@ -790,7 +830,7 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 	// Asynchronously remove old temporary directories
 	files, err := os.ReadDir(s.ReposDir)
 	if err != nil {
-		s.Logger.Error("failed to do tmp cleanup", log.Error(err))
+		logger.Error("failed to do tmp cleanup", log.Error(err))
 	} else {
 		for _, f := range files {
 			// Remove older .tmp directories as well as our older tmp-
@@ -801,7 +841,7 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 			}
 			go func(path string) {
 				if err := os.RemoveAll(path); err != nil {
-					s.Logger.Error("cleanup: failed to remove old temporary directory", log.String("path", path), log.Error(err))
+					logger.Error("failed to remove old temporary directory", log.String("path", path), log.Error(err))
 				}
 			}(filepath.Join(s.ReposDir, f.Name()))
 		}

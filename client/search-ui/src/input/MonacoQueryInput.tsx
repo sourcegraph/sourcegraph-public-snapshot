@@ -96,6 +96,8 @@ export interface MonacoQueryInputProps
      */
     placeholder?: string
 
+    ariaLabel?: string
+
     editorClassName?: string
 }
 
@@ -176,15 +178,22 @@ export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<M
     editorClassName,
     onEditorCreated: onEditorCreatedCallback,
     placeholder,
+    ariaLabel = 'Search query',
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
 
     const onEditorCreated = useCallback(
         (editor: Monaco.editor.IStandaloneCodeEditor) => {
+            // `role` set to fix accessibility issues
+            // https://github.com/sourcegraph/sourcegraph/issues/34733
+            editor.getDomNode()?.setAttribute('role', 'textbox')
+            // `aria-label` to fix accessibility audit
+            editor.getDomNode()?.setAttribute('aria-label', ariaLabel)
+
             setEditor(editor)
             onEditorCreatedCallback?.(editor)
         },
-        [setEditor, onEditorCreatedCallback]
+        [setEditor, onEditorCreatedCallback, ariaLabel]
     )
 
     // Trigger a layout of the Monaco editor when its container gets resized.

@@ -815,7 +815,7 @@ Manage analytics collected by sg.
 
 Make sg better by submitting all analytics stored locally!.
 
-Uses OKAYHQ_TOKEN, or fetches a token from gcloud.
+Uses OKAYHQ_TOKEN, or fetches a token from gcloud or 1password.
 
 Arguments: `[github username]`
 

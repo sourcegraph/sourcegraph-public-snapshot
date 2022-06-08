@@ -1,0 +1,254 @@
+[
+  {
+   "slug": "go",
+   "id": 10060,
+   "name": "go",
+   "scmId": "git",
+   "state": "AVAILABLE",
+   "statusMessage": "Available",
+   "forkable": true,
+   "origin": null,
+   "project": {
+    "key": "SGDEMO",
+    "id": 26,
+    "name": "Sourcegraph Demo",
+    "public": false,
+    "type": "NORMAL",
+    "links": {
+     "self": [
+      {
+       "href": "https://bitbucket.sgdev.org/projects/SGDEMO"
+      }
+     ]
+    }
+   },
+   "public": false,
+   "links": {
+    "clone": [
+     {
+      "href": "https://bitbucket.sgdev.org/scm/sgdemo/go.git",
+      "name": "http"
+     },
+     {
+      "href": "ssh://git@bitbucket.sgdev.org:7999/sgdemo/go.git",
+      "name": "ssh"
+     }
+    ],
+    "self": [
+     {
+      "href": "https://bitbucket.sgdev.org/projects/SGDEMO/repos/go/browse"
+     }
+    ]
+   }
+  },
+  {
+   "slug": "jenkins",
+   "id": 10056,
+   "name": "jenkins",
+   "scmId": "git",
+   "state": "AVAILABLE",
+   "statusMessage": "Available",
+   "forkable": true,
+   "origin": null,
+   "project": {
+    "key": "SGDEMO",
+    "id": 26,
+    "name": "Sourcegraph Demo",
+    "public": false,
+    "type": "NORMAL",
+    "links": {
+     "self": [
+      {
+       "href": "https://bitbucket.sgdev.org/projects/SGDEMO"
+      }
+     ]
+    }
+   },
+   "public": false,
+   "links": {
+    "clone": [
+     {
+      "href": "https://bitbucket.sgdev.org/scm/sgdemo/jenkins.git",
+      "name": "http"
+     },
+     {
+      "href": "ssh://git@bitbucket.sgdev.org:7999/sgdemo/jenkins.git",
+      "name": "ssh"
+     }
+    ],
+    "self": [
+     {
+      "href": "https://bitbucket.sgdev.org/projects/SGDEMO/repos/jenkins/browse"
+     }
+    ]
+   }
+  },
+  {
+   "slug": "mux",
+   "id": 10061,
+   "name": "mux",
+   "scmId": "git",
+   "state": "AVAILABLE",
+   "statusMessage": "Available",
+   "forkable": true,
+   "origin": null,
+   "project": {
+    "key": "SGDEMO",
+    "id": 26,
+    "name": "Sourcegraph Demo",
+    "public": false,
+    "type": "NORMAL",
+    "links": {
+     "self": [
+      {
+       "href": "https://bitbucket.sgdev.org/projects/SGDEMO"
+      }
+     ]
+    }
+   },
+   "public": false,
+   "links": {
+    "clone": [
+     {
+      "href": "ssh://git@bitbucket.sgdev.org:7999/sgdemo/mux.git",
+      "name": "ssh"
+     },
+     {
+      "href": "https://bitbucket.sgdev.org/scm/sgdemo/mux.git",
+      "name": "http"
+     }
+    ],
+    "self": [
+     {
+      "href": "https://bitbucket.sgdev.org/projects/SGDEMO/repos/mux/browse"
+     }
+    ]
+   }
+  },
+  {
+   "slug": "sentry",
+   "id": 10058,
+   "name": "sentry",
+   "scmId": "git",
+   "state": "AVAILABLE",
+   "statusMessage": "Available",
+   "forkable": true,
+   "origin": null,
+   "project": {
+    "key": "SGDEMO",
+    "id": 26,
+    "name": "Sourcegraph Demo",
+    "public": false,
+    "type": "NORMAL",
+    "links": {
+     "self": [
+      {
+       "href": "https://bitbucket.sgdev.org/projects/SGDEMO"
+      }
+     ]
+    }
+   },
+   "public": false,
+   "links": {
+    "clone": [
+     {
+      "href": "ssh://git@bitbucket.sgdev.org:7999/sgdemo/sentry.git",
+      "name": "ssh"
+     },
+     {
+      "href": "https://bitbucket.sgdev.org/scm/sgdemo/sentry.git",
+      "name": "http"
+     }
+    ],
+    "self": [
+     {
+      "href": "https://bitbucket.sgdev.org/projects/SGDEMO/repos/sentry/browse"
+     }
+    ]
+   }
+  },
+  {
+   "slug": "sinatra",
+   "id": 10059,
+   "name": "sinatra",
+   "scmId": "git",
+   "state": "AVAILABLE",
+   "statusMessage": "Available",
+   "forkable": true,
+   "origin": null,
+   "project": {
+    "key": "SGDEMO",
+    "id": 26,
+    "name": "Sourcegraph Demo",
+    "public": false,
+    "type": "NORMAL",
+    "links": {
+     "self": [
+      {
+       "href": "https://bitbucket.sgdev.org/projects/SGDEMO"
+      }
+     ]
+    }
+   },
+   "public": false,
+   "links": {
+    "clone": [
+     {
+      "href": "ssh://git@bitbucket.sgdev.org:7999/sgdemo/sinatra.git",
+      "name": "ssh"
+     },
+     {
+      "href": "https://bitbucket.sgdev.org/scm/sgdemo/sinatra.git",
+      "name": "http"
+     }
+    ],
+    "self": [
+     {
+      "href": "https://bitbucket.sgdev.org/projects/SGDEMO/repos/sinatra/browse"
+     }
+    ]
+   }
+  },
+  {
+   "slug": "sourcegraph",
+   "id": 10072,
+   "name": "sourcegraph",
+   "scmId": "git",
+   "state": "AVAILABLE",
+   "statusMessage": "Available",
+   "forkable": true,
+   "origin": null,
+   "project": {
+    "key": "SGDEMO",
+    "id": 26,
+    "name": "Sourcegraph Demo",
+    "public": false,
+    "type": "NORMAL",
+    "links": {
+     "self": [
+      {
+       "href": "https://bitbucket.sgdev.org/projects/SGDEMO"
+      }
+     ]
+    }
+   },
+   "public": false,
+   "links": {
+    "clone": [
+     {
+      "href": "https://bitbucket.sgdev.org/scm/sgdemo/sourcegraph.git",
+      "name": "http"
+     },
+     {
+      "href": "ssh://git@bitbucket.sgdev.org:7999/sgdemo/sourcegraph.git",
+      "name": "ssh"
+     }
+    ],
+    "self": [
+     {
+      "href": "https://bitbucket.sgdev.org/projects/SGDEMO/repos/sourcegraph/browse"
+     }
+    ]
+   }
+  }
+ ]

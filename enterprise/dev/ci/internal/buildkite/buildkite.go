@@ -43,24 +43,24 @@ var nonAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 // EnsureUniqueKeys validates generated pipeline have unique keys, and provides a key
 // based on the label if not available.
-func (p *Pipeline) EnsureUniqueKeys(occurences map[string]int) error {
+func (p *Pipeline) EnsureUniqueKeys(occurrences map[string]int) error {
 	for _, step := range p.Steps {
 		if s, ok := step.(*Step); ok {
 			if s.Key == "" {
 				s.Key = nonAlphaNumeric.ReplaceAllString(s.Label, "")
 			}
-			occurences[s.Key] += 1
+			occurrences[s.Key] += 1
 		}
 		if p, ok := step.(*Pipeline); ok {
 			if p.Group.Key == "" || p.Group.Group == "" {
 				return errors.Newf("group %+v must have key and group name", p)
 			}
-			if err := p.EnsureUniqueKeys(occurences); err != nil {
+			if err := p.EnsureUniqueKeys(occurrences); err != nil {
 				return err
 			}
 		}
 	}
-	for k, count := range occurences {
+	for k, count := range occurrences {
 		if count > 1 {
 			return errors.Newf("non unique key on step with key %q", k)
 		}

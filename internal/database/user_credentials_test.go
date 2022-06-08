@@ -644,7 +644,7 @@ func setUpUserCredentialTest(t *testing.T, db DB) (context.Context, encryption.K
 	ctx := context.Background()
 
 	// Create a user that allows us to link the credential somewhere.
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a@example.com",
 		Username:              "u2",
 		Password:              "pw",

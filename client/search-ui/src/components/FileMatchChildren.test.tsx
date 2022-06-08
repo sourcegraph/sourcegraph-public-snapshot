@@ -4,7 +4,6 @@ import _VisibilitySensor from 'react-visibility-sensor'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
-import { MockVisibilitySensor } from '@sourcegraph/shared/src/components/CodeExcerpt.test'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import {
@@ -14,6 +13,7 @@ import {
     HIGHLIGHTED_FILE_LINES,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
+import { MockVisibilitySensor } from './CodeExcerpt.test'
 import { FileMatchChildren } from './FileMatchChildren'
 
 jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children, onChange }) => (

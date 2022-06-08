@@ -500,6 +500,8 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = &struct{}{}
 	case extsvc.TypePythonPackages:
 		r.Metadata = &struct{}{}
+	case extsvc.TypeRustPackages:
+		r.Metadata = &struct{}{}
 	default:
 		log15.Warn("scanRepo - unknown service type", "type", typ)
 		return nil

@@ -79,7 +79,7 @@ func transformRecord(ctx context.Context, s BatchesStore, job *btypes.BatchSpecW
 		},
 	}
 
-	frontendURL := conf.Get().ExternalURL
+	frontendURL := conf.ExecutorsFrontendURL()
 
 	srcEndpoint, err := makeURL(frontendURL, accessToken)
 	if err != nil {

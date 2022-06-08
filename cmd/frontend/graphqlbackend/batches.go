@@ -805,6 +805,7 @@ type BatchSpecWorkspaceResolver interface {
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
 	CachedResultFound() bool
+	StepCacheResultCount() int32
 	BatchSpec(ctx context.Context) (BatchSpecResolver, error)
 	OnlyFetchWorkspace() bool
 	Ignored() bool

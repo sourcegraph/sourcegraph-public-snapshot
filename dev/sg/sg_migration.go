@@ -69,7 +69,7 @@ var (
 		Usage:       "Add a new migration file",
 		Description: cliutil.ConstructLongHelp(),
 		Flags:       []cli.Flag{migrateTargetDatabaseFlag},
-		Action:      execAdapter(addExec),
+		Action:      addExec,
 	}
 
 	revertCommand = &cli.Command{
@@ -77,7 +77,7 @@ var (
 		ArgsUsage:   "<commit>",
 		Usage:       "Revert the migrations defined on the given commit",
 		Description: cliutil.ConstructLongHelp(),
-		Action:      execAdapter(revertExec),
+		Action:      revertExec,
 	}
 
 	// outputFactory lazily retrieves the global output that might not yet be instantiated
@@ -113,7 +113,7 @@ var (
 		ArgsUsage:   "<commit>",
 		Usage:       "Identiy the migration leaves for the given commit",
 		Description: cliutil.ConstructLongHelp(),
-		Action:      execAdapter(leavesExec),
+		Action:      leavesExec,
 	}
 
 	squashCommand = &cli.Command{
@@ -122,7 +122,7 @@ var (
 		Usage:       "Collapse migration files from historic releases together",
 		Description: cliutil.ConstructLongHelp(),
 		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, skipTeardownFlag},
-		Action:      execAdapter(squashExec),
+		Action:      squashExec,
 	}
 
 	squashAllCommand = &cli.Command{
@@ -131,7 +131,7 @@ var (
 		Usage:       "Collapse schema definitions into a single SQL file",
 		Description: cliutil.ConstructLongHelp(),
 		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, skipTeardownFlag, outputFilepathFlag},
-		Action:      execAdapter(squashAllExec),
+		Action:      squashAllExec,
 	}
 
 	visualizeCommand = &cli.Command{
@@ -140,7 +140,7 @@ var (
 		Usage:       "Output a DOT visualization of the migration graph",
 		Description: cliutil.ConstructLongHelp(),
 		Flags:       []cli.Flag{migrateTargetDatabaseFlag, outputFilepathFlag},
-		Action:      execAdapter(visualizeExec),
+		Action:      visualizeExec,
 	}
 
 	migrationCommand = &cli.Command{
@@ -234,7 +234,8 @@ func resolveSchema(name string) (*schemas.Schema, error) {
 	return schema, nil
 }
 
-func addExec(ctx context.Context, args []string) error {
+func addExec(ctx *cli.Context) error {
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		return cli.NewExitError("no migration name specified", 1)
 	}
@@ -252,7 +253,8 @@ func addExec(ctx context.Context, args []string) error {
 
 	return migration.Add(database, args[0])
 }
-func revertExec(ctx context.Context, args []string) error {
+func revertExec(ctx *cli.Context) error {
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		return cli.NewExitError("no commit specified", 1)
 	}
@@ -263,7 +265,8 @@ func revertExec(ctx context.Context, args []string) error {
 	return migration.Revert(db.Databases(), args[0])
 }
 
-func squashExec(ctx context.Context, args []string) (err error) {
+func squashExec(ctx *cli.Context) (err error) {
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		return cli.NewExitError("no current-version specified", 1)
 	}
@@ -289,7 +292,8 @@ func squashExec(ctx context.Context, args []string) (err error) {
 	return migration.Squash(database, commit, squashInContainer, skipTeardown)
 }
 
-func visualizeExec(ctx context.Context, args []string) (err error) {
+func visualizeExec(ctx *cli.Context) (err error) {
+	args := ctx.Args().Slice()
 	if len(args) != 0 {
 		return cli.NewExitError("too many arguments", 1)
 	}
@@ -310,7 +314,8 @@ func visualizeExec(ctx context.Context, args []string) (err error) {
 	return migration.Visualize(database, outputFilepath)
 }
 
-func squashAllExec(ctx context.Context, args []string) (err error) {
+func squashAllExec(ctx *cli.Context) (err error) {
+	args := ctx.Args().Slice()
 	if len(args) != 0 {
 		return cli.NewExitError("too many arguments", 1)
 	}
@@ -331,7 +336,8 @@ func squashAllExec(ctx context.Context, args []string) (err error) {
 	return migration.SquashAll(database, squashInContainer, skipTeardown, outputFilepath)
 }
 
-func leavesExec(ctx context.Context, args []string) (err error) {
+func leavesExec(ctx *cli.Context) (err error) {
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		return cli.NewExitError("no commit specified", 1)
 	}

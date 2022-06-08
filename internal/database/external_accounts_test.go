@@ -52,7 +52,7 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
-	user, err := Users(db).Create(ctx, NewUser{Username: "u"})
+	user, err := db.Users().Create(ctx, NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,7 +121,7 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	user, err := Users(db).GetByID(ctx, userID)
+	user, err := db.Users().GetByID(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -170,7 +170,7 @@ func TestExternalAccounts_CreateUserAndSave_NilData(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	user, err := Users(db).GetByID(ctx, userID)
+	user, err := db.Users().GetByID(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}

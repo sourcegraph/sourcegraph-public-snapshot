@@ -127,7 +127,6 @@ SELECT time,
 			t.Errorf("unexpected results from include list: %v", diff)
 		}
 	})
-
 }
 
 func TestCountData(t *testing.T) {

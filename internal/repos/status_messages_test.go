@@ -29,9 +29,9 @@ func TestStatusMessages(t *testing.T) {
 	}
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := NewStore(database.NewDB(db), sql.TxOptions{})
+	store := NewStore(logtest.Scoped(t), database.NewDB(db), sql.TxOptions{})
 
-	admin, err := database.Users(db).Create(ctx, database.NewUser{
+	admin, err := db.Users().Create(ctx, database.NewUser{
 		Email:                 "a1@example.com",
 		Username:              "a1",
 		Password:              "p",
@@ -39,7 +39,7 @@ func TestStatusMessages(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	nonAdmin, err := database.Users(db).Create(ctx, database.NewUser{
+	nonAdmin, err := db.Users().Create(ctx, database.NewUser{
 		Email:                 "u1@example.com",
 		Username:              "u1",
 		Password:              "p",

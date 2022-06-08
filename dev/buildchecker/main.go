@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -404,13 +405,9 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 			totalFlakes += flake
 		}
 
-		message := fmt.Sprintf(`:bar_chart: Welcome to your weekly CI report for week ending %s!
-	• Total builds: *%d*
-	• Total incident duration: *%v*
-	• Total flakes: *%d*
+		avgFlakes := math.Round(float64(totalFlakes) / float64(totalBuilds) * 100)
 
-	For more information, view the dashboards at <https://app.okayhq.com/dashboards/3856903d-33ea-4d60-9719-68fec0eb4313/build-stats-kpis|OKAYHQ>.
-`, historyFlags.createdToDate, totalBuilds, time.Duration(totalTime*int(time.Minute)), totalFlakes)
+		message := generateSummaryMessage(historyFlags.createdFromDate, historyFlags.createdToDate, totalBuilds, totalFlakes, avgFlakes, time.Duration(totalTime*int(time.Minute)))
 
 		if _, err := postSlackUpdate([]string{historyFlags.slackReportWebHook}, message); err != nil {
 			log.Fatal("postSlackUpdate: ", err)
@@ -426,4 +423,16 @@ func writeCSV(p string, records [][]string) error {
 	}
 	fCsv := csv.NewWriter(f)
 	return fCsv.WriteAll(records)
+}
+
+func generateSummaryMessage(dateFrom, dateTo string, builds, flakes int, avgFlakes float64, downtime time.Duration) string {
+
+	return fmt.Sprintf(`:bar_chart: Welcome to your weekly CI report for period *%s* to *%s*!
+	• Total builds: *%d*
+	• Total flakes: *%d*
+	• Average %% of build flakes: *%v%%*
+	• Total incident duration: *%v*
+
+	For more information, view the dashboards at <https://app.okayhq.com/dashboards/3856903d-33ea-4d60-9719-68fec0eb4313/build-stats-kpis|OkayHQ>.
+`, dateFrom, dateTo, builds, flakes, avgFlakes, downtime)
 }

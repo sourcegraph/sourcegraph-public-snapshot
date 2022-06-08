@@ -184,21 +184,25 @@ export const CheckboxRepositoryNode: React.FunctionComponent<React.PropsWithChil
                 className="p-2 w-100 d-flex justify-content-between"
                 onClick={onClick}
             >
-                <div className="d-flex align-items-center">
+                <div className="d-flex">
                     <Checkbox
                         className="mr-3"
                         aria-label={`select ${name} repository`}
                         onChange={onClick}
                         checked={checked}
-                    />
-                    <StatusIcon mirrorInfo={mirrorInfo} />
-                    <CodeHostIcon hostType={serviceType} />
-                    <RepoLink
-                        className="text-muted"
-                        repoClassName="text-body"
-                        repoName={name}
-                        to={null}
-                        onClick={handleOnClick}
+                        label={
+                            <>
+                                <StatusIcon mirrorInfo={mirrorInfo} />
+                                <CodeHostIcon hostType={serviceType} />
+                                <RepoLink
+                                    className="text-muted"
+                                    repoClassName="text-body"
+                                    repoName={name}
+                                    to={null}
+                                    onClick={handleOnClick}
+                                />
+                            </>
+                        }
                     />
                 </div>
                 <div>

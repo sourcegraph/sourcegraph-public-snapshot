@@ -123,6 +123,7 @@ export const CodeIntelIndexesPage: FunctionComponent<React.PropsWithChildren<Cod
                 <div className="list-group position-relative">
                     <FilteredConnection<LsifIndexFields, Omit<CodeIntelIndexNodeProps, 'node'>>
                         listComponent="div"
+                        inputClassName="w-auto"
                         listClassName={classNames(styles.grid, 'mb-3')}
                         noun="index"
                         pluralNoun="indexes"

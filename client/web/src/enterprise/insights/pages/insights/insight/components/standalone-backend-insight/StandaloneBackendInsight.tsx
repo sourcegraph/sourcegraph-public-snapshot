@@ -58,7 +58,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
-    const [filterVisualMode, setFilterVisialMode] = useState<FilterSectionVisualMode>(FilterSectionVisualMode.Preview)
+    const [filterVisualMode, setFilterVisualMode] = useState<FilterSectionVisualMode>(FilterSectionVisualMode.Preview)
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
     const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(insight.seriesDisplayOptions)
@@ -127,7 +127,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         initialValues={filters}
                         originalValues={originalInsightFilters}
                         visualMode={filterVisualMode}
-                        onVisualModeChange={setFilterVisialMode}
+                        onVisualModeChange={setFilterVisualMode}
                         showSeriesDisplayOptions={insight.type === InsightType.CaptureGroup}
                         onFiltersChange={handleFilterChange}
                         onFilterSave={handleFilterSave}

@@ -52,6 +52,39 @@ func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.D
 	}, nil
 }
 
+type ListAccountsResponse []Account
+
+func (c *Client) ListAccountsByEmail(ctx context.Context, email string) (ListAccountsResponse, error) {
+	qsAccounts := make(url.Values)
+	qsAccounts.Set("q", fmt.Sprintf("email:%s", email)) // TODO: what query should we run?
+	return c.listAccounts(ctx, qsAccounts)
+}
+
+func (c *Client) ListAccountsByUsername(ctx context.Context, username string) (ListAccountsResponse, error) {
+	qsAccounts := make(url.Values)
+	qsAccounts.Set("q", fmt.Sprintf("username:%s", username)) // TODO: what query should we run?
+	return c.listAccounts(ctx, qsAccounts)
+}
+
+func (c *Client) listAccounts(ctx context.Context, qsAccounts url.Values) (ListAccountsResponse, error) {
+	qsAccounts.Set("o", "details")
+
+	urlPath := "a/accounts/"
+
+	uAllProjects := url.URL{Path: urlPath, RawQuery: qsAccounts.Encode()}
+
+	reqAllAccounts, err := http.NewRequest("GET", uAllProjects.String(), nil)
+
+	if err != nil {
+		return nil, err
+	}
+	respAllAccts := ListAccountsResponse{}
+	if _, err = c.do(ctx, reqAllAccounts, &respAllAccts); err != nil {
+		return respAllAccts, err
+	}
+	return respAllAccts, nil
+}
+
 // ListProjectsArgs defines options to be set on ListProjects method calls.
 type ListProjectsArgs struct {
 	Cursor *Pagination
@@ -158,6 +191,14 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 		}
 	}
 	return resp, json.Unmarshal(bs[4:], result)
+}
+
+type Account struct {
+	ID          int32  `json:"_account_id"`
+	Name        string `json:"name"`
+	DisplayName string `json:"display_name"`
+	Email       string `json:"email"`
+	Username    string `json:"username"`
 }
 
 type Project struct {

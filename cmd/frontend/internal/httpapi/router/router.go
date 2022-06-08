@@ -31,10 +31,8 @@ const (
 	SettingsGetForSubject  = "internal.settings.get-for-subject"
 	OrgsListUsers          = "internal.orgs.list-users"
 	OrgsGetByName          = "internal.orgs.get-by-name"
-	UsersGetByUsername     = "internal.users.get-by-username"
 	UserEmailsGetEmail     = "internal.user-emails.get-email"
 	ExternalURL            = "internal.app-url"
-	CanSendEmail           = "internal.can-send-email"
 	SendEmail              = "internal.send-email"
 	Extension              = "internal.extension"
 	GitExec                = "internal.git.exec"
@@ -98,10 +96,8 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/settings/get-for-subject").Methods("POST").Name(SettingsGetForSubject)
 	base.Path("/orgs/list-users").Methods("POST").Name(OrgsListUsers)
 	base.Path("/orgs/get-by-name").Methods("POST").Name(OrgsGetByName)
-	base.Path("/users/get-by-username").Methods("POST").Name(UsersGetByUsername)
 	base.Path("/user-emails/get-email").Methods("POST").Name(UserEmailsGetEmail)
 	base.Path("/app-url").Methods("POST").Name(ExternalURL)
-	base.Path("/can-send-email").Methods("POST").Name(CanSendEmail)
 	base.Path("/send-email").Methods("POST").Name(SendEmail)
 	base.Path("/extension").Methods("POST").Name(Extension)
 	base.Path("/git/{RepoID:[0-9]+}/exec").Methods("POST").Name(GitExec)

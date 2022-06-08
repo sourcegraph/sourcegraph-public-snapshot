@@ -96,7 +96,7 @@ func GitServer() *monitoring.Dashboard {
 								Unit(monitoring.Percentage).
 								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerRepoManagement,
-							PossibleSolutions: `
+							NextSteps: `
 								- **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
 							`,
 						},
@@ -192,7 +192,7 @@ func GitServer() *monitoring.Dashboard {
 							Interpretation: `
 								A high value signals load.
 							`,
-							PossibleSolutions: `
+							NextSteps: `
 								- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 								- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../deploy/docker-compose/migrate.md) which offers better scalability and resource isolation.
 								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../deploy/resource_estimator.md).
@@ -217,7 +217,7 @@ func GitServer() *monitoring.Dashboard {
 							Warning:     monitoring.Alert().GreaterOrEqual(25),
 							Panel:       monitoring.Panel().LegendFormat("queue size"),
 							Owner:       monitoring.ObservableOwnerRepoManagement,
-							PossibleSolutions: `
+							NextSteps: `
 								- **If you just added several repositories**, the warning may be expected.
 								- **Check which repositories need cloning**, by visiting e.g. https://sourcegraph.example.com/site-admin/repositories?filter=not-cloned
 							`,
@@ -229,7 +229,7 @@ func GitServer() *monitoring.Dashboard {
 							Warning:     monitoring.Alert().GreaterOrEqual(25),
 							Panel:       monitoring.Panel().LegendFormat("queue size"),
 							Owner:       monitoring.ObservableOwnerRepoManagement,
-							PossibleSolutions: `
+							NextSteps: `
 								- **Check the code host status indicator for errors:** on the Sourcegraph app homepage, when signed in as an admin click the cloud icon in the top right corner of the page.
 								- **Check if the issue continues to happen after 30 minutes**, it may be temporary.
 								- **Check the gitserver logs for more information.**

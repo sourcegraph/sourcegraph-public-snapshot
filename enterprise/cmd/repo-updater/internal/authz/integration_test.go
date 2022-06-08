@@ -91,7 +91,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			testDB := database.NewDB(dbtest.NewDB(t))
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
+			reposStore := repos.NewStore(logtest.Scoped(t), database.NewDB(testDB), sql.TxOptions{})
 
 			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
@@ -135,7 +135,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 
 			db := database.NewDB(testDB)
 			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(db, reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(logtest.Scoped(t), db, reposStore, permsStore, timeutil.Now, nil)
 
 			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -172,7 +172,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			testDB := database.NewDB(dbtest.NewDB(t))
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
+			reposStore := repos.NewStore(logtest.Scoped(t), database.NewDB(testDB), sql.TxOptions{})
 
 			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
@@ -216,7 +216,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 
 			db := database.NewDB(testDB)
 			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(db, reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(logtest.Scoped(t), db, reposStore, permsStore, timeutil.Now, nil)
 
 			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -276,7 +276,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			testDB := database.NewDB(dbtest.NewDB(t))
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
+			reposStore := repos.NewStore(logtest.Scoped(t), database.NewDB(testDB), sql.TxOptions{})
 
 			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
@@ -323,7 +323,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 
 			db := database.NewDB(testDB)
 			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(db, reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(logtest.Scoped(t), db, reposStore, permsStore, timeutil.Now, nil)
 
 			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -360,7 +360,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			testDB := database.NewDB(dbtest.NewDB(t))
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
+			reposStore := repos.NewStore(logtest.Scoped(t), database.NewDB(testDB), sql.TxOptions{})
 
 			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
@@ -407,7 +407,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 
 			db := database.NewDB(testDB)
 			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(db, reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(logtest.Scoped(t), db, reposStore, permsStore, timeutil.Now, nil)
 
 			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
 			if err != nil {

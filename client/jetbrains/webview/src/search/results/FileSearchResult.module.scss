@@ -3,13 +3,13 @@
     overflow-x: hidden;
     cursor: pointer;
     user-select: none;
-    background-color: var(--code-bg);
+    background-color: var(--dropdown-bg);
     display: flex;
     justify-content: space-between;
     align-items: center;
 
     &-active {
-        background-color: var(--code-selection-bg);
+        background-color: var(--color-bg-3);
     }
 
     &-code {
@@ -22,7 +22,7 @@
         overflow-x: hidden;
 
         &-highlight {
-            background-color: var(--hl-dark-yellow);
+            background-color: var(--mark-bg);
             color: var(--hl-gray-4);
             border-radius: 2px;
         }

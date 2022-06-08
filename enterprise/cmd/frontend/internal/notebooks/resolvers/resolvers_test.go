@@ -181,7 +181,7 @@ func TestSingleNotebookCRUD(t *testing.T) {
 	internalCtx := actor.WithInternalActor(context.Background())
 	testdb := database.NewDB(dbtest.NewDB(t))
 	db := database.NewDB(testdb)
-	u := database.Users(db)
+	u := db.Users()
 	o := db.Orgs()
 	om := db.OrgMembers()
 
@@ -550,7 +550,7 @@ func createNotebookStars(t *testing.T, db database.DB, notebookID int64, userIDs
 func TestListNotebooks(t *testing.T) {
 	db := database.NewDB(dbtest.NewDB(t))
 	internalCtx := actor.WithInternalActor(context.Background())
-	u := database.Users(db)
+	u := db.Users()
 	o := db.Orgs()
 	om := db.OrgMembers()
 

@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
-import { catchError, concatMap, delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
+import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import * as GQL from '@sourcegraph/shared/src/schema'
@@ -226,7 +226,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     }
 
     private remoteRefreshes = new Subject<void>()
-    private remoteUpdates = new Subject<string>()
     private siteReloads = new Subject<void>()
     private subscriptions = new Subscription()
 
@@ -246,61 +245,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             )
         )
         this.remoteRefreshes.next()
-
-        this.subscriptions.add(
-            this.remoteUpdates
-                .pipe(
-                    tap(() => this.setState({ saving: true, error: undefined })),
-                    concatMap(newContents => {
-                        const lastConfiguration = this.state.site?.configuration
-                        const lastConfigurationID = lastConfiguration?.id || 0
-
-                        return updateSiteConfiguration(lastConfigurationID, newContents).pipe(
-                            catchError(error => {
-                                console.error(error)
-                                this.setState({ saving: false, error })
-                                return []
-                            }),
-                            tap(() => {
-                                const oldContents = lastConfiguration?.effectiveContents || ''
-                                const oldConfiguration = jsonc.parse(oldContents) as SiteConfiguration
-                                const newConfiguration = jsonc.parse(newContents) as SiteConfiguration
-
-                                // Flipping these feature flags require a reload for the
-                                // UI to be rendered correctly in the navbar and the sidebar.
-                                const keys: (keyof SiteConfiguration)[] = [
-                                    'batchChanges.enabled',
-                                    'codeIntelAutoIndexing.enabled',
-                                ]
-
-                                if (
-                                    !keys.every(
-                                        key => Boolean(oldConfiguration?.[key]) === Boolean(newConfiguration?.[key])
-                                    )
-                                ) {
-                                    window.location.reload()
-                                }
-                            })
-                        )
-                    }),
-                    tap(restartToApply => {
-                        if (restartToApply) {
-                            window.context.needServerRestart = restartToApply
-                        } else {
-                            // Refresh site flags so that global site alerts
-                            // reflect the latest configuration.
-                            // eslint-disable-next-line rxjs/no-ignored-subscription, rxjs/no-nested-subscribe
-                            refreshSiteFlags().subscribe({ error: error => console.error(error) })
-                        }
-                        this.setState({ restartToApply })
-                        this.remoteRefreshes.next()
-                    })
-                )
-                .subscribe(
-                    () => this.setState({ saving: false }),
-                    error => this.setState({ saving: false, error })
-                )
-        )
 
         this.subscriptions.add(
             this.siteReloads
@@ -474,8 +418,9 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         const lastConfiguration = this.state.site?.configuration
         const lastConfigurationID = lastConfiguration?.id || 0
 
+        let restartToApply = false
         try {
-            await updateSiteConfiguration(lastConfigurationID, newContents).toPromise<boolean>()
+            restartToApply = await updateSiteConfiguration(lastConfigurationID, newContents).toPromise<boolean>()
         } catch (error) {
             console.error(error)
             this.setState({ saving: false, error })
@@ -493,18 +438,35 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             window.location.reload()
         }
 
-        this.setState({ saving: false })
+        if (restartToApply) {
+            window.context.needServerRestart = restartToApply
+        } else {
+            // Refresh site flags so that global site alerts
+            // reflect the latest configuration.
+            try {
+                await refreshSiteFlags().toPromise()
+            } catch (error) {
+                console.error(error)
+            }
+        }
+        this.setState({ restartToApply })
 
-        return fetchSite()
-            .toPromise()
-            .then(site => {
-                this.setState({
-                    site,
-                    error: undefined,
-                    loading: false,
-                })
-                return site.configuration.effectiveContents
+        try {
+            const site = await fetchSite().toPromise()
+
+            this.setState({
+                site,
+                error: undefined,
+                loading: false,
             })
+
+            this.setState({ saving: false })
+
+            return site.configuration.effectiveContents
+        } catch (error) {
+            this.setState({ error, loading: false })
+            throw error
+        }
     }
 
     private reloadSite = (): void => {

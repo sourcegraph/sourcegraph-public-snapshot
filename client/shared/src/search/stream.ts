@@ -548,7 +548,7 @@ export function isSearchMatchOfType<T extends SearchMatch['type']>(
 
 // Call the compute endpoint with the given query
 const computeStreamUrl = '/.api/compute/stream'
-export function streamComputeQuery(query: string, computeStreamUrl: string): Observable<string> {
+export function streamComputeQuery(query: string): Observable<string> {
     return new Observable<string>(observer => {
         fetchEventSource(`${computeStreamUrl}?q=${encodeURIComponent(query)}`, {
             method: 'GET',

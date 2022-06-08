@@ -303,7 +303,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
 
-	user, err := Users(db).Create(ctx,
+	user, err := db.Users().Create(ctx,
 		NewUser{
 			Email:           "alice@example.com",
 			Username:        "alice",
@@ -1189,7 +1189,7 @@ func TestGetAffiliatedSyncErrors(t *testing.T) {
 	}
 
 	// Initial user always gets created as an admin
-	admin, err := Users(db).Create(ctx, NewUser{
+	admin, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a1@example.com",
 		Username:              "u1",
 		Password:              "p",
@@ -1198,7 +1198,7 @@ func TestGetAffiliatedSyncErrors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	user2, err := Users(db).Create(ctx, NewUser{
+	user2, err := db.Users().Create(ctx, NewUser{
 		Email:                 "u2@example.com",
 		Username:              "u2",
 		Password:              "p",
@@ -1472,7 +1472,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 	ctx := context.Background()
 
 	// Create test user
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:           "alice@example.com",
 		Username:        "alice",
 		Password:        "password",
@@ -1824,7 +1824,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("many external services", func(t *testing.T) {
-		user, err := Users(db).Create(ctx, NewUser{Username: "alice"})
+		user, err := db.Users().Create(ctx, NewUser{Username: "alice"})
 		if err != nil {
 			t.Fatalf("Test setup error %s", err)
 		}

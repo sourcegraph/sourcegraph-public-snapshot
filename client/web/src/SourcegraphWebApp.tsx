@@ -28,11 +28,11 @@ import {
     getAvailableSearchContextSpecOrDefault,
     SearchQueryStateStoreProvider,
 } from '@sourcegraph/search'
+import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
 import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import {
     Controller as ExtensionsController,
     createController as createExtensionsController,

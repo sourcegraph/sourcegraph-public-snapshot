@@ -1,7 +1,6 @@
-import { getByRole, screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
-import { act } from 'react-dom/test-utils'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -37,21 +36,12 @@ describe('CreateCodeMonitorPage', () => {
         isLightTheme: true,
         isSourcegraphDotCom: false,
     }
-    let clock: sinon.SinonFakeTimers
-
-    beforeEach(() => {
-        clock = sinon.useFakeTimers()
-    })
-
-    afterEach(() => {
-        clock.restore()
-    })
 
     afterEach(() => {
         props.createCodeMonitor.resetHistory()
     })
 
-    test('createCodeMonitor is called on submit', () => {
+    test('createCodeMonitor is called on submit', async () => {
         renderWithBrandedContext(
             <MockedTestProvider>
                 <CreateCodeMonitorPage {...props} />
@@ -64,30 +54,22 @@ describe('CreateCodeMonitorPage', () => {
         const triggerInput = screen.getByTestId('trigger-query-edit')
         expect(triggerInput).toBeInTheDocument()
 
-        const textbox = getByRole(triggerInput, 'textbox')
-        userEvent.type(textbox, 'test type:diff repo:test')
-        act(() => {
-            clock.tick(600)
-        })
+        await waitFor(() => expect(triggerInput.querySelector('textarea[role="textbox"]')).toBeInTheDocument())
 
-        expect(triggerInput).toHaveClass('test-is-valid')
+        const textbox = triggerInput.querySelector('textarea[role="textbox"]')!
+        userEvent.type(textbox, 'test type:diff repo:test')
+
+        await waitFor(() => expect(triggerInput).toHaveClass('test-is-valid'))
 
         userEvent.click(screen.getByTestId('submit-trigger'))
-
         userEvent.click(screen.getByTestId('form-action-toggle-email'))
-
         userEvent.click(screen.getByTestId('submit-action-email'))
 
-        act(() => {
-            clock.tick(600)
-        })
-
         userEvent.click(screen.getByTestId('submit-monitor'))
-
         sinon.assert.called(props.createCodeMonitor)
     })
 
-    test('createCodeMonitor is not called on submit when trigger or action is incomplete', () => {
+    test('createCodeMonitor is not called on submit when trigger or action is incomplete', async () => {
         renderWithBrandedContext(
             <MockedTestProvider>
                 <CreateCodeMonitorPage {...props} />
@@ -105,15 +87,14 @@ describe('CreateCodeMonitorPage', () => {
         const triggerInput = screen.getByTestId('trigger-query-edit')
         expect(triggerInput).toBeInTheDocument()
 
-        const textbox = getByRole(triggerInput, 'textbox')
+        await waitFor(() => expect(triggerInput.querySelector('textarea[role="textbox"]')).toBeInTheDocument())
 
+        const textbox = triggerInput.querySelector('textarea[role="textbox"]')!
         userEvent.type(textbox, 'test type:diff repo:test')
-        act(() => {
-            clock.tick(600)
-        })
-        expect(triggerInput).toHaveClass('test-is-valid')
-        userEvent.click(screen.getByTestId('submit-trigger'))
 
+        await waitFor(() => expect(triggerInput).toHaveClass('test-is-valid'))
+
+        userEvent.click(screen.getByTestId('submit-trigger'))
         userEvent.click(screen.getByTestId('submit-monitor'))
 
         // Pressing enter still does not call createCodeMonitor
@@ -121,10 +102,6 @@ describe('CreateCodeMonitorPage', () => {
 
         userEvent.click(screen.getByTestId('form-action-toggle-email'))
         userEvent.click(screen.getByTestId('submit-action-email'))
-
-        act(() => {
-            clock.tick(600)
-        })
 
         // Pressing enter calls createCodeMonitor when all sections are complete
         userEvent.click(screen.getByTestId('submit-monitor'))

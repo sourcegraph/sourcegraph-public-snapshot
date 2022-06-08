@@ -431,9 +431,9 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		errCollector.Collect(&err)
 		plainResponse, tableErr := generatePlainTable(code)
 		if tableErr != nil {
-			return nil, true, errors.CombineErrors(err, tableErr)
+			return nil, false, errors.CombineErrors(err, tableErr)
 		}
-		return plainResponse, false, err
+		return plainResponse, true, nil
 	}
 
 	if ctx.Err() == context.DeadlineExceeded {
@@ -450,7 +450,10 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 
 		// Timeout, so render plain table.
 		plainResponse, err := generatePlainTable(code)
-		return plainResponse, true, err
+		if err != nil {
+			return nil, false, err
+		}
+		return plainResponse, true, nil
 	} else if err != nil {
 		log15.Error(
 			"syntax highlighting failed (this is a bug, please report it)",
