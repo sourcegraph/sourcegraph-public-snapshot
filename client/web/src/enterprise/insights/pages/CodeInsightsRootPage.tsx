@@ -90,7 +90,13 @@ export const CodeInsightsRootPage: React.FunctionComponent<
                 path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
                 actions={
                     <>
-                        <Button as={Link} to="/insights/add-dashboard" variant="secondary" className="mr-2">
+                        <Button
+                            as={Link}
+                            to="/insights/add-dashboard"
+                            variant="secondary"
+                            className="mr-2"
+                            aria-label="add dashboard button"
+                        >
                             <Icon role="img" aria-hidden={true} as={PlusIcon} /> Add dashboard
                         </Button>
                         <Button
