@@ -9,6 +9,8 @@ import { MockedStoryProvider, MockedStoryProviderProps, usePrependStyles, useThe
 // eslint-disable-next-line no-restricted-imports
 import { DeprecatedTooltip, WildcardThemeContext } from '@sourcegraph/wildcard'
 
+import { MockedFeatureFlagsProvider } from '../featureFlags/FeatureFlagsProvider'
+
 import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
 
 import webStyles from '../SourcegraphWebApp.scss'
@@ -40,14 +42,16 @@ export const WebStory: React.FunctionComponent<React.PropsWithChildren<WebStoryP
     return (
         <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
             <WildcardThemeContext.Provider value={{ isBranded: true }}>
-                <MemoryRouter {...memoryRouterProps}>
-                    <DeprecatedTooltip />
-                    <Children
-                        {...breadcrumbSetters}
-                        isLightTheme={isLightTheme}
-                        telemetryService={NOOP_TELEMETRY_SERVICE}
-                    />
-                </MemoryRouter>
+                <MockedFeatureFlagsProvider overrides={{}}>
+                    <MemoryRouter {...memoryRouterProps}>
+                        <DeprecatedTooltip />
+                        <Children
+                            {...breadcrumbSetters}
+                            isLightTheme={isLightTheme}
+                            telemetryService={NOOP_TELEMETRY_SERVICE}
+                        />
+                    </MemoryRouter>
+                </MockedFeatureFlagsProvider>
             </WildcardThemeContext.Provider>
         </MockedStoryProvider>
     )
