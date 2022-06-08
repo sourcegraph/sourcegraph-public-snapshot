@@ -5,8 +5,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -231,6 +234,48 @@ We recommend installing it with Homebrew and starting it as a system service.`,
 				Fix: cmdsAction(
 					"brew reinstall redis",
 					"brew services start redis",
+				),
+			},
+		},
+	},
+	{
+		Name: "Set up proxy for local development",
+		Checks: []*dependency{
+			{
+				Name: "/etc/hosts contains sourcegraph.test",
+				Description: `Sourcegraph should be reachable under https://sourcegraph.test:3443.
+To do that, we need to add sourcegraph.test to the /etc/hosts file.`,
+				Check: checkAction(check.FileContains("/etc/hosts", "sourcegraph.test")),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					return root.Run(run.Cmd(ctx, `./dev/add_https_domain_to_hosts.sh`)).StreamLines(cio.Verbose)
+				},
+			},
+			{
+				Name: "Caddy root certificate is trusted by system",
+				Description: `In order to use TLS to access your local Sourcegraph instance, you need to
+trust the certificate created by Caddy, the proxy we use locally.
+
+YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
+				Check: checkAction(checkCaddyTrusted),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					return root.Run(run.Cmd(ctx, `./dev/caddy.sh trust`)).StreamLines(cio.Verbose)
+				},
+			},
+		},
+	},
+	categoryAdditionalSGConfiguration(),
+	{
+		Name:      "Set up cloud services",
+		DependsOn: []string{depsHomebrew},
+		Enabled:   teammatesOnly(),
+		Checks: []*dependency{
+			dependencyGcloud(),
+			{
+				Name:  "1password",
+				Check: checkAction(check1password()),
+				Fix: cmdsAction(
+					"brew install --cask 1password/tap/1password-cli",
+					"eval $(op account add --address team-sourcegraph.1password.com --signin)",
 				),
 			},
 		},

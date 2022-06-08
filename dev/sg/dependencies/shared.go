@@ -4,10 +4,12 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -93,6 +95,106 @@ https://docs.github.com/en/authentication/connecting-to-github-with-ssh`,
 				},
 				Fix: cmdAction(`git clone git@github.com:sourcegraph/dev-private.git`),
 			},
+		},
+	}
+}
+
+func categoryAdditionalSGConfiguration() category {
+	return category{
+		Name: "Additional sg configuration",
+		Checks: []*dependency{
+			{
+				Name: "Autocompletions",
+				Check: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if !usershell.IsSupportedShell(ctx) {
+						return nil // dont do setup
+					}
+					sgHome, err := root.GetSGHomePath()
+					if err != nil {
+						return err
+					}
+					shell := usershell.ShellType(ctx)
+					autocompletePath := usershell.AutocompleteScriptPath(sgHome, shell)
+					if _, err := os.Stat(autocompletePath); err != nil {
+						return errors.Wrapf(err, "autocomplete script for shell %s not found", shell)
+					}
+
+					shellConfig := usershell.ShellConfigPath(ctx)
+					conf, err := os.ReadFile(shellConfig)
+					if err != nil {
+						return err
+					}
+					if !strings.Contains(string(conf), autocompletePath) {
+						return errors.Newf("autocomplete script %s not found in shell config %s",
+							autocompletePath, shellConfig)
+					}
+					return nil
+				},
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					sgHome, err := root.GetSGHomePath()
+					if err != nil {
+						return err
+					}
+
+					shell := usershell.ShellType(ctx)
+					if shell == "" {
+						return errors.New("failed to detect shell type")
+					}
+					autocompleteScript := usershell.AutocompleteScripts[shell]
+					autocompletePath := usershell.AutocompleteScriptPath(sgHome, shell)
+
+					cio.Verbosef("Writing autocomplete script to %s", autocompletePath)
+					if err := root.Run(run.Cmd(ctx, `echo '%s' > %s`, autocompleteScript, autocompletePath)).Wait(); err != nil {
+						return err
+					}
+
+					shellConfig := usershell.ShellConfigPath(ctx)
+					if shellConfig == "" {
+						return errors.New("Failed to detect shell config path")
+					}
+					conf, err := os.ReadFile(shellConfig)
+					if err != nil {
+						return err
+					}
+					if !strings.Contains(string(conf), autocompletePath) {
+						cio.Verbosef("Adding configuration to %s", shellConfig)
+						if err := root.Run(run.Cmd(ctx, `echo "PROG=sg source %s" >> %s`,
+							autocompletePath, shellConfig)).Wait(); err != nil {
+							return err
+						}
+					}
+
+					return nil
+				},
+			},
+		},
+	}
+}
+
+func dependencyGcloud() *dependency {
+	return &dependency{
+		Name: "gcloud",
+		Check: checkAction(
+			check.Combine(
+				check.InPath("gcloud"),
+				// User should have logged in with a sourcegraph.com account
+				check.CommandOutputContains("gcloud auth list", "@sourcegraph.com")),
+		),
+		Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+			if err := check.InPath("gcloud")(ctx); err != nil {
+				// This is the official interactive installer: https://cloud.google.com/sdk/docs/downloads-interactive
+				if err := run.Cmd(ctx, "curl https://sdk.cloud.google.com | bash").
+					Input(cio.Input).
+					Run().StreamLines(cio.Write); err != nil {
+					return err
+				}
+			}
+
+			if err := run.Cmd(ctx, "gcloud auth login").Input(cio.Input).Run().StreamLines(cio.Write); err != nil {
+				return err
+			}
+
+			return run.Cmd(ctx, "gcloud auth configure-docker").Run().Wait()
 		},
 	}
 }

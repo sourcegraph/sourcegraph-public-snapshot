@@ -315,3 +315,10 @@ func checkRustVersion(ctx context.Context, cio check.IO, args CheckArgs) error {
 
 	return check.Version("cargo", parts[1], constraint)
 }
+
+// check1password defines the 1password dependency check which is uniform across platforms.
+func check1password() check.CheckFunc {
+	return check.Combine(
+		check.WrapErrMessage(check.InPath("op"), "The 1password CLI, 'op', is required"),
+		check.CommandOutputContains("op account list", "team-sourcegraph.1password.com"))
+}
