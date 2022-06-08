@@ -619,6 +619,11 @@ declare module 'sourcegraph' {
     }
 
     interface TextDocumentDecorationTypeConfig {
+        /**
+         * Defines whether to show decorations inline (default) or in a separate column.
+         * Column display can only be applied if `enableExtensionsDecorationsColumnView`
+         * experimental feature is enabled.
+         */
         display: 'inline' | 'column'
     }
 
