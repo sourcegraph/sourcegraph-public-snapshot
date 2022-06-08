@@ -73,7 +73,8 @@ var Mac = []category{
 			{
 				Name:  "bash",
 				Check: checkAction(check.CommandOutputContains("bash --version", "version 5")),
-				Fix:   cmdAction(`brew install bash`)},
+				Fix:   cmdAction(`brew install bash`),
+			},
 			{
 				Name: "rosetta",
 				Check: checkAction(
@@ -84,6 +85,11 @@ var Mac = []category{
 						check.CommandExitCode("pgrep oahd", 0)),
 				),
 				Fix: cmdAction(`softwareupdate --install-rosetta --agree-to-license`),
+			},
+			{
+				Name:  "certutil",
+				Check: checkAction(check.InPath("certutil")),
+				Fix:   cmdAction(`brew install nss`),
 			},
 			{
 				Name: "docker",

@@ -144,7 +144,9 @@ func categoryAdditionalSGConfiguration() category {
 					autocompletePath := usershell.AutocompleteScriptPath(sgHome, shell)
 
 					cio.Verbosef("Writing autocomplete script to %s", autocompletePath)
-					if err := root.Run(run.Cmd(ctx, `echo '%s' > %s`, autocompleteScript, autocompletePath)).Wait(); err != nil {
+					if err := usershell.Run(ctx,
+						"echo", run.Arg(autocompleteScript), ">", autocompletePath,
+					).Wait(); err != nil {
 						return err
 					}
 
@@ -158,8 +160,9 @@ func categoryAdditionalSGConfiguration() category {
 					}
 					if !strings.Contains(string(conf), autocompletePath) {
 						cio.Verbosef("Adding configuration to %s", shellConfig)
-						if err := root.Run(run.Cmd(ctx, `echo "PROG=sg source %s" >> %s`,
-							autocompletePath, shellConfig)).Wait(); err != nil {
+						if err := usershell.Run(ctx,
+							"echo", run.Arg(`PROG=sg source `+autocompletePath), ">>", shellConfig,
+						).Wait(); err != nil {
 							return err
 						}
 					}
@@ -181,6 +184,10 @@ func dependencyGcloud() *dependency {
 				check.CommandOutputContains("gcloud auth list", "@sourcegraph.com")),
 		),
 		Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+			if cio.Input == nil {
+				return errors.New("interactive input required to fix this check")
+			}
+
 			if err := check.InPath("gcloud")(ctx); err != nil {
 				// This is the official interactive installer: https://cloud.google.com/sdk/docs/downloads-interactive
 				if err := run.Cmd(ctx, "curl https://sdk.cloud.google.com | bash").

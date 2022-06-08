@@ -23,6 +23,37 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// cmdAction executes the given command as an action in a new user shell.
+func cmdAction(cmd string) check.ActionFunc[CheckArgs] {
+	return func(ctx context.Context, cio check.IO, args CheckArgs) error {
+		c := usershell.Command(ctx, cmd)
+		if cio.Input != nil {
+			c = c.Input(cio.Input)
+		}
+		return c.Run().StreamLines(cio.Verbose)
+	}
+}
+
+func cmdsAction(cmds ...string) check.ActionFunc[CheckArgs] {
+	return func(ctx context.Context, cio check.IO, args CheckArgs) error {
+		for _, cmd := range cmds {
+			if err := cmdAction(cmd)(ctx, cio, args); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
+func teammatesOnly() check.EnableFunc[CheckArgs] {
+	return func(ctx context.Context, args CheckArgs) error {
+		if !args.Teammate {
+			return errors.New("Disabled if not a Sourcegraph teammate")
+		}
+		return nil
+	}
+}
+
 func pathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
