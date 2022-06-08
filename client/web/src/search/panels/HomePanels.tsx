@@ -49,22 +49,21 @@ export type HomePanelsFetchMore = (
     fetchMoreOptions: Partial<HomePanelsQueryVariables>
 ) => Promise<ApolloQueryResult<HomePanelsQueryResult>>
 
-// Commenting out these lines to avoid the error for now
 export const HOME_PANELS_QUERY = gql`
     query HomePanelsQuery(
         $userId: ID!
         $firstRecentlySearchedRepositories: Int!
         $firstRecentSearches: Int!
-        #$firstRecentFiles: Int!
+        $firstRecentFiles: Int!
         $enableSavedSearches: Boolean!
-        #$enableCollaborators: Boolean!
+        $enableCollaborators: Boolean!
     ) {
         node(id: $userId) {
             __typename
             ...RecentlySearchedRepositoriesFragment
             ...RecentSearchesPanelFragment
-            #...RecentFilesFragment
-            #...CollaboratorsFragment
+            ...RecentFilesFragment
+            ...CollaboratorsFragment
         }
         ...SavedSearchesPanelFragment
     }
