@@ -129,7 +129,12 @@ func (o *Output) SetVerbose() {
 	o.lock.Lock()
 	defer o.lock.Unlock()
 	o.verbose = true
+}
 
+func (o *Output) UnsetVerbose() {
+	o.lock.Lock()
+	defer o.lock.Unlock()
+	o.verbose = false
 }
 
 func (o *Output) Unlock() {

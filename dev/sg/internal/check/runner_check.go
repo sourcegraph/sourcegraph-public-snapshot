@@ -33,16 +33,16 @@ func (c *Check[Args]) Update(ctx context.Context, cio IO, args Args) error {
 }
 
 // IsEnabled checks and writes some output based on whether or not this check is enabled.
-func (c *Check[Args]) IsEnabled(ctx context.Context, cio IO, args Args) bool {
+func (c *Check[Args]) IsEnabled(ctx context.Context, cio IO, args Args) error {
 	if c.Enabled == nil {
-		return true
+		return nil
 	}
 	err := c.Enabled(ctx, args)
 	if err != nil {
 		cio.Writer.WriteLine(output.Styledf(output.StyleGrey, "Skipped %s: %s", c.Name, err.Error()))
 		c.checkRun = true // treat this as a run that succeeded
 	}
-	return err == nil
+	return err
 }
 
 // IsSatisfied indicates if this check has been run, and if it has errored. RunCheck

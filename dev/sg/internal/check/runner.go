@@ -176,9 +176,10 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		progress.VerboseLine(output.Styledf(output.StylePending, "%d. %s - Determining status...", idx, category.Name))
 
 		if err := category.CheckEnabled(ctx, args); err != nil {
-			progress.WriteLine(output.Linef(output.EmojiQuestionMark, output.StyleGrey, "%d. %s %s[SKIPPED: %s]%s",
-				idx, category.Name, output.StyleBold, err.Error(), output.StyleReset))
 			skipped = append(skipped, i)
+			progress.VerboseLine(output.Styledf(output.StyleGrey, "%s: Category skipped: %s", category.Name, err.Error()))
+			// Mark all as done
+			progress.SetValue(i, float64(len(category.Checks)))
 			continue
 		}
 
@@ -188,28 +189,33 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 			defer wg.Done()
 
 			// Validate checks
-			for ci, c := range category.Checks {
-				var out strings.Builder
-				cio := IO{
-					Input:  r.in,
-					Writer: std.NewFixedOutput(&out, true),
-				}
-
-				if !c.IsEnabled(ctx, cio, args) {
-					// Mark as done anyway
-					progress.SetValue(i, float64(ci+1))
-					continue
-				}
-
-				if err := c.Update(ctx, cio, args); err != nil {
-					outStr := out.String()
-					if len(outStr) > 0 {
-						progress.VerboseLine(output.Styledf(output.StyleWarning, "%s: Check failed, output:", c.Name))
-						progress.Verbose(outStr)
+			for ci, check := range category.Checks {
+				go func(ci int, check *Check[Args]) {
+					var out strings.Builder
+					cio := IO{
+						Input:  r.in,
+						Writer: std.NewFixedOutput(&out, true),
 					}
-					progress.VerboseLine(output.Styledf(output.StyleWarning, "%s: %s", err.Error(), c.Name))
-				}
-				progress.SetValue(i, float64(ci+1))
+
+					if err := check.IsEnabled(ctx, cio, args); err != nil {
+						progress.VerboseLine(output.Styledf(output.StyleGrey, "%s: Check skipped: %s", category.Name, err.Error()))
+						// Mark as done anyway
+						progress.SetValue(i, float64(ci+1))
+						return
+					}
+
+					if err := check.Update(ctx, cio, args); err != nil {
+						outStr := out.String()
+						if len(outStr) > 0 {
+							progress.VerboseLine(output.Styledf(output.StyleWarning, "%s: Check failed, output:", check.Name))
+							progress.Verbose(outStr)
+						}
+						progress.VerboseLine(output.Styledf(output.StyleWarning, "%s: %s", err.Error(), check.Name))
+					}
+
+					// Mark as done
+					progress.SetValue(i, float64(ci+1))
+				}(ci, check)
 			}
 		}(i, category)
 	}
@@ -225,6 +231,19 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 	for i, category := range r.categories {
 		results.all = append(results.all, i)
+
+		var wasSkipped bool
+		for _, skipped := range results.skipped {
+			if skipped == i {
+				wasSkipped = true
+				break
+			}
+		}
+		if wasSkipped {
+			r.out.WriteSkippedf("%d. %s %s[SKIPPED]%s", i+1, category.Name,
+				output.StyleBold, output.StyleReset)
+			continue
+		}
 
 		satisfied := category.IsSatisfied()
 		results.categories[category.Name] = satisfied
@@ -404,6 +423,10 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 			r.out.WriteLine(output.Styledf(output.StyleBold, "Encountered the following error:\n\n%s%s\n", output.StyleReset, dep.checkErr))
 		}
 
+		if dep.Description == "" {
+			return errors.Newf("No description available for manual fix")
+		}
+
 		r.out.WriteLine(output.Styled(output.StyleBold, "How to fix:"))
 
 		r.out.WriteMarkdown(dep.Description)
@@ -425,6 +448,10 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 }
 
 func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx int, category *Category[Args], args Args, results *runAllCategoryChecksResult) (ok bool) {
+	// Best to be verbose when fixing, in case something goes wrong
+	r.out.SetVerbose()
+	defer r.out.UnsetVerbose()
+
 	pending := r.out.Pending(output.Styledf(output.StylePending, "Trying my hardest to fix %q automatically...", category.Name))
 	cio := IO{
 		Input:  r.in,
@@ -471,7 +498,8 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 		}
 
 		// Skip
-		if !c.IsEnabled(ctx, cio, args) {
+		if err := c.IsEnabled(ctx, cio, args); err != nil {
+			pending.WriteLine(output.Styledf(output.StyleGrey, "%q skipped: %s", c.Name, err.Error()))
 			continue
 		}
 
