@@ -4,15 +4,15 @@ This guide describes best practices for adding logging to Sourcegraph's backend 
 
 > NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](../../admin/observability/index.md).
 
-The recommended logger at Sourcegraph is [`github.com/sourcegraph/log`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/lib/log), which exports:
+The recommended logger at Sourcegraph is [`github.com/sourcegraph/log`](https://sourcegraph.com/github.com/sourcegraph/log), which exports:
 
-1. A standardized, strongly-typed, and structured logging interface, [`log.Logger`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/lib/log/logger.go)
+1. A standardized, strongly-typed, and structured logging interface, [`log.Logger`](https://sourcegraph.com/github.com/sourcegraph/log/-/blob/logger.go)
    1. Production output from this logger (`SRC_LOG_FORMAT=json`) complies with the [OpenTelemetry log data model](https://opentelemetry.io/docs/reference/specification/logs/data-model/) (also see: [Logging: OpenTelemetry](../../admin/observability/logs.md#opentelemetry))
    2. `log.Logger` has a variety of constructors for spawning new loggers with context, namely `Scoped`, `WithTrace`, and `WithFields`.
 2. An initialization function to be called in `func main()`, `log.Init()`, that must be called.
    1. Log level can be configured with `SRC_LOG_LEVEL` (also see: [Logging: Log levels](../../admin/observability/logs.md#log-levels))
    2. Do not use this in an `init()` function - we want to explicitly avoid tying logger instances as a compile-time dependency.
-3. A getter to retrieve a `log.Logger` instance, [`log.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/log%24+log.Scoped+lang:go&patternType=literal)
+3. A getter to retrieve a `log.Logger` instance, [`log.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+log.Scoped+lang:go&patternType=literal)
 4. [Testing utilities](#testing-usage)
 
 Logging is also available via the all-in-one `internal/observation` package: [How to add observability](add_observability.md)
