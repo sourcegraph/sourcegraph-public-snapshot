@@ -1,7 +1,5 @@
 import * as React from 'react'
 
-import { LocationDescriptor } from 'history'
-
 import { Link } from '@sourcegraph/wildcard'
 
 /**
@@ -11,7 +9,7 @@ import { Link } from '@sourcegraph/wildcard'
 export const LinkOrSpan: React.FunctionComponent<
     React.PropsWithChildren<
         {
-            to: LocationDescriptor | undefined | null
+            to: string | undefined | null
             children?: React.ReactNode
         } & React.AnchorHTMLAttributes<HTMLAnchorElement>
     >
