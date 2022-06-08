@@ -116,7 +116,6 @@ func (r *Runner[Args]) Interactive(
 	for len(results.failed) != 0 {
 		r.out.Output.ClearScreen()
 
-		// Get args when we run
 		results = r.runAllCategoryChecks(ctx, args)
 		if len(results.failed) == 0 {
 			break
@@ -310,11 +309,13 @@ func (r *Runner[Args]) presentFailedCategoryWithOptions(ctx context.Context, cat
 	r.printCategoryHeaderAndDependencies(categoryIdx+1, category)
 	fixableCategory := category.HasFixable()
 
-	choices := map[int]string{1: "I want to fix these manually"}
+	choices := map[int]string{}
 	if fixableCategory {
-		choices[2] = "I'm feeling lucky. You try fixing all of it for me."
+		choices[1] = "You try fixing all of it for me."
+		choices[2] = "I want to fix these manually"
 		choices[3] = "Go back"
 	} else {
+		choices[1] = "I want to fix these manually"
 		choices[2] = "Go back"
 	}
 
