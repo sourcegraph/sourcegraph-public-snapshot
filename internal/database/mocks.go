@@ -2711,6 +2711,10 @@ type MockDB struct {
 	// AuthzFunc is an instance of a mock function object controlling the
 	// behavior of the method Authz.
 	AuthzFunc *DBAuthzFunc
+	// BitbucketProjectPermissionsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// BitbucketProjectPermissions.
+	BitbucketProjectPermissionsFunc *DBBitbucketProjectPermissionsFunc
 	// ConfFunc is an instance of a mock function object controlling the
 	// behavior of the method Conf.
 	ConfFunc *DBConfFunc
@@ -2820,6 +2824,11 @@ func NewMockDB() *MockDB {
 		},
 		AuthzFunc: &DBAuthzFunc{
 			defaultHook: func() (r0 AuthzStore) {
+				return
+			},
+		},
+		BitbucketProjectPermissionsFunc: &DBBitbucketProjectPermissionsFunc{
+			defaultHook: func() (r0 BitbucketProjectPermissionsStore) {
 				return
 			},
 		},
@@ -3000,6 +3009,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Authz")
 			},
 		},
+		BitbucketProjectPermissionsFunc: &DBBitbucketProjectPermissionsFunc{
+			defaultHook: func() BitbucketProjectPermissionsStore {
+				panic("unexpected invocation of MockDB.BitbucketProjectPermissions")
+			},
+		},
 		ConfFunc: &DBConfFunc{
 			defaultHook: func() ConfStore {
 				panic("unexpected invocation of MockDB.Conf")
@@ -3172,6 +3186,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		AuthzFunc: &DBAuthzFunc{
 			defaultHook: i.Authz,
+		},
+		BitbucketProjectPermissionsFunc: &DBBitbucketProjectPermissionsFunc{
+			defaultHook: i.BitbucketProjectPermissions,
 		},
 		ConfFunc: &DBConfFunc{
 			defaultHook: i.Conf,
@@ -3465,6 +3482,107 @@ func (c DBAuthzFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBAuthzFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBBitbucketProjectPermissionsFunc describes the behavior when the
+// BitbucketProjectPermissions method of the parent MockDB instance is
+// invoked.
+type DBBitbucketProjectPermissionsFunc struct {
+	defaultHook func() BitbucketProjectPermissionsStore
+	hooks       []func() BitbucketProjectPermissionsStore
+	history     []DBBitbucketProjectPermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// BitbucketProjectPermissions delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDB) BitbucketProjectPermissions() BitbucketProjectPermissionsStore {
+	r0 := m.BitbucketProjectPermissionsFunc.nextHook()()
+	m.BitbucketProjectPermissionsFunc.appendCall(DBBitbucketProjectPermissionsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// BitbucketProjectPermissions method of the parent MockDB instance is
+// invoked and the hook queue is empty.
+func (f *DBBitbucketProjectPermissionsFunc) SetDefaultHook(hook func() BitbucketProjectPermissionsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BitbucketProjectPermissions method of the parent MockDB instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *DBBitbucketProjectPermissionsFunc) PushHook(hook func() BitbucketProjectPermissionsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBBitbucketProjectPermissionsFunc) SetDefaultReturn(r0 BitbucketProjectPermissionsStore) {
+	f.SetDefaultHook(func() BitbucketProjectPermissionsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBBitbucketProjectPermissionsFunc) PushReturn(r0 BitbucketProjectPermissionsStore) {
+	f.PushHook(func() BitbucketProjectPermissionsStore {
+		return r0
+	})
+}
+
+func (f *DBBitbucketProjectPermissionsFunc) nextHook() func() BitbucketProjectPermissionsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBBitbucketProjectPermissionsFunc) appendCall(r0 DBBitbucketProjectPermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBBitbucketProjectPermissionsFuncCall
+// objects describing the invocations of this function.
+func (f *DBBitbucketProjectPermissionsFunc) History() []DBBitbucketProjectPermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBBitbucketProjectPermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBBitbucketProjectPermissionsFuncCall is an object that describes an
+// invocation of method BitbucketProjectPermissions on an instance of
+// MockDB.
+type DBBitbucketProjectPermissionsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 BitbucketProjectPermissionsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBBitbucketProjectPermissionsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBBitbucketProjectPermissionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
