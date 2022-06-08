@@ -61,7 +61,7 @@ export const BatchChangeBatchSpecList: React.FunctionComponent<
             queryBatchSpecs={query}
             isLightTheme={isLightTheme}
             currentSpecID={currentSpecID}
-            includeLocallyExecutedSpecs={true}
+            includeLocallyExecutedSpecs={false}
             now={now}
         />
     )
