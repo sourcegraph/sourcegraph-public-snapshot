@@ -14,7 +14,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { containsLiteralOrPattern } from '@sourcegraph/shared/src/search/query/validate'
 import { SearchType } from '@sourcegraph/shared/src/search/stream'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, createLinkUrl } from '@sourcegraph/wildcard'
 
 import styles from './SearchSidebarSection.module.scss'
 
@@ -51,7 +51,10 @@ const SearchTypeLink: React.FunctionComponent<React.PropsWithChildren<SearchType
     })
 
     return (
-        <Link to={{ pathname: '/search', search: builtURLQuery }} className={styles.sidebarSectionListItem}>
+        <Link
+            to={createLinkUrl({ pathname: '/search', search: builtURLQuery })}
+            className={styles.sidebarSectionListItem}
+        >
             {children}
         </Link>
     )
