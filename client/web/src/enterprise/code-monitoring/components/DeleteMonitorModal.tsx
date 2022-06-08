@@ -76,7 +76,11 @@ export const DeleteMonitorModal: React.FunctionComponent<React.PropsWithChildren
                     )}
                 </div>
             )}
-            {deleteCompletedOrError && <div>{deleteCompletedOrError === 'loading' && <LoadingSpinner />}</div>}
+            {/*
+             * Issue: This JSX tag's 'children' prop expects a single child of type 'ReactNode', but multiple children were provided
+             * It seems that v18 requires explicit boolean value
+             */}
+            {!!deleteCompletedOrError && <div>{deleteCompletedOrError === 'loading' && <LoadingSpinner />}</div>}
         </Modal>
     )
 }

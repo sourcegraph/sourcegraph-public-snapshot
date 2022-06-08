@@ -13,7 +13,9 @@ import {
 
 import { CodeExcerpt } from './CodeExcerpt'
 
-export class MockVisibilitySensor extends React.Component<{ onChange?: (isVisible: boolean) => void }> {
+type VisibilitySensorPropsType = React.ComponentProps<typeof _VisibilitySensor>
+
+export class MockVisibilitySensor extends React.Component<VisibilitySensorPropsType> {
     constructor(props: { onChange?: (isVisible: boolean) => void }) {
         super(props)
         if (props.onChange) {
@@ -26,11 +28,14 @@ export class MockVisibilitySensor extends React.Component<{ onChange?: (isVisibl
     }
 }
 
-jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children, onChange }) => (
-    <>
-        <MockVisibilitySensor onChange={onChange}>{children}</MockVisibilitySensor>
-    </>
-))
+jest.mock(
+    'react-visibility-sensor',
+    (): typeof _VisibilitySensor => ({ children, onChange }: VisibilitySensorPropsType) => (
+        <>
+            <MockVisibilitySensor onChange={onChange}>{children}</MockVisibilitySensor>
+        </>
+    )
+)
 
 describe('CodeExcerpt', () => {
     afterAll(cleanup)

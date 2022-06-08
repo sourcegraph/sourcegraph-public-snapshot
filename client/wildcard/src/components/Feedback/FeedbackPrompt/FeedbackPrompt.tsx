@@ -190,7 +190,7 @@ interface FeedbackPromptProps extends FeedbackPromptContentProps {
     children: React.FunctionComponent<React.PropsWithChildren<FeedbackPromptTriggerProps>> | ReactNode
 }
 
-export const FeedbackPrompt: React.FunctionComponent<React.PropsWithChildren<FeedbackPromptProps>> = ({
+export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
     openByDefault = false,
     onSubmit,
     children,

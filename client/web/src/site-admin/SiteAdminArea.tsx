@@ -44,7 +44,7 @@ export interface SiteAdminAreaRouteContext
     isSourcegraphDotCom: boolean
 
     /** This property is only used by {@link SiteAdminOverviewPage}. */
-    overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
+    overviewComponents: readonly React.ComponentType<React.PropsWithChildren<{}>>[]
 }
 
 export interface SiteAdminAreaRoute extends RouteDescriptor<SiteAdminAreaRouteContext> {}

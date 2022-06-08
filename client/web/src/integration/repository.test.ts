@@ -1057,7 +1057,7 @@ describe('Repository', () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}`)
 
             try {
-                await driver.page.waitForSelector('.test-file-decoration-container', { timeout: 5000 })
+                await driver.page.waitForSelector('.test-file-decoration-container', { timeout: 10000 })
             } catch {
                 throw new Error('Expected to see file decorations')
             }

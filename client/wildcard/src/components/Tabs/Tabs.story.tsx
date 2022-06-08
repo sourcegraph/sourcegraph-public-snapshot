@@ -94,7 +94,12 @@ const TabsVariant: Story<TabsProps & { actions: boolean }> = args => {
     )
 }
 
-const Container: React.FunctionComponent<{ title: string; width?: number }> = ({ title, width, children }) => (
+interface ContainerProps {
+    title: string
+    width?: number
+}
+
+const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>> = ({ title, width, children }) => (
     <>
         <H2 style={{ margin: '30px 0 10px 0' }}>{title}</H2>
         <div style={{ width: width ? `${width}px` : undefined }}>{children}</div>

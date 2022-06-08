@@ -55,7 +55,7 @@ export function submitSearch({
         { source }
     )
     localStorage.setItem(SUBMITTED_SEARCHES_COUNT_KEY, JSON.stringify(getSubmittedSearchesCount() + 1))
-    history.push(path, { ...history.location.state, query })
+    history.push(path, { ...(typeof history.location.state === 'object' ? history.location.state : null), query })
     if (activation) {
         activation.update({ DidSearch: true })
     }

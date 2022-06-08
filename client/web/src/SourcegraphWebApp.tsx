@@ -195,7 +195,10 @@ const history = createBrowserHistory()
 /**
  * The root component.
  */
-export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
+export class SourcegraphWebApp extends React.Component<
+    React.PropsWithChildren<SourcegraphWebAppProps>,
+    SourcegraphWebAppState
+> {
     private readonly subscriptions = new Subscription()
     private readonly userRepositoriesUpdates = new Subject<void>()
     private readonly platformContext: PlatformContext = createPlatformContext()
@@ -348,7 +351,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.subscriptions.unsubscribe()
     }
 
-    public render(): React.ReactFragment | null {
+    public render(): React.ReactNode {
         if (window.pageError && window.pageError.statusCode !== 404) {
             const statusCode = window.pageError.statusCode
             const statusText = window.pageError.statusText

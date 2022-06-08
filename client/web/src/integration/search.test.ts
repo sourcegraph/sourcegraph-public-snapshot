@@ -247,6 +247,7 @@ describe('Search', () => {
             expect(await getSearchFieldValue(driver)).toStrictEqual(undefined)
             // Field value is restored when the back button is pressed
             await driver.page.goBack()
+            await driver.page.waitForSelector('#monaco-query-input')
             expect(await getSearchFieldValue(driver)).toStrictEqual('foo')
         })
     })

@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import { trimStart } from 'lodash'
-import { render } from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import { defer, fromEvent, of } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import { Omit } from 'utility-types'
@@ -552,8 +552,9 @@ function enhanceSearchPage(sourcegraphURL: string): void {
             utm_source: getPlatformName(),
             utm_campaign: utmCampaign,
         })
+        const root = createRoot(container)
 
-        render(
+        root.render(
             <SourcegraphIconButton
                 label="Search on Sourcegraph"
                 title="Search on Sourcegraph to get hover tooltips, go to definition and more"
@@ -570,8 +571,7 @@ function enhanceSearchPage(sourcegraphURL: string): void {
                         searchQuery ? `&q=${searchQuery}` : ''
                     }`
                 }}
-            />,
-            container
+            />
         )
     }
 

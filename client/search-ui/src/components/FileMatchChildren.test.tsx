@@ -16,11 +16,14 @@ import {
 import { MockVisibilitySensor } from './CodeExcerpt.test'
 import { FileMatchChildren } from './FileMatchChildren'
 
-jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children, onChange }) => (
-    <>
-        <MockVisibilitySensor onChange={onChange}>{children}</MockVisibilitySensor>
-    </>
-))
+jest.mock(
+    'react-visibility-sensor',
+    (): typeof _VisibilitySensor => ({ children, onChange }: React.ComponentProps<typeof _VisibilitySensor>) => (
+        <>
+            <MockVisibilitySensor onChange={onChange}>{children}</MockVisibilitySensor>
+        </>
+    )
+)
 
 const history = H.createBrowserHistory()
 history.replace({ pathname: '/search' })

@@ -24,7 +24,7 @@ interface ContributionGroup {
     title: string
     error?: ErrorLike
     columnHeaders: string[]
-    rows: (React.ReactFragment | null)[][]
+    rows: React.ReactNode[][]
 }
 
 const ContributionsTable: React.FunctionComponent<

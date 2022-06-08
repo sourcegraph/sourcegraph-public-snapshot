@@ -4,7 +4,7 @@ import '../../shared/polyfills'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { trimEnd, uniq } from 'lodash'
-import { render } from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import { from, noop, Observable, of } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, mapTo } from 'rxjs/operators'
 import { Optional } from 'utility-types'
@@ -275,7 +275,9 @@ const Options: React.FunctionComponent<React.PropsWithChildren<unknown>> = () =>
 }
 
 const inject = (): void => {
-    render(<Options />, document.body)
+    const root = createRoot(document.body)
+
+    root.render(<Options />)
 }
 
 document.addEventListener('DOMContentLoaded', inject)
