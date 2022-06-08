@@ -37,8 +37,8 @@
       "access_key": "{{user `awsAccessKey`}}",
       "secret_key": "{{user `awsSecretKey`}}",
       "aws_polling": {
-        "delay_seconds": "{{user `awsMaxAttempts`}}",
-        "max_attempts": "{{user `awsPollDelaySeconds`}}"
+        "delay_seconds": "{{user `awsPollDelaySeconds`}}",
+        "max_attempts": "{{user `awsMaxAttempts`}}"
       },
       "tags": {
         "OS_Version": "Ubuntu",
@@ -67,7 +67,7 @@
     {
       "type": "shell",
       "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E bash {{ .Path }}",
-      "script": "build.sh",
+      "script": "install.sh",
       "override": {
         "gcp": {
           "environment_vars": ["SRC_CLI_VERSION={{user `srcCliVersion`}}", "PLATFORM_TYPE=gcp"]
