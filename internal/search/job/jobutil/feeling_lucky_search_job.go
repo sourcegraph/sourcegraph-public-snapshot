@@ -175,21 +175,21 @@ func mapConcat(q []query.Node) ([]query.Node, bool) {
 		if n, ok := node.(query.Operator); ok {
 			if n.Kind != query.Concat {
 				// recurse
-				operands, changed := mapConcat(n.Operands)
-				return []query.Node{
-					query.Operator{
-						Kind:     n.Kind,
-						Operands: operands,
-					},
-				}, changed
+				operands, newChanged := mapConcat(n.Operands)
+				mapped = append(mapped, query.Operator{
+					Kind:     n.Kind,
+					Operands: operands,
+				})
+				changed = changed || newChanged
+				continue
 			}
-			// No need to recurse: `concat` nodes only have patterns.
-			return []query.Node{
-				query.Operator{
-					Kind:     query.And,
-					Operands: n.Operands,
-				},
-			}, true
+			// no need to recurse: `concat` nodes only have patterns.
+			mapped = append(mapped, query.Operator{
+				Kind:     query.And,
+				Operands: n.Operands,
+			})
+			changed = true
+			continue
 		}
 		mapped = append(mapped, node)
 	}
