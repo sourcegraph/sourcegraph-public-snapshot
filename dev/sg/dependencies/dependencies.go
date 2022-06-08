@@ -12,7 +12,6 @@ import (
 
 type CheckArgs struct {
 	Teammate bool
-	InRepo   bool
 
 	ConfigFile          string
 	ConfigOverwriteFile string

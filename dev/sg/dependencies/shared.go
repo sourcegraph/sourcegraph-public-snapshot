@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -37,7 +38,7 @@ https://docs.github.com/en/authentication/connecting-to-github-with-ssh`,
 				Name:        "github.com/sourcegraph/sourcegraph",
 				Description: `The 'sourcegraph' repository contains the Sourcegraph codebase and everything to run Sourcegraph locally.`,
 				Check: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if args.InRepo {
+					if _, err := root.RepositoryRoot(); err == nil {
 						return nil
 					}
 

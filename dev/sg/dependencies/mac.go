@@ -3,6 +3,7 @@ package dependencies
 import (
 	"context"
 	"os"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
@@ -153,6 +154,68 @@ var Mac = []category{
 				Fix: cmdsAction(
 					"asdf plugin-add rust https://github.com/asdf-community/asdf-rust.git",
 					"asdf install rust",
+				),
+			},
+		},
+	},
+	{
+		Name: "Postgres database",
+		Checks: []*dependency{
+			{
+				Name: "Install Postgres",
+				Description: `psql, the PostgreSQL CLI client, needs to be available in your $PATH.
+
+If you've installed PostgreSQL with Homebrew that should be the case.
+
+If you used another method, make sure psql is available.`,
+				Check: checkAction(check.InPath("psql")),
+				Fix:   cmdAction("brew install postgresql"),
+			},
+			{
+				Name: "Start Postgres",
+				// In the eventuality of the user using a non standard configuration and having
+				// set it up appropriately in its configuration, we can bypass the standard postgres
+				// check and directly check for the sourcegraph database.
+				//
+				// Because only the latest error is returned, it's better to finish with the real check
+				// for error message clarity.
+				Check: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if err := checkSourcegraphDatabase(ctx, cio, args); err == nil {
+						return nil
+					}
+					return checkPostgresConnection(ctx)
+				},
+				Description: `Sourcegraph requires the PostgreSQL database to be running.
+
+We recommend installing it with Homebrew and starting it as a system service.
+If you know what you're doing, you can also install PostgreSQL another way.
+For example: you can use https://postgresapp.com/
+
+If you're not sure: use the recommended commands to install PostgreSQL.`,
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					err := usershell.Cmd(ctx, "brew services start postgresql").Run()
+					if err != nil {
+						return err
+					}
+
+					// Wait for startup
+					time.Sleep(5 * time.Second)
+
+					// Doesn't matter if this succeeds
+					_ = usershell.Cmd(ctx, "createdb").Run()
+					return nil
+				},
+			},
+			{
+				Name:  "Connection to 'sourcegraph' database",
+				Check: checkSourcegraphDatabase,
+				Description: `` +
+					`Once PostgreSQL is installed and running, we need to set up Sourcegraph database itself and a
+specific user.`,
+				Fix: cmdsAction(
+					"createuser --superuser sourcegraph || true",
+					`psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"`,
+					`createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph`,
 				),
 			},
 		},

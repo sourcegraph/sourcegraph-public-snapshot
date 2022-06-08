@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/dependencies"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -49,16 +48,8 @@ var setupCommandV2 = &cli.Command{
 			out.WriteAlertf("                INFO: You can quit any time by typing ctrl-c.\n")
 		})
 
-		var inRepo bool
-		if _, err := root.RepositoryRoot(); err == nil {
-			inRepo = true
-		} else if err != root.ErrNotInsideSourcegraph {
-			return err
-		}
-
 		args := dependencies.CheckArgs{
 			Teammate:            !cmd.Bool("oss"),
-			InRepo:              inRepo,
 			ConfigFile:          configFile,
 			ConfigOverwriteFile: configOverwriteFile,
 		}

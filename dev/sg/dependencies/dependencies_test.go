@@ -15,7 +15,6 @@ func TestMain(m *testing.M) {
 }
 
 var testArgs = CheckArgs{
-	InRepo:     true,
 	Teammate:   false,
 	ConfigFile: "../../../sg.config.yaml",
 }

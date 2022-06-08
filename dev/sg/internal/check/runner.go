@@ -117,7 +117,7 @@ func (r *Runner[Args]) Interactive(
 
 		r.out.WriteWarningf("Some checks failed. Which one do you want to fix?")
 
-		idx, err := r.getNumberOutOf(results.all)
+		idx, err := r.getNumberOutOf(results.failed)
 		if err != nil {
 			if err == io.EOF {
 				return nil
