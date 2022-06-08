@@ -16,18 +16,9 @@ export const RepoName: React.FunctionComponent<React.PropsWithChildren<RepoNameP
      */
     const [titleReference, truncated, checkTruncation] = useIsTruncated()
 
-    /**
-     * Enabling a tooltip will break the React tree inside JetBrains because we polyfill
-     * `window.Event` which is used internally by the tooltip positioning logic together with
-     * dispatchEvent().
-     *
-     * c.f. https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/jetbrains/webview/src/search/index.tsx?L47
-     */
-    const tooltipContent = truncated && suffix ? suffix : null
-
     return (
         <div className={classNames('w-100', styles.forceSiblingToW100)}>
-            <Tooltip content={tooltipContent} placement="bottom">
+            <Tooltip content={truncated && suffix ? suffix : null} placement="bottom">
                 <div ref={titleReference} onMouseEnter={checkTruncation} className="text-truncate">
                     {repoName}
                     {suffix ? ` › ${suffix}` : null}
