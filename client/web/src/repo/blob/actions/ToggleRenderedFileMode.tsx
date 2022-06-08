@@ -4,7 +4,7 @@ import EyeIcon from 'mdi-react/EyeIcon'
 import { useLocation } from 'react-router'
 
 import { RenderMode } from '@sourcegraph/shared/src/util/url'
-import { DeprecatedTooltipController, Icon } from '@sourcegraph/wildcard'
+import { createLinkUrl, DeprecatedTooltipController, Icon } from '@sourcegraph/wildcard'
 
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
@@ -38,7 +38,7 @@ export const ToggleRenderedFileMode: React.FunctionComponent<React.PropsWithChil
 
     if (actionType === 'dropdown') {
         return (
-            <RepoHeaderActionButtonLink to={getURLForMode(location, otherMode)} file={true}>
+            <RepoHeaderActionButtonLink to={createLinkUrl(getURLForMode(location, otherMode))} file={true}>
                 <Icon role="img" as={EyeIcon} aria-hidden={true} />
                 <span>{label}</span>
             </RepoHeaderActionButtonLink>
@@ -49,7 +49,7 @@ export const ToggleRenderedFileMode: React.FunctionComponent<React.PropsWithChil
         <RepoHeaderActionButtonLink
             className="btn-icon"
             file={false}
-            to={getURLForMode(location, otherMode)}
+            to={createLinkUrl(getURLForMode(location, otherMode))}
             data-tooltip={label}
         >
             <Icon role="img" as={EyeIcon} aria-hidden={true} />{' '}
