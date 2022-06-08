@@ -67,7 +67,7 @@ type AuthorizedRepoArgs struct {
 }
 
 type RepoPermsBitbucketProjectArgs struct {
-	ProjectKey      *string
+	ProjectKey      string
 	CodeHost        graphql.ID
 	UserPermissions []struct {
 		BindID     string
