@@ -2,7 +2,6 @@ package zoekt
 
 import (
 	"context"
-	"github.com/docker/docker/daemon/logger"
 	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"time"
 

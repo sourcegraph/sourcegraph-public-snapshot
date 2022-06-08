@@ -796,7 +796,7 @@ func toFeatures(flagSet *featureflag.FlagSet) search.Features {
 	if flagSet == nil {
 		flagSet = &featureflag.FlagSet{}
 		metricFeatureFlagUnavailable.Inc()
-		slogger.Warn("search feature flags are not available")
+		slog.Scoped("toFeatures", "To Features").Warn("search feature flags are not available")
 	}
 
 	return search.Features{
