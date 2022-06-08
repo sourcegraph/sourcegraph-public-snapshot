@@ -9,6 +9,7 @@ export type FeatureFlagName =
     | 'quick-start-tour-for-authenticated-users'
     | 'new-repo-page'
     | 'ab-visitor-tour-with-notebooks'
+    | 'ab-email-verification-alert'
 
 interface OrgFlagOverride {
     orgID: string

@@ -10,6 +10,7 @@ import { Alert, AlertProps } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { DismissibleAlert } from '../components/DismissibleAlert'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 import styles from './Notices.module.scss'
 
@@ -56,9 +57,6 @@ interface Props extends SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
 }
 
-// FIXME: change to get from featureFlags
-const experimentEnabled = true
-
 /**
  * Displays notices from settings for a specific location.
  */
@@ -69,9 +67,10 @@ export const Notices: React.FunctionComponent<React.PropsWithChildren<Props>> = 
     location,
     authenticatedUser,
 }) => {
+    const [isEmailVerificationAlertEnabled, status] = useFeatureFlag('ab-email-verification-alert')
     const notices: Notice[] = useMemo(() => {
         const userEmails: AuthenticatedUser['emails'] =
-            experimentEnabled && authenticatedUser ? authenticatedUser.emails : []
+            status === 'loaded' && isEmailVerificationAlertEnabled && authenticatedUser ? authenticatedUser.emails : []
 
         const verifyEmailNotices: Notice[] = userEmails
             .filter(({ verified }) => !verified)
@@ -96,7 +95,7 @@ export const Notices: React.FunctionComponent<React.PropsWithChildren<Props>> = 
         }
 
         return [...verifyEmailNotices, ...settingsCascade.final.notices.filter(notice => notice.location === location)]
-    }, [authenticatedUser, location, settingsCascade])
+    }, [authenticatedUser, isEmailVerificationAlertEnabled, location, settingsCascade, status])
 
     if (notices.length === 0) {
         return null
