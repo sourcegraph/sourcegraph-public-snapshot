@@ -75,7 +75,7 @@ https://docs.github.com/en/authentication/connecting-to-github-with-ssh`,
 	+-- sourcegraph
 
 	NOTE: You can ignore this if you're not a Sourcegraph teammate.`,
-				Enabled: teammatesOnly(),
+				Enabled: enableForTeammatesOnly(),
 				Check: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					ok, err := pathExists("dev-private")
 					if ok && err == nil {

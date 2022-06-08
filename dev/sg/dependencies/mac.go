@@ -2,7 +2,6 @@ package dependencies
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/sourcegraph/run"
@@ -10,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
@@ -87,19 +85,14 @@ var Mac = []category{
 				Fix: cmdAction(`softwareupdate --install-rosetta --agree-to-license`),
 			},
 			{
-				Name:  "certutil",
-				Check: checkAction(check.InPath("certutil")),
-				Fix:   cmdAction(`brew install nss`),
+				Name:        "certutil",
+				Description: "Required for caddy certificates.",
+				Check:       checkAction(check.InPath("certutil")),
+				Fix:         cmdAction(`brew install nss`),
 			},
 			{
-				Name: "docker",
-				Enabled: func(ctx context.Context, args CheckArgs) error {
-					// Docker is quite funky in CI
-					if os.Getenv("CI") == "true" {
-						return errors.New("skipping Docker in CI")
-					}
-					return nil
-				},
+				Name:    "docker",
+				Enabled: disableInCI(), // Very wonky in CI
 				Check: checkAction(check.Combine(
 					check.WrapErrMessage(check.InPath("docker"),
 						"if Docker is installed and the check fails, you might need to restart terminal and 'sg setup'"),
@@ -216,11 +209,9 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 				},
 			},
 			{
-				Name:  "Connection to 'sourcegraph' database",
-				Check: checkSourcegraphDatabase,
-				Description: `` +
-					`Once PostgreSQL is installed and running, we need to set up Sourcegraph database itself and a
-specific user.`,
+				Name:        "Connection to 'sourcegraph' database",
+				Check:       checkSourcegraphDatabase,
+				Description: `Once PostgreSQL is installed and running, we need to set up Sourcegraph database itself and a specific user.`,
 				Fix: cmdsAction(
 					"createuser --superuser sourcegraph || true",
 					`psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"`,
@@ -262,7 +253,8 @@ To do that, we need to add sourcegraph.test to the /etc/hosts file.`,
 trust the certificate created by Caddy, the proxy we use locally.
 
 YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
-				Check: checkAction(checkCaddyTrusted),
+				Enabled: disableInCI(), // Can't seem to get this working
+				Check:   checkAction(checkCaddyTrusted),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					return root.Run(run.Cmd(ctx, `./dev/caddy.sh trust`)).StreamLines(cio.Verbose)
 				},
@@ -273,7 +265,7 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 	{
 		Name:      "Cloud services",
 		DependsOn: []string{depsHomebrew},
-		Enabled:   teammatesOnly(),
+		Enabled:   enableForTeammatesOnly(),
 		Checks: []*dependency{
 			dependencyGcloud(),
 			{

@@ -45,10 +45,20 @@ func cmdsAction(cmds ...string) check.ActionFunc[CheckArgs] {
 	}
 }
 
-func teammatesOnly() check.EnableFunc[CheckArgs] {
+func enableForTeammatesOnly() check.EnableFunc[CheckArgs] {
 	return func(ctx context.Context, args CheckArgs) error {
 		if !args.Teammate {
 			return errors.New("Disabled if not a Sourcegraph teammate")
+		}
+		return nil
+	}
+}
+
+func disableInCI() check.EnableFunc[CheckArgs] {
+	return func(ctx context.Context, args CheckArgs) error {
+		// Docker is quite funky in CI
+		if os.Getenv("CI") == "true" {
+			return errors.New("skipping Docker in CI")
 		}
 		return nil
 	}
