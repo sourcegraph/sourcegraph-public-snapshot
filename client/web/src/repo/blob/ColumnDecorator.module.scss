@@ -1,0 +1,23 @@
+.decoration {
+    display: contents;
+}
+
+.wrapper {
+    display: flex;
+    max-width: 220px;
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+}
+
+.item {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.contents {
+    white-space: pre;
+
+    &::before {
+        content: attr(data-contents);
+    }
+}
