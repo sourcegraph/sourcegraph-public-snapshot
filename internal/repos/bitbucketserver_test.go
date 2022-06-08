@@ -616,5 +616,4 @@ func VerifyData(t *testing.T, ctx context.Context, numExpectedResults int, resul
 			}
 		}
 	}
-
 }
