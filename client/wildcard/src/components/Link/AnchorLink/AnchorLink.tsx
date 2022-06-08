@@ -14,7 +14,7 @@ import styles from './AnchorLink.module.scss'
  *
  * @see setLinkComponent
  */
-export const AnchorLink = React.forwardRef(({ to, as: Component, children, className, ...rest }, reference) => {
+export const AnchorLink = React.forwardRef(({ to, children, className, ...rest }, reference) => {
     const { isBranded } = useWildcardTheme()
 
     const commonProps = {

@@ -17,7 +17,7 @@ import type { LinkProps } from '../Link'
  *
  * @param as Only supported when `to` is an absolute URL
  */
-export const RouterLink = React.forwardRef(({ as: Component, to, children, ...rest }, reference) => {
+export const RouterLink = React.forwardRef(({ to, children, ...rest }, reference) => {
     if (to && isAbsoluteUrl(to)) {
         return (
             <AnchorLink to={to} ref={reference} {...rest}>
@@ -27,10 +27,10 @@ export const RouterLink = React.forwardRef(({ as: Component, to, children, ...re
     }
 
     return (
-        <ReactRouterLink to={to} component={Component} ref={reference} {...rest}>
+        <ReactRouterLink to={to} ref={reference} {...rest}>
             {children}
         </ReactRouterLink>
     )
-}) as ForwardReferenceComponent<ReactRouterLink, LinkProps>
+}) as ForwardReferenceComponent<'a', LinkProps>
 
 RouterLink.displayName = 'RouterLink'
