@@ -220,4 +220,19 @@ specific user.`,
 			},
 		},
 	},
+	{
+		Name: "Redis database",
+		Checks: []*dependency{
+			{
+				Name: "Start Redis",
+				Description: `Sourcegraph requires the Redis database to be running.
+We recommend installing it with Homebrew and starting it as a system service.`,
+				Check: checkAction(check.Retry(checkRedisConnection, 5, 500*time.Millisecond)),
+				Fix: cmdsAction(
+					"brew reinstall redis",
+					"brew services start redis",
+				),
+			},
+		},
+	},
 }
