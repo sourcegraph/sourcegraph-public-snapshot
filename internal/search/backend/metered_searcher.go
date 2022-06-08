@@ -2,18 +2,17 @@ package backend
 
 import (
 	"context"
-	"github.com/docker/docker/daemon/logger"
 	"sync"
 	"time"
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
-	slog "github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/keegancsmith/rpc"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"

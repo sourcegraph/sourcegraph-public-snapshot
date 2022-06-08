@@ -10,8 +10,8 @@ import (
 
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
-	slog "github.com/sourcegraph/sourcegraph/lib/log"
 	otlog "github.com/opentracing/opentracing-go/log"
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
@@ -826,7 +826,7 @@ func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions searc
 	})
 
 	if err != nil {
-		slogger.Error("doResults: failed to list user private repos", slog.Error(err), slog.Int("user-id" , int(userID)) )
+		slogger.Error("doResults: failed to list user private repos", slog.Error(err), slog.Int("user-id", int(userID)))
 		tr.LazyPrintf("error resolving user private repos: %v", err)
 	}
 	return userPrivateRepos

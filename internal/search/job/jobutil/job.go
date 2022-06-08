@@ -781,7 +781,7 @@ func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSou
 }
 
 func toFeatures(flags featureflag.FlagSet) search.Features {
-	slogger := slog.Scoped("toFeatures", "To features ")
+	slogger := slog.Scoped("toFeatures", "To features")
 	if flags == nil {
 		flags = featureflag.FlagSet{}
 		metricFeatureFlagUnavailable.Inc()

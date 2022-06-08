@@ -3,8 +3,8 @@ package structural
 import (
 	"context"
 
-	slog "github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/opentracing/opentracing-go/log"
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
