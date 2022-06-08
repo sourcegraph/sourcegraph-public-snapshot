@@ -354,6 +354,8 @@ type BatchSpecResolver interface {
 	AllowUnsupported() *bool
 
 	ViewerCanRetry(context.Context) (bool, error)
+
+	Source() string
 }
 
 type BatchChangeDescriptionResolver interface {

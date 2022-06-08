@@ -511,6 +511,13 @@ func (r *batchSpecResolver) ViewerCanRetry(ctx context.Context) (bool, error) {
 	return state.Finished(), nil
 }
 
+func (r *batchSpecResolver) Source() string {
+	if r.batchSpec.CreatedFromRaw {
+		return btypes.BatchSpecSourceRemote.ToGraphQL()
+	}
+	return btypes.BatchSpecSourceLocal.ToGraphQL()
+}
+
 func (r *batchSpecResolver) computeNamespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
 	r.namespaceOnce.Do(func() {
 		if r.preloadedNamespace != nil {
