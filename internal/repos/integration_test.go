@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -11,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 // This error is passed to txstore.Done in order to always
@@ -53,8 +53,12 @@ func TestIntegration(t *testing.T) {
 		{"Syncer/SyncReposWithLastErrorsHitRateLimit", testSyncReposWithLastErrorsHitsRateLimiter},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			store := repos.NewStore(logtest.Scoped(t), database.NewDB(dbtest.NewDB(t)), sql.TxOptions{Isolation: sql.LevelReadCommitted})
+			store := repos.NewStore(database.NewDB(dbtest.NewDB(t)), sql.TxOptions{Isolation: sql.LevelReadCommitted})
 
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			store.SetLogger(lg)
 			store.SetMetrics(repos.NewStoreMetrics())
 			store.SetTracer(trace.Tracer{Tracer: opentracing.GlobalTracer()})
 
