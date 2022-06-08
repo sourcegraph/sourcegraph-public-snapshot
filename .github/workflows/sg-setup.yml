@@ -31,3 +31,9 @@ jobs:
 
       - name: Test dependencies (${{ matrix.os }})
         run: go test -v ./dev/sg/dependencies/... -sg-setup=${{ matrix.os }}
+        continue-on-error: true
+
+      # We retry because certain sg setup tasks might require a restart
+      - name: Test dependencies attempt 2 (${{ matrix.os }})
+        if: ${{ failure() }}
+        run: go test -v ./dev/sg/dependencies/... -sg-setup=${{ matrix.os }}

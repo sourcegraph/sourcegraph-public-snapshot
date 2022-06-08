@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// WARNING: These tests attempt to modify your system! Run with care or exclusively in CI.
 var sgSetupTests = flag.String("sg-setup", "", "run sg setup tests for the designated platform")
 
 func TestMain(m *testing.M) {
