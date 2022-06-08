@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-// Check can be defined for Runner to execute.
+// Check can be defined for Runner to execute as part of a Category.
 type Check[Args any] struct {
 	// Name is used to identify this Check.
 	Name string
@@ -45,7 +45,7 @@ func (c *Check[Args]) IsEnabled(ctx context.Context, cio IO, args Args) error {
 	return err
 }
 
-// IsSatisfied indicates if this check has been run, and if it has errored. RunCheck
+// IsSatisfied indicates if this check has been run, and if it has errored. Update
 // should be called to update state.
 func (c *Check[Args]) IsSatisfied() bool {
 	return c.checkRun && c.checkErr == nil
