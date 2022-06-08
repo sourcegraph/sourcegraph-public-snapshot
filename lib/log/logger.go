@@ -141,8 +141,9 @@ func (z *zapAdapter) Scoped(scope string, description string) Logger {
 			scopedLogger.
 				AddCallerSkip(callerSkip).
 				Debug("logger.scoped",
-					zap.String("scope", scope),
-					zap.String("description", description))
+					zap.Namespace("scope"),
+					zap.String("name", scope),
+					zap.String("desc", description))
 		}
 	}
 	return scopedLogger

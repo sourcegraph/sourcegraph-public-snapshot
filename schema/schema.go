@@ -1092,6 +1092,12 @@ type MavenRateLimit struct {
 	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
+type Mount struct {
+	// Mountpoint description: The path in the container to mount the path on the local machine to.
+	Mountpoint string `json:"mountpoint"`
+	// Path description: The path on the local machine to mount. The path must be in the same directory or a subdirectory of the batch spec.
+	Path string `json:"path"`
+}
 
 // MountedEncryptionKey description: This encryption key is mounted from a given file path or an environment variable.
 type MountedEncryptionKey struct {
@@ -1528,11 +1534,15 @@ type RustRateLimit struct {
 //
 // Note: if you are using IdP-initiated login, you must have *at most one* SAMLAuthProvider in the `auth.providers` array.
 type SAMLAuthProvider struct {
+	// AllowGroups description: Restrict login to members of these groups
+	AllowGroups []string `json:"allowGroups,omitempty"`
 	// AllowSignup description: Allows new visitors to sign up for accounts via SAML authentication. If false, users signing in via SAML must have an existing Sourcegraph account, which will be linked to their SAML identity after sign-in.
 	AllowSignup *bool `json:"allowSignup,omitempty"`
 	// ConfigID description: An identifier that can be used to reference this authentication provider in other parts of the config. For example, in configuration for a code host, you may want to designate this authentication provider as the identity provider for the code host.
 	ConfigID    string `json:"configID,omitempty"`
 	DisplayName string `json:"displayName,omitempty"`
+	// GroupsAttributeName description: Name of the SAML assertion attribute that holds group membership for allowGroups setting
+	GroupsAttributeName string `json:"groupsAttributeName,omitempty"`
 	// IdentityProviderMetadata description: The SAML Identity Provider metadata XML contents (for static configuration of the SAML Service Provider). The value of this field should be an XML document whose root element is `<EntityDescriptor>` or `<EntityDescriptors>`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	IdentityProviderMetadata string `json:"identityProviderMetadata,omitempty"`
 	// IdentityProviderMetadataURL description: The SAML Identity Provider metadata URL (for dynamic configuration of the SAML Service Provider).
@@ -1999,6 +2009,8 @@ type Step struct {
 	Files map[string]string `json:"files,omitempty"`
 	// If description: A condition to check before executing steps. Supports templating. The value 'true' is interpreted as true.
 	If interface{} `json:"if,omitempty"`
+	// Mount description: Files that are mounted to the Docker container.
+	Mount []*Mount `json:"mount,omitempty"`
 	// Outputs description: Output variables of this step that can be referenced in the changesetTemplate or other steps via outputs.<name-of-output>
 	Outputs map[string]OutputVariable `json:"outputs,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.

@@ -2,8 +2,6 @@ package parser
 
 import (
 	"context"
-	"log"
-	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -18,6 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/std"
 )
 
 type Parser interface {
@@ -249,16 +249,16 @@ func shouldPersistEntry(e *ctags.Entry) bool {
 	return true
 }
 
-func SpawnCtags(ctagsConfig types.CtagsConfig) (ctags.Parser, error) {
+func SpawnCtags(logger log.Logger, ctagsConfig types.CtagsConfig) (ctags.Parser, error) {
 	options := ctags.Options{
 		Bin:                ctagsConfig.Command,
 		PatternLengthLimit: ctagsConfig.PatternLengthLimit,
 	}
 	if ctagsConfig.LogErrors {
-		options.Info = log.New(os.Stderr, "ctags: ", log.LstdFlags)
+		options.Info = std.NewLogger(logger, log.LevelInfo)
 	}
 	if ctagsConfig.DebugLogs {
-		options.Debug = log.New(os.Stderr, "DBUG ctags: ", log.LstdFlags)
+		options.Debug = std.NewLogger(logger, log.LevelDebug)
 	}
 
 	parser, err := ctags.New(options)

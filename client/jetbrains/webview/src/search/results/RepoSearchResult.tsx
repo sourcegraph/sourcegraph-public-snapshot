@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React from 'react'
 
 import classNames from 'classnames'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
@@ -10,9 +10,9 @@ import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { getRepoMatchLabel, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { Icon, Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
 
-import { getResultId } from './utils'
+import { SelectableSearchResult } from './SelectableSearchResult'
 
-import styles from './SearchResult.module.scss'
+import styles from './RepoSearchResult.module.scss'
 
 export interface RepoSearchResultProps {
     match: RepositoryMatch
@@ -32,20 +32,9 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
      */
     const [titleReference, truncated, checkTruncation] = useIsTruncated()
 
-    const resultId = getResultId(match)
-    const onClick = useCallback((): void => selectResult(resultId), [selectResult, resultId])
-
     const formattedRepositoryStarCount = formatRepositoryStarCount(match.repoStars)
     return (
-        // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions -- this is a clickable element
-        <div
-            id={`search-result-list-item-${resultId}`}
-            className={classNames(styles.line, {
-                [styles.lineActive]: resultId === selectedResult,
-            })}
-            onClick={onClick}
-            key={resultId}
-        >
+        <SelectableSearchResult match={match} selectResult={selectResult} selectedResult={selectedResult}>
             <CodeHostIcon repoName={match.repository} className="text-muted flex-shrink-0" />
             <Tooltip content={(truncated && displayRepoName(getRepoMatchLabel(match))) || null}>
                 <span
@@ -111,6 +100,6 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                     {formattedRepositoryStarCount}
                 </>
             )}
-        </div>
+        </SelectableSearchResult>
     )
 }

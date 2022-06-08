@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {
@@ -104,7 +105,7 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 }
 
 func createParserWithConfig(config types.CtagsConfig) (rockskip.ParseSymbolsFunc, error) {
-	parser, err := symbolsParser.SpawnCtags(config)
+	parser, err := symbolsParser.SpawnCtags(sglog.Scoped("ctags", "ctags processes"), config)
 	if err != nil {
 		return nil, err
 	}
