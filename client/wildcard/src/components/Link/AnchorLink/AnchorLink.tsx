@@ -2,9 +2,9 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { ForwardReferenceComponent, useWildcardTheme } from '@sourcegraph/wildcard'
+import { useWildcardTheme } from '@sourcegraph/wildcard'
 
-import type { LinkProps } from '../Link'
+import type { Link } from '../Link'
 
 import styles from './AnchorLink.module.scss'
 
@@ -28,6 +28,6 @@ export const AnchorLink = React.forwardRef(({ to, children, className, ...rest }
             {children}
         </a>
     )
-}) as ForwardReferenceComponent<'a', LinkProps>
+}) as Link
 
 AnchorLink.displayName = 'AnchorLink'

@@ -4,10 +4,8 @@ import isAbsoluteUrl from 'is-absolute-url'
 // eslint-disable-next-line no-restricted-imports
 import { Link as ReactRouterLink } from 'react-router-dom'
 
-import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
-
 import { AnchorLink } from '../AnchorLink'
-import type { LinkProps } from '../Link'
+import type { Link } from '../Link'
 
 import anchorLinkStyles from '../AnchorLink/AnchorLink.module.scss'
 
@@ -31,6 +29,6 @@ export const RouterLink = React.forwardRef(({ to, children, ...rest }, reference
             {children}
         </ReactRouterLink>
     )
-}) as ForwardReferenceComponent<'a', LinkProps>
+}) as Link
 
 RouterLink.displayName = 'RouterLink'

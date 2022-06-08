@@ -1,6 +1,5 @@
 import React from 'react'
-
-import { AnchorLink } from '../AnchorLink'
+import { ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
 
 export interface LinkProps
     extends Pick<
@@ -10,6 +9,8 @@ export interface LinkProps
     to: string
     ref?: React.Ref<HTMLAnchorElement>
 }
+
+export interface Link extends ForwardReferenceExoticComponent<'a', LinkProps> {}
 
 /**
  * The component used to render a link. All shared code must use this component for links—not <a>, <Link>, etc.
@@ -30,7 +31,7 @@ export interface LinkProps
  *
  * @see setLinkComponent
  */
-export let Link: typeof AnchorLink
+export let Link: Link
 
 if (process.env.NODE_ENV !== 'production') {
     // Fail with helpful message if setLinkComponent has not been called when the <Link> component is used.
@@ -45,6 +46,6 @@ if (process.env.NODE_ENV !== 'production') {
  * @see Link
  * @see AnchorLink
  */
-export function setLinkComponent(component: typeof Link): void {
+export function setLinkComponent(component: Link): void {
     Link = component
 }
