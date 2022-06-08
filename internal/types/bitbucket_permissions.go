@@ -6,7 +6,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-// BitbucketProjectPermissionJob TODO
+// BitbucketProjectPermissionJob represents a task to apply a set of permissions
+// to all the repos of the given Bitbucket project.
 type BitbucketProjectPermissionJob struct {
 	ID              int
 	State           string

@@ -97,8 +97,7 @@ func newBitbucketProjectPermissionsWorker(db database.DB, metrics bitbucketProje
 // newBitbucketProjectPermissionsResetter implements resetter for the explicit_permissions_bitbucket_projects_jobs table.
 // See resetter documentation for more details. https://docs.sourcegraph.com/dev/background-information/workers#dequeueing-and-resetting-jobs
 func newBitbucketProjectPermissionsResetter(db database.DB, metrics bitbucketProjectPermissionsMetrics) *dbworker.Resetter {
-	s := db.GitserverLocalClone()
-	workerStore := createBitbucketProjectPermissionsStore(s)
+	workerStore := createBitbucketProjectPermissionsStore(db)
 
 	options := dbworker.ResetterOptions{
 		Name:     "explicit_permissions_bitbucket_projects_jobs_worker_resetter",
@@ -112,7 +111,7 @@ func newBitbucketProjectPermissionsResetter(db database.DB, metrics bitbucketPro
 	return dbworker.NewResetter(workerStore, options)
 }
 
-// createLocalCloneStore creates a store that reads and writes to the explicit_permissions_bitbucket_projects_jobs table.
+// createBitbucketProjectPermissionsStore creates a store that reads and writes to the explicit_permissions_bitbucket_projects_jobs table.
 // It is used by the worker and resetter.
 // TODO(asdine): Fine tune the retry strategy and make some parameters configurable.
 func createBitbucketProjectPermissionsStore(s basestore.ShareableStore) dbworkerstore.Store {
