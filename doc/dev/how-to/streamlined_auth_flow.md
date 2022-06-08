@@ -6,7 +6,7 @@ This document will go through the current auth flow for our IDE extensions, and 
 
 In general, users are required to provide each IDE extension with their Sourcegraph Personal Access Token to make certain requests to the Sourcegraph API.
 
-Before the token creation callback page was introduced, users must retrieve a Sourcegraph Personal Access Token from their Sourcegraph instance manually in order to proceed with the authentication process for each IDE extension.
+Before the token creation callback page was introduced, users had to retrieve a Sourcegraph Personal Access Token from their Sourcegraph instance manually in order to proceed with the authentication process for each IDE extension.
 
 Steps to authenticate an account for an extension:
 1. Redirect users to the auth page in browser from the extension
@@ -52,7 +52,7 @@ The token should then be processed by the extension's URL handler.
 
 ```mermaid
 sequenceDiagram
-    Extension (Client App)->>Sourcegraph Auth UI (Browser): Open auth URL with the<br/>`requestFrom` URL param
+    Extension->>Sourcegraph Auth UI (Browser): Open auth URL with the<br/>`requestFrom` URL param
     Sourcegraph Auth UI (Browser)->>Token Creation Callback Page: Redirect authenticated users
     Token Creation Callback Page->>Token Creation Callback Page: Verify extension
     Note right of Token Creation Callback Page: Check if the allow list has<br/>the `requestFrom` value
