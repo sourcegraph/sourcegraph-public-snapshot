@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
 	"sync"
+	"text/template"
 
 	"github.com/grafana/regexp"
 

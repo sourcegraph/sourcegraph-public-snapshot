@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- Global git email gets inserted as plain text when running `src batch new -f <file_name>` and doesn't result in a schema validation failure. [sourcegraph/src-cli#773](https://github.com/sourcegraph/src-cli/pull/773)
+
 ### Removed
 
 ## 3.40.8
