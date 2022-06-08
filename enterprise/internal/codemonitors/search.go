@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"sync"
 
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/opentracing/opentracing-go"
@@ -201,7 +202,12 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 		return err
 	}
 
+	// Synchronize snapshotting each thing because sometimes the `db` passed into here is actually a transaction,
+	// and it's super unsafe to use transactions concurrently.
+	var mux sync.Mutex
 	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, _ commit.DoSearchFunc) error {
+		mux.Lock()
+		defer mux.Unlock()
 		return snapshotHook(ctx, db, gs, args, monitorID, repoID)
 	}
 
