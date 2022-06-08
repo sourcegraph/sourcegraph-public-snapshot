@@ -57,7 +57,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     const { toggle, isSeriesSelected, isSeriesHovered, setHoveredId } = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
     const [enablePolling] = useFeatureFlag('insight-polling-enabled')
-    const pollingInterval = !enablePolling ? insightPollingInterval(insight) : 0
+    const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
