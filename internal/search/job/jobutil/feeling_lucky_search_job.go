@@ -1,9 +1,15 @@
 package jobutil
 
 import (
+	"context"
+
+	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
 // NewFeelingLuckySearchJob generates opportunistic search queries by applying
@@ -14,24 +20,35 @@ import (
 // Generated queries return a resulting list of jobs. The application order of
 // rules is deterministic. This means the query order, and therefore runtime
 // execution, outputs the same search results for the same inputs. I.e., there
-// is no random choice when applying a rule.
+// is no random choice when applying a rule. The first job in this list
+// propagates an alert-error that notifies consumers of valid generated queries
+// for this plan.
 func NewFeelingLuckySearchJob(inputs *run.SearchInputs, plan query.Plan) []job.Job {
 	children := make([]job.Job, 0, len(plan))
+	var generatedQueries []*search.ProposedQuery // Collects valid generated queries for alerting.
 	for _, b := range plan {
-		for _, newBasic := range applyRulesList(b, rulesList...) {
-			child, err := NewBasicJob(inputs, newBasic)
+		for description, rules := range rulesMap {
+			generated := applyRules(b, rules...)
+			if generated == nil {
+				continue
+			}
+
+			child, err := NewBasicJob(inputs, *generated)
 			if err != nil {
 				return nil
 			}
+
 			children = append(children, child)
+			generatedQueries = append(generatedQueries, &search.ProposedQuery{
+				Description: description,
+				Query:       query.StringHuman(generated.ToParseTree()),
+				PatternType: query.SearchTypeLiteralDefault,
+			})
 		}
 	}
-	return children
-}
 
-var rulesList = [][]rule{
-	{unquotePatterns},
-	{unorderedPatterns},
+	alertJob := &alternateQueriesAlertJob{AlternateQueries: generatedQueries}
+	return append([]job.Job{alertJob}, children...)
 }
 
 // rule represents a transformation function on a Basic query. Applying rules
@@ -40,25 +57,26 @@ var rulesList = [][]rule{
 // rule for an example.
 type rule func(query.Basic) *query.Basic
 
-// applyRulesList takes a list of lists of rules. The order of rules in the inner
-// lists represent rule composition. Each list of rules in the outer list
-// represent one possible query production, if the sequence of the rules in this
-// list apply successfully. Example:
+// rulesMap is an ordered map of rule lists. Each entry in the map represent one
+// possible query production, if the sequence of the rules associated with this
+// map's entry apply successfully. Example:
 //
-// If we have input rule list  [ [ R1, R2 ], [ R2 ] ] and input query B0, then:
+// If we have input query B0 and a map with two entries like this:
 //
-// - If both inner lists apply, we get an output [ B1, B2] where B1 is generated
+// {
+//   "first rule list"  : [ R1, R2 ],
+//   "second rule list" : [ R2 ],
+// }
+//
+// Then:
+//
+// - If both entries apply, the map outputs [ B1, B2 ] where B1 is generated
 //   from applying R1 then R2, and B2 is generated from just applying R2.
-// - If only the first inner list applies, R1 then R2, we get the output [ B1 ]
-// - If only the second inner list applies, R2 on its own, we get the output [ B2 ]
-func applyRulesList(b query.Basic, rulesList ...[]rule) []query.Basic {
-	bs := []query.Basic{}
-	for _, l := range rulesList {
-		if generated := applyRules(b, l...); generated != nil {
-			bs = append(bs, *generated)
-		}
-	}
-	return bs
+// - If only the first entry applies, R1 then R2, we get the output [ B1 ].
+// - If only the second entry applies, R2 on its own, we get the output [ B2 ].
+var rulesMap = map[string][]rule{
+	"unquote patterns":      {unquotePatterns},
+	"AND patterns together": {unorderedPatterns},
 }
 
 // applyRules applies every rule in sequence to `b`. If any rule does not apply, it returns nil.
@@ -176,4 +194,23 @@ func mapConcat(q []query.Node) ([]query.Node, bool) {
 		mapped = append(mapped, node)
 	}
 	return mapped, changed
+}
+
+// A job that propogates which queries were generated. Consumers can use this
+// information (represented by an error value) into alerts, and can further
+// display prominently in a client or user-facing app.
+type alternateQueriesAlertJob struct {
+	AlternateQueries []*search.ProposedQuery
+}
+
+func (g *alternateQueriesAlertJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (*search.Alert, error) {
+	return nil, &alert.ErrLuckyQueries{ProposedQueries: g.AlternateQueries}
+}
+
+func (*alternateQueriesAlertJob) Name() string {
+	return "AlternateQueriesAlertJob"
+}
+
+func (*alternateQueriesAlertJob) Tags() []log.Field {
+	return []log.Field{}
 }

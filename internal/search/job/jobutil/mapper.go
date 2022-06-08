@@ -31,6 +31,9 @@ type Mapper struct {
 
 	// Repo pager Job (pre-step for some Search Jobs)
 	MapRepoPagerJob func(*repoPagerJob) *repoPagerJob
+	// A job that exposes information of alternate queries for consumers
+	// (e.g., for generated queries). Does not return results.
+	MapAlternateQueriesAlertJob func(*alternateQueriesAlertJob) *alternateQueriesAlertJob
 
 	// Expression Jobs
 	MapAndJob func(children []job.Job) []job.Job
@@ -115,6 +118,12 @@ func (m *Mapper) Map(j job.Job) job.Job {
 	case *repos.ComputeExcludedJob:
 		if m.MapReposComputeExcludedJob != nil {
 			j = m.MapReposComputeExcludedJob(j)
+		}
+		return j
+
+	case *alternateQueriesAlertJob:
+		if m.MapAlternateQueriesAlertJob != nil {
+			j = m.MapAlternateQueriesAlertJob(j)
 		}
 		return j
 
