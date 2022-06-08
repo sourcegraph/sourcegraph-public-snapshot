@@ -47,7 +47,8 @@ public class PreviewContent {
         this.relativeUrl = relativeUrl;
     }
 
-    public static PreviewContent fromJson(Project project, JsonObject json) {
+    @NotNull
+    public static PreviewContent fromJson(Project project, @NotNull JsonObject json) {
         int absoluteOffsetAndLengthsSize = json.getAsJsonArray("absoluteOffsetAndLengths").size();
         int[][] absoluteOffsetAndLengths = new int[absoluteOffsetAndLengthsSize][2];
         for (int i = 0; i < absoluteOffsetAndLengths.length; i++) {
