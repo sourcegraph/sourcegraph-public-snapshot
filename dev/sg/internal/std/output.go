@@ -39,17 +39,34 @@ func NewOutput(dst io.Writer, verbose bool) *Output {
 }
 
 // NewFixedOutput instantiates a new output instance with fixed configuration, useful for
-// testing or on platforms/scenarios with problematic terminal detection.
+// platforms/scenarios with problematic terminal detection.
 func NewFixedOutput(dst io.Writer, verbose bool) *Output {
 	return &Output{
-		Output: output.NewOutput(dst, output.OutputOpts{
-			ForceColor:          true,
-			ForceTTY:            true,
-			Verbose:             verbose,
-			ForceWidth:          80,
-			ForceHeight:         25,
-			ForceDarkBackground: true,
-		}),
+		Output: output.NewOutput(dst, newStaticOutputOptions(verbose)),
+	}
+}
+
+// NewSimpleOutput returns a fixed width and height output that does not forcibly enable
+// TTY, useful for testing.
+func NewSimpleOutput(dst io.Writer, verbose bool) *Output {
+	opts := newStaticOutputOptions(verbose)
+	opts.ForceTTY = false
+
+	return &Output{
+		Output: output.NewOutput(dst, opts),
+	}
+}
+
+// newStaticOutputOptions creates static output options that disables all terminal
+// infernce.
+func newStaticOutputOptions(verbose bool) output.OutputOpts {
+	return output.OutputOpts{
+		ForceColor:          true,
+		ForceTTY:            true,
+		Verbose:             verbose,
+		ForceWidth:          80,
+		ForceHeight:         25,
+		ForceDarkBackground: true,
 	}
 }
 

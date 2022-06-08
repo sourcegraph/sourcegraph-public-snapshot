@@ -17,7 +17,7 @@ func TestUbuntuFix(t *testing.T) {
 		t.Skip("Skipping Ubuntu sg setup tests")
 	}
 
-	runner := check.NewRunner(nil, std.NewFixedOutput(os.Stdout, true), Ubuntu)
+	runner := check.NewRunner(nil, std.NewSimpleOutput(os.Stdout, true), Ubuntu)
 
 	err := runner.Fix(context.Background(), testArgs)
 	assert.Nil(t, err)

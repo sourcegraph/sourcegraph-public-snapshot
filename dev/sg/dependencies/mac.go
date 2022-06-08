@@ -21,7 +21,7 @@ var Mac = []category{
 				Name:        "brew",
 				Check:       checkAction(check.InPath("brew")),
 				Fix:         cmdAction(`eval $(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)`),
-				Description: `We depend on having the Homebrew package manager available on macOS.`,
+				Description: `We depend on having the Homebrew package manager available on macOS: https://brew.sh`,
 			},
 		},
 	},

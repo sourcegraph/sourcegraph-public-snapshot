@@ -17,7 +17,7 @@ func TestMacFix(t *testing.T) {
 		t.Skip("Skipping Mac sg setup tests")
 	}
 
-	runner := check.NewRunner(nil, std.NewFixedOutput(os.Stdout, true), Mac)
+	runner := check.NewRunner(nil, std.NewSimpleOutput(os.Stdout, true), Mac)
 
 	err := runner.Fix(context.Background(), testArgs)
 	assert.Nil(t, err)
