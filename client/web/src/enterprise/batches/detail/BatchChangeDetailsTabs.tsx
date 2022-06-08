@@ -101,6 +101,8 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
         [batchChange.batchSpecs.nodes]
     )
 
+    // const isBatchSpecLocallyCreated = batchChange.currentSpec.source === 'LOCAL'
+
     return (
         <BatchChangeTabs history={history} location={location} initialTab={initialTab}>
             <BatchChangeTabList>
