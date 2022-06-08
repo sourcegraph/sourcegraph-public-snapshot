@@ -18,7 +18,7 @@ type category = check.Category[CheckArgs]
 
 type dependency = check.Check[CheckArgs]
 
-var checkAction = check.CheckAction[CheckArgs]
+var checkAction = check.CheckFuncAction[CheckArgs]
 
 type OS string
 

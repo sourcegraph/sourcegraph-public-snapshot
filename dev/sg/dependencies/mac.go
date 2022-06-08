@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 const (
@@ -22,7 +23,7 @@ var Mac = []category{
 			{
 				Name:        "brew",
 				Check:       checkAction(check.InPath("brew")),
-				Fix:         cmdAction(`eval $(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)`),
+				Fix:         cmdFix(`eval $(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)`),
 				Description: `We depend on having the Homebrew package manager available on macOS: https://brew.sh`,
 			},
 		},
@@ -34,42 +35,42 @@ var Mac = []category{
 			{
 				Name:  "git",
 				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.34.1"))),
-				Fix:   cmdAction(`brew install git`),
+				Fix:   cmdFix(`brew install git`),
 			},
 			{
 				Name:  "gnu-sed",
 				Check: checkAction(check.InPath("gsed")),
-				Fix:   cmdAction("brew install gnu-sed"),
+				Fix:   cmdFix("brew install gnu-sed"),
 			},
 			{
 				Name:  "findutils",
 				Check: checkAction(check.InPath("gfind")),
-				Fix:   cmdAction("brew install findutils"),
+				Fix:   cmdFix("brew install findutils"),
 			},
 			{
 				Name:  "comby",
 				Check: checkAction(check.InPath("comby")),
-				Fix:   cmdAction("brew install comby"),
+				Fix:   cmdFix("brew install comby"),
 			},
 			{
 				Name:  "pcre",
 				Check: checkAction(check.InPath("pcregrep")),
-				Fix:   cmdAction(`brew install pcre`),
+				Fix:   cmdFix(`brew install pcre`),
 			},
 			{
 				Name:  "sqlite",
 				Check: checkAction(check.InPath("sqlite3")),
-				Fix:   cmdAction(`brew install sqlite`),
+				Fix:   cmdFix(`brew install sqlite`),
 			},
 			{
 				Name:  "jq",
 				Check: checkAction(check.InPath("jq")),
-				Fix:   cmdAction(`brew install jq`),
+				Fix:   cmdFix(`brew install jq`),
 			},
 			{
 				Name:  "bash",
 				Check: checkAction(check.CommandOutputContains("bash --version", "version 5")),
-				Fix:   cmdAction(`brew install bash`),
+				Fix:   cmdFix(`brew install bash`),
 			},
 			{
 				Name: "rosetta",
@@ -80,13 +81,13 @@ var Mac = []category{
 						// oahd is the process running rosetta
 						check.CommandExitCode("pgrep oahd", 0)),
 				),
-				Fix: cmdAction(`softwareupdate --install-rosetta --agree-to-license`),
+				Fix: cmdFix(`softwareupdate --install-rosetta --agree-to-license`),
 			},
 			{
 				Name:        "certutil",
 				Description: "Required for caddy certificates.",
 				Check:       checkAction(check.InPath("certutil")),
-				Fix:         cmdAction(`brew install nss`),
+				Fix:         cmdFix(`brew install nss`),
 			},
 			{
 				Name:    "docker",
@@ -127,7 +128,7 @@ var Mac = []category{
 			{
 				Name:  "go",
 				Check: checkGoVersion,
-				Fix: cmdsAction(
+				Fix: cmdFixes(
 					"asdf plugin-add golang https://github.com/kennyp/asdf-golang.git",
 					"asdf install golang",
 				),
@@ -135,7 +136,7 @@ var Mac = []category{
 			{
 				Name:  "yarn",
 				Check: checkYarnVersion,
-				Fix: cmdsAction(
+				Fix: cmdFixes(
 					"brew install gpg",
 					"asdf plugin-add yarn",
 					"asdf install yarn",
@@ -144,7 +145,7 @@ var Mac = []category{
 			{
 				Name:  "node",
 				Check: checkNodeVersion,
-				Fix: cmdsAction(
+				Fix: cmdFixes(
 					"asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git",
 					`grep -s "legacy_version_file = yes" ~/.asdfrc >/dev/null || echo 'legacy_version_file = yes' >> ~/.asdfrc`,
 					"asdf install nodejs",
@@ -153,7 +154,7 @@ var Mac = []category{
 			{
 				Name:  "rust",
 				Check: checkRustVersion,
-				Fix: cmdsAction(
+				Fix: cmdFixes(
 					"asdf plugin-add rust https://github.com/asdf-community/asdf-rust.git",
 					"asdf install rust",
 				),
@@ -172,7 +173,7 @@ If you've installed PostgreSQL with Homebrew that should be the case.
 
 If you used another method, make sure psql is available.`,
 				Check: checkAction(check.InPath("psql")),
-				Fix:   cmdAction("brew install postgresql"),
+				Fix:   cmdFix("brew install postgresql"),
 			},
 			{
 				Name: "Start Postgres",
@@ -182,8 +183,8 @@ If you used another method, make sure psql is available.`,
 				//
 				// Because only the latest error is returned, it's better to finish with the real check
 				// for error message clarity.
-				Check: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := checkSourcegraphDatabase(ctx, cio, args); err == nil {
+				Check: func(ctx context.Context, out output.Writer, args CheckArgs) error {
+					if err := checkSourcegraphDatabase(ctx, out, args); err == nil {
 						return nil
 					}
 					return checkPostgresConnection(ctx)
@@ -213,7 +214,7 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 				Name:        "Connection to 'sourcegraph' database",
 				Check:       checkSourcegraphDatabase,
 				Description: `Once PostgreSQL is installed and running, we need to set up Sourcegraph database itself and a specific user.`,
-				Fix: cmdsAction(
+				Fix: cmdFixes(
 					"createuser --superuser sourcegraph || true",
 					`psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"`,
 					`createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph`,
@@ -230,7 +231,7 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 				Description: `Sourcegraph requires the Redis database to be running.
 We recommend installing it with Homebrew and starting it as a system service.`,
 				Check: checkAction(check.Retry(checkRedisConnection, 5, 500*time.Millisecond)),
-				Fix: cmdsAction(
+				Fix: cmdFixes(
 					"brew reinstall redis",
 					"brew services start redis",
 				),
@@ -274,7 +275,7 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 			{
 				Name:  "1password",
 				Check: checkAction(check1password()),
-				Fix: cmdsAction(
+				Fix: cmdFixes(
 					"brew install --cask 1password/tap/1password-cli",
 					"eval $(op account add --address team-sourcegraph.1password.com --signin)",
 				),

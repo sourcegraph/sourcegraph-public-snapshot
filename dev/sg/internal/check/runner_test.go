@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 func TestRunnerFix(t *testing.T) {
@@ -25,7 +26,7 @@ func TestRunnerFix(t *testing.T) {
 				Checks: []*check.Check[any]{
 					{
 						Name: "should not run",
-						Check: func(ctx context.Context, cio check.IO, args any) error {
+						Check: func(ctx context.Context, out output.Writer, args any) error {
 							t.Error("unexpected call")
 							return nil
 						},
@@ -37,7 +38,7 @@ func TestRunnerFix(t *testing.T) {
 				Checks: []*check.Check[any]{
 					{
 						Name: "not satisfied",
-						Check: func(ctx context.Context, cio check.IO, args any) error {
+						Check: func(ctx context.Context, out output.Writer, args any) error {
 							return errors.New("check not satisfied")
 						},
 					},
@@ -49,7 +50,7 @@ func TestRunnerFix(t *testing.T) {
 				Checks: []*check.Check[any]{
 					{
 						Name: "should not be fixed due to requirements that cannot be satisfied",
-						Check: func(ctx context.Context, cio check.IO, args any) error {
+						Check: func(ctx context.Context, out output.Writer, args any) error {
 							return errors.New("i need to be fixed")
 						},
 						Fix: func(ctx context.Context, cio check.IO, args any) error {
@@ -64,7 +65,7 @@ func TestRunnerFix(t *testing.T) {
 				Checks: []*check.Check[any]{
 					{
 						Name: "attempt to fix",
-						Check: func(ctx context.Context, cio check.IO, args any) error {
+						Check: func(ctx context.Context, out output.Writer, args any) error {
 							return errors.New("i need to be fixed")
 						},
 						Fix: func(ctx context.Context, cio check.IO, args any) error {
@@ -95,7 +96,7 @@ func TestRunnerFix(t *testing.T) {
 				Checks: []*check.Check[any]{
 					{
 						Name: "fixable",
-						Check: func(ctx context.Context, cio check.IO, args any) error {
+						Check: func(ctx context.Context, out output.Writer, args any) error {
 							if _, ok := fixedMap.Load("1"); ok {
 								return nil
 							}
@@ -114,7 +115,7 @@ func TestRunnerFix(t *testing.T) {
 				Checks: []*check.Check[any]{
 					{
 						Name: "also fixable",
-						Check: func(ctx context.Context, cio check.IO, args any) error {
+						Check: func(ctx context.Context, out output.Writer, args any) error {
 							if _, ok := fixedMap.Load("2"); ok {
 								return nil
 							}
@@ -127,7 +128,7 @@ func TestRunnerFix(t *testing.T) {
 					},
 					{
 						Name: "no action needed",
-						Check: func(ctx context.Context, cio check.IO, args any) error {
+						Check: func(ctx context.Context, out output.Writer, args any) error {
 							return nil
 						},
 					},

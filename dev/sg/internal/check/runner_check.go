@@ -13,12 +13,12 @@ type Check[Args any] struct {
 	// Description can be used to provide additional context and manual fix instructions.
 	Description string
 
-	// Check must be implemented to execute the check. Should be run using RunCheck.
-	Check ActionFunc[Args]
-	// Fix can be implemented to fix issues with this check.
-	Fix ActionFunc[Args]
-	// Enabled can be implemented to indicate when this checker should be skipped.
+	// Enabled can be implemented to indicate when this check should be skipped.
 	Enabled EnableFunc[Args]
+	// Check must be implemented to execute the check. Should be run using RunCheck.
+	Check CheckAction[Args]
+	// Fix can be implemented to fix issues with this check.
+	Fix FixAction[Args]
 
 	// checkErr, checkRun preserves the state of the most recent check run.
 	checkErr error
