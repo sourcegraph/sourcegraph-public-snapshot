@@ -888,13 +888,12 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                         key={reference.url}
                                         className={classNames('border-0 rounded-0 mb-0', styles.location, className)}
                                     >
-                                        <Link
-                                            as={Button}
+                                        <Button
                                             onClick={event => {
                                                 event.preventDefault()
                                                 setActiveLocation(reference)
                                             }}
-                                            to={reference.url}
+                                            data-test-reference-url={reference.url}
                                             className={styles.locationLink}
                                         >
                                             <span className={styles.locationLinkLineNumber}>
@@ -902,7 +901,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                                 {': '}
                                             </span>
                                             {lineWithHighlightedToken}
-                                        </Link>
+                                        </Button>
                                     </li>
                                 )
                             })}
