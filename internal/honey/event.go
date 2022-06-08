@@ -83,7 +83,7 @@ func (w eventWrapper) Send() error {
 // Enabled() returns true.
 func NewEvent(dataset string) Event {
 	if !Enabled() {
-		return NoopEvent()
+		return noopEvent{}
 	}
 	ev := libhoney.NewEvent()
 	ev.Dataset = dataset + suffix
@@ -97,7 +97,7 @@ func NewEvent(dataset string) Event {
 // fields are assigned to the event.
 func NewEventWithFields(dataset string, fields map[string]any) Event {
 	if !Enabled() {
-		return NoopEvent()
+		return noopEvent{}
 	}
 	ev := NewEvent(dataset)
 	for key, value := range fields {
