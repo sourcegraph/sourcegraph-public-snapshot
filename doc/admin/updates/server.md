@@ -9,7 +9,7 @@ This document describes the exact changes needed to update a single-node Sourceg
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-## 3.39 -> 3.40.1
+## 3.39 -> 3.40.2
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#operation).
 
