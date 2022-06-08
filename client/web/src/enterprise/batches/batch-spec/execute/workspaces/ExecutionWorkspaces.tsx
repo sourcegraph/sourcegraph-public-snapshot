@@ -5,6 +5,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Card, CardBody, Panel, H3, H1, Icon, Text, Code } from '@sourcegraph/wildcard'
 
@@ -32,7 +33,7 @@ export const ExecutionWorkspaces: React.FunctionComponent<
 > = props => {
     const { batchSpec, errors } = useBatchSpecContext<BatchSpecExecutionFields>()
 
-    if (batchSpec.source === 'LOCAL') {
+    if (batchSpec.source === BatchSpecSource.LOCAL) {
         return (
             <>
                 <H1 className="text-center text-muted mt-5">

@@ -9,6 +9,7 @@ import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -142,7 +143,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
         () => [
             { key: 'configuration', isEnabled: true, handler: { type: 'link' } },
             { key: 'spec', isEnabled: true, handler: { type: 'link' } },
-            { key: 'execution', isEnabled: source === 'REMOTE', handler: { type: 'link' } },
+            { key: 'execution', isEnabled: source === BatchSpecSource.REMOTE, handler: { type: 'link' } },
             { key: 'preview', isEnabled: applyURL !== null, handler: { type: 'link' } },
         ],
         [applyURL, source]
@@ -167,7 +168,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                     }
                 />
                 <div className="d-flex align-items-center mb-1">
-                    {batchSpec.source === 'REMOTE' ? (
+                    {batchSpec.source === BatchSpecSource.REMOTE ? (
                         <BatchSpecStateBadge state={batchSpec.state} className="mr-2" />
                     ) : (
                         <Badge

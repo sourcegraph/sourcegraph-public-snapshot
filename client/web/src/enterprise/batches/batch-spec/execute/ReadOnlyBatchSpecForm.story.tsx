@@ -1,5 +1,6 @@
 import { select } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
+
 import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 
 import { WebStory } from '../../../../components/WebStory'

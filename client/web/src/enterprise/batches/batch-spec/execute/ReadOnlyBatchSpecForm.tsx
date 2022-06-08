@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { useMutation } from '@sourcegraph/http-client'
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Alert, Button, H4, Text } from '@sourcegraph/wildcard'
 
@@ -98,7 +99,7 @@ const MemoizedReadOnlyBatchSpecForm: React.FunctionComponent<
                 />
             </div>
             {/* Hide the workspaces preview panel for locally-executed batch specs. */}
-            {batchSpec.source === 'REMOTE' && <WorkspacesPreviewPanel isReadOnly={true} />}
+            {batchSpec.source === BatchSpecSource.REMOTE && <WorkspacesPreviewPanel isReadOnly={true} />}
             <CancelExecutionModal
                 isOpen={showCancelModal}
                 onCancel={() => setShowCancelModal(false)}
