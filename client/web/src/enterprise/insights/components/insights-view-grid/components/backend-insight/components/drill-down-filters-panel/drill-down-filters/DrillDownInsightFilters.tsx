@@ -12,6 +12,7 @@ import { Button, Icon, Link, H4 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
 import { SeriesDisplayOptionsInput } from '../../../../../../../../../graphql-operations'
+import { DEFAULT_SERIES_DISPLAY_OPTIONS } from '../../../../../../../core'
 import { SeriesDisplayOptionsInputRequired } from '../../../../../../../core/types/insight/common'
 import { useField } from '../../../../../../form/hooks/useField'
 import { FormChangeEvent, SubmissionResult, useForm, FORM_ERROR } from '../../../../../../form/hooks/useForm'
@@ -123,7 +124,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
 
     const currentRepositoriesFilters = { include: includeRegex.input.value, exclude: excludeRegex.input.value }
     const hasFiltersChanged = !isEqual(originalValues, values)
-    const hasSeriesDisplayOptionsChanged = !isEqual(originalSeriesDisplayOptions, seriesDisplayOptions)
+    const hasSeriesDisplayOptionsChanged = !isEqual(DEFAULT_SERIES_DISPLAY_OPTIONS, seriesDisplayOptions)
     const hasAppliedFilters = hasActiveFilters(originalValues) && !hasFiltersChanged && !hasSeriesDisplayOptionsChanged
 
     const handleCollapseState = (section: FilterSection, opened: boolean): void => {
