@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
@@ -165,55 +166,73 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 	}
 
 	results.categories = make(map[string]bool)
+	bars := []output.ProgressBar{}
 	for _, category := range r.categories {
 		results.categories[category.Name] = false
+		bars = append(bars, output.ProgressBar{
+			Label: category.Name,
+			Max:   float64(len(category.Checks)),
+		})
 	}
+	progress := r.out.Progress(bars, nil)
 
-	for i, category := range r.categories {
+	var resultsLock sync.Mutex
+	var wg sync.WaitGroup
+	for i, cat := range r.categories {
 		idx := i + 1
+		category := cat
 
-		if err := category.CheckEnabled(ctx, args); err != nil {
-			r.out.WriteSkippedf("%d. %s %s[SKIPPED: %s]%s",
-				idx, category.Name, output.StyleBold, err.Error(), output.StyleReset)
-			results.skipped = append(results.skipped, idx)
-			results.failed = removeEntry(results.failed, i)
-			continue
-		}
+		progress.VerboseLine(output.Styledf(output.StylePending, "%d. %s - Determining status...", idx, category.Name))
+		wg.Add(1)
 
-		pending := r.out.Pending(output.Styledf(output.StylePending, "%d. %s - Determining status...", idx, category.Name))
-		cio := IO{
-			Input:  r.in,
-			Writer: pending,
-		}
+		go func(i int) {
+			defer wg.Done()
 
-		// Validate checks
-		var failures []error
-		for _, c := range category.Checks {
-			if !c.IsEnabled(ctx, cio, args) {
-				continue
+			if err := category.CheckEnabled(ctx, args); err != nil {
+				progress.WriteLine(output.Linef(output.EmojiQuestionMark, output.StyleGrey, "%d. %s %s[SKIPPED: %s]%s",
+					idx, category.Name, output.StyleBold, err.Error(), output.StyleReset))
+				results.skipped = append(results.skipped, idx)
+				results.failed = removeEntry(results.failed, i)
+				return
 			}
 
-			if err := c.RunCheck(ctx, cio, args); err != nil {
-				failures = append(failures, err)
-			}
-		}
+			var out strings.Builder
 
-		// Report results
-		succeeded := len(failures) == 0
-		results.categories[category.Name] = succeeded
-		if succeeded {
-			// If success, progress messages are not important
-			pending.Destroy()
-			r.out.WriteSuccessf("%d. %s", idx, category.Name)
-			results.failed = removeEntry(results.failed, i)
-		} else {
-			// If failures, progress messages are important, so don't destroy
-			for _, failure := range failures {
-				pending.WriteLine(output.Styled(output.StyleWarning, failure.Error()))
+			// Validate checks
+			var failed bool
+			for ci, c := range category.Checks {
+				cio := IO{
+					Input:  r.in,
+					Writer: std.NewFixedOutput(&out, true),
+				}
+
+				if !c.IsEnabled(ctx, cio, args) {
+					continue
+				}
+
+				if err := c.RunCheck(ctx, cio, args); err != nil {
+					failed = true
+					progress.Verbose(out.String())
+					progress.WriteLine(output.Styled(output.StyleWarning, err.Error()))
+				}
+				progress.SetValue(i, float64(ci+1))
 			}
-			pending.Complete(output.Linef(output.EmojiWarning, output.StyleFailure, "%d. %s", idx, category.Name))
-		}
+
+			// Report results by updating the results value
+			resultsLock.Lock()
+			defer resultsLock.Unlock()
+			results.categories[category.Name] = !failed
+			if !failed {
+				progress.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "%d. %s", idx, category.Name))
+				results.failed = removeEntry(results.failed, i)
+			} else {
+				progress.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "%d. %s", idx, category.Name))
+			}
+		}(i)
 	}
+
+	wg.Wait()
+	progress.Destroy()
 
 	if len(results.failed) == 0 {
 		if len(results.skipped) == 0 {
@@ -444,6 +463,7 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, category *C
 			continue
 		}
 
+		// Skip
 		if !c.IsEnabled(ctx, cio, args) {
 			continue
 		}
@@ -456,6 +476,7 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, category *C
 
 		// Attempt fix. Get new args because things might have changed due to another
 		// fix being run.
+		pending.VerboseLine(output.Styledf(output.StylePending, "Trying to fix %s...", c.Name))
 		if err := c.Fix(ctx, cio, args); err != nil {
 			pending.WriteLine(output.Styledf(output.StyleWarning, "Failed to fix %s: %s", c.Name, err.Error()))
 			fixFailed = true
