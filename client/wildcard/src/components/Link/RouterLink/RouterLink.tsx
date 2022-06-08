@@ -9,6 +9,8 @@ import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 import { AnchorLink } from '../AnchorLink'
 import type { LinkProps } from '../Link'
 
+import anchorLinkStyles from '../AnchorLink/AnchorLink.module.scss'
+
 /**
  * Uses react-router-dom's Link for relative URLs, AnchorLink for absolute URLs.
  * This is useful because passing an absolute URL to Link will create
@@ -25,7 +27,7 @@ export const RouterLink = React.forwardRef(({ to, children, ...rest }, reference
     }
 
     return (
-        <ReactRouterLink to={to} ref={reference} {...rest}>
+        <ReactRouterLink className={anchorLinkStyles.anchorLink} to={to} ref={reference} {...rest}>
             {children}
         </ReactRouterLink>
     )
