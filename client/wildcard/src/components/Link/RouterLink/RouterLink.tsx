@@ -14,8 +14,6 @@ import type { LinkProps } from '../Link'
  * This is useful because passing an absolute URL to Link will create
  * an (almost certainly invalid) URL where the absolute URL is resolved to the
  * current URL, such as `https://example.com/a/b/https://example.com/c/d`.
- *
- * @param as Only supported when `to` is an absolute URL
  */
 export const RouterLink = React.forwardRef(({ to, children, ...rest }, reference) => {
     if (to && isAbsoluteUrl(to)) {
