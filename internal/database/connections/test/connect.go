@@ -8,11 +8,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // NewTestDB creates a new connection to the a database and applies the given migrations.
-func NewTestDB(dsn string, schemas ...*schemas.Schema) (_ *sql.DB, err error) {
-	db, err := dbconn.ConnectInternal(dsn, "", "")
+func NewTestDB(logger log.Logger, dsn string, schemas ...*schemas.Schema) (_ *sql.DB, err error) {
+	db, err := dbconn.ConnectInternal(logger, dsn, "", "")
 	if err != nil {
 		return nil, err
 	}

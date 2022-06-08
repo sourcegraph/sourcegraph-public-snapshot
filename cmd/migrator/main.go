@@ -53,6 +53,9 @@ func mainErr(ctx context.Context, args []string) error {
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	})
+
+	logger := log.Scoped("mainErr", "")
+
 	defer syncLogs()
 
 	runnerFactory := newRunnerFactory()
@@ -91,7 +94,7 @@ func mainErr(ctx context.Context, args []string) error {
 			cliutil.Validate(appName, runnerFactory, outputFactory),
 			cliutil.Describe(appName, runnerFactory, outputFactory),
 			cliutil.Drift(appName, runnerFactory, outputFactory, expectedSchemaFactory),
-			cliutil.AddLog(appName, runnerFactory, outputFactory),
+			cliutil.AddLog(logger, appName, runnerFactory, outputFactory),
 		},
 	}
 

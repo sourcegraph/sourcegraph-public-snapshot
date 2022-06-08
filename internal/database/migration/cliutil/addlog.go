@@ -11,8 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func AddLog(commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
-	logger := log.Scoped("command.db", "Add an entry to the migration log")
+func AddLog(logger log.Logger, commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
 	schemaNameFlag := &cli.StringFlag{
 		Name:     "db",
 		Usage:    "The target `schema` to modify.",

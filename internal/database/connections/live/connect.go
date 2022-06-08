@@ -40,7 +40,7 @@ func connectCodeInsightsDB(dsn, appName string, validate, migrate bool, observat
 }
 
 func connect(dsn, appName, dbName string, schema *schemas.Schema, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
-	db, err := dbconn.ConnectInternal(dsn, appName, dbName)
+	db, err := dbconn.ConnectInternal(observationContext.Logger, dsn, appName, dbName)
 	if err != nil {
 		return nil, err
 	}

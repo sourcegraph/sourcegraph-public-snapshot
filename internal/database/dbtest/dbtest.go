@@ -17,6 +17,8 @@ import (
 
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/test"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // NewTx opens a transaction off of the given database, returning that
@@ -185,8 +187,9 @@ func wdHash() string {
 }
 
 func dbConn(t testing.TB, cfg *url.URL, schemas ...*schemas.Schema) *sql.DB {
+	logger := log.Scoped("dbConn", "connects a new test db")
 	t.Helper()
-	db, err := connections.NewTestDB(cfg.String(), schemas...)
+	db, err := connections.NewTestDB(logger, cfg.String(), schemas...)
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}

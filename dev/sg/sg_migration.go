@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -60,6 +61,8 @@ var (
 		Required:    true,
 		Destination: &outputFilepath,
 	}
+
+	logger = log.Scoped("sg migration", "")
 )
 
 var (
@@ -106,7 +109,7 @@ var (
 	validateCommand = cliutil.Validate("sg migration", makeRunner, outputFactory)
 	describeCommand = cliutil.Describe("sg migration", makeRunner, outputFactory)
 	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory, expectedSchemaFactory)
-	addLogCommand   = cliutil.AddLog("sg migration", makeRunner, outputFactory)
+	addLogCommand   = cliutil.AddLog(logger, "sg migration", makeRunner, outputFactory)
 
 	leavesCommand = &cli.Command{
 		Name:        "leaves",
