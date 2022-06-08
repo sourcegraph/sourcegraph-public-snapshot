@@ -3,6 +3,7 @@ package uploads
 import (
 	"context"
 	"io"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -35,6 +36,20 @@ func (s *Service) List(ctx context.Context, opts ListOpts) (uploads []Upload, er
 	return s.uploadsStore.List(ctx, store.ListOpts(opts))
 }
 
+func (s *Service) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
+	ctx, _, endObservation := s.operations.deleteUploadsWithoutRepository.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.uploadsStore.DeleteUploadsWithoutRepository(ctx, now)
+}
+
+func (s *Service) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
+	ctx, _, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.uploadsStore.DeleteIndexesWithoutRepository(ctx, now)
+}
+
 func (s *Service) Get(ctx context.Context, id int) (upload Upload, ok bool, err error) {
 	ctx, _, endObservation := s.operations.get.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -53,8 +68,7 @@ func (s *Service) GetBatch(ctx context.Context, ids ...int) (uploads []Upload, e
 	return nil, errors.Newf("unimplemented: uploads.GetBatch")
 }
 
-type UploadState struct {
-}
+type UploadState struct{}
 
 func (s *Service) Enqueue(ctx context.Context, state UploadState, reader io.Reader) (err error) {
 	ctx, _, endObservation := s.operations.enqueue.With(ctx, &err, observation.Args{})

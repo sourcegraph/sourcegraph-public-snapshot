@@ -760,62 +760,6 @@ const deleteUploadByIDQuery = `
 UPDATE lsif_uploads u SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END WHERE id = %s RETURNING repository_id
 `
 
-// DeletedRepositoryGracePeriod is the minimum allowable duration between a repo deletion
-// and the upload and index records for that repository being deleted.
-const DeletedRepositoryGracePeriod = time.Minute * 30
-
-// DeleteUploadsWithoutRepository deletes uploads associated with repositories that were deleted at least
-// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
-// that were removed for that repository.
-func (s *Store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
-	ctx, trace, endObservation := s.operations.deleteUploadsWithoutRepository.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	unset, _ := s.Store.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload associated with repository not known to this instance")
-	defer unset(ctx)
-	repositories, err := scanCounts(s.Store.Query(ctx, sqlf.Sprintf(deleteUploadsWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
-	if err != nil {
-		return nil, err
-	}
-
-	count := 0
-	for _, numDeleted := range repositories {
-		count += numDeleted
-	}
-	trace.Log(
-		log.Int("count", count),
-		log.Int("numRepositories", len(repositories)),
-	)
-
-	return repositories, nil
-}
-
-const deleteUploadsWithoutRepositoryQuery = `
--- source: internal/codeintel/stores/dbstore/uploads.go:DeleteUploadsWithoutRepository
-WITH
-candidates AS (
-	SELECT u.id
-	FROM repo r
-	JOIN lsif_uploads u ON u.repository_id = r.id
-	WHERE %s - r.deleted_at >= %s * interval '1 second'
-
-	-- Lock these rows in a deterministic order so that we don't
-	-- deadlock with other processes updating the lsif_uploads table.
-	ORDER BY u.id FOR UPDATE
-),
-deleted AS (
-	-- Note: we can go straight from completed -> deleted here as we
-	-- do not need to preserve the deleted repository's current commit
-	-- graph (the API cannot resolve any queries for this repository).
-
-	UPDATE lsif_uploads u
-	SET state = 'deleted'
-	WHERE u.id IN (SELECT id FROM candidates)
-	RETURNING u.id, u.repository_id
-)
-SELECT d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
-`
-
 // HardDeleteUploadByID deletes the upload record with the given identifier.
 func (s *Store) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error) {
 	ctx, _, endObservation := s.operations.hardDeleteUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{

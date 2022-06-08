@@ -8,13 +8,15 @@ import (
 )
 
 type operations struct {
-	list             *observation.Operation
-	get              *observation.Operation
-	getBatch         *observation.Operation
-	enqueue          *observation.Operation
-	delete           *observation.Operation
-	commitsVisibleTo *observation.Operation
-	uploadsVisibleTo *observation.Operation
+	list                           *observation.Operation
+	get                            *observation.Operation
+	getBatch                       *observation.Operation
+	enqueue                        *observation.Operation
+	delete                         *observation.Operation
+	commitsVisibleTo               *observation.Operation
+	uploadsVisibleTo               *observation.Operation
+	deleteUploadsWithoutRepository *observation.Operation
+	deleteIndexesWithoutRepository *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -34,12 +36,14 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		list:             op("List"),
-		get:              op("Get"),
-		getBatch:         op("GetBatch"),
-		enqueue:          op("Enqueue"),
-		delete:           op("Delete"),
-		commitsVisibleTo: op("CommitsVisibleTo"),
-		uploadsVisibleTo: op("UploadsVisibleTo"),
+		list:                           op("List"),
+		get:                            op("Get"),
+		getBatch:                       op("GetBatch"),
+		enqueue:                        op("Enqueue"),
+		delete:                         op("Delete"),
+		commitsVisibleTo:               op("CommitsVisibleTo"),
+		uploadsVisibleTo:               op("UploadsVisibleTo"),
+		deleteUploadsWithoutRepository: op("DeleteUploadsWithoutRepository"),
+		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
 	}
 }
