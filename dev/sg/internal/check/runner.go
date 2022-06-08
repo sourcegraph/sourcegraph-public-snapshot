@@ -168,7 +168,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 	}
 	progress := r.out.Progress(bars, nil)
 
-	var wg sync.WaitGroup
+	var categoriesWg sync.WaitGroup
 	var skipped []int
 	for i, category := range r.categories {
 		idx := i + 1
@@ -184,13 +184,18 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		}
 
 		// Run potentially slow checks concurrently
-		wg.Add(1)
+		categoriesWg.Add(1)
 		go func(i int, category Category[Args]) {
-			defer wg.Done()
+			defer categoriesWg.Done()
 
 			// Validate checks
+			var checksWg sync.WaitGroup
 			for ci, check := range category.Checks {
+				checksWg.Add(1)
+
 				go func(ci int, check *Check[Args]) {
+					defer checksWg.Done()
+
 					var out strings.Builder
 					cio := IO{
 						Input:  r.in,
@@ -217,10 +222,11 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 					progress.SetValue(i, float64(ci+1))
 				}(ci, check)
 			}
+			checksWg.Wait()
 		}(i, category)
 	}
 
-	wg.Wait()
+	categoriesWg.Wait()
 	time.Sleep(1 * time.Second)
 	progress.Destroy()
 
