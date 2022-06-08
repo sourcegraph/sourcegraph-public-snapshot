@@ -1,5 +1,6 @@
 import React from 'react'
 
+import ContentSaveEditOutlineIcon from 'mdi-react/ContentSaveEditOutlineIcon'
 import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 
@@ -25,7 +26,7 @@ export const PartiallyCachedIcon: React.FunctionComponent<React.PropsWithChildre
             className={styles.partiallyCachedIcon}
             data-tooltip={label}
             aria-label={label}
-            as={ContentSaveIcon}
+            as={ContentSaveEditOutlineIcon}
         />
     )
 }
