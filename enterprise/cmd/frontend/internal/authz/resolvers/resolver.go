@@ -300,6 +300,31 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
+	ctx context.Context, args *graphqlbackend.RepoPermsBitbucketProjectArgs,
+) (*graphqlbackend.EmptyResponse, error) {
+	if envvar.SourcegraphDotComMode() {
+		return nil, errDisabledSourcegraphDotCom
+	}
+
+	if err := r.checkLicense(); err != nil {
+		return nil, err
+	}
+
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	_, err := graphqlbackend.UnmarshalExternalServiceID(args.CodeHost)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Returns an empty response for now. This API is a stub and will create a background
+	// worker job to schedule a permissions sync for the given project key under the given codehost.
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
 func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlbackend.AuthorizedRepoArgs) (graphqlbackend.RepositoryConnectionResolver, error) {
 	if envvar.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
