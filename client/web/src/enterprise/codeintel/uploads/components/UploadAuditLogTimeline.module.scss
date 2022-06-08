@@ -9,5 +9,5 @@ $db-column-col: 17.5%;
 }
 
 .data-column-col {
-    width: calc((100% - #{$db-column-col})/2);
+    width: calc((100% - #{$db-column-col}) / 2);
 }
