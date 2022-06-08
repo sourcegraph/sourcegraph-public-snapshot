@@ -1,17 +1,19 @@
 import { FunctionComponent } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-
 import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
+
 import { ButtonLink } from '@sourcegraph/wildcard'
 
-import styles from './deployment-options.module.scss'
-import { PageRoutes } from '../routes.constants'
-import { PageTitle } from '../components/PageTitle'
 import { shouldRedirectToWelcome } from '../auth/SignInSignUpCommon'
+import { PageTitle } from '../components/PageTitle'
+import { PageRoutes } from '../routes.constants'
+
+import styles from './deployment-options.module.scss'
 
 export const BestForTitle: FunctionComponent = () => (
-    <div className={classNames(`text-uppercase font-weight-bolder mb-1`, styles.bestForTitle)}>Best For</div>
+    <div className={classNames('text-uppercase font-weight-bolder mb-1', styles.bestForTitle)}>Best For</div>
 )
 
 interface IProps {

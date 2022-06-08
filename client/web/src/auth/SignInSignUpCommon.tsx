@@ -86,12 +86,12 @@ export function shouldRedirectToWelcome(): boolean {
 }
 
 export function maybeAddPostSignUpRedirect(url?: string): string {
-    const returnToParam = new URLSearchParams(window.location.search).get('returnTo')
+    const returnTo = new URLSearchParams(window.location.search).get('returnTo')
 
-    if (url && returnToParam) {
+    if (url && returnTo) {
         const urlObject = new URL(url, window.location.href)
 
-        urlObject.searchParams.append('redirect', returnToParam)
+        urlObject.searchParams.append('redirect', returnTo)
         return urlObject.toString()
     }
 

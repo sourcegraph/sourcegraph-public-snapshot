@@ -1,16 +1,17 @@
 import { FunctionComponent, useEffect, useState } from 'react'
+
 import classNames from 'classnames'
 import copyToClipboard from 'copy-to-clipboard'
-
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import { ButtonLink } from '@sourcegraph/wildcard'
+
+import { H3, AnchorLink, Code } from '@sourcegraph/wildcard'
 
 import styles from './install.module.scss'
 
 const installText =
     'docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.40.1'
 
-const Install: FunctionComponent = () => {
+export const Install: FunctionComponent = () => {
     const [copied, setCopied] = useState(false)
 
     const copy = async (): Promise<void> => {
@@ -32,7 +33,7 @@ const Install: FunctionComponent = () => {
             </div>
 
             <div className="p-5">
-                <h3 className="font-weight-bold text-3xl">
+                <H3 className="font-weight-bold text-3xl">
                     Install Sourcegraph locally
                     <span
                         onClick={copy}
@@ -43,24 +44,23 @@ const Install: FunctionComponent = () => {
                     >
                         <ContentCopyIcon />
                     </span>
-                </h3>
+                </H3>
 
-                <code className="d-block my-4 pr-5 text-lg">
+                <Code className="d-block my-4 pr-5 text-lg">
                     <small className={copied ? classNames(styles.flashBackground, 'text-break') : 'text-break'}>
                         {installText}
                     </small>
-                </code>
+                </Code>
 
-                <a
+                <AnchorLink
                     className={classNames('d-inline-block', styles.deployToServer)}
-                    href="https://docs.sourcegraph.com"
+                    to="https://docs.sourcegraph.com"
                     target="_blank"
+                    rel="noreferrer"
                 >
                     Deploy to a server or cluster
-                </a>
+                </AnchorLink>
             </div>
         </div>
     )
 }
-
-export default Install

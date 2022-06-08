@@ -1,13 +1,16 @@
 import { FunctionComponent } from 'react'
-import * as H from 'history'
 
-import { BestForTitle } from '.'
-import Install from '../components/Install'
-import { PageRoutes } from '../routes.constants'
-import { ButtonLink } from '@sourcegraph/wildcard'
-import { PageTitle } from '../components/PageTitle'
+import * as H from 'history'
 import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
+
+import { ButtonLink } from '@sourcegraph/wildcard'
+
+import { Install } from '../components/Install'
+import { PageTitle } from '../components/PageTitle'
+import { PageRoutes } from '../routes.constants'
+
+import { BestForTitle } from '.'
 
 import styles from './deployment-options.module.scss'
 
@@ -15,8 +18,7 @@ interface IProps {
     history: H.History
 }
 
-export const SelfHosted: FunctionComponent<IProps> = ({ history }) => {
-    return (
+export const SelfHosted: FunctionComponent<IProps> = ({ history }) => (
         <div className="flex flex-1 mt-5">
             <PageTitle title="Get Started with Sourcegraph Self-Hosted" />
             <div className={styles.hero}>
@@ -68,6 +70,5 @@ export const SelfHosted: FunctionComponent<IProps> = ({ history }) => {
             </div>
         </div>
     )
-}
 
 export default SelfHosted
