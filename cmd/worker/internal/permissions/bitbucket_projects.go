@@ -39,7 +39,7 @@ func NewBitbucketProjectPermissionsJob() job.Job {
 }
 
 func (j *bitbucketProjectPermissionsJob) Description() string {
-	return "Applies explicit permissions to all the repositories of a Bitbucket Project."
+	return "Applies explicit permissions to all repositories of a Bitbucket Project."
 }
 
 // TODO(asdine): Load environment variables from here if needed.
@@ -140,7 +140,7 @@ func createBitbucketProjectPermissionsStore(s basestore.ShareableStore) dbworker
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     5,
-		OrderByExpression: sqlf.Sprintf("id"),
+		OrderByExpression: sqlf.Sprintf("j.id"),
 	})
 }
 
