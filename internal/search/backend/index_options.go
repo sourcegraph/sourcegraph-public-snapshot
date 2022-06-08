@@ -3,7 +3,7 @@ package backend
 import (
 	"bytes"
 	"encoding/json"
-	logger "github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 	"sort"
 
 	"github.com/google/zoekt"
@@ -202,7 +202,7 @@ func getIndexOptions(
 type revsRuleFunc func(*RepoIndexOptions) (revs []string)
 
 func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration) revsRuleFunc {
-	slogger := logger.Scoped("siteConfigRevisionsRuleFunc", "Site config revisions rule function")
+	slog := log.Scoped("siteConfigRevisionsRuleFunc", "Site config revisions rule function")
 
 	if c == nil || c.ExperimentalFeatures == nil {
 		return nil
@@ -215,7 +215,7 @@ func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration) revsRuleFunc {
 		case rule.Name != "":
 			namePattern, err := regexp.Compile(rule.Name)
 			if err != nil {
-				slogger.Error("error compiling regex from search.index.revisions", logger.String("regex", rule.Name), logger.String("err", err.Error()))
+				slog.Error("error compiling regex from search.index.revisions", log.String("regex", rule.Name), log.Error(err))
 				continue
 			}
 

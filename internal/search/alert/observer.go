@@ -3,7 +3,7 @@ package alert
 import (
 	"context"
 	"fmt"
-	logger "github.com/sourcegraph/sourcegraph/lib/log"
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 	"strings"
 	"sync"
 
@@ -217,14 +217,14 @@ func (o *Observer) update(alert *search.Alert) {
 // Done returns the highest priority alert and an error.MultiError containing
 // all errors that could not be converted to alerts.
 func (o *Observer) Done() (*search.Alert, error) {
-	slogger := logger.Scoped("Done", "Done returns the highest priority alert and an error.MultiError containing")
+	slogger := slog.Scoped("Done", "Done returns the highest priority alert and an error.MultiError containing")
 
 	if !o.HasResults && o.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.OriginalQuery) {
 		o.update(search.AlertForStructuralSearchNotSet(o.OriginalQuery))
 	}
 
 	if o.HasResults && o.err != nil {
-		slogger.Error("Errors during search", logger.String("error",  o.err.Error()))
+		slogger.Error("Errors during search", slog.Error(o.err))
 		return o.alert, nil
 	}
 

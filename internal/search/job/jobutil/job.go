@@ -1,8 +1,7 @@
 package jobutil
 
 import (
-	"github.com/inconshreveable/log15"
-	logger "github.com/sourcegraph/sourcegraph/lib/log"
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 	"strings"
 	"time"
 
@@ -782,7 +781,7 @@ func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSou
 }
 
 func toFeatures(flags featureflag.FlagSet) search.Features {
-	slogger := logger.Scoped("toFeatures", "To features ")
+	slogger := slog.Scoped("toFeatures", "To features ")
 	if flags == nil {
 		flags = featureflag.FlagSet{}
 		metricFeatureFlagUnavailable.Inc()

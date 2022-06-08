@@ -2,7 +2,7 @@ package zoekt
 
 import (
 	"context"
-	logger "github.com/sourcegraph/sourcegraph/lib/log"
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -179,7 +179,7 @@ func PartitionRepos(
 	useIndex query.YesNoOnly,
 	containsRefGlobs bool,
 ) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions, err error) {
-	slogger := logger.Scoped("PartitionRepos", "Partition repos")
+	slogger := slog.Scoped("PartitionRepos", "Partition repos")
 
 	// Fallback to Unindexed if the query contains valid ref-globs.
 	if containsRefGlobs {
@@ -215,7 +215,7 @@ func PartitionRepos(
 				return nil, nil, errors.New("index:only failed since indexed search is not available yet")
 			}
 
-			slogger.Warn("zoektIndexedRepos failed", logger.String("error", err.Error()))
+			slogger.Warn("zoektIndexedRepos failed", slog.Error(err))
 		}
 
 		return nil, repos, ctx.Err()

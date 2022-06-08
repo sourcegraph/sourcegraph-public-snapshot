@@ -2,7 +2,7 @@ package searcher
 
 import (
 	"context"
-	logger "github.com/sourcegraph/sourcegraph/lib/log"
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 	"time"
 	"unicode/utf8"
 
@@ -48,7 +48,7 @@ type TextSearchJob struct {
 
 // Run calls the searcher service on a set of repositories.
 func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	slogger := logger.Scoped("Run", "Run calls the searcher service on a set of repositories")
+	slogger := slog.Scoped("Run","Run calls the searcher service on a set of repositories")
 
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
@@ -114,7 +114,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 					repoLimitHit, err := searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.LogFields(log.String("repo", string(repoRev.Repo.Name)), log.Error(err), log.Bool("timeout", errcode.IsTimeout(err)), log.Bool("temporary", errcode.IsTemporary(err)))
-						slogger.Warn("searchFilesInRepo failed",  logger.String("error", err.Error()), logger.String("repo", string(repoRev.Repo.Name)))
+						slogger.Warn("searchFilesInRepo failed",  slog.Error(err), slog.String("repo", string(repoRev.Repo.Name)))
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
 					status, limitHit, err := search.HandleRepoSearchResult(repoRev, repoLimitHit, false, err)

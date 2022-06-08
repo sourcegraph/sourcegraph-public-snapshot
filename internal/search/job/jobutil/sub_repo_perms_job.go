@@ -2,7 +2,7 @@ package jobutil
 
 import (
 	"context"
-	logger "github.com/sourcegraph/sourcegraph/lib/log"
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 	"sync"
 
 	"github.com/opentracing/opentracing-go/log"
@@ -66,7 +66,7 @@ func (s *subRepoPermsFilterJob) Tags() []log.Field {
 // applySubRepoFiltering filters a set of matches using the provided
 // authz.SubRepoPermissionChecker
 func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionChecker, matches []result.Match) ([]result.Match, error) {
-	slogger := logger.Scoped("applySubRepoFiltering", "Filters a set fo matches using the provided")
+	slogger := slog.Scoped("applySubRepoFiltering", "Filters a set fo matches using the provided")
 
 	if !authz.SubRepoEnabled(checker) {
 		return matches, nil
@@ -119,6 +119,6 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 
 	// We don't want to return sensitive authz information or excluded paths to the
 	// user so we'll return generic error and log something more specific.
-	slogger.Warn("Applying sub-repo permissions to search results", logger.String("error", errs.Error()))
+	slogger.Warn("Applying sub-repo permissions to search results", slog.Error(errs))
 	return filtered, errors.New("subRepoFilterFunc")
 }

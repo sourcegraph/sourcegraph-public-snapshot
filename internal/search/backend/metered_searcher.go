@@ -2,12 +2,13 @@ package backend
 
 import (
 	"context"
+	"github.com/docker/docker/daemon/logger"
 	"sync"
 	"time"
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
-	logger "github.com/sourcegraph/sourcegraph/lib/log"
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/keegancsmith/rpc"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
@@ -39,7 +40,7 @@ func NewMeteredSearcher(hostname string, z zoekt.Streamer) zoekt.Streamer {
 }
 
 func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c zoekt.Sender) (err error) {
-	slogger := logger.Scoped("StreamSearch", "Stream search ")
+	slogger := slog.Scoped("StreamSearch", "Stream search ")
 
 	start := time.Now()
 
@@ -102,7 +103,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			newOpts.SpanContext = spanContext
 			opts = &newOpts
 		} else {
-			slogger.Warn("meteredSearcher: Error injecting new span context into map: %s", logger.Error(err))
+			slogger.Warn("meteredSearcher: Error injecting new span context into map: %s", slog.Error(err))
 		}
 	}
 
