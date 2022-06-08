@@ -71,7 +71,7 @@ const MemoizedReadOnlyBatchSpecForm: React.FunctionComponent<
                     message={
                         <>
                             This spec is read-only because it was created and executed locally with the{' '}
-                            <Link to="https://docs.sourcegraph.com/cli">Sourcegraph CLI (src)</Link>.
+                            <Link to="/help/cli">Sourcegraph CLI (src)</Link>.
                         </>
                     }
                 >
