@@ -100,13 +100,13 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	logger.Info("Creating workspace")
 
 	hostRunner := h.runnerFactory("", commandLogger, command.Options{}, h.operations)
-	workingDirectory, err := h.prepareWorkspace(ctx, hostRunner, job.RepositoryName, job.Commit)
+	workspaceRoot, err := h.prepareWorkspace(ctx, hostRunner, job.RepositoryName, job.RepositoryDirectory, job.Commit, job.FetchTags, job.ShallowClone, job.SparseCheckout)
 	if err != nil {
 		return errors.Wrap(err, "failed to prepare workspace")
 	}
 	defer func() {
 		if !h.options.KeepWorkspaces {
-			_ = os.RemoveAll(workingDirectory)
+			_ = os.RemoveAll(workspaceRoot)
 		}
 	}()
 
@@ -132,7 +132,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 		FirecrackerOptions: h.options.FirecrackerOptions,
 		ResourceOptions:    h.options.ResourceOptions,
 	}
-	runner := h.runnerFactory(workingDirectory, commandLogger, options, h.operations)
+	runner := h.runnerFactory(workspaceRoot, commandLogger, options, h.operations)
 
 	// Construct a map from filenames to file content that should be accessible to jobs
 	// within the workspace. This consists of files supplied within the job record itself,
@@ -140,11 +140,11 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	workspaceFileContentsByPath := map[string][]byte{}
 
 	for relativePath, content := range job.VirtualMachineFiles {
-		path, err := filepath.Abs(filepath.Join(workingDirectory, relativePath))
+		path, err := filepath.Abs(filepath.Join(workspaceRoot, relativePath))
 		if err != nil {
 			return err
 		}
-		if !strings.HasPrefix(path, workingDirectory) {
+		if !strings.HasPrefix(path, workspaceRoot) {
 			return errors.Errorf("refusing to write outside of working directory")
 		}
 
@@ -156,7 +156,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 		scriptName := scriptNameFromJobStep(job, i)
 		scriptNames = append(scriptNames, scriptName)
 
-		path := filepath.Join(workingDirectory, command.ScriptsPath, scriptName)
+		path := filepath.Join(workspaceRoot, command.ScriptsPath, scriptName)
 		workspaceFileContentsByPath[path] = buildScript(dockerStep)
 	}
 
