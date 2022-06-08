@@ -1,7 +1,6 @@
-import React, { Ref, useContext, useReducer, useRef, useState } from 'react'
+import React, { Ref, useContext, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import VisibilitySensor from 'react-visibility-sensor'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { asError } from '@sourcegraph/common'
@@ -23,6 +22,7 @@ import { insightPollingInterval } from '../../../../core/backend/gql-backend/uti
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
+import { useVisibility } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 import { InsightContext } from '../InsightContext'
 
@@ -46,9 +46,6 @@ interface BackendInsightProps
     resizing?: boolean
 }
 
-function wasEverVisible(previouslyVisible: boolean, currentVisibility: boolean): boolean {
-    return previouslyVisible || currentVisibility
-}
 /**
  * Renders search based insight. Fetches insight data by gql api handler.
  */
@@ -58,15 +55,15 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     const { currentDashboard, dashboards } = useContext(InsightContext)
     const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
     const { toggle, isSeriesSelected, isSeriesHovered, setHoveredId } = useSeriesToggle()
-    const [wasVisble, dispatchVisibilityChange] = useReducer(wasEverVisible, false)
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
     const [enablePolling] = useFeatureFlag('insight-polling-enabled')
-    const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
+    const pollingInterval = !enablePolling ? insightPollingInterval(insight) : 0
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const insightCardReference = useRef<HTMLDivElement>(null)
     const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
+    const { wasEverVisible } = useVisibility(insightCardReference)
 
     // Use deep copy check in case if a setting subject has re-created copy of
     // the insight config with same structure and values. To avoid insight data
@@ -101,7 +98,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
             variables: { id: insight.id, filters: filterInput, seriesDisplayOptions: displayInput },
             fetchPolicy: 'cache-and-network',
             pollInterval: pollingInterval,
-            skip: !wasVisble,
+            skip: !wasEverVisible,
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
             onCompleted: data => {
                 const parsedData = createBackendInsightData(insight, data.insightViews.nodes[0])
@@ -174,74 +171,72 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     const shareableUrl = `${window.location.origin}/insights/insight/${insight.id}`
 
     return (
-        <VisibilitySensor active={true} onChange={dispatchVisibilityChange} partialVisibility={true}>
-            <InsightCard
-                {...otherProps}
-                ref={mergedInsightCardReference}
-                data-testid={`insight-card.${insight.id}`}
-                className={classNames(otherProps.className, { [styles.cardWithFilters]: isFiltersOpen })}
-                onMouseEnter={trackMouseEnter}
-                onMouseLeave={trackMouseLeave}
-            >
-                <InsightCardHeader
-                    title={
-                        <Link to={shareableUrl} target="_blank" rel="noopener noreferrer">
-                            {insight.title}
-                        </Link>
-                    }
-                >
-                    {wasVisble && (
-                        <>
-                            <DrillDownFiltersPopover
-                                isOpen={isFiltersOpen}
-                                anchor={insightCardReference}
-                                initialFiltersValue={filters}
-                                originalFiltersValue={originalInsightFilters}
-                                insight={insight}
-                                onFilterChange={setFilters}
-                                onFilterSave={handleFilterSave}
-                                onInsightCreate={handleInsightFilterCreation}
-                                onVisibilityChange={setIsFiltersOpen}
-                                originalSeriesDisplayOptions={parseSeriesDisplayOptions(
-                                    insight.defaultSeriesDisplayOptions
-                                )}
-                                onSeriesDisplayOptionsChange={setSeriesDisplayOptions}
-                            />
-                            <InsightContextMenu
-                                insight={insight}
-                                currentDashboard={currentDashboard}
-                                dashboards={dashboards}
-                                zeroYAxisMin={zeroYAxisMin}
-                                onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
-                            />
-                        </>
-                    )}
-                </InsightCardHeader>
-
-                {resizing ? (
-                    <InsightCardBanner>Resizing</InsightCardBanner>
-                ) : error ? (
-                    <BackendInsightErrorAlert error={error} />
-                ) : loading || !wasVisble || !insightData ? (
-                    <InsightCardLoading>Loading code insight</InsightCardLoading>
-                ) : (
-                    <BackendInsightChart
-                        {...insightData}
-                        locked={insight.isFrozen}
-                        zeroYAxisMin={zeroYAxisMin}
-                        isSeriesSelected={isSeriesSelected}
-                        isSeriesHovered={isSeriesHovered}
-                        onDatumClick={trackDatumClicks}
-                        onLegendItemClick={toggle}
-                        setHoveredId={setHoveredId}
-                    />
-                )}
-                {
-                    // Passing children props explicitly to render any top-level content like
-                    // resize-handler from the react-grid-layout library
-                    wasVisble && otherProps.children
+        <InsightCard
+            {...otherProps}
+            ref={mergedInsightCardReference}
+            data-testid={`insight-card.${insight.id}`}
+            className={classNames(otherProps.className, { [styles.cardWithFilters]: isFiltersOpen })}
+            onMouseEnter={trackMouseEnter}
+            onMouseLeave={trackMouseLeave}
+        >
+            <InsightCardHeader
+                title={
+                    <Link to={shareableUrl} target="_blank" rel="noopener noreferrer">
+                        {insight.title}
+                    </Link>
                 }
-            </InsightCard>
-        </VisibilitySensor>
+            >
+                {wasEverVisible && (
+                    <>
+                        <DrillDownFiltersPopover
+                            isOpen={isFiltersOpen}
+                            anchor={insightCardReference}
+                            initialFiltersValue={filters}
+                            originalFiltersValue={originalInsightFilters}
+                            insight={insight}
+                            onFilterChange={setFilters}
+                            onFilterSave={handleFilterSave}
+                            onInsightCreate={handleInsightFilterCreation}
+                            onVisibilityChange={setIsFiltersOpen}
+                            originalSeriesDisplayOptions={parseSeriesDisplayOptions(
+                                insight.defaultSeriesDisplayOptions
+                            )}
+                            onSeriesDisplayOptionsChange={setSeriesDisplayOptions}
+                        />
+                        <InsightContextMenu
+                            insight={insight}
+                            currentDashboard={currentDashboard}
+                            dashboards={dashboards}
+                            zeroYAxisMin={zeroYAxisMin}
+                            onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
+                        />
+                    </>
+                )}
+            </InsightCardHeader>
+
+            {resizing ? (
+                <InsightCardBanner>Resizing</InsightCardBanner>
+            ) : error ? (
+                <BackendInsightErrorAlert error={error} />
+            ) : loading || !wasEverVisible || !insightData ? (
+                <InsightCardLoading>Loading code insight</InsightCardLoading>
+            ) : (
+                <BackendInsightChart
+                    {...insightData}
+                    locked={insight.isFrozen}
+                    zeroYAxisMin={zeroYAxisMin}
+                    isSeriesSelected={isSeriesSelected}
+                    isSeriesHovered={isSeriesHovered}
+                    onDatumClick={trackDatumClicks}
+                    onLegendItemClick={toggle}
+                    setHoveredId={setHoveredId}
+                />
+            )}
+            {
+                // Passing children props explicitly to render any top-level content like
+                // resize-handler from the react-grid-layout library
+                wasEverVisible && otherProps.children
+            }
+        </InsightCard>
     )
 }

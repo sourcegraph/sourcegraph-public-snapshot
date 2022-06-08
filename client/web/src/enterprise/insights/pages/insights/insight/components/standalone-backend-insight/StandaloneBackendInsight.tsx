@@ -1,8 +1,7 @@
-import React, { useContext, useRef, useState, useReducer } from 'react'
+import React, { useContext, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
-import VisibilitySensor from 'react-visibility-sensor'
 
 import { asError } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
@@ -29,6 +28,7 @@ import {
     DrillDownInsightCreationFormValues,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
 import { useSeriesToggle } from '../../../../../components/insights-view-grid/components/backend-insight/components/backend-insight-chart/use-series-toggle'
+import { useVisibility } from '../../../../../components/insights-view-grid/hooks/use-insight-data'
 import {
     ALL_INSIGHTS_DASHBOARD,
     BackendInsight,
@@ -51,16 +51,11 @@ interface StandaloneBackendInsight extends TelemetryProps {
     className?: string
 }
 
-function wasEverVisible(previouslyVisible: boolean, currentVisibility: boolean): boolean {
-    return previouslyVisible || currentVisibility
-}
-
 export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackendInsight> = props => {
     const { telemetryService, insight, className } = props
     const history = useHistory()
     const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
     const { toggle, isSeriesSelected, isSeriesHovered, setHoveredId } = useSeriesToggle()
-    const [wasVisble, dispatchVisibilityChange] = useReducer(wasEverVisible, false)
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
     const [enablePolling] = useFeatureFlag('insight-polling-enabled')
     const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
@@ -73,7 +68,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     // configuration object, They are updated  whenever the user clicks update/save button
     const [originalInsightFilters, setOriginalInsightFilters] = useState(insight.filters)
     const insightCardReference = useRef<HTMLDivElement>(null)
-
+    const { wasEverVisible } = useVisibility(insightCardReference)
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
@@ -99,7 +94,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
             fetchPolicy: 'cache-and-network',
             pollInterval: pollingInterval,
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
-            skip: !wasVisble,
+            skip: !wasEverVisible,
             onCompleted: data => {
                 const parsedData = createBackendInsightData(insight, data.insightViews.nodes[0])
                 if (!parsedData.isFetchingHistoricalData) {
@@ -197,26 +192,24 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                     />
                 </InsightCardHeader>
 
-                <VisibilitySensor active={true} onChange={dispatchVisibilityChange} partialVisibility={true}>
-                    {error ? (
-                        <BackendInsightErrorAlert error={error} />
-                    ) : loading || !wasVisble || !insightData ? (
-                        <InsightCardLoading>Loading code insight</InsightCardLoading>
-                    ) : error ? (
-                        <BackendInsightErrorAlert error={error} />
-                    ) : (
-                        <BackendInsightChart
-                            {...insightData}
-                            locked={insight.isFrozen}
-                            zeroYAxisMin={zeroYAxisMin}
-                            isSeriesSelected={isSeriesSelected}
-                            isSeriesHovered={isSeriesHovered}
-                            onDatumClick={trackDatumClicks}
-                            onLegendItemClick={toggle}
-                            setHoveredId={setHoveredId}
-                        />
-                    )}
-                </VisibilitySensor>
+                {error ? (
+                    <BackendInsightErrorAlert error={error} />
+                ) : loading || !wasEverVisible || !insightData ? (
+                    <InsightCardLoading>Loading code insight</InsightCardLoading>
+                ) : error ? (
+                    <BackendInsightErrorAlert error={error} />
+                ) : (
+                    <BackendInsightChart
+                        {...insightData}
+                        locked={insight.isFrozen}
+                        zeroYAxisMin={zeroYAxisMin}
+                        isSeriesSelected={isSeriesSelected}
+                        isSeriesHovered={isSeriesHovered}
+                        onDatumClick={trackDatumClicks}
+                        onLegendItemClick={toggle}
+                        setHoveredId={setHoveredId}
+                    />
+                )}
             </InsightCard>
         </div>
     )
