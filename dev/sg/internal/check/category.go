@@ -27,8 +27,8 @@ type Check[Args any] struct {
 
 // Update should be used to run a check and set its results onto the Check itself.
 func (c *Check[Args]) Update(ctx context.Context, cio IO, args Args) error {
-	c.checkRun = true
 	c.checkErr = c.Check(ctx, cio, args)
+	c.checkRun = true
 	return c.checkErr
 }
 
