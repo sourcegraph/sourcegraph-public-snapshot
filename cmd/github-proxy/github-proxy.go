@@ -69,7 +69,7 @@ func main() {
 
 	defer liblog.Sync()
 	conf.Init()
-	conf.Watch(liblog.Update(conf.GetLogSinks))
+	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()

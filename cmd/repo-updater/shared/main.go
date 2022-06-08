@@ -82,7 +82,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		InstanceID: hostname.Get(),
 	}, log.NewSentrySink())
 	defer liblog.Sync()
-	conf.Watch(liblog.Update(conf.GetLogSinks))
+	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
