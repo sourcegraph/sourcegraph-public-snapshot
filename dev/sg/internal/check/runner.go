@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/atomic"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -159,27 +161,27 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		r.renderDescription(r.out)
 	}
 
-	bars := []output.ProgressBar{}
-	for _, category := range r.categories {
-		bars = append(bars, output.ProgressBar{
-			Label: category.Name,
-			Max:   float64(len(category.Checks)),
-		})
+	statuses := []*output.StatusBar{}
+	var checks float64
+	for i, category := range r.categories {
+		statuses = append(statuses, output.NewStatusBarWithLabel(fmt.Sprintf("%d. %s", i+1, category.Name)))
+		checks += float64(len(category.Checks))
 	}
-	progress := r.out.Progress(bars, nil)
+	progress := r.out.ProgressWithStatusBars([]output.ProgressBar{{
+		Label: "Running checks",
+		Max:   checks,
+	}}, statuses, nil)
 
 	var categoriesWg sync.WaitGroup
+	var checksDone atomic.Float64
 	var skipped []int
 	for i, category := range r.categories {
-		idx := i + 1
-
-		progress.VerboseLine(output.Styledf(output.StylePending, "%d. %s - Determining status...", idx, category.Name))
+		progress.StatusBarUpdatef(i, "Determining status...")
 
 		if err := category.CheckEnabled(ctx, args); err != nil {
 			skipped = append(skipped, i)
-			progress.VerboseLine(output.Styledf(output.StyleGrey, "%s: Category skipped: %s", category.Name, err.Error()))
-			// Mark all as done
-			progress.SetValue(i, float64(len(category.Checks)))
+			// Mark as done
+			progress.StatusBarCompletef(i, "Category skipped: %s", category.Name, err.Error())
 			continue
 		}
 
@@ -190,10 +192,15 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 			// Validate checks
 			var checksWg sync.WaitGroup
+			var didErr atomic.Bool
 			for ci, check := range category.Checks {
 				checksWg.Add(1)
 
 				go func(ci int, check *Check[Args]) {
+					defer func() {
+						progress.SetValue(0, checksDone.Load()+1)
+						checksDone.Add(1)
+					}()
 					defer checksWg.Done()
 
 					var out strings.Builder
@@ -204,8 +211,6 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 					if err := check.IsEnabled(ctx, args); err != nil {
 						progress.VerboseLine(output.Styledf(output.StyleGrey, "%s: Check skipped: %s", check.Name, err.Error()))
-						// Mark as done anyway
-						progress.SetValue(i, float64(ci+1))
 						return
 					}
 
@@ -215,14 +220,16 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 							progress.VerboseLine(output.Styledf(output.StyleWarning, "%s: Check failed, output:", check.Name))
 							progress.Verbose(outStr)
 						}
-						progress.VerboseLine(output.Styledf(output.StyleWarning, "%s: %s", err.Error(), check.Name))
+						progress.StatusBarFailf(i, "Check %s failed: %s", check.Name, err.Error())
+						didErr.Store(true)
 					}
-
-					// Mark as done
-					progress.SetValue(i, float64(ci+1))
 				}(ci, check)
 			}
 			checksWg.Wait()
+
+			if !didErr.Load() {
+				progress.StatusBarCompletef(i, "Done!")
+			}
 		}(i, category)
 	}
 
@@ -260,6 +267,11 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		} else {
 			results.failed = append(results.failed, i)
 			r.out.WriteFailuref("%d. %s", idx, category.Name)
+			for _, c := range category.Checks {
+				if c.checkErr != nil {
+					r.out.WriteLine(output.Styledf(output.StyleWarning, "\t%s: %s", c.Name, c.checkErr))
+				}
+			}
 		}
 	}
 
@@ -457,11 +469,11 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 	r.out.SetVerbose()
 	defer r.out.UnsetVerbose()
 
-	pending := r.out.Pending(output.Styledf(output.StylePending, "Trying my hardest to fix %q automatically...", category.Name))
+	r.out.WriteLine(output.Styledf(output.StylePending, "Trying my hardest to fix %q automatically...", category.Name))
 
 	// Make sure to call this with a final message before returning!
 	complete := func(emoji string, style output.Style, fmtStr string, args ...any) {
-		pending.Complete(output.Linef(emoji, output.CombineStyles(style, output.StyleBold),
+		r.out.WriteLine(output.Linef(emoji, output.CombineStyles(style, output.StyleBold),
 			"%d. %s - "+fmtStr, append([]any{categoryIdx, category.Name}, args...)...))
 	}
 
@@ -500,37 +512,37 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 
 		// Skip
 		if err := c.IsEnabled(ctx, args); err != nil {
-			pending.WriteLine(output.Linef(output.EmojiQuestionMark, output.CombineStyles(output.StyleGrey, output.StyleBold),
+			r.out.WriteLine(output.Linef(output.EmojiQuestionMark, output.CombineStyles(output.StyleGrey, output.StyleBold),
 				"%q skipped: %s", c.Name, err.Error()))
 			continue
 		}
 
 		// Otherwise, check if this is fixable at all
 		if c.Fix == nil {
-			pending.WriteLine(output.Linef(output.EmojiShrug, output.CombineStyles(output.StyleWarning, output.StyleBold),
+			r.out.WriteLine(output.Linef(output.EmojiShrug, output.CombineStyles(output.StyleWarning, output.StyleBold),
 				"%q cannot be fixed automatically.", c.Name))
 			continue
 		}
 
 		// Attempt fix. Get new args because things might have changed due to another
 		// fix being run.
-		pending.VerboseLine(output.Linef(output.EmojiAsterisk, output.StylePending,
+		r.out.VerboseLine(output.Linef(output.EmojiAsterisk, output.StylePending,
 			"Fixing %q...", c.Name))
 		if err := c.Fix(ctx, IO{
 			Input:  r.in,
-			Writer: pending,
+			Writer: r.out,
 		}, args); err != nil {
-			pending.WriteLine(output.Linef(output.EmojiWarning, output.CombineStyles(output.StyleFailure, output.StyleBold),
+			r.out.WriteLine(output.Linef(output.EmojiWarning, output.CombineStyles(output.StyleFailure, output.StyleBold),
 				"Failed to fix %q: %s", c.Name, err.Error()))
 			continue
 		}
 
 		// Check is the fix worked
-		if err := c.Update(ctx, pending, args); err != nil {
-			pending.WriteLine(output.Styledf(output.CombineStyles(output.StyleWarning, output.StyleBold), "Check %q still failing: %s",
-				c.Name, err.Error()))
+		if err := c.Update(ctx, r.out, args); err != nil {
+			r.out.WriteLine(output.Styledf(output.CombineStyles(output.StyleWarning, output.StyleBold),
+				"Check %q still failing: %s", c.Name, err.Error()))
 		} else {
-			pending.WriteLine(output.Styledf(output.CombineStyles(output.StyleSuccess, output.StyleBold),
+			r.out.WriteLine(output.Styledf(output.CombineStyles(output.StyleSuccess, output.StyleBold),
 				"Check %q is satisfied now!", c.Name))
 		}
 	}
