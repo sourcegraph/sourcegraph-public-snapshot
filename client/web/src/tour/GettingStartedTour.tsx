@@ -28,7 +28,7 @@ function TourVisitorRegular(props: Omit<TourProps, 'tasks' | 'id'>): JSX.Element
     return <Tour {...props} id="Tour" tasks={visitorsTasks} />
 }
 
-const TourVisitor = withFeatureFlag('tour-visitors-notebook', TourVisitorWithNotebook, TourVisitorRegular)
+const TourVisitor = withFeatureFlag('ab-visitor-tour-with-notebooks', TourVisitorWithNotebook, TourVisitorRegular)
 
 type TourWithErrorBoundaryProps = Omit<TourProps, 'useStore' | 'eventPrefix' | 'tasks' | 'id'> & {
     isAuthenticated?: boolean
