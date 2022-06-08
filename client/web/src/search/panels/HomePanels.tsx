@@ -54,16 +54,16 @@ export const HOME_PANELS_QUERY = gql`
         $userId: ID!
         $firstRecentlySearchedRepositories: Int!
         $firstRecentSearches: Int!
-        $firstRecentFiles: Int!
+        #$firstRecentFiles: Int!
         $enableSavedSearches: Boolean!
-        $enableCollaborators: Boolean!
+        #$enableCollaborators: Boolean!
     ) {
         node(id: $userId) {
             __typename
             ...RecentlySearchedRepositoriesFragment
             ...RecentSearchesPanelFragment
-            ...RecentFilesFragment
-            ...CollaboratorsFragment
+            #...RecentFilesFragment
+            #...CollaboratorsFragment
         }
         ...SavedSearchesPanelFragment
     }

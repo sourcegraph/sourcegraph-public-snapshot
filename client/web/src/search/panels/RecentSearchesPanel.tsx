@@ -93,14 +93,13 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
     // get the user's git commit history
     // call streamComputeQuery from stream
 
-    const URL = 'content:output((.|\n)* -> $repo) author:"adham.khalifa@sourcegraph.com" type:commit after:"1 year ago" count:all'
+    const URL =
+        'content:output((.|\n)* -> $repo) author:"adham.khalifa@sourcegraph.com" type:commit after:"1 year ago" count:all'
     const computeStreamUrl = '/.api/compute/stream'
     const query = streamComputeQuery(URL, computeStreamUrl)
     // use useobservable
-    const gitCommit = useObservable(useMemo(() =>
-    streamComputeQuery(URL, computeStreamUrl), [query]))
+    const gitCommit = useObservable(useMemo(() => streamComputeQuery(URL, computeStreamUrl), [query]))
     //console.log(gitCommit)
-
 
     /*
         Get the user’s code search history.
@@ -215,7 +214,7 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
                                 <Timestamp noAbout={true} date={recentSearch.timestamp} now={now} strict={true} />
                             </td>
                         </tr>
-                     ))}
+                    ))}
                 </tbody>
             </table>
             {searchEventLogs?.pageInfo.hasNextPage && <ShowMoreButton onClick={loadMoreItems} />}
@@ -238,7 +237,14 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
                     </tr>
                 </thead>
                 <tbody>
-                    {((gitCommit: { url: LocationDescriptor<any>; searchText: string; timestamp: string | number | Date }, index: React.Key | null | undefined) => (
+                    {(
+                        gitCommit: {
+                            url: LocationDescriptor<any>
+                            searchText: string
+                            timestamp: string | number | Date
+                        },
+                        index: React.Key | null | undefined
+                    ) => (
                         <tr key={index} className={styles.resultsTableRow}>
                             <td>
                                 <small className={styles.recentQuery}>
@@ -251,7 +257,7 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
                                 <Timestamp noAbout={true} date={gitCommit.timestamp} now={now} strict={true} />
                             </td>
                         </tr>
-                        ))}
+                    )}
                 </tbody>
             </table>
             {searchEventLogs?.pageInfo.hasNextPage && <ShowMoreButton onClick={loadMoreItems} />}
@@ -259,7 +265,7 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
     )
 
     // get the user's code search history
-    const codeSearchHistory = processedResults?.map((recentSearch) => recentSearch.searchText)
+    const codeSearchHistory = processedResults?.map(recentSearch => recentSearch.searchText)
 
     // if the user's code search history is not empty
     // show that
@@ -278,7 +284,6 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
         gitCommitDisplay
     }
 
-
     return (
         <PanelContainer
             className={classNames(className, 'recent-searches-panel')}
@@ -290,8 +295,6 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
         />
     )
 }
-
-
 
 function processRecentSearches(eventLogResult?: EventLogResult): RecentSearch[] | null {
     if (!eventLogResult) {
@@ -323,4 +326,3 @@ function processRecentSearches(eventLogResult?: EventLogResult): RecentSearch[] 
 
     return recentSearches
 }
-
