@@ -43,7 +43,7 @@ type MemoizedReadOnlyBatchSpecFormProps = ReadOnlyBatchSpecFormProps &
 
 const MemoizedReadOnlyBatchSpecForm: React.FunctionComponent<
     React.PropsWithChildren<MemoizedReadOnlyBatchSpecFormProps>
-> = React.memo(({ isLightTheme, batchChange, batchSpec, setActionsError }) => {
+> = React.memo(function MemoizedReadOnlyBatchSpecForm({ isLightTheme, batchChange, batchSpec, setActionsError }) {
     const history = useHistory()
 
     const [showCancelModal, setShowCancelModal] = useState(false)

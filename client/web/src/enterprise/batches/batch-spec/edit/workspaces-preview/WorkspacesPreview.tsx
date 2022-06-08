@@ -71,7 +71,7 @@ type MemoizedWorkspacesPreviewProps = WorkspacesPreviewProps &
 
 const MemoizedWorkspacesPreview: React.FunctionComponent<
     React.PropsWithChildren<MemoizedWorkspacesPreviewProps>
-> = React.memo(({ isReadOnly, batchSpec, editor, workspacesPreview }) => {
+> = React.memo(function MemoizedWorkspacesPreview({ isReadOnly, batchSpec, editor, workspacesPreview }) {
     const { debouncedCode, excludeRepo, isServerStale } = editor
     const {
         resolutionState,

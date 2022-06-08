@@ -104,7 +104,13 @@ type MemoizedEditBatchSpecPageContentProps = EditBatchSpecPageContentProps &
 
 const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
     React.PropsWithChildren<MemoizedEditBatchSpecPageContentProps>
-> = React.memo(({ settingsCascade, isLightTheme, batchChange, editor, errors }) => {
+> = React.memo(function MemoizedEditBatchSpecPageContent({
+    settingsCascade,
+    isLightTheme,
+    batchChange,
+    editor,
+    errors,
+}) {
     const { insightTitle } = useInsightTemplates(settingsCascade)
 
     const [activeTabKey, setActiveTabKey] = useState<TabKey>('spec')
