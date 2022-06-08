@@ -6,6 +6,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
@@ -155,16 +156,8 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		r.renderDescription(r.out)
 	}
 
-	var results runAllCategoryChecksResult
-	for i := range r.categories {
-		results.failed = append(results.failed, i)
-		results.all = append(results.all, i)
-	}
-
-	results.categories = make(map[string]bool)
 	bars := []output.ProgressBar{}
 	for _, category := range r.categories {
-		results.categories[category.Name] = false
 		bars = append(bars, output.ProgressBar{
 			Label: category.Name,
 			Max:   float64(len(category.Checks)),
@@ -172,28 +165,26 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 	}
 	progress := r.out.Progress(bars, nil)
 
-	var resultsLock sync.Mutex
 	var wg sync.WaitGroup
-	for i, cat := range r.categories {
+	var skipped []int
+	for i, category := range r.categories {
 		idx := i + 1
-		category := cat
 
 		progress.VerboseLine(output.Styledf(output.StylePending, "%d. %s - Determining status...", idx, category.Name))
-		wg.Add(1)
 
-		go func(i int) {
+		if err := category.CheckEnabled(ctx, args); err != nil {
+			progress.WriteLine(output.Linef(output.EmojiQuestionMark, output.StyleGrey, "%d. %s %s[SKIPPED: %s]%s",
+				idx, category.Name, output.StyleBold, err.Error(), output.StyleReset))
+			skipped = append(skipped, i)
+			continue
+		}
+
+		// Run potentially slow checks concurrently
+		wg.Add(1)
+		go func(i int, category Category[Args]) {
 			defer wg.Done()
 
-			if err := category.CheckEnabled(ctx, args); err != nil {
-				progress.WriteLine(output.Linef(output.EmojiQuestionMark, output.StyleGrey, "%d. %s %s[SKIPPED: %s]%s",
-					idx, category.Name, output.StyleBold, err.Error(), output.StyleReset))
-				results.skipped = append(results.skipped, idx)
-				results.failed = removeEntry(results.failed, i)
-				return
-			}
-
 			// Validate checks
-			var failed bool
 			for ci, c := range category.Checks {
 				var out strings.Builder
 				cio := IO{
@@ -206,7 +197,6 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 				}
 
 				if err := c.Update(ctx, cio, args); err != nil {
-					failed = true
 					outStr := out.String()
 					if len(outStr) > 0 {
 						progress.Verbose(outStr)
@@ -215,22 +205,32 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 				}
 				progress.SetValue(i, float64(ci+1))
 			}
-
-			// Report results by updating the results value
-			resultsLock.Lock()
-			defer resultsLock.Unlock()
-			results.categories[category.Name] = !failed
-			if !failed {
-				progress.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "%d. %s", idx, category.Name))
-				results.failed = removeEntry(results.failed, i)
-			} else {
-				progress.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "%d. %s", idx, category.Name))
-			}
-		}(i)
+		}(i, category)
 	}
 
 	wg.Wait()
+	time.Sleep(1 * time.Second)
 	progress.Destroy()
+
+	results := runAllCategoryChecksResult{
+		skipped:    skipped,
+		categories: make(map[string]bool),
+	}
+
+	for i, category := range r.categories {
+		results.all = append(results.all, i)
+
+		satisfied := category.IsSatisfied()
+		results.categories[category.Name] = satisfied
+
+		idx := i + 1
+		if satisfied {
+			r.out.WriteSuccessf("%d. %s", idx, category.Name)
+		} else {
+			results.failed = append(results.failed, i)
+			r.out.WriteFailuref("%d. %s", idx, category.Name)
+		}
+	}
 
 	if len(results.failed) == 0 {
 		if len(results.skipped) == 0 {

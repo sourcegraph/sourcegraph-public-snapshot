@@ -28,6 +28,10 @@ jobs:
         run: go test -v ./dev/sg/dependencies/... -sg-setup=${{ matrix.os }}
         continue-on-error: true
 
-      # We run the test twice because certain sg setup tasks might require a restart.
+      # We run the test twice because certain sg setup tasks might require a restart, and
+      # also because things will inevitably flaked.
+      #
+      # If everything already worked, this should be pretty fast, and a good test of
+      # validating an existing system.
       - name: Test dependencies attempt 2 (${{ matrix.os }})
         run: go test -v ./dev/sg/dependencies/... -sg-setup=${{ matrix.os }}

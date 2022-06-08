@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"runtime"
 
@@ -70,6 +71,15 @@ var setupCommandV2 = &cli.Command{
 			return setup.Fix(cmd.Context, args)
 
 		default:
+			// Prompt for details if flags are not set
+			if !cmd.IsSet("oss") {
+				std.Out.WriteNoticef("Are you a Sourcegraph teammate? (Y/n) ")
+				var s string
+				if _, err := fmt.Scan(&s); err != nil {
+					return err
+				}
+				args.Teammate = s == "Y"
+			}
 			return setup.Interactive(cmd.Context, args)
 		}
 	},
