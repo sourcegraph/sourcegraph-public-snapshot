@@ -26,20 +26,19 @@ type Check[Args any] struct {
 }
 
 // Update should be used to run a check and set its results onto the Check itself.
-func (c *Check[Args]) Update(ctx context.Context, cio IO, args Args) error {
-	c.checkErr = c.Check(ctx, cio, args)
+func (c *Check[Args]) Update(ctx context.Context, out output.Writer, args Args) error {
+	c.checkErr = c.Check(ctx, out, args)
 	c.checkRun = true
 	return c.checkErr
 }
 
 // IsEnabled checks and writes some output based on whether or not this check is enabled.
-func (c *Check[Args]) IsEnabled(ctx context.Context, cio IO, args Args) error {
+func (c *Check[Args]) IsEnabled(ctx context.Context, args Args) error {
 	if c.Enabled == nil {
 		return nil
 	}
 	err := c.Enabled(ctx, args)
 	if err != nil {
-		cio.Writer.WriteLine(output.Styledf(output.StyleGrey, "Skipped %s: %s", c.Name, err.Error()))
 		c.checkRun = true // treat this as a run that succeeded
 	}
 	return err

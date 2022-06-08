@@ -191,7 +191,7 @@ func dependencyGcloud() *dependency {
 
 			if err := check.InPath("gcloud")(ctx); err != nil {
 				// This is the official interactive installer: https://cloud.google.com/sdk/docs/downloads-interactive
-				if err := run.Cmd(ctx, "curl https://sdk.cloud.google.com | bash").
+				if err := run.Cmd(ctx, "curl https://sdk.cloud.google.com | bash -s -- --disable-prompts").
 					Input(cio.Input).
 					Run().StreamLines(cio.Write); err != nil {
 					return err

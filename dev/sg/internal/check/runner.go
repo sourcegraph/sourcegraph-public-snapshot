@@ -202,7 +202,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 						Writer: std.NewFixedOutput(&out, true),
 					}
 
-					if err := check.IsEnabled(ctx, cio, args); err != nil {
+					if err := check.IsEnabled(ctx, args); err != nil {
 						progress.VerboseLine(output.Styledf(output.StyleGrey, "%s: Check skipped: %s", check.Name, err.Error()))
 						// Mark as done anyway
 						progress.SetValue(i, float64(ci+1))
@@ -442,10 +442,7 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 		pending := r.out.Pending(output.Styled(output.StylePending, "Determining status..."))
 		for _, dep := range category.Checks {
 			// update check state
-			_ = dep.Update(ctx, IO{
-				Input:  r.in,
-				Writer: pending,
-			}, args)
+			_ = dep.Update(ctx, pending, args)
 		}
 		pending.Destroy()
 
@@ -461,10 +458,6 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 	defer r.out.UnsetVerbose()
 
 	pending := r.out.Pending(output.Styledf(output.StylePending, "Trying my hardest to fix %q automatically...", category.Name))
-	cio := IO{
-		Input:  r.in,
-		Writer: pending,
-	}
 
 	// Make sure to call this with a final message before returning!
 	complete := func(emoji string, style output.Style, fmtStr string, args ...any) {
@@ -506,7 +499,7 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 		}
 
 		// Skip
-		if err := c.IsEnabled(ctx, cio, args); err != nil {
+		if err := c.IsEnabled(ctx, args); err != nil {
 			pending.WriteLine(output.Linef(output.EmojiQuestionMark, output.CombineStyles(output.StyleGrey, output.StyleBold),
 				"%q skipped: %s", c.Name, err.Error()))
 			continue
@@ -523,14 +516,17 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 		// fix being run.
 		pending.VerboseLine(output.Linef(output.EmojiAsterisk, output.StylePending,
 			"Fixing %q...", c.Name))
-		if err := c.Fix(ctx, cio, args); err != nil {
+		if err := c.Fix(ctx, IO{
+			Input:  r.in,
+			Writer: pending,
+		}, args); err != nil {
 			pending.WriteLine(output.Linef(output.EmojiWarning, output.CombineStyles(output.StyleFailure, output.StyleBold),
 				"Failed to fix %q: %s", c.Name, err.Error()))
 			continue
 		}
 
 		// Check is the fix worked
-		if err := c.Update(ctx, cio, args); err != nil {
+		if err := c.Update(ctx, pending, args); err != nil {
 			pending.WriteLine(output.Styledf(output.CombineStyles(output.StyleWarning, output.StyleBold), "Check %q still failing: %s",
 				c.Name, err.Error()))
 		} else {
