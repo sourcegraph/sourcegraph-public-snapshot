@@ -47,10 +47,11 @@ func NewFixedOutput(dst io.Writer, verbose bool) *Output {
 }
 
 // NewSimpleOutput returns a fixed width and height output that does not forcibly enable
-// TTY, useful for testing.
+// TTY and color, useful for testing and getting simpler output.
 func NewSimpleOutput(dst io.Writer, verbose bool) *Output {
 	opts := newStaticOutputOptions(verbose)
 	opts.ForceTTY = false
+	opts.ForceColor = false
 
 	return &Output{
 		Output: output.NewOutput(dst, opts),
