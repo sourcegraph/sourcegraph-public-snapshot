@@ -42,9 +42,9 @@ const queryNoBatchSpecs: typeof _queryBatchSpecs = () =>
     })
 
 add('List of specs', () => (
-    <WebStory>{props => <BatchSpecsPage {...props} queryBatchSpecs={queryBatchSpecs} now={NOW} />}</WebStory>
+    <WebStory>{props => <BatchSpecsPage {...props} includeLocallyExecutedSpecs={false} queryBatchSpecs={queryBatchSpecs} now={NOW} />}</WebStory>
 ))
 
 add('No specs', () => (
-    <WebStory>{props => <BatchSpecsPage {...props} queryBatchSpecs={queryNoBatchSpecs} now={NOW} />}</WebStory>
+    <WebStory>{props => <BatchSpecsPage {...props} includeLocallyExecutedSpecs={false} queryBatchSpecs={queryNoBatchSpecs} now={NOW} />}</WebStory>
 ))

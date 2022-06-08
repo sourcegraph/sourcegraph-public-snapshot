@@ -51,6 +51,7 @@ export const BatchChangeBatchSpecList: React.FunctionComponent<
     isLightTheme,
     queryBatchChangeBatchSpecs = _queryBatchChangeBatchSpecs,
     now,
+    includeLocallyExecutedSpecs,
 }) => {
     const query = useMemo(() => queryBatchChangeBatchSpecs(batchChangeID), [queryBatchChangeBatchSpecs, batchChangeID])
 
@@ -61,7 +62,7 @@ export const BatchChangeBatchSpecList: React.FunctionComponent<
             queryBatchSpecs={query}
             isLightTheme={isLightTheme}
             currentSpecID={currentSpecID}
-            includeLocallyExecutedSpecs={false}
+            includeLocallyExecutedSpecs={includeLocallyExecutedSpecs}
             now={now}
         />
     )

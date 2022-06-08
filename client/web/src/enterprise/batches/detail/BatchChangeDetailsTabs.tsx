@@ -230,6 +230,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                                 batchChangeID={batchChange.id}
                                 currentSpecID={batchChange.currentSpec.id}
                                 isLightTheme={isLightTheme}
+                                includeLocallyExecutedSpecs={false}
                             />
                         </Container>
                     )}
