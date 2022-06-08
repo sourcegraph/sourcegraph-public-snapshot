@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -24,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {

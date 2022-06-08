@@ -13,11 +13,12 @@ import (
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
 	"github.com/google/zoekt/web"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestHybridSearch(t *testing.T) {

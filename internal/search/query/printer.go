@@ -16,7 +16,7 @@ func stringHumanPattern(nodes []Node) string {
 				v = strconv.Quote(v)
 			}
 			if n.Negated {
-				v = fmt.Sprintf("(not %s)", v)
+				v = fmt.Sprintf("(NOT %s)", v)
 			}
 			result = append(result, v)
 		case Operator:
@@ -27,9 +27,9 @@ func stringHumanPattern(nodes []Node) string {
 			var separator string
 			switch n.Kind {
 			case Or:
-				separator = " or "
+				separator = " OR "
 			case And:
-				separator = " and "
+				separator = " AND "
 			}
 			result = append(result, "("+strings.Join(nested, separator)+")")
 		}
@@ -79,9 +79,9 @@ func StringHuman(nodes []Node) string {
 					s = append(s, StringHuman([]Node{operand}))
 				}
 				if term.Kind == Or {
-					v = append(v, "("+strings.Join(s, " or ")+")")
+					v = append(v, "("+strings.Join(s, " OR ")+")")
 				} else if term.Kind == And {
-					v = append(v, "("+strings.Join(s, " and ")+")")
+					v = append(v, "("+strings.Join(s, " AND ")+")")
 				}
 			}
 		}

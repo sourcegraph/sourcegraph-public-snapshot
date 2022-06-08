@@ -19,14 +19,15 @@ import (
 
 	"golang.org/x/sync/semaphore"
 
+	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 var root string

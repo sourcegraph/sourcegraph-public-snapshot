@@ -4,11 +4,8 @@ package usershell
 import (
 	"context"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
-
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type key struct{}
@@ -72,13 +69,7 @@ func GuessUserShell() (shellPath string, shellrc string, shell Shell, error erro
 		shellrc = ".bashrc"
 		shell = BashShell
 	case strings.Contains(shellPath, "zsh"):
-		if _, err := os.Stat(path.Join(home, ".zshrc")); errors.Is(err, os.ErrNotExist) {
-			// A fresh mac installation with standard homebrew will tell the user to append
-			// the configuration in .zprofile, not .zshrc.
-			shellrc = ".zprofile"
-		} else {
-			shellrc = ".zshrc"
-		}
+		shellrc = ".zshrc"
 		shell = ZshShell
 	case strings.Contains(shellPath, "fish"):
 		shellrc = ".config/fish/config.fish"
