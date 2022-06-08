@@ -275,6 +275,10 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
         variables: {
             id: 'backend-mock',
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
+            seriesDisplayOptions: {
+                limit: undefined,
+                sortOptions: undefined,
+            },
         },
     },
     result: {
@@ -555,6 +559,10 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
         variables: {
             id: 'backend-mock',
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
+            seriesDisplayOptions: {
+                limit: undefined,
+                sortOptions: undefined,
+            },
         },
     },
     result: {
@@ -835,6 +843,10 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
         variables: {
             id: 'backend-mock',
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
+            seriesDisplayOptions: {
+                limit: undefined,
+                sortOptions: undefined,
+            },
         },
     },
     result: {
