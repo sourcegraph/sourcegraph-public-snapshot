@@ -41,7 +41,7 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
                 variant="icon"
                 outline={true}
                 className={classNames(className, styles.triggerButton)}
-                data-testid="dashboard-context-menu"
+                aria-label="dashboard context menu"
             >
                 <VisuallyHidden>Dashboard options</VisuallyHidden>
                 <DotsVerticalIcon size={16} />
@@ -56,7 +56,7 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
                         data-tooltip={menuPermissions.configure.tooltip}
                         data-placement="right"
                         className={styles.menuItem}
-                        data-testid="ConfigureDashboardButton"
+                        aria-label="configure dashboard"
                         onSelect={() => onSelect(DashboardMenuAction.Configure)}
                     >
                         Configure dashboard

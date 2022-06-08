@@ -118,7 +118,7 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                     disabled={addRemovePermissions.disabled}
                     data-tooltip={addRemovePermissions.tooltip}
                     data-placement="bottom"
-                    data-testid="AddRemoveInsightsButton"
+                    aria-label="add remove insights button"
                     onClick={() => handleSelect(DashboardMenuAction.AddRemoveInsights)}
                 >
                     Add or remove insights
