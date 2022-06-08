@@ -991,6 +991,11 @@
       "group": "Email",
       "default": "noreply@sourcegraph.com"
     },
+    "executors.frontendURL": {
+      "description": "The frontend URL for Sourcegraph. Only root URLs are allowed. If not set, falls back to externalURL",
+      "type": "string",
+      "examples": ["https://sourcegraph.example.com"]
+    },
     "executors.accessToken": {
       "description": "The shared secret between Sourcegraph and executors.",
       "type": "string",
