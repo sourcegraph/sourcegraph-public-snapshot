@@ -157,7 +157,7 @@
           "AlternateQueries": [
             {
               "Description": "AND patterns together",
-              "Query": "context:global (parse AND func)",
+              "Query": "(parse AND func)",
               "PatternType": 1
             }
           ]
@@ -211,7 +211,7 @@
                     "Dependencies": null,
                     "Dependents": null,
                     "CaseSensitiveRepoFilters": false,
-                    "SearchContextSpec": "global",
+                    "SearchContextSpec": "",
                     "CommitAfter": "",
                     "Visibility": "Any",
                     "Limit": 0,
@@ -234,7 +234,7 @@
                     "Dependencies": null,
                     "Dependents": null,
                     "CaseSensitiveRepoFilters": false,
-                    "SearchContextSpec": "global",
+                    "SearchContextSpec": "",
                     "CommitAfter": "",
                     "Visibility": "Any",
                     "Limit": 0,
@@ -297,7 +297,7 @@
                               "Dependencies": null,
                               "Dependents": null,
                               "CaseSensitiveRepoFilters": false,
-                              "SearchContextSpec": "global",
+                              "SearchContextSpec": "",
                               "CommitAfter": "",
                               "Visibility": "Any",
                               "Limit": 0,
@@ -369,7 +369,7 @@
                               "Dependencies": null,
                               "Dependents": null,
                               "CaseSensitiveRepoFilters": false,
-                              "SearchContextSpec": "global",
+                              "SearchContextSpec": "",
                               "CommitAfter": "",
                               "Visibility": "Any",
                               "Limit": 0,
