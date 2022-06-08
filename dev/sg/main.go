@@ -161,8 +161,8 @@ var sg = &cli.App{
 		// Configure logger, for commands that use components that use loggers
 		os.Setenv("SRC_DEVELOPMENT", "true")
 		os.Setenv("SRC_LOG_FORMAT", "console")
-		syncLogs := log.Init(log.Resource{Name: "sg"})
-		interrupt.Register(func() { syncLogs() })
+		liblog := log.Init(log.Resource{Name: "sg"})
+		interrupt.Register(func() { _ = liblog.Sync() })
 
 		// Add autosuggestion hooks to commands with subcommands but no action
 		addSuggestionHooks(cmd.App.Commands)

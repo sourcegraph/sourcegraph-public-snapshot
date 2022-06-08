@@ -197,6 +197,7 @@ export const mockPreviewWorkspace = (
     path: '/',
     searchResultPaths: ['/first-path'],
     cachedResultFound: false,
+    stepCacheResultCount: 0,
     ignored: false,
     unsupported: false,
     ...fields,

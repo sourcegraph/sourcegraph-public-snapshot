@@ -562,7 +562,11 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                         <Text className="mb-0">
                             <strong>
                                 Step has been skipped
-                                {cachedResultFound && <> because a cached result was found for this workspace</>}.
+                                {cachedResultFound && <> because a cached result was found for this workspace</>}
+                                {!cachedResultFound && step.cachedResultFound && (
+                                    <> because a cached result was found for this step</>
+                                )}
+                                .
                             </strong>
                         </Text>
                     )}

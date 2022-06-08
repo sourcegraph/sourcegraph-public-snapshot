@@ -177,7 +177,7 @@ func run(logger log.Logger) error {
 
 	// Set up handler middleware
 	handler := actor.HTTPMiddleware(service)
-	handler = trace.HTTPMiddleware(handler, conf.DefaultClient())
+	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = ot.HTTPMiddleware(handler)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -230,12 +230,13 @@ func main() {
 	stdlog.SetFlags(0)
 	conf.Init()
 	logging.Init()
-	syncLogs := log.Init(log.Resource{
+	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	})
-	defer syncLogs()
+	}, log.NewSentrySink())
+	defer liblog.Sync()
+	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
