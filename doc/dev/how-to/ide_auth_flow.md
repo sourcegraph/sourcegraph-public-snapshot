@@ -6,16 +6,18 @@ This document will go through the current auth flow for our IDE extensions, and 
 
 In general, users are required to provide each IDE extension with their Sourcegraph Personal Access Token to make certain requests to the Sourcegraph API.
 
+### Default Steps
+
 Before the token creation callback page was introduced, users had to retrieve a Sourcegraph Personal Access Token from their Sourcegraph instance manually in order to proceed with the authentication process for each IDE extension.
 
-Steps to authenticate an account for an extension:
+Here are the default steps for an IDE extension to authenticate an account:
 1. Redirect users to the auth page in browser from the extension
 1. Complete the authentication process
-1. Navigate to the User setting page 
-1. Move to Access Token page 
-1. Click Generate new token 
+1. Navigate to the `User setting` page
+1. Move to `Access Tokens` page
+1. Click `Generate new token`
 1. Fill in the description 
-1. Click Generate token 
+1. Click `+ Generate token`
 1. Copy the new token 
 1. Move back to the extension UI
 1. Import the new token
@@ -53,16 +55,16 @@ The token should then be processed by the extension's URL handler.
 ```mermaid
 sequenceDiagram
     Extension->>Sourcegraph Auth UI (Browser): Open auth URL with the<br/>`requestFrom` URL param
-    Sourcegraph Auth UI (Browser)->>Token Creation Callback Page: Redirect authenticated users
-    Token Creation Callback Page->>Token Creation Callback Page: Verify extension
-    Note right of Token Creation Callback Page: Check if the allow list has<br/>the `requestFrom` value
-    Token Creation Callback Page->>Web Server: Request token for verified extension
-    Web Server->>Token Creation Callback Page: Create and return token
-    Token Creation Callback Page->>Sourcegraph Auth UI (Browser): Present token
-    Token Creation Callback Page->>Extension (Client App): Return token with redirect URL
-    Note right of Token Creation Callback Page: Open pre-authorized redirect URL<br/>for the verified extension with<br/>token added to the `code` URL params
-    Extension (Client App)->>Extension (Client App): Import token
-    Note right of Extension (Client App): Retrieve token from URL param<br>using a custom URL handler
+    Sourcegraph Auth UI (Browser)->>Token Creation Callback Page (Browser): Redirect authenticated users
+    Token Creation Callback Page (Browser)->>Token Creation Callback Page (Browser): Verify extension
+    Note right of Token Creation Callback Page (Browser): Check if the allow list has<br/>the `requestFrom` value
+    Token Creation Callback Page (Browser)->>Web Server: Request token for verified extension
+    Web Server->>Token Creation Callback Page (Browser): Create and return token
+    Token Creation Callback Page (Browser)->>Sourcegraph Auth UI (Browser): Present token
+    Token Creation Callback Page (Browser)->>Extension: Return token with redirect URL
+    Note right of Token Creation Callback Page (Browser): Open pre-authorized redirect URL<br/>for the verified extension with<br/>token added to the `code` URL params
+    Extension->>Extension: Import token
+    Note right of Extension: Retrieve token from URL param<br>using a custom URL handler
 ```
 
 ### How to use the Token Creation Callback Page with an extension
@@ -79,14 +81,14 @@ Extension
 ### Backward Compatibility
 
 - The token creation callback page is only supported by instances on version 3.41.0.
-- Users on instances prior to 3.41.0 must create a token manually for the authentication process. 
-- This does not apply to cloud users as Sourcegraph Cloud will always be on the latest version.
+- Users on instances prior to 3.41.0 must create a token manually using the [default steps](#default-steps) for the authentication process. 
+  - This does not apply to cloud users as Sourcegraph Cloud will always be on the latest version.
 
 ### Example: VS Code Extension
 
-Steps to authenticate an account in VSCE using the callback page:
+Steps to authenticate an account in VSCE using the token callback page:
 1. Redirect users to the auth page in browser from the extension
 1. Complete the authentication process
 1. Redirect authorized user to the token creation callback page automatically
-  1. The page reads the url params and look for `requestFrom`, and checks if it is on the [allow list](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@7533ada4fd47e82d95f7258cbb88ca76f414e53d/-/blob/client/web/src/user/settings/accessTokens/UserSettingsCreateAccessTokenCallbackPage.tsx?L59-69)
+  1. The token callback page reads the url params and look for the `requestFrom` URL param value, and checks if it is on the [allow list](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@7533ada4fd47e82d95f7258cbb88ca76f414e53d/-/blob/client/web/src/user/settings/accessTokens/UserSettingsCreateAccessTokenCallbackPage.tsx?L59-69)
 1. Redirect user to the extension and the extension will import the token using a [custom URL handler](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@7533ada4fd47e82d95f7258cbb88ca76f414e53d/-/blob/client/vscode/src/webview/commands.ts?L40-52&utm_source=chrome-extension&utm_campaign=open-on-sourcegraph)
