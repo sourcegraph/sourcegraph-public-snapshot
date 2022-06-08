@@ -82,14 +82,11 @@ func (r *Runner[Args]) Fix(
 
 	// Report what is still bust
 	failedCategories := []string{}
-	for _, category := range r.categories {
-		if err := category.CheckEnabled(ctx, args); err != nil {
+	for c, ok := range results.categories {
+		if ok {
 			continue
 		}
-
-		if !category.IsSatisfied() {
-			failedCategories = append(failedCategories, fmt.Sprintf("%q", category.Name))
-		}
+		failedCategories = append(failedCategories, fmt.Sprintf("%q", c))
 	}
 	if len(failedCategories) > 0 {
 		return errors.Newf("Some categories are still unsatisfied: %s", strings.Join(failedCategories, ", "))
@@ -495,7 +492,6 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 	}
 
 	// now go through the real dependencies
-	var fixFailed bool
 	for _, c := range category.Checks {
 		// If category is fixed, we are good to go
 		if c.IsSatisfied() {
@@ -519,7 +515,6 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 		pending.VerboseLine(output.Styledf(output.StylePending, "Fixing %q...", c.Name))
 		if err := c.Fix(ctx, cio, args); err != nil {
 			pending.WriteLine(output.Styledf(output.StyleWarning, "Failed to fix %q: %s", c.Name, err.Error()))
-			fixFailed = true
 			continue
 		}
 
@@ -527,15 +522,15 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 		if err := c.Update(ctx, cio, args); err != nil {
 			pending.WriteLine(output.Styledf(output.StyleWarning, "Check %q still failing: %s",
 				c.Name, err.Error()))
-			fixFailed = true
 		}
 	}
 
-	if fixFailed {
-		complete(output.EmojiFailure, output.StyleFailure, "Fixes failed")
-	} else {
+	ok = category.IsSatisfied()
+	if ok {
 		complete(output.EmojiSuccess, output.StyleSuccess, "Done!")
+	} else {
+		complete(output.EmojiFailure, output.StyleFailure, "Some checks are still not satisfied")
 	}
 
-	return !fixFailed
+	return
 }
