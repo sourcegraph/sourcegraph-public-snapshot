@@ -65,7 +65,11 @@ var setupCommandV2 = &cli.Command{
 
 		switch {
 		case cmd.Bool("check"):
-			return setup.Check(cmd.Context, args)
+			err := setup.Check(cmd.Context, args)
+			if err != nil {
+				std.Out.WriteSuggestionf("Run 'sg setup -fix' to try and automatically fix issues!")
+			}
+			return err
 
 		case cmd.Bool("fix"):
 			return setup.Fix(cmd.Context, args)
