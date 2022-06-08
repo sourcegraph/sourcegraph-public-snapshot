@@ -3881,6 +3881,9 @@ type GitCommit implements Node {
         includePatterns: [String!]
     ): SymbolConnection!
 
+    """
+    Returns the comparison with another revision.
+    """
     diff(
         """
         The base commit to compare to. Defaults to the commit's first parent.
