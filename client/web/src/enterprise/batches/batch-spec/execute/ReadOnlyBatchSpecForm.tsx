@@ -97,7 +97,8 @@ const MemoizedReadOnlyBatchSpecForm: React.FunctionComponent<
                     originalInput={batchSpec.originalInput}
                 />
             </div>
-            <WorkspacesPreviewPanel isReadOnly={true} />
+            {/* Hide the workspaces preview panel for locally-executed batch specs. */}
+            {batchSpec.source === 'REMOTE' && <WorkspacesPreviewPanel isReadOnly={true} />}
             <CancelExecutionModal
                 isOpen={showCancelModal}
                 onCancel={() => setShowCancelModal(false)}
