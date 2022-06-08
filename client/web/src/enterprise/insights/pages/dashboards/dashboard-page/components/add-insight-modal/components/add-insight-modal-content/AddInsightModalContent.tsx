@@ -75,10 +75,10 @@ export const AddInsightModalContent: React.FunctionComponent<
                             onChange={onChange}
                             onBlur={onBlur}
                             aria-labelledby={insight.id}
+                            className={styles.checkbox}
+                            wrapperClassName={styles.checkboxWrapper}
                         />
-                        <TruncatedText className={styles.insightName} id={insight.id}>
-                            {insight.title}
-                        </TruncatedText>
+                        <TruncatedText id={insight.id}>{insight.title}</TruncatedText>
                     </Label>
                 ))}
             </fieldset>

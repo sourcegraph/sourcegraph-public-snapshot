@@ -6,7 +6,7 @@
 
 .insight-item {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     width: 100%;
     margin: 0;
     padding: 0.5rem 0.5rem;
@@ -18,6 +18,11 @@
     }
 }
 
-.insight-name {
-    margin-left: 0.08rem;
+.checkbox-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.checkbox {
+    margin-top: 0;
 }
