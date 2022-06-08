@@ -24,6 +24,7 @@ import {
     Code,
 } from '@sourcegraph/wildcard'
 
+import { TerminalLine } from '../../auth/Terminal'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { SettingsAreaRepositoryFields } from '../../graphql-operations'
@@ -35,7 +36,6 @@ import { fetchSettingsAreaRepository } from './backend'
 import { ActionContainer, BaseActionContainer } from './components/ActionContainer'
 
 import styles from './RepoSettingsMirrorPage.module.scss'
-import { TerminalLine } from '../../auth/Terminal'
 
 interface UpdateMirrorRepositoryActionContainerProps {
     repo: SettingsAreaRepositoryFields

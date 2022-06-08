@@ -10,6 +10,7 @@ import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, Button, Link, Alert, Icon, H2, Text } from '@sourcegraph/wildcard'
 
+import { Collapsible } from '../components/Collapsible'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -20,7 +21,6 @@ import { RepositoriesResult, SiteAdminRepositoryFields } from '../graphql-operat
 import { refreshSiteFlags } from '../site/backend'
 
 import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
-import { Collapsible } from '../components/Collapsible'
 
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields

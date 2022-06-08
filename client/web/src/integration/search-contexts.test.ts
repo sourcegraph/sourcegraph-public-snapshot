@@ -103,7 +103,7 @@ describe('Search contexts', () => {
                             createdAt: '',
                             url: '',
                             isPrivate: false,
-                            mirrorInfo: { cloned: true, cloneInProgress: false, updatedAt: null },
+                            mirrorInfo: { cloned: true, cloneInProgress: false, updatedAt: null, lastError: null },
                             externalRepository: { serviceType: '', serviceID: '' },
                         },
                     ],
