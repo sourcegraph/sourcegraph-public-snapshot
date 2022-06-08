@@ -76,11 +76,9 @@ export const Notices: React.FunctionComponent<React.PropsWithChildren<Props>> = 
             .filter(({ verified }) => !verified)
             .map(
                 ({ email }): Notice => ({
-                    message: `Please, verify your email <strong>${(email as string)
-                        .split('@')
-                        .join('\\@')}</strong>. Go to <a href="${
+                    message: `Please, <a href="${
                         authenticatedUser?.settingsURL as string
-                    }/emails">emails settings</a> to resend verification email.`,
+                    }/emails">verify your email</a> <strong>${(email as string).split('@').join('\\@')}</strong>.`,
                     location: 'top',
                     dismissible: false,
                 })
