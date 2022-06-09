@@ -44,16 +44,16 @@ mocks:
   - filename: enterprise/cmd/executor/internal/command/mocks_test.go
     path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command
     interfaces:
-      - commandRunner
       - ExecutionLogEntryStore
+      - commandRunner
   - filename: enterprise/cmd/executor/internal/worker/mocks_test.go
     sources:
-      - path: github.com/sourcegraph/sourcegraph/internal/workerutil
-        interfaces:
-          - Store
       - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command
         interfaces:
           - Runner
+      - path: github.com/sourcegraph/sourcegraph/internal/workerutil
+        interfaces:
+          - Store
   - filename: enterprise/cmd/frontend/internal/app/mocks_test.go
     path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app
     interfaces:
@@ -72,8 +72,8 @@ mocks:
       - GitserverClient
       - IndexEnqueuer
       - LSIFStore
-      - RepoUpdaterClient
       - PositionAdjuster
+      - RepoUpdaterClient
   - filename: enterprise/cmd/frontend/internal/codeintel/resolvers/mocks/mocks_temp.go
     path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers
     interfaces:
@@ -115,13 +115,13 @@ mocks:
           - IndexingSettingStore
           - PolicyMatcher
           - RepoUpdaterClient
+      - path: github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore
+        interfaces:
+          - PackageReferenceScanner
       - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
         interfaces:
           - Store
         prefix: Worker
-      - path: github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore
-        interfaces:
-          - PackageReferenceScanner
   - filename: enterprise/cmd/worker/internal/codeintel/janitor/mocks_test.go
     path: github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/janitor
     interfaces:
@@ -163,9 +163,9 @@ mocks:
   - filename: enterprise/internal/insights/discovery/mocks_temp.go
     path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery
     interfaces:
-      - SettingStore
-      - RepoStore
       - IndexableReposLister
+      - RepoStore
+      - SettingStore
   - filename: enterprise/internal/insights/store/mocks_temp.go
     path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store
     interfaces:
@@ -196,14 +196,14 @@ mocks:
       - SandboxService
   - filename: internal/codeintel/dependencies/mocks_test.go
     sources:
-      - path: github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store
-        interfaces:
-          - Store
       - path: github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies
         interfaces:
           - LockfilesService
           - Syncer
           - localGitService
+      - path: github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store
+        interfaces:
+          - Store
   - filename: internal/codeintel/dependencies/internal/lockfiles/mocks_test.go
     path: github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/lockfiles
     interfaces:
@@ -342,10 +342,10 @@ mocks:
   - filename: internal/workerutil/mocks_test.go
     path: github.com/sourcegraph/sourcegraph/internal/workerutil
     interfaces:
-      - Store
       - Handler
-      - WithPreDequeue
+      - Store
       - WithHooks
+      - WithPreDequeue
   - filename: internal/workerutil/dbworker/store/mocks/mocks_temp.go
     path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
     interfaces:
