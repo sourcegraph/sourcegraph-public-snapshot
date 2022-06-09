@@ -73,7 +73,7 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<
             data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
         >
             <span>
-                <Icon role="img" aria-hidden={true} className="mr-1" as={FormatQuoteOpenIcon} />
+                <Icon aria-hidden={true} className="mr-1" as={FormatQuoteOpenIcon} />
                 Searching literally <strong>(including quotes)</strong>
             </span>
         </small>
@@ -149,7 +149,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     }
                     button={
                         <>
-                            <Icon role="img" aria-hidden={true} className="mr-1" as={CodeMonitoringLogo} />
+                            <Icon aria-hidden={true} className="mr-1" as={CodeMonitoringLogo} />
                             Monitor
                         </>
                     }
@@ -186,7 +186,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     className="test-save-search-link"
                     button={
                         <>
-                            <Icon role="img" aria-hidden={true} className="mr-1" as={BookmarkOutlineIcon} />
+                            <Icon aria-hidden={true} className="mr-1" as={BookmarkOutlineIcon} />
                             Save search
                         </>
                     }
@@ -222,7 +222,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     className="btn btn-sm btn-outline-secondary text-decoration-none"
                     onClick={onShareResultsClick}
                 >
-                    <Icon role="img" aria-hidden={true} className="mr-1" as={LinkIcon} />
+                    <Icon aria-hidden={true} className="mr-1" as={LinkIcon} />
                     Share
                 </button>
             </li>

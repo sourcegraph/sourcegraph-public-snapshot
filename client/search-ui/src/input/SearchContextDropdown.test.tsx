@@ -75,19 +75,16 @@ describe('SearchContextDropdown', () => {
     it('should be enabled if query is empty', () => {
         render(<SearchContextDropdown {...defaultProps} />)
         expect(screen.getByTestId('dropdown-toggle')).toBeEnabled()
-        expect(screen.getByTestId('dropdown-toggle')).toHaveAttribute('data-tooltip', '')
     })
 
     it('should be enabled if query does not contain context filter', () => {
         render(<SearchContextDropdown {...defaultProps} query="test (repo:foo or repo:python)" />)
         expect(screen.getByTestId('dropdown-toggle')).toBeEnabled()
-        expect(screen.getByTestId('dropdown-toggle')).toHaveAttribute('data-tooltip', '')
     })
 
     it('should be disabled if query contains context filter', () => {
         render(<SearchContextDropdown {...defaultProps} query="test (context:foo or repo:python)" />)
         expect(screen.getByTestId('dropdown-toggle')).toBeDisabled()
-        expect(screen.getByTestId('dropdown-toggle')).toHaveAttribute('data-tooltip', 'Overridden by query')
     })
 
     it('should submit search on item click', () => {

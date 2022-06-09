@@ -250,7 +250,7 @@ Then add the following lines to your site configuration:
         "clientSecret": "replace-with-the-oauth-secret",
         "url": "https://gitlab.example.com",
         "allowSignup": false, // If not set, it defaults to true allowing any GitLab user with access to your instance to sign up.
-        "allowGroups":[["group", "group/subgroup", "group/subgroup/subgroup"]], // Restrict logins and sign-ups to members of groups or subgroups based on the full-path provided.
+        "allowGroups": ["group", "group/subgroup", "group/subgroup/subgroup"], // Restrict logins and sign-ups to members of groups or subgroups based on the full-path provided.
       }
     ]
 ```

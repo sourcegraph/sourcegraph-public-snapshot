@@ -157,7 +157,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                         {repositoryURL && (
                             <div className="d-flex">
                                 {repositoryURL.hostname === 'github.com' && (
-                                    <Icon role="img" className="mr-1" as={GithubIcon} aria-hidden={true} />
+                                    <Icon className="mr-1" as={GithubIcon} aria-hidden={true} />
                                 )}
                                 <Link
                                     to={repositoryURL.href}

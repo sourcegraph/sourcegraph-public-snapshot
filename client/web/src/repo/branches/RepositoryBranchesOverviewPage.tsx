@@ -150,7 +150,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                                             to={`/${this.props.repo.name}/-/branches/all`}
                                         >
                                             View more branches
-                                            <Icon role="img" as={ChevronRightIcon} aria-hidden={true} />
+                                            <Icon as={ChevronRightIcon} aria-hidden={true} />
                                         </Link>
                                     )}
                                 </ul>

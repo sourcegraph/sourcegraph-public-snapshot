@@ -14,11 +14,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -84,13 +85,13 @@ func (s *jvmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 	mavenDep := dep.(*reposource.MavenDependency)
 	sourceCodeJarPath, err := s.fetch(ctx, s.config, mavenDep)
 	if err != nil {
-		return errors.Wrap(err, "fetch jar")
+		return notFoundError{errors.Errorf("%s not found", dep)}
 	}
 
 	// commitJar creates a git commit in the given working directory that adds all the file contents of the given jar file.
 	// A `*.jar` file works the same way as a `*.zip` file, it can even be uncompressed with the `unzip` command-line tool.
 	if err := unzipJarFile(sourceCodeJarPath, dir); err != nil {
-		return errors.Wrapf(err, "failed to unzip jar file for %s to %v", dep.PackageManagerSyntax(), sourceCodeJarPath)
+		return errors.Wrapf(err, "failed to unzip jar file for %s to %v", dep, sourceCodeJarPath)
 	}
 
 	file, err := os.Create(filepath.Join(dir, "lsif-java.json"))

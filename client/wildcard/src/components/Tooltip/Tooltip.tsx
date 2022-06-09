@@ -14,7 +14,7 @@ interface TooltipProps {
     defaultOpen?: boolean
     /** The preferred side of the trigger to render against when open. Will be reversed if a collision is detected. Defaults to `right`. */
     placement?: TooltipPrimitive.TooltipContentProps['side']
-    /** Class applied to trigger `<span>`. */
+    /** Class name to apply to the wrapping span */
     className?: string
 }
 
@@ -44,9 +44,9 @@ function onPointerDownOutside(event: Event): void {
 export const Tooltip: React.FunctionComponent<TooltipProps> = ({
     children,
     content,
+    className,
     defaultOpen = false,
     placement = 'right',
-    className,
 }) => (
     // NOTE: We plan to consolidate this logic with our Popover component in the future, but chose Radix first to support short-term accessibility needs.
     // GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/36080
