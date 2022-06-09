@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
 
 export interface LinkProps
