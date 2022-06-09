@@ -4,4 +4,8 @@ interface Props {
     children: React.ReactNode
 }
 
-export const SearchResultHeader: React.FunctionComponent<Props> = ({ children }: Props) => <div>{children}</div>
+import styles from './SearchResultHeader.module.scss'
+
+export const SearchResultHeader: React.FunctionComponent<Props> = ({ children }: Props) => (
+    <div className={styles.searchResultHeader}>{children}</div>
+)
