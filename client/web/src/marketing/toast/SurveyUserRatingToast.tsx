@@ -13,8 +13,7 @@ export interface SurveyUserRatingToastProps {
     toggleErrorMessage: boolean
     onContinue: () => void
     onDismiss: () => void
-    shouldPermanentlyDismiss: boolean
-    toggleShouldPermanentlyDismiss: (value: boolean) => void
+    setToggledPermanentlyDismiss: (value: boolean) => void
 }
 
 export const SurveyUserRatingToast: React.FunctionComponent<SurveyUserRatingToastProps> = ({
@@ -22,8 +21,7 @@ export const SurveyUserRatingToast: React.FunctionComponent<SurveyUserRatingToas
     toggleErrorMessage,
     onDismiss,
     onContinue,
-    shouldPermanentlyDismiss,
-    toggleShouldPermanentlyDismiss,
+    setToggledPermanentlyDismiss,
 }) => (
     <Toast
         title="Tell us what you think"
@@ -45,8 +43,7 @@ export const SurveyUserRatingToast: React.FunctionComponent<SurveyUserRatingToas
                 <Checkbox
                     id="survey-toast-refuse"
                     label={<span className={styles.checkboxLabel}>Don't show this again</span>}
-                    checked={shouldPermanentlyDismiss}
-                    onChange={event => toggleShouldPermanentlyDismiss(event.target.checked)}
+                    onChange={event => setToggledPermanentlyDismiss(event.target.checked)}
                 />
                 <Button variant="secondary" size="sm" onClick={onContinue}>
                     Continue

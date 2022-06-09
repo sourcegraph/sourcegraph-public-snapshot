@@ -16,7 +16,7 @@ import { AuthenticatedUser } from '../../auth'
 import { OPTIONS } from '../components/SurveyUseCaseForm'
 import { mockVariables, submitSurveyMock } from '../page/SurveyPage.mocks'
 
-import { SurveyToast } from './SurveyToast'
+import { SurveyToast } from '.'
 
 export const mockAuthenticatedUser: AuthenticatedUser = {
     id: 'userID',

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { FlexTextArea, H4, Input } from '@sourcegraph/wildcard'
+import { FlexTextArea, H4, Input, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SurveyUseCase } from '../../graphql-operations'
@@ -103,9 +103,9 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                 <FlexTextArea
                     containerClassName="mt-3"
                     label={
-                        <span className={classNames(styles.textareaLabel, formLabelClassName)}>
+                        <Text size="small" className={formLabelClassName}>
                             What else are you using Sourcegraph to do?
-                        </span>
+                        </Text>
                     }
                     onChange={event => onChangeOtherUseCase(event.target.value)}
                     value={otherUseCase}
@@ -114,9 +114,9 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
             <FlexTextArea
                 containerClassName="mt-3"
                 label={
-                    <span className={classNames(styles.textareaLabel, formLabelClassName)}>
+                    <Text size="small" className={formLabelClassName}>
                         Anything else you would like to share with us?
-                    </span>
+                    </Text>
                 }
                 onChange={event => onChangeAdditionalInformation(event.target.value)}
                 value={additionalInformation}
@@ -125,9 +125,9 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                 <Input
                     className="mt-3"
                     label={
-                        <span className={classNames(styles.textareaLabel, formLabelClassName)}>
+                        <Text size="small" className={formLabelClassName}>
                             What is your email?
-                        </span>
+                        </Text>
                     }
                     onChange={event => onChangeEmail(event.target.value)}
                     value={email}

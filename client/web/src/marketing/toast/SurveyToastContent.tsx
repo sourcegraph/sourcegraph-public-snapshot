@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react'
 
 import { gql, useMutation } from '@apollo/client'
 
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-
 import { AuthenticatedUser } from '../../auth'
 import { SubmitSurveyResult, SubmitSurveyVariables, SurveyUseCase } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -20,14 +18,6 @@ const SUBMIT_SURVEY = gql`
     }
 `
 
-interface SurveyToastProps {
-    /**
-     * For Storybook only
-     */
-    forceVisible?: boolean
-    authenticatedUser: AuthenticatedUser | null
-}
-
 interface UserFeedbackProps {
     score: number
     useCases: SurveyUseCase[]
@@ -42,24 +32,20 @@ enum ToastSteps {
     thankYou = 3,
 }
 
-export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<SurveyToastProps>> = ({
-    forceVisible,
-    authenticatedUser,
-}) => {
-    const [shouldPermanentlyDismiss, setShouldPermanentlyDismiss] = useState(false)
-    const [temporarilyDismissed, setTemporarilyDismissed] = useTemporarySetting(
-        'npsSurvey.hasTemporarilyDismissed',
-        false
-    )
-    const [permanentlyDismissed, setPermanentlyDismissed] = useTemporarySetting(
-        'npsSurvey.hasPermanentlyDismissed',
-        false
-    )
-    const [daysActiveCount] = useTemporarySetting('user.daysActiveCount', 0)
-    const loadingTemporarySettings =
-        temporarilyDismissed === undefined || permanentlyDismissed === undefined || daysActiveCount === undefined
+interface SurveyToastContentProps {
+    authenticatedUser: AuthenticatedUser | null
+    shouldTemporarilyDismiss: () => void
+    shouldPermanentlyDismiss: () => void
+    hideToast: () => void
+}
 
-    const [shouldShow, setShouldShow] = useState(false)
+export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren<SurveyToastContentProps>> = ({
+    authenticatedUser,
+    shouldTemporarilyDismiss,
+    shouldPermanentlyDismiss,
+    hideToast,
+}) => {
+    const [togglePermanentlyDismiss, setTogglePermanentlyDismiss] = useState(false)
     const [toggleErrorMessage, setToggleErrorMessage] = useState<boolean>(false)
     const [activeStep, setActiveStep] = useState<ToastSteps>(ToastSteps.rate)
     const [userFeedback, setUserFeedback] = useState<UserFeedbackProps>({
@@ -70,50 +56,22 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
         email: '',
     })
 
-    /**
-     * We set dismissal state when either:
-     * 1. User clicks the dismiss button
-     * 2. User submits the survey
-     */
-    const updateDismissalState = (): void => {
-        if (shouldPermanentlyDismiss) {
-            setPermanentlyDismissed(shouldPermanentlyDismiss)
+    useEffect(() => {
+        eventLogger.log('SurveyReminderViewed')
+    }, [])
+
+    const setFutureVisibility = (): void => {
+        if (togglePermanentlyDismiss) {
+            shouldPermanentlyDismiss()
         } else {
-            setTemporarilyDismissed(true)
+            shouldTemporarilyDismiss()
         }
     }
 
     const [submitSurvey, { loading: isSubmitting }] = useMutation<SubmitSurveyResult, SubmitSurveyVariables>(
         SUBMIT_SURVEY,
-        {
-            onCompleted: updateDismissalState,
-        }
+        { onCompleted: setFutureVisibility }
     )
-
-    useEffect(() => {
-        if (!loadingTemporarySettings) {
-            /**
-             * We show a toast notification if:
-             * 1. User has not recently dismissed the notification
-             * 2. User has not permanently dismissed the notification
-             * 3. User has been active for exactly 3 days OR it has been 30 days since they were last shown the notification
-             */
-            setShouldShow(!temporarilyDismissed && !permanentlyDismissed && daysActiveCount % 30 === 3)
-        }
-
-        /**
-         * We only use the initial temporary settings to ensure we have better control over when the toast is shown.
-         * E.g. we want to always update temporary settings on submit, but show a thank you screen before dismissal.
-         */
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [loadingTemporarySettings])
-
-    useEffect(() => {
-        if (!loadingTemporarySettings && daysActiveCount % 30 === 0) {
-            // Reset toast dismissal 3 days before it will be shown
-            setTemporarilyDismissed(false)
-        }
-    }, [loadingTemporarySettings, daysActiveCount, setTemporarilyDismissed])
 
     const handleContinue = (): void => {
         if (userFeedback.score !== -1) {
@@ -133,29 +91,16 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             submitSurvey({ variables: { input: userFeedback } })
         } else {
-            // No need to submit, but we want to ensure user isn't bothered by the toast again
-            updateDismissalState()
+            // No need to submit, but we want to ensure user isn't bothered by the toast again before exiting
+            setFutureVisibility()
         }
 
-        // Hide the toast
-        setShouldShow(false)
+        hideToast()
     }
 
     const handleUseCaseDone = async (): Promise<void> => {
         await submitSurvey({ variables: { input: userFeedback } })
         handleContinue()
-    }
-
-    const visible = forceVisible || shouldShow
-
-    useEffect(() => {
-        if (visible) {
-            eventLogger.log('SurveyReminderViewed')
-        }
-    }, [visible])
-
-    if (!visible) {
-        return null
     }
 
     switch (activeStep) {
@@ -165,8 +110,7 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
                     onChange={score => setUserFeedback(current => ({ ...current, score }))}
                     onDismiss={handleDismiss}
                     onContinue={handleContinue}
-                    toggleShouldPermanentlyDismiss={setShouldPermanentlyDismiss}
-                    shouldPermanentlyDismiss={shouldPermanentlyDismiss}
+                    setToggledPermanentlyDismiss={setTogglePermanentlyDismiss}
                     toggleErrorMessage={toggleErrorMessage}
                 />
             )

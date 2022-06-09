@@ -46,9 +46,7 @@ export const SurveyUseCaseCheckbox: React.FunctionComponent<SurveyUseCaseCheckbo
                 onChange={onChange}
                 className={styles.usecaseCheck}
             />
-            <span className={classNames('ml-1', styles.checkboxLabel, checked && styles.checkboxLabelActive)}>
-                {label}
-            </span>
+            <span className={classNames('ml-1', checked && styles.checkboxLabelActive)}>{label}</span>
         </Button>
     )
 }

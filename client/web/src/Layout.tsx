@@ -38,7 +38,7 @@ import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
-import { SurveyToast } from './marketing/toast/SurveyToast'
+import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
 import { OrgAreaRoute } from './org/area/OrgArea'
@@ -211,7 +211,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 keyboardShortcuts={props.keyboardShortcuts}
             />
             <GlobalAlerts authenticatedUser={props.authenticatedUser} settingsCascade={props.settingsCascade} />
-            {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
+            {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} forceVisible={false} />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
