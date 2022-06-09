@@ -5,7 +5,7 @@ import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './Toggles.module.scss'
 
@@ -76,16 +76,13 @@ export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<T
         ? {
               tabIndex: 0,
               'aria-label': `${props.title} toggle`,
-              'data-tooltip': tooltipValue,
               onClick: onCheckboxToggled,
           }
-        : { tabIndex: -1, 'aria-hidden': true, 'data-tooltip': tooltipValue }
+        : { tabIndex: -1, 'aria-hidden': true }
 
     return (
         // Click events here are defined in useEffect
-        <Button
-            as="div"
-            ref={toggleCheckbox}
+        <Tooltip
             className={classNames(
                 styles.toggle,
                 props.className,
@@ -94,13 +91,20 @@ export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<T
                 !interactive && styles.toggleNonInteractive,
                 props.activeClassName
             )}
-            role="checkbox"
-            variant="icon"
-            aria-disabled={!!disabledRule}
-            aria-checked={isActive}
-            {...interactiveProps}
+            content={tooltipValue}
+            placement="bottom"
         >
-            <Icon role="img" aria-hidden={true} as={props.icon} />
-        </Button>
+            <Button
+                as="div"
+                ref={toggleCheckbox}
+                role="checkbox"
+                variant="icon"
+                aria-disabled={!!disabledRule}
+                aria-checked={isActive}
+                {...interactiveProps}
+            >
+                <Icon role="img" aria-hidden={true} as={props.icon} />
+            </Button>
+        </Tooltip>
     )
 }
