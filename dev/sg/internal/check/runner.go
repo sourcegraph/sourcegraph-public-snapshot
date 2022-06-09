@@ -6,7 +6,6 @@ import (
 	"io"
 	"strings"
 	"sync"
-	"time"
 
 	"go.uber.org/atomic"
 
@@ -172,90 +171,86 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		Max:   checks,
 	}}, statuses, nil)
 
-	var categoriesWg sync.WaitGroup
-	var checksDone atomic.Float64
-	var skipped []int
+	var (
+		categoriesWg sync.WaitGroup
+		skipped      = map[int]struct{}{}
+
+		// used for progress bar
+		checksDone           atomic.Float64
+		updateChecksProgress = func() {
+			progress.SetValue(0, checksDone.Load()+1)
+			checksDone.Add(1)
+		}
+	)
 	for i, category := range r.categories {
 		progress.StatusBarUpdatef(i, "Determining status...")
 
 		if err := category.CheckEnabled(ctx, args); err != nil {
-			skipped = append(skipped, i)
+			skipped[i] = struct{}{}
 			// Mark as done
-			progress.StatusBarCompletef(i, "Category skipped: %s", category.Name, err.Error())
+			progress.StatusBarCompletef(i, "Category skipped: %s", err.Error())
 			continue
 		}
 
-		// Run potentially slow checks concurrently
+		// Run categories concurrently
 		categoriesWg.Add(1)
 		go func(i int, category Category[Args]) {
 			defer categoriesWg.Done()
 
-			// Validate checks
+			// Run all checks for this category concurrently
 			var checksWg sync.WaitGroup
 			var didErr atomic.Bool
-			for ci, check := range category.Checks {
+			for _, check := range category.Checks {
 				checksWg.Add(1)
-
-				go func(ci int, check *Check[Args]) {
-					defer func() {
-						progress.SetValue(0, checksDone.Load()+1)
-						checksDone.Add(1)
-					}()
+				go func(check *Check[Args]) {
+					defer updateChecksProgress()
 					defer checksWg.Done()
 
-					cio := IO{
-						Input:  r.in,
-						Writer: std.NewFixedOutput(io.Discard, true),
-					}
-
 					if err := check.IsEnabled(ctx, args); err != nil {
-						progress.VerboseLine(output.Styledf(output.StyleGrey, "%s: Check skipped: %s", check.Name, err.Error()))
+						progress.StatusBarUpdatef(i, "Check %s skipped: %s", check.Name, err.Error())
 						return
 					}
 
-					if err := check.Update(ctx, cio, args); err != nil {
+					// progress.Verbose never writes to output, so we just send check
+					// progress to discard.
+					//
+					// TODO maybe we should collect this output
+					if err := check.Update(ctx, std.NewFixedOutput(io.Discard, true), args); err != nil {
 						progress.StatusBarFailf(i, "Check %s failed: %s", check.Name, err.Error())
 						didErr.Store(true)
 					}
-				}(ci, check)
+				}(check)
 			}
 			checksWg.Wait()
 
+			// If error'd, status bar has already been set to failed with an error message
 			if !didErr.Load() {
 				progress.StatusBarCompletef(i, "Done!")
 			}
 		}(i, category)
 	}
-
 	categoriesWg.Wait()
-	time.Sleep(1 * time.Second)
-	progress.Destroy()
 
+	// Destroy progress and render a complete summary.
+	// TODO we can probably refine and improe the summary a bit more.
+	progress.Destroy()
 	results := runAllCategoryChecksResult{
-		skipped:    skipped,
 		categories: make(map[string]bool),
 	}
-
 	for i, category := range r.categories {
 		results.all = append(results.all, i)
+		idx := i + 1
 
-		var wasSkipped bool
-		for _, skipped := range results.skipped {
-			if skipped == i {
-				wasSkipped = true
-				break
-			}
-		}
-		if wasSkipped {
-			r.out.WriteSkippedf("%d. %s %s[SKIPPED]%s", i+1, category.Name,
+		if _, ok := skipped[i]; ok {
+			r.out.WriteSkippedf("%d. %s %s[SKIPPED]%s", idx, category.Name,
 				output.StyleBold, output.StyleReset)
+			results.skipped = append(results.skipped, i)
 			continue
 		}
 
+		// Report if this check is happy or not
 		satisfied := category.IsSatisfied()
 		results.categories[category.Name] = satisfied
-
-		idx := i + 1
 		if satisfied {
 			r.out.WriteSuccessf("%d. %s", idx, category.Name)
 		} else {
@@ -264,7 +259,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 			for _, c := range category.Checks {
 				if c.checkErr != nil {
 					r.out.WriteLine(output.Styledf(output.CombineStyles(output.StyleBold, output.StyleWarning),
-						"\t%s: %s", c.Name, c.checkErr))
+						"%s: %s", c.Name, c.checkErr))
 					// Render additional details
 					if rErr, ok := c.checkErr.(RenderableError); ok {
 						rErr.Render(r.out)
