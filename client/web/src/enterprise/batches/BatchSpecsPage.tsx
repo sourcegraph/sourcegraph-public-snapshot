@@ -30,7 +30,7 @@ export const BatchSpecsPage: React.FunctionComponent<React.PropsWithChildren<Bat
             className="mb-3"
         />
         <Container>
-            <BatchSpecList {...props} includeLocallyExecutedSpecs={props.includeLocallyExecutedSpecs} />
+            <BatchSpecList {...props} />
         </Container>
     </>
 )
@@ -51,7 +51,6 @@ export const BatchChangeBatchSpecList: React.FunctionComponent<
     isLightTheme,
     queryBatchChangeBatchSpecs = _queryBatchChangeBatchSpecs,
     now,
-    includeLocallyExecutedSpecs,
 }) => {
     const query = useMemo(() => queryBatchChangeBatchSpecs(batchChangeID), [queryBatchChangeBatchSpecs, batchChangeID])
 
@@ -62,7 +61,6 @@ export const BatchChangeBatchSpecList: React.FunctionComponent<
             queryBatchSpecs={query}
             isLightTheme={isLightTheme}
             currentSpecID={currentSpecID}
-            includeLocallyExecutedSpecs={includeLocallyExecutedSpecs}
             now={now}
         />
     )
@@ -71,7 +69,6 @@ export const BatchChangeBatchSpecList: React.FunctionComponent<
 export interface BatchSpecListProps extends ThemeProps, Pick<RouteComponentProps, 'history' | 'location'> {
     currentSpecID?: Scalars['ID']
     queryBatchSpecs?: typeof _queryBatchSpecs
-    includeLocallyExecutedSpecs: Scalars['Boolean']
     /** For testing purposes only. Sets the current date */
     now?: () => Date
 }
@@ -82,7 +79,6 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
     currentSpecID,
     isLightTheme,
     queryBatchSpecs = _queryBatchSpecs,
-    includeLocallyExecutedSpecs,
     now,
 }) => {
     const query = useCallback(
@@ -90,11 +86,11 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
             const passedArguments = {
                 first: args.first ?? null,
                 after: args.after ?? null,
-                includeLocallyExecutedSpecs,
+                includeLocallyExecutedSpecs: false,
             }
             return queryBatchSpecs(passedArguments)
         },
-        [queryBatchSpecs, includeLocallyExecutedSpecs]
+        [queryBatchSpecs]
     )
     return (
         <FilteredConnection<BatchSpecListFields, Omit<BatchSpecNodeProps, 'node'>>

@@ -46,7 +46,6 @@ add('List of specs', () => (
         {props => (
             <BatchSpecsPage
                 {...props}
-                includeLocallyExecutedSpecs={false}
                 queryBatchSpecs={queryBatchSpecs}
                 now={NOW}
             />
@@ -59,7 +58,6 @@ add('No specs', () => (
         {props => (
             <BatchSpecsPage
                 {...props}
-                includeLocallyExecutedSpecs={false}
                 queryBatchSpecs={queryNoBatchSpecs}
                 now={NOW}
             />
