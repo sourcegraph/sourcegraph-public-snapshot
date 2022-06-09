@@ -39,6 +39,8 @@ export interface GitReferenceNodeProps {
 
     onClick?: React.MouseEventHandler<HTMLAnchorElement>
     nodeLinkClassName?: string
+
+    ariaLabel?: string
 }
 
 export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<GitReferenceNodeProps>> = ({
@@ -50,6 +52,7 @@ export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<G
     onClick,
     icon: ReferenceIcon,
     nodeLinkClassName,
+    ariaLabel,
 }) => {
     const mostRecentSig =
         node.target.commit &&
@@ -63,9 +66,11 @@ export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<G
         <li key={node.id} className={classNames('d-block list-group-item', styles.gitRefNode, className)}>
             <LinkOrSpan
                 className={classNames(styles.gitRefNodeLink, nodeLinkClassName)}
+
                 to={!ancestorIsLink ? url : undefined}
                 onClick={onClick}
                 data-testid="git-ref-node"
+                aria-label= {ariaLabel}
             >
                 <span className="d-flex align-items-center">
                     {ReferenceIcon && <Icon role="img" className="mr-1" as={ReferenceIcon} aria-hidden={true} />}

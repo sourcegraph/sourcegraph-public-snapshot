@@ -155,9 +155,10 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
             centered={withCenteredSummary}
         />
     )
-
+    {console.log(nodeComponentProps)}
     const nodes = connection.nodes.map((node, index) => (
-        <NodeComponent key={hasID(node) ? node.id : index} node={node} {...nodeComponentProps!} />
+        <NodeComponent key={hasID(node) ? node.id : index} node={node} ariaLabel={nodeComponentProps && nodeComponentProps.ariaLabelFunction && nodeComponentProps.ariaLabelFunction(node.displayName)} {...nodeComponentProps!} />
+        //
     ))
 
     return (
