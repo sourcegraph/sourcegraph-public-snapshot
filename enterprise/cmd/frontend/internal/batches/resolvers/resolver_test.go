@@ -2026,6 +2026,72 @@ query($batchChangesCredential: ID!) {
 }
 `
 
+func TestListBatchSpecs(t *testing.T) {
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+
+	user := ct.CreateTestUser(t, db, true)
+	userID := user.ID
+
+	cstore := store.New(db, &observation.TestContext, nil)
+
+	batchSpecs := make([]*btypes.BatchSpec, 0, 10)
+
+	for i := 0; i < cap(batchSpecs); i++ {
+		batchSpec := &btypes.BatchSpec{
+			RawSpec:         ct.TestRawBatchSpec,
+			UserID:          userID,
+			NamespaceUserID: userID,
+		}
+
+		if i%2 == 0 {
+			// 5 batch specs will have `createdFromRaw` set to `true` while the remaining 5
+			// will be set to `false`.
+			batchSpec.CreatedFromRaw = true
+		}
+
+		if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
+			t.Fatal(err)
+		}
+
+		batchSpecs = append(batchSpecs, batchSpec)
+	}
+
+	r := &Resolver{store: cstore}
+	s, err := newSchema(database.NewDB(db), r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("include locally executed batch specs", func(t *testing.T) {
+		input := map[string]any{
+			"includeLocallyExecutedSpecs": true,
+		}
+		var response struct{ BatchSpecs apitest.BatchSpecConnection }
+		apitest.MustExec(ctx, t, s, input, &response, queryListBatchSpecs)
+
+		// All batch specs should be returned here.
+		assert.Len(t, response.BatchSpecs.Nodes, len(batchSpecs))
+	})
+
+	t.Run("exclude locally executed batch specs", func(t *testing.T) {
+		input := map[string]any{
+			"includeLocallyExecutedSpecs": false,
+		}
+		var response struct{ BatchSpecs apitest.BatchSpecConnection }
+		apitest.MustExec(ctx, t, s, input, &response, queryListBatchSpecs)
+
+		// Only 5 batch specs are returned here because we excluded non-SSBC batch specs.
+		assert.Len(t, response.BatchSpecs.Nodes, 5)
+	})
+}
+
+const queryListBatchSpecs = `
+query($includeLocallyExecutedSpecs: Boolean!) {
+	batchSpecs(includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) { nodes { id } }
+}
+`
+
 func stringPtr(s string) *string { return &s }
 
 func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
