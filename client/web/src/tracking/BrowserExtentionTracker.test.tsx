@@ -3,6 +3,7 @@ import React from 'react'
 import { act, cleanup, render } from '@testing-library/react'
 import { renderHook, cleanup as hookCleanup } from '@testing-library/react-hooks'
 import { MemoryRouter } from 'react-router-dom'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { BrowserExtensionTracker, useIsBrowserExtensionActiveUser } from './BrowserExtensionTracker'
 
@@ -44,7 +45,9 @@ describe('BrowserExtensionTracker', () => {
 
         render(
             <MemoryRouter initialEntries={[url]}>
-                <BrowserExtensionTracker />
+                <CompatRouter>
+                    <BrowserExtensionTracker />
+                </CompatRouter>
             </MemoryRouter>
         )
 
@@ -63,7 +66,9 @@ describe('BrowserExtensionTracker', () => {
         )
         render(
             <MemoryRouter>
-                <BrowserExtensionTracker />
+                <CompatRouter>
+                    <BrowserExtensionTracker />
+                </CompatRouter>
             </MemoryRouter>,
             { wrapper }
         )
