@@ -5,9 +5,10 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -783,7 +784,7 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 	if flags == nil {
 		flags = featureflag.FlagSet{}
 		metricFeatureFlagUnavailable.Inc()
-		log15.Warn("search feature flags are not available")
+		slog.Scoped("toFeatures", "To Features").Warn("search feature flags are not available")
 	}
 
 	return search.Features{

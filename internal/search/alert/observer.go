@@ -6,8 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -22,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type Observer struct {
@@ -218,12 +217,13 @@ func (o *Observer) update(alert *search.Alert) {
 // Done returns the highest priority alert and an error.MultiError containing
 // all errors that could not be converted to alerts.
 func (o *Observer) Done() (*search.Alert, error) {
+	slogger := slog.Scoped("Done", "Done returns the highest priority alert and an error.MultiError containing")
 	if !o.HasResults && o.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.OriginalQuery) {
 		o.update(search.AlertForStructuralSearchNotSet(o.OriginalQuery))
 	}
 
 	if o.HasResults && o.err != nil {
-		log15.Error("Errors during search", "error", o.err)
+		slogger.Error("Errors during search", slog.Error(o.err))
 		return o.alert, nil
 	}
 

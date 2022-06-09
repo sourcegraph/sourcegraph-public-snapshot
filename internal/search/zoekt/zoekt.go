@@ -7,8 +7,9 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
@@ -57,13 +58,14 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 }
 
 func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[string]string) {
+	slogger := slog.Scoped("getSpanContext", "get span context in zoekt")
 	if !ot.ShouldTrace(ctx) {
 		return false, nil
 	}
 
 	spanContext = make(map[string]string)
 	if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil {
-		log15.Warn("Error injecting span context into map: %s", err)
+		slogger.Warn("Error injecting span context into map: %s", slog.Error(err))
 		return true, nil
 	}
 	return true, spanContext

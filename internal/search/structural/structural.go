@@ -3,9 +3,10 @@ package structural
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
+
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -108,6 +109,7 @@ func retryStructuralSearch(ctx context.Context, clients job.RuntimeClients, args
 }
 
 func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
+	slogger := slog.Scoped("runStructuralSearch", "Function runs structural search")
 	if args.PatternInfo.FileMatchLimit != limits.DefaultMaxSearchResults {
 		// streamStructuralSearch performs a streaming search when the user sets a value
 		// for `count`. The first return parameter indicates whether the request was
@@ -131,7 +133,7 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 		event = agg.SearchEvent
 		if len(event.Results) == 0 {
 			// Still no results? Give up.
-			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
+			slogger.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
 			event.Stats.IsLimitHit = false // Ensure we don't display "Show more".
 		}
 	}

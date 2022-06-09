@@ -9,9 +9,10 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
+
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -178,6 +179,7 @@ func PartitionRepos(
 	useIndex query.YesNoOnly,
 	containsRefGlobs bool,
 ) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions, err error) {
+	slogger := slog.Scoped("PartitionRepos", "Partition repos")
 	// Fallback to Unindexed if the query contains valid ref-globs.
 	if containsRefGlobs {
 		return nil, repos, nil
@@ -212,7 +214,7 @@ func PartitionRepos(
 				return nil, nil, errors.New("index:only failed since indexed search is not available yet")
 			}
 
-			log15.Warn("zoektIndexedRepos failed", "error", err)
+			slogger.Warn("zoektIndexedRepos failed", slog.Error(err))
 		}
 
 		return nil, repos, ctx.Err()

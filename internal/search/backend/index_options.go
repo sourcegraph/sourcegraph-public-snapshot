@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -202,6 +202,7 @@ func getIndexOptions(
 type revsRuleFunc func(*RepoIndexOptions) (revs []string)
 
 func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration) revsRuleFunc {
+	slog := log.Scoped("siteConfigRevisionsRuleFunc", "Site config revisions rule function")
 	if c == nil || c.ExperimentalFeatures == nil {
 		return nil
 	}
@@ -213,7 +214,7 @@ func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration) revsRuleFunc {
 		case rule.Name != "":
 			namePattern, err := regexp.Compile(rule.Name)
 			if err != nil {
-				log15.Error("error compiling regex from search.index.revisions", "regex", rule.Name, "err", err)
+				slog.Error("error compiling regex from search.index.revisions", log.String("regex", rule.Name), log.Error(err))
 				continue
 			}
 

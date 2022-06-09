@@ -4,8 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
+
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -66,6 +67,7 @@ func (s *subRepoPermsFilterJob) Tags() []log.Field {
 // applySubRepoFiltering filters a set of matches using the provided
 // authz.SubRepoPermissionChecker
 func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionChecker, matches []result.Match) ([]result.Match, error) {
+	slogger := slog.Scoped("applySubRepoFiltering", "Filters a set fo matches using the provided")
 	if !authz.SubRepoEnabled(checker) {
 		return matches, nil
 	}
@@ -117,6 +119,6 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 
 	// We don't want to return sensitive authz information or excluded paths to the
 	// user so we'll return generic error and log something more specific.
-	log15.Warn("Applying sub-repo permissions to search results", "error", errs)
+	slogger.Warn("Applying sub-repo permissions to search results", slog.Error(errs))
 	return filtered, errors.New("subRepoFilterFunc")
 }
