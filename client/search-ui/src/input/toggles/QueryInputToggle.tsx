@@ -103,7 +103,7 @@ export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<T
                 aria-checked={isActive}
                 {...interactiveProps}
             >
-                <Icon role="img" aria-hidden={true} as={props.icon} />
+                <Icon aria-hidden={true} as={props.icon} />
             </Button>
         </Tooltip>
     )

@@ -8,6 +8,7 @@ export type FeatureFlagName =
     | 'open-beta-enabled'
     | 'quick-start-tour-for-authenticated-users'
     | 'new-repo-page'
+    | 'insight-polling-enabled'
     | 'ab-visitor-tour-with-notebooks'
 
 interface OrgFlagOverride {

@@ -145,7 +145,7 @@ export const WithChildren: Story = props => {
                                 title="Close panel"
                                 variant="icon"
                             >
-                                <Icon role="img" aria-hidden={true} as={CloseIcon} />
+                                <Icon aria-hidden={true} as={CloseIcon} />
                             </Button>
                         </Tooltip>
                     </div>

@@ -43,7 +43,7 @@ export const ExternalServiceCard: React.FunctionComponent<React.PropsWithChildre
 }) => {
     const children = (
         <div className={classNames('p-3 d-flex align-items-start border', className)}>
-            <Icon role="img" className="h3 mb-0 mr-3" as={CardIcon} aria-hidden={true} />
+            <Icon className="h3 mb-0 mr-3" as={CardIcon} aria-hidden={true} />
             <div className="flex-1">
                 <H3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>
                     {title}
@@ -51,7 +51,7 @@ export const ExternalServiceCard: React.FunctionComponent<React.PropsWithChildre
                         <small>
                             {' '}
                             by
-                            <Icon role="img" as={AccountIcon} aria-hidden={true} />
+                            <Icon as={AccountIcon} aria-hidden={true} />
                             <Link to={namespace.url}>{namespace.namespaceName}</Link>
                         </small>
                     )}

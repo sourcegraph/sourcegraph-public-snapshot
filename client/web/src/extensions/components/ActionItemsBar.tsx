@@ -218,7 +218,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         variant="link"
                         aria-label="Scroll up"
                     >
-                        <Icon role="img" as={MenuUpIcon} aria-hidden={true} />
+                        <Icon as={MenuUpIcon} aria-hidden={true} />
                     </Button>
                 )}
                 <ActionsContainer
@@ -279,7 +279,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         variant="link"
                         aria-label="Scroll down"
                     >
-                        <Icon role="img" as={MenuDownIcon} aria-hidden={true} />
+                        <Icon as={MenuDownIcon} aria-hidden={true} />
                     </Button>
                 )}
                 {haveExtensionsLoaded && <ActionItemsDivider />}
@@ -291,7 +291,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                             data-tooltip="Add extensions"
                             aria-label="Add extensions"
                         >
-                            <Icon role="img" as={PlusIcon} aria-hidden={true} />
+                            <Icon as={PlusIcon} aria-hidden={true} />
                         </Link>
                     </li>
                 </ul>
@@ -336,14 +336,9 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                         {!haveExtensionsLoaded ? (
                             <LoadingSpinner />
                         ) : isOpen ? (
-                            <Icon
-                                role="img"
-                                data-testid="action-items-toggle-open"
-                                as={ChevronDoubleUpIcon}
-                                aria-hidden={true}
-                            />
+                            <Icon data-testid="action-items-toggle-open" as={ChevronDoubleUpIcon} aria-hidden={true} />
                         ) : (
-                            <Icon role="img" as={PuzzleOutlineIcon} aria-hidden={true} />
+                            <Icon as={PuzzleOutlineIcon} aria-hidden={true} />
                         )}
                     </ButtonLink>
                 </div>

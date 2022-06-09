@@ -5,7 +5,6 @@ import classNames from 'classnames'
 export interface IconProps {
     className?: string
     size?: number
-    'data-tooltip'?: string
 }
 
 function sizeProps(props: IconProps): { width: number; height: number; viewBox: string } {

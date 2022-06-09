@@ -162,7 +162,6 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
         >
             <div className={styles.header}>
                 <Icon
-                    role="img"
                     className="flex-shrink-0"
                     as={icon}
                     aria-label={resultType ? `${resultType} result` : undefined}
@@ -189,19 +188,15 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                     >
                         {expanded ? (
                             <>
-                                {collapseLabel && (
-                                    <Icon role="img" className="mr-1" as={ArrowCollapseUpIcon} aria-hidden={true} />
-                                )}
+                                {collapseLabel && <Icon className="mr-1" as={ArrowCollapseUpIcon} aria-hidden={true} />}
                                 {collapseLabel}
-                                {!collapseLabel && <Icon role="img" as={ChevronDownIcon} aria-hidden={true} />}
+                                {!collapseLabel && <Icon as={ChevronDownIcon} aria-hidden={true} />}
                             </>
                         ) : (
                             <>
-                                {expandLabel && (
-                                    <Icon role="img" className="mr-1" as={ArrowExpandDownIcon} aria-hidden={true} />
-                                )}
+                                {expandLabel && <Icon className="mr-1" as={ArrowExpandDownIcon} aria-hidden={true} />}
                                 {expandLabel}
-                                {!expandLabel && <Icon role="img" as={ChevronLeftIcon} aria-hidden={true} />}
+                                {!expandLabel && <Icon as={ChevronLeftIcon} aria-hidden={true} />}
                             </>
                         )}
                     </Button>

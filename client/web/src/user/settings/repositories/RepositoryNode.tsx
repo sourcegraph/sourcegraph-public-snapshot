@@ -56,13 +56,13 @@ const StatusIcon: React.FunctionComponent<React.PropsWithChildren<StatusIconProp
                 data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
                 aria-label="Visit the repository to clone it. See its mirroring settings for diagnostics."
             >
-                <Icon role="img" as={CloudOutlineIcon} aria-hidden={true} />
+                <Icon as={CloudOutlineIcon} aria-hidden={true} />
             </small>
         )
     }
     return (
         <small className="mr-2">
-            <Icon role="img" className={styles.check} as={TickIcon} aria-label="Success" />
+            <Icon className={styles.check} as={TickIcon} aria-label="Success" />
         </small>
     )
 }
@@ -76,25 +76,25 @@ const CodeHostIcon: React.FunctionComponent<React.PropsWithChildren<CodeHostIcon
         case ExternalServiceKind.GITHUB:
             return (
                 <small className="mr-2">
-                    <Icon role="img" className={styles.github} as={GithubIcon} aria-hidden={true} />
+                    <Icon className={styles.github} as={GithubIcon} aria-hidden={true} />
                 </small>
             )
         case ExternalServiceKind.GITLAB:
             return (
                 <small className="mr-2">
-                    <Icon role="img" className={styles.gitlab} as={GitlabIcon} aria-hidden={true} />
+                    <Icon className={styles.gitlab} as={GitlabIcon} aria-hidden={true} />
                 </small>
             )
         case ExternalServiceKind.BITBUCKETCLOUD:
             return (
                 <small className="mr-2">
-                    <Icon role="img" as={BitbucketIcon} aria-hidden={true} />
+                    <Icon as={BitbucketIcon} aria-hidden={true} />
                 </small>
             )
         default:
             return (
                 <small className="mr-2">
-                    <Icon role="img" as={SourceRepositoryIcon} aria-hidden={true} />
+                    <Icon as={SourceRepositoryIcon} aria-hidden={true} />
                 </small>
             )
     }
@@ -139,7 +139,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 Private
                             </Badge>
                         )}
-                        <Icon role="img" className="ml-2 text-primary" as={ChevronRightIcon} aria-hidden={true} />
+                        <Icon className="ml-2 text-primary" as={ChevronRightIcon} aria-hidden={true} />
                     </div>
                 </Link>
             </td>
