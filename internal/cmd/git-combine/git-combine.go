@@ -360,7 +360,7 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 
 	opt.SetDefaults()
 
-	err := cleanupStaleLockFiles(dir)
+	err := cleanupStaleLockFiles(dir, opt.Logger)
 	if err != nil {
 		return fmt.Errorf("removing stale git lock files: %w", err)
 	}
@@ -448,11 +448,15 @@ func main() {
 	}
 }
 
-// cleanupStaleLockFiles removes any Git lock files that might have been left behind
-// by a crashed git-combine process
-func cleanupStaleLockFiles(gitDir string) error {
+// cleanupStaleLockFiles removes any "stale" Git lock files inside gitDir that might have been left behind
+// by a crashed git-combine process.
+func cleanupStaleLockFiles(gitDir string, logger *log.Logger) error {
+	if logger == nil {
+		logger = log.Default()
+	}
+
 	var lockFiles []string
-	for _, f := range []string{"git.pid.lock", "index.lock"} {
+	for _, f := range []string{"gc.pid.lock", "index.lock"} {
 		lockFiles = append(lockFiles, filepath.Join(gitDir, f))
 	}
 
@@ -472,7 +476,7 @@ func cleanupStaleLockFiles(gitDir string) error {
 		return fmt.Errorf("finding stale lockfiles in %q: %w", refsDir, err)
 	}
 
-	// remove all stale lockfiles
+	// remove all stale lock files
 	for _, f := range lockFiles {
 		err := os.Remove(f)
 		if err != nil {
@@ -480,10 +484,10 @@ func cleanupStaleLockFiles(gitDir string) error {
 				continue
 			}
 
-			return fmt.Errorf("removing stale lock file %q", f)
+			return fmt.Errorf("removing stale lock file %q: %w", f, err)
 		}
 
-		log.Printf("removed stale lock file %q", f)
+		logger.Printf("removed stale lock file %q", f)
 	}
 
 	return nil
