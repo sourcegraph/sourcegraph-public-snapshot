@@ -88,7 +88,10 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		autogold.Want("NumFrozen", numFrozen).Equal(t, 4)
 
 		setMockLicenseCheck(true)
-		checkAndEnforceLicense(ctx, insightsDB)
+		err = checkAndEnforceLicense(ctx, insightsDB)
+		if err != nil {
+			t.Fatal(err)
+		}
 		numFrozen, err = getNumFrozenInsights()
 		if err != nil {
 			t.Fatal(err)

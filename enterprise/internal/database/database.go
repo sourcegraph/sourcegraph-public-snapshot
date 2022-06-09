@@ -42,7 +42,9 @@ func (edb *enterpriseDB) Perms() PermsStore {
 type InsightsDB interface {
 	dbutil.DB
 	basestore.ShareableStore
-	insightsDB()
+
+	Transact(context.Context) (InsightsDB, error)
+	Done(error) error
 }
 
 func NewInsightsDB(inner dbutil.DB) InsightsDB {
@@ -53,7 +55,25 @@ type insightsDB struct {
 	*basestore.Store
 }
 
-func (*insightsDB) insightsDB() {}
+func (d *insightsDB) Transact(ctx context.Context) (InsightsDB, error) {
+	tx, err := d.Store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &insightsDB{tx}, nil
+}
+
+func (d *insightsDB) Done(err error) error {
+	return d.Store.Done(err)
+}
+
+func (d *insightsDB) Unwrap() dbutil.DB {
+	// Recursively unwrap in case we ever call `NewInsightsDB()` with an `InsightsDB`
+	if unwrapper, ok := d.Handle().DB().(dbutil.Unwrapper); ok {
+		return unwrapper.Unwrap()
+	}
+	return d.Handle().DB()
+}
 
 func (d *insightsDB) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
 	return d.Handle().DB().QueryContext(ctx, q, args...)

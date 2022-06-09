@@ -28,10 +28,10 @@ func checkAndEnforceLicense(ctx context.Context, insightsdb edb.InsightsDB) (err
 	insightStore := store.NewInsightStore(insightsdb)
 	dashboardStore := store.NewDashboardStore(insightsdb)
 	insightTx, err := insightStore.Transact(ctx)
-	dashboardTx := dashboardStore.With(insightTx)
 	if err != nil {
 		return err
 	}
+	dashboardTx := dashboardStore.With(insightTx)
 	defer func() { err = insightTx.Done(err) }()
 
 	licenseError := licensing.Check(licensing.FeatureCodeInsights)
