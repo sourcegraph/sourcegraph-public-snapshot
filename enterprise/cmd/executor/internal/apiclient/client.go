@@ -12,7 +12,6 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
-	io_prometheus_client "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
@@ -284,10 +283,6 @@ func collectMetrics() (string, error) {
 
 	var buf bytes.Buffer
 	enc := expfmt.NewEncoder(&buf, expfmt.FmtText)
-	dec := expfmt.NewDecoder(nil, "")
-	var asdf io_prometheus_client.MetricFamily
-	_ = dec.Decode(&asdf)
-
 	for _, mf := range mfs {
 		if err := enc.Encode(mf); err != nil {
 			return "", err
