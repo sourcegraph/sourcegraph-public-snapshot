@@ -2,6 +2,7 @@ import { subDays, subHours, subMinutes } from 'date-fns'
 import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockedResponse } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 
 import {
     BatchSpecWorkspaceResolutionState,
@@ -70,6 +71,7 @@ export const mockFullBatchSpec = (batchSpec?: Partial<BatchSpecExecutionFields>)
     __typename: 'BatchSpec',
     id: '1',
     state: BatchSpecState.PENDING,
+    source: BatchSpecSource.REMOTE,
     originalInput: 'name: my-batch-change',
     createdAt: now.toISOString(),
     startedAt: null,

@@ -2862,6 +2862,22 @@ enum BatchSpecState {
 }
 
 """
+The possible sources of a batch spec.
+"""
+enum BatchSpecSource {
+    """
+    The spec was created from the local src-cli workflow.
+    """
+    LOCAL
+
+    """
+    This spec was created for remote server-side execution, e.g. from the web UI editor,
+    or with src batch remote.
+    """
+    REMOTE
+}
+
+"""
 A list of batch specs.
 """
 type BatchSpecConnection {
@@ -3107,6 +3123,12 @@ type BatchSpec implements Node {
     retryBatchSpecExecution.
     """
     viewerCanRetry: Boolean!
+
+    """
+    Whether the batch spec was created from the local src-cli workflow or remotely for
+    server-side execution.
+    """
+    source: BatchSpecSource!
 }
 
 """
