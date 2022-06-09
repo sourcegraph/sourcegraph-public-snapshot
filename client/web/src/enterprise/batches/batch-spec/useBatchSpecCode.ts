@@ -10,6 +10,7 @@ import { useDebounce } from '@sourcegraph/wildcard'
 
 import batchSpecSchemaJSON from '../../../../../../schema/batch_spec.schema.json'
 
+import helloWorldSample from './edit/library/hello-world.batch.yaml'
 import {
     excludeRepo as excludeRepoFromYaml,
     hasOnOrImportChangesetsStatement,
@@ -132,7 +133,7 @@ export const useBatchSpecCode = (originalInput: string, name: string): UseBatchS
     const [code, setCode] = useState<string>(() =>
         // Start with the hello world sample code initially if the user hasn't written any
         // batch spec code yet, otherwise show the latest spec code.
-        isMinimalBatchSpec(originalInput) ? insertNameIntoLibraryItem(originalInput, name) : originalInput
+        isMinimalBatchSpec(originalInput) ? insertNameIntoLibraryItem(helloWorldSample, name) : originalInput
     )
     const debouncedCode = useDebounce(code, DEBOUNCE_AMOUNT)
 
