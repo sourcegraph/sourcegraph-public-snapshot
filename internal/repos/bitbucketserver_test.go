@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -429,6 +430,82 @@ func TestBitbucketServerSource_ListByProjectKey(t *testing.T) {
 	}
 }
 
+func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
+	err := godotenv.Load("local.env")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	url := "https://bitbucket.sgdev.org"
+	TOKEN := os.Getenv("AUTHTOKEN")
+
+	cases := map[string]*schema.BitbucketServerConnection{
+		"simple": {
+			Url:   url,
+			Token: TOKEN,
+		},
+		"ssh": {
+			Url:                         url,
+			Token:                       TOKEN,
+			InitialRepositoryEnablement: true,
+			GitURLType:                  "ssh",
+		},
+		"path-pattern": {
+			Url:                   url,
+			Token:                 TOKEN,
+			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
+		},
+		"username": {
+			Url:                   url,
+			Username:              "foo",
+			Token:                 TOKEN,
+			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
+		},
+	}
+
+	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
+
+	for name, config := range cases {
+		t.Run(name, func(t *testing.T) {
+			s, err := newBitbucketServerSource(&svc, config, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			s.config.ProjectKeys = []string{
+				"SOURCEGRAPH",
+			}
+
+			ctxWithTimeOut, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			results := make(chan SourceResult, 5)
+			defer close(results)
+
+			s.ListRepos(ctxWithTimeOut, results)
+
+			var got []*types.Repo
+
+		verify:
+			for {
+				select {
+				case res := <-results:
+					got = append(got, res.Repo)
+				case <-ctxWithTimeOut.Done():
+					t.Fatal(errors.New("timeout!"))
+				default:
+					if len(got) == 1 {
+						path := filepath.Join("testdata/authentic", "bitbucketserver-repos-"+name+".golden")
+						testutil.AssertGolden(t, path, true, got)
+						break verify
+					}
+				}
+			}
+		})
+	}
+
+}
+
 func GetReposFromTestdata(t *testing.T) []bitbucketserver.Repo {
 	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
 	if err != nil {
@@ -488,6 +565,7 @@ func VerifyData(t *testing.T, ctx context.Context, numExpectedResults int, resul
 		"SG/python-langserver-fork": {},
 		"~KEEGAN/rgp":               {},
 		"~KEEGAN/rgp-unavailable":   {},
+		"SOURCEGRAPH/jsonrpc2":      {},
 	}
 
 	for {
