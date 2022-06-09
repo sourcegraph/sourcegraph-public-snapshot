@@ -533,7 +533,6 @@ export class FilteredConnection<
                         emptyElement={this.props.emptyElement}
                         totalCountSummaryComponent={this.props.totalCountSummaryComponent}
                         withCenteredSummary={this.props.withCenteredSummary}
-
                     />
                 )}
                 {console.log(this.props)}
