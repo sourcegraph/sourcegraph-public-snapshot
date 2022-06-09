@@ -35,6 +35,8 @@ import (
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -57,7 +59,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // tempDirName is the name used for the temporary directory under ReposDir.
@@ -1128,6 +1129,7 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, match
 		}
 
 		searcher := &search.CommitSearcher{
+			Logger:               s.Logger,
 			RepoDir:              dir.Path(),
 			Revisions:            args.Revisions,
 			Query:                mt,

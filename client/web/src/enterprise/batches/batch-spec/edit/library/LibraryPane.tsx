@@ -122,11 +122,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                             onClick={() => toggleCollapse(!collapsed)}
                             aria-label={collapsed ? 'Expand' : 'Collapse'}
                         >
-                            <Icon
-                                role="img"
-                                aria-hidden={true}
-                                as={collapsed ? ChevronDoubleRightIcon : ChevronDoubleLeftIcon}
-                            />
+                            <Icon aria-hidden={true} as={collapsed ? ChevronDoubleRightIcon : ChevronDoubleLeftIcon} />
                         </Button>
                     </div>
                 </div>

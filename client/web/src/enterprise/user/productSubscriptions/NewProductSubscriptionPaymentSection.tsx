@@ -108,7 +108,6 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<React
                 ) : isErrorLike(previewInvoice) ? (
                     <span className="text-danger">
                         <Icon
-                            role="img"
                             aria-label={previewInvoice.message}
                             data-tooltip={previewInvoice.message}
                             as={AlertCircleIcon}

@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react'
 
 import * as TooltipPrimitive from '@radix-ui/react-tooltip'
+import classNames from 'classnames'
 
 import styles from './Tooltip.module.scss'
 
@@ -13,6 +14,8 @@ interface TooltipProps {
     defaultOpen?: boolean
     /** The preferred side of the trigger to render against when open. Will be reversed if a collision is detected. Defaults to `right`. */
     placement?: TooltipPrimitive.TooltipContentProps['side']
+    /** Class name to apply to the wrapping span */
+    className?: string
 }
 
 /** Arrow width in pixels */
@@ -41,6 +44,7 @@ function onPointerDownOutside(event: Event): void {
 export const Tooltip: React.FunctionComponent<TooltipProps> = ({
     children,
     content,
+    className,
     defaultOpen = false,
     placement = 'right',
 }) => (
@@ -49,7 +53,11 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = ({
     <TooltipPrimitive.Root delayDuration={0} defaultOpen={defaultOpen}>
         <TooltipPrimitive.Trigger asChild={true}>
             {/** The onClick and role attributes here are part of the onPointerDownOutside fix described above. */}
-            <span role="presentation" className={styles.tooltip} onClick={event => event.preventDefault()}>
+            <span
+                role="presentation"
+                className={classNames(styles.tooltip, className)}
+                onClick={event => event.preventDefault()}
+            >
                 {children}
 
                 {

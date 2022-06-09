@@ -9,10 +9,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,8 +22,13 @@ type InsightStore struct {
 }
 
 // NewInsightStore returns a new InsightStore backed by the given Postgres db.
-func NewInsightStore(db dbutil.DB) *InsightStore {
+func NewInsightStore(db edb.InsightsDB) *InsightStore {
 	return &InsightStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
+}
+
+// NewInsightStoreWith returns a new InsightStore backed by the given Postgres db.
+func NewInsightStoreWith(other basestore.ShareableStore) *InsightStore {
+	return &InsightStore{Store: basestore.NewWithHandle(other.Handle()), Now: time.Now}
 }
 
 // Handle returns the underlying transactable database handle.

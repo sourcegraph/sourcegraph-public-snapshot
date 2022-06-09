@@ -218,7 +218,10 @@ func assertBatchSpecsInResponse(t *testing.T, ctx context.Context, s *graphql.Sc
 
 	batchChangeAPIID := string(marshalBatchChangeID(batchChangeID))
 
-	input := map[string]any{"batchChange": batchChangeAPIID}
+	input := map[string]any{
+		"batchChange":                 batchChangeAPIID,
+		"includeLocallyExecutedSpecs": true,
+	}
 
 	var res struct{ Node apitest.BatchChange }
 	apitest.MustExec(ctx, t, s, input, &res, queryBatchChangeBatchSpecs)
@@ -290,11 +293,11 @@ query($namespace: ID!, $name: String!){
 `
 
 const queryBatchChangeBatchSpecs = `
-query($batchChange: ID!){
+query($batchChange: ID!, $includeLocallyExecutedSpecs: Boolean){
   node(id: $batchChange) {
     ... on BatchChange {
       id
-      batchSpecs { totalCount nodes { id } }
+      batchSpecs(includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) { totalCount nodes { id } }
     }
   }
 }

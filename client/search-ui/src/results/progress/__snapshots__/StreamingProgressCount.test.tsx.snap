@@ -29,21 +29,26 @@ exports[`StreamingProgressCount should render correctly for 0 repositories 1`] =
     data-testid="streaming-progress-count"
   >
     0 results in 0.00s
-    <svg
-      aria-label="From 0 repositories"
-      class="mdi-icon iconInline ml-1"
-      data-tooltip="From 0 repositories"
-      fill="currentColor"
-      height="24"
-      role="img"
-      tabindex="0"
-      viewBox="0 0 24 24"
-      width="24"
+    <span
+      class="tooltip"
+      data-state="closed"
+      role="presentation"
     >
-      <path
-        d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
-      />
-    </svg>
+      <svg
+        aria-label="From 0 repositories"
+        class="mdi-icon iconInline ml-1"
+        fill="currentColor"
+        height="24"
+        role="img"
+        tabindex="0"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
+        />
+      </svg>
+    </span>
   </small>
 </DocumentFragment>
 `;
@@ -55,21 +60,26 @@ exports[`StreamingProgressCount should render correctly for 1 item complete 1`] 
     data-testid="streaming-progress-count"
   >
     1 result in 1.25s
-    <svg
-      aria-label="From 1 repository"
-      class="mdi-icon iconInline ml-1"
-      data-tooltip="From 1 repository"
-      fill="currentColor"
-      height="24"
-      role="img"
-      tabindex="0"
-      viewBox="0 0 24 24"
-      width="24"
+    <span
+      class="tooltip"
+      data-state="closed"
+      role="presentation"
     >
-      <path
-        d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
-      />
-    </svg>
+      <svg
+        aria-label="From 1 repository"
+        class="mdi-icon iconInline ml-1"
+        fill="currentColor"
+        height="24"
+        role="img"
+        tabindex="0"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
+        />
+      </svg>
+    </span>
   </small>
 </DocumentFragment>
 `;
@@ -81,21 +91,26 @@ exports[`StreamingProgressCount should render correctly for 123 items complete 1
     data-testid="streaming-progress-count"
   >
     123 results in 1.25s
-    <svg
-      aria-label="From 500 repositories"
-      class="mdi-icon iconInline ml-1"
-      data-tooltip="From 500 repositories"
-      fill="currentColor"
-      height="24"
-      role="img"
-      tabindex="0"
-      viewBox="0 0 24 24"
-      width="24"
+    <span
+      class="tooltip"
+      data-state="closed"
+      role="presentation"
     >
-      <path
-        d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
-      />
-    </svg>
+      <svg
+        aria-label="From 500 repositories"
+        class="mdi-icon iconInline ml-1"
+        fill="currentColor"
+        height="24"
+        role="img"
+        tabindex="0"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
+        />
+      </svg>
+    </span>
   </small>
 </DocumentFragment>
 `;
@@ -107,21 +122,26 @@ exports[`StreamingProgressCount should render correctly for big numbers complete
     data-testid="streaming-progress-count"
   >
     1.2m results in 52.50s
-    <svg
-      aria-label="From 8.9k repositories"
-      class="mdi-icon iconInline ml-1"
-      data-tooltip="From 8.9k repositories"
-      fill="currentColor"
-      height="24"
-      role="img"
-      tabindex="0"
-      viewBox="0 0 24 24"
-      width="24"
+    <span
+      class="tooltip"
+      data-state="closed"
+      role="presentation"
     >
-      <path
-        d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
-      />
-    </svg>
+      <svg
+        aria-label="From 8.9k repositories"
+        class="mdi-icon iconInline ml-1"
+        fill="currentColor"
+        height="24"
+        role="img"
+        tabindex="0"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
+        />
+      </svg>
+    </span>
   </small>
 </DocumentFragment>
 `;
@@ -133,21 +153,26 @@ exports[`StreamingProgressCount should render correctly for limithit 1`] = `
     data-testid="streaming-progress-count"
   >
     123+ results in 1.25s
-    <svg
-      aria-label="From 500 repositories"
-      class="mdi-icon iconInline ml-1"
-      data-tooltip="From 500 repositories"
-      fill="currentColor"
-      height="24"
-      role="img"
-      tabindex="0"
-      viewBox="0 0 24 24"
-      width="24"
+    <span
+      class="tooltip"
+      data-state="closed"
+      role="presentation"
     >
-      <path
-        d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
-      />
-    </svg>
+      <svg
+        aria-label="From 500 repositories"
+        class="mdi-icon iconInline ml-1"
+        fill="currentColor"
+        height="24"
+        role="img"
+        tabindex="0"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
+        />
+      </svg>
+    </span>
   </small>
 </DocumentFragment>
 `;

@@ -31,7 +31,7 @@ export const TimelineModal: React.FunctionComponent<React.PropsWithChildren<Time
             <H3 className="mb-0">Execution timeline</H3>
             <Button className="p-0 ml-2" onClick={onCancel} variant="icon">
                 <VisuallyHidden>Close</VisuallyHidden>
-                <Icon role="img" aria-hidden={true} as={CloseIcon} />
+                <Icon aria-hidden={true} as={CloseIcon} />
             </Button>
         </div>
         <ExecutionTimeline node={node} />

@@ -3,6 +3,7 @@ import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../../components/WebStory'
@@ -93,6 +94,27 @@ add('with workspace selected', () => (
                         selectedWorkspaceID="spec1234"
                         queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                     />
+                </BatchSpecContextProvider>
+            </MockedTestProvider>
+        )}
+    </WebStory>
+))
+
+add('for a locally-executed spec', () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={MOCKS}>
+                <BatchSpecContextProvider
+                    batchChange={mockBatchChange()}
+                    batchSpec={mockFullBatchSpec({ source: BatchSpecSource.LOCAL })}
+                >
+                    <div className="container">
+                        <ExecutionWorkspaces
+                            {...props}
+                            selectedWorkspaceID="spec1234"
+                            queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                        />
+                    </div>
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}

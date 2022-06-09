@@ -404,7 +404,6 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         if (isErrorLike(this.state.messagesOrError)) {
             return (
                 <Icon
-                    role="img"
                     data-tooltip="Sorry, we couldn’t fetch notifications!"
                     as={CloudAlertIconRefresh}
                     size="md"
@@ -421,7 +420,6 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         if (isNoActivityReason(this.state.messagesOrError)) {
             return (
                 <Icon
-                    role="img"
                     data-tooltip={codeHostMessage}
                     as={CloudOffOutlineIcon}
                     size="md"
@@ -437,7 +435,6 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             codeHostMessage = this.state.isOpen ? undefined : 'Syncing repositories failed!'
             return (
                 <Icon
-                    role="img"
                     data-tooltip={codeHostMessage}
                     as={CloudAlertIconRefresh}
                     size="md"
@@ -450,7 +447,6 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             codeHostMessage = this.state.isOpen ? undefined : 'Cloning repositories...'
             return (
                 <Icon
-                    img="img"
                     data-tooltip={codeHostMessage}
                     as={CloudSyncIconRefresh}
                     size="md"
@@ -462,7 +458,6 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         codeHostMessage = this.state.isOpen ? undefined : 'Repositories up-to-date'
         return (
             <Icon
-                role="img"
                 data-tooltip={codeHostMessage}
                 as={CloudCheckIconRefresh}
                 size="md"

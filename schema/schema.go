@@ -723,9 +723,9 @@ type GitCommitDescription struct {
 type GitHubAuthProvider struct {
 	// AllowGroupsPermissionsSync description: Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/repo/permissions#permissions-caching).
 	AllowGroupsPermissionsSync bool `json:"allowGroupsPermissionsSync,omitempty"`
-	// AllowOrgs description: Restricts new logins to members of these GitHub organizations. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.
+	// AllowOrgs description: Restricts new logins and signups (if allowSignup is true) to members of these GitHub organizations. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.
 	AllowOrgs []string `json:"allowOrgs,omitempty"`
-	// AllowOrgsMap description: Restricts new logins to members of GitHub teams. Each list of teams should have their Github org name as a key. Subteams inheritance is not supported, therefore only members of the listed teams will be granted access. Existing sessions won't be invalidated. Leave empty or unset for no team restrictions.
+	// AllowOrgsMap description: Restricts new logins and signups (if allowSignup is true) to members of GitHub teams. Each list of teams should have their Github org name as a key. Subteams inheritance is not supported, therefore only members of the listed teams will be granted access. Existing sessions won't be invalidated. Leave empty or unset for no team restrictions.
 	AllowOrgsMap map[string][]string `json:"allowOrgsMap,omitempty"`
 	// AllowSignup description: Allows new visitors to sign up for accounts via GitHub authentication. If false, users signing in via GitHub must have an existing Sourcegraph account, which will be linked to their GitHub identity after sign-in.
 	AllowSignup bool `json:"allowSignup,omitempty"`
@@ -828,7 +828,7 @@ type GitHubWebhook struct {
 
 // GitLabAuthProvider description: Configures the GitLab OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitLab instance: https://docs.gitlab.com/ee/integration/oauth_provider.html. The application should have `api` and `read_user` scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and "/.auth/gitlab/callback".
 type GitLabAuthProvider struct {
-	// AllowGroups description: Restricts new logins to members of these GitLab groups. Existing sessions won't be invalidated. Make sure to inform the full path for groups or subgroups instead of their names. Leave empty or unset for no group restrictions.
+	// AllowGroups description: Restricts new logins and signups (if allowSignup is true) to members of these GitLab groups. Existing sessions won't be invalidated. Make sure to inform the full path for groups or subgroups instead of their names. Leave empty or unset for no group restrictions.
 	AllowGroups []string `json:"allowGroups,omitempty"`
 	// AllowSignup description: Allows new visitors to sign up for accounts via GitLab authentication. If false, users signing in via GitLab must have an existing Sourcegraph account, which will be linked to their GitLab identity after sign-in.
 	AllowSignup *bool `json:"allowSignup,omitempty"`
@@ -1737,6 +1737,8 @@ type SettingsExperimentalFeatures struct {
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
 	// Editor description: Specifies which (code) editor to use for query and text input
 	Editor *string `json:"editor,omitempty"`
+	// EnableExtensionsDecorationsColumnView description: If extension supports column view show its decorations in a separate column in the blob view.
+	EnableExtensionsDecorationsColumnView *bool `json:"enableExtensionsDecorationsColumnView,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
 	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
 	// EnableSearchStack description: REMOVED: This feature can now be enabled/disabled via the notepad button on the notebooks list page.
@@ -1787,6 +1789,8 @@ type SettingsExperimentalFeatures struct {
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
+	// RedirectUnsupportedBrowser description: Prompts user to install new browser for non es5
+	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser,omitempty"`
 	// ApiRatelimit description: Configuration for API rate limiting
 	ApiRatelimit *ApiRatelimit `json:"api.ratelimit,omitempty"`
 	// ApidocsSearchIndexSizeLimitFactor description: Deprecated.
@@ -1887,6 +1891,8 @@ type SiteConfiguration struct {
 	EncryptionKeys *EncryptionKeys `json:"encryption.keys,omitempty"`
 	// ExecutorsAccessToken description: The shared secret between Sourcegraph and executors.
 	ExecutorsAccessToken string `json:"executors.accessToken,omitempty"`
+	// ExecutorsFrontendURL description: The frontend URL for Sourcegraph. Only root URLs are allowed. If not set, falls back to externalURL
+	ExecutorsFrontendURL string `json:"executors.frontendURL,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: Configures Sourcegraph extensions.

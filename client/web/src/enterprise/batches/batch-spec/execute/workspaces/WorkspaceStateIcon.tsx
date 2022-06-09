@@ -29,7 +29,6 @@ export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren
         case BatchSpecWorkspaceState.QUEUED:
             return (
                 <Icon
-                    role="img"
                     className={classNames('text-muted', className)}
                     data-tooltip="This workspace is queued for execution."
                     aria-label="This workspace is queued for execution."
@@ -39,7 +38,6 @@ export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren
         case BatchSpecWorkspaceState.PROCESSING:
             return (
                 <Icon
-                    role="img"
                     className={classNames('text-muted', className)}
                     data-tooltip="This workspace is currently executing."
                     aria-label="This workspace is currently executing."
@@ -49,7 +47,6 @@ export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren
         case BatchSpecWorkspaceState.SKIPPED:
             return (
                 <Icon
-                    role="img"
                     className={classNames('text-muted', className)}
                     data-tooltip="This workspace was skipped."
                     aria-label="This workspace was skipped."
@@ -59,7 +56,6 @@ export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren
         case BatchSpecWorkspaceState.CANCELED:
             return (
                 <Icon
-                    role="img"
                     className={classNames('text-muted', className)}
                     data-tooltip="The execution for this workspace was canceled."
                     aria-label="The execution for this workspace was canceled."
@@ -69,7 +65,6 @@ export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren
         case BatchSpecWorkspaceState.CANCELING:
             return (
                 <Icon
-                    role="img"
                     className={classNames('text-muted', className)}
                     data-tooltip="The execution for this workspace is being canceled."
                     aria-label="The execution for this workspace is being canceled."
@@ -79,7 +74,6 @@ export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren
         case BatchSpecWorkspaceState.FAILED:
             return (
                 <Icon
-                    role="img"
                     className="text-danger"
                     data-tooltip="The execution for this workspace failed."
                     aria-label="The execution for this workspace failed."
@@ -90,7 +84,6 @@ export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren
             if (cachedResultFound) {
                 return (
                     <Icon
-                        role="img"
                         className="text-success"
                         data-tooltip="Cached result found for this workspace."
                         aria-label="Cached result found for this workspace."
@@ -100,7 +93,6 @@ export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren
             }
             return (
                 <Icon
-                    role="img"
                     className="text-success"
                     data-tooltip="Execution for this workspace succeeded."
                     aria-label="Execution for this workspace succeeded."

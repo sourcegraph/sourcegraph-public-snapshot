@@ -228,8 +228,8 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                         <LoadingSpinner />
                                     ) : (
                                         <span className="text-success">
-                                            <Icon role="img" aria-hidden={true} as={CheckCircleIcon} /> Published
-                                            release successfully.
+                                            <Icon aria-hidden={true} as={CheckCircleIcon} /> Published release
+                                            successfully.
                                         </span>
                                     ))}
                             </div>

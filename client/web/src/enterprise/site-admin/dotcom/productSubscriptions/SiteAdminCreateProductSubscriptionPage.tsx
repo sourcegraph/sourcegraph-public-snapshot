@@ -95,7 +95,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
                                 variant="secondary"
                                 size="sm"
                             >
-                                <Icon role="img" aria-hidden={true} as={AddIcon} /> Create new subscription
+                                <Icon aria-hidden={true} as={AddIcon} /> Create new subscription
                             </Button>
                         </Form>
                     </div>

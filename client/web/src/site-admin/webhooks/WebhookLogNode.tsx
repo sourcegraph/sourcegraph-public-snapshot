@@ -39,7 +39,7 @@ export const WebhookLogNode: React.FunctionComponent<React.PropsWithChildren<Pro
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                     onClick={toggleExpanded}
                 >
-                    <Icon role="img" aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
+                    <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
                 </Button>
             </span>
             <span className={styles.statusCode}>
@@ -52,9 +52,9 @@ export const WebhookLogNode: React.FunctionComponent<React.PropsWithChildren<Pro
             <span className={styles.smDetailsButton}>
                 <Button onClick={toggleExpanded} outline={true} variant="secondary">
                     {isExpanded ? (
-                        <Icon role="img" aria-hidden={true} as={ChevronDownIcon} />
+                        <Icon aria-hidden={true} as={ChevronDownIcon} />
                     ) : (
-                        <Icon role="img" aria-hidden={true} as={ChevronRightIcon} />
+                        <Icon aria-hidden={true} as={ChevronRightIcon} />
                     )}{' '}
                     {isExpanded ? 'Hide' : 'Show'} details
                 </Button>
