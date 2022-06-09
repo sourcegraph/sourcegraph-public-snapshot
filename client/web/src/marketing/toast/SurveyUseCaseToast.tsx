@@ -14,7 +14,7 @@ export interface UseCaseFeedbackState
     extends Pick<TotalFeedbackState, 'useCases' | 'otherUseCase' | 'additionalInformation' | 'email'> {}
 
 export interface UseCaseFeedbackModifiers {
-    onChangeUseCase: (useCase: TotalFeedbackState['useCases'][number]) => void
+    onChangeUseCases: (useCases: TotalFeedbackState['useCases']) => void
     onChangeOtherUseCase: (otherUseCase: TotalFeedbackState['otherUseCase']) => void
     onChangeAdditionalInformation: (additionalInfo: TotalFeedbackState['additionalInformation']) => void
     onChangeEmail: (email: TotalFeedbackState['email']) => void
@@ -32,7 +32,7 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastP
     onDismiss,
     onDone,
     useCases,
-    onChangeUseCase,
+    onChangeUseCases,
     otherUseCase,
     onChangeOtherUseCase,
     additionalInformation,
@@ -49,7 +49,7 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastP
                 title="You are using sourcegraph to..."
                 authenticatedUser={authenticatedUser}
                 useCases={useCases}
-                onChangeUseCase={onChangeUseCase}
+                onChangeUseCases={onChangeUseCases}
                 otherUseCase={otherUseCase}
                 onChangeOtherUseCase={onChangeOtherUseCase}
                 additionalInformation={additionalInformation}

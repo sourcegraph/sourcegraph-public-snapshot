@@ -111,20 +111,6 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
         handleContinue()
     }
 
-    const handleUseCase = (value: SurveyUseCase): void => {
-        if (userFeedback.useCases.includes(value)) {
-            setUserFeedback(current => ({
-                ...current,
-                useCases: current.useCases.filter(instance => instance !== value),
-            }))
-            return
-        }
-        setUserFeedback(current => ({
-            ...current,
-            useCases: [...current.useCases, value],
-        }))
-    }
-
     switch (activeStep) {
         case ToastSteps.rate:
             return (
@@ -142,7 +128,7 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
                 <SurveyUseCaseToast
                     isSubmitting={isSubmitting}
                     useCases={userFeedback.useCases}
-                    onChangeUseCase={handleUseCase}
+                    onChangeUseCases={useCases => setUserFeedback(current => ({ ...current, useCases }))}
                     otherUseCase={userFeedback.otherUseCase}
                     onChangeOtherUseCase={otherUseCase => setUserFeedback(current => ({ ...current, otherUseCase }))}
                     additionalInformation={userFeedback.additionalInformation}

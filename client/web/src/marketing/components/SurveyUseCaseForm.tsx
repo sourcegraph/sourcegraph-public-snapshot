@@ -44,7 +44,7 @@ interface SurveyUseCaseFormProps extends UseCaseFeedbackState, UseCaseFeedbackMo
 
 export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> = ({
     useCases,
-    onChangeUseCase,
+    onChangeUseCases,
     otherUseCase,
     onChangeOtherUseCase,
     additionalInformation,
@@ -67,6 +67,14 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
         setShowOtherInput(shouldShow)
     }
 
+    const handleUseCaseChange = (value: SurveyUseCase): void => {
+        const newUseCases = useCases.includes(value)
+            ? useCases.filter(instance => instance !== value)
+            : [...useCases, value]
+
+        onChangeUseCases(newUseCases)
+    }
+
     return (
         <div className={classNames('mb-2', className)}>
             <H4 id="usecase-group" className={classNames('d-flex', styles.title, formLabelClassName)}>
@@ -76,7 +84,7 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                 {OPTIONS.map(({ id, labelValue }) => (
                     <SurveyUseCaseCheckbox
                         label={labelValue}
-                        onChange={() => onChangeUseCase(id)}
+                        onChange={() => handleUseCaseChange(id)}
                         key={id}
                         id={id}
                         checked={useCases.includes(id)}
