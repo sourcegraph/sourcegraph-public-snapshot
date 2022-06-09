@@ -201,16 +201,19 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 
 	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id)})
 	if err != nil {
+		tx.Done(err)
 		return false, errors.Wrap(err, "loading batch spec workspace execution job")
 	}
 
 	workspace, err := tx.GetBatchSpecWorkspace(ctx, GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
 	if err != nil {
+		tx.Done(err)
 		return false, errors.Wrap(err, "loading batch spec workspace")
 	}
 
 	batchSpec, err := tx.GetBatchSpec(ctx, GetBatchSpecOpts{ID: workspace.BatchSpecID})
 	if err != nil {
+		tx.Done(err)
 		return false, errors.Wrap(err, "loading batch spec")
 	}
 
@@ -219,11 +222,13 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 
 	repo, err := tx.Repos().Get(ctx, workspace.RepoID)
 	if err != nil {
+		tx.Done(err)
 		return false, errors.Wrap(err, "loading repo")
 	}
 
 	events, err := logEventsFromLogEntries(job.ExecutionLogs)
 	if err != nil {
+		tx.Done(err)
 		return false, err
 	}
 
