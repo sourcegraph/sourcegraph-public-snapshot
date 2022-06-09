@@ -2,7 +2,6 @@ import React, { ReactNode } from 'react'
 
 import * as TooltipPrimitive from '@radix-ui/react-tooltip'
 import classNames from 'classnames'
-import { isEmpty } from 'lodash'
 
 import styles from './Tooltip.module.scss'
 
@@ -10,7 +9,7 @@ interface TooltipProps {
     /** A single child element that will trigger the Tooltip to open on hover. */
     children: ReactNode
     /** The text that will be displayed in the Tooltip. If `null`, no Tooltip will be rendered, allowing for Tooltips to be shown conditionally. */
-    content: string | null | undefined
+    content: string | null
     /** The open state of the tooltip when it is initially rendered. Defaults to `false`. */
     defaultOpen?: boolean
     /** The preferred side of the trigger to render against when open. Will be reversed if a collision is detected. Defaults to `right`. */
@@ -70,7 +69,7 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = ({
 
                 {
                     // The rest of the Tooltip components still need to be rendered for the content to correctly be shown conditionally.
-                    isEmpty(content) ? null : (
+                    content === null ? null : (
                         /*
                          * Rendering the Content within the Trigger is a workaround to support being able to hover over the Tooltip content itself.
                          * Refrence: https://github.com/radix-ui/primitives/issues/620#issuecomment-1079147761

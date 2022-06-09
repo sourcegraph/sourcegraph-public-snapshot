@@ -8,7 +8,7 @@ import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators
 
 import { ActionContribution, Evaluated } from '@sourcegraph/client-api'
 import { asError, ErrorLike, isErrorLike, isExternalLink } from '@sourcegraph/common'
-import { LoadingSpinner, ButtonLink, ButtonLinkProps, WildcardThemeContext, Tooltip } from '@sourcegraph/wildcard'
+import { LoadingSpinner, ButtonLink, ButtonLinkProps, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { urlForOpenPanel } from '../commands/commands'
@@ -222,16 +222,14 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
         // Simple display if the action is a noop.
         if (!this.props.action.command) {
             return (
-                <Tooltip content={tooltip}>
-                    <span
-                        aria-label={tooltip}
-                        data-content={this.props.dataContent}
-                        className={this.props.className}
-                        tabIndex={this.props.tabIndex}
-                    >
-                        {content}
-                    </span>
-                </Tooltip>
+                <span
+                    data-tooltip={tooltip}
+                    data-content={this.props.dataContent}
+                    className={this.props.className}
+                    tabIndex={this.props.tabIndex}
+                >
+                    {content}
+                </span>
             )
         }
 
@@ -260,51 +258,48 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
               }
             : {}
 
-        const actionTooltip =
-            this.props.showInlineError && isErrorLike(this.state.actionOrError)
-                ? `Error: ${this.state.actionOrError.message}`
-                : tooltip
-
         return (
-            <Tooltip content={actionTooltip}>
-                <ButtonLink
-                    aria-label={actionTooltip}
-                    data-content={this.props.dataContent}
-                    disabled={
-                        !this.props.active ||
-                        ((this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
-                            this.state.actionOrError === LOADING) ||
-                        this.props.disabledWhen
-                    }
-                    disabledClassName={this.props.inactiveClassName}
-                    data-action-item-pressed={pressed}
-                    className={classNames(
-                        'test-action-item',
-                        this.props.className,
-                        showLoadingSpinner && styles.actionItemLoading,
-                        pressed && [this.props.pressedClassName],
-                        buttonLinkProps.variant === 'link' && styles.actionItemLink
-                    )}
-                    pressed={pressed}
-                    onSelect={this.runAction}
-                    // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
-                    // it as a button that executes the command.
-                    to={to}
-                    {...newTabProps}
-                    {...buttonLinkProps}
-                    tabIndex={this.props.tabIndex}
-                >
-                    {content}{' '}
-                    {!this.props.hideExternalLinkIcon && primaryTo && isExternalLink(primaryTo) && (
-                        <OpenInNewIcon className={this.props.iconClassName} />
-                    )}
-                    {showLoadingSpinner && (
-                        <div className={styles.loader} data-testid="action-item-spinner">
-                            <LoadingSpinner inline={false} className={this.props.iconClassName} />
-                        </div>
-                    )}
-                </ButtonLink>
-            </Tooltip>
+            <ButtonLink
+                data-tooltip={
+                    this.props.showInlineError && isErrorLike(this.state.actionOrError)
+                        ? `Error: ${this.state.actionOrError.message}`
+                        : tooltip
+                }
+                data-content={this.props.dataContent}
+                disabled={
+                    !this.props.active ||
+                    ((this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
+                        this.state.actionOrError === LOADING) ||
+                    this.props.disabledWhen
+                }
+                disabledClassName={this.props.inactiveClassName}
+                data-action-item-pressed={pressed}
+                className={classNames(
+                    'test-action-item',
+                    this.props.className,
+                    showLoadingSpinner && styles.actionItemLoading,
+                    pressed && [this.props.pressedClassName],
+                    buttonLinkProps.variant === 'link' && styles.actionItemLink
+                )}
+                pressed={pressed}
+                onSelect={this.runAction}
+                // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
+                // it as a button that executes the command.
+                to={to}
+                {...newTabProps}
+                {...buttonLinkProps}
+                tabIndex={this.props.tabIndex}
+            >
+                {content}{' '}
+                {!this.props.hideExternalLinkIcon && primaryTo && isExternalLink(primaryTo) && (
+                    <OpenInNewIcon className={this.props.iconClassName} />
+                )}
+                {showLoadingSpinner && (
+                    <div className={styles.loader} data-testid="action-item-spinner">
+                        <LoadingSpinner inline={false} className={this.props.iconClassName} />
+                    </div>
+                )}
+            </ButtonLink>
         )
     }
 
