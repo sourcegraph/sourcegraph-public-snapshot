@@ -3,12 +3,9 @@ package permissions
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
-	"encoding/json"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -22,11 +19,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // bitbucketProjectPermissionsJob implements the job.Job interface. It is used by the worker service
@@ -137,74 +132,15 @@ func createBitbucketProjectPermissionsStore(s basestore.ShareableStore) dbworker
 			sqlf.Sprintf("j.permissions"),
 			sqlf.Sprintf("j.unrestricted"),
 		},
-		Scan:              scanFirstBitbucketProjectPermissionsJob,
+		Scan: func(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+			j, ok, err := database.ScanFirstBitbucketProjectPermissionsJob(rows, err)
+			return j, ok, err
+		},
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     5,
 		OrderByExpression: sqlf.Sprintf("j.id"),
 	})
-}
-
-// scanFirstBitbucketProjectPermissionsJob scans a single job from the return value of `*Store.query`.
-func scanFirstBitbucketProjectPermissionsJob(rows *sql.Rows, queryErr error) (_ workerutil.Record, exists bool, err error) {
-	if queryErr != nil {
-		return nil, false, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var job types.BitbucketProjectPermissionJob
-		var executionLogs []dbworkerstore.ExecutionLogEntry
-		var permissions []userPermission
-
-		if err := rows.Scan(
-			&job.ID,
-			&job.State,
-			&job.FailureMessage,
-			&job.QueuedAt,
-			&job.StartedAt,
-			&job.FinishedAt,
-			&job.ProcessAfter,
-			&job.NumResets,
-			&job.NumFailures,
-			&job.LastHeartbeatAt,
-			pq.Array(&executionLogs),
-			&job.WorkerHostname,
-			&job.ProjectKey,
-			&job.ExternalServiceID,
-			pq.Array(&permissions),
-			&job.Unrestricted,
-		); err != nil {
-			return nil, false, err
-		}
-
-		for _, entry := range executionLogs {
-			job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
-		}
-
-		for _, perm := range permissions {
-			job.Permissions = append(job.Permissions, types.UserPermission(perm))
-		}
-
-		return &job, true, nil
-	}
-
-	return nil, false, nil
-}
-
-type userPermission types.UserPermission
-
-func (p *userPermission) Scan(value any) error {
-	b, ok := value.([]byte)
-	if !ok {
-		return errors.Errorf("value is not []byte: %T", value)
-	}
-
-	return json.Unmarshal(b, &p)
-}
-
-func (p userPermission) Value() (driver.Value, error) {
-	return json.Marshal(p)
 }
 
 // These are the metrics that are used by the worker and resetter.
