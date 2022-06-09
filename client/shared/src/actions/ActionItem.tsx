@@ -288,7 +288,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
 
         if (!to) {
             return (
-                <Tooltip className={this.props.tooltipClassName} content={tooltipOrErrorMessage ?? null}>
+                <Tooltip className={this.props.tooltipClassName} content={tooltipOrErrorMessage || null}>
                     <Button
                         {...sharedProps}
                         {...buttonLinkProps}
@@ -316,15 +316,9 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
         }
 
         return (
-            <Tooltip className={this.props.tooltipClassName} content={tooltipOrErrorMessage ?? null}>
+            <Tooltip className={this.props.tooltipClassName} content={tooltipOrErrorMessage || null}>
                 <ButtonLink
                     data-content={this.props.dataContent}
-                    disabled={
-                        !this.props.active ||
-                        ((this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
-                            this.state.actionOrError === LOADING) ||
-                        this.props.disabledWhen
-                    }
                     disabledClassName={this.props.inactiveClassName}
                     data-action-item-pressed={pressed}
                     className={classNames(
@@ -341,7 +335,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                     to={to}
                     {...newTabProps}
                     {...buttonLinkProps}
-                    tabIndex={this.props.tabIndex}
+                    {...sharedProps}
                 >
                     {content}{' '}
                     {!this.props.hideExternalLinkIcon && primaryTo && isExternalLink(primaryTo) && (
