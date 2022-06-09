@@ -82,14 +82,16 @@ export function getCodeMonitoringCreateAction(
 
 export function getBatchChangeCreateAction(
     query: string | undefined,
+    patternType: SearchPatternType,
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null,
     isServerSideBatchChangeEnabled: boolean | undefined
 ): CreateAction | null {
+    console.log(isServerSideBatchChangeEnabled, query, authenticatedUser, '<====')
     if (!isServerSideBatchChangeEnabled || !query || !authenticatedUser) {
         return null
     }
     const searchParameters = new URLSearchParams(location.search)
-    searchParameters.set('trigger-query', query)
+    searchParameters.set('trigger-query', `${query} patterntype:${patternType}`)
     const url = `/batch-changes/create?${searchParameters.toString()}`
 
     return {

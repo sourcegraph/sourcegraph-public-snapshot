@@ -216,6 +216,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             [
                 getBatchChangeCreateAction(
                     props.query as string,
+                    props.patternType,
                     props.authenticatedUser,
                     props.batchChangesExecutionEnabled
                 ),
