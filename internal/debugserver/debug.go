@@ -3,6 +3,7 @@ package debugserver
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -10,14 +11,23 @@ import (
 	"strings"
 
 	"github.com/felixge/fgprof"
+	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/expfmt"
 	"golang.org/x/net/trace"
+
+	dto "github.com/prometheus/client_model/go"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var CurrentMetrics map[string][]*dto.MetricFamily
 
 var addr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address.")
 
@@ -125,6 +135,42 @@ func NewServerRoutine(ready <-chan struct{}, extra ...Endpoint) goroutine.Backgr
 		router.Handle("/debug/requests", http.HandlerFunc(trace.Traces))
 		router.Handle("/debug/events", http.HandlerFunc(trace.Events))
 		router.Handle("/metrics", promhttp.Handler())
+		// TODO: This only runs in frontend.
+		router.Handle("/metrics-executors", promhttp.HandlerFor(prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) {
+			reConn := redispool.Cache.Get()
+			defer reConn.Close()
+
+			keys, err := redis.Values(reConn.Do("KEYS", ExecutorsMetricsPrefixForRedis+"*"))
+			if err != nil {
+				return nil, errors.Wrap(err, "scan keys")
+			}
+
+			if len(keys) == 0 {
+				return nil, nil
+			}
+
+			encodedMetrics, err := redis.Strings(reConn.Do("MGET", keys...))
+			if err != nil {
+				return nil, errors.Wrap(err, "mget keys")
+			}
+
+			data := []*dto.MetricFamily{}
+			for _, metrics := range encodedMetrics {
+				dec := expfmt.NewDecoder(strings.NewReader(metrics), expfmt.FmtText)
+				for {
+					var a dto.MetricFamily
+					if err := dec.Decode(&a); err != nil {
+						if err == io.EOF {
+							break
+						}
+						return nil, errors.Wrap(err, "decoding metric data")
+					}
+					data = append(data, &a)
+				}
+			}
+
+			return data, nil
+		}), promhttp.HandlerOpts{}))
 
 		// This path acts as a wildcard and should appear after more specific entries.
 		router.PathPrefix("/debug/pprof").HandlerFunc(pprof.Index)
@@ -136,3 +182,5 @@ func NewServerRoutine(ready <-chan struct{}, extra ...Endpoint) goroutine.Backgr
 
 	return httpserver.NewFromAddr(addr, &http.Server{Handler: handler})
 }
+
+const ExecutorsMetricsPrefixForRedis = "executors-metrics:"

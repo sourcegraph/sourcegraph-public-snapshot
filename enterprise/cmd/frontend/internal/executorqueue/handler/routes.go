@@ -6,12 +6,18 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+
+	dto "github.com/prometheus/client_model/go"
+	"github.com/prometheus/common/expfmt"
 
 	"github.com/gorilla/mux"
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -134,7 +140,47 @@ func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 
 		// TODO: Store metrics for executor.
 
-		fmt.Printf("Received metrics from executor: \n%s\n", payload.PrometheusMetrics)
+		// fmt.Printf("Received metrics from executor: \n%s\n", payload.PrometheusMetrics)
+
+		as := []*dto.MetricFamily{}
+		dec := expfmt.NewDecoder(strings.NewReader(payload.PrometheusMetrics), expfmt.FmtText)
+		for {
+			var a dto.MetricFamily
+			if err := dec.Decode(&a); err != nil {
+				if err == io.EOF {
+					break
+				}
+				panic(err)
+			}
+			strptr := func(s string) *string {
+				return &s
+			}
+			for _, m := range a.Metric {
+				m.Label = append(m.Label, &dto.LabelPair{Name: strptr("instance"), Value: &payload.ExecutorName})
+				m.Label = append(m.Label, &dto.LabelPair{Name: strptr("erick"), Value: strptr("voldemort")})
+				m.Label = append(m.Label, &dto.LabelPair{Name: strptr("voldemort"), Value: strptr("erick")})
+				m.Label = append(m.Label, &dto.LabelPair{Name: strptr("job"), Value: strptr("sourcegraph-executors")})
+			}
+
+			as = append(as, &a)
+		}
+
+		var enc bytes.Buffer
+		encoder := expfmt.NewEncoder(&enc, expfmt.FmtText)
+
+		for _, a := range as {
+			if err := encoder.Encode(a); err != nil {
+				return http.StatusBadRequest, nil, err
+			}
+		}
+
+		reConn := redispool.Cache.Get()
+		defer reConn.Close()
+
+		err := reConn.Send("SETEX", debugserver.ExecutorsMetricsPrefixForRedis+payload.ExecutorName, 30, enc.String())
+		if err != nil {
+			return http.StatusInternalServerError, nil, err
+		}
 
 		unknownIDs, err := h.heartbeat(r.Context(), executor, payload.JobIDs)
 		return http.StatusOK, unknownIDs, err
