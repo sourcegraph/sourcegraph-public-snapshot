@@ -5,16 +5,10 @@ exports[`ActionItem Renders contributed action items 1`] = `
    
   <li>
     <span
-      class="tooltip"
-      data-state="closed"
-      role="presentation"
+      class="actionItem"
+      data-tooltip="This is Action A"
     >
-      <span
-        aria-label="This is Action A"
-        class="actionItem"
-      >
-         Action A
-      </span>
+       Action A
     </span>
   </li>
 </DocumentFragment>
