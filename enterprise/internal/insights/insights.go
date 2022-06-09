@@ -2,12 +2,12 @@ package insights
 
 import (
 	"context"
-	"database/sql"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/migration"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -61,7 +61,7 @@ func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchabl
 // database migrations before returning. It is safe to call from multiple services/containers (in
 // which case, one's migration will win and the other caller will receive an error and should exit
 // and restart until the other finishes.)
-func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
+func InitializeCodeInsightsDB(app string) (edb.InsightsDB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeInsightsDSN
 	})
@@ -70,7 +70,7 @@ func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
 		return nil, errors.Errorf("Failed to connect to codeinsights database: %s", err)
 	}
 
-	return db, nil
+	return edb.NewInsightsDB(db), nil
 }
 
 func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {

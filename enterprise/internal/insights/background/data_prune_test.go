@@ -7,6 +7,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -24,7 +25,7 @@ func TestPerformPurge(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := dbtest.NewInsightsDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
 	postgres := database.NewDB(dbtest.NewDB(t))
 	permStore := store.NewInsightPermissionStore(postgres)
 	timeseriesStore := store.NewWithClock(insightsDB, permStore, clock)
