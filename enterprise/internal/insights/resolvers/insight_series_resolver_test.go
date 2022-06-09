@@ -23,7 +23,7 @@ func TestResolver_InsightSeries(t *testing.T) {
 		ctx := actor.WithInternalActor(context.Background())
 		now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 		clock := func() time.Time { return now }
-		insightsDB := dbtest.NewInsightsDB(t)
+		insightsDB := database.NewDB(dbtest.NewInsightsDB(t))
 		postgres := database.NewDB(dbtest.NewDB(t))
 		resolver := newWithClock(insightsDB, postgres, clock)
 

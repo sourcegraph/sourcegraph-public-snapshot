@@ -11,8 +11,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,7 +22,7 @@ type InsightStore struct {
 }
 
 // NewInsightStore returns a new InsightStore backed by the given Postgres db.
-func NewInsightStore(db dbutil.DB) *InsightStore {
+func NewInsightStore(db database.DB) *InsightStore {
 	return &InsightStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
 }
 

@@ -126,12 +126,12 @@ func filterByIds(ids []string, insight []insights.SearchInsight) []insights.Sear
 
 type settingMigrator struct {
 	base     database.DB
-	insights dbutil.DB
+	insights database.DB
 }
 
 // NewMigrateSettingInsightsJob will migrate insights from settings into the database. This is a job that will be
 // deprecated as soon as this functionality is available over an API.
-func NewMigrateSettingInsightsJob(ctx context.Context, base database.DB, insights dbutil.DB) goroutine.BackgroundRoutine {
+func NewMigrateSettingInsightsJob(ctx context.Context, base, insights database.DB) goroutine.BackgroundRoutine {
 	interval := time.Minute * 10
 	m := settingMigrator{
 		base:     base,

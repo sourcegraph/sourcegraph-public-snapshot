@@ -34,7 +34,7 @@ type baseInsightResolver struct {
 	postgresDB database.DB
 }
 
-func WithBase(insightsDB dbutil.DB, primaryDB database.DB, clock func() time.Time) *baseInsightResolver {
+func WithBase(insightsDB, primaryDB database.DB, clock func() time.Time) *baseInsightResolver {
 	insightStore := store.NewInsightStore(insightsDB)
 	timeSeriesStore := store.NewWithClock(insightsDB, store.NewInsightPermissionStore(primaryDB), clock)
 	dashboardStore := store.NewDashboardStore(insightsDB)
@@ -61,13 +61,13 @@ type Resolver struct {
 }
 
 // New returns a new Resolver whose store uses the given Postgres DBs.
-func New(db dbutil.DB, postgres database.DB) graphqlbackend.InsightsResolver {
+func New(db, postgres database.DB) graphqlbackend.InsightsResolver {
 	return newWithClock(db, postgres, timeutil.Now)
 }
 
 // newWithClock returns a new Resolver whose store uses the given Postgres DBs and the given clock
 // for timestamps.
-func newWithClock(db dbutil.DB, postgres database.DB, clock func() time.Time) *Resolver {
+func newWithClock(db, postgres database.DB, clock func() time.Time) *Resolver {
 	base := WithBase(db, postgres, clock)
 	return &Resolver{
 		baseInsightResolver:  *base,

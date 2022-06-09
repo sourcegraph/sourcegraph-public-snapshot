@@ -52,7 +52,7 @@ func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchabl
 	if err != nil {
 		return err
 	}
-	enterpriseServices.InsightsResolver = resolvers.New(db, postgres)
+	enterpriseServices.InsightsResolver = resolvers.New(database.NewDB(db), postgres)
 
 	return nil
 }
@@ -83,7 +83,7 @@ func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.R
 		return err
 	}
 
-	insightsMigrator := migration.NewMigrator(insightsDB, db)
+	insightsMigrator := migration.NewMigrator(database.NewDB(insightsDB), db)
 
 	// This id (14) was defined arbitrarily in this migration file: 1528395945_settings_migration_out_of_band.up.sql.
 	if err := outOfBandMigrationRunner.Register(14, insightsMigrator, oobmigration.MigratorOptions{Interval: 10 * time.Second}); err != nil {

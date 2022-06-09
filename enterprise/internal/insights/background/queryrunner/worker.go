@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -82,7 +83,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		insightsStore:   insightsStore,
 		repoStore:       repoStore,
 		limiter:         limiter,
-		metadadataStore: store.NewInsightStore(insightsStore.Handle().DB()),
+		metadadataStore: store.NewInsightStore(database.NewDBWith(insightsStore)),
 		seriesCache:     sharedCache,
 		search:          query.Search,
 		searchStream: func(ctx context.Context, query string) (*streaming.TabulationResult, error) {
