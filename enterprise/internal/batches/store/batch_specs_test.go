@@ -24,7 +24,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(batchSpecs); i++ {
-			// only the fourth batch spec should have be locally-created
+			// only the fourth batch spec should be locally-created
 			createdFromRaw := i != 3
 			falsy := overridable.FromBoolOrString(false)
 			c := &btypes.BatchSpec{
