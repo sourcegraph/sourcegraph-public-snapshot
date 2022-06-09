@@ -83,19 +83,21 @@ export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<T
     return (
         // Click events here are defined in useEffect
         <Tooltip
-            className={classNames(
-                styles.toggle,
-                props.className,
-                !!disabledRule && styles.disabled,
-                isActive && styles.toggleActive,
-                !interactive && styles.toggleNonInteractive,
-                props.activeClassName
-            )}
+            // For now, Tooltip wraps the child element in a <span>, so make sure that gets styled to space the toggles correctly
+            className={styles.toggleWrapper}
             content={tooltipValue}
             placement="bottom"
         >
             <Button
                 as="div"
+                className={classNames(
+                    styles.toggle,
+                    props.className,
+                    !!disabledRule && styles.disabled,
+                    isActive && styles.toggleActive,
+                    !interactive && styles.toggleNonInteractive,
+                    props.activeClassName
+                )}
                 ref={toggleCheckbox}
                 role="checkbox"
                 variant="icon"
