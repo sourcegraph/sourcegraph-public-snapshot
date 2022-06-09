@@ -60,6 +60,11 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
         eventLogger.log('SurveyReminderViewed')
     }, [])
 
+    /**
+     * We set dismissal state when either:
+     * 1. User clicks the dismiss button
+     * 2. User submits the survey
+     */
     const setFutureVisibility = (): void => {
         if (togglePermanentlyDismiss) {
             shouldPermanentlyDismiss()
