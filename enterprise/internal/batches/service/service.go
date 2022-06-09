@@ -335,7 +335,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 
 	// Temporarily prevent mounts for server-side processing.
 	if hasMount(spec) {
-		return nil, errors.Newf("mounts are not allowed for server-side processing")
+		return nil, errors.New("mounts are not allowed for server-side processing")
 	}
 
 	// Check whether the current user has access to either one of the namespaces.
@@ -582,7 +582,7 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 
 	// Temporarily prevent mounts for server-side processing.
 	if hasMount(spec) {
-		return nil, errors.Newf("mounts are not allowed for server-side processing")
+		return nil, errors.New("mounts are not allowed for server-side processing")
 	}
 
 	// Check whether the current user has access to either one of the namespaces.
