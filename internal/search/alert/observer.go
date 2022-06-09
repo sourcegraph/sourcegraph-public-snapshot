@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	slog "github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type Observer struct {
@@ -36,6 +36,7 @@ type Observer struct {
 	mu    sync.Mutex
 	alert *search.Alert
 	err   error
+	log   log.Logger
 }
 
 // reposExist returns true if one or more repos resolve. If the attempt
@@ -217,13 +218,12 @@ func (o *Observer) update(alert *search.Alert) {
 // Done returns the highest priority alert and an error.MultiError containing
 // all errors that could not be converted to alerts.
 func (o *Observer) Done() (*search.Alert, error) {
-	slogger := slog.Scoped("Done", "Done returns the highest priority alert and an error.MultiError containing")
 	if !o.HasResults && o.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.OriginalQuery) {
 		o.update(search.AlertForStructuralSearchNotSet(o.OriginalQuery))
 	}
 
 	if o.HasResults && o.err != nil {
-		slogger.Error("Errors during search", slog.Error(o.err))
+		o.log.Error("Errors during search", log.Error(o.err))
 		return o.alert, nil
 	}
 
