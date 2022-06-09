@@ -678,7 +678,9 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
 exports[`<HierarchicalLocationsView /> shows a spinner before any locations emissions 1`] = `
 <DocumentFragment>
   <div
+    aria-label="Loading"
     class="iconInline loadingSpinner m-1 test-loading-spinner"
+    role="img"
   />
 </DocumentFragment>
 `;
@@ -686,7 +688,9 @@ exports[`<HierarchicalLocationsView /> shows a spinner before any locations emis
 exports[`<HierarchicalLocationsView /> shows a spinner if locations emits empty and is not complete 1`] = `
 <DocumentFragment>
   <div
+    aria-label="Loading"
     class="iconInline loadingSpinner m-1 test-loading-spinner"
+    role="img"
   />
 </DocumentFragment>
 `;

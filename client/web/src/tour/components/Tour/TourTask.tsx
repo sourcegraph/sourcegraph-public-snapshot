@@ -115,13 +115,7 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                         {icon && variant === 'small' && <span className={classNames(styles.taskIcon)}>{icon}</span>}
                         <Text className={styles.title}>{title}</Text>
                         {completed === 100 && (
-                            <Icon
-                                role="img"
-                                as={CheckCircleIcon}
-                                size="sm"
-                                className="text-success"
-                                aria-label="Completed"
-                            />
+                            <Icon as={CheckCircleIcon} size="sm" className="text-success" aria-label="Completed" />
                         )}
                         {typeof completed === 'number' && completed < 100 && (
                             <CircularProgressbar
@@ -194,7 +188,6 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                                 <Tooltip content={step.tooltip}>
                                     <Icon
                                         as={HelpCircleOutlineIcon}
-                                        role="img"
                                         size="sm"
                                         className={classNames('ml-1', styles.colorLink)}
                                         aria-label={step.tooltip}
@@ -203,7 +196,6 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                             )}
                             {(isMultiStep || !title) && step.isCompleted && (
                                 <Icon
-                                    role="img"
                                     as={CheckCircleIcon}
                                     size="md"
                                     className="text-success"

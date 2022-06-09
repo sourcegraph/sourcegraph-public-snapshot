@@ -52,7 +52,6 @@ export const StreamingProgressCount: React.FunctionComponent<
                     )}`}
                 >
                     <Icon
-                        role="img"
                         className="ml-1"
                         as={InformationOutlineIcon}
                         tabIndex={0}
@@ -68,7 +67,7 @@ export const StreamingProgressCount: React.FunctionComponent<
         {showTrace && progress.trace && (
             <small className="d-flex ml-2">
                 <Link to={progress.trace}>
-                    <Icon role="img" aria-hidden={true} className="mr-2" as={ClipboardPulseOutlineIcon} />
+                    <Icon aria-hidden={true} className="mr-2" as={ClipboardPulseOutlineIcon} />
                     View trace
                 </Link>
             </small>

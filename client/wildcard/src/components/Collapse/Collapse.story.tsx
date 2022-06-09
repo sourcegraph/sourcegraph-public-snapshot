@@ -40,12 +40,7 @@ export const Simple: Story = () => {
             <Collapse isOpen={isOpened} onOpenChange={handleOpenChange}>
                 <CollapseHeader as={Button} outline={true} focusLocked={true} variant="secondary" className="w-50">
                     Collapsable
-                    <Icon
-                        role="img"
-                        aria-hidden={true}
-                        as={isOpened ? ChevronDownIcon : ChevronLeftIcon}
-                        className="mr-1"
-                    />
+                    <Icon aria-hidden={true} as={isOpened ? ChevronDownIcon : ChevronLeftIcon} className="mr-1" />
                 </CollapseHeader>
                 <CollapsePanel className="w-50">
                     <Input placeholder="testing this one" />
@@ -64,12 +59,7 @@ export const Simple: Story = () => {
                             className="w-50"
                         >
                             Collapsable
-                            <Icon
-                                role="img"
-                                aria-hidden={true}
-                                as={isOpen ? ChevronDownIcon : ChevronLeftIcon}
-                                className="mr-1"
-                            />
+                            <Icon aria-hidden={true} as={isOpen ? ChevronDownIcon : ChevronLeftIcon} className="mr-1" />
                         </CollapseHeader>
                         <CollapsePanel className="w-50">
                             <Input placeholder="testing this one" />
@@ -90,12 +80,7 @@ export const Simple: Story = () => {
                             className="w-50"
                         >
                             Collapsable
-                            <Icon
-                                role="img"
-                                aria-hidden={true}
-                                as={isOpen ? ChevronDownIcon : ChevronLeftIcon}
-                                className="mr-1"
-                            />
+                            <Icon aria-hidden={true} as={isOpen ? ChevronDownIcon : ChevronLeftIcon} className="mr-1" />
                         </CollapseHeader>
                         <CollapsePanel className="w-50">
                             <Input placeholder="testing this one" />

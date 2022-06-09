@@ -53,7 +53,7 @@ export const SiteAdminTokensPage: React.FunctionComponent<React.PropsWithChildre
                     className={classNames('ml-2', !accessTokensEnabled && 'disabled')}
                     to={accessTokensEnabled ? `${authenticatedUser.settingsURL!}/tokens/new` : null}
                 >
-                    <Icon role="img" as={AddIcon} aria-hidden={true} /> Generate access token
+                    <Icon as={AddIcon} aria-hidden={true} /> Generate access token
                 </Button>
             </div>
             <Text>

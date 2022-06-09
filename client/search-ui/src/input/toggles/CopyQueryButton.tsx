@@ -54,7 +54,7 @@ export const CopyQueryButton: React.FunctionComponent<React.PropsWithChildren<Pr
                 aria-live="polite"
                 onClick={nextClick}
             >
-                <Icon role="img" aria-hidden={true} as={ClipboardOutlineIcon} />
+                <Icon aria-hidden={true} as={ClipboardOutlineIcon} />
             </Button>
             {props.keyboardShortcutForFullCopy.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={copyFullQuery} allowDefault={false} ignoreInput={true} />

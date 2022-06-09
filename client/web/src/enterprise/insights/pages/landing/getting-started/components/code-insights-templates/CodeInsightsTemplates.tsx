@@ -226,7 +226,7 @@ const QueryPanel: React.FunctionComponent<React.PropsWithChildren<QueryPanelProp
                 aria-label="Copy Docker command to clipboard"
                 variant="icon"
             >
-                <Icon role="img" aria-hidden={true} as={ContentCopyIcon} />
+                <Icon aria-hidden={true} as={ContentCopyIcon} />
             </Button>
         </CodeInsightsQueryBlock>
     )

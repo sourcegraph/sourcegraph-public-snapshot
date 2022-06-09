@@ -68,7 +68,6 @@ export const DeleteOrgModal: React.FunctionComponent<React.PropsWithChildren<Del
                     Delete organization?
                 </H3>
                 <Icon
-                    role="img"
                     className="position-absolute cursor-pointer"
                     style={{ top: '1rem', right: '1rem' }}
                     onClick={toggleDeleteModal}

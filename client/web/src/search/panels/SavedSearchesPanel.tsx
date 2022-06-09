@@ -91,7 +91,7 @@ export const SavedSearchesPanel: React.FunctionComponent<React.PropsWithChildren
                     variant="secondary"
                     as={Link}
                 >
-                    <Icon role="img" aria-hidden={true} as={PlusIcon} />
+                    <Icon aria-hidden={true} as={PlusIcon} />
                     Create a saved search
                 </ButtonLink>
             )}
@@ -127,7 +127,7 @@ export const SavedSearchesPanel: React.FunctionComponent<React.PropsWithChildren
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
                                             aria-label={`Edit saved search ${search.description}`}
                                         >
-                                            <Icon role="img" aria-hidden={true} as={PencilOutlineIcon} />
+                                            <Icon aria-hidden={true} as={PencilOutlineIcon} />
                                         </Link>
                                     ) : (
                                         <Link
@@ -135,7 +135,7 @@ export const SavedSearchesPanel: React.FunctionComponent<React.PropsWithChildren
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
                                             aria-label={`Edit saved search ${search.description}`}
                                         >
-                                            <Icon role="img" aria-hidden={true} as={PencilOutlineIcon} />
+                                            <Icon aria-hidden={true} as={PencilOutlineIcon} />
                                         </Link>
                                     ))}
                             </div>
