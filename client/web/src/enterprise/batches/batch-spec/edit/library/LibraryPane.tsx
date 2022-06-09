@@ -2,13 +2,12 @@ import React, { useState, useCallback } from 'react'
 
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
-import { useLocation } from 'react-router'
 import { animated, useSpring } from 'react-spring'
 
 import { Button, useLocalStorage, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../../../graphql-operations'
-import { insertNameIntoLibraryItem, insertQueryIntoLibraryItem } from '../../yaml-util'
+import { insertNameIntoLibraryItem } from '../../yaml-util'
 
 import combySample from './comby.batch.yaml'
 import goImportsSample from './go-imports.batch.yaml'
@@ -95,30 +94,13 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
         [animateContainer, animateContent, animateHeader, setDefaultCollapsed]
     )
 
-    const location = useLocation()
-    const parameters = new URLSearchParams(location.search)
-    const searchQuery = parameters.get('q') ?? undefined
-
-    const updateLibraryItemFields = useCallback(
-        (code: string, name: string): string => {
-            const updatedCode = insertNameIntoLibraryItem(code, name)
-
-            if (searchQuery) {
-                return insertQueryIntoLibraryItem(updatedCode, searchQuery)
-            }
-
-            return updatedCode
-        },
-        [searchQuery]
-    )
-
     const onConfirm = useCallback(() => {
         if (selectedItem && !('isReadOnly' in props && props.isReadOnly)) {
-            const updatedCode = updateLibraryItemFields(selectedItem.code, name)
-            props.onReplaceItem(updatedCode)
+            const codeWithName = insertNameIntoLibraryItem(selectedItem.code, name)
+            props.onReplaceItem(codeWithName)
             setSelectedItem(undefined)
         }
-    }, [name, selectedItem, props, updateLibraryItemFields])
+    }, [name, selectedItem, props])
 
     return (
         <>
