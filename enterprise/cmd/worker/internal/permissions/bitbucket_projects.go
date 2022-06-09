@@ -3,7 +3,6 @@ package permissions
 import (
 	"context"
 	"database/sql"
-	"sort"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -12,24 +11,17 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // bitbucketProjectPermissionsJob implements the job.Job interface. It is used by the worker service
@@ -191,76 +183,4 @@ func newMetricsForBitbucketProjectPermissionsQueries(logger log.Logger) bitbucke
 		resetFailures: resetFailures,
 		errors:        errors,
 	}
-}
-
-func SetPermissions(ctx context.Context, db edb.EnterpriseDB, perms []types.UserPermission, repoIDs []api.RepoID) error {
-	sort.Slice(perms, func(i, j int) bool {
-		return perms[i].BindID < perms[j].BindID
-	})
-	sort.Slice(repoIDs, func(i, j int) bool {
-		return repoIDs[i] < repoIDs[j]
-	})
-
-	bindIDs := make([]string, 0, len(perms))
-	for _, up := range perms {
-		bindIDs = append(bindIDs, up.BindID)
-	}
-
-	// bind the bindIDs to actual user IDs
-	mapping, err := db.Perms().MapUsers(ctx, bindIDs, globals.PermissionsUserMapping())
-	if err != nil {
-		return errors.Wrap(err, "failed to map bind IDs to user IDs")
-	}
-
-	userIDs := make(map[int32]struct{}, len(mapping))
-	for _, id := range mapping {
-		userIDs[id] = struct{}{}
-	}
-
-	// determine which users don't exist yet
-	pendingBindIDs := make([]string, 0, len(bindIDs))
-	for _, bindID := range bindIDs {
-		if _, ok := mapping[bindID]; !ok {
-			pendingBindIDs = append(pendingBindIDs, bindID)
-		}
-	}
-
-	for _, repoID := range repoIDs {
-		// Make sure the repo ID is valid.
-		if _, err := db.Repos().Get(ctx, repoID); err != nil {
-			return errors.Wrapf(err, "failed query repo %d", repoID)
-		}
-
-		p := authz.RepoPermissions{
-			RepoID:  int32(repoID),
-			Perm:    authz.Read, // Note: We currently only support read for repository permissions.
-			UserIDs: userIDs,
-		}
-
-		txs, err := db.Perms().Transact(ctx)
-		if err != nil {
-			return errors.Wrap(err, "failed to start transaction")
-		}
-		defer func() { err = txs.Done(err) }()
-
-		accounts := &extsvc.Accounts{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			AccountIDs:  pendingBindIDs,
-		}
-
-		// set repo permissions (and user permissions)
-		err = txs.SetRepoPermissions(ctx, &p)
-		if err != nil {
-			return errors.Wrap(err, "failed to set repository permissions")
-		}
-
-		// set pending permissions
-		err = txs.SetRepoPendingPermissions(ctx, accounts, &p)
-		if err != nil {
-			return errors.Wrap(err, "set repository pending permissions")
-		}
-	}
-
-	return nil
 }
