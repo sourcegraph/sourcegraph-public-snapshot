@@ -31,7 +31,7 @@ var initDBStore = memo.NewMemoizedConstructor(func() (*dbstore.Store, error) {
 		return nil, err
 	}
 
-	return dbstore.NewWithDB(db, observationContext), nil
+	return dbstore.NewWithDB(database.NewDB(db), observationContext), nil
 })
 
 // InitDependencySyncingStore initializes and returns a dependency index store.

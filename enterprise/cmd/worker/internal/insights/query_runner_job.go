@@ -62,7 +62,7 @@ func (s *insightsQueryRunnerJob) Routines(ctx context.Context, logger log.Logger
 		return nil, err
 	}
 
-	return background.GetBackgroundQueryRunnerJob(context.Background(), logger, mainAppDb, insightsDB), nil
+	return background.GetBackgroundQueryRunnerJob(context.Background(), logger, database.NewDB(mainAppDb), insightsDB), nil
 }
 
 func NewInsightsQueryRunnerJob() job.Job {
