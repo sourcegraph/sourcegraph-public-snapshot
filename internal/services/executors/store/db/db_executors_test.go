@@ -129,7 +129,7 @@ func TestExecutorsList(t *testing.T) {
 }
 
 func TestExecutorsGetByID(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := New(db)
 	ctx := context.Background()
 
@@ -188,7 +188,7 @@ func TestExecutorsGetByID(t *testing.T) {
 }
 
 func TestExecutorsGetByHostname(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := New(db)
 	ctx := context.Background()
 
@@ -249,7 +249,7 @@ func TestExecutorsGetByHostname(t *testing.T) {
 }
 
 func TestExecutorsDeleteInactiveHeartbeats(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := New(db)
 	ctx := context.Background()
 
