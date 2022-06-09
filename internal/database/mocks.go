@@ -2073,6 +2073,415 @@ func (c AuthzStoreRevokeUserPermissionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// MockBitbucketProjectPermissionsStore is a mock implementation of the
+// BitbucketProjectPermissionsStore interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/database) used for unit
+// testing.
+type MockBitbucketProjectPermissionsStore struct {
+	// EnqueueFunc is an instance of a mock function object controlling the
+	// behavior of the method Enqueue.
+	EnqueueFunc *BitbucketProjectPermissionsStoreEnqueueFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *BitbucketProjectPermissionsStoreHandleFunc
+	// WithFunc is an instance of a mock function object controlling the
+	// behavior of the method With.
+	WithFunc *BitbucketProjectPermissionsStoreWithFunc
+}
+
+// NewMockBitbucketProjectPermissionsStore creates a new mock of the
+// BitbucketProjectPermissionsStore interface. All methods return zero
+// values for all results, unless overwritten.
+func NewMockBitbucketProjectPermissionsStore() *MockBitbucketProjectPermissionsStore {
+	return &MockBitbucketProjectPermissionsStore{
+		EnqueueFunc: &BitbucketProjectPermissionsStoreEnqueueFunc{
+			defaultHook: func(context.Context, string, int64, []types.UserPermission, bool) (r0 int, r1 error) {
+				return
+			},
+		},
+		HandleFunc: &BitbucketProjectPermissionsStoreHandleFunc{
+			defaultHook: func() (r0 *basestore.TransactableHandle) {
+				return
+			},
+		},
+		WithFunc: &BitbucketProjectPermissionsStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) (r0 BitbucketProjectPermissionsStore) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockBitbucketProjectPermissionsStore creates a new mock of the
+// BitbucketProjectPermissionsStore interface. All methods panic on
+// invocation, unless overwritten.
+func NewStrictMockBitbucketProjectPermissionsStore() *MockBitbucketProjectPermissionsStore {
+	return &MockBitbucketProjectPermissionsStore{
+		EnqueueFunc: &BitbucketProjectPermissionsStoreEnqueueFunc{
+			defaultHook: func(context.Context, string, int64, []types.UserPermission, bool) (int, error) {
+				panic("unexpected invocation of MockBitbucketProjectPermissionsStore.Enqueue")
+			},
+		},
+		HandleFunc: &BitbucketProjectPermissionsStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockBitbucketProjectPermissionsStore.Handle")
+			},
+		},
+		WithFunc: &BitbucketProjectPermissionsStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) BitbucketProjectPermissionsStore {
+				panic("unexpected invocation of MockBitbucketProjectPermissionsStore.With")
+			},
+		},
+	}
+}
+
+// NewMockBitbucketProjectPermissionsStoreFrom creates a new mock of the
+// MockBitbucketProjectPermissionsStore interface. All methods delegate to
+// the given implementation, unless overwritten.
+func NewMockBitbucketProjectPermissionsStoreFrom(i BitbucketProjectPermissionsStore) *MockBitbucketProjectPermissionsStore {
+	return &MockBitbucketProjectPermissionsStore{
+		EnqueueFunc: &BitbucketProjectPermissionsStoreEnqueueFunc{
+			defaultHook: i.Enqueue,
+		},
+		HandleFunc: &BitbucketProjectPermissionsStoreHandleFunc{
+			defaultHook: i.Handle,
+		},
+		WithFunc: &BitbucketProjectPermissionsStoreWithFunc{
+			defaultHook: i.With,
+		},
+	}
+}
+
+// BitbucketProjectPermissionsStoreEnqueueFunc describes the behavior when
+// the Enqueue method of the parent MockBitbucketProjectPermissionsStore
+// instance is invoked.
+type BitbucketProjectPermissionsStoreEnqueueFunc struct {
+	defaultHook func(context.Context, string, int64, []types.UserPermission, bool) (int, error)
+	hooks       []func(context.Context, string, int64, []types.UserPermission, bool) (int, error)
+	history     []BitbucketProjectPermissionsStoreEnqueueFuncCall
+	mutex       sync.Mutex
+}
+
+// Enqueue delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockBitbucketProjectPermissionsStore) Enqueue(v0 context.Context, v1 string, v2 int64, v3 []types.UserPermission, v4 bool) (int, error) {
+	r0, r1 := m.EnqueueFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.EnqueueFunc.appendCall(BitbucketProjectPermissionsStoreEnqueueFuncCall{v0, v1, v2, v3, v4, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Enqueue method of
+// the parent MockBitbucketProjectPermissionsStore instance is invoked and
+// the hook queue is empty.
+func (f *BitbucketProjectPermissionsStoreEnqueueFunc) SetDefaultHook(hook func(context.Context, string, int64, []types.UserPermission, bool) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Enqueue method of the parent MockBitbucketProjectPermissionsStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *BitbucketProjectPermissionsStoreEnqueueFunc) PushHook(hook func(context.Context, string, int64, []types.UserPermission, bool) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BitbucketProjectPermissionsStoreEnqueueFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, int64, []types.UserPermission, bool) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BitbucketProjectPermissionsStoreEnqueueFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, string, int64, []types.UserPermission, bool) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *BitbucketProjectPermissionsStoreEnqueueFunc) nextHook() func(context.Context, string, int64, []types.UserPermission, bool) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BitbucketProjectPermissionsStoreEnqueueFunc) appendCall(r0 BitbucketProjectPermissionsStoreEnqueueFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BitbucketProjectPermissionsStoreEnqueueFuncCall objects describing the
+// invocations of this function.
+func (f *BitbucketProjectPermissionsStoreEnqueueFunc) History() []BitbucketProjectPermissionsStoreEnqueueFuncCall {
+	f.mutex.Lock()
+	history := make([]BitbucketProjectPermissionsStoreEnqueueFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BitbucketProjectPermissionsStoreEnqueueFuncCall is an object that
+// describes an invocation of method Enqueue on an instance of
+// MockBitbucketProjectPermissionsStore.
+type BitbucketProjectPermissionsStoreEnqueueFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int64
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 []types.UserPermission
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BitbucketProjectPermissionsStoreEnqueueFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BitbucketProjectPermissionsStoreEnqueueFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// BitbucketProjectPermissionsStoreHandleFunc describes the behavior when
+// the Handle method of the parent MockBitbucketProjectPermissionsStore
+// instance is invoked.
+type BitbucketProjectPermissionsStoreHandleFunc struct {
+	defaultHook func() *basestore.TransactableHandle
+	hooks       []func() *basestore.TransactableHandle
+	history     []BitbucketProjectPermissionsStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockBitbucketProjectPermissionsStore) Handle() *basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(BitbucketProjectPermissionsStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockBitbucketProjectPermissionsStore instance is invoked and the
+// hook queue is empty.
+func (f *BitbucketProjectPermissionsStoreHandleFunc) SetDefaultHook(hook func() *basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockBitbucketProjectPermissionsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *BitbucketProjectPermissionsStoreHandleFunc) PushHook(hook func() *basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BitbucketProjectPermissionsStoreHandleFunc) SetDefaultReturn(r0 *basestore.TransactableHandle) {
+	f.SetDefaultHook(func() *basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BitbucketProjectPermissionsStoreHandleFunc) PushReturn(r0 *basestore.TransactableHandle) {
+	f.PushHook(func() *basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *BitbucketProjectPermissionsStoreHandleFunc) nextHook() func() *basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BitbucketProjectPermissionsStoreHandleFunc) appendCall(r0 BitbucketProjectPermissionsStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BitbucketProjectPermissionsStoreHandleFuncCall objects describing the
+// invocations of this function.
+func (f *BitbucketProjectPermissionsStoreHandleFunc) History() []BitbucketProjectPermissionsStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]BitbucketProjectPermissionsStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BitbucketProjectPermissionsStoreHandleFuncCall is an object that
+// describes an invocation of method Handle on an instance of
+// MockBitbucketProjectPermissionsStore.
+type BitbucketProjectPermissionsStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BitbucketProjectPermissionsStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BitbucketProjectPermissionsStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// BitbucketProjectPermissionsStoreWithFunc describes the behavior when the
+// With method of the parent MockBitbucketProjectPermissionsStore instance
+// is invoked.
+type BitbucketProjectPermissionsStoreWithFunc struct {
+	defaultHook func(basestore.ShareableStore) BitbucketProjectPermissionsStore
+	hooks       []func(basestore.ShareableStore) BitbucketProjectPermissionsStore
+	history     []BitbucketProjectPermissionsStoreWithFuncCall
+	mutex       sync.Mutex
+}
+
+// With delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockBitbucketProjectPermissionsStore) With(v0 basestore.ShareableStore) BitbucketProjectPermissionsStore {
+	r0 := m.WithFunc.nextHook()(v0)
+	m.WithFunc.appendCall(BitbucketProjectPermissionsStoreWithFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the With method of the
+// parent MockBitbucketProjectPermissionsStore instance is invoked and the
+// hook queue is empty.
+func (f *BitbucketProjectPermissionsStoreWithFunc) SetDefaultHook(hook func(basestore.ShareableStore) BitbucketProjectPermissionsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// With method of the parent MockBitbucketProjectPermissionsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *BitbucketProjectPermissionsStoreWithFunc) PushHook(hook func(basestore.ShareableStore) BitbucketProjectPermissionsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BitbucketProjectPermissionsStoreWithFunc) SetDefaultReturn(r0 BitbucketProjectPermissionsStore) {
+	f.SetDefaultHook(func(basestore.ShareableStore) BitbucketProjectPermissionsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BitbucketProjectPermissionsStoreWithFunc) PushReturn(r0 BitbucketProjectPermissionsStore) {
+	f.PushHook(func(basestore.ShareableStore) BitbucketProjectPermissionsStore {
+		return r0
+	})
+}
+
+func (f *BitbucketProjectPermissionsStoreWithFunc) nextHook() func(basestore.ShareableStore) BitbucketProjectPermissionsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BitbucketProjectPermissionsStoreWithFunc) appendCall(r0 BitbucketProjectPermissionsStoreWithFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BitbucketProjectPermissionsStoreWithFuncCall objects describing the
+// invocations of this function.
+func (f *BitbucketProjectPermissionsStoreWithFunc) History() []BitbucketProjectPermissionsStoreWithFuncCall {
+	f.mutex.Lock()
+	history := make([]BitbucketProjectPermissionsStoreWithFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BitbucketProjectPermissionsStoreWithFuncCall is an object that describes
+// an invocation of method With on an instance of
+// MockBitbucketProjectPermissionsStore.
+type BitbucketProjectPermissionsStoreWithFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 basestore.ShareableStore
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 BitbucketProjectPermissionsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BitbucketProjectPermissionsStoreWithFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BitbucketProjectPermissionsStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // MockConfStore is a mock implementation of the ConfStore interface (from
 // the package github.com/sourcegraph/sourcegraph/internal/database) used
 // for unit testing.
