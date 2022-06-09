@@ -8,16 +8,11 @@ import { LineDecorator, LineDecoratorProps } from './LineDecorator'
 
 describe('LineDecorator', () => {
     function createCodeElement() {
-        const parentRow = document.createElement('tr')
-
-        const lineElement = parentRow.insertCell()
-        lineElement.classList.add('line')
-        lineElement.dataset.line = '1'
-
-        const codeElement = parentRow.insertCell()
+        const codeElement = document.createElement('td')
         codeElement.classList.add('code')
-
-        return { parentRow, lineElement, codeElement }
+        const parentRow = document.createElement('tr')
+        parentRow.append(codeElement)
+        return { codeElement, parentRow }
     }
 
     function createLineDecoratorProps(

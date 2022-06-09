@@ -8,11 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dghubble/gologin/github"
+	"github.com/dghubble/gologin/v2/github"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -27,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type sessionIssuerHelper struct {

@@ -4,7 +4,7 @@
 source /root/.profile
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 root_dir=$(pwd)
-set -e
+set -ex
 
 URL="${1:-"http://localhost:7080"}"
 
@@ -31,8 +31,11 @@ pushd internal/cmd/init-sg
 go build
 ./init-sg initSG
 popd
+# Load variables set up by init-server, disabling `-x` to avoid printing variables
+set +x
 # shellcheck disable=SC1091
 source /root/.sg_envrc
+set -x
 
 # Stop old Sourcegraph release
 docker container stop "$CONTAINER"

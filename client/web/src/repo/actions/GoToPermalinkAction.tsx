@@ -68,7 +68,7 @@ export class GoToPermalinkAction extends React.PureComponent<
         if (this.props.actionType === 'dropdown') {
             return (
                 <RepoHeaderActionButtonLink file={true} to={this.permalinkURL} onSelect={this.onClick.bind(this)}>
-                    <Icon as={LinkIcon} aria-hidden={true} />
+                    <Icon role="img" as={LinkIcon} aria-hidden={true} />
                     <span>Permalink (with full Git commit SHA)</span>
                 </RepoHeaderActionButtonLink>
             )
@@ -83,7 +83,7 @@ export class GoToPermalinkAction extends React.PureComponent<
                 data-tooltip="Permalink (with full Git commit SHA)"
                 aria-label="Permalink (with full Git commit SHA)"
             >
-                <Icon as={LinkIcon} aria-hidden={true} />
+                <Icon role="img" as={LinkIcon} aria-hidden={true} />
             </RepoHeaderActionButtonLink>
         )
     }

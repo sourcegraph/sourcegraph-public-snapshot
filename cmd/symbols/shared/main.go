@@ -8,8 +8,6 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api"
@@ -30,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const addr = ":3184"
@@ -41,13 +40,12 @@ func Main(setup SetupFunc) {
 	env.HandleHelpFlag()
 	conf.Init()
 	logging.Init()
-	liblog := log.Init(log.Resource{
+	syncLogs := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySink())
-	defer liblog.Sync()
-	go conf.Watch(liblog.Update(conf.GetLogSinks))
+	})
+	defer syncLogs()
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
@@ -85,7 +83,7 @@ func Main(setup SetupFunc) {
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      actor.HTTPMiddleware(ot.HTTPMiddleware(trace.HTTPMiddleware(logger, api.NewHandler(searchFunc, handleStatus, ctagsBinary), conf.DefaultClient()))),
+		Handler:      actor.HTTPMiddleware(ot.HTTPMiddleware(trace.HTTPMiddleware(api.NewHandler(searchFunc, handleStatus, ctagsBinary), conf.DefaultClient()))),
 	})
 	routines = append(routines, server)
 

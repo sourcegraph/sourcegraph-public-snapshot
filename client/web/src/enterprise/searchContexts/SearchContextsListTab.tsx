@@ -213,7 +213,7 @@ export const SearchContextsListTab: React.FunctionComponent<React.PropsWithChild
                 pluralNoun="search contexts"
                 noSummaryIfAllNodesVisible={true}
                 cursorPaging={true}
-                inputClassName={classNames(styles.filterInput)}
+                inputClassName={classNames('w-100', styles.filterInput)}
                 inputPlaceholder="Filter search contexts..."
                 inputAriaLabel="Filter search contexts"
             />

@@ -1,8 +1,6 @@
 import { select } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
-
 import { WebStory } from '../../../../components/WebStory'
 import { BatchSpecState } from '../../../../graphql-operations'
 import { mockBatchChange, mockFullBatchSpec } from '../batch-spec.mock'
@@ -53,19 +51,6 @@ add('after execution finishes', () => (
                         BatchSpecState.COMPLETED
                     ),
                 })}
-            >
-                <ReadOnlyBatchSpecForm {...props} />
-            </BatchSpecContextProvider>
-        )}
-    </WebStory>
-))
-
-add('for a locally-executed spec', () => (
-    <WebStory>
-        {props => (
-            <BatchSpecContextProvider
-                batchChange={mockBatchChange()}
-                batchSpec={mockFullBatchSpec({ source: BatchSpecSource.LOCAL })}
             >
                 <ReadOnlyBatchSpecForm {...props} />
             </BatchSpecContextProvider>

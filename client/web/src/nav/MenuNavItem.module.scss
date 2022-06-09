@@ -1,0 +1,10 @@
+.menu-nav-item {
+    color: var(--primary);
+    position: relative;
+    display: inline-flex;
+    vertical-align: middle;
+
+    &:hover {
+        color: var(--primary);
+    }
+}

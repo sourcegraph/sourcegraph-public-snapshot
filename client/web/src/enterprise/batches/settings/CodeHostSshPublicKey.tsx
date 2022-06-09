@@ -26,7 +26,6 @@ const configInstructionLinks: Record<ExternalServiceKind, string> = {
     [ExternalServiceKind.PAGURE]: 'unsupported',
     [ExternalServiceKind.PHABRICATOR]: 'unsupported',
     [ExternalServiceKind.PYTHONPACKAGES]: 'unsupported',
-    [ExternalServiceKind.RUSTPACKAGES]: 'unsupported',
 }
 
 export interface CodeHostSshPublicKeyProps {
@@ -55,7 +54,7 @@ export const CodeHostSshPublicKey: React.FunctionComponent<React.PropsWithChildr
                 <Label htmlFor={LABEL_ID}>{label}</Label>
                 {showCopyButton && (
                     <Button onClick={onCopy} variant="secondary">
-                        <Icon aria-hidden={true} as={ContentCopyIcon} />
+                        <Icon role="img" aria-hidden={true} as={ContentCopyIcon} />
                         {copied ? 'Copied!' : 'Copy'}
                     </Button>
                 )}

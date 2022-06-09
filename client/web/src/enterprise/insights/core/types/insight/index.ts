@@ -1,18 +1,11 @@
-import { InsightExecutionType, InsightType, InsightFilters, InsightDashboardReference } from './common'
+import { InsightExecutionType, InsightType, InsightFilters } from './common'
 import { CaptureGroupInsight } from './types/capture-group-insight'
 import { LangStatsInsight } from './types/lang-stat-insight'
 import { SearchBasedInsight, SearchBasedInsightSeries } from './types/search-insight'
 
 export { InsightType, InsightExecutionType }
 
-export type {
-    InsightDashboardReference,
-    SearchBasedInsight,
-    SearchBasedInsightSeries,
-    LangStatsInsight,
-    CaptureGroupInsight,
-    InsightFilters,
-}
+export type { SearchBasedInsight, SearchBasedInsightSeries, LangStatsInsight, CaptureGroupInsight, InsightFilters }
 
 /**
  * Main insight model. Union of all different insights by execution type (backend, runtime)

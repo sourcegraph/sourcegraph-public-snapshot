@@ -1,14 +1,13 @@
-import React, { useCallback, useContext, useMemo, useState } from 'react'
+import React, { useCallback, useContext, useState } from 'react'
 
 import classNames from 'classnames'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import { useHistory } from 'react-router-dom'
 
 import { isExternalLink } from '@sourcegraph/common'
 import { ModalVideo } from '@sourcegraph/search-ui'
-import { Button, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { ItemPicker } from '../ItemPicker'
 
@@ -31,7 +30,6 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
     completed,
     icon,
     variant,
-    dataAttributes = {},
 }) => {
     const [selectedStep, setSelectedStep] = useState<TourTaskStepType>()
     const [showLanguagePicker, setShowLanguagePicker] = useState(false)
@@ -78,14 +76,6 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
         },
         [onStepClick, onLanguageSelect, selectedStep, history]
     )
-    const attributes = useMemo(
-        () =>
-            Object.entries(dataAttributes).reduce(
-                (result, [key, value]) => ({ ...result, [`data-${key}`]: value }),
-                {}
-            ),
-        [dataAttributes]
-    )
 
     if (showLanguagePicker) {
         return (
@@ -101,31 +91,25 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
 
     const isMultiStep = steps.length > 1
     return (
-        <div
-            className={classNames(
-                icon && [styles.task, variant === 'small' && styles.isSmall],
-                !title && styles.noTitleTask
-            )}
-            {...attributes}
-        >
+        <div className={classNames(icon && [styles.task, variant === 'small' && styles.isSmall])}>
             {icon && variant !== 'small' && <span className={styles.taskIcon}>{icon}</span>}
             <div className={classNames('flex-grow-1', variant !== 'small' && 'h-100 d-flex flex-column')}>
-                {title && (
-                    <div className="d-flex justify-content-between position-relative">
-                        {icon && variant === 'small' && <span className={classNames(styles.taskIcon)}>{icon}</span>}
-                        <Text className={styles.title}>{title}</Text>
-                        {completed === 100 && (
-                            <Icon as={CheckCircleIcon} size="sm" className="text-success" aria-label="Completed" />
-                        )}
-                        {typeof completed === 'number' && completed < 100 && (
-                            <CircularProgressbar
-                                className={styles.progressBar}
-                                strokeWidth={10}
-                                value={completed || 0}
-                            />
-                        )}
-                    </div>
-                )}
+                <div className="d-flex justify-content-between position-relative">
+                    {icon && variant === 'small' && <span className={classNames(styles.taskIcon)}>{icon}</span>}
+                    <Text className={styles.title}>{title}</Text>
+                    {completed === 100 && (
+                        <Icon
+                            role="img"
+                            as={CheckCircleIcon}
+                            size="sm"
+                            className="text-success"
+                            aria-label="Completed"
+                        />
+                    )}
+                    {typeof completed === 'number' && completed < 100 && (
+                        <CircularProgressbar className={styles.progressBar} strokeWidth={10} value={completed || 0} />
+                    )}
+                </div>
                 <ul
                     className={classNames(
                         styles.stepList,
@@ -135,7 +119,7 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                     )}
                 >
                     {steps.map(step => (
-                        <li key={step.id} className={classNames(styles.stepListItem, 'd-flex align-items-center')}>
+                        <li key={step.id} className={classNames(styles.stepListItem, 'd-flex align-items-start')}>
                             {step.action.type === 'link' && (
                                 <Link
                                     className="flex-grow-1"
@@ -147,10 +131,7 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                             )}
                             {step.action.type === 'new-tab-link' && (
                                 <Link
-                                    className={classNames(
-                                        'flex-grow-1',
-                                        step.action.variant === 'button-primary' && 'btn btn-primary'
-                                    )}
+                                    className="flex-grow-1"
                                     to={getTourTaskStepActionValue(step, language)}
                                     onClick={event => handleLinkClick(event, step)}
                                     target="_blank"
@@ -184,18 +165,9 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                                     onToggle={isOpen => handleVideoToggle(isOpen, step)}
                                 />
                             )}
-                            {step.tooltip && (
-                                <Tooltip content={step.tooltip}>
-                                    <Icon
-                                        as={HelpCircleOutlineIcon}
-                                        size="sm"
-                                        className={classNames('ml-1', styles.colorLink)}
-                                        aria-label={step.tooltip}
-                                    />
-                                </Tooltip>
-                            )}
-                            {(isMultiStep || !title) && step.isCompleted && (
+                            {isMultiStep && step.isCompleted && (
                                 <Icon
+                                    role="img"
                                     as={CheckCircleIcon}
                                     size="md"
                                     className="text-success"

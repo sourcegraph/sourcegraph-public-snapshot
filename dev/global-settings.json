@@ -1,7 +1,6 @@
 {
   // This is set from an environment variable
   "experimentalFeatures": {
-    "batchChangesExecution": true,
     "showRepogroupHomepage": true,
     "showMultilineSearchConsole": true,
     "codeMonitoring": true,

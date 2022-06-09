@@ -206,7 +206,6 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 
 	for _, job := range totalJobs {
 		// todo: fix this transactionality
-		job.Priority = int(priority.High)
 		err := s.enqueueQueryRunnerJob(ctx, job)
 		if err != nil {
 			return err

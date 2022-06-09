@@ -159,9 +159,7 @@ exports[`ExternalServiceForm edit GitHub, loading 1`] = `
       type="submit"
     >
       <div
-        aria-label="Loading"
         class="iconInline loadingSpinner"
-        role="img"
       />
       Add repositories
     </button>

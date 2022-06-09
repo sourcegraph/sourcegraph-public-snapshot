@@ -1,89 +1,80 @@
-import { iif, Observable, timer } from 'rxjs'
-import { distinctUntilChanged, map, retry, shareReplay, switchMap } from 'rxjs/operators'
+import { from, Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
-import type { requestGraphQL } from '../../backend/graphql'
-import { EvaluateFeatureFlagResult } from '../../graphql-operations'
+import { requestGraphQL } from '../../backend/graphql'
+import { FetchFeatureFlagsResult } from '../../graphql-operations'
 import { FeatureFlagName } from '../featureFlags'
 
 import { getFeatureFlagOverride } from './feature-flag-local-overrides'
 
 /**
- * Evaluate feature flags for the current user
+ * Fetches the evaluated feature flags for the current user
  */
-const fetchEvaluateFeatureFlag = (
-    requestGraphQLFunc: typeof requestGraphQL,
-    flagName: FeatureFlagName
-): Observable<EvaluateFeatureFlagResult['evaluateFeatureFlag']> =>
-    requestGraphQLFunc<EvaluateFeatureFlagResult>(
-        gql`
-            query EvaluateFeatureFlag($flagName: String!) {
-                evaluateFeatureFlag(flagName: $flagName)
-            }
-        `,
-        {
-            flagName,
-        }
+function fetchFeatureFlags(): Observable<FetchFeatureFlagsResult['viewerFeatureFlags']> {
+    return from(
+        requestGraphQL<FetchFeatureFlagsResult>(
+            gql`
+                query FetchFeatureFlags {
+                    viewerFeatureFlags {
+                        name
+                        value
+                    }
+                }
+            `
+        )
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.evaluateFeatureFlag)
+        map(data => data.viewerFeatureFlags)
     )
+}
 
 /**
- * Feature flag client service. Should be used as singleton for the whole application.
+ * A Map wrapper that first looks in localStorage.get when returning values.
  */
-export class FeatureFlagClient {
-    private flags = new Map<FeatureFlagName, Observable<EvaluateFeatureFlagResult['evaluateFeatureFlag']>>()
+class FeatureFlagsProxyMap extends Map<FeatureFlagName, boolean> {
+    public get(key: FeatureFlagName): boolean | undefined {
+        const overriddenValue = getFeatureFlagOverride(key)
 
-    /**
-     * @param requestGraphQLFunction function to use for making GQL API calls
-     * @param refetchInterval milliseconds to refetch each feature flag evaluation. Fetches once if undefined provided.
-     */
-    constructor(private requestGraphQLFunction: typeof requestGraphQL, private refetchInterval?: number) {}
+        if (overriddenValue !== null && ['true', 'false'].includes(overriddenValue)) {
+            return JSON.parse(overriddenValue) as boolean
+        }
 
-    /**
-     * For mocking/testing purposes
-     *
-     * @see {MockedFeatureFlagsProvider}
-     */
-    public setRequestGraphQLFunction(requestGraphQLFunction: typeof requestGraphQL): void {
-        this.requestGraphQLFunction = requestGraphQLFunction
+        return super.get(key)
+    }
+}
+
+export interface IFeatureFlagClient {
+    on(flagName: FeatureFlagName, callback: (value: boolean, error?: Error) => void): () => void
+}
+
+export class FeatureFlagClient implements IFeatureFlagClient {
+    private cache = new FeatureFlagsProxyMap()
+    constructor() {
+        fetchFeatureFlags()
+            .toPromise()
+            .then(flags => {
+                for (const flag of flags) {
+                    this.cache.set(flag.name as FeatureFlagName, flag.value)
+                }
+            })
+            .catch(console.error)
     }
 
     /**
-     * Evaluates and returns feature flag value
+     * Calls callback function whenever a feature flag is changed
+     * NOTE: Will change to actual per flag evaluation and listeners on flag value change once backend is migrated to new API
+     *
+     * @returns a cleanup/unsubscribe function
      */
-    public get(flagName: FeatureFlagName): Observable<EvaluateFeatureFlagResult['evaluateFeatureFlag']> {
-        if (!this.flags.has(flagName)) {
-            const flag$ = iif(
-                () => typeof this.refetchInterval === 'number' && this.refetchInterval > 0,
-                timer(0, this.refetchInterval),
-                timer(0)
-            ).pipe(
-                switchMap(() => fetchEvaluateFeatureFlag(this.requestGraphQLFunction, flagName).pipe(retry(3))),
-                map(value => {
-                    // Use local feature flag override if exists
-                    const overriddenValue = getFeatureFlagOverride(flagName)
-                    if (overriddenValue === null) {
-                        return value
-                    }
-                    if (['true', 1].includes(overriddenValue)) {
-                        return true
-                    }
-                    if (['false', 0].includes(overriddenValue)) {
-                        return false
-                    }
-                    return value
-                }),
-                distinctUntilChanged(),
-                // shared between all subscribers to avoid multiple computations/API calls
-                shareReplay(1)
-            )
-
-            this.flags.set(flagName, flag$)
+    // eslint-disable-next-line id-length
+    public on(flagName: FeatureFlagName, callback: (value: boolean, error?: Error) => void): () => void {
+        Promise.resolve(this.cache.get(flagName) || false)
+            .then(callback)
+            .catch(error => callback(false, error))
+        return () => {
+            // TODO: cleanup
         }
-
-        return this.flags.get(flagName)!
     }
 }

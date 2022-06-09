@@ -162,6 +162,7 @@ export const PositionSettingsGallery: Story = () => {
 
 PositionSettingsGallery.parameters = {
     chromatic: {
+        enableDarkMode: true,
         disableSnapshot: false,
     },
 }

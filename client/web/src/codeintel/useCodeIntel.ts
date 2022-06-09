@@ -221,10 +221,7 @@ export const useCodeIntel = ({
                 definitions: previousData.definitions,
                 references: {
                     endCursor: newReferenceData.pageInfo.endCursor,
-                    nodes: dedupeLocations([
-                        ...previousData.references.nodes,
-                        ...newReferenceData.nodes.map(buildPreciseLocation),
-                    ]),
+                    nodes: [...previousData.references.nodes, ...newReferenceData.nodes.map(buildPreciseLocation)],
                 },
             })
 
@@ -254,10 +251,10 @@ export const useCodeIntel = ({
                 definitions: previousData.definitions,
                 implementations: {
                     endCursor: newImplementationsData.pageInfo.endCursor,
-                    nodes: dedupeLocations([
+                    nodes: [
                         ...previousData.implementations.nodes,
                         ...newImplementationsData.nodes.map(buildPreciseLocation),
-                    ]),
+                    ],
                 },
             })
         },
@@ -329,27 +326,15 @@ const getLsifData = ({
     return {
         implementations: {
             endCursor: lsif.implementations.pageInfo.endCursor,
-            nodes: dedupeLocations(lsif.implementations.nodes).map(buildPreciseLocation),
+            nodes: lsif.implementations.nodes.map(buildPreciseLocation),
         },
         references: {
             endCursor: lsif.references.pageInfo.endCursor,
-            nodes: dedupeLocations(lsif.references.nodes).map(buildPreciseLocation),
+            nodes: lsif.references.nodes.map(buildPreciseLocation),
         },
         definitions: {
             endCursor: lsif.definitions.pageInfo.endCursor,
             nodes: lsif.definitions.nodes.map(buildPreciseLocation),
         },
     }
-}
-
-const dedupeLocations = <L extends { url: string }>(locations: L[]): L[] => {
-    const deduped = []
-    const seenURLs = new Set<string>()
-    for (const location of locations) {
-        if (!seenURLs.has(location.url)) {
-            deduped.push(location)
-            seenURLs.add(location.url)
-        }
-    }
-    return deduped
 }

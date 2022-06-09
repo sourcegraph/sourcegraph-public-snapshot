@@ -78,22 +78,3 @@ add('previewing an execution result', () => (
         )}
     </WebStory>
 ))
-
-const LOCAL_TABS: TabsConfig[] = [
-    { key: 'configuration', isEnabled: true, handler: { type: 'link' } },
-    { key: 'spec', isEnabled: true, handler: { type: 'link' } },
-    { key: 'execution', isEnabled: false },
-    { key: 'preview', isEnabled: true, handler: { type: 'link' } },
-]
-
-add('for a locally-executed spec', () => (
-    <WebStory>
-        {props => (
-            <TabBar
-                {...props}
-                tabsConfig={LOCAL_TABS}
-                activeTabKey={select('Active tab', ['configuration', 'spec', 'preview'], 'preview')}
-            />
-        )}
-    </WebStory>
-))

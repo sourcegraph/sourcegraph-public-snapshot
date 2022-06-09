@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
@@ -12,8 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestStatusMessages(t *testing.T) {
@@ -29,9 +29,9 @@ func TestStatusMessages(t *testing.T) {
 	}
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := NewStore(logtest.Scoped(t), database.NewDB(db))
+	store := NewStore(logtest.Scoped(t), database.NewDB(db), sql.TxOptions{})
 
-	admin, err := db.Users().Create(ctx, database.NewUser{
+	admin, err := database.Users(db).Create(ctx, database.NewUser{
 		Email:                 "a1@example.com",
 		Username:              "a1",
 		Password:              "p",
@@ -39,7 +39,7 @@ func TestStatusMessages(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	nonAdmin, err := db.Users().Create(ctx, database.NewUser{
+	nonAdmin, err := database.Users(db).Create(ctx, database.NewUser{
 		Email:                 "u1@example.com",
 		Username:              "u1",
 		Password:              "p",

@@ -50,8 +50,7 @@ type LangSpec struct {
 	language     *sitter.Language
 	commentStyle CommentStyle
 	// localsQuery is a tree-sitter localsQuery that finds scopes and defs.
-	localsQuery          string
-	topLevelSymbolsQuery string
+	localsQuery string
 }
 
 // Info about comments in a language.
@@ -93,11 +92,6 @@ var langToLangSpec = map[string]LangSpec{
 (lambda_expression          parameters: (inferred_parameters (identifier) @definition))       ; (x, y) -> ...
 (lambda_expression          parameters: (identifier) @definition)                             ; x -> ...
 (enhanced_for_statement     name:       (identifier) @definition)                             ; for (var item : items) ...
-`,
-		topLevelSymbolsQuery: `
-(program (class_declaration     name: (identifier) @symbol))
-(program (enum_declaration      name: (identifier) @symbol))
-(program (interface_declaration name: (identifier) @symbol))
 `,
 	},
 	"go": {

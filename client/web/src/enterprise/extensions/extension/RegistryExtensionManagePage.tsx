@@ -194,7 +194,8 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                                     <LoadingSpinner />
                                 ) : (
                                     <span className="text-success ml-2">
-                                        <Icon aria-hidden={true} as={CheckCircleIcon} /> Updated extension successfully.
+                                        <Icon role="img" aria-hidden={true} as={CheckCircleIcon} /> Updated extension
+                                        successfully.
                                     </span>
                                 ))}
                         </div>

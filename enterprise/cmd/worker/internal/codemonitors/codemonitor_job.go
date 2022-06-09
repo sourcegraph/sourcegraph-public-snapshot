@@ -3,8 +3,6 @@ package codemonitors
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
@@ -12,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type codeMonitorJob struct{}
@@ -34,5 +33,5 @@ func (j *codeMonitorJob) Routines(ctx context.Context, logger log.Logger) ([]gor
 		return nil, err
 	}
 
-	return background.NewBackgroundJobs(logger, edb.NewEnterpriseDB(database.NewDB(sqlDB))), nil
+	return background.NewBackgroundJobs(edb.NewEnterpriseDB(database.NewDB(sqlDB))), nil
 }

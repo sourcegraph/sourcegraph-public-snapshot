@@ -8,13 +8,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.RepoInfo, error) {
@@ -60,10 +59,6 @@ func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.Rep
 		} else {
 			resp.LastChanged = &lastChanged
 		}
-	}
-	gitRepo, err := s.DB.GitserverRepos().GetByName(ctx, repo)
-	if err == nil {
-		resp.Size = gitRepo.RepoSizeBytes
 	}
 	return &resp, nil
 }

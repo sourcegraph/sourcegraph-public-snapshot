@@ -32,13 +32,13 @@ export const FileLocationsError: React.FunctionComponent<React.PropsWithChildren
 
 export const FileLocationsNotFound: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className={classNames('m-2', styles.notFound)}>
-        <Icon as={MapSearchIcon} aria-hidden={true} /> No locations found
+        <Icon role="img" as={MapSearchIcon} aria-hidden={true} /> No locations found
     </div>
 )
 
 export const FileLocationsNoGroupSelected: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className="m-2">
-        <Icon as={MapSearchIcon} aria-hidden={true} /> No locations found in the current repository
+        <Icon role="img" as={MapSearchIcon} aria-hidden={true} /> No locations found in the current repository
     </div>
 )
 

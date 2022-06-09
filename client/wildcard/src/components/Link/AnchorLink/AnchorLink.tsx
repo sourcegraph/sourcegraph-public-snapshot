@@ -1,20 +1,19 @@
-import React from 'react'
+import * as React from 'react'
 
 import classNames from 'classnames'
+import * as H from 'history'
+// eslint-disable-next-line no-restricted-imports
+import { Link } from 'react-router-dom'
 
-import { useWildcardTheme } from '@sourcegraph/wildcard'
-
-import type { Link } from '../Link'
+import { useWildcardTheme } from '../../../hooks/useWildcardTheme'
+import { ForwardReferenceComponent } from '../../../types'
+import type { LinkProps } from '../Link'
 
 import styles from './AnchorLink.module.scss'
 
-/**
- * Link that doesn't use react-router under the hood.
- * May be used directly and via setLinkComponent outside of Router context.
- *
- * @see setLinkComponent
- */
-export const AnchorLink = React.forwardRef(({ to, children, className, ...rest }, reference) => {
+export type AnchorLinkProps = LinkProps
+
+export const AnchorLink = React.forwardRef(({ to, as: Component, children, className, ...rest }, reference) => {
     const { isBranded } = useWildcardTheme()
 
     const commonProps = {
@@ -22,12 +21,20 @@ export const AnchorLink = React.forwardRef(({ to, children, className, ...rest }
         className: classNames(isBranded && styles.anchorLink, className),
     }
 
+    if (!Component) {
+        return (
+            // eslint-disable-next-line react/forbid-elements
+            <a href={to && typeof to !== 'string' ? H.createPath(to) : to} {...rest} {...commonProps}>
+                {children}
+            </a>
+        )
+    }
+
     return (
-        // eslint-disable-next-line react/forbid-elements
-        <a href={to} {...rest} {...commonProps}>
+        <Component to={to} {...rest} {...commonProps}>
             {children}
-        </a>
+        </Component>
     )
-}) as Link
+}) as ForwardReferenceComponent<Link<unknown>, AnchorLinkProps>
 
 AnchorLink.displayName = 'AnchorLink'

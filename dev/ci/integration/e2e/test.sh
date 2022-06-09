@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
-set -e
+set -ex
 
 URL="${1:-"http://localhost:7080"}"
 

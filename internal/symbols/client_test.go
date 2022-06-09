@@ -16,17 +16,16 @@ import (
 
 func TestSearchWithFiltering(t *testing.T) {
 	ctx := context.Background()
-	fixture := search.SymbolsResponse{
-		Symbols: result.Symbols{
-			result.Symbol{
-				Name: "foo1",
-				Path: "file1",
-			},
-			result.Symbol{
-				Name: "foo2",
-				Path: "file2",
-			},
-		}}
+	fixture := result.Symbols{
+		result.Symbol{
+			Name: "foo1",
+			Path: "file1",
+		},
+		result.Symbol{
+			Name: "foo2",
+			Path: "file2",
+		},
+	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(fixture)
 	}))

@@ -79,15 +79,26 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
                 />
               </div>
             </label>
-            <div
-              class="form-group d-flex flex-column align-content-start position-relative"
+            <label
+              class="label w-100 form-group"
             >
-              <label
-                class="label align-self-start"
-                for="password"
+              <div
+                class="mb-2"
               >
-                Password
-              </label>
+                <div
+                  class="d-flex justify-content-between"
+                >
+                  <span>
+                    Password
+                  </span>
+                  <a
+                    class="anchorLink"
+                    href="/password-reset"
+                  >
+                    Forgot password?
+                  </a>
+                </div>
+              </div>
               <div
                 class="container loader-input loaderInput"
               >
@@ -102,17 +113,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
                   value=""
                 />
               </div>
-              <small
-                class="form-text text-muted align-self-end position-absolute"
-              >
-                <a
-                  class="anchorLink"
-                  href="/password-reset"
-                >
-                  Forgot password?
-                </a>
-              </small>
-            </div>
+            </label>
             <div
               class="form-group"
             >
@@ -150,7 +151,6 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
                 class="mdi-icon iconInline"
                 fill="currentColor"
                 height="24"
-                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >
@@ -251,15 +251,26 @@ exports[`SignInPage renders sign in page (server) 1`] = `
                 />
               </div>
             </label>
-            <div
-              class="form-group d-flex flex-column align-content-start position-relative"
+            <label
+              class="label w-100 form-group"
             >
-              <label
-                class="label align-self-start"
-                for="password"
+              <div
+                class="mb-2"
               >
-                Password
-              </label>
+                <div
+                  class="d-flex justify-content-between"
+                >
+                  <span>
+                    Password
+                  </span>
+                  <a
+                    class="anchorLink"
+                    href="/password-reset"
+                  >
+                    Forgot password?
+                  </a>
+                </div>
+              </div>
               <div
                 class="container loader-input loaderInput"
               >
@@ -274,17 +285,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
                   value=""
                 />
               </div>
-              <small
-                class="form-text text-muted align-self-end position-absolute"
-              >
-                <a
-                  class="anchorLink"
-                  href="/password-reset"
-                >
-                  Forgot password?
-                </a>
-              </small>
-            </div>
+            </label>
             <div
               class="form-group"
             >
@@ -322,7 +323,6 @@ exports[`SignInPage renders sign in page (server) 1`] = `
                 class="mdi-icon iconInline"
                 fill="currentColor"
                 height="24"
-                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >

@@ -2,9 +2,8 @@ package resolvers
 
 import (
 	"context"
+	"database/sql"
 	"time"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -37,7 +36,7 @@ func WithBase(insightsDB dbutil.DB, primaryDB database.DB, clock func() time.Tim
 	insightStore := store.NewInsightStore(insightsDB)
 	timeSeriesStore := store.NewWithClock(insightsDB, store.NewInsightPermissionStore(primaryDB), clock)
 	dashboardStore := store.NewDashboardStore(insightsDB)
-	workerBaseStore := basestore.NewWithHandle(primaryDB.Handle())
+	workerBaseStore := basestore.NewWithDB(primaryDB, sql.TxOptions{})
 
 	return &baseInsightResolver{
 		insightStore:    insightStore,
@@ -54,7 +53,6 @@ type Resolver struct {
 	timeSeriesStore      store.Interface
 	insightMetadataStore store.InsightMetadataStore
 	dataSeriesStore      store.DataSeriesStore
-	backfiller           *background.ScopedBackfiller
 
 	baseInsightResolver
 }
@@ -73,7 +71,6 @@ func newWithClock(db dbutil.DB, postgres database.DB, clock func() time.Time) *R
 		timeSeriesStore:      base.timeSeriesStore,
 		insightMetadataStore: base.insightStore,
 		dataSeriesStore:      base.insightStore,
-		backfiller:           background.NewScopedBackfiller(base.workerBaseStore, base.timeSeriesStore),
 	}
 }
 

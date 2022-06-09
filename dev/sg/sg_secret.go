@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 
@@ -31,7 +32,7 @@ sg secret reset buildkite
 				Name:      "reset",
 				ArgsUsage: "<...key>",
 				Usage:     "Remove a specific secret from secrets file",
-				Action:    resetSecretExec,
+				Action:    execAdapter(resetSecretExec),
 			},
 			{
 				Name:  "list",
@@ -45,19 +46,18 @@ sg secret reset buildkite
 						Destination: &secretListViewFlag,
 					},
 				},
-				Action: listSecretExec,
+				Action: execAdapter(listSecretExec),
 			},
 		},
 	}
 )
 
-func resetSecretExec(ctx *cli.Context) error {
-	args := ctx.Args().Slice()
+func resetSecretExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {
 		return errors.New("no key provided to reset")
 	}
 
-	secretsStore, err := secrets.FromContext(ctx.Context)
+	secretsStore, err := secrets.FromContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -73,8 +73,8 @@ func resetSecretExec(ctx *cli.Context) error {
 	return nil
 }
 
-func listSecretExec(ctx *cli.Context) error {
-	secretsStore, err := secrets.FromContext(ctx.Context)
+func listSecretExec(ctx context.Context, args []string) error {
+	secretsStore, err := secrets.FromContext(ctx)
 	if err != nil {
 		return err
 	}

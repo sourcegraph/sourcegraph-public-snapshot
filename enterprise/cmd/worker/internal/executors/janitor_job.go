@@ -3,14 +3,12 @@ package executors
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/services/executors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type janitorJob struct{}
@@ -35,7 +33,7 @@ func (j *janitorJob) Routines(ctx context.Context, logger log.Logger) ([]gorouti
 
 	routines := []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(context.Background(), janitorConfigInst.CleanupTaskInterval, goroutine.HandlerFunc(func(ctx context.Context) error {
-			return executors.New(database.NewDB(db)).DeleteInactiveHeartbeats(ctx, janitorConfigInst.HeartbeatRecordsMaxAge)
+			return executors.New(db).DeleteInactiveHeartbeats(ctx, janitorConfigInst.HeartbeatRecordsMaxAge)
 		})),
 	}
 

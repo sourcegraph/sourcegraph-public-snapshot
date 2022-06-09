@@ -57,8 +57,8 @@ developers to explore code by
 Code Intelligence is made up of multiple features that build on top of each other:
 
 - [Search-based code intelligence](explanations/search_based_code_intelligence.md) works out of the box with all of the most popular programming languages, powered by Sourcegraph's code search and [extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22).
-- [Precise code intelligence](explanations/precise_code_intelligence.md) uses SCIP and LSIF indexes to provide correct code intelligence features and accurate cross-repository navigation.
-- [Auto-indexing](explanations/auto_indexing.md) uses [Sourcegraph executors](../admin/executors.md) to create indexes for the code in your Sourcegraph instance, giving you up-to-date cross-repository code intelligence.
+- [Precise code intelligence](explanations/precise_code_intelligence.md) uses [LSIF indexes](https://lsif.dev/) to provide correct code intelligence features and accurate cross-repository navigation.
+- [Auto-indexing](explanations/auto_indexing.md) uses [Sourcegraph executors](../admin/executors.md) to create LSIF indexes for the code in your Sourcegraph instance, giving you up-to-date cross-repository code intelligence.
 - [Dependency navigation](explanations/features.md#dependency-navigation) allows you to navigate and search through the dependencies of your code, by leveraging precise code intelligence and auto-indexing.
 
 ## Code Intelligence for your code
@@ -68,7 +68,7 @@ Here's how you go from search-based code intelligence to **automatically-updatin
 1. Navigate code with [search-based code intelligence](explanations/search_based_code_intelligence.md) and [Sourcegraph extensions](../../../extensions/index.md):
 
     Included in a standard Sourcegraph installation and works out of the box!
-1. Start using [precise code intelligence](explanations/precise_code_intelligence.md) by creating an index of a repository and uploading it to your Sourcegraph instance:
+1. Start using [precise code intelligence](explanations/precise_code_intelligence.md) by creating an LSIF index of a repository and uploading it to your Sourcegraph instance:
 
     - [Index a Go repository](how-to/index_a_go_repository.md#manual-indexing)
     - [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md#manual-indexing)
@@ -76,7 +76,7 @@ Here's how you go from search-based code intelligence to **automatically-updatin
     - [Index a Java, Scala & Kotlin repository](https://sourcegraph.github.io/scip-java/docs/getting-started.html)
 
     See the [tutorials](#tutorials) for more step-by-step instructions.
-1. _Optional_: automate the uploading of indexes by [adding indexing and uploading to your CI setup](how-to/adding_lsif_to_workflows.md).
+1. _Optional_: automate the uploading of LSIF indexes by [adding LSIF indexing and uploading to your CI setup](how-to/adding_lsif_to_workflows.md).
 1. Get **automatic precise code intelligence** by [enabling auto-indexing](how-to/enable_auto_indexing.md) which makes Sourcegraph automatically index the your repositories and enable precise code intelligence for them.
 1. Setup **auto-dependency indexing** to navigate and search through the dependencies used by your code:
     - **Go**: Enable [auto-indexing](explanations/auto_indexing.md) and Sourcegraph will start indexing your dependencies.

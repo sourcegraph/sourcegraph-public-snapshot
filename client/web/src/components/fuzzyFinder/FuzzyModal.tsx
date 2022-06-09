@@ -23,6 +23,7 @@ import styles from './FuzzyModal.module.scss'
 // - case-insensitive search is almost unusable in the chromium/chromium repo (360k files)
 const DEFAULT_CASE_INSENSITIVE_FILE_COUNT_THRESHOLD = 80000
 
+const FUZZY_MODAL_TITLE = 'fuzzy-modal-title'
 const FUZZY_MODAL_RESULTS = 'fuzzy-modal-results'
 
 // Cache for the last fuzzy query. This value is only used to avoid redoing the
@@ -233,13 +234,15 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
             position="center"
             className={styles.modal}
             onDismiss={() => props.onClose()}
-            aria-label="Fuzzy finder: Find file"
+            aria-labelledby={FUZZY_MODAL_TITLE}
         >
             <div className={styles.content}>
                 <div className={styles.header}>
-                    <H3 className="mb-0">Find file</H3>
+                    <H3 className="mb-0" id={FUZZY_MODAL_TITLE}>
+                        Find file
+                    </H3>
                     <Button variant="icon" onClick={() => props.onClose()} aria-label="Close">
-                        <Icon className={styles.closeIcon} as={CloseIcon} aria-hidden={true} />
+                        <Icon role="img" className={styles.closeIcon} as={CloseIcon} aria-hidden={true} />
                     </Button>
                 </div>
                 <Input

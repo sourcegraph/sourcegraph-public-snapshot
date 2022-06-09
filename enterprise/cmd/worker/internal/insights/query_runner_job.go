@@ -3,8 +3,6 @@ package insights
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
@@ -14,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type insightsQueryRunnerBaseConfig struct {
@@ -62,7 +61,7 @@ func (s *insightsQueryRunnerJob) Routines(ctx context.Context, logger log.Logger
 		return nil, err
 	}
 
-	return background.GetBackgroundQueryRunnerJob(context.Background(), logger, database.NewDB(mainAppDb), insightsDB), nil
+	return background.GetBackgroundQueryRunnerJob(context.Background(), logger, mainAppDb, insightsDB), nil
 }
 
 func NewInsightsQueryRunnerJob() job.Job {

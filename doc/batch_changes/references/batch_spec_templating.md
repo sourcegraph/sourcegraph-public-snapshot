@@ -121,7 +121,6 @@ They are evaluated after the execution of all entries in `steps`.
 | `steps.deleted_files` | `list of strings` | List of files that have been deleted by the `steps`. Empty list if no files have been deleted. |
 | `steps.path` | `string` | Path (relative to the root of the directory, no leading `/` or `.`) in which the `steps` have been executed. Empty if no workspaces have been used and the `steps` were executed in the root of the repository. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.25 or later</small></i> |
 | `outputs.<name>` | depends on `outputs.<name>.format`, default: `string`| Value of an [`output`](batch_spec_yaml_reference.md#steps-outputs) set by `steps`. If the [`outputs.<name>.format`](batch_spec_yaml_reference.md#steps-outputs-format) is `yaml` or `json` and the `value` a data structure (i.e. array, object, ...), then subfields can be accessed too. See "[Examples](#examples)" below. |
-| `batch_change_link` | `string` | <strong><small>Only available in `changesetTemplate.body`</small></strong><br />Link back to the batch change that produced the changeset on Sourcegraph. If omitted, the link will be automatically appended to the end of the body. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.40.9 or later</small></i> |
 
 ## Template helper functions
 
@@ -307,15 +306,4 @@ changesetTemplate:
   body: |
     The host of the repository: ${{ index (split repository.name "/") 0 }}
     The org of the repository: ${{ index (split repository.name "/") 1 }}
-```
-
-Render the batch change link at the beginning of the changeset body:
-
-```yaml
-changesetTemplate:
-  # [...]
-  body: |
-    ${{ batch_change_link }}
-
-    This is the rest of my changeset description.
 ```

@@ -80,8 +80,8 @@ func (j *alertJob) Tags() []log.Field {
 		log.String("originalQuery", j.inputs.OriginalQuery),
 		trace.Stringer("patternType", j.inputs.PatternType),
 		log.Bool("onSourcegraphDotCom", j.inputs.OnSourcegraphDotCom),
-		trace.Stringer("protocol", j.inputs.Protocol),
 		trace.Stringer("features", j.inputs.Features),
+		trace.Stringer("protocol", j.inputs.Protocol),
 	}
 }
 

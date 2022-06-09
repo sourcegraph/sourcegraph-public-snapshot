@@ -27,14 +27,14 @@ export function parseSearchURLQuery(query: string): string | undefined {
 export function parseSearchURLPatternType(query: string): SearchPatternType | undefined {
     const searchParameters = new URLSearchParams(query)
     const patternType = searchParameters.get('patternType')
-    switch (patternType) {
-        case SearchPatternType.literal:
-        case SearchPatternType.regexp:
-        case SearchPatternType.structural:
-        case SearchPatternType.lucky:
-            return patternType
+    if (
+        patternType !== SearchPatternType.literal &&
+        patternType !== SearchPatternType.regexp &&
+        patternType !== SearchPatternType.structural
+    ) {
+        return undefined
     }
-    return undefined
+    return patternType
 }
 
 function searchURLIsCaseSensitive(query: string): boolean {

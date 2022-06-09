@@ -154,11 +154,6 @@ function setDiagnosticsOptions(editor: typeof monaco, batchChangeName: string): 
         type => type.type !== 'string'
     )
 
-    // Temporarily remove the mount field from the schema, so it does not show up in the auto-suggestion.
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    delete schema.properties.steps.items.properties.mount
-
     // Enforce the exact name match. The user must use the settings UI to change the name.
     schema.properties.name.pattern = `^${batchChangeName}$`
 

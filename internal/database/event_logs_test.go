@@ -76,9 +76,9 @@ func TestEventLogs_CountUsersWithSetting(t *testing.T) {
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
-	usersStore := db.Users()
+	usersStore := Users(db)
 	settingsStore := db.TemporarySettings()
-	eventLogsStore := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
+	eventLogsStore := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 
 	for i := 0; i < 24; i++ {
 		user, err := usersStore.Create(ctx, NewUser{Username: fmt.Sprintf("u%d", i)})
@@ -322,7 +322,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		}
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
+	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 	summary, err := el.siteUsage(ctx, now)
 	if err != nil {
 		t.Fatal(err)
@@ -407,7 +407,7 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 		"codeintel.searchReferences",
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
+	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 	count, err := el.codeIntelligenceWeeklyUsersCount(ctx, eventNames, now)
 	if err != nil {
 		t.Fatal(err)
@@ -617,7 +617,7 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
+	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 	count, err := el.codeIntelligenceSettingsPageViewCount(ctx, now)
 	if err != nil {
 		t.Fatal(err)
@@ -681,7 +681,7 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
+	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 	events, err := el.aggregatedCodeIntelEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
@@ -735,7 +735,7 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 		}
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
+	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 	events, err := el.aggregatedCodeIntelEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
@@ -815,7 +815,7 @@ func TestEventLogs_AggregatedCodeIntelInvestigationEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
+	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 	events, err := el.aggregatedCodeIntelInvestigationEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)

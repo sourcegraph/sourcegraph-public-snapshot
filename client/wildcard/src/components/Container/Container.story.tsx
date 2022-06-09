@@ -3,7 +3,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { H1, H2, H3, Text, Input } from '..'
+import { H1, H2, H3, Text } from '..'
 import { Alert } from '../Alert'
 import { Button } from '../Button'
 
@@ -49,12 +49,12 @@ export const Overview: Story = () => (
             <H3>Section I</H3>
             <Text>Here you change the username.</Text>
             <div className="form-group">
-                <Input />
+                <input type="text" className="form-control" />
             </div>
             <H3>Section II</H3>
             <Text>Here you change your email.</Text>
             <div className="form-group mb-0">
-                <Input type="email" />
+                <input type="text" className="form-control" />
             </div>
         </Container>
         <div className="mb-3">
@@ -71,7 +71,7 @@ export const Overview: Story = () => (
             <H3>Section I</H3>
             <Text>Here you change the username.</Text>
             <div className="form-group">
-                <Input />
+                <input type="text" className="form-control" />
             </div>
             <Button className="mb-2" variant="secondary">
                 Save
@@ -80,7 +80,7 @@ export const Overview: Story = () => (
             <H3>Section II</H3>
             <Text>Here you change your email.</Text>
             <div className="form-group">
-                <Input type="email" />
+                <input type="text" className="form-control" />
             </div>
             <Button variant="secondary">Save</Button>
         </Container>

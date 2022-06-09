@@ -314,7 +314,6 @@ ${{ steps.added_files }}
 ${{ steps.deleted_files }}
 ${{ steps.renamed_files }}
 ${{ steps.path }}
-${{ batch_change_link }}
 `,
 			want: `README.md main.go
 github.com/sourcegraph/src-cli
@@ -326,8 +325,7 @@ CGO_ENABLED=0
 [added-file.txt]
 [deleted-file.txt]
 [renamed-file.txt]
-infrastructure/sub-project
-${{ batch_change_link }}`,
+infrastructure/sub-project`,
 		},
 		{
 			name:    "empty context",
@@ -340,15 +338,13 @@ ${{ steps.modified_files }}
 ${{ steps.added_files }}
 ${{ steps.deleted_files }}
 ${{ steps.renamed_files }}
-${{ batch_change_link }}
 `,
 			want: `<no value>
 <no value>
 []
 []
 []
-[]
-${{ batch_change_link }}`,
+[]`,
 		},
 	}
 

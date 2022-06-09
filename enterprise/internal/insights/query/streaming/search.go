@@ -2,7 +2,6 @@ package streaming
 
 import (
 	"context"
-	"io"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
@@ -61,8 +60,8 @@ func Search(ctx context.Context, query string, decoder streamhttp.FrontendStream
 	return err
 }
 
-func genericComputeStream(ctx context.Context, handler func(io.Reader) error, query, operation string) (err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, operation)
+func ComputeMatchContextStream(ctx context.Context, query string, decoder client.ComputeMatchContextStreamDecoder) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "InsightsComputeStreamSearch")
 	defer func() {
 		span.LogFields(
 			log.Error(err),
@@ -70,7 +69,7 @@ func genericComputeStream(ctx context.Context, handler func(io.Reader) error, qu
 		span.Finish()
 	}()
 
-	req, err := client.NewComputeStreamRequest(internalapi.Client.URL+"/.internal", query)
+	req, err := client.NewMatchContextRequest(internalapi.Client.URL+"/.internal", query)
 	if err != nil {
 		return err
 	}
@@ -91,13 +90,9 @@ func genericComputeStream(ctx context.Context, handler func(io.Reader) error, qu
 	}
 	defer resp.Body.Close()
 
-	return handler(resp.Body)
-}
-
-func ComputeMatchContextStream(ctx context.Context, query string, decoder client.ComputeMatchContextStreamDecoder) (err error) {
-	return genericComputeStream(ctx, decoder.ReadAll, query, "InsightsComputeStreamSearch")
-}
-
-func ComputeTextStream(ctx context.Context, query string, decoder client.ComputeTextStreamDecoder) (err error) {
-	return genericComputeStream(ctx, decoder.ReadAll, query, "InsightsComputeTextSearch")
+	decErr := decoder.ReadAll(resp.Body)
+	if decErr != nil {
+		return decErr
+	}
+	return err
 }

@@ -151,7 +151,7 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<
             data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
         >
             <span>
-                <Icon aria-hidden={true} as={FormatQuoteOpenIcon} />
+                <Icon role="img" aria-hidden={true} as={FormatQuoteOpenIcon} />
                 Searching literally <strong>(including quotes)</strong>
             </span>
         </small>
@@ -256,7 +256,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     className="a11y-ignore create-code-monitor-button"
                     button={
                         <>
-                            <Icon aria-hidden={true} className="mr-1" as={createCodeMonitorAction.icon} />
+                            <Icon role="img" aria-hidden={true} className="mr-1" as={createCodeMonitorAction.icon} />
                             {createCodeMonitorAction.label}
                         </>
                     }
@@ -289,7 +289,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     className="test-save-search-link"
                     button={
                         <>
-                            <Icon aria-hidden={true} className="mr-1" as={BookmarkOutlineIcon} />
+                            <Icon role="img" aria-hidden={true} className="mr-1" as={BookmarkOutlineIcon} />
                             Save search
                         </>
                     }
@@ -334,9 +334,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     size="sm"
                     aria-label={`${showFilters ? 'Hide' : 'Show'} filters`}
                 >
-                    <Icon aria-hidden={true} className="mr-1" as={MenuIcon} />
+                    <Icon role="img" aria-hidden={true} className="mr-1" as={MenuIcon} />
                     Filters
-                    <Icon aria-hidden={true} as={showFilters ? MenuUpIcon : MenuDownIcon} />
+                    <Icon role="img" aria-hidden={true} as={showFilters ? MenuUpIcon : MenuDownIcon} />
                 </Button>
 
                 {props.stats}
@@ -388,7 +388,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                 outline={true}
                                 size="sm"
                             >
-                                <Icon aria-hidden={true} className="mr-1" as={createActionButton.icon} />
+                                <Icon role="img" aria-hidden={true} className="mr-1" as={createActionButton.icon} />
                                 {createActionButton.label}
                             </ButtonLink>
                         </li>
@@ -414,7 +414,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                 <Button
                                     onClick={props.onExpandAllResultsToggle}
                                     className="text-decoration-none"
-                                    data-placement="bottom"
                                     data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
                                     aria-label={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
                                     aria-live="polite"
@@ -424,6 +423,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                     size="sm"
                                 >
                                     <Icon
+                                        role="img"
                                         aria-hidden={true}
                                         className="mr-0"
                                         as={props.allExpanded ? ArrowCollapseUpIcon : ArrowExpandDownIcon}

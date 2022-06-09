@@ -4,12 +4,7 @@ import { OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables } from 
 
 // A union of all feature flags we currently have.
 // If there are no feature flags at the moment, this should be `never`.
-export type FeatureFlagName =
-    | 'open-beta-enabled'
-    | 'quick-start-tour-for-authenticated-users'
-    | 'new-repo-page'
-    | 'insight-polling-enabled'
-    | 'ab-visitor-tour-with-notebooks'
+export type FeatureFlagName = 'open-beta-enabled' | 'quick-start-tour-for-authenticated-users' | 'new-repo-page'
 
 interface OrgFlagOverride {
     orgID: string

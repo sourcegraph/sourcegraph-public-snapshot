@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dghubble/gologin"
+	"github.com/dghubble/gologin/v2"
 )
 
 /*
-This code is copied from https://sourcegraph.com/github.com/dghubble/gologin/-/blob/internal/cookie.go
+This code is copied from https://sourcegraph.com/github.com/dghubble/gologin/v2/-/blob/internal/cookie.go
 */
 
 // NewCookie returns a new http.Cookie with the given value and CookieConfig

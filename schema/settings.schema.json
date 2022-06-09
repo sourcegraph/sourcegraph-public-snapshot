@@ -12,12 +12,6 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "homePanelsComputeSuggestions": {
-          "type": "boolean",
-          "default": false,
-          "deprecated": false,
-          "description": "Enable the home panels compute suggestions feature."
-        },
         "codeInsights": {
           "description": "Enables code insights on directory pages.",
           "type": "boolean",
@@ -316,14 +310,6 @@
           "!go": {
             "pointer": true
           }
-        },
-        "enableExtensionsDecorationsColumnView": {
-          "description": "If extension supports column view show its decorations in a separate column in the blob view.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
         }
       },
       "group": "Experimental"
@@ -425,9 +411,9 @@
       "default": 1
     },
     "search.defaultPatternType": {
-      "description": "The default pattern type (literal or regexp) that search queries will be intepreted as. `lucky` is an experimental mode that will interpret the query in multiple ways.",
+      "description": "The default pattern type (literal or regexp) that search queries will be intepreted as.",
       "type": "string",
-      "pattern": "literal|regexp|lucky"
+      "pattern": "literal|regexp"
     },
     "search.defaultCaseSensitive": {
       "description": "Whether query patterns are treated case sensitively. Patterns are case insensitive by default.",

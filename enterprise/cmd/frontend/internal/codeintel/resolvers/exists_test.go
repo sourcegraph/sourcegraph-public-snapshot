@@ -8,7 +8,6 @@ import (
 
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -42,7 +41,7 @@ func TestFindClosestDumps(t *testing.T) {
 		return
 	})
 
-	resolver := newResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, nil, 50, &observation.TestContext, database.NewMockDB())
+	resolver := newResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, nil, 50, &observation.TestContext, nil)
 	dumps, err := resolver.findClosestDumps(context.Background(), commitChecker, 42, "deadbeef", "s1/main.go", true, "idx")
 	if err != nil {
 		t.Fatalf("unexpected error finding closest dumps: %s", err)
@@ -102,7 +101,7 @@ func TestFindClosestDumpsInfersClosestUploads(t *testing.T) {
 		return false, nil
 	})
 
-	resolver := newResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, nil, 50, &observation.TestContext, database.NewMockDB())
+	resolver := newResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, nil, 50, &observation.TestContext, nil)
 	dumps, err := resolver.findClosestDumps(context.Background(), commitChecker, 42, "deadbeef", "s1/main.go", true, "idx")
 	if err != nil {
 		t.Fatalf("unexpected error finding closest dumps: %s", err)
@@ -141,7 +140,7 @@ func TestFindClosestDumpsDoesNotInferClosestUploadForUnknownRepository(t *testin
 	mockGitserverClient := NewMockGitserverClient()
 	commitChecker := newCachedCommitChecker(mockGitserverClient)
 
-	resolver := newResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, nil, 50, &observation.TestContext, database.NewMockDB())
+	resolver := newResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, nil, 50, &observation.TestContext, nil)
 	dumps, err := resolver.findClosestDumps(context.Background(), commitChecker, 42, "deadbeef", "s1/main.go", true, "idx")
 	if err != nil {
 		t.Fatalf("unexpected error finding closest dumps: %s", err)

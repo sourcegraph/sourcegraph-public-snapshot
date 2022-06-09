@@ -1,4 +1,5 @@
 // @ts-check
+
 'use strict'
 const path = require('path')
 
@@ -12,6 +13,9 @@ const {
   getMonacoCSSRule,
   getCSSLoaders,
 } = require('@sourcegraph/build-config')
+
+const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
+
 /**
  * The VS Code extension core needs to be built for two targets:
  * - Node.js for VS Code desktop
@@ -19,9 +23,6 @@ const {
  *
  * @param {*} targetType See https://webpack.js.org/configuration/target/
  */
-// Node Envs
-const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
-// Core Configuration
 function getExtensionCoreConfiguration(targetType) {
   if (typeof targetType !== 'string') {
     return
@@ -35,23 +36,14 @@ function getExtensionCoreConfiguration(targetType) {
     output: {
       // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
       path: path.resolve(__dirname, 'dist', `${targetType}`),
-      filename: '[name].js',
+      filename: 'extension.js',
       library: {
         type: 'umd',
       },
       globalObject: 'globalThis',
       devtoolModuleFilenameTemplate: '../[resource-path]',
     },
-    performance: {
-      hints: false,
-    },
-    optimization: {
-      splitChunks: {
-        minSize: 10000,
-        maxSize: 240000,
-      },
-    },
-    devtool: mode === 'development' ? 'source-map' : false,
+    devtool: 'source-map',
     externals: {
       // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
       vscode: 'commonjs vscode',
@@ -111,23 +103,22 @@ function getExtensionCoreConfiguration(targetType) {
     ],
   }
 }
-/**
- * Configuration for Webviews
- */
-// PATHS
+
 const rootPath = path.resolve(__dirname, '../../')
 const vscodeWorkspacePath = path.resolve(rootPath, 'client', 'vscode')
 const vscodeSourcePath = path.resolve(vscodeWorkspacePath, 'src')
 const webviewSourcePath = path.resolve(vscodeSourcePath, 'webview')
-// Webview Panels Paths
+
 const searchPanelWebviewPath = path.resolve(webviewSourcePath, 'search-panel')
 const searchSidebarWebviewPath = path.resolve(webviewSourcePath, 'sidebars', 'search')
 const helpSidebarWebviewPath = path.resolve(webviewSourcePath, 'sidebars', 'help')
-// Extension Host Worker Path
+
 const extensionHostWorker = /main\.worker\.ts$/
-// Monaco Editor Path
+
 const MONACO_EDITOR_PATH = path.resolve(rootPath, 'node_modules', 'monaco-editor')
+
 /** @type {import('webpack').Configuration}*/
+
 const webviewConfig = {
   context: __dirname, // needed when running `gulp` from the root dir
   mode,
@@ -139,19 +130,10 @@ const webviewConfig = {
     helpSidebar: [path.resolve(helpSidebarWebviewPath, 'index.tsx')],
     style: path.join(webviewSourcePath, 'index.scss'),
   },
-  devtool: mode === 'development' ? 'source-map' : false,
+  devtool: 'source-map',
   output: {
     path: path.resolve(__dirname, 'dist/webview'),
     filename: '[name].js',
-  },
-  performance: {
-    hints: false,
-  },
-  optimization: {
-    splitChunks: {
-      minSize: 10000,
-      maxSize: 250000,
-    },
   },
   plugins: [
     new MiniCssExtractPlugin(),
@@ -168,6 +150,7 @@ const webviewConfig = {
   resolve: {
     alias: {
       path: require.resolve('path-browserify'),
+      './Link': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'Link'), // Replace web app Link component from @sourcegraph/wildcard with the Link component built for VSCE
       './RepoSearchResult': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'RepoSearchResult'),
       './CommitSearchResult': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'CommitSearchResult'),
       './FileMatchChildren': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'FileMatchChildren'),
@@ -229,10 +212,12 @@ const webviewConfig = {
     ],
   },
 }
+
 module.exports = function () {
   if (process.env.TARGET_TYPE) {
     return Promise.all([getExtensionCoreConfiguration(process.env.TARGET_TYPE), webviewConfig])
   }
+
   // If target type isn't specified, build both.
   return Promise.all([getExtensionCoreConfiguration('node'), getExtensionCoreConfiguration('webworker'), webviewConfig])
 }

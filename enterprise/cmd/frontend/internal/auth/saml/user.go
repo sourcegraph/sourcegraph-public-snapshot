@@ -19,7 +19,6 @@ type authnResponseInfo struct {
 	spec                 extsvc.AccountSpec
 	email, displayName   string
 	unnormalizedUsername string
-	groups               map[string]bool
 	accountData          any
 }
 
@@ -59,10 +58,6 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 	if pn := attr.Get("eduPersonPrincipalName"); email == "" && mightBeEmail(pn) {
 		email = pn
 	}
-	groupsAttr := "groups"
-	if p.config.GroupsAttributeName != "" {
-		groupsAttr = p.config.GroupsAttributeName
-	}
 	info := authnResponseInfo{
 		spec: extsvc.AccountSpec{
 			ServiceType: providerType,
@@ -73,7 +68,6 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 		email:                email,
 		unnormalizedUsername: firstNonempty(attr.Get("login"), attr.Get("uid"), attr.Get("username"), attr.Get("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"), email),
 		displayName:          firstNonempty(attr.Get("displayName"), attr.Get("givenName")+" "+attr.Get("surname"), attr.Get("http://schemas.xmlsoap.org/claims/CommonName"), attr.Get("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname")),
-		groups:               attr.GetMap(groupsAttr),
 		accountData:          assertions,
 	}
 	if assertions.NameID == "" {
@@ -131,17 +125,4 @@ func (v samlAssertionValues) Get(key string) string {
 		}
 	}
 	return ""
-}
-
-func (v samlAssertionValues) GetMap(key string) map[string]bool {
-	for _, a := range v {
-		if a.Name == key || a.FriendlyName == key {
-			output := make(map[string]bool)
-			for _, v := range a.Values {
-				output[v.Value] = true
-			}
-			return output
-		}
-	}
-	return nil
 }

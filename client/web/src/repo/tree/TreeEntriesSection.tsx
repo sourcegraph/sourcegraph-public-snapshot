@@ -50,6 +50,7 @@ const TreeEntry: React.FunctionComponent<
         >
             <span>
                 <Icon
+                    role="img"
                     className="mr-1"
                     as={isDirectory ? FolderOutlineIcon : FileDocumentOutlineIcon}
                     aria-hidden={true}

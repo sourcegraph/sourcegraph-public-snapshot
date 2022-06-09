@@ -1,9 +1,10 @@
 import { Observable } from 'rxjs'
 
-import { Insight, InsightDashboard, InsightsDashboardOwner } from '../types'
+import { BackendInsight, Insight, InsightDashboard, InsightsDashboardOwner } from '../types'
 
 import {
     AssignInsightsToDashboardInput,
+    BackendInsightData,
     DashboardCreateInput,
     DashboardCreateResult,
     DashboardDeleteInput,
@@ -86,6 +87,11 @@ export interface CodeInsightsBackend {
     deleteInsight: (insightId: string) => Observable<unknown>
 
     removeInsightFromDashboard: (input: RemoveInsightFromDashboardInput) => Observable<unknown>
+
+    /**
+     * Returns backend insight (via gql API handler)
+     */
+    getBackendInsightData: (insight: BackendInsight) => Observable<BackendInsightData>
 
     /**
      * Returns extension like built-in insight that is fetched via frontend

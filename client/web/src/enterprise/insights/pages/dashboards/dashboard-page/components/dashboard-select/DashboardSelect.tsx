@@ -85,10 +85,7 @@ export const DashboardSelect: React.FunctionComponent<React.PropsWithChildren<Da
                 <MenuButton dashboards={rawDashboards} />
 
                 <ListboxPopover className={classNames(styles.popover)} portal={true}>
-                    <ListboxList
-                        id="insights-dashboard-select-content"
-                        className={classNames(styles.list, 'dropdown-menu')}
-                    >
+                    <ListboxList className={classNames(styles.list, 'dropdown-menu')}>
                         <Input
                             name="filter"
                             value={filter}

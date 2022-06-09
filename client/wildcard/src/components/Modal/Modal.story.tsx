@@ -29,6 +29,7 @@ export const Default: Story = () => (
 Default.parameters = {
     component: Modal,
     chromatic: {
+        enableDarkMode: true,
         disableSnapshot: false,
     },
     design: [

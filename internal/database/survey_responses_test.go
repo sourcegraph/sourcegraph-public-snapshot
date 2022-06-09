@@ -13,7 +13,7 @@ func TestSurveyResponses_Create_Count(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	count, err := SurveyResponses(db).Count(ctx)
@@ -29,7 +29,7 @@ func TestSurveyResponses_Create_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	user, err := db.Users().Create(ctx, NewUser{
+	user, err := Users(db).Create(ctx, NewUser{
 		Email:                 "a@a.com",
 		Username:              "u",
 		Password:              "p",

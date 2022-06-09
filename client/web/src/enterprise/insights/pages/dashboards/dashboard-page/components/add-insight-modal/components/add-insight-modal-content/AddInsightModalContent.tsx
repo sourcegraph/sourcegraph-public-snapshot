@@ -3,7 +3,7 @@ import React from 'react'
 import { escapeRegExp } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Input, Link, Label, Checkbox } from '@sourcegraph/wildcard'
+import { Button, Label, Input, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
 import { TruncatedText } from '../../../../../../../components'
@@ -68,17 +68,16 @@ export const AddInsightModalContent: React.FunctionComponent<
             <fieldset className={styles.insightsContainer}>
                 {filteredInsights.map(insight => (
                     <Label key={insight.id} weight="medium" className={styles.insightItem}>
-                        <Checkbox
+                        <input
+                            type="checkbox"
                             name="insightIds"
                             value={insight.id}
                             checked={isChecked(insight.id)}
                             onChange={onChange}
                             onBlur={onBlur}
-                            aria-labelledby={insight.id}
-                            className={styles.checkbox}
-                            wrapperClassName={styles.checkboxWrapper}
                         />
-                        <TruncatedText id={insight.id}>{insight.title}</TruncatedText>
+
+                        <TruncatedText className={styles.insightName}>{insight.title}</TruncatedText>
                     </Label>
                 ))}
             </fieldset>

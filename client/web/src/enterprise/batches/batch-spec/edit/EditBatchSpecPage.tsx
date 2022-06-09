@@ -61,7 +61,7 @@ export const EditBatchSpecPage: React.FunctionComponent<React.PropsWithChildren<
     if (loading && !data) {
         return (
             <div className="w-100 text-center">
-                <Icon aria-label="Loading" className="m-2" as={LoadingSpinner} />
+                <Icon role="img" aria-label="Loading" className="m-2" as={LoadingSpinner} />
             </div>
         )
     }
@@ -104,13 +104,7 @@ type MemoizedEditBatchSpecPageContentProps = EditBatchSpecPageContentProps &
 
 const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
     React.PropsWithChildren<MemoizedEditBatchSpecPageContentProps>
-> = React.memo(function MemoizedEditBatchSpecPageContent({
-    settingsCascade,
-    isLightTheme,
-    batchChange,
-    editor,
-    errors,
-}) {
+> = React.memo(({ settingsCascade, isLightTheme, batchChange, editor, errors }) => {
     const { insightTitle } = useInsightTemplates(settingsCascade)
 
     const [activeTabKey, setActiveTabKey] = useState<TabKey>('spec')

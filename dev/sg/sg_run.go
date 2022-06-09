@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"sort"
@@ -38,7 +39,7 @@ sg run gitserver frontend repo-updater
 	`,
 	Category: CategoryDev,
 	Flags:    []cli.Flag{},
-	Action:   runExec,
+	Action:   execAdapter(runExec),
 	BashComplete: completeOptions(func() (options []string) {
 		config, _ := sgconf.Get(configFile, configOverwriteFile)
 		if config == nil {
@@ -51,13 +52,12 @@ sg run gitserver frontend repo-updater
 	}),
 }
 
-func runExec(ctx *cli.Context) error {
+func runExec(ctx context.Context, args []string) error {
 	config, err := sgconf.Get(configFile, configOverwriteFile)
 	if err != nil {
 		return err
 	}
 
-	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "No command specified"))
 		return flag.ErrHelp
@@ -73,7 +73,7 @@ func runExec(ctx *cli.Context) error {
 		cmds = append(cmds, cmd)
 	}
 
-	return run.Commands(ctx.Context, config.Env, verbose, cmds...)
+	return run.Commands(ctx, config.Env, verbose, cmds...)
 }
 
 func constructRunCmdLongHelp() string {

@@ -120,5 +120,5 @@ type usersStore struct {
 }
 
 func (u *usersStore) Count(ctx context.Context) (int, error) {
-	return u.db.Users().Count(ctx, nil)
+	return database.Users(u.db).Count(ctx, nil)
 }

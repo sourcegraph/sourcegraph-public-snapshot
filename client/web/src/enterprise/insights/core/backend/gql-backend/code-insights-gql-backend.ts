@@ -18,11 +18,12 @@ import {
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
 import { ALL_INSIGHTS_DASHBOARD } from '../../constants'
-import { Insight, InsightDashboard, InsightsDashboardOwner } from '../../types'
+import { BackendInsight, Insight, InsightDashboard, InsightsDashboardOwner } from '../../types'
 import { CodeInsightsBackend } from '../code-insights-backend'
 import {
     AccessibleInsightInfo,
     AssignInsightsToDashboardInput,
+    BackendInsightData,
     DashboardCreateInput,
     DashboardDeleteInput,
     DashboardUpdateInput,
@@ -49,6 +50,7 @@ import { GET_INSIGHTS_GQL } from './gql/GetInsights'
 import { REMOVE_INSIGHT_FROM_DASHBOARD_GQL } from './gql/RemoveInsightFromDashboard'
 import { createDashboard } from './methods/create-dashboard/create-dashboard'
 import { createInsight } from './methods/create-insight/create-insight'
+import { getBackendInsightData } from './methods/get-backend-insight-data/get-backend-insight-data'
 import { getBuiltInInsight } from './methods/get-built-in-insight-data'
 import { getLangStatsInsightContent } from './methods/get-built-in-insight-data/get-lang-stats-insight-content'
 import { getSearchInsightContent } from './methods/get-built-in-insight-data/get-search-insight-content'
@@ -103,7 +105,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     return null
                 }
 
-                return createInsightView(insightData)
+                return createInsightView(insightData) ?? null
             }),
             catchError(() => of(null))
         )
@@ -159,6 +161,9 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 }))
             )
         )
+
+    public getBackendInsightData = (insight: BackendInsight): Observable<BackendInsightData> =>
+        getBackendInsightData(this.apolloClient, insight)
 
     public getBuiltInInsightData = getBuiltInInsight
 

@@ -203,7 +203,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                         </>
                     ) : (
                         <>
-                            <Icon as={DeleteIcon} aria-hidden={true} /> Delete
+                            <Icon role="img" as={DeleteIcon} aria-hidden={true} /> Delete
                         </>
                     )}
                 </Button>
@@ -366,7 +366,7 @@ const AddFeatureFlagOverride: FunctionComponent<
                         />
                     </Label>
                     <Input
-                        inputClassName="mt-2"
+                        className="mt-2"
                         label={`${overrideType} ID`}
                         type="number"
                         value={namespaceID}
@@ -622,16 +622,21 @@ const CreateFeatureFlag: React.FunctionComponent<
     }>
 > = ({ name, setFlagName, type, setFlagType, value, setFlagValue }) => (
     <>
-        <Input
-            id="name"
-            value={name}
-            onChange={({ target: { value } }) => {
-                setFlagName(value)
-            }}
-            className="form-group"
-            label={<H3>Name</H3>}
-            message="Required."
-        />
+        <div className="form-group d-flex flex-column">
+            <Label htmlFor="name">
+                <H3>Name</H3>
+            </Label>
+            <input
+                id="name"
+                type="text"
+                className="form-control"
+                value={name}
+                onChange={({ target: { value } }) => {
+                    setFlagName(value)
+                }}
+            />
+            <small className="form-text text-muted">Required.</small>
+        </div>
 
         <Select
             id="type"
@@ -702,16 +707,17 @@ const FeatureFlagRolloutValueSettings: React.FunctionComponent<
     }>
 > = ({ value, update }) => (
     <div className="form-group d-flex flex-column">
-        <Input
+        <Label htmlFor="rollout-value">
+            <H3>Value</H3>
+        </Label>
+        <input
             type="range"
             id="rollout-value"
             name="rollout-value"
             step="10"
             min="0"
             max="10000"
-            className="mb-0"
-            label={<H3>Value</H3>}
-            inputClassName="w-25"
+            className="w-25"
             value={value.rolloutBasisPoints}
             onChange={({ target }) => {
                 update({ rolloutBasisPoints: parseInt(target.value, 10) })

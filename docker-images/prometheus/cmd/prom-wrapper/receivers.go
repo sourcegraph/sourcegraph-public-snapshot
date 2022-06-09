@@ -28,17 +28,17 @@ const (
 )
 
 const docsURL = "https://docs.sourcegraph.com"
-const alertsDocsPathPath = "admin/observability/alerts"
+const alertSolutionsPagePath = "admin/observability/alert_solutions"
 
-// alertsReferenceURL generates a link to the alerts reference page that embeds the appropriate version
+// alertSolutionsURL generates a link to the alert solutions page that embeds the appropriate version
 // if it is available and it is a semantic version.
-func alertsReferenceURL() string {
+func alertSolutionsURL() string {
 	maybeSemver := "v" + version.Version()
 	_, semverErr := semver.NewVersion(maybeSemver)
 	if semverErr == nil && !version.IsDev(version.Version()) {
-		return fmt.Sprintf("%s/@%s/%s", docsURL, maybeSemver, alertsDocsPathPath)
+		return fmt.Sprintf("%s/@%s/%s", docsURL, maybeSemver, alertSolutionsPagePath)
 	}
-	return fmt.Sprintf("%s/%s", docsURL, alertsDocsPathPath)
+	return fmt.Sprintf("%s/%s", docsURL, alertSolutionsPagePath)
 }
 
 // commonLabels defines the set of labels we group alerts by, such that each alert falls in a unique group.
@@ -56,7 +56,7 @@ var commonLabels = []string{"alertname", "level", "service_name", "name", "owner
 var (
 	// observableDocAnchorTemplate must match anchors generated in `monitoring/monitoring/documentation.go`.
 	observableDocAnchorTemplate = `{{ .CommonLabels.service_name }}-{{ .CommonLabels.name | reReplaceAll "_" "-" }}`
-	alertsReferenceURLTemplate  = fmt.Sprintf(`%s#%s`, alertsReferenceURL(), observableDocAnchorTemplate)
+	alertSolutionsURLTemplate   = fmt.Sprintf(`%s#%s`, alertSolutionsURL(), observableDocAnchorTemplate)
 
 	// Title templates
 	firingTitleTemplate       = "[{{ .CommonLabels.level | toUpper }}] {{ .CommonLabels.description }}"
@@ -122,8 +122,8 @@ func newRoutesAndReceivers(newAlerts []*schema.ObservabilityAlerts, externalURL 
 		firingBodyTemplate          = `{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' is firing for service '{{ .CommonLabels.service_name }}' ({{ .CommonLabels.owner }}).`
 		firingBodyTemplateWithLinks = fmt.Sprintf(`%s
 
-For next steps, please refer to our documentation: %s
-For more details, please refer to the service dashboard: %s`, firingBodyTemplate, alertsReferenceURLTemplate, dashboardURLTemplate)
+For possible solutions, please refer to our documentation: %s
+For more details, please refer to the service dashboard: %s`, firingBodyTemplate, alertSolutionsURLTemplate, dashboardURLTemplate)
 		resolvedBodyTemplate = `{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' for service '{{ .CommonLabels.service_name }}' has resolved.`
 
 		// use for notifiers that provide fields for links
@@ -262,7 +262,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 				Responders:  responders,
 				Source:      dashboardURLTemplate,
 				Details: map[string]string{
-					"Next steps": alertsReferenceURLTemplate,
+					"Solutions": alertSolutionsURLTemplate,
 				},
 
 				NotifierConfig: notifierConfig,
@@ -286,8 +286,8 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 
 				Description: notificationTitleTemplate,
 				Links: []amconfig.PagerdutyLink{{
-					Text: "Next steps",
-					Href: alertsReferenceURLTemplate,
+					Text: "Solutions",
+					Href: alertSolutionsURLTemplate,
 				}, {
 					Text: "Dashboard",
 					Href: dashboardURLTemplate,
@@ -317,13 +317,13 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 				IconURL:   notifier.Slack.Icon_url,
 
 				Title:     notificationTitleTemplate,
-				TitleLink: alertsReferenceURLTemplate,
+				TitleLink: alertSolutionsURLTemplate,
 
 				Text: notificationBodyTemplateWithoutLinks,
 				Actions: []*amconfig.SlackAction{{
-					Text: "Next steps",
+					Text: "Solutions",
 					Type: "button",
-					URL:  alertsReferenceURLTemplate,
+					URL:  alertSolutionsURLTemplate,
 				}, {
 					Text: "Dashboard",
 					Type: "button",

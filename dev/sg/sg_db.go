@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -60,13 +61,13 @@ sg db add-user -name=foo
 						Destination: &dbDatabaseNameFlag,
 					},
 				},
-				Action: dbResetPGExec,
+				Action: execAdapter(dbResetPGExec),
 			},
 			{
 				Name:      "reset-redis",
 				Usage:     "Drops, recreates and migrates the specified Sourcegraph Redis database",
 				UsageText: "sg db reset-redis",
-				Action:    dbResetRedisExec,
+				Action:    execAdapter(dbResetRedisExec),
 			},
 			{
 				Name:        "add-user",
@@ -145,7 +146,7 @@ func dbAddUserAction(cmd *cli.Context) error {
 	return nil
 }
 
-func dbResetRedisExec(ctx *cli.Context) error {
+func dbResetRedisExec(ctx context.Context, args []string) error {
 	// Read the configuration.
 	config, _ := sgconf.Get(configFile, configOverwriteFile)
 	if config == nil {
@@ -168,7 +169,7 @@ func dbResetRedisExec(ctx *cli.Context) error {
 	return nil
 }
 
-func dbResetPGExec(ctx *cli.Context) error {
+func dbResetPGExec(ctx context.Context, args []string) error {
 	// Read the configuration.
 	config, _ := sgconf.Get(configFile, configOverwriteFile)
 	if config == nil {
@@ -200,7 +201,7 @@ func dbResetPGExec(ctx *cli.Context) error {
 			err error
 		)
 
-		db, err = pgx.Connect(ctx.Context, dsn)
+		db, err = pgx.Connect(ctx, dsn)
 		if err != nil {
 			return errors.Wrap(err, "failed to connect to Postgres database")
 		}
@@ -211,13 +212,13 @@ func dbResetPGExec(ctx *cli.Context) error {
 			return nil
 		}
 
-		_, err = db.Exec(ctx.Context, "DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
+		_, err = db.Exec(ctx, "DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
 		if err != nil {
 			std.Out.WriteFailuref("Failed to drop schema 'public': %s", err)
 			return err
 		}
 
-		if err := db.Close(ctx.Context); err != nil {
+		if err := db.Close(ctx); err != nil {
 			return err
 		}
 	}
@@ -238,7 +239,7 @@ func dbResetPGExec(ctx *cli.Context) error {
 		})
 	}
 
-	return r.Run(ctx.Context, runner.Options{
+	return r.Run(ctx, runner.Options{
 		Operations: operations,
 	})
 }

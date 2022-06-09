@@ -18,9 +18,8 @@ import {
     Link,
     Icon,
     Checkbox,
-    Input,
-    Text,
     Label,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
@@ -112,17 +111,18 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
 
             <Form onSubmit={onSubmit}>
                 <Container className="mb-3">
-                    <Input
-                        data-testid="test-create-access-token-description"
-                        id="user-settings-create-access-token-page__note"
-                        onChange={onNoteChange}
-                        required={true}
-                        autoFocus={true}
-                        placeholder="What's this token for?"
-                        className="form-group"
-                        label="Token description"
-                    />
-
+                    <div className="form-group">
+                        <Label htmlFor="user-settings-create-access-token-page__note">Token description</Label>
+                        <input
+                            type="text"
+                            className="form-control test-create-access-token-description"
+                            id="user-settings-create-access-token-page__note"
+                            onChange={onNoteChange}
+                            required={true}
+                            autoFocus={true}
+                            placeholder="What's this token for?"
+                        />
+                    </div>
                     <div className="form-group mb-0">
                         <Label htmlFor="user-settings-create-access-token-page__scope-user:all" className="mb-0">
                             Token scope
@@ -170,7 +170,11 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         className="test-create-access-token-submit"
                         variant="primary"
                     >
-                        {creationOrError === 'loading' ? <LoadingSpinner /> : <Icon as={AddIcon} aria-hidden={true} />}{' '}
+                        {creationOrError === 'loading' ? (
+                            <LoadingSpinner />
+                        ) : (
+                            <Icon role="img" as={AddIcon} aria-hidden={true} />
+                        )}{' '}
                         Generate token
                     </Button>
                     <Button

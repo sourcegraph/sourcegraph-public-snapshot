@@ -12,7 +12,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
 
-	slog "github.com/sourcegraph/log"
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -39,8 +39,6 @@ type IndexedRepoRevs struct {
 	// branchRepos is used to construct a zoektquery.BranchesRepos to efficiently
 	// marshal and send to zoekt
 	branchRepos map[string]*zoektquery.BranchRepos
-
-	log slog.Logger
 }
 
 // add will add reporev and repo to the list of repository and branches to
@@ -181,6 +179,7 @@ func PartitionRepos(
 	useIndex query.YesNoOnly,
 	containsRefGlobs bool,
 ) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions, err error) {
+	slogger := slog.Scoped("PartitionRepos", "Partition repos")
 	// Fallback to Unindexed if the query contains valid ref-globs.
 	if containsRefGlobs {
 		return nil, repos, nil
@@ -215,7 +214,7 @@ func PartitionRepos(
 				return nil, nil, errors.New("index:only failed since indexed search is not available yet")
 			}
 
-			indexed.log.Warn("zoektIndexedRepos failed", slog.Error(err))
+			slogger.Warn("zoektIndexedRepos failed", slog.Error(err))
 		}
 
 		return nil, repos, ctx.Err()

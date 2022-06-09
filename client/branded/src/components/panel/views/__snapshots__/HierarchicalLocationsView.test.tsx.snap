@@ -52,7 +52,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               class="header"
             >
               <svg
-                aria-label="content result"
+                aria-hidden="true"
                 class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
@@ -68,12 +68,12 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 class="mx-1 headerDivider"
               />
               <span
-                class="tooltip"
-                data-state="closed"
-                role="presentation"
+                aria-label="github.com"
+                role="img"
+                title="github.com"
               >
                 <svg
-                  aria-label="github.com"
+                  aria-hidden="true"
                   class="mdi-icon iconInline text-muted flex-shrink-0"
                   fill="currentColor"
                   height="24"
@@ -90,29 +90,23 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 class="headerTitle test-search-result-label"
                 data-testid="result-container-header"
               >
-                <span
-                  class="tooltip"
-                  data-state="closed"
-                  role="presentation"
+                <div
+                  class="ml-1 flex-shrink-past-contents text-truncate"
                 >
-                  <div
-                    class="ml-1 flex-shrink-past-contents text-truncate"
+                  <a
+                    class="anchorLink"
+                    href="/github.com/foo/bar"
                   >
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar"
-                    >
-                      foo/bar
-                    </a>
-                     › 
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar/-/blob/?subtree=true"
-                    >
-                      <strong />
-                    </a>
-                  </div>
-                </span>
+                    foo/bar
+                  </a>
+                   › 
+                  <a
+                    class="anchorLink"
+                    href="/github.com/foo/bar/-/blob/?subtree=true"
+                  >
+                    <strong />
+                  </a>
+                </div>
                 <span
                   class="ml-2 headerDescription"
                 />
@@ -315,7 +309,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               class="header"
             >
               <svg
-                aria-label="content result"
+                aria-hidden="true"
                 class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
@@ -331,12 +325,12 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 class="mx-1 headerDivider"
               />
               <span
-                class="tooltip"
-                data-state="closed"
-                role="presentation"
+                aria-label="github.com"
+                role="img"
+                title="github.com"
               >
                 <svg
-                  aria-label="github.com"
+                  aria-hidden="true"
                   class="mdi-icon iconInline text-muted flex-shrink-0"
                   fill="currentColor"
                   height="24"
@@ -353,31 +347,25 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 class="headerTitle test-search-result-label"
                 data-testid="result-container-header"
               >
-                <span
-                  class="tooltip"
-                  data-state="closed"
-                  role="presentation"
+                <div
+                  class="ml-1 flex-shrink-past-contents text-truncate"
                 >
-                  <div
-                    class="ml-1 flex-shrink-past-contents text-truncate"
+                  <a
+                    class="anchorLink"
+                    href="/github.com/foo/bar"
                   >
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar"
-                    >
-                      foo/bar
-                    </a>
-                     › 
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
-                    >
-                      <strong>
-                        file1.txt
-                      </strong>
-                    </a>
-                  </div>
-                </span>
+                    foo/bar
+                  </a>
+                   › 
+                  <a
+                    class="anchorLink"
+                    href="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
+                  >
+                    <strong>
+                      file1.txt
+                    </strong>
+                  </a>
+                </div>
                 <span
                   class="ml-2 headerDescription"
                 />
@@ -534,7 +522,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               class="header"
             >
               <svg
-                aria-label="content result"
+                aria-hidden="true"
                 class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
@@ -550,12 +538,12 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 class="mx-1 headerDivider"
               />
               <span
-                class="tooltip"
-                data-state="closed"
-                role="presentation"
+                aria-label="github.com"
+                role="img"
+                title="github.com"
               >
                 <svg
-                  aria-label="github.com"
+                  aria-hidden="true"
                   class="mdi-icon iconInline text-muted flex-shrink-0"
                   fill="currentColor"
                   height="24"
@@ -572,29 +560,23 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 class="headerTitle test-search-result-label"
                 data-testid="result-container-header"
               >
-                <span
-                  class="tooltip"
-                  data-state="closed"
-                  role="presentation"
+                <div
+                  class="ml-1 flex-shrink-past-contents text-truncate"
                 >
-                  <div
-                    class="ml-1 flex-shrink-past-contents text-truncate"
+                  <a
+                    class="anchorLink"
+                    href="/github.com/foo/bar"
                   >
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar"
-                    >
-                      foo/bar
-                    </a>
-                     › 
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar/-/blob/?subtree=true"
-                    >
-                      <strong />
-                    </a>
-                  </div>
-                </span>
+                    foo/bar
+                  </a>
+                   › 
+                  <a
+                    class="anchorLink"
+                    href="/github.com/foo/bar/-/blob/?subtree=true"
+                  >
+                    <strong />
+                  </a>
+                </div>
                 <span
                   class="ml-2 headerDescription"
                 />
@@ -678,9 +660,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
 exports[`<HierarchicalLocationsView /> shows a spinner before any locations emissions 1`] = `
 <DocumentFragment>
   <div
-    aria-label="Loading"
     class="iconInline loadingSpinner m-1 test-loading-spinner"
-    role="img"
   />
 </DocumentFragment>
 `;
@@ -688,9 +668,7 @@ exports[`<HierarchicalLocationsView /> shows a spinner before any locations emis
 exports[`<HierarchicalLocationsView /> shows a spinner if locations emits empty and is not complete 1`] = `
 <DocumentFragment>
   <div
-    aria-label="Loading"
     class="iconInline loadingSpinner m-1 test-loading-spinner"
-    role="img"
   />
 </DocumentFragment>
 `;

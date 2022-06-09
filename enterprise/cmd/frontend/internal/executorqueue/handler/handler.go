@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/log"
-
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type handler struct {

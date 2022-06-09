@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -74,7 +73,7 @@ type RepositoryRevisions struct {
 
 	// ListRefs is called to list all Git refs for a repository. It is intended to be mocked by
 	// tests. If nil, git.ListRefs is used.
-	ListRefs func(ctx context.Context, db database.DB, repo api.RepoName) ([]gitdomain.Ref, error) `json:"-"`
+	ListRefs func(ctx context.Context, db database.DB, repo api.RepoName) ([]git.Ref, error) `json:"-"`
 }
 
 func (r *RepositoryRevisions) Copy() *RepositoryRevisions {

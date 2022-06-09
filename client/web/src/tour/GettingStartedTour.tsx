@@ -3,32 +3,7 @@ import { withFeatureFlag } from '../featureFlags/withFeatureFlag'
 import { Tour, TourProps } from './components/Tour/Tour'
 import { TourInfo } from './components/Tour/TourInfo'
 import { withErrorBoundary } from './components/withErrorBoundary'
-import {
-    authenticatedExtraTask,
-    authenticatedTasks,
-    visitorsTasks,
-    visitorsTasksWithNotebook,
-    visitorsTasksWithNotebookExtraTask,
-} from './data'
-
-function TourVisitorWithNotebook(props: Omit<TourProps, 'tasks' | 'id'>): JSX.Element {
-    return (
-        <Tour
-            {...props}
-            id="TourWithNotebook"
-            title="Code Search Basics"
-            keepCompletedTasks={true}
-            tasks={visitorsTasksWithNotebook}
-            extraTask={visitorsTasksWithNotebookExtraTask}
-        />
-    )
-}
-
-function TourVisitorRegular(props: Omit<TourProps, 'tasks' | 'id'>): JSX.Element {
-    return <Tour {...props} id="Tour" tasks={visitorsTasks} />
-}
-
-const TourVisitor = withFeatureFlag('ab-visitor-tour-with-notebooks', TourVisitorWithNotebook, TourVisitorRegular)
+import { authenticatedExtraTask, authenticatedTasks, visitorsTasks } from './data'
 
 type TourWithErrorBoundaryProps = Omit<TourProps, 'useStore' | 'eventPrefix' | 'tasks' | 'id'> & {
     isAuthenticated?: boolean
@@ -44,7 +19,7 @@ const TourWithErrorBoundary = withErrorBoundary(
 
         // Show visitors version
         if (!isAuthenticated) {
-            return <TourVisitor {...props} />
+            return <Tour {...props} id="Tour" tasks={visitorsTasks} />
         }
 
         return (
@@ -59,7 +34,7 @@ const TourWithErrorBoundary = withErrorBoundary(
 )
 
 // Show for enabled control group
-export const TourAuthenticated = withFeatureFlag('quick-start-tour-for-authenticated-users', Tour)
+export const TourAuthenticated = withFeatureFlag(Tour, 'quick-start-tour-for-authenticated-users')
 
 export const GettingStartedTour = Object.assign(TourWithErrorBoundary, {
     Info: TourInfo,

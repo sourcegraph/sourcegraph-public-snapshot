@@ -199,7 +199,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 					return nil, nil
 				}
 
-				// Repository is not cloneable.
+				// Repository is not clonable.
 				dangerouslyServeError(w, r, db, errors.New("repository could not be cloned"), http.StatusInternalServerError)
 				return nil, nil
 			}
@@ -342,7 +342,7 @@ func serveSignIn(db database.DB) handlerFunc {
 func serveEmbed(db database.DB) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		flagSet := featureflag.FromContext(r.Context())
-		if enabled := flagSet.GetBoolOr("enable-embed-route", false); !enabled {
+		if enabled := flagSet["enable-embed-route"]; !enabled {
 			w.WriteHeader(http.StatusNotFound)
 			return nil
 		}

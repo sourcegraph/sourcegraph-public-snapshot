@@ -161,11 +161,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
             role="none"
         >
             <div className={styles.header}>
-                <Icon
-                    className="flex-shrink-0"
-                    as={icon}
-                    aria-label={resultType ? `${resultType} result` : undefined}
-                />
+                <Icon role="img" className="flex-shrink-0" as={icon} aria-hidden={true} />
                 <div className={classNames('mx-1', styles.headerDivider)} />
                 <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0" />
                 <div className={classNames(styles.headerTitle, titleClassName)} data-testid="result-container-header">
@@ -188,15 +184,19 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                     >
                         {expanded ? (
                             <>
-                                {collapseLabel && <Icon className="mr-1" as={ArrowCollapseUpIcon} aria-hidden={true} />}
+                                {collapseLabel && (
+                                    <Icon role="img" className="mr-1" as={ArrowCollapseUpIcon} aria-hidden={true} />
+                                )}
                                 {collapseLabel}
-                                {!collapseLabel && <Icon as={ChevronDownIcon} aria-hidden={true} />}
+                                {!collapseLabel && <Icon role="img" as={ChevronDownIcon} aria-hidden={true} />}
                             </>
                         ) : (
                             <>
-                                {expandLabel && <Icon className="mr-1" as={ArrowExpandDownIcon} aria-hidden={true} />}
+                                {expandLabel && (
+                                    <Icon role="img" className="mr-1" as={ArrowExpandDownIcon} aria-hidden={true} />
+                                )}
                                 {expandLabel}
-                                {!expandLabel && <Icon as={ChevronLeftIcon} aria-hidden={true} />}
+                                {!expandLabel && <Icon role="img" as={ChevronLeftIcon} aria-hidden={true} />}
                             </>
                         )}
                     </Button>
@@ -206,8 +206,8 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                 )}
                 {formattedRepositoryStarCount && (
                     <>
-                        <SearchResultStar aria-label={`${repoStars} stars`} />
-                        <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
+                        <SearchResultStar />
+                        {formattedRepositoryStarCount}
                     </>
                 )}
             </div>

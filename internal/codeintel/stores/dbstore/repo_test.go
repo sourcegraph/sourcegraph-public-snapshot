@@ -10,14 +10,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestRepoNames(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -45,7 +44,7 @@ func TestRepoNames(t *testing.T) {
 }
 
 func TestRepoIDsByGlobPatterns(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -116,7 +115,7 @@ func TestRepoIDsByGlobPatterns(t *testing.T) {
 }
 
 func TestUpdateReposMatchingPatterns(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -182,7 +181,7 @@ func TestUpdateReposMatchingPatterns(t *testing.T) {
 }
 
 func TestUpdateReposMatchingPatternsOverLimit(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 

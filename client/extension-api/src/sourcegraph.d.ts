@@ -618,15 +618,6 @@ declare module 'sourcegraph' {
         dark?: ThemableDecorationAttachmentStyle
     }
 
-    interface TextDocumentDecorationTypeConfig {
-        /**
-         * Defines whether to show decorations inline (default) or in a separate column.
-         * Column display can only be applied if `enableExtensionsDecorationsColumnView`
-         * experimental feature is enabled.
-         */
-        display: 'inline' | 'column'
-    }
-
     /**
      * Represents a handle to a set of decorations.
      *
@@ -634,12 +625,8 @@ declare module 'sourcegraph' {
      * {@link sourcegraph.app.createDecorationType}
      */
     export interface TextDocumentDecorationType {
-        readonly extensionID?: string
-
         /** An opaque identifier. */
         readonly key: string
-
-        readonly config: TextDocumentDecorationTypeConfig
     }
 
     /**
@@ -1156,7 +1143,7 @@ declare module 'sourcegraph' {
          * Use this to create a unique handle to a set of decorations, that can be applied to
          * text editors using {@link setDecorations}.
          */
-        export function createDecorationType(config?: TextDocumentDecorationType['config']): TextDocumentDecorationType
+        export function createDecorationType(): TextDocumentDecorationType
 
         /**
          * Creates a statusBarItemType that can be used to add a status bar item to

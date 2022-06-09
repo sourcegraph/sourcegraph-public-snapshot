@@ -65,7 +65,7 @@ func main() {
 				adrs = append(adrs, adr{
 					Title:  title,
 					Number: number,
-					Path:   entry.Name(),
+					Path:   "./" + entry.Name(),
 					Date:   time.Unix(int64(ts), 0).Format("2006-01-02"),
 				})
 				break

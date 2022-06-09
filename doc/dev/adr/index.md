@@ -8,6 +8,5 @@ Are you considering adding an ADR? Check out the [How-to page](how-to.md)!
 
 To preserve order, individual documents are prefixed by the **current epoch Unix timestamp**.
 
-1. _2022-04-26_ [Record architecture decisions](1650968652-record-architecture-decisions.md)
-2. _2022-05-13_ [Use Go for scripting purposes](1652433602-use-go-for-scripting.md)
-3. _2022-05-24_ [Use Tech Radar](1653383629-use-tech-radar.md)
+1. _2022-04-26_ [Record architecture decisions](./1650968652-record-architecture-decisions.md)
+2. _2022-05-13_ [Use Go for scripting purposes](./1652433602-use-go-for-scripting.md)

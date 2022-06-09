@@ -7,5 +7,4 @@ const (
 	NpmPackagesScheme    = shared.NpmPackagesScheme
 	GoModulesScheme      = shared.GoModulesScheme
 	PythonPackagesScheme = shared.PythonPackagesScheme
-	RustPackagesScheme   = shared.RustPackagesScheme
 )

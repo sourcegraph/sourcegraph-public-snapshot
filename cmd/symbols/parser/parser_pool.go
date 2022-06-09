@@ -6,8 +6,6 @@ import (
 	"github.com/sourcegraph/go-ctags"
 )
 
-type ParserFactory func() (ctags.Parser, error)
-
 type ParserPool interface {
 	Get(ctx context.Context) (ctags.Parser, error)
 	Done(parser ctags.Parser)

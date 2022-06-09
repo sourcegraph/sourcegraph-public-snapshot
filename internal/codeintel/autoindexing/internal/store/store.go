@@ -2,13 +2,14 @@ package store
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -25,9 +26,9 @@ type store struct {
 }
 
 // New returns a new autoindexing store.
-func New(db database.DB, observationContext *observation.Context) Store {
+func New(db dbutil.DB, observationContext *observation.Context) Store {
 	return &store{
-		db:         basestore.NewWithHandle(db.Handle()),
+		db:         basestore.NewWithDB(db, sql.TxOptions{}),
 		operations: newOperations(observationContext),
 	}
 }

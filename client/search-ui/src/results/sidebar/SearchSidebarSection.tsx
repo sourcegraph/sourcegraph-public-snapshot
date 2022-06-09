@@ -116,7 +116,12 @@ export const SearchSidebarSection: React.FunctionComponent<
                         <H5 as={H2} className="flex-grow-1">
                             {header}
                         </H5>
-                        <Icon aria-hidden={true} className="mr-1" as={isOpened ? ChevronDownIcon : ChevronLeftIcon} />
+                        <Icon
+                            role="img"
+                            aria-hidden={true}
+                            className="mr-1"
+                            as={isOpened ? ChevronDownIcon : ChevronLeftIcon}
+                        />
                     </CollapseHeader>
 
                     <CollapsePanel>

@@ -148,9 +148,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** The publishable key for the billing service (Stripe). */
     billingPublishableKey?: string
-
-    /** Prompt users with browsers that would crash to download a modern browser. */
-    RedirectUnsupportedBrowser?: boolean
 }
 
 export interface BrandAssets {

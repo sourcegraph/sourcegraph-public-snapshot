@@ -184,15 +184,3 @@ func ComputeBatchSpecState(spec *BatchSpec, stats BatchSpecStats) BatchSpecState
 
 	return "INVALID"
 }
-
-// BatchSpecSource defines the possible sources for creating a BatchSpec. Client-side
-// batch specs (created with src-cli) are said to have the "local" source, and batch specs
-// created for server-side execution are said to have the "remote" source.
-type BatchSpecSource string
-
-const (
-	BatchSpecSourceLocal  BatchSpecState = "local"
-	BatchSpecSourceRemote BatchSpecState = "remote"
-)
-
-func (s BatchSpecSource) ToGraphQL() string { return strings.ToUpper(string(s)) }

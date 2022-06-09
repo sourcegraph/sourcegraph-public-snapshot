@@ -63,11 +63,13 @@ export const DownloadDiffButton: React.FunctionComponent<React.PropsWithChildren
 
     let icon: JSX.Element
     if (isErrorLike(state)) {
-        icon = <Icon aria-hidden={true} className="icon" data-tooltip={state?.message} as={AlertCircleIcon} />
+        icon = (
+            <Icon role="img" aria-hidden={true} className="icon" data-tooltip={state?.message} as={AlertCircleIcon} />
+        )
     } else if (state === DownloadState.LOADING) {
         icon = <LoadingSpinner />
     } else {
-        icon = <Icon aria-hidden={true} as={DownloadIcon} />
+        icon = <Icon role="img" aria-hidden={true} as={DownloadIcon} />
     }
 
     return (

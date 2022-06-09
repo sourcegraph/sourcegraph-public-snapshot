@@ -314,7 +314,7 @@ func TestContainsRefGlobs(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
-			query, err := Run(Sequence(
+			query, err := Run(sequence(
 				Init(c.input, SearchTypeLiteralDefault),
 				Globbing,
 			))

@@ -8,13 +8,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // vcsDependenciesSyncer implements the VCSSyncer interface for dependency repos
@@ -150,7 +149,7 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 			continue
 		}
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency); err != nil {
-			return errors.Wrapf(err, "error pushing dependency %q", dependency)
+			return errors.Wrapf(err, "error pushing dependency %q", dependency.PackageManagerSyntax())
 		}
 	}
 
@@ -209,14 +208,7 @@ func (s *vcsDependenciesSyncer) gitPushDependencyTag(ctx context.Context, bareGi
 	defer os.RemoveAll(workDir)
 
 	err = s.source.Download(ctx, workDir, dep)
-	// We should not return err when dependency is not found
-	if err != nil && errcode.IsNotFound(err) {
-		s.logger.With(
-			log.String("dependency", dep.PackageManagerSyntax()),
-			log.String("error", err.Error()),
-		).Warn("Error during dependency download")
-		return nil
-	} else if err != nil {
+	if err != nil {
 		return err
 	}
 

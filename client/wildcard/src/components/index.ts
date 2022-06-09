@@ -30,7 +30,7 @@ export { ButtonLink } from './ButtonLink'
 export { Menu, MenuButton, MenuDivider, MenuHeader, MenuItem, MenuLink, MenuList, MenuText } from './Menu'
 export { NavMenu } from './NavMenu'
 export { Text, Code, Heading, Label, H1, H2, H3, H4, H5, H6 } from './Typography'
-export { AnchorLink, RouterLink, setLinkComponent, Link, createLinkUrl } from './Link'
+export { AnchorLink, RouterLink, setLinkComponent, Link } from './Link'
 export { Modal } from './Modal'
 export { FeedbackBadge, FeedbackText, FeedbackPrompt } from './Feedback'
 export {
@@ -39,7 +39,6 @@ export {
     PopoverContent,
     Position,
     PopoverTail,
-    PopoverRoot,
     PopoverOpenEventReason,
     EMPTY_RECTANGLE,
     createRectangle,
@@ -62,4 +61,5 @@ export type { IconProps } from './Icon'
 export type { Point } from './Popover'
 export type { HeadingProps, HeadingElement } from './Typography'
 export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatusBadgeProps } from './Badge'
+export type { AnchorLinkProps } from './Link'
 export type { ModalProps } from './Modal'

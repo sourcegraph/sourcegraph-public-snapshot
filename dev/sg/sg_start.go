@@ -96,7 +96,7 @@ sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterpr
 			}
 			return
 		}),
-		Action: startExec,
+		Action: execAdapter(startExec),
 	}
 )
 
@@ -132,13 +132,12 @@ func constructStartCmdLongHelp() string {
 	return out.String()
 }
 
-func startExec(ctx *cli.Context) error {
+func startExec(ctx context.Context, args []string) error {
 	config, err := sgconf.Get(configFile, configOverwriteFile)
 	if err != nil {
 		return err
 	}
 
-	args := ctx.Args().Slice()
 	if len(args) > 2 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
@@ -194,7 +193,7 @@ func startExec(ctx *cli.Context) error {
 		}
 	}
 
-	return startCommandSet(ctx.Context, set, config)
+	return startCommandSet(ctx, set, config)
 }
 
 func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.Config) error {

@@ -9,13 +9,12 @@ const DEFAULT_SERIES_DISPLAY_OPTIONS = {
 }
 
 interface InsightOptions {
-    id?: string
     type: 'calculated' | 'just-in-time'
 }
 
 export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOptions): InsightViewNode => ({
     __typename: 'InsightView',
-    id: options.id ?? '001',
+    id: '001',
     appliedSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     defaultSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     dashboardReferenceCount: 0,
@@ -26,7 +25,6 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
         includeRepoRegex: '',
         excludeRepoRegex: '',
     },
-    dashboards: { nodes: [] },
     presentation: {
         __typename: 'LineChartInsightViewPresentation',
         title: 'Migration to new GraphQL TS types',
@@ -87,7 +85,6 @@ export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
     appliedSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     defaultSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     dashboardReferenceCount: 0,
-    dashboards: { nodes: [] },
     isFrozen: false,
     appliedFilters: {
         __typename: 'InsightViewFilters',
@@ -133,7 +130,6 @@ export const SOURCEGRAPH_LANG_STATS_INSIGHT_METADATA_FIXTURE: InsightViewNode = 
     appliedSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     defaultSeriesDisplayOptions: DEFAULT_SERIES_DISPLAY_OPTIONS,
     dashboardReferenceCount: 0,
-    dashboards: { nodes: [] },
     isFrozen: false,
     appliedFilters: {
         __typename: 'InsightViewFilters',

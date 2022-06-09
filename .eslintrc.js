@@ -70,10 +70,6 @@ const config = {
             message:
               'Please use components from the Wildcard component library instead. We work on removing `reactstrap` dependency.',
           },
-          {
-            name: 'chromatic/isChromatic',
-            message: 'Please use `isChromatic` from the `@sourcegraph/storybook` package.',
-          },
         ],
         patterns: [
           {
@@ -103,10 +99,6 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
             element: 'form',
             message:
               'Use the Form component in src/components/Form.tsx instead of the native HTML form element to get proper form validation feedback',
-          },
-          {
-            element: 'input',
-            message: 'Use the <Input/> component from @sourcegraph/wildcard instead.',
           },
           {
             element: 'select',

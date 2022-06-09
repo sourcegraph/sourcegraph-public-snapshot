@@ -4,7 +4,7 @@ import { noop } from 'lodash'
 import { useCallbackRef, useMergeRefs } from 'use-callback-ref'
 
 import { ForwardReferenceComponent } from '../../../types'
-import { PopoverContext } from '../contexts/internal-context'
+import { PopoverContext } from '../context'
 import { PopoverOpenEventReason } from '../Popover'
 
 interface PopoverTriggerProps {}

@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -22,8 +23,8 @@ type SurveyResponseStore struct {
 }
 
 // SurveyResponses instantiates and returns a new SurveyResponseStore with prepared statements.
-func SurveyResponses(db DB) *SurveyResponseStore {
-	return &SurveyResponseStore{Store: basestore.NewWithHandle(db.Handle())}
+func SurveyResponses(db dbutil.DB) *SurveyResponseStore {
+	return &SurveyResponseStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewSurveyResponseStoreWithDB instantiates and returns a new SurveyResponseStore using the other store handle.

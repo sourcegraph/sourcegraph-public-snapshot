@@ -69,7 +69,7 @@ var (
 		Usage:       "Add a new migration file",
 		Description: cliutil.ConstructLongHelp(),
 		Flags:       []cli.Flag{migrateTargetDatabaseFlag},
-		Action:      addExec,
+		Action:      execAdapter(addExec),
 	}
 
 	revertCommand = &cli.Command{
@@ -77,7 +77,7 @@ var (
 		ArgsUsage:   "<commit>",
 		Usage:       "Revert the migrations defined on the given commit",
 		Description: cliutil.ConstructLongHelp(),
-		Action:      revertExec,
+		Action:      execAdapter(revertExec),
 	}
 
 	// outputFactory lazily retrieves the global output that might not yet be instantiated
@@ -113,7 +113,7 @@ var (
 		ArgsUsage:   "<commit>",
 		Usage:       "Identiy the migration leaves for the given commit",
 		Description: cliutil.ConstructLongHelp(),
-		Action:      leavesExec,
+		Action:      execAdapter(leavesExec),
 	}
 
 	squashCommand = &cli.Command{
@@ -122,7 +122,7 @@ var (
 		Usage:       "Collapse migration files from historic releases together",
 		Description: cliutil.ConstructLongHelp(),
 		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, skipTeardownFlag},
-		Action:      squashExec,
+		Action:      execAdapter(squashExec),
 	}
 
 	squashAllCommand = &cli.Command{
@@ -131,7 +131,7 @@ var (
 		Usage:       "Collapse schema definitions into a single SQL file",
 		Description: cliutil.ConstructLongHelp(),
 		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, skipTeardownFlag, outputFilepathFlag},
-		Action:      squashAllExec,
+		Action:      execAdapter(squashAllExec),
 	}
 
 	visualizeCommand = &cli.Command{
@@ -140,7 +140,7 @@ var (
 		Usage:       "Output a DOT visualization of the migration graph",
 		Description: cliutil.ConstructLongHelp(),
 		Flags:       []cli.Flag{migrateTargetDatabaseFlag, outputFilepathFlag},
-		Action:      visualizeExec,
+		Action:      execAdapter(visualizeExec),
 	}
 
 	migrationCommand = &cli.Command{
@@ -234,8 +234,7 @@ func resolveSchema(name string) (*schemas.Schema, error) {
 	return schema, nil
 }
 
-func addExec(ctx *cli.Context) error {
-	args := ctx.Args().Slice()
+func addExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {
 		return cli.NewExitError("no migration name specified", 1)
 	}
@@ -253,8 +252,7 @@ func addExec(ctx *cli.Context) error {
 
 	return migration.Add(database, args[0])
 }
-func revertExec(ctx *cli.Context) error {
-	args := ctx.Args().Slice()
+func revertExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {
 		return cli.NewExitError("no commit specified", 1)
 	}
@@ -265,8 +263,7 @@ func revertExec(ctx *cli.Context) error {
 	return migration.Revert(db.Databases(), args[0])
 }
 
-func squashExec(ctx *cli.Context) (err error) {
-	args := ctx.Args().Slice()
+func squashExec(ctx context.Context, args []string) (err error) {
 	if len(args) == 0 {
 		return cli.NewExitError("no current-version specified", 1)
 	}
@@ -292,8 +289,7 @@ func squashExec(ctx *cli.Context) (err error) {
 	return migration.Squash(database, commit, squashInContainer, skipTeardown)
 }
 
-func visualizeExec(ctx *cli.Context) (err error) {
-	args := ctx.Args().Slice()
+func visualizeExec(ctx context.Context, args []string) (err error) {
 	if len(args) != 0 {
 		return cli.NewExitError("too many arguments", 1)
 	}
@@ -314,8 +310,7 @@ func visualizeExec(ctx *cli.Context) (err error) {
 	return migration.Visualize(database, outputFilepath)
 }
 
-func squashAllExec(ctx *cli.Context) (err error) {
-	args := ctx.Args().Slice()
+func squashAllExec(ctx context.Context, args []string) (err error) {
 	if len(args) != 0 {
 		return cli.NewExitError("too many arguments", 1)
 	}
@@ -336,8 +331,7 @@ func squashAllExec(ctx *cli.Context) (err error) {
 	return migration.SquashAll(database, squashInContainer, skipTeardown, outputFilepath)
 }
 
-func leavesExec(ctx *cli.Context) (err error) {
-	args := ctx.Args().Slice()
+func leavesExec(ctx context.Context, args []string) (err error) {
 	if len(args) == 0 {
 		return cli.NewExitError("no commit specified", 1)
 	}

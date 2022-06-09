@@ -1,5 +1,4 @@
-import { isChromatic } from '@sourcegraph/storybook'
-
+import isChromatic from 'chromatic/isChromatic'
 const incrementedLocalStorageKeys = new Map<string, number>()
 
 /**

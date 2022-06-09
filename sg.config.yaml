@@ -333,7 +333,12 @@ commands:
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} -config doc/docsite.json serve -http=localhost:5080
-    install_func: "installDocsite"
+    install: |
+      if [ ! -x .bin/docsite_${DOCSITE_VERSION} ]; then
+        curl -sS -L -f \
+        "https://github.com/sourcegraph/docsite/releases/download/${DOCSITE_VERSION}/docsite_${DOCSITE_VERSION}_$(go env GOOS)_$(go env GOARCH)" \
+        -o .bin/docsite_${DOCSITE_VERSION} && chmod +x .bin/docsite_${DOCSITE_VERSION}
+      fi
     env:
       DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION in all places (including outside this repo)
 
@@ -499,7 +504,7 @@ commands:
     # database:
     #
     #   env:
-    #       PGHOST: localhost
+    #       POSTGRES_HOST: localhost
     #       PGPASSWORD: sourcegraph
     #       PGUSER: sourcegraph
     #
@@ -511,7 +516,20 @@ commands:
   jaeger:
     cmd: |
       .bin/jaeger-all-in-one-${JAEGER_VERSION} --log-level ${JAEGER_LOG_LEVEL}
-    install_func: installJaeger
+    install: |
+      set -e
+      mkdir -p "${JAEGER_DISK}"
+      suffix="${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH)"
+      target="$PWD/.bin/jaeger-all-in-one-${JAEGER_VERSION}"
+      url="https://github.com/jaegertracing/jaeger/releases/download/v${JAEGER_VERSION}/jaeger-${suffix}.tar.gz"
+
+      if [ ! -f "${target}" ]; then
+        echo "downloading ${url}" 1>&2
+        curl -sS -L -f "${url}" | tar -xz --to-stdout "jaeger-${suffix}/jaeger-all-in-one" >"${target}.tmp"
+        mv "${target}.tmp" "${target}"
+      fi
+
+      chmod +x "${target}"
     env:
       JAEGER_VERSION: 1.30.0
       JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger

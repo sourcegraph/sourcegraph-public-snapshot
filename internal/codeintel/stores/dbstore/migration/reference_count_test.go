@@ -9,14 +9,13 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestReferenceCountMigrator(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := dbstore.NewWithDB(db, &observation.TestContext)
 	migrator := NewReferenceCountMigrator(store, 75)
 

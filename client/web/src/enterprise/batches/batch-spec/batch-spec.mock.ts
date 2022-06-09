@@ -2,7 +2,6 @@ import { subDays, subHours, subMinutes } from 'date-fns'
 import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockedResponse } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 
 import {
     BatchSpecWorkspaceResolutionState,
@@ -71,7 +70,6 @@ export const mockFullBatchSpec = (batchSpec?: Partial<BatchSpecExecutionFields>)
     __typename: 'BatchSpec',
     id: '1',
     state: BatchSpecState.PENDING,
-    source: BatchSpecSource.REMOTE,
     originalInput: 'name: my-batch-change',
     createdAt: now.toISOString(),
     startedAt: null,
@@ -199,7 +197,6 @@ export const mockPreviewWorkspace = (
     path: '/',
     searchResultPaths: ['/first-path'],
     cachedResultFound: false,
-    stepCacheResultCount: 0,
     ignored: false,
     unsupported: false,
     ...fields,
@@ -261,7 +258,6 @@ export const mockWorkspace = (
     finishedAt: now.toISOString(),
     failureMessage: null,
     placeInQueue: null,
-    placeInGlobalQueue: null,
     path: '/some/path',
     onlyFetchWorkspace: false,
     ignored: false,
@@ -403,7 +399,6 @@ export const HIDDEN_WORKSPACE: HiddenBatchSpecWorkspaceFields = {
         deleted: 5,
     },
     placeInQueue: null,
-    placeInGlobalQueue: null,
     onlyFetchWorkspace: false,
     ignored: false,
     unsupported: false,

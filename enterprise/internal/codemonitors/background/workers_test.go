@@ -8,12 +8,10 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
-
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestActionRunner(t *testing.T) {
@@ -40,7 +38,7 @@ func TestActionRunner(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := database.NewDB(dbtest.NewDB(t))
+			db := dbtest.NewDB(t)
 			testQuery := "test patternType:literal"
 			externalURL := "https://www.sourcegraph.com"
 

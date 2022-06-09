@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/amit7itz/goset"
 	"github.com/inconshreveable/log15"
 	pg "github.com/lib/pq"
 	"k8s.io/utils/lru"
@@ -39,6 +38,7 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 	defer func() { err = errors.CombineErrors(err, releaseLock()) }()
 
 	tipCommit := NULL
+	tipCommitHash := ""
 	tipHeight := 0
 
 	var repoId int
@@ -58,6 +58,7 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 			return false, err
 		} else if present {
 			tipCommit = commit
+			tipCommitHash = commitHash
 			tipHeight = height
 			return false, nil
 		}
@@ -74,13 +75,10 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 		return nil
 	}
 
-	parse, err := s.createParser()
-	if err != nil {
-		return errors.Wrap(err, "createParser")
-	}
+	parse := s.createParser()
 
-	symbolCache := lru.New(s.symbolsCacheSize)
-	pathSymbolsCache := lru.New(s.pathSymbolsCacheSize)
+	symbolCache := newSymbolIdCache(s.symbolsCacheSize)
+	pathSymbolsCache := newPathSymbolsCache(s.pathSymbolsCacheSize)
 
 	tasklog.Start("Log")
 	entriesIndexed := 0
@@ -134,37 +132,30 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 			}
 		}
 
-		symbolsFromDeletedFiles := map[string]*goset.Set[string]{}
-		{
-			// Fill from the cache.
-			for _, path := range deletedPaths {
-				if symbols, ok := pathSymbolsCache.Get(path); ok {
-					symbolsFromDeletedFiles[path] = symbols.(*goset.Set[string])
+		getSymbols := func(commit string, paths []string) (map[string]map[string]struct{}, error) {
+			pathToSymbols := map[string]map[string]struct{}{}
+			pathsToFetchSet := map[string]struct{}{}
+			for _, path := range paths {
+				pathsToFetchSet[path] = struct{}{}
+			}
+
+			// Don't fetch files that are already in the cache.
+			if commit == tipCommitHash {
+				for _, path := range paths {
+					if symbols, ok := pathSymbolsCache.get(path); ok {
+						pathToSymbols[path] = symbols
+						delete(pathsToFetchSet, path)
+					}
 				}
 			}
 
-			// Fetch the rest from the DB.
-			pathsToFetch := goset.NewSet[string]()
-			for _, path := range deletedPaths {
-				if _, ok := pathSymbolsCache.Get(path); !ok {
-					pathsToFetch.Add(path)
-				}
+			pathsToFetch := []string{}
+			for path := range pathsToFetchSet {
+				pathsToFetch = append(pathsToFetch, path)
 			}
 
-			pathToSymbols, err := GetSymbolsInFiles(ctx, tx, repoId, pathsToFetch.Items(), hops)
-			if err != nil {
-				return err
-			}
-
-			for path, symbols := range pathToSymbols {
-				symbolsFromDeletedFiles[path] = symbols
-			}
-		}
-
-		symbolsFromAddedFiles := map[string]*goset.Set[string]{}
-		{
 			tasklog.Start("ArchiveEach")
-			err = s.git.ArchiveEach(repo, entry.Commit, addedPaths, func(path string, contents []byte) error {
+			err = s.git.ArchiveEach(repo, commit, pathsToFetch, func(path string, contents []byte) error {
 				defer tasklog.Continue("ArchiveEach")
 
 				tasklog.Start("parse")
@@ -173,59 +164,70 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 					return errors.Wrap(err, "parse")
 				}
 
-				symbolsFromAddedFiles[path] = goset.NewSet[string]()
+				pathToSymbols[path] = map[string]struct{}{}
 				for _, symbol := range symbols {
-					symbolsFromAddedFiles[path].Add(symbol.Name)
+					pathToSymbols[path][symbol.Name] = struct{}{}
 				}
-
-				// Cache the symbols we just parsed.
-				pathSymbolsCache.Add(path, symbolsFromAddedFiles[path])
 
 				return nil
 			})
 
 			if err != nil {
-				return errors.Wrap(err, "while looping ArchiveEach")
+				return nil, errors.Wrap(err, "while looping ArchiveEach")
 			}
 
+			// Cache the symbols we just parsed.
+			if commit != tipCommitHash {
+				for path, symbols := range pathToSymbols {
+					pathSymbolsCache.set(path, symbols)
+				}
+			}
+
+			return pathToSymbols, nil
+		}
+
+		symbolsFromDeletedFiles, err := getSymbols(tipCommitHash, deletedPaths)
+		if err != nil {
+			return errors.Wrap(err, "getSymbols (deleted)")
+		}
+		symbolsFromAddedFiles, err := getSymbols(entry.Commit, addedPaths)
+		if err != nil {
+			return errors.Wrap(err, "getSymbols (added)")
 		}
 
 		// Compute the symmetric difference of symbols between the added and deleted paths.
-		deletedSymbols := map[string]*goset.Set[string]{}
-		addedSymbols := map[string]*goset.Set[string]{}
+		deletedSymbols := map[string]map[string]struct{}{}
+		addedSymbols := map[string]map[string]struct{}{}
 		for _, pathStatus := range entry.PathStatuses {
-			deleted := symbolsFromDeletedFiles[pathStatus.Path]
-			if deleted == nil {
-				deleted = goset.NewSet[string]()
-			}
-			added := symbolsFromAddedFiles[pathStatus.Path]
-			if added == nil {
-				added = goset.NewSet[string]()
-			}
 			switch pathStatus.Status {
 			case gitdomain.DeletedAMD:
-				deletedSymbols[pathStatus.Path] = deleted
+				deletedSymbols[pathStatus.Path] = symbolsFromDeletedFiles[pathStatus.Path]
 			case gitdomain.AddedAMD:
-				addedSymbols[pathStatus.Path] = added
+				addedSymbols[pathStatus.Path] = symbolsFromAddedFiles[pathStatus.Path]
 			case gitdomain.ModifiedAMD:
-				deletedSymbols[pathStatus.Path] = deleted.Difference(added)
-				addedSymbols[pathStatus.Path] = added.Difference(deleted)
+				deletedSymbols[pathStatus.Path] = map[string]struct{}{}
+				addedSymbols[pathStatus.Path] = map[string]struct{}{}
+				for name := range symbolsFromDeletedFiles[pathStatus.Path] {
+					if _, ok := symbolsFromAddedFiles[pathStatus.Path][name]; !ok {
+						deletedSymbols[pathStatus.Path][name] = struct{}{}
+					}
+				}
+				for name := range symbolsFromAddedFiles[pathStatus.Path] {
+					if _, ok := symbolsFromDeletedFiles[pathStatus.Path][name]; !ok {
+						addedSymbols[pathStatus.Path][name] = struct{}{}
+					}
+				}
 			}
 		}
 
 		for path, symbols := range deletedSymbols {
-			for _, symbol := range symbols.Items() {
+			for symbol := range symbols {
 				id := 0
-				id_, ok := symbolCache.Get(pathSymbol{path: path, symbol: symbol})
-				if ok {
-					id = id_.(int)
-				} else {
+				ok := false
+				if id, ok = symbolCache.get(path, symbol); !ok {
 					tasklog.Start("GetSymbol")
 					found := false
 					id, found, err = GetSymbol(ctx, tx, repoId, path, symbol, hops)
-					if err != nil {
-						return errors.Wrap(err, "GetSymbol")
-					}
 					if !found {
 						// We did not find the symbol that (supposedly) has been deleted, so ignore the
 						// deletion. This will probably lead to extra symbols in search results.
@@ -267,6 +269,7 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 		}
 
 		tipCommit = commit
+		tipCommitHash = entry.Commit
 		tipHeight += 1
 
 		return nil
@@ -280,10 +283,10 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 	return nil
 }
 
-func BatchInsertSymbols(ctx context.Context, tasklog *TaskLog, tx *sql.Tx, repoId, commit int, symbolCache *lru.Cache, symbols map[string]*goset.Set[string]) error {
+func BatchInsertSymbols(ctx context.Context, tasklog *TaskLog, tx *sql.Tx, repoId, commit int, symbolCache *symbolIdCache, symbols map[string]map[string]struct{}) error {
 	callback := func(inserter *batch.Inserter) error {
 		for path, pathSymbols := range symbols {
-			for _, symbol := range pathSymbols.Items() {
+			for symbol := range pathSymbols {
 				if err := inserter.Insert(ctx, pg.Array([]int{commit}), pg.Array([]int{}), repoId, path, symbol); err != nil {
 					return err
 				}
@@ -300,7 +303,7 @@ func BatchInsertSymbols(ctx context.Context, tasklog *TaskLog, tx *sql.Tx, repoI
 		if err := rows.Scan(&path, &symbol, &id); err != nil {
 			return err
 		}
-		symbolCache.Add(pathSymbol{path: path, symbol: symbol}, id)
+		symbolCache.set(path, symbol, id)
 		return nil
 	}
 
@@ -327,7 +330,46 @@ type indexRequest struct {
 	done chan struct{}
 }
 
-type pathSymbol struct {
-	path   string
-	symbol string
+type symbolIdCache struct {
+	cache *lru.Cache
+}
+
+func newSymbolIdCache(size int) *symbolIdCache {
+	return &symbolIdCache{cache: lru.New(size)}
+}
+
+func (s *symbolIdCache) get(path, symbol string) (int, bool) {
+	v, ok := s.cache.Get(symbolIdCacheKey(path, symbol))
+	if !ok {
+		return 0, false
+	}
+	return v.(int), true
+}
+
+func (s *symbolIdCache) set(path, symbol string, id int) {
+	s.cache.Add(symbolIdCacheKey(path, symbol), id)
+}
+
+func symbolIdCacheKey(path, symbol string) string {
+	return path + ":" + symbol
+}
+
+type pathSymbolsCache struct {
+	cache *lru.Cache
+}
+
+func newPathSymbolsCache(size int) *pathSymbolsCache {
+	return &pathSymbolsCache{cache: lru.New(size)}
+}
+
+func (s *pathSymbolsCache) get(path string) (map[string]struct{}, bool) {
+	v, ok := s.cache.Get(path)
+	if !ok {
+		return nil, false
+	}
+	return v.(map[string]struct{}), true
+}
+
+func (s *pathSymbolsCache) set(path string, symbols map[string]struct{}) {
+	s.cache.Add(path, symbols)
 }

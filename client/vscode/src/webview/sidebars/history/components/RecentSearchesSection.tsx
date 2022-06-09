@@ -64,7 +64,12 @@ export const RecentSearchesSection: React.FunctionComponent<React.PropsWithChild
                 aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent searches`}
             >
                 <H5 className="flex-grow-1">Recent Searches</H5>
-                <Icon className="mr-1" as={collapsed ? ChevronLeftIcon : ChevronDownIcon} aria-hidden={true} />
+                <Icon
+                    role="img"
+                    className="mr-1"
+                    as={collapsed ? ChevronLeftIcon : ChevronDownIcon}
+                    aria-hidden={true}
+                />
             </button>
 
             {!collapsed && (

@@ -32,11 +32,11 @@ type Event struct {
 	FirstSourceURL *string
 	// LastSourceURL is only logged for Cloud events; therefore, this only goes to the BigQuery database
 	// and does not go to the Postgres DB.
-	LastSourceURL    *string
-	URL              string
-	Source           string
-	EvaluatedFlagSet featureflag.EvaluatedFlagSet
-	CohortID         *string
+	LastSourceURL *string
+	URL           string
+	Source        string
+	FeatureFlags  featureflag.FlagSet
+	CohortID      *string
 	// Referrer is only logged for Cloud events; therefore, this only goes to the BigQuery database
 	// and does not go to the Postgres DB.
 	Referrer       *string
@@ -49,24 +49,24 @@ type Event struct {
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
-func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, argument, publicArgument json.RawMessage, evaluatedFlagSet featureflag.EvaluatedFlagSet, cohortID *string) error {
+func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, argument, publicArgument json.RawMessage, featureFlags featureflag.FlagSet, cohortID *string) error {
 	insertID, _ := uuid.NewRandom()
 	insertIDFinal := insertID.String()
 	eventID := int32(rand.Int())
 	return LogEvent(context.Background(), db, Event{
-		EventName:        eventName,
-		UserID:           userID,
-		UserCookieID:     "backend", // Use a non-empty string here to avoid the event_logs table's user existence constraint causing issues
-		URL:              "",
-		Source:           "BACKEND",
-		Argument:         argument,
-		PublicArgument:   publicArgument,
-		UserProperties:   json.RawMessage("{}"),
-		EvaluatedFlagSet: evaluatedFlagSet,
-		CohortID:         cohortID,
-		DeviceID:         &deviceID,
-		InsertID:         &insertIDFinal,
-		EventID:          &eventID,
+		EventName:      eventName,
+		UserID:         userID,
+		UserCookieID:   "backend", // Use a non-empty string here to avoid the event_logs table's user existence constraint causing issues
+		URL:            "",
+		Source:         "BACKEND",
+		Argument:       argument,
+		PublicArgument: publicArgument,
+		UserProperties: json.RawMessage("{}"),
+		FeatureFlags:   featureFlags,
+		CohortID:       cohortID,
+		DeviceID:       &deviceID,
+		InsertID:       &insertIDFinal,
+		EventID:        &eventID,
 	})
 }
 
@@ -152,7 +152,7 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 		if event.Referrer != nil {
 			referrer = *event.Referrer
 		}
-		featureFlagJSON, err := json.Marshal(event.EvaluatedFlagSet)
+		featureFlagJSON, err := json.Marshal(event.FeatureFlags)
 		if err != nil {
 			return nil, err
 		}
@@ -214,16 +214,16 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 		}
 
 		databaseEvents = append(databaseEvents, &database.Event{
-			Name:             event.EventName,
-			URL:              event.URL,
-			UserID:           uint32(event.UserID),
-			AnonymousUserID:  event.UserCookieID,
-			Source:           event.Source,
-			Argument:         event.Argument,
-			Timestamp:        timeNow().UTC(),
-			EvaluatedFlagSet: event.EvaluatedFlagSet,
-			CohortID:         event.CohortID,
-			PublicArgument:   event.PublicArgument,
+			Name:            event.EventName,
+			URL:             event.URL,
+			UserID:          uint32(event.UserID),
+			AnonymousUserID: event.UserCookieID,
+			Source:          event.Source,
+			Argument:        event.Argument,
+			Timestamp:       timeNow().UTC(),
+			FeatureFlags:    event.FeatureFlags,
+			CohortID:        event.CohortID,
+			PublicArgument:  event.PublicArgument,
 		})
 	}
 

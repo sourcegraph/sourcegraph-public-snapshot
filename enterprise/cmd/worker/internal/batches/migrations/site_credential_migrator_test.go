@@ -19,7 +19,7 @@ import (
 
 func TestSiteCredentialMigrator(t *testing.T) {
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 

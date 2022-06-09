@@ -27,7 +27,6 @@ type sessionIssuerHelper struct {
 	*extsvc.CodeHost
 	clientID    string
 	db          database.DB
-	allowSignup *bool
 	allowGroups []string
 }
 
@@ -57,9 +56,6 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, message, errors.New(message)
 	}
 
-	// AllowSignup defaults to true when not set to preserve the existing behavior.
-	signupAllowed := s.allowSignup == nil || *s.allowSignup
-
 	var data extsvc.AccountData
 	gitlab.SetExternalAccountData(&data, gUser, token)
 
@@ -81,7 +77,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			AccountID:   strconv.FormatInt(int64(gUser.ID), 10),
 		},
 		ExternalAccountData: data,
-		CreateIfNotExist:    signupAllowed,
+		CreateIfNotExist:    true,
 	})
 	if err != nil {
 		return nil, safeErrMsg, err

@@ -164,22 +164,22 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		}
 
 		events = append(events, usagestats.Event{
-			EventName:        args.Event,
-			URL:              args.URL,
-			UserID:           actor.FromContext(ctx).UID,
-			UserCookieID:     args.UserCookieID,
-			FirstSourceURL:   args.FirstSourceURL,
-			LastSourceURL:    args.LastSourceURL,
-			Source:           args.Source,
-			Argument:         argumentPayload,
-			EvaluatedFlagSet: featureflag.GetEvaluatedFlagSet(ctx),
-			CohortID:         args.CohortID,
-			Referrer:         args.Referrer,
-			PublicArgument:   publicArgumentPayload,
-			UserProperties:   userPropertiesPayload,
-			DeviceID:         args.DeviceID,
-			EventID:          args.EventID,
-			InsertID:         args.InsertID,
+			EventName:      args.Event,
+			URL:            args.URL,
+			UserID:         actor.FromContext(ctx).UID,
+			UserCookieID:   args.UserCookieID,
+			FirstSourceURL: args.FirstSourceURL,
+			LastSourceURL:  args.LastSourceURL,
+			Source:         args.Source,
+			Argument:       argumentPayload,
+			FeatureFlags:   featureflag.FromContext(ctx),
+			CohortID:       args.CohortID,
+			Referrer:       args.Referrer,
+			PublicArgument: publicArgumentPayload,
+			UserProperties: userPropertiesPayload,
+			DeviceID:       args.DeviceID,
+			EventID:        args.EventID,
+			InsertID:       args.InsertID,
 		})
 	}
 

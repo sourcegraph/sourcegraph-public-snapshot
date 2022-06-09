@@ -2,14 +2,12 @@ package jobutil
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -19,23 +17,19 @@ import (
 // This is used to implement logic where we might like to order independent
 // search operations, favoring results returns by jobs earlier in the list to
 // those appearing later in the list. If this job sees a cancellation for a
-// child job, it stops executing additional jobs and returns. If ensureUnique is
-// true, this job ensures only unique results among all children are sent (if
-// two or more jobs send the same result, only the first unique result is sent,
-// subsequent similar results are ignored).
-func NewSequentialJob(ensureUnique bool, children ...job.Job) job.Job {
+// child job, it stops executing additional jobs and returns.
+func NewSequentialJob(children ...job.Job) job.Job {
 	if len(children) == 0 {
 		return &NoopJob{}
 	}
 	if len(children) == 1 {
 		return children[0]
 	}
-	return &SequentialJob{children: children, ensureUnique: ensureUnique}
+	return &SequentialJob{children: children}
 }
 
 type SequentialJob struct {
-	ensureUnique bool
-	children     []job.Job
+	children []job.Job
 }
 
 func (s *SequentialJob) Name() string {
@@ -43,40 +37,12 @@ func (s *SequentialJob) Name() string {
 }
 
 func (s *SequentialJob) Tags() []log.Field {
-	return []log.Field{
-		log.Bool("ensureUnique", s.ensureUnique),
-	}
+	return []log.Field{}
 }
 
-func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, parentStream, finish := job.StartSpan(ctx, parentStream, s)
-	defer func() { finish(alert, err) }()
-
+func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	var maxAlerter search.MaxAlerter
 	var errs errors.MultiError
-
-	stream := parentStream
-	if s.ensureUnique {
-		var mux sync.Mutex
-		dedup := result.NewDeduper()
-
-		stream = streaming.StreamFunc(func(event streaming.SearchEvent) {
-			mux.Lock()
-
-			results := event.Results[:0]
-			for _, match := range event.Results {
-				seen := dedup.Seen(match)
-				if seen {
-					continue
-				}
-				dedup.Add(match)
-				results = append(results, match)
-			}
-			event.Results = results
-			mux.Unlock()
-			parentStream.Send(event)
-		})
-	}
 
 	for _, child := range s.children {
 		alert, err := child.Run(ctx, clients, stream)

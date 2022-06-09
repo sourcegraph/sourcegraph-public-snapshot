@@ -133,7 +133,7 @@ func lsifToHTML(
 		splitLines[idx] = []rune(line)
 	}
 
-	occurrences := document.Occurrences
+	occurences := document.Occurrences
 
 	row, occIndex := int32(0), 0
 	for row < int32(len(splitLines)) {
@@ -148,8 +148,8 @@ func lsifToHTML(
 		addRow(row)
 
 		lineCharacter := int32(0)
-		for occIndex < len(occurrences) && occurrences[occIndex].Range[0] < row+1 {
-			occ := occurrences[occIndex]
+		for occIndex < len(occurences) && occurences[occIndex].Range[0] < row+1 {
+			occ := occurences[occIndex]
 			occIndex += 1
 
 			startRow, startCharacter, endRow, endCharacter := normalizeSCIPRange(occ.Range)

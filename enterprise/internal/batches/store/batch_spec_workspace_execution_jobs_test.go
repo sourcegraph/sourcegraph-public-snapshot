@@ -20,7 +20,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 	for i := 0; i < cap(jobs); i++ {
 		job := &btypes.BatchSpecWorkspaceExecutionJob{
 			BatchSpecWorkspaceID: int64(i + 456),
-			UserID:               int32(i + 1),
 		}
 
 		jobs = append(jobs, job)
@@ -45,9 +44,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				t.Fatal(diff)
 			}
 
-			// Always one, since every job is in a separate user queue (see l.23).
-			job.PlaceInUserQueue = 1
-			job.PlaceInGlobalQueue = int64(idx + 1)
+			job.PlaceInQueue = int64(idx + 1)
 		}
 	})
 
@@ -101,16 +98,13 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			case 0:
 				job.State = btypes.BatchSpecWorkspaceExecutionJobStateQueued
 				job.Cancel = true
-				job.PlaceInGlobalQueue = 1
-				job.PlaceInUserQueue = 1
+				job.PlaceInQueue = 1
 			case 1:
 				job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
-				job.PlaceInUserQueue = 0
-				job.PlaceInGlobalQueue = 0
+				job.PlaceInQueue = 0
 			case 2:
 				job.State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
-				job.PlaceInUserQueue = 0
-				job.PlaceInGlobalQueue = 0
+				job.PlaceInQueue = 0
 			}
 
 			ct.UpdateJobState(t, ctx, s, job)
@@ -488,15 +482,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			}
 		}
 
-		createBatchSpec := func(t *testing.T, batchSpec *btypes.BatchSpec) {
-			t.Helper()
-			batchSpec.UserID = 1
-			batchSpec.NamespaceUserID = 1
-			if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
-				t.Fatal(err)
-			}
-		}
-
 		t.Run("success", func(t *testing.T) {
 			// TODO: Test we skip jobs where nothing needs to be executed.
 
@@ -507,7 +492,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 
 			batchSpec := &btypes.BatchSpec{}
 
-			createBatchSpec(t, batchSpec)
 			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace, unsupportedWorkspace, cachedResultWorkspace)
 			createJobsAndAssert(t, batchSpec, []int64{normalWorkspace.ID})
 		})
@@ -518,7 +502,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 
 			batchSpec := &btypes.BatchSpec{AllowIgnored: true}
 
-			createBatchSpec(t, batchSpec)
 			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace)
 			createJobsAndAssert(t, batchSpec, []int64{normalWorkspace.ID, ignoredWorkspace.ID})
 		})
@@ -529,7 +512,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 
 			batchSpec := &btypes.BatchSpec{AllowUnsupported: true}
 
-			createBatchSpec(t, batchSpec)
 			createWorkspaces(t, batchSpec, normalWorkspace, unsupportedWorkspace)
 			createJobsAndAssert(t, batchSpec, []int64{normalWorkspace.ID, unsupportedWorkspace.ID})
 		})
@@ -541,7 +523,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 
 			batchSpec := &btypes.BatchSpec{AllowUnsupported: true, AllowIgnored: true}
 
-			createBatchSpec(t, batchSpec)
 			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace, unsupportedWorkspace)
 			createJobsAndAssert(t, batchSpec, []int64{normalWorkspace.ID, ignoredWorkspace.ID, unsupportedWorkspace.ID})
 		})
@@ -662,7 +643,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 func createWorkspaces(t *testing.T, ctx context.Context, s *Store) []*btypes.BatchSpecWorkspace {
 	t.Helper()
 
-	batchSpec := &btypes.BatchSpec{NamespaceUserID: 1, UserID: 1}
+	batchSpec := &btypes.BatchSpec{NamespaceUserID: 1}
 	if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}

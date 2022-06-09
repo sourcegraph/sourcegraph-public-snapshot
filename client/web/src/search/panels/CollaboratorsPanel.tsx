@@ -120,7 +120,7 @@ export const CollaboratorsPanel: React.FunctionComponent<React.PropsWithChildren
                                         </span>
                                     ) : successfulInvites.has(person.email) ? (
                                         <span className="text-success ml-auto mr-3">
-                                            <Icon aria-hidden={true} className="mr-1" as={EmailCheckIcon} />
+                                            <Icon role="img" aria-hidden={true} className="mr-1" as={EmailCheckIcon} />
                                             Invited
                                         </span>
                                     ) : (
@@ -129,7 +129,7 @@ export const CollaboratorsPanel: React.FunctionComponent<React.PropsWithChildren
                                                 {person.email}
                                             </div>
                                             <div className={classNames('text-primary', styles.inviteButtonOverlay)}>
-                                                <Icon aria-hidden={true} className="mr-1" as={EmailIcon} />
+                                                <Icon role="img" aria-hidden={true} className="mr-1" as={EmailIcon} />
                                                 Invite to Sourcegraph
                                             </div>
                                         </>
@@ -211,7 +211,12 @@ const CollaboratorsPanelInfo: React.FunctionComponent<React.PropsWithChildren<{ 
                     <CardBody>
                         <div className={classNames('d-flex', 'align-content-start', 'mb-2')}>
                             <H2 className={classNames(styles.infoBox, 'mb-0')}>
-                                <Icon aria-hidden={true} className="mr-2 text-muted" as={InformationOutlineIcon} />
+                                <Icon
+                                    role="img"
+                                    aria-hidden={true}
+                                    className="mr-2 text-muted"
+                                    as={InformationOutlineIcon}
+                                />
                                 What is this?
                             </H2>
                             <div className="flex-grow-1" />
@@ -252,7 +257,7 @@ const CollaboratorsPanelInfo: React.FunctionComponent<React.PropsWithChildren<{ 
             <div className={classNames('text-muted', styles.info)}>Collaborators from your repositories</div>
             <div className="flex-grow-1" />
             <div>
-                <Icon aria-hidden={true} className="mr-1 text-muted" as={InformationOutlineIcon} />
+                <Icon role="img" aria-hidden={true} className="mr-1 text-muted" as={InformationOutlineIcon} />
                 <Button
                     variant="link"
                     className={classNames(styles.info, 'p-0')}

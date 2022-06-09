@@ -15,12 +15,11 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 
-	"github.com/sourcegraph/log"
-
 	sgslack "github.com/sourcegraph/sourcegraph/dev/sg/internal/slack"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var auditFormatFlag string
@@ -50,23 +49,23 @@ var auditCommand = &cli.Command{
 				Value:       os.Getenv("GITHUB_TOKEN"),
 			},
 		},
-		Action: func(ctx *cli.Context) error {
-			ghc := github.NewClient(oauth2.NewClient(ctx.Context, oauth2.StaticTokenSource(
+		Action: execAdapter(func(ctx context.Context, args []string) error {
+			ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 				&oauth2.Token{AccessToken: auditPRGitHubToken},
 			)))
 
 			logger := log.Scoped("audit pr", "sg audit pr")
 			logger.Debug("fetching issues")
-			issues, err := fetchIssues(ctx.Context, logger, ghc)
+			issues, err := fetchIssues(ctx, logger, ghc)
 			if err != nil {
 				return err
 			}
-			slack, err := sgslack.NewClient(ctx.Context)
+			slack, err := sgslack.NewClient(ctx)
 			if err != nil {
 				return err
 			}
 			logger.Debug("formatting results")
-			prAuditIssues, err := presentIssues(ctx.Context, ghc, slack, issues)
+			prAuditIssues, err := presentIssues(ctx, ghc, slack, issues)
 			if err != nil {
 				return err
 			}
@@ -89,7 +88,7 @@ var auditCommand = &cli.Command{
 			}
 
 			return nil
-		},
+		}),
 	}},
 }
 

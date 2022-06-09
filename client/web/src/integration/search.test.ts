@@ -249,8 +249,6 @@ describe('Search', () => {
             await driver.page.goBack()
             expect(await getSearchFieldValue(driver)).toStrictEqual('foo')
         })
-
-        // TODO: Add test for line break handling (https://github.com/sourcegraph/sourcegraph/issues/36725)
     })
 
     describe('Case sensitivity toggle', () => {

@@ -158,15 +158,10 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 		)
 	}
 
-	var response search.SymbolsResponse
-	err = json.NewDecoder(resp.Body).Decode(&response)
+	err = json.NewDecoder(resp.Body).Decode(&symbols)
 	if err != nil {
-		return nil, err
+		return symbols, err
 	}
-	if response.Err != "" {
-		return nil, errors.New(response.Err)
-	}
-	symbols = response.Symbols
 
 	// 🚨 SECURITY: We have valid results, so we need to apply sub-repo permissions
 	// filtering.

@@ -42,7 +42,6 @@ const batchSpecWorkspaceFieldsFragment = gql`
             deleted
         }
         placeInQueue
-        placeInGlobalQueue
         onlyFetchWorkspace
         ignored
         unsupported
@@ -178,7 +177,6 @@ export const batchSpecExecutionFieldsFragment = gql`
     fragment BatchSpecExecutionFields on BatchSpec {
         id
         originalInput
-        source
         state
         description {
             name

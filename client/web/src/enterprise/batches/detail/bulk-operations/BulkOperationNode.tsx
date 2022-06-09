@@ -22,32 +22,32 @@ import styles from './BulkOperationNode.module.scss'
 const OPERATION_TITLES: Record<BulkOperationType, JSX.Element> = {
     COMMENT: (
         <>
-            <Icon aria-hidden={true} className="text-muted" as={CommentOutlineIcon} /> Comment on changesets
+            <Icon role="img" aria-hidden={true} className="text-muted" as={CommentOutlineIcon} /> Comment on changesets
         </>
     ),
     DETACH: (
         <>
-            <Icon aria-hidden={true} className="text-muted" as={LinkVariantRemoveIcon} /> Detach changesets
+            <Icon role="img" aria-hidden={true} className="text-muted" as={LinkVariantRemoveIcon} /> Detach changesets
         </>
     ),
     REENQUEUE: (
         <>
-            <Icon aria-hidden={true} className="text-muted" as={SyncIcon} /> Retry changesets
+            <Icon role="img" aria-hidden={true} className="text-muted" as={SyncIcon} /> Retry changesets
         </>
     ),
     MERGE: (
         <>
-            <Icon aria-hidden={true} className="text-muted" as={SourceBranchIcon} /> Merge changesets
+            <Icon role="img" aria-hidden={true} className="text-muted" as={SourceBranchIcon} /> Merge changesets
         </>
     ),
     CLOSE: (
         <>
-            <Icon aria-hidden={true} className="text-danger" as={SourceBranchIcon} /> Close changesets
+            <Icon role="img" aria-hidden={true} className="text-danger" as={SourceBranchIcon} /> Close changesets
         </>
     ),
     PUBLISH: (
         <>
-            <Icon aria-hidden={true} className="text-muted" as={UploadIcon} /> Publish changesets
+            <Icon role="img" aria-hidden={true} className="text-muted" as={UploadIcon} /> Publish changesets
         </>
     ),
 }
@@ -112,7 +112,8 @@ export const BulkOperationNode: React.FunctionComponent<React.PropsWithChildren<
                                 ) : (
                                     <>
                                         <AlertLink to={error.changeset.externalURL?.url ?? ''}>
-                                            {error.changeset.title} <Icon aria-hidden={true} as={ExternalLinkIcon} />
+                                            {error.changeset.title}{' '}
+                                            <Icon role="img" aria-hidden={true} as={ExternalLinkIcon} />
                                         </AlertLink>{' '}
                                         on{' '}
                                         <AlertLink to={error.changeset.repository.url}>

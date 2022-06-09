@@ -6,17 +6,15 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // InitStore initializes and returns a *store.Store instance.
@@ -36,7 +34,7 @@ var initStore = memo.NewMemoizedConstructor(func() (*store.Store, error) {
 		return nil, err
 	}
 
-	return store.New(database.NewDB(db), observationContext, keyring.Default().BatchChangesCredentialKey), nil
+	return store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey), nil
 })
 
 // InitReconcilerWorkerStore initializes and returns a dbworker.Store instance for the reconciler worker.

@@ -78,49 +78,6 @@ The most likely error message indicating a problem is:
 Error prefetching SAML service provider metadata
 ```
 
-### How to control user sign-up and sign-in
-
-Use the following filters to restrict how users can create accounts and sign in to your Sourcegraph instance via SAML auth provider.
-
-**allowSignup**
-
-  Allows new users to creating their accounts via SAML authentication, or blocks the sign-up when set to `false`.
-
-  If `false`, users signing in via SAML must have an existing Sourcegraph account, which will be linked to their SAML identity after the sign-in.
-
-  If not set, it will default to `true`.
-
-  ```json
-    {
-      "type": "saml",
-      // ...
-      "allowSignup": false
-    }
-  ```
-
-**allowGroups**
-
-  Restricts login to members of the allowed SAML groups.
-
-  When not configured or set to`true`, sign-in will be allowed.
-  If the list of allowed groups is empty, sign-in is not allowed.
-
-  The `groupsAttributeName` is an optional parameter that can be used to set a different name for the SAML attribute assertion that contains a list of groups the user belongs to. It defaults to "groups" when not provided.
-
-  If combined with `"allowSignup": true` or if `allowSignup` is not set, only members of the allowed groups can create their accounts in Sourcegraph via SAML authentication.
-  When set with `"allowSignup": false`, an admin should first create the user account so that the user can login with SAML.
-
-  ```json
-    {
-      "type": "saml",
-      // ...
-      "allowSignup": false,
-      "allowGroups": ["sourcegraph"],
-      "groupAttributesName": "mySAMLgroup"
-    }
-  ```
-
-
 See [SAML troubleshooting](#troubleshooting) for more tips.
 
 ## Troubleshooting

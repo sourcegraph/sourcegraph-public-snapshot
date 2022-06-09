@@ -12,10 +12,10 @@ import (
 )
 
 func TestRegistryExtensionReleases(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
-	user, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
+	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -5,7 +5,7 @@
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 root_dir=$(pwd)
-set -e
+set -ex
 
 export SOURCEGRAPH_BASE_URL="${1:-"http://localhost:7080"}"
 
@@ -21,6 +21,7 @@ pushd dev/ci/integration/code-intel || exit 1
 set +x
 # shellcheck disable=SC1091
 source /root/.sg_envrc
+set -x
 "${root_dir}/init-sg" addRepos -config repos.json
 popd || exit 1
 

@@ -11,14 +11,13 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetIndexByID(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -91,7 +90,7 @@ func TestGetIndexByID(t *testing.T) {
 }
 
 func TestGetQueuedIndexRank(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -140,7 +139,7 @@ func TestGetQueuedIndexRank(t *testing.T) {
 }
 
 func TestGetIndexesByIDs(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -202,7 +201,7 @@ func TestGetIndexesByIDs(t *testing.T) {
 }
 
 func TestGetIndexes(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -321,7 +320,7 @@ func TestGetIndexes(t *testing.T) {
 }
 
 func TestIsQueued(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertIndexes(t, db, Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
@@ -358,7 +357,7 @@ func TestIsQueued(t *testing.T) {
 }
 
 func TestInsertIndexes(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -483,7 +482,7 @@ func TestInsertIndexes(t *testing.T) {
 }
 
 func TestDeleteIndexByID(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertIndexes(t, db,
@@ -505,7 +504,7 @@ func TestDeleteIndexByID(t *testing.T) {
 }
 
 func TestDeleteIndexByIDMissingRow(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	if found, err := store.DeleteIndexByID(context.Background(), 1); err != nil {
@@ -516,7 +515,7 @@ func TestDeleteIndexByIDMissingRow(t *testing.T) {
 }
 
 func TestDeleteIndexesWithoutRepository(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	var indexes []Index
@@ -539,7 +538,7 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 	for repositoryID, deletedAt := range deletions {
 		query := sqlf.Sprintf(`UPDATE repo SET deleted_at=%s WHERE id=%s`, deletedAt, repositoryID)
 
-		if _, err := db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		if _, err := db.Query(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("Failed to update repository: %s", err)
 		}
 	}
@@ -560,7 +559,7 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 }
 
 func TestLastIndexScanForRepository(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -592,7 +591,7 @@ func TestLastIndexScanForRepository(t *testing.T) {
 }
 
 func TestRecentIndexesSummary(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 

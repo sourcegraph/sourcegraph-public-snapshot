@@ -10,11 +10,6 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 ## Unreleased
 
-## 3.40.1 -> 3.40.2
-
-To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/312b9f8308148cf9403cc7868eee7b5c9611b121](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/312b9f8308148cf9403cc7868eee7b5c9611b121)
-
 ## 3.39 -> 3.40.1
 
 - A fix that corrects the default behavior of the `migrator` service is included in this release. An attempt to standardize CLI packages in v3.39.0 unintentionally

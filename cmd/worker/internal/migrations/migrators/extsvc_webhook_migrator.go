@@ -2,11 +2,13 @@ package migrators
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
@@ -25,8 +27,8 @@ func NewExternalServiceWebhookMigrator(store *basestore.Store) *ExternalServiceW
 	return &ExternalServiceWebhookMigrator{store: store, BatchSize: 50}
 }
 
-func NewExternalServiceWebhookMigratorWithDB(db database.DB) *ExternalServiceWebhookMigrator {
-	return NewExternalServiceWebhookMigrator(basestore.NewWithHandle(db.Handle()))
+func NewExternalServiceWebhookMigratorWithDB(db dbutil.DB) *ExternalServiceWebhookMigrator {
+	return NewExternalServiceWebhookMigrator(basestore.NewWithDB(db, sql.TxOptions{}))
 }
 
 // ID returns the migration row ID in the out_of_band_migrations table.

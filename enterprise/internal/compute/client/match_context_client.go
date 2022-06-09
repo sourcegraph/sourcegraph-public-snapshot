@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// NewComputeStreamRequest returns an http.Request against the streaming API for query.
-func NewComputeStreamRequest(baseURL string, query string) (*stdhttp.Request, error) {
+// NewMatchContextRequest returns an http.Request against the streaming API for query.
+func NewMatchContextRequest(baseURL string, query string) (*stdhttp.Request, error) {
 	u := baseURL + "/compute/stream?q=" + url.QueryEscape(query)
 	req, err := stdhttp.NewRequest("GET", u, nil)
 	if err != nil {

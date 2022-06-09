@@ -64,7 +64,8 @@ export class CopyableText extends React.PureComponent<Props, State> {
                             variant="secondary"
                             aria-label="Copy"
                         >
-                            <Icon as={ContentCopyIcon} aria-hidden={true} /> {this.state.copied ? 'Copied' : 'Copy'}
+                            <Icon role="img" as={ContentCopyIcon} aria-hidden={true} />{' '}
+                            {this.state.copied ? 'Copied' : 'Copy'}
                         </Button>
                     </div>
                 </div>

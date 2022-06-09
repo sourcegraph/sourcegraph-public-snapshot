@@ -2,7 +2,6 @@ package jobutil
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -187,9 +186,7 @@ func TestSequentialJob(t *testing.T) {
 			default:
 			}
 			s.Send(streaming.SearchEvent{
-				Results: []result.Match{&result.FileMatch{
-					File: result.File{Path: strconv.Itoa(i)},
-				}},
+				Results: []result.Match{&result.FileMatch{}},
 			})
 		}
 		return nil, nil
@@ -203,7 +200,7 @@ func TestSequentialJob(t *testing.T) {
 	// Setup: A child job that panics.
 	neverJob := mockjob.NewStrictMockJob()
 	t.Run("sequential job returns early after cancellation when limit job sees 5 events", func(t *testing.T) {
-		limitedSequentialJob := NewLimitJob(5, NewSequentialJob(true, mockJob, neverJob))
+		limitedSequentialJob := NewLimitJob(5, NewSequentialJob(mockJob, neverJob))
 		require.NotPanics(t, func() {
 			limitedSequentialJob.Run(context.Background(), job.RuntimeClients{}, stream)
 		})

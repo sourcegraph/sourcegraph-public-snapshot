@@ -11,7 +11,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -62,8 +61,8 @@ func (blocks *NotebookBlocks) Scan(value any) error {
 	return json.Unmarshal(b, &blocks)
 }
 
-func Notebooks(db database.DB) NotebooksStore {
-	store := basestore.NewWithHandle(db.Handle())
+func Notebooks(db dbutil.DB) NotebooksStore {
+	store := basestore.NewWithDB(db, sql.TxOptions{})
 	return &notebooksStore{store}
 }
 

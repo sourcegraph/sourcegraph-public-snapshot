@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -51,9 +52,9 @@ const fetchUnauthorizedReposSql = `
 -- source: enterprise/internal/insights/resolver/permissions.go:FetchUnauthorizedRepos
 	SELECT id FROM repo WHERE NOT`
 
-func NewInsightPermissionStore(db database.DB) *InsightPermStore {
+func NewInsightPermissionStore(db dbutil.DB) *InsightPermStore {
 	return &InsightPermStore{
-		Store: basestore.NewWithHandle(db.Handle()),
+		Store: basestore.NewWithDB(db, sql.TxOptions{}),
 	}
 }
 

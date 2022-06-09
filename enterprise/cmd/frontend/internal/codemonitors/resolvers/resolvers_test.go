@@ -1260,8 +1260,7 @@ func TestTriggerTestEmailAction(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
-	r := newTestResolver(t, db)
+	r := newTestResolver(t, nil)
 
 	namespaceID := relay.MarshalID("User", actor.FromContext(ctx).UID)
 

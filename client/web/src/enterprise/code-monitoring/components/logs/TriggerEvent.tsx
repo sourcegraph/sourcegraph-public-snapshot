@@ -61,10 +61,20 @@ export const TriggerEvent: React.FunctionComponent<
     return (
         <>
             <Button onClick={toggleExpanded} className={classNames('btn-icon d-block', styles.expandButton)}>
-                <Icon aria-hidden={true} className="mr-2" as={expanded ? ChevronDownIcon : ChevronRightIcon} />
+                <Icon
+                    role="img"
+                    aria-hidden={true}
+                    className="mr-2"
+                    as={expanded ? ChevronDownIcon : ChevronRightIcon}
+                />
 
                 {hasError ? (
-                    <Icon aria-hidden={true} className={classNames(styles.errorIcon, 'mr-2')} as={AlertCircleIcon} />
+                    <Icon
+                        role="img"
+                        aria-hidden={true}
+                        className={classNames(styles.errorIcon, 'mr-2')}
+                        as={AlertCircleIcon}
+                    />
                 ) : (
                     <span />
                 )}
@@ -80,7 +90,7 @@ export const TriggerEvent: React.FunctionComponent<
                             className="font-weight-normal ml-2"
                         >
                             {triggerEvent.resultCount} new {pluralize('result', triggerEvent.resultCount)}{' '}
-                            <Icon aria-hidden={true} as={OpenInNewIcon} />
+                            <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />
                         </Link>
                     )}
                 </span>

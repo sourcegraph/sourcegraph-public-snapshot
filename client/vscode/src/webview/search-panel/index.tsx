@@ -16,7 +16,7 @@ import {
     WildcardThemeContext,
     // This is the root Tooltip usage
     // eslint-disable-next-line no-restricted-imports
-    DeprecatedTooltip,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI } from '../../contract'
@@ -124,7 +124,7 @@ render(
             <MemoryRouter>
                 <Main />
             </MemoryRouter>
-            <DeprecatedTooltip key={1} className="sourcegraph-tooltip" />
+            <Tooltip key={1} className="sourcegraph-tooltip" />
         </WildcardThemeContext.Provider>
     </ShortcutProvider>,
     document.querySelector('#root')

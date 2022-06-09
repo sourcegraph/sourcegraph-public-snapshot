@@ -2,6 +2,7 @@ package migrators
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"testing"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -27,7 +29,7 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		var svcs []*types.ExternalService
 
 		es := db.ExternalServices()
-		basestore := basestore.NewWithHandle(db.Handle())
+		basestore := basestore.NewWithDB(db, sql.TxOptions{})
 
 		// Create a trivial external service of each kind, as well as duplicate
 		// services for the external service kinds that support webhooks.
@@ -147,10 +149,10 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		return svcs
 	}
 
-	clearHasWebhooks := func(t *testing.T, ctx context.Context, db database.DB) {
+	clearHasWebhooks := func(t *testing.T, ctx context.Context, db dbutil.DB) {
 		t.Helper()
 
-		basestore := basestore.NewWithHandle(db.Handle())
+		basestore := basestore.NewWithDB(db, sql.TxOptions{})
 		if err := basestore.Exec(
 			ctx,
 			sqlf.Sprintf("UPDATE external_services SET has_webhooks = NULL"),

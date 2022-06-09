@@ -3,53 +3,43 @@ import { useContext, useEffect, useState } from 'react'
 import { FeatureFlagName } from './featureFlags'
 import { FeatureFlagsContext } from './FeatureFlagsProvider'
 
-type FetchStatus = 'initial' | 'loaded' | 'error'
+type FetchStatus = 'loading' | 'finished' | 'error'
 
 /**
  * Returns an evaluated feature flag for the current user
- *
- * @returns [flagValue, fetchStatus, error]
  */
-export function useFeatureFlag(flagName: FeatureFlagName, defaultValue = false): [boolean, FetchStatus, any?] {
+export function useFeatureFlag(flagName: FeatureFlagName): [boolean, FetchStatus, Error | null] {
     const { client } = useContext(FeatureFlagsContext)
-    const [{ value, status, error }, setResult] = useState<{ value: boolean | null; status: FetchStatus; error?: any }>(
-        {
-            status: 'initial',
-            value: defaultValue,
-        }
-    )
+    const [value, setValue] = useState<boolean>(false)
+    const [status, setStatus] = useState<FetchStatus>('loading')
+    const [error, setError] = useState<Error | null>(null)
 
     useEffect(() => {
         let isMounted = true
         if (!client) {
-            const errorMessage =
+            console.warn(
                 '[useFeatureFlag]: No FeatureFlagClient is configured. All feature flags will default to "false" value.'
-            console.warn(errorMessage)
-            setResult(({ value }) => ({ value, status: 'error', error: new Error(errorMessage) }))
+            )
             return
         }
 
-        const subscription = client.get(flagName).subscribe(
-            value => {
-                if (!isMounted) {
-                    return
-                }
-                setResult({ value, status: 'loaded' })
-            },
-            error => {
-                if (!isMounted) {
-                    return
-                }
-                setResult(({ value }) => ({ value, status: 'error', error }))
+        const cleanup = client.on(flagName, (value, error) => {
+            if (!isMounted) {
+                return
             }
-        )
+            if (error) {
+                setError(error)
+                setStatus('error')
+                return
+            }
+            setStatus('finished')
+            setValue(value)
+        })
 
         return () => {
             isMounted = false
-            setResult(({ value }) => ({ value, status: 'initial' }))
-            subscription.unsubscribe()
+            cleanup()
         }
-    }, [client, flagName])
-
-    return [typeof value === 'boolean' ? value : defaultValue, status, error]
+    })
+    return [value, status, error]
 }

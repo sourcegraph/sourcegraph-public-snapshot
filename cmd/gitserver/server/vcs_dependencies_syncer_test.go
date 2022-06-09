@@ -14,13 +14,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
@@ -132,17 +131,6 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 
 		s.assertRefs(t, dir, map[string]string{})
 	})
-
-	depsSource.download["org.springframework.boot:spring-boot:3.0"] = notFoundError{errors.New("Please contact Josh Long")}
-
-	t.Run("trying to download non-existent Maven dependency", func(t *testing.T) {
-		springBootDep, err := reposource.ParseMavenDependency("org.springframework.boot:spring-boot:3.0")
-		if err != nil {
-			t.Fatal("Cannot parse Maven dependency")
-		}
-		err = s.gitPushDependencyTag(ctx, string(dir), springBootDep)
-		require.NoError(t, err)
-	})
 }
 
 type fakeDepsService struct {
@@ -213,6 +201,10 @@ func (s *fakeDepsSource) Get(ctx context.Context, name, version string) (reposou
 
 	return dep, nil
 }
+
+type notFoundError struct{ error }
+
+func (e notFoundError) NotFound() bool { return true }
 
 func (s *fakeDepsSource) Download(ctx context.Context, dir string, dep reposource.PackageDependency) error {
 	err := s.download[dep.PackageManagerSyntax()]

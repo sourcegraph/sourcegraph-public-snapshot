@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -267,8 +268,8 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}
 
 	repos := makeRepositoryRevisions("foo@master:mybranch:*refs/heads/")
-	repos[0].ListRefs = func(context.Context, database.DB, api.RepoName) ([]gitdomain.Ref, error) {
-		return []gitdomain.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
+	repos[0].ListRefs = func(context.Context, database.DB, api.RepoName) ([]git.Ref, error) {
+		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
 
 	matches, _, err := RunRepoSubsetTextSearch(

@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/opentracing/opentracing-go/log"
-	slog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -21,6 +20,7 @@ import (
 // backend (e.g., text vs commit vs symbol search are represented as different
 // jobs) as well as combinations over those searches (run a set in parallel,
 // timeout). Calling Run on a job object runs a search.
+//go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/search/job -i Job -d mockjob
 type Job interface {
 	Run(context.Context, RuntimeClients, streaming.Sender) (*search.Alert, error)
 	Name() string
@@ -32,5 +32,4 @@ type RuntimeClients struct {
 	Zoekt        zoekt.Streamer
 	SearcherURLs *endpoint.Map
 	Gitserver    gitserver.Client
-	log          slog.Logger
 }

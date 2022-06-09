@@ -165,7 +165,7 @@ const renderDashboardsContent = (
 
 const triggerDashboardMenuItem = async (screen: RenderWithBrandedContextResult & { user: UserEvent }, name: RegExp) => {
     const { user } = screen
-    const dashboardMenu = await waitFor(() => screen.getByRole('button', { name: /dashboard context menu/ }))
+    const dashboardMenu = await waitFor(() => screen.getByRole('button', { name: /Dashboard options/ }))
     user.click(dashboardMenu)
 
     const dashboardMenuItem = screen.getByRole('menuitem', { name })
@@ -218,14 +218,14 @@ describe('DashboardsContent', () => {
 
         const { history } = screen
 
-        await triggerDashboardMenuItem(screen, /configure dashboard/)
+        await triggerDashboardMenuItem(screen, /Configure dashboard/)
 
         expect(history.location.pathname).toEqual('/insights/dashboards/foo/edit')
     })
 
     it('opens add insight modal', async () => {
         const screen = renderDashboardsContent()
-        const addInsightsButton = await waitFor(() => screen.getByRole('button', { name: /add or remove insights/ }))
+        const addInsightsButton = await waitFor(() => screen.getByRole('button', { name: /Add or remove insights/ }))
 
         userEvent.click(addInsightsButton)
 

@@ -10,9 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var uploadPackArgs = []string{

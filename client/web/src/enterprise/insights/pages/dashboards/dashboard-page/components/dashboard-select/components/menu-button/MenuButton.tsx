@@ -24,7 +24,7 @@ export const MenuButton: React.FunctionComponent<React.PropsWithChildren<MenuBut
     const { dashboards, className } = props
 
     return (
-        <ListboxButton id="insight-dashboard-select-button" className={classNames(styles.button, className)}>
+        <ListboxButton className={classNames(styles.button, className)}>
             {({ value, isExpanded }) => {
                 const dashboard = dashboards.find(dashboard => dashboard.id === value)
 

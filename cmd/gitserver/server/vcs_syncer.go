@@ -22,7 +22,3 @@ type VCSSyncer interface {
 	// RemoteShowCommand returns the command to be executed for showing remote.
 	RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error)
 }
-
-type notFoundError struct{ error }
-
-func (e notFoundError) NotFound() bool { return true }

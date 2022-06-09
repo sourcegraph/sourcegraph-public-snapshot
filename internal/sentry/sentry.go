@@ -4,13 +4,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
 
 	"github.com/cockroachdb/redact"
 	"github.com/getsentry/sentry-go"
 	"github.com/inconshreveable/log15"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -115,17 +114,21 @@ func CapturePanic(err error, tags map[string]string) {
 	captureError(err, sentry.LevelFatal, tags)
 }
 
-// Recover is a recovery handler to wrap the stdlib net/http Mux.
+// Recovery handler to wrap the stdlib net/http Mux.
 // Example:
 //  mux := http.NewServeMux
 //  ...
 //	http.Handle("/", sentry.Recoverer(mux))
-func Recoverer(logger log.Logger, handler http.Handler) http.Handler {
+func Recoverer(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if r := recover(); r != nil {
 				err := errors.Errorf("handler panic: %v", redact.Safe(r))
-				logger.Error("handler panic", log.Error(err))
+				CapturePanic(err, nil)
+
+				log15.Error("recovered from panic", "error", err)
+				debug.PrintStack()
+
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}()

@@ -18,6 +18,8 @@ import (
 )
 
 // TeammateResolver provides an interface to find information about teammates.
+//
+//go:generate ../mockgen.sh github.com/sourcegraph/sourcegraph/dev/team -i TeammateResolver -o mock.go
 type TeammateResolver interface {
 	// ResolveByName tries to resolve a teammate by name
 	ResolveByName(ctx context.Context, name string) (*Teammate, error)

@@ -35,7 +35,7 @@ apk --no-cache add jansson
 NUMCPUS=$(grep -c '^processor' /proc/cpuinfo)
 
 # Installation
-curl --retry 5 "https://codeload.github.com/universal-ctags/ctags/tar.gz/$CTAGS_VERSION" | tar xz -C /tmp
+curl "https://codeload.github.com/universal-ctags/ctags/tar.gz/$CTAGS_VERSION" | tar xz -C /tmp
 cd /tmp/ctags-$CTAGS_VERSION
 ./autogen.sh
 ./configure --program-prefix=universal- --enable-json

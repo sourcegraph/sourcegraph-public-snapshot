@@ -2,7 +2,7 @@
 name: buildchecker-history
 on:
   schedule:
-  - cron: '0 0 * * SUN'
+  - cron: '* * * * SUN'
   workflow_dispatch:
 
 jobs:

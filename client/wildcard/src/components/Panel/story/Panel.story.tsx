@@ -146,7 +146,7 @@ export const WithChildren: Story = props => {
                             data-placement="left"
                             variant="icon"
                         >
-                            <Icon aria-hidden={true} as={CloseIcon} />
+                            <Icon role="img" aria-hidden={true} as={CloseIcon} />
                         </Button>
                     </div>
                 </div>

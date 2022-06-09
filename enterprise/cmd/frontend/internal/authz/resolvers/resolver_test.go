@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -370,82 +369,6 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 		})
 		if err != nil {
 			t.Fatal(err)
-		}
-	})
-}
-
-func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
-	t.Run("disabled on dotcom", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
-
-		users := database.NewStrictMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
-
-		db := edb.NewStrictMockEnterpriseDB()
-		db.UsersFunc.SetDefaultReturn(users)
-
-		r := &Resolver{db: db}
-
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx, nil)
-
-		if !errors.Is(err, errDisabledSourcegraphDotCom) {
-			t.Errorf("err: want %q, but got %q", errDisabledSourcegraphDotCom, err)
-		}
-
-		if result != nil {
-			t.Errorf("result: want nil but got %v", result)
-		}
-
-		// Reset the env var for other tests.
-		envvar.MockSourcegraphDotComMode(false)
-	})
-
-	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
-
-		db := edb.NewStrictMockEnterpriseDB()
-		db.UsersFunc.SetDefaultReturn(users)
-
-		r := &Resolver{db: db}
-
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx, nil)
-
-		if !errors.Is(err, backend.ErrMustBeSiteAdmin) {
-			t.Errorf("err: want %q, but got %q", backend.ErrMustBeSiteAdmin, err)
-		}
-
-		if result != nil {
-			t.Errorf("result: want nil but got %v", result)
-		}
-	})
-
-	t.Run("invalid codehost", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-
-		db := edb.NewStrictMockEnterpriseDB()
-		db.UsersFunc.SetDefaultReturn(users)
-
-		r := &Resolver{db: db}
-
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx,
-			&graphqlbackend.RepoPermsBitbucketProjectArgs{
-				// Note: Usage of graphqlbackend.MarshalOrgID here is NOT a typo. Intentionally use an
-				// incorrect format for the CodeHost ID.
-				CodeHost: graphqlbackend.MarshalOrgID(1),
-			},
-		)
-
-		if err == nil {
-			t.Error("expected error, but got nil")
-		}
-
-		if result != nil {
-			t.Errorf("result: want nil but got %v", result)
 		}
 	})
 }

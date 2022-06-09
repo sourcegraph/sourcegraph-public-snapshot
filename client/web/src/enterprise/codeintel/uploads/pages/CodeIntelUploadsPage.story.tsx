@@ -33,7 +33,6 @@ const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
         },
     },
     associatedIndex: null,
-    auditLogs: [],
 }
 
 const testUploads: LsifUploadFields[] = [

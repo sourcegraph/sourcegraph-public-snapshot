@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
-	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/go-ctags"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
@@ -25,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -48,7 +48,7 @@ func main() {
 				return nil, nil, nil, "", err
 			}
 
-			searchFunc := func(ctx context.Context, args search.SymbolsParameters) (results result.Symbols, err error) {
+			searchFunc := func(ctx context.Context, args types.SearchArgs) (results result.Symbols, err error) {
 				if sliceContains(repos, string(args.Repo)) {
 					return rockskipSearchFunc(ctx, args)
 				} else {
@@ -72,7 +72,7 @@ func SetupRockskip(observationContext *observation.Context, gitserverClient symb
 
 	db := mustInitializeCodeIntelDB()
 	git := NewGitserver(repositoryFetcher)
-	createParser := func() (rockskip.ParseSymbolsFunc, error) { return createParserWithConfig(config.Ctags) }
+	createParser := func() rockskip.ParseSymbolsFunc { return createParserWithConfig(config.Ctags) }
 	server, err := rockskip.NewService(db, git, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize)
 	if err != nil {
 		return nil, nil, nil, config.Ctags.Command, err
@@ -105,11 +105,8 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 	}
 }
 
-func createParserWithConfig(config types.CtagsConfig) (rockskip.ParseSymbolsFunc, error) {
-	parser, err := symbolsParser.SpawnCtags(sglog.Scoped("ctags", "ctags processes"), config)
-	if err != nil {
-		return nil, err
-	}
+func createParserWithConfig(config types.CtagsConfig) rockskip.ParseSymbolsFunc {
+	parser := mustCreateCtagsParser(config)
 
 	return func(path string, bytes []byte) (symbols []rockskip.Symbol, err error) {
 		entries, err := parser.Parse(path, bytes)
@@ -128,7 +125,27 @@ func createParserWithConfig(config types.CtagsConfig) (rockskip.ParseSymbolsFunc
 		}
 
 		return symbols, nil
-	}, nil
+	}
+}
+
+func mustCreateCtagsParser(ctagsConfig types.CtagsConfig) ctags.Parser {
+	options := ctags.Options{
+		Bin:                ctagsConfig.Command,
+		PatternLengthLimit: ctagsConfig.PatternLengthLimit,
+	}
+	if ctagsConfig.LogErrors {
+		options.Info = log.New(os.Stderr, "ctags: ", log.LstdFlags)
+	}
+	if ctagsConfig.DebugLogs {
+		options.Debug = log.New(os.Stderr, "DBUG ctags: ", log.LstdFlags)
+	}
+
+	parser, err := ctags.New(options)
+	if err != nil {
+		log.Fatalf("Failed to create new ctags parser: %s", err)
+	}
+
+	return symbolsParser.NewFilteringParser(parser, ctagsConfig.MaxFileSize, ctagsConfig.MaxSymbols)
 }
 
 func mustInitializeCodeIntelDB() *sql.DB {
@@ -168,8 +185,8 @@ func (g Gitserver) ArchiveEach(repo string, commit string, paths []string, onFil
 		return nil
 	}
 
-	args := search.SymbolsParameters{Repo: api.RepoName(repo), CommitID: api.CommitID(commit)}
-	parseRequestOrErrors := g.repositoryFetcher.FetchRepositoryArchive(context.TODO(), args.Repo, args.CommitID, paths)
+	args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit)}
+	parseRequestOrErrors := g.repositoryFetcher.FetchRepositoryArchive(context.TODO(), args, paths)
 	defer func() {
 		// Ensure the channel is drained
 		for range parseRequestOrErrors {

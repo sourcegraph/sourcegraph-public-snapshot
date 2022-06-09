@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -11,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -39,9 +39,9 @@ type store struct {
 }
 
 // New returns a new store.
-func New(db database.DB, op *observation.Context) *store {
+func New(db dbutil.DB, op *observation.Context) *store {
 	return &store{
-		db:         basestore.NewWithHandle(db.Handle()),
+		db:         basestore.NewWithDB(db, sql.TxOptions{}),
 		operations: newOperations(op),
 	}
 }

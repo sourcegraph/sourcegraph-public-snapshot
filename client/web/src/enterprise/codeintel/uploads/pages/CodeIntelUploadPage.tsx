@@ -3,7 +3,6 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { takeWhile } from 'rxjs/operators'
@@ -12,7 +11,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Container, PageHeader, LoadingSpinner, useObservable, Icon, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, useObservable, Icon, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { Collapsible } from '../../../../components/Collapsible'
@@ -32,7 +31,6 @@ import { DependencyOrDependentNode } from '../components/DependencyOrDependentNo
 import { EmptyDependencies } from '../components/EmptyDependencies'
 import { EmptyDependents } from '../components/EmptyDependents'
 import { EmptyUploadRetentionMatchStatus } from '../components/EmptyUploadRetentionStatusNode'
-import { UploadAuditLogTimeline } from '../components/UploadAuditLogTimeline'
 import { RetentionMatchNode } from '../components/UploadRetentionStatusNode'
 import { queryLisfUploadFields as defaultQueryLisfUploadFields } from '../hooks/queryLisfUploadFields'
 import { queryLsifUploadsList as defaultQueryLsifUploadsList } from '../hooks/queryLsifUploadsList'
@@ -218,9 +216,9 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
                         />
                         {uploadOrError.isLatestForRepo && (
                             <div>
-                                <Icon aria-hidden={true} as={InformationOutlineIcon} /> This upload can answer queries
-                                for the tip of the default branch and are targets of cross-repository find reference
-                                operations.
+                                <Icon role="img" aria-hidden={true} as={InformationOutlineIcon} /> This upload can
+                                answer queries for the tip of the default branch and are targets of cross-repository
+                                find reference operations.
                             </div>
                         )}
                     </Container>
@@ -270,7 +268,6 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
                                             <FilteredConnection
                                                 listComponent="div"
                                                 listClassName={classNames(styles.grid, 'mb-3')}
-                                                inputClassName="w-auto"
                                                 noun="dependency"
                                                 pluralNoun="dependencies"
                                                 nodeComponent={DependencyOrDependentNode}
@@ -297,7 +294,6 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
                                             <FilteredConnection
                                                 listComponent="div"
                                                 listClassName={classNames(styles.grid, 'mb-3')}
-                                                inputClassName="w-auto"
                                                 noun="dependent"
                                                 pluralNoun="dependents"
                                                 nodeComponent={DependencyOrDependentNode}
@@ -343,7 +339,6 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
                                     <FilteredConnection
                                         listComponent="div"
                                         listClassName={classNames(styles.grid, 'mb-3')}
-                                        inputClassName="w-auto"
                                         noun="match"
                                         pluralNoun="matches"
                                         nodeComponent={RetentionMatchNode}
@@ -358,20 +353,6 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
                             </Container>
                         </>
                     )}
-
-                    <Container className="mt-2">
-                        <Collapsible title={<H3 className="mb-0">Audit Logs</H3>} titleAtStart={true}>
-                            {uploadOrError.auditLogs?.length ?? 0 > 0 ? (
-                                <UploadAuditLogTimeline logs={uploadOrError.auditLogs || []} />
-                            ) : (
-                                <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
-                                    <MapSearchIcon className="mb-2" />
-                                    <br />
-                                    This upload has no audit logs.
-                                </Text>
-                            )}
-                        </Collapsible>
-                    </Container>
                 </>
             )}
         </div>

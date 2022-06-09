@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -125,8 +126,8 @@ type extensionStore struct {
 var _ ExtensionStore = (*extensionStore)(nil)
 
 // Extensions instantiates and returns a new ExtensionsStore with prepared statements.
-func Extensions(db database.DB) ExtensionStore {
-	return &extensionStore{Store: basestore.NewWithHandle(db.Handle())}
+func Extensions(db dbutil.DB) ExtensionStore {
+	return &extensionStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // ExtensionsWith instantiates and returns a new ExtensionsStore using the other store handle.

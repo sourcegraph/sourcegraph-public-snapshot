@@ -101,11 +101,12 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     })
 
     const client = useApolloClient()
+    const contextValidator = useMemo(() => createSearchContextValidator(client), [client])
 
     const contexts = useField({
         name: 'context',
         formApi: formAPI,
-        validators: { async: useMemo(() => createSearchContextValidator(client), [client]) },
+        validators: { async: contextValidator },
     })
 
     const includeRegex = useField({
@@ -200,7 +201,6 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     <FilterCollapseSection
                         open={isHorizontalMode || activeSection === FilterSection.SortFilter}
                         title="Sort & Limit"
-                        aria-label="sort and limit filter section"
                         preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
                         hasActiveFilter={false}
                         withSeparators={!isHorizontalMode}
@@ -217,7 +217,6 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                 <FilterCollapseSection
                     open={isHorizontalMode || activeSection === FilterSection.SearchContext}
                     title="Search context"
-                    aria-label="search context filter section"
                     preview={getSerializedSearchContextFilter(contexts.input.value)}
                     hasActiveFilter={hasActiveUnaryFilter(contexts.input.value)}
                     withSeparators={!isHorizontalMode}
@@ -249,7 +248,6 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                 <FilterCollapseSection
                     open={isHorizontalMode || activeSection === FilterSection.RegularExpressions}
                     title="Regular expression"
-                    aria-label="regular expressions filter section"
                     preview={getSerializedRepositoriesFilter(currentRepositoriesFilters)}
                     hasActiveFilter={
                         hasActiveUnaryFilter(includeRegex.input.value) || hasActiveUnaryFilter(excludeRegex.input.value)
@@ -337,7 +335,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         disabled={(!hasFiltersChanged && !hasSeriesDisplayOptionsChanged) || !formAPI.valid}
                         onClick={onCreateInsightRequest}
                     >
-                        <Icon aria-hidden={true} className="mr-1" as={PlusIcon} />
+                        <Icon role="img" aria-hidden={true} className="mr-1" as={PlusIcon} />
                         Save as new view
                     </Button>
                 </div>

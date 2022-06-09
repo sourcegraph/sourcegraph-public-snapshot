@@ -3,20 +3,19 @@ package main
 import (
 	"os"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {
-	liblog := log.Init(log.Resource{
+	syncLogs := log.Init(log.Resource{
 		Name:    env.MyName,
 		Version: version.Version(),
 	})
-	defer liblog.Sync()
+	defer syncLogs()
 
 	logger := log.Scoped("worker", "worker oss edition")
 

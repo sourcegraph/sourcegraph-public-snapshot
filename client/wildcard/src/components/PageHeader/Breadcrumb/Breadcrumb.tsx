@@ -6,7 +6,7 @@ import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 
 import styles from './Breadcrumb.module.scss'
 
-export type BreadcrumbIcon = React.ComponentType<{ className?: string; role?: React.AriaRole }>
+export type BreadcrumbIcon = React.ComponentType<{ className?: string }>
 export type BreadcrumbText = React.ReactNode
 
 type BreadcrumbProps = React.HTMLAttributes<HTMLSpanElement> & {

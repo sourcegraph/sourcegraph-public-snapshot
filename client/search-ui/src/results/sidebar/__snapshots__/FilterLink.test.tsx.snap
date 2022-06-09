@@ -121,12 +121,12 @@ exports[`FilterLink should have correct links for repos 1`] = `
           r:
         </span>
         <span
-          class="tooltip"
-          data-state="closed"
-          role="presentation"
+          aria-label="gitlab.com"
+          role="img"
+          title="gitlab.com"
         >
           <svg
-            aria-label="gitlab.com"
+            aria-hidden="true"
             class="mdi-icon iconInline text-muted sidebarSectionIcon"
             fill="currentColor"
             height="24"
@@ -167,12 +167,12 @@ exports[`FilterLink should have correct links for repos 1`] = `
           r:
         </span>
         <span
-          class="tooltip"
-          data-state="closed"
-          role="presentation"
+          aria-label="github.com"
+          role="img"
+          title="github.com"
         >
           <svg
-            aria-label="github.com"
+            aria-hidden="true"
             class="mdi-icon iconInline text-muted sidebarSectionIcon"
             fill="currentColor"
             height="24"
@@ -247,12 +247,12 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
           r:
         </span>
         <span
-          class="tooltip"
-          data-state="closed"
-          role="presentation"
+          aria-label="gitlab.com"
+          role="img"
+          title="gitlab.com"
         >
           <svg
-            aria-label="gitlab.com"
+            aria-hidden="true"
             class="mdi-icon iconInline text-muted sidebarSectionIcon"
             fill="currentColor"
             height="24"
@@ -293,12 +293,12 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
           r:
         </span>
         <span
-          class="tooltip"
-          data-state="closed"
-          role="presentation"
+          aria-label="github.com"
+          role="img"
+          title="github.com"
         >
           <svg
-            aria-label="github.com"
+            aria-hidden="true"
             class="mdi-icon iconInline text-muted sidebarSectionIcon"
             fill="currentColor"
             height="24"

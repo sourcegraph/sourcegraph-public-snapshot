@@ -230,8 +230,8 @@ export const commonWebGraphQlResults: Partial<
             nodes: [],
         },
     }),
-    EvaluateFeatureFlag: () => ({
-        evaluateFeatureFlag: false,
+    FetchFeatureFlags: () => ({
+        viewerFeatureFlags: [],
     }),
     OrgFeatureFlagValue: () => ({
         organizationFeatureFlagValue: false,

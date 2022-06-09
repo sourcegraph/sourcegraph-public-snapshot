@@ -55,7 +55,7 @@ export const ReposMatchingPattern: FunctionComponent<React.PropsWithChildren<Rep
                     className="p-0"
                     disabled={disabled}
                 >
-                    <Icon className="text-danger" aria-hidden={true} as={TrashIcon} />
+                    <Icon role="img" className="text-danger" aria-hidden={true} as={TrashIcon} />
                 </Button>
             </span>
         </>

@@ -39,7 +39,7 @@ func makeCommit(i int) string {
 }
 
 // insertUploads populates the lsif_uploads table with the given upload models.
-func insertUploads(t testing.TB, db database.DB, uploads ...Upload) {
+func insertUploads(t testing.TB, db *sql.DB, uploads ...Upload) {
 	for _, upload := range uploads {
 		if upload.Commit == "" {
 			upload.Commit = makeCommit(upload.ID)
@@ -111,57 +111,8 @@ func insertUploads(t testing.TB, db database.DB, uploads ...Upload) {
 	}
 }
 
-func updateUploads(t testing.TB, db database.DB, uploads ...Upload) {
-	for _, upload := range uploads {
-		query := sqlf.Sprintf(`
-			UPDATE lsif_uploads
-			SET
-				commit = COALESCE(NULLIF(%s, ''), commit),
-				root = COALESCE(NULLIF(%s, ''), root),
-				uploaded_at = COALESCE(NULLIF(%s, '0001-01-01 00:00:00+00'::timestamptz), uploaded_at),
-				state = COALESCE(NULLIF(%s, ''), state),
-				failure_message  = COALESCE(%s, failure_message),
-				started_at = COALESCE(%s, started_at),
-				finished_at = COALESCE(%s, finished_at),
-				process_after = COALESCE(%s, process_after),
-				num_resets = COALESCE(NULLIF(%s, 0), num_resets),
-				num_failures = COALESCE(NULLIF(%s, 0), num_failures),
-				repository_id = COALESCE(NULLIF(%s, 0), repository_id),
-				indexer = COALESCE(NULLIF(%s, ''), indexer),
-				indexer_version = COALESCE(NULLIF(%s, ''), indexer_version),
-				num_parts = COALESCE(NULLIF(%s, 0), num_parts),
-				uploaded_parts = COALESCE(NULLIF(%s, '{}'::integer[]), uploaded_parts),
-				upload_size = COALESCE(%s, upload_size),
-				associated_index_id = COALESCE(%s, associated_index_id)
-			WHERE id = %s
-		`,
-			upload.Commit,
-			upload.Root,
-			upload.UploadedAt,
-			upload.State,
-			upload.FailureMessage,
-			upload.StartedAt,
-			upload.FinishedAt,
-			upload.ProcessAfter,
-			upload.NumResets,
-			upload.NumFailures,
-			upload.RepositoryID,
-			upload.Indexer,
-			upload.IndexerVersion,
-			upload.NumParts,
-			pq.Array(upload.UploadedParts),
-			upload.UploadSize,
-			upload.AssociatedIndexID,
-			upload.ID)
-
-		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("unexpected error while inserting upload: %s", err)
-		}
-	}
-}
-
 // insertIndexes populates the lsif_indexes table with the given index models.
-func insertIndexes(t testing.TB, db database.DB, indexes ...Index) {
+func insertIndexes(t testing.TB, db *sql.DB, indexes ...Index) {
 	for _, index := range indexes {
 		if index.Commit == "" {
 			index.Commit = makeCommit(index.ID)
@@ -235,7 +186,7 @@ func insertIndexes(t testing.TB, db database.DB, indexes ...Index) {
 
 // insertRepo creates a repository record with the given id and name. If there is already a repository
 // with the given identifier, nothing happens
-func insertRepo(t testing.TB, db database.DB, id int, name string) {
+func insertRepo(t testing.TB, db *sql.DB, id int, name string) {
 	if name == "" {
 		name = fmt.Sprintf("n-%d", id)
 	}
@@ -257,7 +208,7 @@ func insertRepo(t testing.TB, db database.DB, id int, name string) {
 }
 
 // Marks a repo as deleted
-func deleteRepo(t testing.TB, db database.DB, id int, deleted_at time.Time) {
+func deleteRepo(t testing.TB, db *sql.DB, id int, deleted_at time.Time) {
 	query := sqlf.Sprintf(
 		`UPDATE repo SET deleted_at = %s WHERE id = %s`,
 		deleted_at,
@@ -304,18 +255,18 @@ func insertPackageReferences(t testing.TB, store *Store, packageReferences []sha
 // with the given identifiers. Each upload is assumed to refer to the tip of the default branch. To mark
 // an upload as protected (visible to _some_ branch) butn ot visible from the default branch, use the
 // insertVisibleAtTipNonDefaultBranch method instead.
-func insertVisibleAtTip(t testing.TB, db database.DB, repositoryID int, uploadIDs ...int) {
+func insertVisibleAtTip(t testing.TB, db *sql.DB, repositoryID int, uploadIDs ...int) {
 	insertVisibleAtTipInternal(t, db, repositoryID, true, uploadIDs...)
 }
 
 // insertVisibleAtTipNonDefaultBranch populates rows of the lsif_uploads_visible_at_tip table for the
 // given repository with the given identifiers. Each upload is assumed to refer to the tip of a branch
 // distinct from the default branch or a tag.
-func insertVisibleAtTipNonDefaultBranch(t testing.TB, db database.DB, repositoryID int, uploadIDs ...int) {
+func insertVisibleAtTipNonDefaultBranch(t testing.TB, db *sql.DB, repositoryID int, uploadIDs ...int) {
 	insertVisibleAtTipInternal(t, db, repositoryID, false, uploadIDs...)
 }
 
-func insertVisibleAtTipInternal(t testing.TB, db database.DB, repositoryID int, isDefaultBranch bool, uploadIDs ...int) {
+func insertVisibleAtTipInternal(t testing.TB, db *sql.DB, repositoryID int, isDefaultBranch bool, uploadIDs ...int) {
 	var rows []*sqlf.Query
 	for _, uploadID := range uploadIDs {
 		rows = append(rows, sqlf.Sprintf("(%s, %s, %s)", repositoryID, uploadID, isDefaultBranch))
@@ -331,7 +282,7 @@ func insertVisibleAtTipInternal(t testing.TB, db database.DB, repositoryID int, 
 }
 
 // insertNearestUploads populates the lsif_nearest_uploads table with the given upload metadata.
-func insertNearestUploads(t testing.TB, db database.DB, repositoryID int, uploads map[string][]commitgraph.UploadMeta) {
+func insertNearestUploads(t testing.TB, db *sql.DB, repositoryID int, uploads map[string][]commitgraph.UploadMeta) {
 	var rows []*sqlf.Query
 	for commit, uploadMetas := range uploads {
 		uploadsByLength := make(map[int]int, len(uploadMetas))
@@ -362,7 +313,7 @@ func insertNearestUploads(t testing.TB, db database.DB, repositoryID int, upload
 }
 
 //nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
-func insertLinks(t testing.TB, db database.DB, repositoryID int, links map[string]commitgraph.LinkRelationship) {
+func insertLinks(t testing.TB, db *sql.DB, repositoryID int, links map[string]commitgraph.LinkRelationship) {
 	if len(links) == 0 {
 		return
 	}
@@ -397,7 +348,7 @@ func toCommitGraphView(uploads []Upload) *commitgraph.CommitGraphView {
 }
 
 //nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
-func getVisibleUploads(t testing.TB, db database.DB, repositoryID int, commits []string) map[string][]int {
+func getVisibleUploads(t testing.TB, db *sql.DB, repositoryID int, commits []string) map[string][]int {
 	idsByCommit := map[string][]int{}
 	for _, commit := range commits {
 		query := makeVisibleUploadsQuery(repositoryID, commit)
@@ -419,7 +370,7 @@ func getVisibleUploads(t testing.TB, db database.DB, repositoryID int, commits [
 }
 
 //nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
-func getUploadsVisibleAtTip(t testing.TB, db database.DB, repositoryID int) []int {
+func getUploadsVisibleAtTip(t testing.TB, db *sql.DB, repositoryID int) []int {
 	query := sqlf.Sprintf(
 		`SELECT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s AND is_default_branch ORDER BY upload_id`,
 		repositoryID,
@@ -433,7 +384,7 @@ func getUploadsVisibleAtTip(t testing.TB, db database.DB, repositoryID int) []in
 	return ids
 }
 
-func getProtectedUploads(t testing.TB, db database.DB, repositoryID int) []int {
+func getProtectedUploads(t testing.TB, db *sql.DB, repositoryID int) []int {
 	query := sqlf.Sprintf(
 		`SELECT DISTINCT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s ORDER BY upload_id`,
 		repositoryID,

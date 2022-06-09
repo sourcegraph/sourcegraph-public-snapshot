@@ -5,7 +5,7 @@ import express from 'express'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import signale from 'signale'
 
-import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
+import { STATIC_ASSETS_PATH } from '../utils'
 
 import { buildMonaco, BUILD_OPTIONS } from './build'
 import { assetPathPrefix } from './manifestPlugin'

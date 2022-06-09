@@ -10,7 +10,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/sourcegraph/log"
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -58,6 +58,7 @@ func ParseSearchContextSpec(searchContextSpec string) ParsedSearchContextSpec {
 }
 
 func ResolveSearchContextSpec(ctx context.Context, db database.DB, searchContextSpec string) (sc *types.SearchContext, err error) {
+	slogger := slog.Scoped("ResolveSearchContextSpec", "Resolves the search context spec")
 	tr, ctx := trace.New(ctx, "ResolveSearchContextSpec", searchContextSpec)
 	defer func() {
 		tr.LazyPrintf("context: %+v", sc)
@@ -88,7 +89,7 @@ func ResolveSearchContextSpec(ctx context.Context, db database.DB, searchContext
 					return nil, database.ErrNamespaceNotFound
 				}
 
-				sc.Error("ResolveSearchContextSpec.OrgMembers.GetByOrgIDAndUserID", log.Error(err))
+				slogger.Error("ResolveSearchContextSpec.OrgMembers.GetByOrgIDAndUserID", slog.Error(err))
 				// NOTE: We do want to return identical error as if the namespace not found in
 				// case of internal server error. Otherwise, we're leaking the information when
 				// error occurs.

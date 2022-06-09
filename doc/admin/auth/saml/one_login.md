@@ -20,7 +20,7 @@
    URL". It should look something like `https://mycompany.onelogin.com/saml/metadata/123456` or
    `https://app.onelogin.com/saml/metadata/123456`. Record this for the next section.
 
-## 2. Add the SAML auth provider to Sourcegraph site config
+## 2. Add the SAMl auth provider to Sourcegraph site config
 
 [Add a SAML auth provider](./index.md#add-a-saml-provider) with `identityProviderMetadataURL` set to the Issuer URL recorded from the previous section. Here is an example:
 

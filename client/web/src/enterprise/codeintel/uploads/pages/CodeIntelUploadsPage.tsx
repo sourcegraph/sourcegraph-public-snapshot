@@ -167,7 +167,6 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
                     <FilteredConnection<LsifUploadFields, Omit<CodeIntelUploadNodeProps, 'node'>>
                         listComponent="div"
                         listClassName={classNames(styles.grid, 'mb-3')}
-                        inputClassName="w-auto"
                         noun="upload"
                         pluralNoun="uploads"
                         nodeComponent={CodeIntelUploadNode}

@@ -66,7 +66,7 @@ function highlightSlice(html: HtmlBuilder, kind: SyntaxKind, slice: string): voi
     }
 }
 
-// Currently assumes that no ranges overlap in the occurrences.
+// Currently assumes that no ranges overlap in the occurences.
 export function render(lsif_json: string, content: string): string {
     const occurrences = (JSON.parse(lsif_json) as JsonDocument).occurrences.map(occ => new Occurrence(occ))
 
@@ -111,7 +111,7 @@ export function render(lsif_json: string, content: string): string {
                 // Move to the next line
                 lineNumber++
 
-                // Handle all the lines that completely owned by this occurrence
+                // Handle all the lines that completely owned by this occurence
                 while (lineNumber < end.line) {
                     line = lines[lineNumber]
 
@@ -122,7 +122,7 @@ export function render(lsif_json: string, content: string): string {
                     lineNumber++
                 }
 
-                // Write as much of the line as the last occurrence owns
+                // Write as much of the line as the last occurence owns
                 line = lines[lineNumber]
 
                 openLine(html, lineNumber)

@@ -27,16 +27,31 @@ export const ActivationChecklistItem: React.FunctionComponent<
     <div className={classNames('d-flex justify-content-between', styles.activationChecklistItem, className)}>
         <div className="d-flex align-items-center">
             <span className={styles.iconContainer}>
-                <Icon className={classNames(styles.icon, styles.iconDown)} as={ChevronDownIcon} aria-hidden={true} />
-                <Icon className={classNames(styles.icon, styles.iconRight)} as={ChevronRightIcon} aria-hidden={true} />
+                <Icon
+                    role="img"
+                    className={classNames(styles.icon, styles.iconDown)}
+                    as={ChevronDownIcon}
+                    aria-hidden={true}
+                />
+                <Icon
+                    role="img"
+                    className={classNames(styles.icon, styles.iconRight)}
+                    as={ChevronRightIcon}
+                    aria-hidden={true}
+                />
             </span>
             <span>{props.title}</span>
         </div>
         <div>
             {props.done ? (
-                <Icon className="text-success" as={CheckCircleIcon} aria-label="Completed" />
+                <Icon role="img" className="text-success" as={CheckCircleIcon} aria-label="Completed" />
             ) : (
-                <Icon className="text-muted" as={CheckboxBlankCircleOutlineIcon} aria-label="Not completed" />
+                <Icon
+                    role="img"
+                    className="text-muted"
+                    as={CheckboxBlankCircleOutlineIcon}
+                    aria-label="Not completed"
+                />
             )}
         </div>
     </div>

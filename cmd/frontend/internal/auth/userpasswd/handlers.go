@@ -158,7 +158,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 		}
 	}
 
-	usr, err := db.Users().Create(r.Context(), newUserData)
+	usr, err := database.Users(db).Create(r.Context(), newUserData)
 	if err != nil {
 		var (
 			message    string
@@ -183,7 +183,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 		log15.Error("Error in user signup.", "email", creds.Email, "username", creds.Username, "error", err)
 		http.Error(w, message, statusCode)
 
-		if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+		if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpFailed", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
 			log15.Warn("Failed to log event SignUpFailed", "error", err)
 		}
 
@@ -217,7 +217,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
 	}
 
-	if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+	if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
 		log15.Warn("Failed to log event SignUpSucceeded", "error", err)
 	}
 }
@@ -381,7 +381,7 @@ func logSignInEvent(r *http.Request, db database.DB, user *types.User, name *dat
 
 	// Safe to ignore this error
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
-	_ = usagestats.LogBackendEvent(db, user.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil)
+	_ = usagestats.LogBackendEvent(db, user.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.FromContext(r.Context()), nil)
 	db.SecurityEventLogs().LogEvent(r.Context(), event)
 }
 

@@ -1,9 +1,6 @@
-import React, { forwardRef, useEffect, useRef } from 'react'
-
-import { useMergeRefs } from 'use-callback-ref'
+import React, { forwardRef } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useSearchParameters } from '@sourcegraph/wildcard'
 
 import { Insight, isBackendInsight } from '../../../core'
 
@@ -21,18 +18,6 @@ export interface SmartInsightProps extends TelemetryProps, React.HTMLAttributes<
  */
 export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, reference) => {
     const { insight, resizing = false, telemetryService, ...otherProps } = props
-    const localReference = useRef<HTMLElement>(null)
-    const mergedReference = useMergeRefs([reference, localReference])
-    const search = useSearchParameters()
-
-    useEffect(() => {
-        const insightIdToBeFocused = search.get('focused')
-        const element = mergedReference.current
-
-        if (element && insightIdToBeFocused === insight.id) {
-            element.focus()
-        }
-    }, [insight.id, mergedReference, search])
 
     if (isBackendInsight(insight)) {
         return (
@@ -41,7 +26,7 @@ export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, r
                 resizing={resizing}
                 telemetryService={telemetryService}
                 {...otherProps}
-                innerRef={mergedReference}
+                innerRef={reference}
             />
         )
     }
@@ -52,7 +37,7 @@ export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, r
             insight={insight}
             resizing={resizing}
             telemetryService={telemetryService}
-            innerRef={mergedReference}
+            innerRef={reference}
             {...otherProps}
         />
     )

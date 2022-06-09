@@ -9,10 +9,6 @@ import (
 
 	"golang.org/x/sync/semaphore"
 
-	"github.com/sourcegraph/go-ctags"
-
-	sglog "github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api"
@@ -50,10 +46,9 @@ func SetupSqlite(observationContext *observation.Context, gitserverClient gitser
 		os.Exit(0)
 	}
 
-	parserFactory := func() (ctags.Parser, error) {
-		return parser.SpawnCtags(sglog.Scoped("ctags", "ctags processes"), config.Ctags)
-	}
-	parserPool, err := parser.NewParserPool(parserFactory, config.NumCtagsProcesses)
+	ctagsParserFactory := parser.NewCtagsParserFactory(config.Ctags)
+
+	parserPool, err := parser.NewParserPool(ctagsParserFactory, config.NumCtagsProcesses)
 	if err != nil {
 		log.Fatalf("Failed to create parser pool: %s", err)
 	}
@@ -66,7 +61,7 @@ func SetupSqlite(observationContext *observation.Context, gitserverClient gitser
 	parser := parser.NewParser(parserPool, repositoryFetcher, config.RequestBufferSize, config.NumCtagsProcesses, observationContext)
 	databaseWriter := writer.NewDatabaseWriter(config.CacheDir, gitserverClient, parser, semaphore.NewWeighted(int64(config.MaxConcurrentlyIndexing)))
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
-	searchFunc := api.MakeSqliteSearchFunc(observability.NewOperations(observationContext), cachedDatabaseWriter, gitserverClient)
+	searchFunc := api.MakeSqliteSearchFunc(observability.NewOperations(observationContext), cachedDatabaseWriter)
 
 	evictionInterval := time.Second * 10
 	cacheSizeBytes := int64(config.CacheSizeMB) * 1000 * 1000

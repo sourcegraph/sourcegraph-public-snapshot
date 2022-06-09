@@ -17,11 +17,10 @@ import (
 	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/dev/okay"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type Flags struct {
@@ -50,8 +49,8 @@ var logger log.Logger
 
 func main() {
 	ctx := context.Background()
-	liblog := log.Init(log.Resource{Name: "deployment-notifier"})
-	defer liblog.Sync()
+	sync := log.Init(log.Resource{Name: "deployment-notifier"})
+	defer sync()
 	logger = log.Scoped("main", "a script that checks for deployment notifications")
 
 	flags := &Flags{}

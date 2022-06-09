@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 // numTestCommits determines the number of files/commits/tags to create for

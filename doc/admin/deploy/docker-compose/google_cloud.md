@@ -17,19 +17,12 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 * Check the boxes for **Allow HTTP traffic** and **Allow HTTPS traffic** in the **Firewall** section
 * Open the **Management, disks, networking, and SSH keys** dropdown section
 
-> WARNING: To configure your Sourcegraph instance, you must create and use a fork of the reference repository - refer to the following steps, which use GitHub as an example, then return to this page:
+> WARNING: To configure your Sourcegraph instance, you must create and use a fork of the reference repository - refer to the [Configuration section](index.md#reference-repository) of the [Docker Compose deployment docs](index.md) for more details. Then update the following variables in the script below:
 >
->  1. [Fork the reference repo](index.md#fork-the-sourcegraph-reference-repository)
->  2. [Clone your fork](index.md#clone-your-fork)
->  3. [Configure a release branch](index.md#configure-a-release-branch)
+> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: Your fork's git clone URL
+> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. Most likely, `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='release'` if you followed our branching recommendations in the [Configuration section](index.md#configuration) of the [Docker Compose deployment docs](index.md)
 
 * Under the **Management** section, add the following in the **Startup script** field:
-
-> NOTE: replace the following variables in the script based on how you created your fork and release branch
->
-> `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: Your fork's git clone URL
->
-> `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. In the [example](index.md#configure-a-release-branch) the revision is the `release` branch. 
 
 ```bash
 #!/usr/bin/env bash
@@ -44,7 +37,7 @@ DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
 
 # 🚨 Update these variables with the correct values from your fork!
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.40.2'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.40.1'
 
 # Install git
 sudo apt-get update -y

@@ -12,10 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	clearRedisCache = ff.ClearEvaluatedFlagFromCache
-)
-
 type FeatureFlagStore interface {
 	basestore.ShareableStore
 	With(basestore.ShareableStore) FeatureFlagStore
@@ -157,7 +153,6 @@ func (f *featureFlagStore) DeleteFeatureFlag(ctx context.Context, name string) e
 		WHERE flag_name = %s;
 	`
 
-	clearRedisCache(name)
 	return f.Exec(ctx, sqlf.Sprintf(deleteFeatureFlagFmtStr, name))
 }
 

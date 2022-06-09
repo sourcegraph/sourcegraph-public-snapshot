@@ -7,5 +7,4 @@ export const ENVIRONMENT_CONFIG = {
     WEBPACK_BUNDLE_ANALYZER: getEnvironmentBoolean('WEBPACK_BUNDLE_ANALYZER'),
     WEBPACK_SPEED_ANALYZER: getEnvironmentBoolean('WEBPACK_SPEED_ANALYZER'),
     MINIFY: getEnvironmentBoolean('MINIFY'),
-    CHROMATIC: getEnvironmentBoolean('CHROMATIC'),
 }

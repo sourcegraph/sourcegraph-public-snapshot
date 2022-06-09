@@ -35,20 +35,13 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 
 	authSaveableUsers := map[string]int32{
 		"alice": 1,
-		"cindy": 3,
-		"dan":   4,
 	}
-
-	signupNotAllowed := new(bool)
-	signupAllowed := new(bool)
-	*signupAllowed = true
 
 	type input struct {
 		description     string
 		glUser          *gitlab.User
 		glUserGroups    []*gitlab.Group
 		glUserGroupsErr error
-		allowSignup     *bool
 		allowGroups     []string
 	}
 
@@ -58,85 +51,6 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 		expErr        bool
 		expAuthUserOp *auth.GetAndSaveUserOp
 	}{
-		{
-			inputs: []input{{
-				description: "glUser, allowSignup not set, defaults to true -> new user and session created",
-				glUser: &gitlab.User{
-					ID:       int32(104),
-					Username: string("dan"),
-					Email:    string("dan@example.com"),
-				},
-			}},
-			expActor: &actor.Actor{UID: 4},
-			expAuthUserOp: &auth.GetAndSaveUserOp{
-				UserProps: database.NewUser{
-					Username:        "dan",
-					Email:           "dan@example.com",
-					EmailIsVerified: true,
-				},
-				ExternalAccount: extsvc.AccountSpec{
-					ServiceType: extsvc.TypeGitLab,
-					ServiceID:   "https://gitlab.com/",
-					ClientID:    clientID,
-					AccountID:   "104",
-				},
-				CreateIfNotExist: true,
-			},
-		},
-		{
-			inputs: []input{{
-				description: "glUser, allowSignup set to false -> no new user nor session created",
-				allowSignup: signupNotAllowed,
-				glUser: &gitlab.User{
-					ID:       int32(102),
-					Username: string("bob"),
-					Email:    string("bob@example.com"),
-				},
-			}},
-			expErr: true,
-		},
-		{
-			inputs: []input{{
-				description: "glUser, allowSignup set to false, allowedGroups list provided -> no new user nor session created",
-				allowSignup: signupNotAllowed,
-				allowGroups: []string{"group1"},
-				glUser: &gitlab.User{
-					ID:       int32(102),
-					Username: string("bob"),
-					Email:    string("bob@example.com"),
-				},
-				glUserGroups: []*gitlab.Group{
-					{FullPath: "group1"},
-				},
-			}},
-			expErr: true,
-		},
-		{
-			inputs: []input{{
-				description: "glUser, allowSignup set true -> new user and session created",
-				allowSignup: signupAllowed,
-				glUser: &gitlab.User{
-					ID:       int32(103),
-					Username: string("cindy"),
-					Email:    string("cindy@example.com"),
-				},
-			}},
-			expActor: &actor.Actor{UID: 3},
-			expAuthUserOp: &auth.GetAndSaveUserOp{
-				UserProps: database.NewUser{
-					Username:        "cindy",
-					Email:           "cindy@example.com",
-					EmailIsVerified: true,
-				},
-				ExternalAccount: extsvc.AccountSpec{
-					ServiceType: extsvc.TypeGitLab,
-					ServiceID:   "https://gitlab.com/",
-					ClientID:    clientID,
-					AccountID:   "101",
-				},
-				CreateIfNotExist: true,
-			},
-		},
 		{
 			inputs: []input{{
 				description: "glUser, allowedGroups not set -> session created",
@@ -281,8 +195,6 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				}
 
 				var gotAuthUserOp *auth.GetAndSaveUserOp
-				getAndSaveUserError := errors.New("auth.GetAndSaveUser error")
-
 				auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
 					if gotAuthUserOp != nil {
 						t.Fatal("GetAndSaveUser called more than once")
@@ -295,7 +207,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 						return uid, "", nil
 					}
 
-					return 0, "safeErr", getAndSaveUserError
+					return 0, "safeErr", errors.New("error mocking get and save user")
 				}
 
 				defer func() {
@@ -307,7 +219,6 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				s := &sessionIssuerHelper{
 					CodeHost:    codeHost,
 					clientID:    clientID,
-					allowSignup: ci.allowSignup,
 					allowGroups: ci.allowGroups,
 				}
 
@@ -324,10 +235,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					t.Errorf("expected no error, but was %v", err)
 				}
 
-				if c.expErr && err != getAndSaveUserError {
-					if got, exp := gotAuthUserOp, c.expAuthUserOp; !reflect.DeepEqual(got, exp) {
-						t.Error(cmp.Diff(got, exp))
-					}
+				if got, exp := gotAuthUserOp, c.expAuthUserOp; !reflect.DeepEqual(got, exp) {
+					t.Error(cmp.Diff(got, exp))
 				}
 			})
 		}

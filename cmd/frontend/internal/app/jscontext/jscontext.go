@@ -97,8 +97,6 @@ type JSContext struct {
 
 	CodeInsightsGQLApiEnabled bool `json:"codeInsightsGqlApiEnabled"`
 
-	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
-
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
@@ -145,7 +143,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	var sentryDSN *string
 	siteConfig := conf.Get().SiteConfiguration
-
 	if siteConfig.Log != nil && siteConfig.Log.Sentry != nil && siteConfig.Log.Sentry.Dsn != "" {
 		sentryDSN = &siteConfig.Log.Sentry.Dsn
 	}
@@ -168,17 +165,16 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	// authentication above, but do not include e.g. hard-coded secrets about
 	// the server instance here as they would be sent to anonymous users.
 	return JSContext{
-		ExternalURL:                globals.ExternalURL().String(),
-		XHRHeaders:                 headers,
-		UserAgentIsBot:             isBot(req.UserAgent()),
-		AssetsRoot:                 assetsutil.URL("").String(),
-		Version:                    version.Version(),
-		IsAuthenticatedUser:        actor.IsAuthenticated(),
-		Datadog:                    datadogRUM,
-		SentryDSN:                  sentryDSN,
-		RedirectUnsupportedBrowser: siteConfig.RedirectUnsupportedBrowser,
-		Debug:                      env.InsecureDev,
-		SiteID:                     siteID,
+		ExternalURL:         globals.ExternalURL().String(),
+		XHRHeaders:          headers,
+		UserAgentIsBot:      isBot(req.UserAgent()),
+		AssetsRoot:          assetsutil.URL("").String(),
+		Version:             version.Version(),
+		IsAuthenticatedUser: actor.IsAuthenticated(),
+		Datadog:             datadogRUM,
+		SentryDSN:           sentryDSN,
+		Debug:               env.InsecureDev,
+		SiteID:              siteID,
 
 		SiteGQLID: string(graphqlbackend.SiteGQLID()),
 

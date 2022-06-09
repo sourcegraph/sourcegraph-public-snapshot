@@ -92,7 +92,12 @@ export const SavedSearchesSection: React.FunctionComponent<React.PropsWithChildr
                 aria-label={`${collapsed ? 'Expand' : 'Collapse'} saved searches`}
             >
                 <H5 className="flex-grow-1">Saved Searches</H5>
-                <Icon aria-hidden={true} className="mr-1" as={collapsed ? ChevronLeftIcon : ChevronDownIcon} />
+                <Icon
+                    role="img"
+                    aria-hidden={true}
+                    className="mr-1"
+                    as={collapsed ? ChevronLeftIcon : ChevronDownIcon}
+                />
             </button>
 
             {!collapsed && savedSearches && (

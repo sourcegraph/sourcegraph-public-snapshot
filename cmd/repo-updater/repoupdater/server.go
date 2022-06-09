@@ -10,8 +10,6 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
@@ -24,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // Server is a repoupdater server.

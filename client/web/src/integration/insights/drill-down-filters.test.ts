@@ -37,7 +37,7 @@ describe('Backend insight drill down filters', () => {
     afterEach(() => testContext?.dispose())
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
-    it('should update the insight configuration if drill-down filters have been persisted', async () => {
+    it('should update user settings if drill-down filters have been persisted', async () => {
         overrideInsightsGraphQLApi({
             testContext,
             overrides: {
@@ -70,13 +70,6 @@ describe('Backend insight drill down filters', () => {
                     },
                 }),
 
-                GetSearchContextByName: () => ({
-                    searchContexts: {
-                        __typename: 'SearchContextConnection',
-                        nodes: [{ __typename: 'SearchContext', spec: '@sourcegraph/sourcegraph' }],
-                    },
-                }),
-
                 UpdateLineChartSearchInsight: () => ({
                     __typename: 'Mutation',
                     updateLineChartSearchInsight: {
@@ -91,17 +84,11 @@ describe('Backend insight drill down filters', () => {
         await driver.page.waitForSelector('svg circle')
 
         await driver.page.click('button[aria-label="Filters"]')
-
-        // fill in the excludeRepoRegexp filter
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
         await driver.page.type('[name="excludeRepoRegexp"]', 'github.com/sourcegraph/sourcegraph')
 
-        // fill in the search context filter regexp
-        await driver.page.click('button[aria-label="search context filter section"]')
-        await driver.page.type('[name="context"]', '@sourcegraph/sourcegraph')
-
         // Wait until async validation of the search context field is passed
-        await delay(1000)
+        await delay(500)
 
         // Close the drill-down filter panel
         await driver.page.keyboard.press(Key.Escape)
@@ -121,7 +108,7 @@ describe('Backend insight drill down filters', () => {
 
         assert.deepStrictEqual(variables.input.viewControls, {
             filters: {
-                searchContexts: ['@sourcegraph/sourcegraph'],
+                searchContexts: [],
                 includeRepoRegex: '',
                 excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
             },

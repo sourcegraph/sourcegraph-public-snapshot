@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"sort"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -49,7 +51,7 @@ type PermsStore interface {
 	//     UserID: 1,
 	//     Perm: authz.Read,
 	//     Type: authz.PermRepos,
-	//     IDs: {1, 2},
+	//     IDs: bitmap{1, 2},
 	// }
 	//
 	// Table states for input:
@@ -71,11 +73,11 @@ type PermsStore interface {
 	// This method starts its own transaction for update consistency if the caller hasn't started one already.
 	//
 	// Example input:
-	//  &RepoPermissions{
-	//      RepoID: 1,
-	//      Perm: authz.Read,
-	//      UserIDs: {1, 2},
-	//  }
+	// &RepoPermissions{
+	//     RepoID: 1,
+	//     Perm: authz.Read,
+	//     UserIDs: bitmap{1, 2},
+	// }
 	//
 	// Table states for input:
 	// 	"user_permissions":
@@ -149,6 +151,9 @@ type PermsStore interface {
 	// "user_pending_permissions" table. It accepts list of bind IDs because a user
 	// has multiple bind IDs, e.g. username and email addresses.
 	DeleteAllUserPendingPermissions(ctx context.Context, accounts *extsvc.Accounts) error
+	// ListExternalAccounts returns all external accounts that are associated with
+	// given user.
+	ListExternalAccounts(ctx context.Context, userID int32) (accounts []*extsvc.Account, _ error)
 	// GetUserIDsByExternalAccounts returns all user IDs matched by given external
 	// account specs. The returned set has mapping relation as "account ID -> user
 	// ID". The number of results could be less than the candidate list due to some
@@ -156,6 +161,7 @@ type PermsStore interface {
 	GetUserIDsByExternalAccounts(ctx context.Context, accounts *extsvc.Accounts) (map[string]int32, error)
 	// UserIDsWithNoPerms returns a list of user IDs with no permissions found in the
 	// database.
+
 	UserIDsWithNoPerms(ctx context.Context) ([]int32, error)
 	// UserIDsWithOutdatedPerms returns a list of user IDs who have had repository
 	// syncing from either user or organization code host connection (that the user
@@ -194,12 +200,12 @@ type permsStore struct {
 var _ PermsStore = (*permsStore)(nil)
 
 // Perms returns a new PermsStore with given parameters.
-func Perms(db database.DB, clock func() time.Time) PermsStore {
+func Perms(db dbutil.DB, clock func() time.Time) PermsStore {
 	return perms(db, clock)
 }
 
-func perms(db database.DB, clock func() time.Time) *permsStore {
-	return &permsStore{Store: basestore.NewWithHandle(db.Handle()), clock: clock}
+func perms(db dbutil.DB, clock func() time.Time) *permsStore {
+	return &permsStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), clock: clock}
 }
 
 func PermsWith(other basestore.ShareableStore, clock func() time.Time) PermsStore {
@@ -497,9 +503,14 @@ func (s *permsStore) SetRepoPermissionsUnrestricted(ctx context.Context, ids []i
 	const format = `
 UPDATE repo_permissions
 SET unrestricted = %s
-WHERE repo_id = ANY (%s::int[])
+WHERE repo_id IN (%s)
 `
-	q := sqlf.Sprintf(format, unrestricted, pq.Array(ids))
+	idqs := make([]*sqlf.Query, len(ids))
+	for i := range ids {
+		idqs[i] = sqlf.Sprintf("%s", ids[i])
+	}
+
+	q := sqlf.Sprintf(format, unrestricted, sqlf.Join(idqs, ","))
 
 	return errors.Wrap(s.Exec(ctx, q), "setting unrestricted flag")
 }
@@ -644,14 +655,14 @@ func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 	updatedAt := txs.clock()
 	p.UpdatedAt = updatedAt
 	if len(accounts.AccountIDs) > 0 {
-		// NOTE: The primary key of "user_pending_permissions" table is auto-incremented,
-		// and it is monotonically growing even with upsert in Postgres (i.e. the primary
-		// key is increased internally by one even if the row exists). This means with
-		// large number of AccountIDs, the primary key will grow very quickly every time
-		// we do an upsert, and not far from reaching the largest number an int8 (64-bit
-		// integer) can hold (9,223,372,036,854,775,807). Therefore, load existing rows
-		// would help us only upsert rows that are newly discovered. See NOTE in below
-		// for why we do upsert not insert.
+		// NOTE: The primary key of "user_pending_permissions" table is
+		//  auto-incremented, and it is monotonically growing even with upsert in
+		//  Postgres (i.e. the primary key is increased internally by one even if the row
+		//  exists). This means with large number of AccountIDs, the primary key will
+		//  grow very quickly every time we do an upsert, and soon reaching the largest
+		//  number an int4 (32-bit integer) can hold (2,147,483,647). Therefore, load
+		//  existing rows would help us only upsert rows that are newly discovered. See
+		//  NOTE in below for why we do upsert not insert.
 		q = loadExistingUserPendingPermissionsBatchQuery(accounts, p)
 		bindIDsToIDs, err := txs.loadExistingUserPendingPermissionsBatch(ctx, q)
 		if err != nil {
@@ -1397,6 +1408,83 @@ AND permission = %s
 	}
 
 	return id, ids, updatedAt, syncedAt, nil
+}
+
+func (s *permsStore) ListExternalAccounts(ctx context.Context, userID int32) (accounts []*extsvc.Account, err error) {
+	ctx, save := s.observe(ctx, "ListExternalAccounts", "")
+	defer func() { save(&err, otlog.Int32("userID", userID)) }()
+
+	q := sqlf.Sprintf(`
+-- source: enterprise/internal/database/perms_store.go:PermsStore.ListExternalAccounts
+SELECT
+    id, user_id,
+    service_type, service_id, client_id, account_id,
+    auth_data, account_data,
+    created_at, updated_at,
+	  encryption_key_id
+FROM user_external_accounts
+WHERE
+    user_id = %s
+AND deleted_at IS NULL
+AND expired_at IS NULL
+ORDER BY id ASC
+`, userID)
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+
+	for rows.Next() {
+		var (
+			acct            extsvc.Account
+			authData, data  sql.NullString
+			encryptionKeyID string
+		)
+
+		if err := rows.Scan(
+			&acct.ID, &acct.UserID,
+			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
+			&authData, &data,
+			&acct.CreatedAt, &acct.UpdatedAt,
+			&encryptionKeyID,
+		); err != nil {
+			return nil, err
+		}
+
+		if authData.Valid {
+			tmp, err := database.MaybeDecrypt(
+				ctx,
+				keyring.Default().UserExternalAccountKey,
+				authData.String,
+				encryptionKeyID,
+			)
+			if err != nil {
+				return nil, err
+			}
+			msg := json.RawMessage(tmp)
+			acct.AuthData = &msg
+		}
+		if data.Valid {
+			tmp, err := database.MaybeDecrypt(
+				ctx,
+				keyring.Default().UserExternalAccountKey,
+				data.String,
+				encryptionKeyID,
+			)
+			if err != nil {
+				return nil, err
+			}
+			msg := json.RawMessage(tmp)
+			acct.Data = &msg
+		}
+		accounts = append(accounts, &acct)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return accounts, nil
 }
 
 func (s *permsStore) GetUserIDsByExternalAccounts(ctx context.Context, accounts *extsvc.Accounts) (_ map[string]int32, err error) {

@@ -13,8 +13,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/log"
-
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -26,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -49,12 +48,12 @@ func main() {
 }
 
 func mainErr(ctx context.Context, args []string) error {
-	liblog := log.Init(log.Resource{
+	syncLogs := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	})
-	defer liblog.Sync()
+	defer syncLogs()
 
 	runnerFactory := newRunnerFactory()
 	outputFactory := func() *output.Output { return out }

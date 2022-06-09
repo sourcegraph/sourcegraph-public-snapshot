@@ -59,7 +59,6 @@ const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.GITOLITE]: <span>Unsupported</span>,
     [ExternalServiceKind.GOMODULES]: <span>Unsupported</span>,
     [ExternalServiceKind.PYTHONPACKAGES]: <span>Unsupported</span>,
-    [ExternalServiceKind.RUSTPACKAGES]: <span>Unsupported</span>,
     [ExternalServiceKind.JVMPACKAGES]: <span>Unsupported</span>,
     [ExternalServiceKind.NPMPACKAGES]: <span>Unsupported</span>,
     [ExternalServiceKind.PERFORCE]: <span>Unsupported</span>,
@@ -180,18 +179,17 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                             <div className="form-group">
                                 {requiresUsername && (
                                     <>
-                                        <Input
+                                        <Label htmlFor="username">Username</Label>
+                                        <input
                                             id="username"
                                             name="username"
                                             autoComplete="off"
-                                            inputClassName="mb-2"
-                                            className="mb-0"
+                                            className="mb-2"
                                             required={true}
                                             spellCheck="false"
                                             minLength={1}
                                             value={username}
                                             onChange={onChangeUsername}
-                                            label="Username"
                                         />
                                     </>
                                 )}

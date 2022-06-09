@@ -16,7 +16,6 @@ exports[`RepositoryReleasesTagsPage renders 1`] = `
           class="container loader-input loaderInput input"
         >
           <input
-            aria-label="Search tags..."
             autocapitalize="off"
             autocomplete="off"
             autocorrect="off"

@@ -13,7 +13,7 @@ export type TourProps = TelemetryProps & {
     id: string
     tasks: TourTaskType[]
     extraTask?: TourTaskType
-} & Pick<React.ComponentProps<typeof TourContent>, 'variant' | 'className' | 'height' | 'title' | 'keepCompletedTasks'>
+} & Pick<React.ComponentProps<typeof TourContent>, 'variant' | 'className' | 'height'>
 
 export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> = React.memo(
     ({ id: tourId, tasks, extraTask, telemetryService, ...props }) => {
@@ -113,7 +113,7 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
                     {...props}
                     onClose={onClose}
                     tasks={
-                        [status === 'completed' && extraTask, ...extendedTasks].filter(Boolean) as (
+                        [...extendedTasks, status === 'completed' && extraTask].filter(Boolean) as (
                             | TourTaskType
                             | TourTaskType
                         )[]
@@ -124,5 +124,3 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
         )
     }
 )
-
-Tour.displayName = 'Tour'

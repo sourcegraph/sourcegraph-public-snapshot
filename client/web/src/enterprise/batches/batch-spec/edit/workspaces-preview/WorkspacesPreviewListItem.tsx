@@ -8,7 +8,7 @@ import {
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
-import { CachedIcon, Descriptor, ExcludeIcon, ListItem, PartiallyCachedIcon } from '../../../workspaces-list'
+import { CachedIcon, Descriptor, ExcludeIcon, ListItem } from '../../../workspaces-list'
 
 import styles from './WorkspacesPreviewListItem.module.scss'
 
@@ -35,18 +35,10 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<
         exclude(workspace.repository.name, workspace.branch.displayName)
     }, [exclude, workspace])
 
-    const statusIndicator = useMemo(() => {
-        if (toBeExcluded) {
-            return <ExcludeIcon />
-        }
-        if (workspace.cachedResultFound) {
-            return <CachedIcon />
-        }
-        if (workspace.stepCacheResultCount > 0) {
-            return <PartiallyCachedIcon count={workspace.stepCacheResultCount} />
-        }
-        return undefined
-    }, [toBeExcluded, workspace.cachedResultFound, workspace.stepCacheResultCount])
+    const statusIndicator = useMemo(
+        () => (toBeExcluded ? <ExcludeIcon /> : workspace.cachedResultFound ? <CachedIcon /> : undefined),
+        [toBeExcluded, workspace.cachedResultFound]
+    )
 
     return (
         <ListItem className={!isReadOnly && isStale ? styles.stale : undefined}>
@@ -70,6 +62,6 @@ const ExcludeButton: React.FunctionComponent<React.PropsWithChildren<{ handleExc
         data-tooltip="Omit this repository from batch spec file"
         onClick={handleExclude}
     >
-        <Icon aria-hidden={true} as={CloseIcon} />
+        <Icon role="img" aria-hidden={true} as={CloseIcon} />
     </Button>
 )

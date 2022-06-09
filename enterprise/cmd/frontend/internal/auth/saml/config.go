@@ -77,16 +77,13 @@ func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 		}
 	}
 
-	seen := map[string]int{}
+	seen := map[schema.SAMLAuthProvider]int{}
 	for i, p := range c.SiteConfig().AuthProviders {
 		if p.Saml != nil {
-			// we can ignore errors: converting to JSON must work, as we parsed from JSON before
-			bytes, _ := json.Marshal(*p.Saml)
-			key := string(bytes)
-			if j, ok := seen[key]; ok {
+			if j, ok := seen[*p.Saml]; ok {
 				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("SAML auth provider at index %d is duplicate of index %d, ignoring", i, j)))
 			} else {
-				seen[key] = i
+				seen[*p.Saml] = i
 			}
 		}
 	}

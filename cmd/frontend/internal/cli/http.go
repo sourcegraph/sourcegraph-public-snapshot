@@ -9,8 +9,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -94,7 +92,6 @@ func newExternalHTTPHandler(
 
 	var h http.Handler = sm
 
-	logger := log.Scoped("external", "external http handlers")
 	// Wrap in middleware, first line is last to run.
 	//
 	// 🚨 SECURITY: Auth middleware that must run before other auth middlewares.
@@ -108,7 +105,7 @@ func newExternalHTTPHandler(
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = internalauth.ForbidAllRequestsMiddleware(h)
 	h = internalauth.OverrideAuthMiddleware(db, h)
-	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
+	h = tracepkg.HTTPMiddleware(h, conf.DefaultClient())
 	h = ot.HTTPMiddleware(h)
 
 	return h
@@ -145,8 +142,7 @@ func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntel
 	))
 	h := http.Handler(internalMux)
 	h = gcontext.ClearHandler(h)
-	logger := log.Scoped("internal", "internal http handlers")
-	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
+	h = tracepkg.HTTPMiddleware(h, conf.DefaultClient())
 	h = ot.HTTPMiddleware(h)
 	return h
 }

@@ -93,7 +93,6 @@ type Step struct {
 	Env       env.Environment   `json:"env,omitempty" yaml:"env"`
 	Files     map[string]string `json:"files,omitempty" yaml:"files,omitempty"`
 	Outputs   Outputs           `json:"outputs,omitempty" yaml:"outputs,omitempty"`
-	Mount     []Mount           `json:"mount,omitempty" yaml:"mount,omitempty"`
 
 	If any `json:"if,omitempty" yaml:"if,omitempty"`
 }
@@ -127,11 +126,6 @@ type Group struct {
 	Directory  string `json:"directory,omitempty" yaml:"directory"`
 	Branch     string `json:"branch,omitempty" yaml:"branch"`
 	Repository string `json:"repository,omitempty" yaml:"repository"`
-}
-
-type Mount struct {
-	Mountpoint string `json:"mountpoint" yaml:"mountpoint"`
-	Path       string `json:"path" yaml:"path"`
 }
 
 type ParseBatchSpecOptions struct {

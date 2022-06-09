@@ -152,17 +152,3 @@ func (r *UploadResolver) DocumentPaths(ctx context.Context, args *gql.LSIFUpload
 		documents:  documents,
 	}, nil
 }
-
-func (r *UploadResolver) AuditLogs(ctx context.Context) (*[]gql.LSIFUploadsAuditLogsResolver, error) {
-	logs, err := r.resolver.AuditLogsForUpload(ctx, r.upload.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	resolvers := make([]gql.LSIFUploadsAuditLogsResolver, 0, len(logs))
-	for _, log := range logs {
-		resolvers = append(resolvers, &lsifUploadsAuditLogResolver{log})
-	}
-
-	return &resolvers, nil
-}

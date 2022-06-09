@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// lintLoggingLibraries enforces that only usages of github.com/sourcegraph/log are added
+// lintLoggingLibraries enforces that only usages of lib/log are added
 func lintLoggingLibraries() lint.Runner {
 	const header = "Logging library linter"
 
@@ -20,7 +20,7 @@ func lintLoggingLibraries() lint.Runner {
 			// No log15 - we only catch import changes for now, checking for 'log15.' is
 			// too sensitive to just code moves.
 			`"github.com/inconshreveable/log15"`,
-			// No zap - we re-rexport everything via github.com/sourcegraph/log
+			// No zap - we re-rexport everything via lib/log
 			`"go.uber.org/zap"`,
 			`"go.uber.org/zap/zapcore"`,
 		}
@@ -28,6 +28,8 @@ func lintLoggingLibraries() lint.Runner {
 		allowedFiles = []string{
 			// Banned imports will match on the linter here
 			"dev/sg/linters/liblog.go",
+			// We re-export things here
+			"lib/log",
 			// We allow one usage of a direct zap import here
 			"internal/observation/fields.go",
 		}
@@ -44,7 +46,7 @@ func lintLoggingLibraries() lint.Runner {
 		for _, l := range hunk.AddedLines {
 			for _, banned := range bannedImports {
 				if strings.TrimSpace(l) == banned {
-					return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/log" instead`,
+					return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/sourcegraph/lib/log" instead`,
 						banned)
 				}
 			}

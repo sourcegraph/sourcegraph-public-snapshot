@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -1496,7 +1494,6 @@ type SearchContext struct {
 	// Query is the Sourcegraph query that defines this search context
 	// e.g. repo:^github\.com/org rev:bar archive:no f:sub/dir
 	Query string
-	log.Logger
 }
 
 // SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions

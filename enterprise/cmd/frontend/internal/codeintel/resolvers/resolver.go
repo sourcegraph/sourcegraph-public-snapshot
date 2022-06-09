@@ -55,8 +55,6 @@ type Resolver interface {
 	SupportedByCtags(ctx context.Context, filepath string, repo api.RepoName) (bool, string, error)
 	RetentionPolicyOverview(ctx context.Context, upload store.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []RetentionPolicyMatchCandidate, totalCount int, err error)
 
-	AuditLogsForUpload(ctx context.Context, id int) ([]store.UploadLog, error)
-
 	UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver
 	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
 	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)

@@ -109,7 +109,7 @@ sg ci build --help
 		Name:    "preview",
 		Aliases: []string{"plan"},
 		Usage:   "Preview the pipeline that would be run against the currently checked out branch",
-		Action: func(ctx *cli.Context) error {
+		Action: execAdapter(func(ctx context.Context, args []string) error {
 			std.Out.WriteLine(output.Styled(output.StyleSuggestion,
 				"If the current branch were to be pushed, the following pipeline would be run:"))
 
@@ -130,7 +130,7 @@ sg ci build --help
 				return err
 			}
 			return std.Out.WriteMarkdown(out)
-		},
+		}),
 	}, {
 		Name:    "status",
 		Aliases: []string{"st"},
@@ -147,8 +147,9 @@ sg ci build --help
 				Usage:   "Open build page in browser",
 			},
 		},
-		Action: func(ctx *cli.Context) error {
-			client, err := bk.NewClient(ctx.Context, std.Out.Output)
+		Action: func(cmd *cli.Context) error {
+			ctx := cmd.Context
+			client, err := bk.NewClient(ctx, std.Out.Output)
 			if err != nil {
 				return err
 			}
@@ -160,9 +161,9 @@ sg ci build --help
 			// Just support main pipeline for now
 			var build *buildkite.Build
 			if ciBuild != "" {
-				build, err = client.GetBuildByNumber(ctx.Context, "sourcegraph", ciBuild)
+				build, err = client.GetBuildByNumber(ctx, "sourcegraph", ciBuild)
 			} else {
-				build, err = client.GetMostRecentBuild(ctx.Context, "sourcegraph", branch)
+				build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
 			}
 			if err != nil {
 				return errors.Newf("failed to get most recent build for branch %q: %w", branch, err)
@@ -170,17 +171,17 @@ sg ci build --help
 			// Print a high level overview
 			printBuildOverview(build)
 
-			if ctx.Bool("view") {
+			if cmd.Bool("view") {
 				if err := open.URL(*build.WebURL); err != nil {
 					std.Out.WriteWarningf("failed to open build in browser: %s", err)
 				}
 			}
 
-			if ctx.Bool("wait") && build.FinishedAt == nil {
+			if cmd.Bool("wait") && build.FinishedAt == nil {
 				pending := std.Out.Pending(output.Styledf(output.StylePending, "Waiting for %d jobs...", len(build.Jobs)))
-				err := statusTicker(ctx.Context, func() (bool, error) {
+				err := statusTicker(ctx, func() (bool, error) {
 					// get the next update
-					build, err = client.GetMostRecentBuild(ctx.Context, "sourcegraph", branch)
+					build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
 					if err != nil {
 						return false, errors.Newf("failed to get most recent build for branch %q: %w", branch, err)
 					}
@@ -217,7 +218,7 @@ sg ci build --help
 			}
 
 			// build status finalized
-			failed := printBuildResults(build, ctx.Bool("wait"))
+			failed := printBuildResults(build, cmd.Bool("wait"))
 
 			if !branchFromFlag && ciBuild == "" {
 				// If we're not on a specific branch and not asking for a specific build, warn if build commit is not your commit
@@ -553,27 +554,26 @@ From there, you can start exploring logs with the Grafana explore panel.
 		Name:        "docs",
 		Usage:       "Render reference documentation for build pipeline types",
 		Description: "An online version of the rendered documentation is also available in https://docs.sourcegraph.com/dev/background-information/ci/reference.",
-		Action: func(ctx *cli.Context) error {
+		Action: execAdapter(func(ctx context.Context, args []string) error {
 			cmd := exec.Command("go", "run", "./enterprise/dev/ci/gen-pipeline.go", "-docs")
 			out, err := run.InRoot(cmd)
 			if err != nil {
 				return err
 			}
 			return std.Out.WriteMarkdown(out)
-		},
+		}),
 	}, {
 		Name:      "open",
 		ArgsUsage: "[pipeline]",
 		Usage:     "Open Sourcegraph's Buildkite page in browser",
-		Action: func(ctx *cli.Context) error {
+		Action: execAdapter(func(ctx context.Context, args []string) error {
 			buildkiteURL := fmt.Sprintf("https://buildkite.com/%s", bk.BuildkiteOrg)
-			args := ctx.Args().Slice()
 			if len(args) > 0 && args[0] != "" {
 				pipeline := args[0]
 				buildkiteURL += fmt.Sprintf("/%s", pipeline)
 			}
 			return open.URL(buildkiteURL)
-		},
+		}),
 	}},
 }
 

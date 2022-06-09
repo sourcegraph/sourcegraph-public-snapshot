@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -20,12 +18,12 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var schemeToExternalService = map[string]string{
-	dependencies.JVMPackagesScheme:  extsvc.KindJVMPackages,
-	dependencies.NpmPackagesScheme:  extsvc.KindNpmPackages,
-	dependencies.RustPackagesScheme: extsvc.KindRustPackages,
+	dependencies.JVMPackagesScheme: extsvc.KindJVMPackages,
+	dependencies.NpmPackagesScheme: extsvc.KindNpmPackages,
 }
 
 // NewDependencySyncScheduler returns a new worker instance that processes
@@ -224,8 +222,7 @@ func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Con
 		upload.Indexer == "lsif-java" ||
 		upload.Indexer == "lsif-tsc" ||
 		upload.Indexer == "scip-typescript" ||
-		upload.Indexer == "lsif-typescript" ||
-		upload.Indexer == "rust-analyzer", nil
+		upload.Indexer == "lsif-typescript", nil
 }
 
 func kindsToArray(k map[string]struct{}) (s []string) {

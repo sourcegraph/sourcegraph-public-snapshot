@@ -10,14 +10,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	pgs "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestExecutorsList(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := New(db)
 	ctx := context.Background()
 
@@ -129,7 +128,7 @@ func TestExecutorsList(t *testing.T) {
 }
 
 func TestExecutorsGetByID(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := New(db)
 	ctx := context.Background()
 
@@ -188,7 +187,7 @@ func TestExecutorsGetByID(t *testing.T) {
 }
 
 func TestExecutorsGetByHostname(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := New(db)
 	ctx := context.Background()
 
@@ -249,7 +248,7 @@ func TestExecutorsGetByHostname(t *testing.T) {
 }
 
 func TestExecutorsDeleteInactiveHeartbeats(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	store := New(db)
 	ctx := context.Background()
 

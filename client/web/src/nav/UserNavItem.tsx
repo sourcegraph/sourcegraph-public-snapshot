@@ -148,7 +148,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                     targetID={targetID}
                                     className={styles.avatar}
                                 />
-                                <Icon as={isExpanded ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
+                                <Icon role="img" as={isExpanded ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
                             </div>
                         </div>
                         {isExtensionAlertAnimating && (
@@ -168,27 +168,19 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                         )}
                     </MenuButton>
                     <MenuList position={position} className={styles.dropdownMenu} aria-label="User. Open menu">
-                        <MenuHeader className={styles.dropdownHeader}>
+                        <MenuHeader>
                             Signed in as <strong>@{props.authenticatedUser.username}</strong>
                         </MenuHeader>
-                        <MenuDivider className={styles.dropdownDivider} />
-                        <MenuLink className={styles.dropdownItem} as={Link} to={props.authenticatedUser.settingsURL!}>
+                        <MenuDivider />
+                        <MenuLink as={Link} to={props.authenticatedUser.settingsURL!}>
                             Settings
                         </MenuLink>
                         {props.showRepositorySection && (
-                            <MenuLink
-                                className={styles.dropdownItem}
-                                as={Link}
-                                to={`/users/${props.authenticatedUser.username}/settings/repositories`}
-                            >
+                            <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/settings/repositories`}>
                                 Your repositories
                             </MenuLink>
                         )}
-                        <MenuLink
-                            className={styles.dropdownItem}
-                            as={Link}
-                            to={`/users/${props.authenticatedUser.username}/searches`}
-                        >
+                        <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
                             Saved searches
                         </MenuLink>
                         {isOpenBetaEnabled && (
@@ -237,57 +229,45 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                         </div>
                         {!isOpenBetaEnabled && props.authenticatedUser.organizations.nodes.length > 0 && (
                             <>
-                                <MenuDivider className={styles.dropdownDivider} />
-                                <MenuHeader className={styles.dropdownHeader}>Your organizations</MenuHeader>
+                                <MenuDivider />
+                                <MenuHeader>Your organizations</MenuHeader>
                                 {props.authenticatedUser.organizations.nodes.map(org => (
-                                    <MenuLink
-                                        className={styles.dropdownItem}
-                                        as={Link}
-                                        key={org.id}
-                                        to={org.settingsURL || org.url}
-                                    >
+                                    <MenuLink as={Link} key={org.id} to={org.settingsURL || org.url}>
                                         {org.displayName || org.name}
                                     </MenuLink>
                                 ))}
                             </>
                         )}
-                        <MenuDivider className={styles.dropdownDivider} />
+                        <MenuDivider />
                         {props.authenticatedUser.siteAdmin && (
-                            <MenuLink className={styles.dropdownItem} as={Link} to="/site-admin">
+                            <MenuLink as={Link} to="/site-admin">
                                 Site admin
                             </MenuLink>
                         )}
-                        <MenuLink className={styles.dropdownItem} as={Link} to="/help" target="_blank" rel="noopener">
-                            Help <Icon as={OpenInNewIcon} aria-hidden={true} />
+                        <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
+                            Help <Icon role="img" as={OpenInNewIcon} aria-hidden={true} />
                         </MenuLink>
                         <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
 
                         {props.authenticatedUser.session?.canSignOut && (
-                            <MenuLink className={styles.dropdownItem} as={AnchorLink} to="/-/sign-out">
+                            <MenuLink as={AnchorLink} to="/-/sign-out">
                                 Sign out
                             </MenuLink>
                         )}
-                        <MenuDivider className={styles.dropdownDivider} />
+                        <MenuDivider />
                         {props.showDotComMarketing && (
-                            <MenuLink
-                                className={styles.dropdownItem}
-                                as={AnchorLink}
-                                to="https://about.sourcegraph.com"
-                                target="_blank"
-                                rel="noopener"
-                            >
-                                About Sourcegraph <Icon as={OpenInNewIcon} aria-hidden={true} />
+                            <MenuLink as={AnchorLink} to="https://about.sourcegraph.com" target="_blank" rel="noopener">
+                                About Sourcegraph <Icon role="img" as={OpenInNewIcon} aria-hidden={true} />
                             </MenuLink>
                         )}
                         {codeHostIntegrationMessaging === 'browser-extension' && (
                             <MenuLink
-                                className={styles.dropdownItem}
                                 as={AnchorLink}
                                 to="https://docs.sourcegraph.com/integration/browser_extension"
                                 target="_blank"
                                 rel="noopener"
                             >
-                                Browser extension <Icon as={OpenInNewIcon} aria-hidden={true} />
+                                Browser extension <Icon role="img" as={OpenInNewIcon} aria-hidden={true} />
                             </MenuLink>
                         )}
                     </MenuList>

@@ -3,7 +3,6 @@ import { addMinutes } from 'date-fns'
 import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import {
     EMPTY_SETTINGS_CASCADE,
     SettingsOrgSubject,
@@ -26,7 +25,6 @@ import {
     EXECUTING_BATCH_SPEC,
     FAILED_BATCH_SPEC,
     mockBatchChange,
-    mockFullBatchSpec,
     mockWorkspaceResolutionStatus,
     mockWorkspaces,
 } from '../batch-spec.mock'
@@ -195,24 +193,6 @@ add('completed with errors', () => (
                     {...props}
                     batchSpecID="spec1234"
                     batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
-                    authenticatedUser={mockAuthenticatedUser}
-                    settingsCascade={SETTINGS_CASCADE}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-))
-
-const LOCAL_MOCKS = buildMocks(mockFullBatchSpec({ source: BatchSpecSource.LOCAL }))
-
-add('for a locally-executed spec', () => (
-    <WebStory>
-        {props => (
-            <MockedTestProvider link={new WildcardMockLink(LOCAL_MOCKS)}>
-                <ExecuteBatchSpecPage
-                    {...props}
-                    batchSpecID="spec1234"
-                    batchChange={{ name: 'my-local-batch-change', namespace: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
                     settingsCascade={SETTINGS_CASCADE}
                 />

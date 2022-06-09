@@ -214,7 +214,7 @@ func (h ChunkMatch) AsLineMatches() []*LineMatch {
 	lineMatches := make([]*LineMatch, len(lines))
 	for i, line := range lines {
 		lineNumber := h.ContentStart.Line + i
-		offsetAndLengths := [][2]int32{}
+		var offsetAndLengths [][2]int32
 		for _, rr := range h.Ranges {
 			for rangeLine := rr.Start.Line; rangeLine <= rr.End.Line; rangeLine++ {
 				if rangeLine == lineNumber {
@@ -228,9 +228,7 @@ func (h ChunkMatch) AsLineMatches() []*LineMatch {
 						end = rr.End.Column
 					}
 
-					if start != end {
-						offsetAndLengths = append(offsetAndLengths, [2]int32{int32(start), int32(end - start)})
-					}
+					offsetAndLengths = append(offsetAndLengths, [2]int32{int32(start), int32(end - start)})
 				}
 			}
 		}

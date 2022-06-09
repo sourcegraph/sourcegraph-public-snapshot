@@ -32,7 +32,6 @@ export interface Settings {
             enabled: boolean
             forNerds?: boolean
         }
-        enableExtensionsDecorationsColumnView?: boolean
     }
     [key: string]: any
 
