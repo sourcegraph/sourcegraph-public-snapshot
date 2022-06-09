@@ -53,8 +53,6 @@ interface Props extends SettingsCascadeProps {
 
     /** Display notices for this location. */
     location: Notice['location']
-
-    authenticatedUser: AuthenticatedUser | null
 }
 
 /**
@@ -65,14 +63,51 @@ export const Notices: React.FunctionComponent<React.PropsWithChildren<Props>> = 
     alertClassName,
     settingsCascade,
     location,
+}) => {
+    if (
+        !isSettingsValid<Settings>(settingsCascade) ||
+        !settingsCascade.final.notices ||
+        !Array.isArray(settingsCascade.final.notices)
+    ) {
+        return null
+    }
+
+    const notices = settingsCascade.final.notices.filter(notice => notice.location === location)
+    if (notices.length === 0) {
+        return null
+    }
+
+    return (
+        <div className={classNames(styles.notices, className)}>
+            {notices.map((notice, index) => (
+                <NoticeAlert key={index} testId="notice-alert" className={alertClassName} notice={notice} />
+            ))}
+        </div>
+    )
+}
+
+interface VerifyEmailNoticesProps {
+    className?: string
+    /** Apply this class name to each notice (alongside .alert). */
+    alertClassName?: string
+    authenticatedUser: AuthenticatedUser
+}
+
+/**
+ * Displays notices from settings for a specific location.
+ */
+export const VerifyEmailNotices: React.FunctionComponent<VerifyEmailNoticesProps> = ({
+    className,
+    alertClassName,
     authenticatedUser,
 }) => {
     const [isEmailVerificationAlertEnabled, status] = useFeatureFlag('ab-email-verification-alert')
-    const notices: Notice[] = useMemo(() => {
-        const userEmails: AuthenticatedUser['emails'] =
-            status === 'loaded' && isEmailVerificationAlertEnabled && authenticatedUser ? authenticatedUser.emails : []
 
-        const verifyEmailNotices: Notice[] = userEmails
+    const notices: Notice[] = useMemo(() => {
+        if (status !== 'loaded' || !isEmailVerificationAlertEnabled) {
+            return []
+        }
+        return authenticatedUser.emails
             .filter(({ verified }) => !verified)
             .map(
                 ({ email }): Notice => ({
@@ -83,17 +118,7 @@ export const Notices: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                     dismissible: false,
                 })
             ) as Notice[]
-
-        if (
-            !isSettingsValid<Settings>(settingsCascade) ||
-            !settingsCascade.final.notices ||
-            !Array.isArray(settingsCascade.final.notices)
-        ) {
-            return verifyEmailNotices
-        }
-
-        return [...verifyEmailNotices, ...settingsCascade.final.notices.filter(notice => notice.location === location)]
-    }, [authenticatedUser, isEmailVerificationAlertEnabled, location, settingsCascade, status])
+    }, [authenticatedUser, isEmailVerificationAlertEnabled, status])
 
     if (notices.length === 0) {
         return null
