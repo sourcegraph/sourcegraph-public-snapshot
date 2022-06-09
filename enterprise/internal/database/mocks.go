@@ -20,6 +20,7 @@ import (
 	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
 	extsvc "github.com/sourcegraph/sourcegraph/internal/extsvc"
 	result "github.com/sourcegraph/sourcegraph/internal/search/result"
+	schema "github.com/sourcegraph/sourcegraph/schema"
 )
 
 // MockCodeMonitorStore is a mock implementation of the CodeMonitorStore
@@ -11332,6 +11333,9 @@ type MockPermsStore struct {
 	// LoadUserPermissionsFunc is an instance of a mock function object
 	// controlling the behavior of the method LoadUserPermissions.
 	LoadUserPermissionsFunc *PermsStoreLoadUserPermissionsFunc
+	// MapUsersFunc is an instance of a mock function object controlling the
+	// behavior of the method MapUsers.
+	MapUsersFunc *PermsStoreMapUsersFunc
 	// MetricsFunc is an instance of a mock function object controlling the
 	// behavior of the method Metrics.
 	MetricsFunc *PermsStoreMetricsFunc
@@ -11430,6 +11434,11 @@ func NewMockPermsStore() *MockPermsStore {
 		},
 		LoadUserPermissionsFunc: &PermsStoreLoadUserPermissionsFunc{
 			defaultHook: func(context.Context, *authz.UserPermissions) (r0 error) {
+				return
+			},
+		},
+		MapUsersFunc: &PermsStoreMapUsersFunc{
+			defaultHook: func(context.Context, []string, *schema.PermissionsUserMapping) (r0 map[string]int32, r1 error) {
 				return
 			},
 		},
@@ -11560,6 +11569,11 @@ func NewStrictMockPermsStore() *MockPermsStore {
 				panic("unexpected invocation of MockPermsStore.LoadUserPermissions")
 			},
 		},
+		MapUsersFunc: &PermsStoreMapUsersFunc{
+			defaultHook: func(context.Context, []string, *schema.PermissionsUserMapping) (map[string]int32, error) {
+				panic("unexpected invocation of MockPermsStore.MapUsers")
+			},
+		},
 		MetricsFunc: &PermsStoreMetricsFunc{
 			defaultHook: func(context.Context, time.Duration) (*PermsMetrics, error) {
 				panic("unexpected invocation of MockPermsStore.Metrics")
@@ -11666,6 +11680,9 @@ func NewMockPermsStoreFrom(i PermsStore) *MockPermsStore {
 		},
 		LoadUserPermissionsFunc: &PermsStoreLoadUserPermissionsFunc{
 			defaultHook: i.LoadUserPermissions,
+		},
+		MapUsersFunc: &PermsStoreMapUsersFunc{
+			defaultHook: i.MapUsers,
 		},
 		MetricsFunc: &PermsStoreMetricsFunc{
 			defaultHook: i.Metrics,
@@ -12783,6 +12800,117 @@ func (c PermsStoreLoadUserPermissionsFuncCall) Args() []interface{} {
 // invocation.
 func (c PermsStoreLoadUserPermissionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// PermsStoreMapUsersFunc describes the behavior when the MapUsers method of
+// the parent MockPermsStore instance is invoked.
+type PermsStoreMapUsersFunc struct {
+	defaultHook func(context.Context, []string, *schema.PermissionsUserMapping) (map[string]int32, error)
+	hooks       []func(context.Context, []string, *schema.PermissionsUserMapping) (map[string]int32, error)
+	history     []PermsStoreMapUsersFuncCall
+	mutex       sync.Mutex
+}
+
+// MapUsers delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPermsStore) MapUsers(v0 context.Context, v1 []string, v2 *schema.PermissionsUserMapping) (map[string]int32, error) {
+	r0, r1 := m.MapUsersFunc.nextHook()(v0, v1, v2)
+	m.MapUsersFunc.appendCall(PermsStoreMapUsersFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the MapUsers method of
+// the parent MockPermsStore instance is invoked and the hook queue is
+// empty.
+func (f *PermsStoreMapUsersFunc) SetDefaultHook(hook func(context.Context, []string, *schema.PermissionsUserMapping) (map[string]int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MapUsers method of the parent MockPermsStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PermsStoreMapUsersFunc) PushHook(hook func(context.Context, []string, *schema.PermissionsUserMapping) (map[string]int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreMapUsersFunc) SetDefaultReturn(r0 map[string]int32, r1 error) {
+	f.SetDefaultHook(func(context.Context, []string, *schema.PermissionsUserMapping) (map[string]int32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreMapUsersFunc) PushReturn(r0 map[string]int32, r1 error) {
+	f.PushHook(func(context.Context, []string, *schema.PermissionsUserMapping) (map[string]int32, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreMapUsersFunc) nextHook() func(context.Context, []string, *schema.PermissionsUserMapping) (map[string]int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreMapUsersFunc) appendCall(r0 PermsStoreMapUsersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreMapUsersFuncCall objects
+// describing the invocations of this function.
+func (f *PermsStoreMapUsersFunc) History() []PermsStoreMapUsersFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreMapUsersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreMapUsersFuncCall is an object that describes an invocation of
+// method MapUsers on an instance of MockPermsStore.
+type PermsStoreMapUsersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *schema.PermissionsUserMapping
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[string]int32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreMapUsersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreMapUsersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // PermsStoreMetricsFunc describes the behavior when the Metrics method of
