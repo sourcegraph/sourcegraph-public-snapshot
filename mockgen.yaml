@@ -251,6 +251,7 @@ mocks:
     interfaces:
       - DBStore
       - LSIFStore
+      - UploadService
     path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup
   - filename: internal/codeintel/uploads/background/commitgraph/mock_iface_test.go
     interfaces:

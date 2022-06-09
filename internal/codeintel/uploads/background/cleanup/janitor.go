@@ -12,6 +12,7 @@ import (
 type janitor struct {
 	dbStore   DBStore
 	lsifStore LSIFStore
+	uploadSvc UploadService
 	metrics   *metrics
 	clock     glock.Clock
 }
