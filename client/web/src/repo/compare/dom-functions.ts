@@ -19,12 +19,20 @@ export const diffDomFunctions: DOMFunctions = {
     },
 
     getLineNumberFromCodeElement: (codeCell: HTMLElement): number => {
-        let cell = codeCell.closest('td')!.previousElementSibling as HTMLTableCellElement
-        while (cell) {
-            if (cell.dataset.line) {
-                return parseInt(cell.dataset.line, 10)
+        const closestTd = codeCell.closest('td')
+        if (closestTd) {
+            // First search right-to-left for a line number using `previousElementSibling`
+            // If not found, search left-to-right for a line number using `nextElementSibling`
+            const siblings = ['previousElementSibling', 'nextElementSibling'] as const
+            for (const sibling of siblings) {
+                let cell = closestTd[sibling] as HTMLTableCellElement
+                while (cell) {
+                    if (cell.dataset.line) {
+                        return parseInt(cell.dataset.line, 10)
+                    }
+                    cell = cell[sibling] as HTMLTableCellElement
+                }
             }
-            cell = cell.previousElementSibling as HTMLTableCellElement
         }
         throw new Error('Could not find a line number in any cell')
     },
