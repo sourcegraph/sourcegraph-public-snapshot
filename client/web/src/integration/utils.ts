@@ -37,10 +37,6 @@ const waitForCodeHighlighting = async (page: Page): Promise<void> => {
 
 type ColorScheme = 'dark' | 'light'
 
-const ColorSchemeToMonacoEditorClassName: Record<ColorScheme, string> = {
-    dark: 'vs-dark',
-    light: 'vs',
-}
 /**
  * Percy couldn't capture <img /> since they have `src` values with testing domain name.
  * We need to call this function before asking Percy to take snapshots,
@@ -90,25 +86,13 @@ export const setColorScheme = async (
         page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }]),
         shouldWaitForCodeHighlighting ? waitForCodeHighlighting(page) : Promise.resolve(),
     ])
-
-    try {
-        // Check Monaco editor is styled correctly
-        await page.waitForFunction(
-            (expectedClassName: string) =>
-                document.querySelector('#monaco-query-input .monaco-editor') &&
-                document.querySelector('#monaco-query-input .monaco-editor')?.classList.contains(expectedClassName),
-            { timeout: 1000 },
-            ColorSchemeToMonacoEditorClassName[scheme]
-        )
-
-        // Wait a tiny bit for Monaco syntax highlighting to be applied
-        await page.waitForTimeout(500)
-    } catch {
-        // noop, page doesn't use monaco editor
-    }
 }
 
 export interface PercySnapshotConfig {
+    /**
+     * How long to wait for the UI to settle before taking a screenshot.
+     */
+    timeout: number
     waitForCodeHighlighting: boolean
 }
 
@@ -118,7 +102,7 @@ export interface PercySnapshotConfig {
 export const percySnapshotWithVariants = async (
     page: Page,
     name: string,
-    config?: PercySnapshotConfig
+    { timeout = 1000, waitForCodeHighlighting = false } = {}
 ): Promise<void> => {
     const percyEnabled = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
 
@@ -126,23 +110,19 @@ export const percySnapshotWithVariants = async (
         return
     }
 
-    try {
-        // Wait for Monaco editor to finish rendering before taking screenshots
-        await page.waitForSelector('#monaco-query-input .monaco-editor', { visible: true, timeout: 1000 })
-    } catch {
-        // noop, page doesn't use monaco editor
-    }
-
-    // Theme-light
-    await setColorScheme(page, 'light', config?.waitForCodeHighlighting)
-    await convertImgSourceHttpToBase64(page)
-    await percySnapshot(page, `${name} - light theme`)
-
     // Theme-dark
-    await setColorScheme(page, 'dark', config?.waitForCodeHighlighting)
+    await setColorScheme(page, 'dark', waitForCodeHighlighting)
+    // Wait for the UI to settle before converting images and taking the
+    // screenshot.
+    await page.waitForTimeout(timeout)
     await convertImgSourceHttpToBase64(page)
     await percySnapshot(page, `${name} - dark theme`)
 
-    // Reset to light theme
-    await setColorScheme(page, 'light', config?.waitForCodeHighlighting)
+    // Theme-light
+    await setColorScheme(page, 'light', waitForCodeHighlighting)
+    // Wait for the UI to settle before converting images and taking the
+    // screenshot.
+    await page.waitForTimeout(timeout)
+    await convertImgSourceHttpToBase64(page)
+    await percySnapshot(page, `${name} - light theme`)
 }
