@@ -185,7 +185,7 @@ export async function createPreviewContent(
         return {
             resultType: match.type,
             fileName: '',
-            repoUrl: '',
+            repoUrl: getRepoMatchUrl(match).slice(1),
             path: '',
             content: null,
             lineNumber: -1,
