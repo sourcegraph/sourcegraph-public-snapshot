@@ -202,6 +202,7 @@ const StatusBarItem: React.FunctionComponent<
                 noop && classNames('text-decoration-none', styles.itemNoop),
                 className
             )}
+            aria-label={statusBarItem.tooltip}
             data-tooltip={statusBarItem.tooltip}
             onSelect={handleCommand}
             tabIndex={noop ? -1 : 0}

@@ -71,7 +71,7 @@ export const Button = React.forwardRef(
             size && getButtonSize({ size })
         )
 
-        const buttonComponent = (
+        return (
             <Component
                 ref={reference}
                 className={classNames(isBranded && brandedButtonClassname, className)}
@@ -82,8 +82,6 @@ export const Button = React.forwardRef(
                 {children}
             </Component>
         )
-
-        return buttonComponent
     }
 ) as ForwardReferenceComponent<'button', ButtonProps>
 
