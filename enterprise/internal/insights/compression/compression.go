@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
