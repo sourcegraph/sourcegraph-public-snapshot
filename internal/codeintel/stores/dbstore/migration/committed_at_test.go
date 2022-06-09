@@ -209,7 +209,7 @@ func TestCommittedAtMigratorUnknownRepository(t *testing.T) {
 }
 
 func TestCommittedAtMigratorUnknownCommits(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := dbstore.NewWithDB(db, &observation.TestContext)
 	gitserverClient := NewMockGitserverClient()
 	migrator := NewCommittedAtMigrator(store, gitserverClient, 250)

@@ -376,7 +376,7 @@ func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
 	}
 
 	// Mark configuration policy as protected (no other way to do so outside of migrations)
-	if _, err := db.Exec("UPDATE lsif_configuration_policies SET protected = true"); err != nil {
+	if _, err := db.ExecContext(context.Background(), "UPDATE lsif_configuration_policies SET protected = true"); err != nil {
 		t.Fatalf("unexpected error marking configuration policy as protected: %s", err)
 	}
 
@@ -527,7 +527,7 @@ func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 	}
 
 	// Mark configuration policy as protected (no other way to do so outside of migrations)
-	if _, err := db.Exec("UPDATE lsif_configuration_policies SET protected = true"); err != nil {
+	if _, err := db.ExecContext(context.Background(), "UPDATE lsif_configuration_policies SET protected = true"); err != nil {
 		t.Fatalf("unexpected error marking configuration policy as protected: %s", err)
 	}
 

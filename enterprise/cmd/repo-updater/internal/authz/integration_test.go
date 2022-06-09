@@ -2,7 +2,6 @@ package authz
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -14,7 +13,6 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/log/logtest"
-
 	authzGitHub "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -92,7 +90,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			testDB := database.NewDB(dbtest.NewDB(t))
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(logtest.Scoped(t), database.NewDB(testDB), sql.TxOptions{})
+			reposStore := repos.NewStore(logtest.Scoped(t), database.NewDB(testDB))
 
 			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
@@ -173,7 +171,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			testDB := database.NewDB(dbtest.NewDB(t))
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(logtest.Scoped(t), database.NewDB(testDB), sql.TxOptions{})
+			reposStore := repos.NewStore(logtest.Scoped(t), database.NewDB(testDB))
 
 			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
@@ -277,7 +275,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			testDB := database.NewDB(dbtest.NewDB(t))
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(logtest.Scoped(t), database.NewDB(testDB), sql.TxOptions{})
+			reposStore := repos.NewStore(logtest.Scoped(t), database.NewDB(testDB))
 
 			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
@@ -361,7 +359,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			testDB := database.NewDB(dbtest.NewDB(t))
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(logtest.Scoped(t), database.NewDB(testDB), sql.TxOptions{})
+			reposStore := repos.NewStore(logtest.Scoped(t), database.NewDB(testDB))
 
 			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {

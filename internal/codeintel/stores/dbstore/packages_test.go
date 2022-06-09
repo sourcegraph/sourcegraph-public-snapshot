@@ -49,7 +49,7 @@ func TestUpdatePackagesEmpty(t *testing.T) {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}
 
-	count, _, err := basestore.ScanFirstInt(db.Query("SELECT COUNT(*) FROM lsif_packages"))
+	count, _, err := basestore.ScanFirstInt(db.QueryContext(context.Background(), "SELECT COUNT(*) FROM lsif_packages"))
 	if err != nil {
 		t.Fatalf("unexpected error checking package count: %s", err)
 	}

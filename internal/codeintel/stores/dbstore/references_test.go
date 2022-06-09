@@ -49,7 +49,7 @@ func TestUpdatePackageReferencesEmpty(t *testing.T) {
 		t.Fatalf("unexpected error updating references: %s", err)
 	}
 
-	count, _, err := basestore.ScanFirstInt(db.Query("SELECT COUNT(*) FROM lsif_references"))
+	count, _, err := basestore.ScanFirstInt(db.QueryContext(context.Background(), "SELECT COUNT(*) FROM lsif_references"))
 	if err != nil {
 		t.Fatalf("unexpected error checking reference count: %s", err)
 	}
