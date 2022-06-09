@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -193,12 +194,12 @@ type permsStore struct {
 var _ PermsStore = (*permsStore)(nil)
 
 // Perms returns a new PermsStore with given parameters.
-func Perms(db dbutil.DB, clock func() time.Time) PermsStore {
+func Perms(db database.DB, clock func() time.Time) PermsStore {
 	return perms(db, clock)
 }
 
-func perms(db dbutil.DB, clock func() time.Time) *permsStore {
-	return &permsStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), clock: clock}
+func perms(db database.DB, clock func() time.Time) *permsStore {
+	return &permsStore{Store: basestore.NewWithHandle(db.Handle()), clock: clock}
 }
 
 func PermsWith(other basestore.ShareableStore, clock func() time.Time) PermsStore {
