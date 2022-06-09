@@ -42,7 +42,7 @@ func TestUpdatePackageReferences(t *testing.T) {
 }
 
 func TestUpdatePackageReferencesEmpty(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(db)
 
 	if err := store.UpdatePackageReferences(context.Background(), 0, nil); err != nil {

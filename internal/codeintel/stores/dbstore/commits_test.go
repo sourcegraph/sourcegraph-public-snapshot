@@ -183,7 +183,7 @@ func TestSkipsDeletedRepositories(t *testing.T) {
 }
 
 func TestCommitGraphMetadata(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(db)
 
 	if err := store.MarkRepositoryAsDirty(context.Background(), 50); err != nil {

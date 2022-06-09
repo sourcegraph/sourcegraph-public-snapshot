@@ -771,7 +771,7 @@ func TestDeleteUploadByIDNotCompleted(t *testing.T) {
 }
 
 func TestDeleteUploadByIDMissingRow(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(db)
 
 	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
@@ -1611,7 +1611,7 @@ func TestUpdateCommitedAt(t *testing.T) {
 }
 
 func TestLastUploadRetentionScanForRepository(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(db)
 	ctx := context.Background()
 

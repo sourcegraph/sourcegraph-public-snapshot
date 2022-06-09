@@ -505,7 +505,7 @@ func TestDeleteIndexByID(t *testing.T) {
 }
 
 func TestDeleteIndexByIDMissingRow(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(db)
 
 	if found, err := store.DeleteIndexByID(context.Background(), 1); err != nil {
@@ -560,7 +560,7 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 }
 
 func TestLastIndexScanForRepository(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(db)
 	ctx := context.Background()
 
