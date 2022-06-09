@@ -69,17 +69,16 @@ type Store struct {
 	observationContext *observation.Context
 }
 
-
 // New returns a new Store backed by the given database.
-func New(db dbutil.DB, observationContext *observation.Context, key encryption.Key) *Store {
+func New(db database.DB, observationContext *observation.Context, key encryption.Key) *Store {
 	return NewWithClock(db, observationContext, key, timeutil.Now)
 }
 
 // NewWithClock returns a new Store backed by the given database and
 // clock for timestamps.
-func NewWithClock(db dbutil.DB, observationContext *observation.Context, key encryption.Key, clock func() time.Time) *Store {
+func NewWithClock(db database.DB, observationContext *observation.Context, key encryption.Key, clock func() time.Time) *Store {
 	return &Store{
-		Store:              basestore.NewWithDB(db, sql.TxOptions{}),
+		Store:              basestore.NewWithHandle(db.Handle()),
 		key:                key,
 		now:                clock,
 		operations:         newOperations(observationContext),
