@@ -362,7 +362,7 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 
 	err := cleanupStaleLockFiles(dir, opt.Logger)
 	if err != nil {
-		return fmt.Errorf("removing stale git lock files: %w", err)
+		return errors.Wrap(err, "removing stale git lock files")
 	}
 
 	for {
@@ -456,7 +456,16 @@ func cleanupStaleLockFiles(gitDir string, logger *log.Logger) error {
 	}
 
 	var lockFiles []string
-	for _, f := range []string{"gc.pid.lock", "index.lock"} {
+
+	// add "well-known" lock files
+	for _, f := range []string{
+		"gc.pid.lock", // created when git starts a garbage collection run
+		"index.lock",  // created when running "git add" / "git commit"
+
+		// from cmd/gitserver/server/cleanup\.go
+		"config.lock",
+		"packed-refs.lock",
+	} {
 		lockFiles = append(lockFiles, filepath.Join(gitDir, f))
 	}
 
@@ -473,7 +482,7 @@ func cleanupStaleLockFiles(gitDir string, logger *log.Logger) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("finding stale lockfiles in %q: %w", refsDir, err)
+		return errors.Wrapf(err, "finding stale lockfiles in %q: %w", refsDir)
 	}
 
 	// remove all stale lock files
@@ -484,7 +493,7 @@ func cleanupStaleLockFiles(gitDir string, logger *log.Logger) error {
 				continue
 			}
 
-			return fmt.Errorf("removing stale lock file %q: %w", f, err)
+			return errors.Wrapf(err, "removing stale lock file %q", f)
 		}
 
 		logger.Printf("removed stale lock file %q", f)
