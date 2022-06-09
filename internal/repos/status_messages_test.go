@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
@@ -30,7 +29,7 @@ func TestStatusMessages(t *testing.T) {
 	}
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := NewStore(logtest.Scoped(t), database.NewDB(db), sql.TxOptions{})
+	store := NewStore(logtest.Scoped(t), database.NewDB(db))
 
 	admin, err := db.Users().Create(ctx, database.NewUser{
 		Email:                 "a1@example.com",

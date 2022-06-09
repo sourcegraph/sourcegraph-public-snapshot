@@ -89,7 +89,7 @@ type batchSpecWorkspaceExecutionWorkerStore struct {
 }
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error) {
-	batchesStore := New(s.Store.Handle().DB(), s.observationContext, nil)
+	batchesStore := New(database.NewDBWith(s.Store), s.observationContext, nil)
 
 	t := true
 	cs, err := batchesStore.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
@@ -123,7 +123,7 @@ func deleteAccessToken(ctx context.Context, deleteToken accessTokenHardDeleter, 
 type markFinal func(ctx context.Context, tx dbworkerstore.Store) (_ bool, err error)
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, id int, fn markFinal) (ok bool, err error) {
-	batchesStore := New(s.Store.Handle().DB(), s.observationContext, nil)
+	batchesStore := New(database.NewDBWith(s.Store), s.observationContext, nil)
 	tx, err := batchesStore.Transact(ctx)
 	if err != nil {
 		return false, err
@@ -193,7 +193,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkFailed(ctx context.Context,
 }
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Context, id int, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
-	batchesStore := New(s.Store.Handle().DB(), s.observationContext, nil)
+	batchesStore := New(database.NewDBWith(s.Store), s.observationContext, nil)
 
 	tx, err := batchesStore.Transact(ctx)
 	if err != nil {
