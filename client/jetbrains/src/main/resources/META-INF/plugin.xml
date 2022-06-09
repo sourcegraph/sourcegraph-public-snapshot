@@ -58,7 +58,7 @@
             id="com.sourcegraph.website.OpenRevisionAction"
             icon="/icons/icon.png"
             class="com.sourcegraph.website.OpenRevisionAction"
-            text="Open revision diff in Sourcegraph Web">
+            text="Open Revision Diff in Sourcegraph Web">
             <add-to-group group-id="VcsHistoryActionsGroup" anchor="last"/>
             <add-to-group group-id="Vcs.Log.ContextMenu" anchor="last"/>
             <add-to-group group-id="VcsHistoryActionsGroup.Toolbar" anchor="last"/>
