@@ -213,10 +213,10 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 					// progress.Verbose never writes to output, so we just send check
 					// progress to discard.
-					//
-					// TODO maybe we should collect this output
-					if err := check.Update(ctx, std.NewFixedOutput(io.Discard, true), args); err != nil {
+					var updateOutput strings.Builder
+					if err := check.Update(ctx, std.NewFixedOutput(&updateOutput, true), args); err != nil {
 						progress.StatusBarFailf(i, "Check %s failed: %s", check.Name, err.Error())
+						check.cachedCheckOutput = updateOutput.String()
 						didErr.Store(true)
 					}
 				}(check)
@@ -257,12 +257,12 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 			results.failed = append(results.failed, i)
 			r.out.WriteFailuref("%d. %s", idx, category.Name)
 			for _, c := range category.Checks {
-				if c.checkErr != nil {
+				if c.cachedCheckErr != nil {
 					r.out.WriteLine(output.Styledf(output.CombineStyles(output.StyleBold, output.StyleWarning),
-						"%s: %s", c.Name, c.checkErr))
+						"%s: %s", c.Name, c.cachedCheckErr))
 					// Render additional details
-					if rErr, ok := c.checkErr.(RenderableError); ok {
-						rErr.Render(r.out)
+					if c.cachedCheckOutput != "" {
+						r.out.Write(c.cachedCheckOutput)
 					}
 				}
 			}
@@ -359,8 +359,8 @@ func (r *Runner[Args]) printCategoryHeaderAndDependencies(categoryIdx int, categ
 		if dep.IsSatisfied() {
 			r.out.WriteSuccessf("%d. %s", idx, dep.Name)
 		} else {
-			if dep.checkErr != nil {
-				r.out.WriteFailuref("%d. %s: %s", idx, dep.Name, dep.checkErr)
+			if dep.cachedCheckErr != nil {
+				r.out.WriteFailuref("%d. %s: %s", idx, dep.Name, dep.cachedCheckErr)
 			} else {
 				r.out.WriteFailuref("%d. %s: %s", idx, dep.Name, "check failed")
 			}
@@ -428,29 +428,36 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 			}
 		}
 
-		dep := category.Checks[idx]
+		check := category.Checks[idx]
 
-		r.out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "%s", dep.Name))
+		r.out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "%s", check.Name))
 		r.out.Write("")
 
-		if dep.checkErr != nil {
-			r.out.WriteLine(output.Styledf(output.StyleBold, "Encountered the following error:\n\n%s%s\n", output.StyleReset, dep.checkErr))
+		if check.cachedCheckErr != nil {
+			r.out.WriteLine(output.Styledf(output.StyleBold, "Encountered the following error:\n\n%s%s\n", output.StyleReset, check.cachedCheckErr))
 		}
 
-		if dep.Description == "" {
-			return errors.Newf("No description available for manual fix")
+		if check.Description == "" {
+			return errors.Newf("No description available for manual fix - good luck!")
 		}
 
 		r.out.WriteLine(output.Styled(output.StyleBold, "How to fix:"))
 
-		r.out.WriteMarkdown(dep.Description)
+		r.out.WriteMarkdown(check.Description)
 
-		pending := r.out.Pending(output.Styled(output.StylePending, "Determining status..."))
-		for _, dep := range category.Checks {
+		// Wait for user to finish
+		r.out.Promptf("Hit 'Return' or 'Enter' when you are done.")
+		fmt.Fscanln(r.in)
+
+		// Check statuses
+		r.out.WriteLine(output.Styled(output.StylePending, "Determining status..."))
+		for _, check := range category.Checks {
 			// update check state
-			_ = dep.Update(ctx, pending, args)
+			if err := check.Update(ctx, r.out, args); err == nil {
+				// reset output for the next check if all is good
+				r.out.ClearScreen()
+			}
 		}
-		pending.Destroy()
 
 		r.printCategoryHeaderAndDependencies(categoryIdx, category)
 	}
@@ -524,7 +531,7 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 			"Fixing %q...", c.Name))
 		if err := c.Fix(ctx, IO{
 			Input:  r.in,
-			Writer: r.out,
+			Output: r.out,
 		}, args); err != nil {
 			r.out.WriteLine(output.Linef(output.EmojiWarning, output.CombineStyles(output.StyleFailure, output.StyleBold),
 				"Failed to fix %q: %s", c.Name, err.Error()))

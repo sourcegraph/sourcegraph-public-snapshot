@@ -3,7 +3,7 @@ package check
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 )
 
 // Check can be defined for Runner to execute as part of a Category.
@@ -20,16 +20,18 @@ type Check[Args any] struct {
 	// Fix can be implemented to fix issues with this check.
 	Fix FixAction[Args]
 
-	// checkErr, checkRun preserves the state of the most recent check run.
-	checkErr error
-	checkRun bool
+	// The following preserve the state of the most recent check run.
+	checkWasRun    bool
+	cachedCheckErr error
+	// cachedCheckOutput is occasionally used to cache the results of a check run
+	cachedCheckOutput string
 }
 
 // Update should be used to run a check and set its results onto the Check itself.
-func (c *Check[Args]) Update(ctx context.Context, out output.Writer, args Args) error {
-	c.checkErr = c.Check(ctx, out, args)
-	c.checkRun = true
-	return c.checkErr
+func (c *Check[Args]) Update(ctx context.Context, out *std.Output, args Args) error {
+	c.cachedCheckErr = c.Check(ctx, out, args)
+	c.checkWasRun = true
+	return c.cachedCheckErr
 }
 
 // IsEnabled checks and writes some output based on whether or not this check is enabled.
@@ -39,7 +41,7 @@ func (c *Check[Args]) IsEnabled(ctx context.Context, args Args) error {
 	}
 	err := c.Enabled(ctx, args)
 	if err != nil {
-		c.checkRun = true // treat this as a run that succeeded
+		c.checkWasRun = true // treat this as a run that succeeded
 	}
 	return err
 }
@@ -47,7 +49,7 @@ func (c *Check[Args]) IsEnabled(ctx context.Context, args Args) error {
 // IsSatisfied indicates if this check has been run, and if it has errored. Update
 // should be called to update state.
 func (c *Check[Args]) IsSatisfied() bool {
-	return c.checkRun && c.checkErr == nil
+	return c.checkWasRun && c.cachedCheckErr == nil
 }
 
 // Category is a set of checks.
