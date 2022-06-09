@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/opentracing/opentracing-go/log"
+	slog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -31,4 +32,5 @@ type RuntimeClients struct {
 	Zoekt        zoekt.Streamer
 	SearcherURLs *endpoint.Map
 	Gitserver    gitserver.Client
+	log          slog.Logger
 }

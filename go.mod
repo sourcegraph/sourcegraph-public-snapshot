@@ -413,6 +413,7 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
+	github.com/sourcegraph/log v0.0.0-20220608183241-51d325291e9a
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
 	github.com/xlab/treeprint v1.1.0 // indirect
 	k8s.io/klog/v2 v2.40.1 // indirect

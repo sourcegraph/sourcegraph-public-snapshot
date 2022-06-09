@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	zoektquery "github.com/google/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -278,6 +280,7 @@ type RepoOptions struct {
 	ArchivedSet  bool
 	NoArchived   bool
 	OnlyArchived bool
+	log          log.Logger
 }
 
 func (op *RepoOptions) String() string {

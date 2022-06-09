@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sourcegraph/lib/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -20,11 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	slog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type Observer struct {
-	log slog.Logger
+	log log.Logger
 	Db  database.DB
 
 	// Inputs are used to generate alert messages based on the query.
@@ -223,7 +224,7 @@ func (o *Observer) Done() (*search.Alert, error) {
 	}
 
 	if o.HasResults && o.err != nil {
-		o.log.Error("Errors during search", slog.Error(o.err))
+		o.log.Error("Errors during search", log.Error(o.err))
 		return o.alert, nil
 	}
 
