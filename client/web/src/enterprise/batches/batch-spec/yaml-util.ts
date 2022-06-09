@@ -422,6 +422,24 @@ export const insertFieldIntoLibraryItem = (
 }
 
 /**
+ * Replaces the name of the provided `librarySpec`. If `librarySpec` or its name
+ * is not properly parsable, just returns the original `librarySpec`.
+ *
+ * @param librarySpec the raw batch spec YAML example code from a library spec
+ * @param name the name of the batch change to be inserted
+ */
+export const insertNameIntoLibraryItem = (librarySpec: string, name: string): string => insertFieldIntoLibraryItem(librarySpec, name, 'name')
+
+/**
+ * Replaces the query of the provided `librarySpec`. If `librarySpec` or its query
+ * is not properly parsable, just returns the original `librarySpec`.
+ *
+ * @param librarySpec the raw batch spec YAML example code from a library spec
+ * @param query the updated query to be inserted
+ */
+export const insertQueryIntoLibraryItem = (librarySpec: string, query: string): string => insertFieldIntoLibraryItem(librarySpec, `- repositoriesMatchingQuery: ${query}\n\n`, 'on', false)
+
+/**
  * Parses and performs a comparison between the values for the "on", "importChangesets",
  * and "workspaces" statements of two different batch specs, returning true if the
  * statements match or "UNKNOWN" if the specs are not able to be parsed and compared.

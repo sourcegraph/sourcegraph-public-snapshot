@@ -19,7 +19,7 @@ import {
     UNSTARTED_CONNECTION_MOCKS,
     UNSTARTED_WITH_CACHE_CONNECTION_MOCKS,
 } from '../batch-spec.mock'
-import { insertFieldIntoLibraryItem } from '../yaml-util'
+import { insertNameIntoLibraryItem } from '../yaml-util'
 
 import { EditBatchSpecPage } from './EditBatchSpecPage'
 import goImportsSample from './library/go-imports.batch.yaml'
@@ -109,7 +109,7 @@ const MULTIPLE_SPEC_MOCKS = new WildcardMockLink([
                         nodes: [
                             mockBatchSpec({
                                 id: 'new',
-                                originalInput: insertFieldIntoLibraryItem(goImportsSample, 'my-batch-change', 'name'),
+                                originalInput: insertNameIntoLibraryItem(goImportsSample, 'my-batch-change'),
                             }),
                             mockBatchSpec({ id: 'old1' }),
                             mockBatchSpec({ id: 'old2' }),
