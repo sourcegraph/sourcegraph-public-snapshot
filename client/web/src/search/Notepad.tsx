@@ -11,7 +11,7 @@ import React, {
 } from 'react'
 
 import classNames from 'classnames'
-import { LocationDescriptor } from 'history'
+import type { LocationDescriptorObject } from 'history'
 import BookPlusOutlineIcon from 'mdi-react/BookPlusOutlineIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
@@ -28,7 +28,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, TextArea, Icon, H2, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Link, TextArea, Icon, H2, H3, Text, createLinkUrl } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '../notebooks'
 import {
@@ -564,7 +564,7 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
             <div className="d-flex">
                 <span className="flex-shrink-0 text-muted mr-1">{icon}</span>
                 <span className="flex-1">
-                    <Link to={location} className="p-0">
+                    <Link to={typeof location === 'string' ? location : createLinkUrl(location)} className="p-0">
                         {title}
                     </Link>
                 </span>
@@ -624,7 +624,12 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
 
 function getUIComponentsForEntry(
     entry: NotepadEntry | NotepadEntryInput
-): { icon: React.ReactElement; title: React.ReactElement; location: LocationDescriptor; body?: React.ReactElement } {
+): {
+    icon: React.ReactElement
+    title: React.ReactElement
+    location: LocationDescriptorObject | string
+    body?: React.ReactElement
+} {
     switch (entry.type) {
         case 'search':
             return {

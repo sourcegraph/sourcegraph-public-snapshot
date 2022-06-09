@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -110,7 +109,8 @@ func testNewFeatureFlagRoundtrip(t *testing.T) {
 
 func testListFeatureFlags(t *testing.T) {
 	t.Parallel()
-	flagStore := &featureFlagStore{Store: basestore.NewWithDB(dbtest.NewDB(t), sql.TxOptions{})}
+	db := NewDB(dbtest.NewDB(t))
+	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := actor.WithInternalActor(context.Background())
 
 	flag1 := &ff.FeatureFlag{Name: "bool_true", Bool: &ff.FeatureFlagBool{Value: true}}
@@ -194,7 +194,7 @@ func testNewOverrideRoundtrip(t *testing.T) {
 func testListUserOverrides(t *testing.T) {
 	t.Parallel()
 	db := NewDB(dbtest.NewDB(t))
-	flagStore := &featureFlagStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
 	users := db.Users()
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -273,7 +273,7 @@ func testListUserOverrides(t *testing.T) {
 func testListOrgOverrides(t *testing.T) {
 	t.Parallel()
 	db := NewDB(dbtest.NewDB(t))
-	flagStore := &featureFlagStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
 	users := db.Users()
 	orgs := db.Orgs()
 	orgMembers := db.OrgMembers()

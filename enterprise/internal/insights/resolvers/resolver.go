@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
@@ -38,7 +37,7 @@ func WithBase(insightsDB dbutil.DB, primaryDB database.DB, clock func() time.Tim
 	insightStore := store.NewInsightStore(insightsDB)
 	timeSeriesStore := store.NewWithClock(insightsDB, store.NewInsightPermissionStore(primaryDB), clock)
 	dashboardStore := store.NewDashboardStore(insightsDB)
-	workerBaseStore := basestore.NewWithDB(primaryDB, sql.TxOptions{})
+	workerBaseStore := basestore.NewWithHandle(primaryDB.Handle())
 
 	return &baseInsightResolver{
 		insightStore:    insightStore,

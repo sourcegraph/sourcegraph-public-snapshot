@@ -10,7 +10,7 @@ import (
 	"context"
 	"sync"
 
-	log "github.com/sourcegraph/sourcegraph/lib/log"
+	log "github.com/sourcegraph/log"
 )
 
 // MockWithHooks is a mock implementation of the WithHooks interface (from

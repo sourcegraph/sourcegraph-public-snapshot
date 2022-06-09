@@ -19,11 +19,17 @@ export interface TimelineStage {
 
 export interface TimelineProps {
     stages: TimelineStage[]
+    withoutPreviousDate?: boolean
     now?: () => Date
     className?: string
 }
 
-export const Timeline: FunctionComponent<React.PropsWithChildren<TimelineProps>> = ({ stages, now, className }) => (
+export const Timeline: FunctionComponent<React.PropsWithChildren<TimelineProps>> = ({
+    stages,
+    now,
+    className,
+    withoutPreviousDate = false,
+}) => (
     <div className={className}>
         {stages.map((stage, stageIndex) => {
             if (!stage.date) {
@@ -47,11 +53,13 @@ export const Timeline: FunctionComponent<React.PropsWithChildren<TimelineProps>>
                             <div className="flex-0">
                                 <div className={styles.executorTaskSeparator} />
                             </div>
-                            <div className="flex-1">
-                                <span className="text-muted ml-4">
-                                    {formatDistance(new Date(stage.date), new Date(previousDate))}
-                                </span>
-                            </div>
+                            {!withoutPreviousDate && (
+                                <div className="flex-1">
+                                    <span className="text-muted ml-4">
+                                        {formatDistance(new Date(stage.date), new Date(previousDate))}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     )}
 

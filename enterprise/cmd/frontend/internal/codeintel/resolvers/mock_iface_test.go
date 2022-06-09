@@ -60,6 +60,9 @@ type MockDBStore struct {
 	// function object controlling the behavior of the method
 	// FindClosestDumpsFromGraphFragment.
 	FindClosestDumpsFromGraphFragmentFunc *DBStoreFindClosestDumpsFromGraphFragmentFunc
+	// GetAuditLogsForUploadFunc is an instance of a mock function object
+	// controlling the behavior of the method GetAuditLogsForUpload.
+	GetAuditLogsForUploadFunc *DBStoreGetAuditLogsForUploadFunc
 	// GetConfigurationPoliciesFunc is an instance of a mock function object
 	// controlling the behavior of the method GetConfigurationPolicies.
 	GetConfigurationPoliciesFunc *DBStoreGetConfigurationPoliciesFunc
@@ -189,6 +192,11 @@ func NewMockDBStore() *MockDBStore {
 		},
 		FindClosestDumpsFromGraphFragmentFunc: &DBStoreFindClosestDumpsFromGraphFragmentFunc{
 			defaultHook: func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) (r0 []dbstore.Dump, r1 error) {
+				return
+			},
+		},
+		GetAuditLogsForUploadFunc: &DBStoreGetAuditLogsForUploadFunc{
+			defaultHook: func(context.Context, int) (r0 []dbstore.UploadLog, r1 error) {
 				return
 			},
 		},
@@ -369,6 +377,11 @@ func NewStrictMockDBStore() *MockDBStore {
 				panic("unexpected invocation of MockDBStore.FindClosestDumpsFromGraphFragment")
 			},
 		},
+		GetAuditLogsForUploadFunc: &DBStoreGetAuditLogsForUploadFunc{
+			defaultHook: func(context.Context, int) ([]dbstore.UploadLog, error) {
+				panic("unexpected invocation of MockDBStore.GetAuditLogsForUpload")
+			},
+		},
 		GetConfigurationPoliciesFunc: &DBStoreGetConfigurationPoliciesFunc{
 			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
 				panic("unexpected invocation of MockDBStore.GetConfigurationPolicies")
@@ -527,6 +540,9 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		FindClosestDumpsFromGraphFragmentFunc: &DBStoreFindClosestDumpsFromGraphFragmentFunc{
 			defaultHook: i.FindClosestDumpsFromGraphFragment,
+		},
+		GetAuditLogsForUploadFunc: &DBStoreGetAuditLogsForUploadFunc{
+			defaultHook: i.GetAuditLogsForUpload,
 		},
 		GetConfigurationPoliciesFunc: &DBStoreGetConfigurationPoliciesFunc{
 			defaultHook: i.GetConfigurationPolicies,
@@ -1624,6 +1640,115 @@ func (c DBStoreFindClosestDumpsFromGraphFragmentFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBStoreFindClosestDumpsFromGraphFragmentFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBStoreGetAuditLogsForUploadFunc describes the behavior when the
+// GetAuditLogsForUpload method of the parent MockDBStore instance is
+// invoked.
+type DBStoreGetAuditLogsForUploadFunc struct {
+	defaultHook func(context.Context, int) ([]dbstore.UploadLog, error)
+	hooks       []func(context.Context, int) ([]dbstore.UploadLog, error)
+	history     []DBStoreGetAuditLogsForUploadFuncCall
+	mutex       sync.Mutex
+}
+
+// GetAuditLogsForUpload delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockDBStore) GetAuditLogsForUpload(v0 context.Context, v1 int) ([]dbstore.UploadLog, error) {
+	r0, r1 := m.GetAuditLogsForUploadFunc.nextHook()(v0, v1)
+	m.GetAuditLogsForUploadFunc.appendCall(DBStoreGetAuditLogsForUploadFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetAuditLogsForUpload method of the parent MockDBStore instance is
+// invoked and the hook queue is empty.
+func (f *DBStoreGetAuditLogsForUploadFunc) SetDefaultHook(hook func(context.Context, int) ([]dbstore.UploadLog, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetAuditLogsForUpload method of the parent MockDBStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *DBStoreGetAuditLogsForUploadFunc) PushHook(hook func(context.Context, int) ([]dbstore.UploadLog, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBStoreGetAuditLogsForUploadFunc) SetDefaultReturn(r0 []dbstore.UploadLog, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]dbstore.UploadLog, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBStoreGetAuditLogsForUploadFunc) PushReturn(r0 []dbstore.UploadLog, r1 error) {
+	f.PushHook(func(context.Context, int) ([]dbstore.UploadLog, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBStoreGetAuditLogsForUploadFunc) nextHook() func(context.Context, int) ([]dbstore.UploadLog, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreGetAuditLogsForUploadFunc) appendCall(r0 DBStoreGetAuditLogsForUploadFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreGetAuditLogsForUploadFuncCall
+// objects describing the invocations of this function.
+func (f *DBStoreGetAuditLogsForUploadFunc) History() []DBStoreGetAuditLogsForUploadFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreGetAuditLogsForUploadFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreGetAuditLogsForUploadFuncCall is an object that describes an
+// invocation of method GetAuditLogsForUpload on an instance of MockDBStore.
+type DBStoreGetAuditLogsForUploadFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []dbstore.UploadLog
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreGetAuditLogsForUploadFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreGetAuditLogsForUploadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
