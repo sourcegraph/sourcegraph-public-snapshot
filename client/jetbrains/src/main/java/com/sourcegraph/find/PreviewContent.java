@@ -23,6 +23,7 @@ import java.util.Base64;
 import java.util.Objects;
 
 public class PreviewContent {
+    private final String resultType;
     private final Project project;
     private final String fileName;
     private final String repoUrl;
@@ -34,10 +35,11 @@ public class PreviewContent {
 
     private VirtualFile virtualFile;
 
-    public PreviewContent(@NotNull Project project, @Nullable String fileName, @NotNull String repoUrl, @Nullable String path, @Nullable String content, int lineNumber, int[][] absoluteOffsetAndLengths, @Nullable String relativeUrl) {
+    public PreviewContent(@NotNull Project project, @Nullable String resultType, @Nullable String fileName, @NotNull String repoUrl, @Nullable String path, @Nullable String content, int lineNumber, int[][] absoluteOffsetAndLengths, @Nullable String relativeUrl) {
         this.project = project;
         // It seems like the constructor is not called when we use the JSON parser to create instances of this class, so
         // avoid adding any computation here.
+        this.resultType = resultType;
         this.fileName = fileName;
         this.repoUrl = repoUrl;
         this.path = path;
@@ -58,6 +60,7 @@ public class PreviewContent {
         }
 
         return new PreviewContent(project,
+            isNotNull(json, "resultType") ? json.get("resultType").getAsString() : null,
             isNotNull(json, "fileName") ? json.get("fileName").getAsString() : null,
             json.get("repoUrl").getAsString(),
             isNotNull(json, "path") ? json.get("path").getAsString() : null,
@@ -69,6 +72,11 @@ public class PreviewContent {
 
     private static boolean isNotNull(@NotNull JsonObject json, String key) {
         return json.get(key) != null && !json.get(key).isJsonNull();
+    }
+
+    @Nullable
+    public String getResultType() {
+        return resultType;
     }
 
     @Nullable

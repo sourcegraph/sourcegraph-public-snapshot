@@ -6,6 +6,7 @@ import {
     getRepoMatchUrl,
     PathMatch,
     SearchMatch,
+    SearchType,
     SymbolMatch,
 } from '@sourcegraph/shared/src/search/stream'
 
@@ -13,6 +14,7 @@ import { loadContent } from './lib/blob'
 import { PluginConfig, Search, Theme } from './types'
 
 export interface PreviewContent {
+    resultType: SearchType
     fileName: string
     repoUrl: string
     path: string
@@ -153,12 +155,14 @@ export async function createPreviewContent(
     lineOrSymbolMatchIndex: number | undefined
 ): Promise<PreviewContent> {
     if (match.type === 'commit') {
+        const isCommitResult = match.content.startsWith('```COMMIT_EDITMSG')
         const content = prepareContent(
-            match.content.startsWith('```COMMIT_EDITMSG')
+            isCommitResult
                 ? match.content.replace(/^```COMMIT_EDITMSG\n([\S\s]*)\n```$/, '$1')
                 : match.content.replace(/^```diff\n([\S\s]*)\n```$/, '$1')
         )
         return {
+            resultType: isCommitResult ? 'commit' : 'diff',
             fileName: '',
             repoUrl: '',
             path: '',
@@ -179,6 +183,7 @@ export async function createPreviewContent(
 
     if (match.type === 'repo') {
         return {
+            resultType: match.type,
             fileName: '',
             repoUrl: '',
             path: '',
@@ -198,6 +203,7 @@ export async function createPreviewContent(
     console.log(`Unknown match type: “${match.type}”`)
 
     return {
+        resultType: null,
         fileName: '',
         repoUrl: '',
         path: '',
@@ -221,6 +227,7 @@ async function createPreviewContentForContentMatch(
     )
 
     return {
+        resultType: 'file',
         fileName,
         repoUrl: match.repository,
         path: match.path,
@@ -236,6 +243,7 @@ async function createPreviewContentForPathMatch(match: PathMatch): Promise<Previ
     const content = await loadContent(match)
 
     return {
+        resultType: match.type,
         fileName,
         repoUrl: match.repository,
         path: match.path,
@@ -257,6 +265,7 @@ async function createPreviewContentForSymbolMatch(
     console.log(symbolMatch)
 
     return {
+        resultType: match.type,
         fileName,
         repoUrl: match.repository,
         path: match.path,
