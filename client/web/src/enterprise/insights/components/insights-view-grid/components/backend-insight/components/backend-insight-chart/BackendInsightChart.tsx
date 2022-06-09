@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Dispatch, SetStateAction } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
@@ -10,8 +10,6 @@ import { getLineColor, LegendItem, LegendList, ScrollBox } from '../../../../../
 import { BackendInsightData } from '../../../../../../core'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
-
-import { useSeriesToggle } from './use-series-toggle'
 
 import styles from './BackendInsightChart.module.scss'
 
@@ -43,16 +41,28 @@ export const MINIMAL_SERIES_FOR_ASIDE_LEGEND = 3
 interface BackendInsightChartProps<Datum> extends BackendInsightData {
     locked: boolean
     zeroYAxisMin: boolean
+    isSeriesSelected: (id: string) => boolean
+    isSeriesHovered: (id: string) => boolean
     className?: string
+    onLegendItemClick: (id: string) => void
     onDatumClick: () => void
+    setHoveredId: Dispatch<SetStateAction<string | undefined>>
 }
 
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
-    const { locked, isFetchingHistoricalData, content, zeroYAxisMin, className, onDatumClick } = props
+    const {
+        locked,
+        isFetchingHistoricalData,
+        content,
+        zeroYAxisMin,
+        isSeriesSelected,
+        isSeriesHovered,
+        className,
+        onDatumClick,
+        onLegendItemClick,
+        setHoveredId,
+    } = props
     const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
-    const availableSeriesIds = props.content.series.map(series => `${series.id}`)
-
-    const { toggle, isSeriesSelected, isSeriesHovered, setHoveredId } = useSeriesToggle(availableSeriesIds)
 
     const hasViewManySeries = content.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
@@ -102,7 +112,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     selected={isSeriesSelected(`${series.id}`)}
                                     hovered={isSeriesHovered(`${series.id}`)}
                                     className={styles.legendListItem}
-                                    onClick={() => toggle(`${series.id}`)}
+                                    onClick={() => onLegendItemClick(`${series.id}`)}
                                     onMouseEnter={() => setHoveredId(`${series.id}`)}
                                     // prevent accidental dragging events
                                     onMouseDown={event => event.stopPropagation()}
