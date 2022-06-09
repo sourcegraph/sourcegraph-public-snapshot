@@ -36,7 +36,7 @@ func NewPythonPackagesSyncer(
 	placeholder := assertPythonParsesPlaceholder()
 
 	return &vcsDependenciesSyncer{
-		logger:      log.Scoped("vcs syncer", "vcsDependenciesSyncer implements the VCSSyncer interface for dependency repos"),
+		logger:      log.Scoped("PythonPackagesSyncer", "sync Python packages"),
 		typ:         "python_packages",
 		scheme:      dependencies.PythonPackagesScheme,
 		placeholder: placeholder,

@@ -89,7 +89,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	trace.Init()
 	profiler.Init()
 
-	logger := log.Scoped("repo-updater", "repo-updater service")
+	logger := log.Scoped("service", "repo-updater service")
 
 	// Signals health of startup
 	ready := make(chan struct{})

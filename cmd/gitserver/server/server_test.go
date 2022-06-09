@@ -258,6 +258,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 	}
 
 	s := &Server{
+		Logger:            logtest.Scoped(t),
 		skipCloneForTests: true,
 	}
 	h := s.Handler()
@@ -509,7 +510,7 @@ func addCommitToRepo(cmd func(string, ...string) string) string {
 
 func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, db database.DB) *Server {
 	s := &Server{
-		Logger:           logtest.Scoped(t).Scoped("server", "test server"),
+		Logger:           logtest.Scoped(t),
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
@@ -1226,7 +1227,10 @@ func TestHostnameMatch(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			s := Server{Hostname: tc.hostname}
+			s := Server{
+				Logger:   logtest.Scoped(t),
+				Hostname: tc.hostname,
+			}
 			have := s.hostnameMatch(tc.addr)
 			if have != tc.shouldMatch {
 				t.Fatalf("Want %v, got %v", tc.shouldMatch, have)
@@ -1435,6 +1439,7 @@ func TestHandleBatchLog(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			server := &Server{
+				Logger:                  logtest.Scoped(t),
 				GlobalBatchLogSemaphore: semaphore.NewWeighted(8),
 			}
 			h := server.Handler()
