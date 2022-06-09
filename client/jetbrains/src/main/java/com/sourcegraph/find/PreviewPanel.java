@@ -71,7 +71,10 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
             editorComponent = editor.getComponent();
             add(editorComponent, BorderLayout.CENTER);
 
-            validate();
+            addHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
+
+            revalidate();
+            repaint();
 
             addAndScrollToHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
         });
@@ -98,6 +101,8 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
             ApplicationManager.getApplication().invokeLater(() -> {
                 remove(editorComponent);
                 editorComponent = null;
+                revalidate();
+                repaint();
             });
         }
     }
