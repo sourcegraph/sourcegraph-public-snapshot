@@ -130,7 +130,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                 {shouldDisplayOldUI ? (
                     <BatchChangeTab index={2} name={TabName.Spec}>
                         <span>
-                            <Icon role="img" aria-hidden={true} className="text-muted mr-2" as={FileDocumentIcon} />
+                            <Icon aria-hidden={true} className="text-muted mr-2" as={FileDocumentIcon} />
                             <span className="text-content" data-tab-content="Spec">
                                 Spec
                             </span>
