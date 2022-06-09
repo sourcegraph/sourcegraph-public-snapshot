@@ -45,6 +45,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
 
     const { currentDashboard, dashboards } = useContext(InsightContext)
     const { getBackendInsightData, createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
+    // Note: useSeriesToggle cannot be used directly in BackendInsightChart because it is unmounted when the chart is hidden
     const { toggle, isSeriesSelected, isSeriesHovered, setHoveredId } = useSeriesToggle()
 
     // Visual line chart settings
