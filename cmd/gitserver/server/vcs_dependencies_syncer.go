@@ -150,7 +150,7 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 			continue
 		}
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency); err != nil {
-			return errors.Wrapf(err, "error pushing dependency %q", dependency.PackageManagerSyntax())
+			return errors.Wrapf(err, "error pushing dependency %q", dependency)
 		}
 	}
 

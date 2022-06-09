@@ -81,7 +81,7 @@ func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 	defer tgz.Close()
 
 	if err = decompressTgz(tgz, dir); err != nil {
-		return errors.Wrapf(err, "failed to decompress gzipped tarball for %s", dep.PackageManagerSyntax())
+		return errors.Wrapf(err, "failed to decompress gzipped tarball for %s", dep)
 	}
 
 	return nil
