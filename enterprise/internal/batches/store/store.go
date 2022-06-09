@@ -98,13 +98,9 @@ func (s *Store) Clock() func() time.Time { return s.now }
 // instantiated with.
 // It's here for legacy reason to pass the database.DB to a repos.Store while
 // repos.Store doesn't accept a basestore.TransactableHandle yet.
-func (s *Store) DatabaseDB() database.DB { return database.NewDB(s.Handle().DB()) }
+func (s *Store) DatabaseDB() database.DB { return database.NewDBWith(s) }
 
 var _ basestore.ShareableStore = &Store{}
-
-// Handle returns the underlying transactable database handle.
-// Needed to implement the ShareableStore interface.
-func (s *Store) Handle() *basestore.TransactableHandle { return s.Store.Handle() }
 
 // With creates a new Store with the given basestore.Shareable store as the
 // underlying basestore.Store.

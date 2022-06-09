@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
@@ -732,7 +733,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			// Again, we're going to set up a poisoned store database that will
 			// error if a transaction is started.
 			s := gitLabTestSetup(t, db)
-			store := store.NewWithClock(&noNestingTx{s.DatabaseDB()}, &observation.TestContext, nil, s.Clock())
+			store := store.NewWithClock(database.NewDB(&noNestingTx{s.Handle().DB()}), &observation.TestContext, nil, s.Clock())
 			h := NewGitLabWebhook(store)
 
 			t.Run("missing merge request", func(t *testing.T) {
@@ -881,7 +882,7 @@ func (ntx *nestedTx) BeginTx(ctx context.Context, opts *sql.TxOptions) error { r
 
 // noNestingTx is another transaction wrapper that always returns an error when
 // a transaction is attempted.
-type noNestingTx struct{ database.DB }
+type noNestingTx struct{ dbutil.DB }
 
 func (nntx *noNestingTx) BeginTx(ctx context.Context, opts *sql.TxOptions) error {
 	return errors.New("foo")
