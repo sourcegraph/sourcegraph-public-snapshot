@@ -123,6 +123,7 @@ exports[`FilterLink should have correct links for repos 1`] = `
         <span
           class="tooltip"
           data-state="closed"
+          data-test-content="gitlab.com"
           role="presentation"
         >
           <svg
@@ -169,6 +170,7 @@ exports[`FilterLink should have correct links for repos 1`] = `
         <span
           class="tooltip"
           data-state="closed"
+          data-test-content="github.com"
           role="presentation"
         >
           <svg
@@ -249,6 +251,7 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
         <span
           class="tooltip"
           data-state="closed"
+          data-test-content="gitlab.com"
           role="presentation"
         >
           <svg
@@ -295,6 +298,7 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
         <span
           class="tooltip"
           data-state="closed"
+          data-test-content="github.com"
           role="presentation"
         >
           <svg

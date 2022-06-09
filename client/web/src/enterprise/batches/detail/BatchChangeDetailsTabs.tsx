@@ -10,6 +10,7 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import { isErrorLike } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -101,6 +102,9 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
         [batchChange.batchSpecs.nodes]
     )
 
+    const isBatchSpecLocallyCreated = batchChange.currentSpec.source === BatchSpecSource.LOCAL
+    const shouldDisplayOldUI = !isExecutionEnabled || isBatchSpecLocallyCreated
+
     return (
         <BatchChangeTabs history={history} location={location} initialTab={initialTab}>
             <BatchChangeTabList>
@@ -123,7 +127,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         </span>
                     </span>
                 </BatchChangeTab>
-                {!isExecutionEnabled && (
+                {shouldDisplayOldUI ? (
                     <BatchChangeTab index={2} name={TabName.Spec}>
                         <span>
                             <Icon aria-hidden={true} className="text-muted mr-2" as={FileDocumentIcon} />
@@ -132,8 +136,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                             </span>
                         </span>
                     </BatchChangeTab>
-                )}
-                {isExecutionEnabled && (
+                ) : (
                     <BatchChangeTab index={2} name={TabName.Executions} customPath="/executions">
                         <span>
                             <Icon aria-hidden={true} className="text-muted mr-2" as={FileDocumentIcon} />
@@ -199,7 +202,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                     />
                 </BatchChangeTabPanel>
                 <BatchChangeTabPanel>
-                    {!isExecutionEnabled ? (
+                    {shouldDisplayOldUI ? (
                         <>
                             <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
                                 <BatchSpecMeta
