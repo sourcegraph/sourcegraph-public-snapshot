@@ -64,6 +64,9 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
      * We set dismissal state when either:
      * 1. User clicks the dismiss button
      * 2. User submits the survey
+     *
+     * It's important to separate the two actions, as it is possible the user might
+     * exit the page after submitting the survey but BEFORE dismissing the button.
      */
     const setFutureVisibility = (): void => {
         if (togglePermanentlyDismiss) {
