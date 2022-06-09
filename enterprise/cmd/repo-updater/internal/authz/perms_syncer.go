@@ -389,13 +389,13 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		if err != nil {
 			// The "401 Unauthorized" is returned by code hosts when the token is revoked
 			unauthorized := errcode.IsUnauthorized(err)
-
 			forbidden := errcode.IsForbidden(err)
-
 			// Detect GitHub account suspension error
 			accountSuspended := errcode.IsAccountSuspended(err)
 
 			if unauthorized || accountSuspended || forbidden {
+				// These are fatal errors that mean we should continue as if the account no
+				// longer has any access
 				err = accounts.TouchExpired(ctx, acct.ID)
 				if err != nil {
 					return nil, nil, errors.Wrapf(err, "set expired for external account %d", acct.ID)
@@ -420,6 +420,14 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			if errors.Is(err, &authz.ErrUnimplemented{}) {
 				acctLogger.Debug("unimplemented", log.Error(err))
 				continue
+			}
+
+			if errcode.IsTemporary(err) {
+				// If we have a temporary issue, we should instead return any permissions we
+				// already know about to ensure that we don't temporarily remove access for the
+				// user because of intermittent errors.
+
+				// TODO: Update extPerms once we have the required db methods
 			}
 
 			// Process partial results if this is an initial fetch.
