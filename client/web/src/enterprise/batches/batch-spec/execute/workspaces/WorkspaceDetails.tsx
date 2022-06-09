@@ -141,7 +141,10 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
         </div>
         <div className="d-flex align-items-center">
             {typeof workspace.placeInQueue === 'number' && (
-                <span className={classNames(styles.workspaceDetail, 'd-flex align-items-center')}>
+                <span
+                    className={classNames(styles.workspaceDetail, 'd-flex align-items-center')}
+                    data-tooltip={`This workspace is number ${workspace.placeInGlobalQueue} in the global queue`}
+                >
                     <Icon role="img" aria-hidden={true} as={TimelineClockOutlineIcon} />
                     <strong className="ml-1 mr-1">
                         <NumberInQueue number={workspace.placeInQueue} />

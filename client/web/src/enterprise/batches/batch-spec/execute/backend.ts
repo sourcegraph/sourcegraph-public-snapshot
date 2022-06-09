@@ -42,6 +42,7 @@ const batchSpecWorkspaceFieldsFragment = gql`
             deleted
         }
         placeInQueue
+        placeInGlobalQueue
         onlyFetchWorkspace
         ignored
         unsupported

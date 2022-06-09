@@ -34,7 +34,7 @@ const batchSpecWorkspaceExecutionJobStalledJobMaximumAge = time.Second * 25
 
 // batchSpecWorkspaceExecutionJobMaximumNumResets is the maximum number of
 // times a job can be reset. If a job's failed attempts counter reaches this
-// threshold, it will be moved into "errored" rather than "queued" on its next
+// threshold, it will be moved into "failed" rather than "queued" on its next
 // reset.
 const batchSpecWorkspaceExecutionJobMaximumNumResets = 3
 
@@ -45,13 +45,15 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 	Scan: func(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 		return scanFirstBatchSpecWorkspaceExecutionJob(rows, err)
 	},
-	// This needs to be kept in sync with the placeInQueue fragment in the batch
-	// spec execution jobs store.
-	OrderByExpression: sqlf.Sprintf("batch_spec_workspace_execution_jobs.created_at, batch_spec_workspace_execution_jobs.id"),
+	OrderByExpression: sqlf.Sprintf("batch_spec_workspace_execution_jobs.place_in_global_queue"),
 	StalledMaxAge:     batchSpecWorkspaceExecutionJobStalledJobMaximumAge,
 	MaxNumResets:      batchSpecWorkspaceExecutionJobMaximumNumResets,
 	// Explicitly disable retries.
 	MaxNumRetries: 0,
+
+	// This view ranks jobs from different users in a round-robin fashion
+	// so that no single user can clog the queue.
+	ViewName: "batch_spec_workspace_execution_queue batch_spec_workspace_execution_jobs",
 }
 
 type BatchSpecWorkspaceExecutionWorkerStore interface {
