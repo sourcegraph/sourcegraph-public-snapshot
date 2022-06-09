@@ -41,6 +41,10 @@
         &:global(.selected) {
             background: var(--code-selection-bg);
         }
+
+        &:global(.highlighted) {
+            background: var(--code-selection-bg);
+        }
     }
 
     td:global(.line),

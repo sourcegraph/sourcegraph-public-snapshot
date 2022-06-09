@@ -2097,6 +2097,11 @@ interface BatchSpecWorkspace {
     cachedResultFound: Boolean!
 
     """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
+
+    """
     The time when the workspace was enqueued for processing. Null, if not yet enqueued.
     """
     queuedAt: DateTime
@@ -2179,6 +2184,11 @@ type VisibleBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     Whether we found a task cache result.
     """
     cachedResultFound: Boolean!
+
+    """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
 
     """
     Executor stages of running in this workspace. Null, if the execution hasn't
@@ -2288,6 +2298,11 @@ type HiddenBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     Whether we found a task cache result.
     """
     cachedResultFound: Boolean!
+
+    """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
 
     """
     The time when the workspace was enqueued for processing. Null, if not yet enqueued.
@@ -2847,6 +2862,22 @@ enum BatchSpecState {
 }
 
 """
+The possible sources of a batch spec.
+"""
+enum BatchSpecSource {
+    """
+    The spec was created from the local src-cli workflow.
+    """
+    LOCAL
+
+    """
+    This spec was created for remote server-side execution, e.g. from the web UI editor,
+    or with src batch remote.
+    """
+    REMOTE
+}
+
+"""
 A list of batch specs.
 """
 type BatchSpecConnection {
@@ -3092,6 +3123,12 @@ type BatchSpec implements Node {
     retryBatchSpecExecution.
     """
     viewerCanRetry: Boolean!
+
+    """
+    Whether the batch spec was created from the local src-cli workflow or remotely for
+    server-side execution.
+    """
+    source: BatchSpecSource!
 }
 
 """

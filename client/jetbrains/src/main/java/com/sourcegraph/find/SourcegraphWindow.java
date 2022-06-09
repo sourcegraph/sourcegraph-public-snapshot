@@ -16,7 +16,6 @@ import org.cef.browser.CefBrowser;
 import org.cef.handler.CefKeyboardHandler;
 import org.cef.misc.BoolRef;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -29,8 +28,6 @@ public class SourcegraphWindow implements Disposable {
     private final Project project;
     private final FindPopupPanel mainPanel;
     private JBPopup popup;
-    @Nullable
-    private Window window;
     private static final Logger logger = Logger.getInstance(SourcegraphWindow.class);
 
     public SourcegraphWindow(@NotNull Project project) {
@@ -45,19 +42,9 @@ public class SourcegraphWindow implements Disposable {
             popup = createPopup();
             popup.showCenteredInCurrentWindow(project);
             registerOutsideClickListener();
-
-            if (popup instanceof AbstractPopup) {
-                window = ((AbstractPopup) popup).getPopupWindow();
-            }
-        } else {
-            popup.setUiVisible(true);
-
-            if (window != null) {
-                // Manually emit a WINDOW_OPENED event if we change the popup to make it visible again. This works around
-                // issues with third-party extensions like the material UI theme that uses these events to display overlays.
-                window.dispatchEvent(new WindowEvent(window, WindowEvent.WINDOW_OPENED));
-            }
         }
+
+        popup.setUiVisible(true);
 
         // If the popup is already shown, hitting alt + a gain should behave the same as the native find in files
         // feature and focus the search field.
@@ -68,12 +55,6 @@ public class SourcegraphWindow implements Disposable {
 
     public void hidePopup() {
         popup.setUiVisible(false);
-
-        if (window != null) {
-            // Manually emit a WINDOW_CLOSING event if we change the popup to make it invisible. This works around
-            // issues with third-party extensions like the material UI theme that uses these events to display overlays.
-            window.dispatchEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSING));
-        }
     }
 
     @NotNull
@@ -171,8 +152,12 @@ public class SourcegraphWindow implements Disposable {
                 }
 
                 // Detect if we're focusing the Sourcegraph popup
-                if (windowEvent.getWindow().equals(window)) {
-                    return;
+                if (popup instanceof AbstractPopup) {
+                    Window sourcegraphPopupWindow = ((AbstractPopup) popup).getPopupWindow();
+
+                    if (windowEvent.getWindow().equals(sourcegraphPopupWindow)) {
+                        return;
+                    }
                 }
 
                 // Detect if the newly focused window is a parent of the project root window

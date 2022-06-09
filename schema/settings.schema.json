@@ -316,6 +316,14 @@
           "!go": {
             "pointer": true
           }
+        },
+        "enableExtensionsDecorationsColumnView": {
+          "description": "If extension supports column view show its decorations in a separate column in the blob view.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"
