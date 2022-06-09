@@ -1843,7 +1843,7 @@ extend type Query {
         """
         after: String
         """
-        Include locally executed batch specs in the list of specs returned.
+        Include locally executed (i.e. with src-cli) batch specs in the list of specs returned.
         """
         includeLocallyExecutedSpecs: Boolean
     ): BatchSpecConnection!
