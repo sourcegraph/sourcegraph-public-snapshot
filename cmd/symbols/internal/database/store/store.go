@@ -43,7 +43,7 @@ func NewStore(dbFile string) (Store, error) {
 
 	return &store{
 		db:    db,
-		Store: basestore.NewWithDB(db, sql.TxOptions{}),
+		Store: basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
 	}, nil
 }
 

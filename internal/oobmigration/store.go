@@ -119,7 +119,7 @@ type Store struct {
 
 // NewStoreWithDB creates a new Store with the given database connection.
 func NewStoreWithDB(db database.DB) *Store {
-	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	return &Store{Store: basestore.NewWithHandle(db.Handle())}
 }
 
 var _ basestore.ShareableStore = &Store{}
