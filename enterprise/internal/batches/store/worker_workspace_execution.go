@@ -10,7 +10,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -229,7 +228,8 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 	}
 
 	rollbackAndMarkFailed := func(err error, fmtStr string, args ...any) (bool, error) {
-		// Rollback transaction but ignore rollback errors
+		// Rollback transaction but ignore rollback errors. As long as nothing
+		// is committed, we don't care.
 		tx.Done(err)
 		return s.Store.MarkFailed(ctx, id, fmt.Sprintf(fmtStr, args...), options)
 	}
@@ -237,6 +237,11 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 	executionResults, stepResults, err := extractCacheEntries(events)
 	if err != nil {
 		return rollbackAndMarkFailed(err, fmt.Sprintf("failed to extract cache entries: %s", err))
+	}
+
+	// This should never happen. If it does, guard against it.
+	if len(executionResults) > 1 {
+		return rollbackAndMarkFailed(errors.New("error"), "logs cannot contain more than 1 execution result")
 	}
 
 	for _, entry := range stepResults {
@@ -304,24 +309,19 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		return rollbackAndMarkFailed(err, fmt.Sprintf("failed to delete internal access token: %s", err))
 	}
 
-	if err = s.setChangesetSpecIDs(ctx, job.BatchSpecWorkspaceID, changesetSpecIDs); err != nil {
-		return false, tx.Done(err)
+	if err = s.setChangesetSpecIDs(ctx, tx, job.BatchSpecWorkspaceID, changesetSpecIDs); err != nil {
+		return rollbackAndMarkFailed(err, fmt.Sprintf("setChangesetSpecIDs: %s", err))
 	}
 
 	ok, err := s.Store.With(tx).MarkComplete(ctx, id, options)
+	// When no record matched, we don't want to commit the rest. Make sure to properly fail the tx.
+	if !ok && err == nil {
+		return ok, tx.Done(errors.New("new"))
+	}
 	return ok, tx.Done(err)
 }
 
-func (s *batchSpecWorkspaceExecutionWorkerStore) setChangesetSpecIDs(ctx context.Context, batchSpecWorkspaceID int64, changesetSpecIDs []int64) error {
-	if len(changesetSpecIDs) > 0 {
-		// Set the batch_spec_id on the changeset_specs that were created.
-		q := sqlf.Sprintf(setBatchSpecIDOnChangesetSpecsQueryFmtstr, batchSpecWorkspaceID, pq.Array(changesetSpecIDs))
-		_, err := s.Store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-		if err != nil {
-			return err
-		}
-	}
-
+func (s *batchSpecWorkspaceExecutionWorkerStore) setChangesetSpecIDs(ctx context.Context, tx *Store, batchSpecWorkspaceID int64, changesetSpecIDs []int64) error {
 	m := make(map[int64]struct{}, len(changesetSpecIDs))
 	for _, id := range changesetSpecIDs {
 		m[id] = struct{}{}
@@ -332,28 +332,19 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) setChangesetSpecIDs(ctx context
 	}
 
 	// Set changeset_spec_ids on the batch_spec_workspace.
-	q := sqlf.Sprintf(setChangesetSpecIDsOnBatchSpecWorkspaceQueryFmtstr, marshaledIDs, batchSpecWorkspaceID)
-	_, err = s.Store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	return err
+	res, err := tx.ExecResult(ctx, sqlf.Sprintf(setChangesetSpecIDsOnBatchSpecWorkspaceQueryFmtstr, marshaledIDs, batchSpecWorkspaceID))
+	if err != nil {
+		return err
+	}
+	c, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if c != 1 {
+		return errors.New("incorrect number of changeset_specs updated")
+	}
+	return nil
 }
-
-const setBatchSpecIDOnChangesetSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store/worker_workspace_execution.go:setChangesetSpecIDs
-UPDATE
-	changeset_specs
-SET
-	batch_spec_id = (
-		SELECT
-			batch_spec_workspaces.batch_spec_id
-		FROM
-			batch_spec_workspaces
-		WHERE
-			batch_spec_workspaces.id = %s
-		LIMIT 1
-	)
-WHERE
-	changeset_specs.id = ANY (%s)
-`
 
 const setChangesetSpecIDsOnBatchSpecWorkspaceQueryFmtstr = `
 -- source: enterprise/internal/batches/store/worker_workspace_execution.go:setChangesetSpecIDs
