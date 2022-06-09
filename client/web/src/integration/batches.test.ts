@@ -568,7 +568,7 @@ describe('Batches', () => {
                 await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change')
                 // View overview page.
                 await driver.page.waitForSelector('.test-batch-change-details-page')
-                await percySnapshotWithVariants(driver.page, 'Batch change details page')
+                await percySnapshotWithVariants(driver.page, `Batch change details page ${entityType}`)
                 await accessibilityAudit(driver.page)
 
                 // Expand one changeset.
@@ -818,7 +818,7 @@ describe('Batches', () => {
                 await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/apply/spec123')
                 // View overview page.
                 await driver.page.waitForSelector('.test-batch-change-apply-page')
-                await percySnapshotWithVariants(driver.page, 'Batch change preview page')
+                await percySnapshotWithVariants(driver.page, `Batch change preview page ${entityType}`)
                 await accessibilityAudit(driver.page)
 
                 // Expand one changeset.
