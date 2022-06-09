@@ -51,6 +51,10 @@ func NewInsightsDB(inner dbutil.DB) InsightsDB {
 	return &insightsDB{basestore.NewWithDB(inner, sql.TxOptions{})}
 }
 
+func NewInsightsDBWith(other basestore.ShareableStore) InsightsDB {
+	return &insightsDB{basestore.NewWithHandle(other.Handle())}
+}
+
 type insightsDB struct {
 	*basestore.Store
 }

@@ -9,9 +9,9 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -22,7 +22,7 @@ type DBDashboardStore struct {
 }
 
 // NewDashboardStore returns a new DBDashboardStore backed by the given Postgres db.
-func NewDashboardStore(db dbutil.DB) *DBDashboardStore {
+func NewDashboardStore(db edb.InsightsDB) *DBDashboardStore {
 	return &DBDashboardStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
 }
 

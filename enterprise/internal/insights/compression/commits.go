@@ -2,7 +2,6 @@ package compression
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -30,7 +29,7 @@ type CommitStore interface {
 
 func NewCommitStore(db edb.InsightsDB) *DBCommitStore {
 	return &DBCommitStore{
-		Store: basestore.NewWithDB(db, sql.TxOptions{}),
+		Store: basestore.NewWithHandle(db.Handle()),
 	}
 }
 
