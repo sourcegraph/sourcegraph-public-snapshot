@@ -3,7 +3,7 @@ import { useLocation } from 'react-router'
 import helloWorldSample from '../batch-spec/edit/library/hello-world.batch.yaml'
 import { insertQueryIntoLibraryItem, insertNameIntoLibraryItem } from '../batch-spec/yaml-util'
 
-interface UseSearchQueryResult {
+interface UseSearchTemplateResult {
     renderTemplate?: (title: string) => string
 }
 
@@ -21,7 +21,7 @@ const createRenderTemplate = (query: string): ((title: string) => string) => {
 /**
  * Custom hook for create page which creates a batch spec from a search query
  */
-export const useSearchTemplate = (): UseSearchQueryResult => {
+export const useSearchTemplate = (): UseSearchTemplateResult => {
     const location = useLocation()
     const parameters = new URLSearchParams(location.search)
 
