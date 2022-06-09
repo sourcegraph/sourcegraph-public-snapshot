@@ -303,14 +303,16 @@ func (r *Runner[Args]) presentFailedCategoryWithOptions(ctx context.Context, cat
 
 	switch choice {
 	case 1:
-		err = r.fixCategoryManually(ctx, categoryIdx, category, args)
-	case 2:
 		if fixableCategory {
 			r.out.ClearScreen()
 			if !r.fixCategoryAutomatically(ctx, categoryIdx, category, args, results) {
 				err = errors.Newf("%s: failed to fix category automatically", category.Name)
 			}
+		} else {
+			err = r.fixCategoryManually(ctx, categoryIdx, category, args)
 		}
+	case 2:
+		err = r.fixCategoryManually(ctx, categoryIdx, category, args)
 	case 3:
 		return nil
 	}
@@ -374,7 +376,7 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 		r.out.Write("")
 
 		if check.cachedCheckErr != nil {
-			r.out.WriteLine(output.Styledf(output.StyleBold, "Encountered the following error:\n\n%s%s\n", output.StyleReset, check.cachedCheckErr))
+			r.out.WriteLine(output.Styledf(output.StyleBold, "Check encountered the following error:\n\n%s%s\n", output.StyleReset, check.cachedCheckErr))
 		}
 
 		if check.Description == "" {
@@ -387,18 +389,16 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 
 		// Wait for user to finish
 		r.out.Promptf("Hit 'Return' or 'Enter' when you are done.")
-		fmt.Fscanln(r.in)
+		waitForReturn(r.in)
 
 		// Check statuses
 		r.out.WriteLine(output.Styled(output.StylePending, "Determining status..."))
-		for _, check := range category.Checks {
-			// update check state
-			if err := check.Update(ctx, r.out, args); err == nil {
-				// reset output for the next check if all is good
-				r.out.ClearScreen()
-			}
+		if err := check.Update(ctx, r.out, args); err != nil {
+			r.out.WriteWarningf("Check %q still not satisfied", check.Name)
+			return err
 		}
 
+		// Print summary again
 		r.printCategoryHeaderAndDependencies(categoryIdx, category)
 	}
 
