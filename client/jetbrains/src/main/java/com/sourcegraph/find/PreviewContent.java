@@ -84,7 +84,7 @@ public class PreviewContent {
         return fileName;
     }
 
-    @Nullable
+    @NotNull
     public String getRepoUrl() {
         return repoUrl;
     }
