@@ -427,7 +427,20 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				// already know about to ensure that we don't temporarily remove access for the
 				// user because of intermittent errors.
 
-				// TODO: Update extPerms once we have the required db methods
+				extPerms = new(authz.ExternalUserPermissions)
+
+				// Load last synced sub-repo perms
+				currentSubRepoPerms, err := s.db.SubRepoPerms().GetByUserAndService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
+				if err != nil {
+					return nil, nil, errors.Wrap(err, "fetching existing sub-repo permissions")
+				}
+				extPerms.SubRepoPermissions = make(map[extsvc.RepoID]*authz.SubRepoPermissions, len(currentSubRepoPerms))
+				for k := range currentSubRepoPerms {
+					v := currentSubRepoPerms[k]
+					extPerms.SubRepoPermissions[extsvc.RepoID(k.ID)] = &v
+				}
+
+				// TODO: Load list of last synced repos for this user, for this provider
 			}
 
 			// Process partial results if this is an initial fetch.
@@ -459,6 +472,8 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		// Record any sub-repository permissions
 		for repoID := range extPerms.SubRepoPermissions {
 			spec := api.ExternalRepoSpec{
+				// This is safe since repoID is an extsvc.RepoID which represents the external id
+				// of the repo.
 				ID:          string(repoID),
 				ServiceType: provider.ServiceType(),
 				ServiceID:   provider.ServiceID(),
@@ -475,6 +490,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				},
 			)
 		}
+
 		for _, excludePrefix := range extPerms.ExcludeContains {
 			excludeContainsSpecs = append(excludeContainsSpecs,
 				api.ExternalRepoSpec{
