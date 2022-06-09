@@ -219,7 +219,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     const ShareLinkButton = useMemo(
         () => (
             <Tooltip className="mr-2" content="Share results link">
-                <li className={styles.navItem}>
+                <li className={classNames('mr-2', styles.navItem)}>
                     <button
                         type="button"
                         className="btn btn-sm btn-outline-secondary text-decoration-none"

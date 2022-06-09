@@ -325,7 +325,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                                 />
                             </>
                         )}
-                        <Tooltip className="ml-2" content="Close panel" placement="left">
+                        <Tooltip content="Close panel" placement="left">
                             <Button
                                 onClick={handlePanelClose}
                                 variant="icon"
