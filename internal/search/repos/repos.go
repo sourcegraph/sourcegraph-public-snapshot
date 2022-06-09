@@ -14,7 +14,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
-	slog "github.com/sourcegraph/sourcegraph/lib/log"
+	slog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -794,8 +794,7 @@ func (MissingRepoRevsError) Error() string { return "missing repo revs" }
 // Get all private repos for the the current actor. On sourcegraph.com, those are
 // only the repos directly added by the user. Otherwise it's all repos the user has
 // access to on all connected code hosts / external services.
-func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
-	slogger := slog.Scoped("PrivateReposForActor", "Get all private repos for the current actor")
+func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions search.RepoOptions, log slog.Logger) []types.MinimalRepo {
 	tr, ctx := trace.New(ctx, "PrivateReposForActor", "")
 	defer tr.Finish()
 
@@ -825,7 +824,7 @@ func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions searc
 	})
 
 	if err != nil {
-		slogger.Error("doResults: failed to list user private repos", slog.Error(err), slog.Int("user-id", int(userID)))
+		log.Error("doResults: failed to list user private repos", slog.Error(err), slog.Int32("user-id", userID))
 		tr.LazyPrintf("error resolving user private repos: %v", err)
 	}
 	return userPrivateRepos

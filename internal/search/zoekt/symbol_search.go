@@ -6,6 +6,7 @@ import (
 
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/opentracing/opentracing-go/log"
+	slog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -77,13 +78,14 @@ type GlobalSymbolSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
 	RepoOpts         search.RepoOptions
+	log              slog.Logger
 }
 
 func (s *GlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	userPrivateRepos := repos.PrivateReposForActor(ctx, clients.DB, s.RepoOpts)
+	userPrivateRepos := repos.PrivateReposForActor(ctx, clients.DB, s.RepoOpts, s.log)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 

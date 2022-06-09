@@ -143,7 +143,7 @@ require (
 	github.com/sourcegraph/scip v0.0.0-20220518222722-74aaacf8e4fb
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220511160847-5a43d3ea24eb
-	github.com/stretchr/testify v1.7.1
+	github.com/stretchr/testify v1.7.2
 	github.com/stripe/stripe-go v70.15.0+incompatible
 	github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203
 	github.com/temoto/robotstxt v1.1.2
@@ -374,7 +374,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/kube-openapi v0.0.0-20220124234850-424119656bbf // indirect
 	k8s.io/utils v0.0.0-20220127004650-9b3446523e65
 	mvdan.cc/gofumpt v0.2.1 // indirect
@@ -404,6 +404,7 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
+	github.com/sourcegraph/log v0.0.0-20220609165528-fd7144264b51
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
 	github.com/xlab/treeprint v1.1.0 // indirect
 	k8s.io/klog/v2 v2.40.1 // indirect

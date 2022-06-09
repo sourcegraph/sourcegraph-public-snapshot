@@ -12,7 +12,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
 
-	slog "github.com/sourcegraph/sourcegraph/lib/log"
+	slog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -585,13 +585,14 @@ type GlobalTextSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
 	RepoOpts         search.RepoOptions
+	log              slog.Logger
 }
 
 func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, t)
 	defer func() { finish(alert, err) }()
 
-	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.DB, t.RepoOpts)
+	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.DB, t.RepoOpts, t.log)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 
