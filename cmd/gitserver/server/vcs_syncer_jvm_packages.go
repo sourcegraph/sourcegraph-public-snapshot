@@ -85,7 +85,7 @@ func (s *jvmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 	mavenDep := dep.(*reposource.MavenDependency)
 	sourceCodeJarPath, err := s.fetch(ctx, s.config, mavenDep)
 	if err != nil {
-		return errors.Wrap(err, "fetch jar")
+		return notFoundError{errors.Errorf("%s not found", dep)}
 	}
 
 	// commitJar creates a git commit in the given working directory that adds all the file contents of the given jar file.
