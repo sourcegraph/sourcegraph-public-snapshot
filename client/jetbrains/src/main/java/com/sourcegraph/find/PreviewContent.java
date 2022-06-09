@@ -145,11 +145,15 @@ public class PreviewContent {
     }
 
     public void openInEditorOrBrowser() throws URISyntaxException, IOException, NotSupportedException {
-        if (fileName == null || fileName.length() == 0) {
-            openInBrowser();
-        } else {
+        if (opensInEditor()) {
             openInEditor();
+        } else {
+            openInBrowser();
         }
+    }
+
+    public boolean opensInEditor() {
+        return fileName != null && fileName.length() > 0;
     }
 
     private void openInEditor() {
