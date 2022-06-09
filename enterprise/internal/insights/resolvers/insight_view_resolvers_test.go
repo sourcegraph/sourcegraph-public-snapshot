@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"sort"
 	"testing"
 
@@ -174,7 +173,7 @@ func TestFrozenInsightDataSeriesResolver(t *testing.T) {
 			insightStore:    store.NewInsightStore(insightsDB),
 			dashboardStore:  store.NewDashboardStore(insightsDB),
 			insightsDB:      insightsDB,
-			workerBaseStore: basestore.NewWithDB(postgres, sql.TxOptions{}),
+			workerBaseStore: basestore.NewWithHandle(postgres.Handle()),
 			postgresDB:      postgres,
 			timeSeriesStore: timeseriesStore,
 		}

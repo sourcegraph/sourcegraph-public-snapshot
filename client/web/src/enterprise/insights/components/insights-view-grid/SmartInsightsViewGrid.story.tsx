@@ -1,19 +1,11 @@
 import { Meta } from '@storybook/react'
-import { Observable, of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'
-import { CodeInsightsBackendStoryMock } from '../../CodeInsightsBackendStoryMock'
-import {
-    BackendInsightData,
-    SeriesChartContent,
-    BackendInsight,
-    Insight,
-    InsightExecutionType,
-    InsightType,
-    isCaptureGroupInsight,
-} from '../../core'
+import { SeriesChartContent, InsightExecutionType, InsightType, SearchBasedInsight } from '../../core'
+import { GET_INSIGHT_VIEW_GQL } from '../../core/backend/gql-backend'
 
 import { SmartInsightsViewGrid } from './SmartInsightsViewGrid'
 
@@ -30,7 +22,7 @@ const defaultStory: Meta = {
 
 export default defaultStory
 
-const insightsWithManyLines: Insight[] = [
+const insightsWithManyLines: SearchBasedInsight[] = [
     {
         id: 'searchInsights.insight.Backend_1',
         executionType: InsightExecutionType.Backend,
@@ -38,7 +30,7 @@ const insightsWithManyLines: Insight[] = [
         type: InsightType.SearchBased,
         title: 'Backend insight #2',
         series: [{ id: '', query: '', stroke: '', name: '' }],
-        step: { weeks: 2 },
+        step: { days: 1 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
@@ -52,7 +44,7 @@ const insightsWithManyLines: Insight[] = [
         type: InsightType.SearchBased,
         title: 'Backend insight #3',
         series: [],
-        step: { weeks: 2 },
+        step: { days: 1 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
@@ -73,7 +65,7 @@ const insightsWithManyLines: Insight[] = [
             { id: '', query: '', stroke: '', name: '' },
             { id: '', query: '', stroke: '', name: '' },
         ],
-        step: { weeks: 2 },
+        step: { days: 1 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
@@ -87,7 +79,7 @@ const insightsWithManyLines: Insight[] = [
         type: InsightType.SearchBased,
         title: 'Backend insight #2',
         series: [{ id: '', query: '', stroke: '', name: '' }],
-        step: { weeks: 2 },
+        step: { days: 1 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
@@ -122,7 +114,7 @@ const insightsWithManyLines: Insight[] = [
             { id: '', query: '', stroke: '', name: '' },
             { id: '', query: '', stroke: '', name: '' },
         ],
-        step: { weeks: 2 },
+        step: { days: 1 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
@@ -136,7 +128,7 @@ const insightsWithManyLines: Insight[] = [
         type: InsightType.SearchBased,
         title: 'Backend insight #2',
         series: [{ id: '', query: '', stroke: '', name: '' }],
-        step: { weeks: 2 },
+        step: { days: 1 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
@@ -150,7 +142,7 @@ const insightsWithManyLines: Insight[] = [
         type: InsightType.SearchBased,
         title: 'Backend insight #2',
         series: [{ id: '', query: '', stroke: '', name: '' }],
-        step: { weeks: 2 },
+        step: { days: 1 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
@@ -574,26 +566,107 @@ const LINE_CHART_TESTS_CASES_EXAMPLE: SeriesChartContent<SeriesDatum> = {
     ],
 }
 
-const codeInsightsApiWithManyLines = {
-    getBackendInsightData: (insight: BackendInsight): Observable<BackendInsightData> => {
-        if (isCaptureGroupInsight(insight)) {
-            throw new Error('This demo does not support capture group insight')
-        }
-
-        return of({
-            content:
-                insight.series.length >= 6
-                    ? insight.series.length >= 15
-                        ? LINE_CHART_WITH_HUGE_NUMBER_OF_LINES
-                        : LINE_CHART_WITH_MANY_LINES
-                    : LINE_CHART_TESTS_CASES_EXAMPLE,
-            isFetchingHistoricalData: false,
-        })
-    },
+function generateSeries(insight: SearchBasedInsight) {
+    let seriesData = LINE_CHART_TESTS_CASES_EXAMPLE
+    if (insight.series.length >= 15) {
+        seriesData = LINE_CHART_WITH_HUGE_NUMBER_OF_LINES
+    } else if (insight.series.length >= 6) {
+        seriesData = LINE_CHART_WITH_MANY_LINES
+    }
+    return seriesData.series.map(series => ({
+        seriesId: series.id,
+        label: series.name,
+        points: series.data.map(point => ({
+            dateTime: new Date(point.x).toUTCString(),
+            value: point.value,
+            __typename: 'InsightDataPoint',
+        })),
+        status: {
+            backfillQueuedAt: '2021-06-06T15:48:11Z',
+            completedJobs: 0,
+            pendingJobs: 0,
+            failedJobs: 0,
+            __typename: 'InsightSeriesStatus',
+        },
+        __typename: 'InsightsSeries',
+    }))
 }
 
-export const SmartInsightsViewGridExample = (): JSX.Element => (
-    <CodeInsightsBackendStoryMock mocks={codeInsightsApiWithManyLines}>
-        <SmartInsightsViewGrid insights={insightsWithManyLines} telemetryService={NOOP_TELEMETRY_SERVICE} />
-    </CodeInsightsBackendStoryMock>
-)
+function generateMocks(insights: SearchBasedInsight[]) {
+    return insights.map(insight => ({
+        request: {
+            query: GET_INSIGHT_VIEW_GQL,
+            variables: {
+                id: insight.id,
+                filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
+                seriesDisplayOptions: {
+                    limit: undefined,
+                    sortOptions: undefined,
+                },
+            },
+        },
+        result: {
+            data: {
+                insightViews: {
+                    nodes: [
+                        {
+                            id: insight.id,
+                            appliedSeriesDisplayOptions: {
+                                limit: 20,
+                                sortOptions: {
+                                    mode: 'RESULT_COUNT',
+                                    direction: 'DESC',
+                                    __typename: 'SeriesSortOptions',
+                                },
+                                __typename: 'SeriesDisplayOptions',
+                            },
+                            defaultSeriesDisplayOptions: {
+                                limit: null,
+                                sortOptions: {
+                                    mode: null,
+                                    direction: null,
+                                    __typename: 'SeriesSortOptions',
+                                },
+                                __typename: 'SeriesDisplayOptions',
+                            },
+                            dataSeries: generateSeries(insight),
+                            __typename: 'InsightView',
+                        },
+                    ],
+                    __typename: 'InsightViewConnection',
+                },
+            },
+        },
+    }))
+}
+
+function prepInsightSeries(insights: SearchBasedInsight[]): SearchBasedInsight[] {
+    return insights.map(insight => {
+        let seriesData = LINE_CHART_TESTS_CASES_EXAMPLE
+        if (insight.series.length >= 15) {
+            seriesData = LINE_CHART_WITH_HUGE_NUMBER_OF_LINES
+        } else if (insight.series.length >= 6) {
+            seriesData = LINE_CHART_WITH_MANY_LINES
+        }
+        const series = seriesData.series.map(data => ({
+            id: data.id.toString(),
+            query: '',
+            stroke: data.color,
+            name: data.name,
+        }))
+        insight.series = series
+
+        return insight
+    })
+}
+
+export const SmartInsightsViewGridExample = (): JSX.Element => {
+    const insights = prepInsightSeries(insightsWithManyLines)
+    const mocks = generateMocks(insights)
+
+    return (
+        <MockedTestProvider mocks={mocks} addTypename={true}>
+            <SmartInsightsViewGrid insights={insights} telemetryService={NOOP_TELEMETRY_SERVICE} />
+        </MockedTestProvider>
+    )
+}

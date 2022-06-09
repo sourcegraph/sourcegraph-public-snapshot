@@ -89,9 +89,8 @@ export const NotebookFileBlockInputs: React.FunctionComponent<
         <div className={styles.fileBlockInputs}>
             <div className="text-muted mb-2">
                 <small>
-                    <Icon role="img" aria-hidden={true} as={InfoCircleOutlineIcon} /> To automatically select a file,
-                    copy a Sourcegraph file URL, select the block, and paste the URL ({isMacPlatform ? '⌘' : 'Ctrl'} +
-                    v).
+                    <Icon aria-hidden={true} as={InfoCircleOutlineIcon} /> To automatically select a file, copy a
+                    Sourcegraph file URL, select the block, and paste the URL ({isMacPlatform ? '⌘' : 'Ctrl'} + v).
                 </small>
             </div>
             <SearchTypeSuggestionsInput<PathMatch>

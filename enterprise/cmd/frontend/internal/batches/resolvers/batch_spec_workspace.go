@@ -393,15 +393,28 @@ func (r *batchSpecWorkspaceResolver) DiffStat(ctx context.Context) (*graphqlback
 	return &totalDiff, nil
 }
 
-func (r *batchSpecWorkspaceResolver) PlaceInQueue() *int32 {
+func (r *batchSpecWorkspaceResolver) isQueued() bool {
 	if r.execution == nil {
-		return nil
+		return false
 	}
-	if r.execution.State != btypes.BatchSpecWorkspaceExecutionJobStateQueued {
+	return r.execution.State == btypes.BatchSpecWorkspaceExecutionJobStateQueued
+}
+
+func (r *batchSpecWorkspaceResolver) PlaceInQueue() *int32 {
+	if !r.isQueued() {
 		return nil
 	}
 
-	i32 := int32(r.execution.PlaceInQueue)
+	i32 := int32(r.execution.PlaceInUserQueue)
+	return &i32
+}
+
+func (r *batchSpecWorkspaceResolver) PlaceInGlobalQueue() *int32 {
+	if !r.isQueued() {
+		return nil
+	}
+
+	i32 := int32(r.execution.PlaceInGlobalQueue)
 	return &i32
 }
 

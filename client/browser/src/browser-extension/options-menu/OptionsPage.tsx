@@ -159,13 +159,13 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
             <section className="d-flex">
                 <div className={styles.splitSectionPart}>
                     <Link to="https://sourcegraph.com/search" {...NEW_TAB_LINK_PROPS}>
-                        <Icon role="img" className="mr-2" as={EarthIcon} aria-hidden={true} />
+                        <Icon className="mr-2" as={EarthIcon} aria-hidden={true} />
                         Sourcegraph Cloud
                     </Link>
                 </div>
                 <div className={styles.splitSectionPart}>
                     <Link to="https://docs.sourcegraph.com" {...NEW_TAB_LINK_PROPS}>
-                        <Icon role="img" className="mr-2" as={BookOpenPageVariantIcon} aria-hidden={true} />
+                        <Icon className="mr-2" as={BookOpenPageVariantIcon} aria-hidden={true} />
                         Documentation
                     </Link>
                 </div>
@@ -187,7 +187,7 @@ const PermissionAlert: React.FunctionComponent<React.PropsWithChildren<Permissio
 }) => (
     <section className={classNames('bg-2', styles.section)}>
         <H4>
-            {AlertIcon && <Icon role="img" className="mr-2" as={AlertIcon} aria-hidden={true} />} <span>{name}</span>
+            {AlertIcon && <Icon className="mr-2" as={AlertIcon} aria-hidden={true} />} <span>{name}</span>
         </H4>
         <Text className={styles.permissionText}>
             <strong>Grant permissions</strong> to use the Sourcegraph extension on {name}.
@@ -213,7 +213,7 @@ const RepoSyncErrorAlert: React.FunctionComponent<
     return (
         <section className={classNames('bg-2', styles.section)}>
             <H4>
-                <Icon role="img" aria-hidden={true} className="mr-2" as={isDefaultURL ? LockIcon : BlockHelperIcon} />
+                <Icon aria-hidden={true} className="mr-2" as={isDefaultURL ? LockIcon : BlockHelperIcon} />
                 {isDefaultURL ? 'Private repository' : 'Repository not found'}
             </H4>
             <Text className="mb-0">
@@ -263,7 +263,7 @@ const RepoSyncErrorAlert: React.FunctionComponent<
 const SourcegraphCloudAlert: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <section className={classNames('bg-2', styles.section)}>
         <H4>
-            <Icon role="img" aria-hidden={true} className="mr-2" as={CheckCircleOutlineIcon} />
+            <Icon aria-hidden={true} className="mr-2" as={CheckCircleOutlineIcon} />
             You're on Sourcegraph Cloud
         </H4>
         <Text>Naturally, the browser extension is not necessary to browse public code on sourcegraph.com.</Text>

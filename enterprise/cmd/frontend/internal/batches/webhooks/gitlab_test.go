@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
@@ -542,7 +543,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			// We can induce an error with a broken database connection.
 			s := gitLabTestSetup(t, db)
 			h := NewGitLabWebhook(s)
-			h.Store = store.NewWithClock(&brokenDB{errors.New("foo")}, &observation.TestContext, nil, s.Clock())
+			h.Store = store.NewWithClock(database.NewDB(&brokenDB{errors.New("foo")}), &observation.TestContext, nil, s.Clock())
 
 			es, err := h.getExternalServiceFromRawID(ctx, "12345")
 			if es != nil {
@@ -602,7 +603,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				}
 
 				// We can induce an error with a broken database connection.
-				h.Store = store.NewWithClock(&brokenDB{errors.New("foo")}, &observation.TestContext, nil, s.Clock())
+				h.Store = store.NewWithClock(database.NewDB(&brokenDB{errors.New("foo")}), &observation.TestContext, nil, s.Clock())
 
 				err := h.handleEvent(ctx, es, event)
 				if err == nil {
@@ -622,7 +623,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				}
 
 				// We can induce an error with a broken database connection.
-				h.Store = store.NewWithClock(&brokenDB{errors.New("foo")}, &observation.TestContext, nil, s.Clock())
+				h.Store = store.NewWithClock(database.NewDB(&brokenDB{errors.New("foo")}), &observation.TestContext, nil, s.Clock())
 
 				err := h.handleEvent(ctx, es, event)
 				if err == nil {
@@ -732,7 +733,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			// Again, we're going to set up a poisoned store database that will
 			// error if a transaction is started.
 			s := gitLabTestSetup(t, db)
-			store := store.NewWithClock(&noNestingTx{s.DatabaseDB()}, &observation.TestContext, nil, s.Clock())
+			store := store.NewWithClock(database.NewDB(&noNestingTx{s.Handle().DB()}), &observation.TestContext, nil, s.Clock())
 			h := NewGitLabWebhook(store)
 
 			t.Run("missing merge request", func(t *testing.T) {
@@ -881,7 +882,7 @@ func (ntx *nestedTx) BeginTx(ctx context.Context, opts *sql.TxOptions) error { r
 
 // noNestingTx is another transaction wrapper that always returns an error when
 // a transaction is attempted.
-type noNestingTx struct{ database.DB }
+type noNestingTx struct{ dbutil.DB }
 
 func (nntx *noNestingTx) BeginTx(ctx context.Context, opts *sql.TxOptions) error {
 	return errors.New("foo")
@@ -896,7 +897,7 @@ func gitLabTestSetup(t *testing.T, db *sql.DB) *store.Store {
 
 	// Note that tx is wrapped in nestedTx to effectively neuter further use of
 	// transactions within the test.
-	return store.NewWithClock(&nestedTx{tx}, &observation.TestContext, nil, c.Now)
+	return store.NewWithClock(database.NewDB(&nestedTx{tx}), &observation.TestContext, nil, c.Now)
 }
 
 // assertBodyIncludes checks for a specific substring within the given response

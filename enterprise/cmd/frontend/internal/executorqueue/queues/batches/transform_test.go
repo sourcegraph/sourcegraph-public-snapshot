@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
@@ -111,7 +113,7 @@ func TestTransformRecord(t *testing.T) {
 	}
 
 	t.Run("with cache entry", func(t *testing.T) {
-		job, err := transformRecord(context.Background(), store, workspaceExecutionJob, "hunter2")
+		job, err := transformRecord(context.Background(), log.Scoped("test", "test logger"), store, workspaceExecutionJob, "hunter2")
 		if err != nil {
 			t.Fatalf("unexpected error transforming record: %s", err)
 		}
@@ -151,7 +153,7 @@ func TestTransformRecord(t *testing.T) {
 		// Set the no cache flag on the batch spec.
 		batchSpec.NoCache = true
 
-		job, err := transformRecord(context.Background(), store, workspaceExecutionJob, "hunter2")
+		job, err := transformRecord(context.Background(), log.Scoped("test", "test logger"), store, workspaceExecutionJob, "hunter2")
 		if err != nil {
 			t.Fatalf("unexpected error transforming record: %s", err)
 		}

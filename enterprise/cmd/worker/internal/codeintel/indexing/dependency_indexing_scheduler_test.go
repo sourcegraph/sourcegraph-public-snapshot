@@ -8,12 +8,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestDependencyIndexingSchedulerHandler(t *testing.T) {

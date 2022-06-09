@@ -120,20 +120,20 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	// Create batch spec workspace execution jobs
 	_, err = db.ExecContext(context.Background(), `
 		INSERT INTO batch_spec_workspace_execution_jobs
-			(id, batch_spec_workspace_id, started_at, finished_at)
+			(id, batch_spec_workspace_id, user_id, started_at, finished_at)
 		VALUES
 			-- Finished this month
-			(1, 1, $4::timestamp, $3::timestamp),
-			(2, 2, $4::timestamp, $3::timestamp),
-			(3, 3, $4::timestamp, $3::timestamp),
+			(1, 1, $6, $4::timestamp, $3::timestamp),
+			(2, 2, $6, $4::timestamp, $3::timestamp),
+			(3, 3, $6, $4::timestamp, $3::timestamp),
 			-- Finished last month
-			(4, 4, $1::timestamp, $2::timestamp),
+			(4, 4, $5, $1::timestamp, $2::timestamp),
 			-- Processing: has been started but not finished
-			(5, 3, $4::timestamp, NULL),
+			(5, 3, $6, $4::timestamp, NULL),
 			-- Queued: has not been started or finished
-			(6, 3, NULL, NULL),
-			(7, 3, NULL, NULL)
-	`, lastMonthWorkspaceExecutionStartedDate, lastMonthWorkspaceExecutionFinishedDate, now, workspaceExecutionStartedDate)
+			(6, 3, $6, NULL, NULL),
+			(7, 3, $6, NULL, NULL)
+	`, lastMonthWorkspaceExecutionStartedDate, lastMonthWorkspaceExecutionFinishedDate, now, workspaceExecutionStartedDate, user.ID, user2.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

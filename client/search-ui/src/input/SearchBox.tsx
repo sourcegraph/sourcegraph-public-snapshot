@@ -114,10 +114,17 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         placeholder="Enter search query..."
                     />
                     <Toggles
-                        {...props}
+                        patternType={props.patternType}
+                        setPatternType={props.setPatternType}
+                        caseSensitive={props.caseSensitive}
+                        setCaseSensitivity={props.setCaseSensitivity}
+                        settingsCascade={props.settingsCascade}
                         submitSearch={props.submitSearchOnToggle}
                         navbarSearchQuery={queryState.query}
                         className={styles.searchBoxToggles}
+                        showCopyQueryButton={props.showCopyQueryButton}
+                        structuralSearchDisabled={props.structuralSearchDisabled}
+                        selectedSearchContextSpec={props.selectedSearchContextSpec}
                     />
                 </div>
             </div>

@@ -36,7 +36,7 @@ add('GitHub', () => (
             return (
                 <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
                     <PopoverTrigger as={Button} id={targetID} aria-label="Github">
-                        <Icon role="img" as={GithubIcon} aria-hidden="true" />
+                        <Icon as={GithubIcon} aria-hidden="true" />
                     </PopoverTrigger>
                     <InstallBrowserExtensionPopover
                         url=""
@@ -67,7 +67,7 @@ add(
                 return (
                     <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
                         <PopoverTrigger as={Button} id={targetID} aria-label="Gitlab">
-                            <Icon role="img" as={GitlabIcon} aria-hidden={true} />
+                            <Icon as={GitlabIcon} aria-hidden={true} />
                         </PopoverTrigger>
                         <InstallBrowserExtensionPopover
                             url=""
@@ -102,7 +102,7 @@ add(
                 return (
                     <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
                         <PopoverTrigger as={Button} id={targetID} aria-label="Phabricator">
-                            <Icon role="img" as={PhabricatorIcon} aria-hidden={true} />
+                            <Icon as={PhabricatorIcon} aria-hidden={true} />
                         </PopoverTrigger>
                         <InstallBrowserExtensionPopover
                             url=""
@@ -137,7 +137,7 @@ add(
                 return (
                     <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
                         <PopoverTrigger as={Button} id={targetID} aria-label="Bitbucket">
-                            <Icon role="img" as={BitbucketIcon} aria-hidden={true} />
+                            <Icon as={BitbucketIcon} aria-hidden={true} />
                         </PopoverTrigger>
                         <InstallBrowserExtensionPopover
                             url=""

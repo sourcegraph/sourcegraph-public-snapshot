@@ -75,15 +75,14 @@ export const ChangesetLastSynced: React.FunctionComponent<React.PropsWithChildre
         <small className="text-muted">
             {changeset.__typename === 'ExternalChangeset' && changeset.syncerError ? (
                 <span data-tooltip="Expand to see details.">
-                    <Icon role="img" aria-hidden={true} className="text-danger" as={AlertCircleIcon} /> Syncing from
-                    code host failed.
+                    <Icon aria-hidden={true} className="text-danger" as={AlertCircleIcon} /> Syncing from code host
+                    failed.
                 </span>
             ) : (
                 <>Last synced {formatDistance(parseISO(changeset.updatedAt), _now ?? new Date())} ago.</>
             )}{' '}
             {isErrorLike(lastUpdatedAt) && (
                 <Icon
-                    role="img"
                     data-tooltip={lastUpdatedAt.message}
                     aria-label={lastUpdatedAt.message}
                     className="ml-2 small"
@@ -126,5 +125,5 @@ const UpdateLoaderIcon: React.FunctionComponent<
         )
     }
 
-    return <Icon role="img" aria-hidden={true} as={InfoCircleOutlineIcon} />
+    return <Icon aria-hidden={true} as={InfoCircleOutlineIcon} />
 }
