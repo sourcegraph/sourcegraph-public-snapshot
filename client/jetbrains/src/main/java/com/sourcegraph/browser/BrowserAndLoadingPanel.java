@@ -11,10 +11,22 @@ import java.awt.*;
  */
 public class BrowserAndLoadingPanel extends JLayeredPane {
     private boolean isBrowserVisible = false;
+    private final JBPanelWithEmptyText jcefPanel;
 
-    public BrowserAndLoadingPanel(@NotNull JBPanelWithEmptyText jcefPanel, @NotNull JBPanelWithEmptyText overlayPanel) {
+    public BrowserAndLoadingPanel() {
+        jcefPanel = new JBPanelWithEmptyText(new BorderLayout()).withEmptyText(
+            "Unfortunately, the browser is not available on your system. Try running the IDE with the default OpenJDK.");
+
+        JBPanelWithEmptyText overlayPanel = new JBPanelWithEmptyText();
+        //noinspection DialogTitleCapitalization
+        overlayPanel.getEmptyText().setText("Loading Sourcegraph...");
+
         add(overlayPanel, 0);
         add(jcefPanel, 1);
+    }
+
+    public void setBrowser(@NotNull SourcegraphJBCefBrowser browser) {
+        jcefPanel.add(browser.getComponent());
     }
 
     @Override

@@ -5,8 +5,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.ui.jcef.JBCefJSQuery;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.ThemeUtil;
+import com.sourcegraph.find.FindPopupPanel;
 import com.sourcegraph.find.PreviewContent;
-import com.sourcegraph.find.PreviewPanel;
 import com.sourcegraph.find.Search;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,13 +16,11 @@ import java.io.StringWriter;
 
 public class JSToJavaBridgeRequestHandler {
     private final Project project;
-    private final PreviewPanel previewPanel;
-    private final BrowserAndLoadingPanel topPanel;
+    private final FindPopupPanel findPopupPanel;
 
-    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull PreviewPanel previewPanel, @NotNull BrowserAndLoadingPanel topPanel) {
+    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull FindPopupPanel findPopupPanel) {
         this.project = project;
-        this.previewPanel = previewPanel;
-        this.topPanel = topPanel;
+        this.findPopupPanel = findPopupPanel;
     }
 
     public JBCefJSQuery.Response handle(@NotNull JsonObject request) {
@@ -69,10 +67,10 @@ public class JSToJavaBridgeRequestHandler {
                 case "preview":
                     arguments = request.getAsJsonObject("arguments");
                     previewContent = PreviewContent.fromJson(project, arguments);
-                    previewPanel.setContent(previewContent);
+                    findPopupPanel.setPreviewContent(previewContent);
                     return createSuccessResponse(null);
                 case "clearPreview":
-                    previewPanel.clearContent();
+                    findPopupPanel.clearPreviewContent();
                     return createSuccessResponse(null);
                 case "open":
                     arguments = request.getAsJsonObject("arguments");
@@ -84,7 +82,7 @@ public class JSToJavaBridgeRequestHandler {
                     }
                     return createSuccessResponse(null);
                 case "indicateFinishedLoading":
-                    topPanel.setBrowserVisible(true);
+                    findPopupPanel.setBrowserVisible(true);
                     return createSuccessResponse(null);
                 default:
                     return createErrorResponse("Unknown action: '" + action + "'.", "No stack trace");
