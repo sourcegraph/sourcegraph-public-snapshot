@@ -46,16 +46,16 @@
   targets:
     # worker
     - 127.0.0.1:6089
-- labels:
-    job: sourcegraph-code-intel-indexers
-  targets:
-    # sourcegraph-code-intel-indexers
-    - 127.0.0.1:6092
-- labels:
-    job: executor-batches
-  targets:
-    # executor-batches
-    - 127.0.0.1:6093
+# - labels:
+#     job: sourcegraph-code-intel-indexers
+#   targets:
+#     # sourcegraph-code-intel-indexers
+#     - 127.0.0.1:6092
+# - labels:
+#     job: executor-batches
+#   targets:
+#     # executor-batches
+#     - 127.0.0.1:6093
 - labels:
     job: postgres_exporter
   targets:
