@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import { escapeRegExp, isEqual } from 'lodash'
+import { escapeRegExp } from 'lodash'
 import { RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -12,7 +12,7 @@ import { gql } from '@sourcegraph/http-client'
 import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, ButtonGroup, Link, CardHeader, CardBody, Card, Input, Label } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, Link, CardHeader, CardBody, Card, Input, Label, Tooltip } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -70,27 +70,30 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
                     {commit && (
                         <>
                             <Timestamp date={commit.author.date} />:{' '}
-                            <Link
-                                to={commit.url}
-                                className="repository-contributor-node__commit-subject"
-                                data-tooltip="Most recent commit by contributor"
-                            >
-                                {commit.subject}
-                            </Link>
+                            <Tooltip content="Most recent commit by contributor" placement="bottom">
+                                <Link to={commit.url} className="repository-contributor-node__commit-subject">
+                                    {commit.subject}
+                                </Link>
+                            </Tooltip>
                         </>
                     )}
                 </div>
                 <div className={styles.count}>
-                    <Link
-                        to={`/search?${buildSearchURLQuery(query, SearchPatternType.literal, false)}`}
-                        className="font-weight-bold"
-                        data-tooltip={
-                            revisionRange?.includes('..') &&
-                            'All commits will be shown (revision end ranges are not yet supported)'
+                    <Tooltip
+                        content={
+                            revisionRange?.includes('..')
+                                ? 'All commits will be shown (revision end ranges are not yet supported)'
+                                : null
                         }
+                        placement="left"
                     >
-                        {numberWithCommas(node.count)} {pluralize('commit', node.count)}
-                    </Link>
+                        <Link
+                            to={`/search?${buildSearchURLQuery(query, SearchPatternType.literal, false)}`}
+                            className="font-weight-bold"
+                        >
+                            {numberWithCommas(node.count)} {pluralize('commit', node.count)}
+                        </Link>
+                    </Tooltip>
                 </div>
             </div>
         </li>
@@ -174,255 +177,261 @@ class FilteredContributorsConnection extends FilteredConnection<
     Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path' | 'globbing'>
 > {}
 
-interface State extends QuerySpec {}
+const contributorsPageInputIds: Record<keyof QuerySpec, string> = {
+    revisionRange: 'repository-stats-contributors-page__revision-range',
+    after: 'repository-stats-contributors-page__after',
+    path: 'repository-stats-contributors-page__path',
+}
 
 /** A page that shows a repository's contributors. */
-export class RepositoryStatsContributorsPage extends React.PureComponent<Props, State> {
-    private static REVISION_RANGE_INPUT_ID = 'repository-stats-contributors-page__revision-range'
-    private static AFTER_INPUT_ID = 'repository-stats-contributors-page__after'
-    private static PATH_INPUT_ID = 'repository-stats-contributors-page__path'
+export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = ({
+    location,
+    history,
+    repo,
+    globbing,
+}) => {
+    // Get state from query params
+    const getDerivedState = React.useCallback(
+        (_location: typeof location = location): QuerySpec => {
+            const query = new URLSearchParams(_location.search)
+            return {
+                revisionRange: query.get('revisionRange'),
+                after: query.get('after'),
+                path: query.get('path'),
+            }
+        },
+        [location]
+    )
 
-    public state: State = this.getDerivedProps()
-
-    private specChanges = new Subject<void>()
-
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('RepositoryStatsContributors')
-    }
-
-    public componentDidUpdate(previousProps: Props): void {
-        const spec = this.getDerivedProps(this.props.location)
-        const previousSpec = this.getDerivedProps(previousProps.location)
-        if (!isEqual(spec, previousSpec)) {
-            eventLogger.log('RepositoryStatsContributorsPropsUpdated')
-            // eslint-disable-next-line react/no-did-update-set-state
-            this.setState(spec)
-            this.specChanges.next()
+    // Get query params from state
+    const getUrlQuery = React.useCallback((spec: QuerySpec): string => {
+        const search = new URLSearchParams()
+        for (const [key, value] of Object.entries(spec)) {
+            if (value) {
+                search.set(key, value)
+            }
         }
-    }
+        return search.toString()
+    }, [])
 
-    private getDerivedProps(location = this.props.location): QuerySpec {
-        const query = new URLSearchParams(location.search)
-        const revisionRange = query.get('revision-range')
-        const after = query.get('after')
-        const path = query.get('path')
-        return { revisionRange, after, path }
-    }
+    const [state, setState] = React.useState<QuerySpec>(getDerivedState())
+    const [bufferState, setBufferState] = React.useState<QuerySpec>(getDerivedState())
+    const specChanges = React.useRef<Subject<void>>(new Subject<void>())
 
-    public render(): JSX.Element | null {
-        const { revisionRange, after, path } = this.getDerivedProps()
+    // Log page view when initially rendered
+    React.useEffect(() => {
+        eventLogger.logPageView('RepositoryStatsContributors')
+    }, [])
 
-        // Whether the user has entered new option values that differ from what's in the URL query and has not yet
-        // submitted the form.
-        const stateDiffers =
-            !equalOrEmpty(this.state.revisionRange, revisionRange) ||
-            !equalOrEmpty(this.state.after, after) ||
-            !equalOrEmpty(this.state.path, path)
+    // Update state when search params change
+    React.useEffect(() => {
+        setState(getDerivedState(location))
+        specChanges.current.next()
+        // We only want to run this effect when `location.search` is updated,
+        // and having `location`, `getDerivedState` is unnecessary.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location.search])
 
-        return (
-            <div>
-                <PageTitle title="Contributors" />
-                <Card className={styles.card}>
-                    <CardHeader>Contributions filter</CardHeader>
-                    <CardBody>
-                        <Form onSubmit={this.onSubmit}>
-                            <div className={classNames(styles.row, 'form-inline')}>
-                                <div className="input-group mb-2 mr-sm-2">
-                                    <div className="input-group-prepend">
-                                        <Label
-                                            htmlFor={RepositoryStatsContributorsPage.AFTER_INPUT_ID}
-                                            className="input-group-text"
-                                        >
-                                            Time period
-                                        </Label>
-                                    </div>
-                                    <Input
-                                        name="after"
-                                        size={12}
-                                        id={RepositoryStatsContributorsPage.AFTER_INPUT_ID}
-                                        value={this.state.after || ''}
-                                        placeholder="All time"
-                                        onChange={this.onChange}
-                                    />
-                                    <div className="input-group-append">
-                                        <ButtonGroup aria-label="Time period presets">
-                                            <Button
-                                                className={classNames(
-                                                    styles.btnNoLeftRoundedCorners,
-                                                    this.state.after === '7 days ago' && 'active'
-                                                )}
-                                                onClick={() => this.setStateAfterAndSubmit('7 days ago')}
-                                                variant="secondary"
-                                            >
-                                                Last 7 days
-                                            </Button>
-                                            <Button
-                                                className={classNames(this.state.after === '30 days ago' && 'active')}
-                                                onClick={() => this.setStateAfterAndSubmit('30 days ago')}
-                                                variant="secondary"
-                                            >
-                                                Last 30 days
-                                            </Button>
-                                            <Button
-                                                className={classNames(this.state.after === '1 year ago' && 'active')}
-                                                onClick={() => this.setStateAfterAndSubmit('1 year ago')}
-                                                variant="secondary"
-                                            >
-                                                Last year
-                                            </Button>
-                                            <Button
-                                                className={classNames(!this.state.after && 'active')}
-                                                onClick={() => this.setStateAfterAndSubmit(null)}
-                                                variant="secondary"
-                                            >
-                                                All time
-                                            </Button>
-                                        </ButtonGroup>
-                                    </div>
+    // Sync state --> bufferState
+    React.useEffect(() => {
+        setBufferState(state)
+    }, [state])
+
+    // Update the buffer values, but don't update the URL
+    const onChange = React.useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
+        const { value } = event.target
+        // Get the name of the state field to update
+        const updated = Object.entries(contributorsPageInputIds).find(
+            ([_key, id]) => id === event.currentTarget.id
+        )?.[0]
+        if (updated) {
+            setBufferState(previousState => ({ ...previousState, [updated]: value }))
+        }
+    }, [])
+
+    // Update the URL to reflect buffer state. `state` change will follow via `useEffect` on `location.search`.
+    const onSubmit = React.useCallback<React.FormEventHandler<HTMLFormElement>>(
+        event => {
+            event.preventDefault()
+            history.push({
+                search: getUrlQuery(bufferState),
+            })
+        },
+        [getUrlQuery, bufferState, history]
+    )
+
+    // Reset the buffer state to the original state
+    const onCancel = React.useCallback<React.MouseEventHandler<HTMLButtonElement>>(
+        event => {
+            event.preventDefault()
+            setBufferState(state)
+        },
+        [state]
+    )
+
+    // Wrap the gql query with additional variables
+    const wrappedQueryRepositoryContributors = React.useCallback(
+        (args: { first?: number }): Observable<GQL.IRepositoryContributorConnection> => {
+            const { revisionRange, after, path } = state
+            return queryRepositoryContributors({
+                ...args,
+                repo: repo.id,
+                revisionRange: revisionRange || undefined,
+                after: after || undefined,
+                path: path || undefined,
+            })
+        },
+        [state, repo.id]
+    )
+
+    // Push new query param to history, state change will follow via `useEffect` on `location.search`
+    const updateAfter = React.useCallback(
+        (after: string | null): void => {
+            history.push({ search: getUrlQuery({ ...state, after }) })
+        },
+        [state, history, getUrlQuery]
+    )
+
+    // Whether the user has entered new option values that differ from what's in the URL query and has not yet
+    // submitted the form.
+    const stateDiffers =
+        !equalOrEmpty(state.revisionRange, bufferState.revisionRange) ||
+        !equalOrEmpty(state.after, bufferState.after) ||
+        !equalOrEmpty(state.path, bufferState.path)
+
+    return (
+        <div>
+            <PageTitle title="Contributors" />
+            <Card className={styles.card}>
+                <CardHeader>Contributions filter</CardHeader>
+                <CardBody>
+                    <Form onSubmit={onSubmit}>
+                        <div className={classNames(styles.row, 'form-inline')}>
+                            <div className="input-group mb-2 mr-sm-2">
+                                <div className="input-group-prepend">
+                                    <Label htmlFor={contributorsPageInputIds.after} className="input-group-text">
+                                        Time period
+                                    </Label>
                                 </div>
-                            </div>
-                            <div className={classNames(styles.row, 'form-inline')}>
-                                <div className="input-group mt-2 mr-sm-2">
-                                    <div className="input-group-prepend">
-                                        <Label
-                                            htmlFor={RepositoryStatsContributorsPage.REVISION_RANGE_INPUT_ID}
-                                            className="input-group-text"
-                                        >
-                                            Revision range
-                                        </Label>
-                                    </div>
-                                    <Input
-                                        name="revision-range"
-                                        size={18}
-                                        id={RepositoryStatsContributorsPage.REVISION_RANGE_INPUT_ID}
-                                        value={this.state.revisionRange || ''}
-                                        placeholder="Default branch"
-                                        onChange={this.onChange}
-                                        autoCapitalize="off"
-                                        autoCorrect="off"
-                                        autoComplete="off"
-                                        spellCheck={false}
-                                    />
-                                </div>
-                                <div className="input-group mt-2 mr-sm-2">
-                                    <div className="input-group-prepend">
-                                        <Label
-                                            htmlFor={RepositoryStatsContributorsPage.PATH_INPUT_ID}
-                                            className="input-group-text"
-                                        >
-                                            Path
-                                        </Label>
-                                    </div>
-                                    <Input
-                                        name="path"
-                                        size={18}
-                                        id={RepositoryStatsContributorsPage.PATH_INPUT_ID}
-                                        value={this.state.path || ''}
-                                        placeholder="All files"
-                                        onChange={this.onChange}
-                                        autoCapitalize="off"
-                                        autoCorrect="off"
-                                        autoComplete="off"
-                                        spellCheck={false}
-                                    />
-                                </div>
-                                {stateDiffers && (
-                                    <div className="form-group mb-0">
-                                        <Button type="submit" className="mr-2 mt-2" variant="primary">
-                                            Update
-                                        </Button>
+                                <Input
+                                    name="after"
+                                    size={12}
+                                    id={contributorsPageInputIds.after}
+                                    value={bufferState.after || ''}
+                                    placeholder="All time"
+                                    onChange={onChange}
+                                />
+                                <div className="input-group-append">
+                                    <ButtonGroup aria-label="Time period presets">
                                         <Button
-                                            type="reset"
-                                            className="mt-2"
-                                            onClick={this.onCancel}
+                                            className={classNames(
+                                                styles.btnNoLeftRoundedCorners,
+                                                state.after === '7 days ago' && 'active'
+                                            )}
+                                            onClick={() => updateAfter('7 days ago')}
                                             variant="secondary"
                                         >
-                                            Cancel
+                                            Last 7 days
                                         </Button>
-                                    </div>
-                                )}
+                                        <Button
+                                            className={classNames(state.after === '30 days ago' && 'active')}
+                                            onClick={() => updateAfter('30 days ago')}
+                                            variant="secondary"
+                                        >
+                                            Last 30 days
+                                        </Button>
+                                        <Button
+                                            className={classNames(state.after === '1 year ago' && 'active')}
+                                            onClick={() => updateAfter('1 year ago')}
+                                            variant="secondary"
+                                        >
+                                            Last year
+                                        </Button>
+                                        <Button
+                                            className={classNames(!state.after && 'active')}
+                                            onClick={() => updateAfter(null)}
+                                            variant="secondary"
+                                        >
+                                            All time
+                                        </Button>
+                                    </ButtonGroup>
+                                </div>
                             </div>
-                        </Form>
-                    </CardBody>
-                </Card>
-                <FilteredContributorsConnection
-                    listClassName="list-group list-group-flush test-filtered-contributors-connection"
-                    noun="contributor"
-                    pluralNoun="contributors"
-                    queryConnection={this.queryRepositoryContributors}
-                    nodeComponent={RepositoryContributorNode}
-                    nodeComponentProps={{
-                        repoName: this.props.repo.name,
-                        revisionRange,
-                        after,
-                        path,
-                        globbing: this.props.globbing,
-                    }}
-                    defaultFirst={20}
-                    hideSearch={true}
-                    useURLQuery={false}
-                    updates={this.specChanges}
-                    history={this.props.history}
-                    location={this.props.location}
-                />
-            </div>
-        )
-    }
-
-    private onChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        switch (event.currentTarget.id) {
-            case RepositoryStatsContributorsPage.REVISION_RANGE_INPUT_ID:
-                this.setState({ revisionRange: event.currentTarget.value })
-                return
-
-            case RepositoryStatsContributorsPage.AFTER_INPUT_ID:
-                this.setState({ after: event.currentTarget.value })
-                return
-
-            case RepositoryStatsContributorsPage.PATH_INPUT_ID:
-                this.setState({ path: event.currentTarget.value })
-                return
-        }
-    }
-
-    private onSubmit: React.FormEventHandler<HTMLFormElement> = event => {
-        event.preventDefault()
-        this.props.history.push({ search: this.urlQuery(this.state) })
-    }
-
-    private onCancel: React.MouseEventHandler<HTMLButtonElement> = event => {
-        event.preventDefault()
-        this.setState(this.getDerivedProps())
-    }
-
-    private queryRepositoryContributors = (args: {
-        first?: number
-    }): Observable<GQL.IRepositoryContributorConnection> => {
-        const { revisionRange, after, path } = this.getDerivedProps()
-        return queryRepositoryContributors({
-            ...args,
-            repo: this.props.repo.id,
-            revisionRange: revisionRange || undefined,
-            after: after || undefined,
-            path: path || undefined,
-        })
-    }
-
-    private urlQuery(spec: QuerySpec): string {
-        const query = new URLSearchParams()
-        if (spec.revisionRange) {
-            query.set('revision-range', spec.revisionRange)
-        }
-        if (spec.after) {
-            query.set('after', spec.after)
-        }
-        if (spec.path) {
-            query.set('path', spec.path)
-        }
-        return query.toString()
-    }
-
-    private setStateAfterAndSubmit(after: string | null): void {
-        this.setState({ after }, () => this.props.history.push({ search: this.urlQuery(this.state) }))
-    }
+                        </div>
+                        <div className={classNames(styles.row, 'form-inline')}>
+                            <div className="input-group mt-2 mr-sm-2">
+                                <div className="input-group-prepend">
+                                    <Label
+                                        htmlFor={contributorsPageInputIds.revisionRange}
+                                        className="input-group-text"
+                                    >
+                                        Revision range
+                                    </Label>
+                                </div>
+                                <Input
+                                    name="revision-range"
+                                    size={18}
+                                    id={contributorsPageInputIds.revisionRange}
+                                    value={bufferState.revisionRange || ''}
+                                    placeholder="Default branch"
+                                    onChange={onChange}
+                                    autoCapitalize="off"
+                                    autoCorrect="off"
+                                    autoComplete="off"
+                                    spellCheck={false}
+                                />
+                            </div>
+                            <div className="input-group mt-2 mr-sm-2">
+                                <div className="input-group-prepend">
+                                    <Label htmlFor={contributorsPageInputIds.path} className="input-group-text">
+                                        Path
+                                    </Label>
+                                </div>
+                                <Input
+                                    name="path"
+                                    size={18}
+                                    id={contributorsPageInputIds.path}
+                                    value={bufferState.path || ''}
+                                    placeholder="All files"
+                                    onChange={onChange}
+                                    autoCapitalize="off"
+                                    autoCorrect="off"
+                                    autoComplete="off"
+                                    spellCheck={false}
+                                />
+                            </div>
+                            {stateDiffers && (
+                                <div className="form-group mb-0">
+                                    <Button type="submit" className="mr-2 mt-2" variant="primary">
+                                        Update
+                                    </Button>
+                                    <Button type="reset" className="mt-2" onClick={onCancel} variant="secondary">
+                                        Cancel
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    </Form>
+                </CardBody>
+            </Card>
+            <FilteredContributorsConnection
+                listClassName="list-group list-group-flush test-filtered-contributors-connection"
+                noun="contributor"
+                pluralNoun="contributors"
+                queryConnection={wrappedQueryRepositoryContributors}
+                nodeComponent={RepositoryContributorNode}
+                nodeComponentProps={{
+                    repoName: repo.name,
+                    globbing,
+                    ...state,
+                }}
+                defaultFirst={20}
+                hideSearch={true}
+                useURLQuery={false}
+                updates={specChanges.current}
+                history={history}
+                location={location}
+            />
+        </div>
+    )
 }
