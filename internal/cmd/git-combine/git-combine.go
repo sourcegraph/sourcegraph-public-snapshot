@@ -487,7 +487,7 @@ func cleanupStaleLockFiles(gitDir string, logger *log.Logger) error {
 	})
 
 	if err != nil {
-		return errors.Wrapf(err, "finding stale lockfiles in %q: %w", refsDir)
+		return errors.Wrapf(err, "finding stale lockfiles in %q", refsDir)
 	}
 
 	// remove all stale lock files
