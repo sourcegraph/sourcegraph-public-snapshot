@@ -14,6 +14,7 @@ import { extensionsController } from '@sourcegraph/shared/src/testing/searchTest
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { WebStory } from '../../components/WebStory'
+import { MockedFeatureFlagsProvider } from '../../featureFlags/FeatureFlagsProvider'
 import { SourcegraphContext } from '../../jscontext'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
@@ -157,7 +158,11 @@ add('Cloud with panels and collaborators', () => (
 
 add('Cloud marketing home', () => (
     <WebStory>
-        {webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} authenticatedUser={null} />}
+        {webProps => (
+            <MockedFeatureFlagsProvider overrides={{}}>
+                <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} authenticatedUser={null} />
+            </MockedFeatureFlagsProvider>
+        )}
     </WebStory>
 ))
 

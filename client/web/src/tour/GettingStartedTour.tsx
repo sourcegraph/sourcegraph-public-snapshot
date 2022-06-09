@@ -3,7 +3,32 @@ import { withFeatureFlag } from '../featureFlags/withFeatureFlag'
 import { Tour, TourProps } from './components/Tour/Tour'
 import { TourInfo } from './components/Tour/TourInfo'
 import { withErrorBoundary } from './components/withErrorBoundary'
-import { authenticatedExtraTask, authenticatedTasks, visitorsTasks } from './data'
+import {
+    authenticatedExtraTask,
+    authenticatedTasks,
+    visitorsTasks,
+    visitorsTasksWithNotebook,
+    visitorsTasksWithNotebookExtraTask,
+} from './data'
+
+function TourVisitorWithNotebook(props: Omit<TourProps, 'tasks' | 'id'>): JSX.Element {
+    return (
+        <Tour
+            {...props}
+            id="TourWithNotebook"
+            title="Code Search Basics"
+            keepCompletedTasks={true}
+            tasks={visitorsTasksWithNotebook}
+            extraTask={visitorsTasksWithNotebookExtraTask}
+        />
+    )
+}
+
+function TourVisitorRegular(props: Omit<TourProps, 'tasks' | 'id'>): JSX.Element {
+    return <Tour {...props} id="Tour" tasks={visitorsTasks} />
+}
+
+const TourVisitor = withFeatureFlag('ab-visitor-tour-with-notebooks', TourVisitorWithNotebook, TourVisitorRegular)
 
 type TourWithErrorBoundaryProps = Omit<TourProps, 'useStore' | 'eventPrefix' | 'tasks' | 'id'> & {
     isAuthenticated?: boolean
@@ -19,7 +44,7 @@ const TourWithErrorBoundary = withErrorBoundary(
 
         // Show visitors version
         if (!isAuthenticated) {
-            return <Tour {...props} id="Tour" tasks={visitorsTasks} />
+            return <TourVisitor {...props} />
         }
 
         return (
