@@ -17,11 +17,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 // cmdFix executes the given command as an action in a new user shell.
@@ -180,7 +180,7 @@ func dsnCandidates() ([]string, error) {
 	}, nil
 }
 
-func checkSourcegraphDatabase(ctx context.Context, out output.Writer, args CheckArgs) error {
+func checkSourcegraphDatabase(ctx context.Context, out *std.Output, args CheckArgs) error {
 	// This check runs only in the `sourcegraph/sourcegraph` repository, so
 	// we try to parse the globalConf and use its `Env` to configure the
 	// Postgres connection.
@@ -266,7 +266,7 @@ func getToolVersionConstraint(ctx context.Context, tool string) (string, error) 
 	return fmt.Sprintf("~> %s", version), nil
 }
 
-func checkGoVersion(ctx context.Context, out output.Writer, args CheckArgs) error {
+func checkGoVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
 	if err := check.InPath("go")(ctx); err != nil {
 		return err
 	}
@@ -289,7 +289,7 @@ func checkGoVersion(ctx context.Context, out output.Writer, args CheckArgs) erro
 	return check.Version("go", strings.TrimPrefix(parts[2], "go"), constraint)
 }
 
-func checkYarnVersion(ctx context.Context, out output.Writer, args CheckArgs) error {
+func checkYarnVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
 	if err := check.InPath("yarn")(ctx); err != nil {
 		return err
 	}
@@ -312,7 +312,7 @@ func checkYarnVersion(ctx context.Context, out output.Writer, args CheckArgs) er
 	return check.Version("yarn", trimmed, constraint)
 }
 
-func checkNodeVersion(ctx context.Context, out output.Writer, args CheckArgs) error {
+func checkNodeVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
 	if err := check.InPath("node")(ctx); err != nil {
 		return err
 	}
@@ -335,7 +335,7 @@ func checkNodeVersion(ctx context.Context, out output.Writer, args CheckArgs) er
 	return check.Version("yarn", trimmed, constraint)
 }
 
-func checkRustVersion(ctx context.Context, out output.Writer, args CheckArgs) error {
+func checkRustVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
 	if err := check.InPath("cargo")(ctx); err != nil {
 		return err
 	}

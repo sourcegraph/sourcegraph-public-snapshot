@@ -9,10 +9,10 @@ import (
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 func categoryCloneRepositories() category {
@@ -26,7 +26,7 @@ func categoryCloneRepositories() category {
 See here on how to set that up:
 
 https://docs.github.com/en/authentication/connecting-to-github-with-ssh`,
-				Check: func(ctx context.Context, out output.Writer, args CheckArgs) error {
+				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
 					if args.Teammate {
 						return check.CommandOutputContains(
 							"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -T git@github.com",
@@ -40,7 +40,7 @@ https://docs.github.com/en/authentication/connecting-to-github-with-ssh`,
 			{
 				Name:        "github.com/sourcegraph/sourcegraph",
 				Description: `The 'sourcegraph' repository contains the Sourcegraph codebase and everything to run Sourcegraph locally.`,
-				Check: func(ctx context.Context, out output.Writer, args CheckArgs) error {
+				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
 					if _, err := root.RepositoryRoot(); err == nil {
 						return nil
 					}
@@ -77,7 +77,7 @@ https://docs.github.com/en/authentication/connecting-to-github-with-ssh`,
 
 	NOTE: You can ignore this if you're not a Sourcegraph teammate.`,
 				Enabled: enableForTeammatesOnly(),
-				Check: func(ctx context.Context, out output.Writer, args CheckArgs) error {
+				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
 					ok, err := pathExists("dev-private")
 					if ok && err == nil {
 						return nil
@@ -106,7 +106,7 @@ func categoryAdditionalSGConfiguration() category {
 		Checks: []*dependency{
 			{
 				Name: "Autocompletions",
-				Check: func(ctx context.Context, out output.Writer, args CheckArgs) error {
+				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
 					if !usershell.IsSupportedShell(ctx) {
 						return nil // dont do setup
 					}

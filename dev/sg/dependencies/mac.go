@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 const (
@@ -186,7 +186,7 @@ If you used another method, make sure psql is available.`,
 				//
 				// Because only the latest error is returned, it's better to finish with the real check
 				// for error message clarity.
-				Check: func(ctx context.Context, out output.Writer, args CheckArgs) error {
+				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
 					if err := checkSourcegraphDatabase(ctx, out, args); err == nil {
 						return nil
 					}

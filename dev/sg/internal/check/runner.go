@@ -121,7 +121,7 @@ func (r *Runner[Args]) Interactive(
 
 		r.out.WriteWarningf("Some checks failed. Which one do you want to fix?")
 
-		idx, err := r.getNumberOutOf(results.failed)
+		idx, err := getNumberOutOf(r.in, r.out, results.failed)
 		if err != nil {
 			if err == io.EOF {
 				return nil
@@ -282,38 +282,6 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 	return &results
 }
 
-func removeEntry(s []int, val int) (result []int) {
-	for _, e := range s {
-		if e != val {
-			result = append(result, e)
-		}
-	}
-	return result
-}
-
-func (r *Runner[Args]) getNumberOutOf(numbers []int) (int, error) {
-	var strs []string
-	var idx = make(map[int]struct{})
-	for _, num := range numbers {
-		strs = append(strs, fmt.Sprintf("%d", num+1))
-		idx[num+1] = struct{}{}
-	}
-
-	for {
-		r.out.Promptf("[%s]:", strings.Join(strs, ","))
-		var num int
-		_, err := fmt.Fscan(r.in, &num)
-		if err != nil {
-			return 0, err
-		}
-
-		if _, ok := idx[num]; ok {
-			return num - 1, nil
-		}
-		r.out.Writef("%d is an invalid choice :( Let's try again?\n", num)
-	}
-}
-
 func (r *Runner[Args]) presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, category *Category[Args], args Args, results *runAllCategoryChecksResult) error {
 	r.printCategoryHeaderAndDependencies(categoryIdx+1, category)
 	fixableCategory := category.HasFixable()
@@ -328,7 +296,7 @@ func (r *Runner[Args]) presentFailedCategoryWithOptions(ctx context.Context, cat
 		choices[2] = "Go back"
 	}
 
-	choice, err := r.getChoice(choices)
+	choice, err := getChoice(r.in, r.out, choices)
 	if err != nil {
 		return err
 	}
@@ -368,34 +336,6 @@ func (r *Runner[Args]) printCategoryHeaderAndDependencies(categoryIdx int, categ
 	}
 }
 
-func (r *Runner[Args]) getChoice(choices map[int]string) (int, error) {
-	for {
-		r.out.Write("")
-		r.out.WriteNoticef("What do you want to do?")
-
-		for i := 0; i < len(choices); i++ {
-			num := i + 1
-			desc, ok := choices[num]
-			if !ok {
-				return 0, errors.Newf("internal error: %d not found in provided choices", i)
-			}
-			r.out.Writef("%s[%d]%s: %s", output.StyleBold, num, output.StyleReset, desc)
-		}
-
-		r.out.Promptf("Enter choice:")
-		var s int
-		_, err := fmt.Fscan(r.in, &s)
-		if err != nil {
-			return 0, err
-		}
-
-		if _, ok := choices[s]; ok {
-			return s, nil
-		}
-		r.out.WriteFailuref("Invalid choice")
-	}
-}
-
 func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int, category *Category[Args], args Args) error {
 	for {
 		toFix := []int{}
@@ -419,7 +359,7 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 		} else {
 			r.out.WriteNoticef("Which one do you want to fix?")
 			var err error
-			idx, err = r.getNumberOutOf(toFix)
+			idx, err = getNumberOutOf(r.in, r.out, toFix)
 			if err != nil {
 				if err == io.EOF {
 					return nil
