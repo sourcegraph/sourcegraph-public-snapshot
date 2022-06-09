@@ -1313,9 +1313,9 @@ func (c *ClientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 // ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
 // file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
 func (c *ClientImplementor) ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) ([]byte, error) {
-	//if Mocks.ReadFile != nil {
-	//	return Mocks.ReadFile(commit, name)
-	//}
+	if Mocks.ReadFile != nil {
+		return Mocks.ReadFile(commit, name)
+	}
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadFile")
 	span.SetTag("Name", name)
@@ -1338,9 +1338,9 @@ func (c *ClientImplementor) ReadFile(ctx context.Context, repo api.RepoName, com
 // NewFileReader returns an io.ReadCloser reading from the named file at commit.
 // The caller should always close the reader after use
 func (c *ClientImplementor) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
-	//if Mocks.NewFileReader != nil {
-	//	return Mocks.NewFileReader(commit, name)
-	//}
+	if Mocks.NewFileReader != nil {
+		return Mocks.NewFileReader(commit, name)
+	}
 	a := actor.FromContext(ctx)
 	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, name); err != nil {
 		return nil, err
@@ -1433,9 +1433,9 @@ func (br *blobReader) convertError(err error) error {
 
 // Stat returns a FileInfo describing the named file at commit.
 func (c *ClientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
-	//if Mocks.Stat != nil {
-	//	return Mocks.Stat(commit, path)
-	//}
+	if Mocks.Stat != nil {
+		return Mocks.Stat(commit, path)
+	}
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Stat")
 	span.SetTag("Commit", commit)
