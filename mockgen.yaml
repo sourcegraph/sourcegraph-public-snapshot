@@ -58,13 +58,13 @@ mocks:
   - filename: enterprise/cmd/frontend/internal/codeintel/resolvers/mock_iface_test.go
     path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers
     interfaces:
-      - GitserverClient
       - DBStore
-      - LSIFStore
-      - IndexEnqueuer
-      - RepoUpdaterClient
       - EnqueuerDBStore
       - EnqueuerGitserverClient
+      - GitserverClient
+      - IndexEnqueuer
+      - LSIFStore
+      - RepoUpdaterClient
   - filename: enterprise/cmd/frontend/internal/codeintel/resolvers/mock_position_adjuster_test.go
     path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers
     interfaces:
@@ -88,14 +88,14 @@ mocks:
   - filename: enterprise/cmd/frontend/internal/registry/stores/dbmocks/mock_stores.go
     path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores
     interfaces:
-      - ReleaseStore
       - ExtensionStore
+      - ReleaseStore
   - filename: enterprise/cmd/precise-code-intel-worker/internal/worker/mock_iface_test.go
     path: github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker
     interfaces:
       - DBStore
-      - LSIFStore
       - GitserverClient
+      - LSIFStore
   - filename: enterprise/cmd/precise-code-intel-worker/internal/worker/mock_worker_store_test.go
     path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
     interfaces:
@@ -105,13 +105,13 @@ mocks:
     path: github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing
     interfaces:
       - DBStore
+      - ExternalServiceStore
       - GitserverClient
       - IndexEnqueuer
-      - IndexingSettingStore
       - IndexingRepoStore
-      - ExternalServiceStore
-      - RepoUpdaterClient
+      - IndexingSettingStore
       - PolicyMatcher
+      - RepoUpdaterClient
   - filename: enterprise/cmd/worker/internal/codeintel/indexing/mock_scanner_test.go
     path: github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore
     interfaces:
@@ -148,8 +148,8 @@ mocks:
   - filename: enterprise/internal/database/mocks.go
     path: github.com/sourcegraph/sourcegraph/enterprise/internal/database
     interfaces:
-      - EnterpriseDB
       - CodeMonitorStore
+      - EnterpriseDB
       - PermsStore
   - filename: enterprise/internal/insights/background/mock_repo_store.go
     path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background
@@ -201,19 +201,19 @@ mocks:
     interfaces:
       - DBStore
       - GitServerClient
-      - RepoUpdaterClient
       - InferenceService
+      - RepoUpdaterClient
   - filename: internal/codeintel/autoindexing/internal/inference/mock_iface_test.go
     path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference
     interfaces:
-      - SandboxService
       - GitService
+      - SandboxService
   - filename: internal/codeintel/dependencies/mock_iface_test.go
     path: github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies
     interfaces:
-      - localGitService
       - LockfilesService
       - Syncer
+      - localGitService
   - filename: internal/codeintel/dependencies/mock_iface_store_test.go
     path: github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store
     interfaces:
@@ -256,8 +256,8 @@ mocks:
     path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/commitgraph
     interfaces:
       - DBStore
-      - Locker
       - GitserverClient
+      - Locker
   - filename: internal/codeintel/uploads/background/expiration/mock_iface_test.go
     path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/expiration
     interfaces:
@@ -274,14 +274,15 @@ mocks:
   - filename: internal/database/mocks.go
     path: github.com/sourcegraph/sourcegraph/internal/database
     interfaces:
-      - DB
       - AccessTokenStore
       - AuthzStore
       - ConfStore
+      - DB
       - EventLogStore
-      - SecurityEventLogsStore
       - ExternalServiceStore
       - FeatureFlagStore
+      - GitserverLocalCloneStore
+      - GitserverRepoStore
       - GlobalStateStore
       - NamespaceStore
       - OrgInvitationStore
@@ -289,10 +290,9 @@ mocks:
       - OrgStore
       - PhabricatorStore
       - RepoStore
-      - GitserverRepoStore
-      - GitserverLocalCloneStore
       - SavedSearchStore
       - SearchContextsStore
+      - SecurityEventLogsStore
       - SettingsStore
       - SubRepoPermsStore
       - TemporarySettingsStore
@@ -358,8 +358,8 @@ mocks:
     interfaces:
       - gcsAPI
       - gcsBucketHandle
-      - gcsObjectHandle
       - gcsComposer
+      - gcsObjectHandle
     package: uploadstore
   - filename: internal/uploadstore/mocks/mock_store.go
     path: github.com/sourcegraph/sourcegraph/internal/uploadstore
