@@ -343,7 +343,7 @@ mocks:
     interfaces:
       - SearchClient
     path: github.com/sourcegraph/sourcegraph/internal/search/client
-  - dirname: internal/search/job/mockjob
+  - filename: internal/search/job/mockjob/job_mock.go
     interfaces:
       - Job
     path: github.com/sourcegraph/sourcegraph/internal/search/job
