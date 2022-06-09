@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"sync"
 
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/opentracing/opentracing-go"
@@ -210,11 +211,29 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 		return err
 	}
 
+	// HACK(camdencheek): Limit the concurrency of the code monitor job because the
+	// database.DB here might actually be a transaction, and transactions cannot be
+	// used concurrently.
+	planJob = limitCodeMonitorConcurrency(planJob)
+
 	_, err = planJob.Run(ctx, clients, streaming.NewNullStream())
 	return err
 }
 
 var ErrInvalidMonitorQuery = errors.New("code monitor cannot use different patterns for different repos")
+
+func limitCodeMonitorConcurrency(in job.Job) job.Job {
+	return jobutil.MapAtom(in, func(atom job.Job) job.Job {
+		switch typedAtom := atom.(type) {
+		case *commit.SearchJob:
+			jobCopy := *typedAtom
+			jobCopy.Concurrency = 1
+			return &jobCopy
+		default:
+			return atom
+		}
+	})
+}
 
 func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
 	commitSearchJobCount := 0

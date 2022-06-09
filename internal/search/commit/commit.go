@@ -32,6 +32,7 @@ type SearchJob struct {
 	Diff                 bool
 	Limit                int
 	IncludeModifiedFiles bool
+	Concurrency          int
 
 	// CodeMonitorSearchWrapper, if set, will wrap the commit search with extra logic specific to code monitors.
 	CodeMonitorSearchWrapper CodeMonitorHook `json:"-"`
@@ -94,7 +95,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return doSearch(args)
 	}
 
-	bounded := goroutine.NewBounded(4)
+	bounded := goroutine.NewBounded(j.Concurrency)
 	defer func() { err = errors.Append(err, bounded.Wait()) }()
 
 	repos := searchrepos.Resolver{DB: clients.DB, Opts: j.RepoOpts}
@@ -109,7 +110,10 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 				return searchRepoRev(repoRev)
 			})
 		}
-		return nil
+		// HACK(camdencheek): finish each batch before resolving the next page
+		// to ensure that the db handle (which might be a transaction) does not
+		// get used in parallel
+		return bounded.Wait()
 	})
 }
 
