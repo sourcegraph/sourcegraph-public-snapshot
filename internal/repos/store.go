@@ -111,8 +111,8 @@ type store struct {
 }
 
 // NewStore instantiates and returns a new Store with given database handle.
-func NewStore(logger log.Logger, db database.DB, txOpts sql.TxOptions) Store {
-	s := basestore.NewWithDB(db, txOpts)
+func NewStore(logger log.Logger, db database.DB) Store {
+	s := basestore.NewWithHandle(db.Handle())
 	return &store{
 		Store:  s,
 		Logger: logger,

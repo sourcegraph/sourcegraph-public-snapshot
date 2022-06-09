@@ -129,7 +129,9 @@ func (o *observedSource) GetRepo(ctx context.Context, path string) (sourced *typ
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		o.metrics.GetRepo.Observe(secs, 1, &err)
-		o.logger.Error("source.get-repo", log.Error(err))
+		if err != nil {
+			o.logger.Error("source.get-repo", log.Error(err))
+		}
 	}(time.Now())
 
 	return rg.GetRepo(ctx, path)

@@ -4,7 +4,7 @@ import LinkIcon from 'mdi-react/LinkIcon'
 
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './SearchSidebarSection.module.scss'
 
@@ -12,18 +12,18 @@ export const getQuickLinks = (settingsCascade: SettingsCascadeProps['settingsCas
     const quickLinks = (isSettingsValid<Settings>(settingsCascade) && settingsCascade.final.quicklinks) || []
 
     return quickLinks.map((quickLink, index) => (
-        <Link
+        <Tooltip
             // Can't guarantee that URL, name, or description are unique, so use index as key.
             // This is safe since this list will only be updated when settings change.
             // eslint-disable-next-line react/no-array-index-key
             key={index}
-            to={quickLink.url}
-            data-tooltip={quickLink.description}
-            data-placement="right"
-            className={styles.sidebarSectionListItem}
+            content={quickLink.description ?? null}
+            placement="right"
         >
-            <Icon role="img" aria-hidden={true} className="pr-1 flex-shrink-0" as={LinkIcon} />
-            {quickLink.name}
-        </Link>
+            <Link to={quickLink.url} className={styles.sidebarSectionListItem}>
+                <Icon role="img" aria-hidden={true} className="pr-1 flex-shrink-0" as={LinkIcon} />
+                {quickLink.name}
+            </Link>
+        </Tooltip>
     ))
 }

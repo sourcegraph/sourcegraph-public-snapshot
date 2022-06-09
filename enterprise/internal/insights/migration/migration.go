@@ -49,7 +49,7 @@ func NewMigrator(insightsDB dbutil.DB, postgresDB database.DB) oobmigration.Migr
 		insightStore:               store.NewInsightStore(insightsDB),
 		dashboardStore:             store.NewDashboardStore(insightsDB),
 		orgStore:                   postgresDB.Orgs(),
-		workerBaseStore:            basestore.NewWithDB(postgresDB, sql.TxOptions{}),
+		workerBaseStore:            basestore.NewWithHandle(postgresDB.Handle()),
 	}
 }
 
