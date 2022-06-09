@@ -49,7 +49,7 @@ public class PreviewContent {
 
     @NotNull
     public static PreviewContent fromJson(Project project, @NotNull JsonObject json) {
-        int absoluteOffsetAndLengthsSize = json.getAsJsonArray("absoluteOffsetAndLengths").size();
+        int absoluteOffsetAndLengthsSize = isNotNull(json, "absoluteOffsetAndLengths") ? json.getAsJsonArray("absoluteOffsetAndLengths").size() : 0;
         int[][] absoluteOffsetAndLengths = new int[absoluteOffsetAndLengthsSize][2];
         for (int i = 0; i < absoluteOffsetAndLengths.length; i++) {
             JsonElement element = json.getAsJsonArray("absoluteOffsetAndLengths").get(i);
@@ -58,13 +58,17 @@ public class PreviewContent {
         }
 
         return new PreviewContent(project,
-            json.get("fileName").getAsString(),
+            isNotNull(json, "fileName") ? json.get("fileName").getAsString() : null,
             json.get("repoUrl").getAsString(),
-            json.get("path").getAsString(),
-            json.get("content").getAsString(),
-            json.get("lineNumber").getAsInt(),
+            isNotNull(json, "path") ? json.get("path").getAsString() : null,
+            isNotNull(json, "content") ? json.get("content").getAsString() : null,
+            isNotNull(json, "lineNumber") ? json.get("lineNumber").getAsInt() : -1,
             absoluteOffsetAndLengths,
             json.get("relativeUrl").getAsString());
+    }
+
+    private static boolean isNotNull(@NotNull JsonObject json, String key) {
+        return json.get(key) != null && !json.get(key).isJsonNull();
     }
 
     @Nullable
