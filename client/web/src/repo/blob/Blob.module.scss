@@ -1,7 +1,6 @@
 .blob {
     position: relative;
     overflow: auto;
-    padding-top: 0.5rem;
     tab-size: 4;
     display: flex;
     background-color: var(--code-bg);
@@ -12,15 +11,6 @@
 
     table {
         border-collapse: collapse;
-
-        // Give room to view the last few lines of code
-        // without the floating status bar getting in the way.
-        &::after {
-            content: '';
-            display: inline-block;
-            padding-bottom: calc(var(--blob-status-bar-height) + var(--blob-status-bar-vertical-gap) + 0.5rem);
-            // Extra 0.5rem padding on top of the minimum required to expose code;
-        }
     }
 
     td:global(.line) {
@@ -38,12 +28,30 @@
     }
 
     tr {
-        &:global(.selected) {
+        &:global(.selected),
+        &:global(.highlighted) {
             background: var(--code-selection-bg);
         }
 
-        &:global(.highlighted) {
-            background: var(--code-selection-bg);
+        &:first-child {
+            vertical-align: bottom;
+
+            td {
+                padding-top: 0.5rem;
+            }
+        }
+
+        &:last-child {
+            vertical-align: top;
+
+            // Give room to view the last few lines of code
+            // without the floating status bar getting in the way.
+            &::after {
+                content: '';
+                display: block;
+                height: calc(var(--blob-status-bar-height) + var(--blob-status-bar-vertical-gap) + 1.5rem);
+                background: green;
+            }
         }
     }
 

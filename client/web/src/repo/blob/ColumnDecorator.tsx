@@ -13,6 +13,7 @@ import {
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './ColumnDecorator.module.scss'
 
@@ -54,7 +55,14 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
             const cleanup = (): void => {
                 // remove added cells
                 for (const [cell] of addedCells) {
+                    const row = cell.closest('tr')
                     cell.remove()
+
+                    // if no other columns with decorations
+                    if (!row?.querySelector(`.${styles.decoration}`)) {
+                        // remove line number cell extra horizontal padding
+                        row?.querySelector('td.line')?.classList.remove('px-2')
+                    }
                 }
 
                 // reset state
@@ -73,6 +81,9 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                         if (!cell) {
                             cell = row.insertCell(1)
                             cell.classList.add(styles.decoration, className)
+
+                            // add line number cell extra horizontal padding
+                            row.querySelector('td.line')?.classList.add('px-2')
 
                             const wrapper = document.createElement('div')
                             wrapper.classList.add(styles.wrapper)
@@ -112,34 +123,37 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                 const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
 
                                 return (
-                                    <LinkOrSpan
+                                    <Tooltip
                                         key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${
                                             portalRoot.dataset.line ?? ''
                                         }`}
-                                        className={styles.item}
-                                        // eslint-disable-next-line react/forbid-dom-props
-                                        style={{ color: style.color }}
-                                        data-tooltip={attachment.hoverMessage}
-                                        to={attachment.linkURL}
-                                        // Use target to open external URLs
-                                        target={
-                                            attachment.linkURL && isAbsoluteUrl(attachment.linkURL)
-                                                ? '_blank'
-                                                : undefined
-                                        }
-                                        // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
-                                        rel="noreferrer noopener"
-                                        onMouseEnter={selectRow}
-                                        onMouseLeave={deselectRow}
-                                        onFocus={selectRow}
-                                        onBlur={deselectRow}
+                                        content={attachment.hoverMessage || null}
                                     >
-                                        <span
-                                            className={styles.contents}
-                                            data-line-decoration-attachment-content={true}
-                                            data-contents={attachment.contentText || ''}
-                                        />
-                                    </LinkOrSpan>
+                                        <LinkOrSpan
+                                            className={styles.item}
+                                            // eslint-disable-next-line react/forbid-dom-props
+                                            style={{ color: style.color }}
+                                            to={attachment.linkURL}
+                                            // Use target to open external URLs
+                                            target={
+                                                attachment.linkURL && isAbsoluteUrl(attachment.linkURL)
+                                                    ? '_blank'
+                                                    : undefined
+                                            }
+                                            // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
+                                            rel="noreferrer noopener"
+                                            onMouseEnter={selectRow}
+                                            onMouseLeave={deselectRow}
+                                            onFocus={selectRow}
+                                            onBlur={deselectRow}
+                                        >
+                                            <span
+                                                className={styles.contents}
+                                                data-line-decoration-attachment-content={true}
+                                                data-contents={attachment.contentText || ''}
+                                            />
+                                        </LinkOrSpan>
+                                    </Tooltip>
                                 )
                             }),
                             portalRoot.firstChild as HTMLDivElement
