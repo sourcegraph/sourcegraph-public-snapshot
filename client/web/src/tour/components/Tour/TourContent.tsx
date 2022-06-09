@@ -15,6 +15,8 @@ import { TourTaskType } from './types'
 import styles from './Tour.module.scss'
 
 interface TourContentProps {
+    title?: string
+    keepCompletedTasks?: boolean
     tasks: (TourTaskType | TourTaskType)[]
     onClose: () => void
     variant?: 'horizontal'
@@ -22,16 +24,20 @@ interface TourContentProps {
     className?: string
 }
 
-const Header: React.FunctionComponent<React.PropsWithChildren<{ onClose: () => void }>> = ({ children, onClose }) => (
+const Header: React.FunctionComponent<{ onClose: () => void; title?: string }> = ({
+    children,
+    onClose,
+    title = 'Quick start',
+}) => (
     <div className="d-flex justify-content-between align-items-start">
-        <Text className={styles.title}>Quick start</Text>
+        <Text className={styles.title}>{title}</Text>
         <Button variant="icon" data-testid="tour-close-btn" onClick={onClose} aria-label="Close quick start">
             <Icon role="img" as={CloseIcon} aria-hidden={true} /> {children}
         </Button>
     </div>
 )
 
-const Footer: React.FunctionComponent<React.PropsWithChildren<{ completedCount: number; totalCount: number }>> = ({
+const Footer: React.FunctionComponent<{ completedCount: number; totalCount: number }> = ({
     completedCount,
     totalCount,
 }) => (
@@ -46,7 +52,7 @@ const Footer: React.FunctionComponent<React.PropsWithChildren<{ completedCount: 
     </Text>
 )
 
-const CompletedItem: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => (
+const CompletedItem: React.FunctionComponent = ({ children }) => (
     <li className="d-flex align-items-start">
         <Icon
             role="img"
@@ -59,15 +65,26 @@ const CompletedItem: React.FunctionComponent<React.PropsWithChildren<unknown>> =
     </li>
 )
 
-export const TourContent: React.FunctionComponent<React.PropsWithChildren<TourContentProps>> = ({
+export const TourContent: React.FunctionComponent<TourContentProps> = ({
     onClose,
     tasks,
     variant,
     className,
+    title,
+    keepCompletedTasks,
     height = 18,
 }) => {
     const { completedCount, totalCount, completedTasks, completedTaskChunks, ongoingTasks } = useMemo(() => {
         const completedTasks = tasks.filter(task => task.completed === 100)
+        if (keepCompletedTasks) {
+            return {
+                completedTasks: [],
+                ongoingTasks: tasks,
+                completedTaskChunks: [],
+                totalCount: tasks.filter(task => typeof task.completed === 'number').length,
+                completedCount: completedTasks.length,
+            }
+        }
         return {
             completedTasks,
             ongoingTasks: tasks.filter(task => task.completed !== 100),
@@ -75,17 +92,21 @@ export const TourContent: React.FunctionComponent<React.PropsWithChildren<TourCo
             totalCount: tasks.filter(task => typeof task.completed === 'number').length,
             completedCount: completedTasks.length,
         }
-    }, [tasks])
+    }, [keepCompletedTasks, tasks])
     const isHorizontal = variant === 'horizontal'
 
     return (
         <div className={className} data-testid="tour-content">
-            {isHorizontal && <Header onClose={onClose}>Don't show again</Header>}
+            {isHorizontal && (
+                <Header onClose={onClose} title={title}>
+                    Don't show again
+                </Header>
+            )}
             <MarketingBlock
                 wrapperClassName={classNames('w-100 d-flex', !isHorizontal && styles.marketingBlockWrapper)}
                 contentClassName={classNames(styles.marketingBlockContent, 'w-100 d-flex flex-column pt-3 pb-1')}
             >
-                {!isHorizontal && <Header onClose={onClose} />}
+                {!isHorizontal && <Header onClose={onClose} title={title} />}
                 <div
                     className={classNames(
                         styles.taskList,
@@ -100,8 +121,8 @@ export const TourContent: React.FunctionComponent<React.PropsWithChildren<TourCo
                             <div className={styles.completedItemsInner}>
                                 {completedTaskChunks.map((completedTaskChunk, index) => (
                                     <ul key={index} className="p-0 m-0 list-unstyled text-nowrap">
-                                        {completedTaskChunk.map(completedTask => (
-                                            <CompletedItem key={completedTask.title}>
+                                        {completedTaskChunk.map((completedTask, index) => (
+                                            <CompletedItem key={`${completedTask.title}-${index}`}>
                                                 {completedTask.title}
                                             </CompletedItem>
                                         ))}
@@ -110,13 +131,19 @@ export const TourContent: React.FunctionComponent<React.PropsWithChildren<TourCo
                             </div>
                         </div>
                     )}
-                    {ongoingTasks.map(task => (
-                        <TourTask key={task.title} {...task} variant={!isHorizontal ? 'small' : undefined} />
+                    {ongoingTasks.map((task, index) => (
+                        <TourTask
+                            key={`${task.title}-${index}`}
+                            {...task}
+                            variant={!isHorizontal ? 'small' : undefined}
+                        />
                     ))}
                     {!isHorizontal && completedTasks.length > 0 && (
                         <div>
-                            {completedTasks.map(completedTask => (
-                                <CompletedItem key={completedTask.title}>{completedTask.title}</CompletedItem>
+                            {completedTasks.map((completedTask, index) => (
+                                <CompletedItem key={`${completedTask.title}-${index}`}>
+                                    {completedTask.title}
+                                </CompletedItem>
                             ))}
                         </div>
                     )}

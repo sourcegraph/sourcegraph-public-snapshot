@@ -7,7 +7,7 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 import { pluralize } from '@sourcegraph/common'
 import { Progress } from '@sourcegraph/shared/src/search/stream'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
 
@@ -54,22 +54,25 @@ export const StreamingProgressCount: React.FunctionComponent<
             >
                 <span aria-label={readingContent}>{content}</span>
                 {progress.repositoriesCount !== undefined && (
-                    <Icon
-                        role="img"
-                        className="ml-1"
-                        data-tooltip={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
+                    <Tooltip
+                        content={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
                             'repository',
                             progress.repositoriesCount,
                             'repositories'
                         )}`}
-                        tabIndex={0}
-                        as={InformationOutlineIcon}
-                        aria-label={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
-                            'repository',
-                            progress.repositoriesCount,
-                            'repositories'
-                        )}`}
-                    />
+                    >
+                        <Icon
+                            role="img"
+                            className="ml-1"
+                            tabIndex={0}
+                            as={InformationOutlineIcon}
+                            aria-label={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
+                                'repository',
+                                progress.repositoriesCount,
+                                'repositories'
+                            )}`}
+                        />
+                    </Tooltip>
                 )}
             </small>
             {showTrace && progress.trace && (

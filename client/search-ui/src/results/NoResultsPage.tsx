@@ -12,7 +12,7 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Icon, Code, H2, H3, H4, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Code, H2, H3, H4, Text, createLinkUrl } from '@sourcegraph/wildcard'
 
 import { ModalVideo } from '../documentation/ModalVideo'
 
@@ -110,7 +110,7 @@ const SearchInputExample: React.FunctionComponent<React.PropsWithChildren<Search
     if (runnable) {
         const builtURLQuery = buildSearchURLQuery(query, patternType, false, 'global')
         return (
-            <Link onClick={onRun} to={{ pathname: '/search', search: builtURLQuery }}>
+            <Link onClick={onRun} to={createLinkUrl({ pathname: '/search', search: builtURLQuery })}>
                 <div className={styles.searchInputExample}>
                     {example}
                     <span className="ml-2 text-nowrap">Run Search</span>

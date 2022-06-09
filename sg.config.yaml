@@ -333,12 +333,7 @@ commands:
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} -config doc/docsite.json serve -http=localhost:5080
-    install: |
-      if [ ! -x .bin/docsite_${DOCSITE_VERSION} ]; then
-        curl -sS -L -f \
-        "https://github.com/sourcegraph/docsite/releases/download/${DOCSITE_VERSION}/docsite_${DOCSITE_VERSION}_$(go env GOOS)_$(go env GOARCH)" \
-        -o .bin/docsite_${DOCSITE_VERSION} && chmod +x .bin/docsite_${DOCSITE_VERSION}
-      fi
+    install_func: "installDocsite"
     env:
       DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION in all places (including outside this repo)
 

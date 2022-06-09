@@ -8,12 +8,13 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // vcsDependenciesSyncer implements the VCSSyncer interface for dependency repos
@@ -149,7 +150,7 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 			continue
 		}
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency); err != nil {
-			return errors.Wrapf(err, "error pushing dependency %q", dependency.PackageManagerSyntax())
+			return errors.Wrapf(err, "error pushing dependency %q", dependency)
 		}
 	}
 
