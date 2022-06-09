@@ -134,8 +134,8 @@ public class PreviewContent {
         return obj instanceof PreviewContent && equals((PreviewContent) obj);
     }
 
-    private boolean equals(PreviewContent other) {
-        return Objects.equals(fileName, other.fileName)
+    private boolean equals(@Nullable PreviewContent other) {
+        return other != null && Objects.equals(fileName, other.fileName)
             && repoUrl.equals(other.repoUrl)
             && Objects.equals(path, other.path)
             && Objects.equals(content, other.content)
