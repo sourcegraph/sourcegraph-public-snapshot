@@ -276,6 +276,7 @@ mocks:
       - DB
       - AccessTokenStore
       - AuthzStore
+      - BitbucketProjectPermissionsStore
       - ConfStore
       - EventLogStore
       - SecurityEventLogsStore

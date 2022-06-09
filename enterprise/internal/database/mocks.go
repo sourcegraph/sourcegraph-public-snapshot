@@ -6941,6 +6941,10 @@ type MockEnterpriseDB struct {
 	// AuthzFunc is an instance of a mock function object controlling the
 	// behavior of the method Authz.
 	AuthzFunc *EnterpriseDBAuthzFunc
+	// BitbucketProjectPermissionsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// BitbucketProjectPermissions.
+	BitbucketProjectPermissionsFunc *EnterpriseDBBitbucketProjectPermissionsFunc
 	// CodeMonitorsFunc is an instance of a mock function object controlling
 	// the behavior of the method CodeMonitors.
 	CodeMonitorsFunc *EnterpriseDBCodeMonitorsFunc
@@ -7056,6 +7060,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		AuthzFunc: &EnterpriseDBAuthzFunc{
 			defaultHook: func() (r0 database.AuthzStore) {
+				return
+			},
+		},
+		BitbucketProjectPermissionsFunc: &EnterpriseDBBitbucketProjectPermissionsFunc{
+			defaultHook: func() (r0 database.BitbucketProjectPermissionsStore) {
 				return
 			},
 		},
@@ -7246,6 +7255,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.Authz")
 			},
 		},
+		BitbucketProjectPermissionsFunc: &EnterpriseDBBitbucketProjectPermissionsFunc{
+			defaultHook: func() database.BitbucketProjectPermissionsStore {
+				panic("unexpected invocation of MockEnterpriseDB.BitbucketProjectPermissions")
+			},
+		},
 		CodeMonitorsFunc: &EnterpriseDBCodeMonitorsFunc{
 			defaultHook: func() CodeMonitorStore {
 				panic("unexpected invocation of MockEnterpriseDB.CodeMonitors")
@@ -7429,6 +7443,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		AuthzFunc: &EnterpriseDBAuthzFunc{
 			defaultHook: i.Authz,
+		},
+		BitbucketProjectPermissionsFunc: &EnterpriseDBBitbucketProjectPermissionsFunc{
+			defaultHook: i.BitbucketProjectPermissions,
 		},
 		CodeMonitorsFunc: &EnterpriseDBCodeMonitorsFunc{
 			defaultHook: i.CodeMonitors,
@@ -7729,6 +7746,109 @@ func (c EnterpriseDBAuthzFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBAuthzFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBBitbucketProjectPermissionsFunc describes the behavior when
+// the BitbucketProjectPermissions method of the parent MockEnterpriseDB
+// instance is invoked.
+type EnterpriseDBBitbucketProjectPermissionsFunc struct {
+	defaultHook func() database.BitbucketProjectPermissionsStore
+	hooks       []func() database.BitbucketProjectPermissionsStore
+	history     []EnterpriseDBBitbucketProjectPermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// BitbucketProjectPermissions delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) BitbucketProjectPermissions() database.BitbucketProjectPermissionsStore {
+	r0 := m.BitbucketProjectPermissionsFunc.nextHook()()
+	m.BitbucketProjectPermissionsFunc.appendCall(EnterpriseDBBitbucketProjectPermissionsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// BitbucketProjectPermissions method of the parent MockEnterpriseDB
+// instance is invoked and the hook queue is empty.
+func (f *EnterpriseDBBitbucketProjectPermissionsFunc) SetDefaultHook(hook func() database.BitbucketProjectPermissionsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BitbucketProjectPermissions method of the parent MockEnterpriseDB
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *EnterpriseDBBitbucketProjectPermissionsFunc) PushHook(hook func() database.BitbucketProjectPermissionsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBBitbucketProjectPermissionsFunc) SetDefaultReturn(r0 database.BitbucketProjectPermissionsStore) {
+	f.SetDefaultHook(func() database.BitbucketProjectPermissionsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBBitbucketProjectPermissionsFunc) PushReturn(r0 database.BitbucketProjectPermissionsStore) {
+	f.PushHook(func() database.BitbucketProjectPermissionsStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBBitbucketProjectPermissionsFunc) nextHook() func() database.BitbucketProjectPermissionsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBBitbucketProjectPermissionsFunc) appendCall(r0 EnterpriseDBBitbucketProjectPermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// EnterpriseDBBitbucketProjectPermissionsFuncCall objects describing the
+// invocations of this function.
+func (f *EnterpriseDBBitbucketProjectPermissionsFunc) History() []EnterpriseDBBitbucketProjectPermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBBitbucketProjectPermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBBitbucketProjectPermissionsFuncCall is an object that
+// describes an invocation of method BitbucketProjectPermissions on an
+// instance of MockEnterpriseDB.
+type EnterpriseDBBitbucketProjectPermissionsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.BitbucketProjectPermissionsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBBitbucketProjectPermissionsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBBitbucketProjectPermissionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

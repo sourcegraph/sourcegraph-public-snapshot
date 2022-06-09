@@ -1,7 +1,6 @@
 import React from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import AccountIcon from 'mdi-react/AccountIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
@@ -29,7 +28,7 @@ interface ExternalServiceCardProps {
 
     namespace?: ExternalServiceFields['namespace']
 
-    to?: H.LocationDescriptor
+    to?: string
     className?: string
 }
 

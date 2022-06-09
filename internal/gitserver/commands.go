@@ -47,6 +47,8 @@ type DiffOptions struct {
 	// RangeType to be used for computing the diff: one of ".." or "..." (or unset: "").
 	// For a nice visual explanation of ".." vs "...", see https://stackoverflow.com/a/46345364/2682729
 	RangeType string
+
+	Paths []string
 }
 
 // Diff returns an iterator that can be used to access the diff between two
@@ -68,7 +70,7 @@ func (c *ClientImplementor) Diff(ctx context.Context, opts DiffOptions) (*DiffFi
 		return nil, errors.Errorf("invalid diff range argument: %q", rangeSpec)
 	}
 
-	rdr, err := c.execReader(ctx, opts.Repo, []string{
+	rdr, err := c.execReader(ctx, opts.Repo, append([]string{
 		"diff",
 		"--find-renames",
 		// TODO(eseliger): Enable once we have support for copy detection in go-diff
@@ -80,7 +82,7 @@ func (c *ClientImplementor) Diff(ctx context.Context, opts DiffOptions) (*DiffFi
 		"--no-prefix",
 		rangeSpec,
 		"--",
-	})
+	}, opts.Paths...))
 	if err != nil {
 		return nil, errors.Wrap(err, "executing git diff")
 	}

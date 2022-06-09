@@ -1,6 +1,6 @@
 package conf
 
-import "github.com/sourcegraph/sourcegraph/lib/log"
+import "github.com/sourcegraph/log"
 
 func GetLogSinks() log.SinksConfig {
 	cfg := Get()
