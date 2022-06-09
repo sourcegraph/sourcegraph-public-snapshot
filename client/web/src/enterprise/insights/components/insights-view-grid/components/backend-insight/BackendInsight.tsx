@@ -8,7 +8,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Link, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
 import { SeriesDisplayOptionsInput } from '../../../../../../graphql-operations'
-import { BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
+import { BackendInsight, BackendInsightData, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
 import { LazyQueryStatus } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
@@ -201,7 +201,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                     isSeriesSelected={isSeriesSelected}
                     isSeriesHovered={isSeriesHovered}
                     onDatumClick={trackDatumClicks}
-                    onLegendItemClick={toggle}
+                    onLegendItemClick={seriesId => toggle(seriesId, mapSeriesIds(state.data))}
                     setHoveredId={setHoveredId}
                 />
             )}
@@ -213,3 +213,5 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
         </InsightCard>
     )
 }
+
+const mapSeriesIds = (data: BackendInsightData): string[] => data.content.series.map(series => `${series.id}`)

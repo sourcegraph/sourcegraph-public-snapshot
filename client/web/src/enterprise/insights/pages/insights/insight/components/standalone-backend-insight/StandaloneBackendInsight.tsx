@@ -24,6 +24,7 @@ import { useInsightData } from '../../../../../components/insights-view-grid/hoo
 import {
     ALL_INSIGHTS_DASHBOARD,
     BackendInsight,
+    BackendInsightData,
     CodeInsightsBackendContext,
     DEFAULT_SERIES_DISPLAY_OPTIONS,
     InsightFilters,
@@ -172,7 +173,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         isSeriesSelected={isSeriesSelected}
                         isSeriesHovered={isSeriesHovered}
                         onDatumClick={trackDatumClicks}
-                        onLegendItemClick={toggle}
+                        onLegendItemClick={seriesId => toggle(seriesId, mapSeriesIds(state.data))}
                         setHoveredId={setHoveredId}
                     />
                 )}
@@ -180,3 +181,5 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         </div>
     )
 }
+
+const mapSeriesIds = (data: BackendInsightData): string[] => data.content.series.map(series => `${series.id}`)

@@ -9,23 +9,22 @@ interface UseSeriesToggleReturn {
     isSeriesSelected: (id: string) => boolean
     isSeriesHovered: (id: string) => boolean
     setHoveredId: Dispatch<SetStateAction<string | undefined>>
-    toggle: (id: string) => void
+    toggle: (id: string, availableSeriesIds: string[]) => void
 }
 
 // Used when clicking legend items in a line chart. This hook manages the currently
 // selected data series as well as the currently hovered legend item.
 /**
- * @param availableSeriesIds {string[]} List of series ids that can be selected
  * @returns helper tools for managing the currently selected and hovered series
  */
-export const useSeriesToggle = (availableSeriesIds: string[]): UseSeriesToggleReturn => {
+export const useSeriesToggle = (): UseSeriesToggleReturn => {
     const [selectedSeriesIds, setSelectedSeriesIds] = useState<string[]>([])
     const [hoveredId, setHoveredId] = useState<string | undefined>()
 
     const selectSeries = (seriesId: string): void => setSelectedSeriesIds([...selectedSeriesIds, seriesId])
     const deselectSeries = (seriesId: string): void =>
         setSelectedSeriesIds(selectedSeriesIds.filter(id => id !== seriesId))
-    const toggle = (seriesId: string): void => {
+    const toggle = (seriesId: string, availableSeriesIds: string[]): void => {
         // Reset the selected series if the user is about to select all of them
         if (selectedSeriesIds.length === availableSeriesIds.length - 1) {
             return setSelectedSeriesIds([])
