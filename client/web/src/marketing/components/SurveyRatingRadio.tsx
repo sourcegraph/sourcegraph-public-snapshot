@@ -23,6 +23,10 @@ export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<
         setFocusedIndex(index)
     }
 
+    const handleBlur = (): void => {
+        setFocusedIndex(null)
+    }
+
     const handleChange = (score: number): void => {
         eventLogger.log('SurveyButtonClicked', { score }, { score })
 
@@ -37,6 +41,7 @@ export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<
             aria-labelledby={props.ariaLabelledby}
             aria-describedby="survey-rating-scale"
             className={radioStyles.scores}
+            onBlur={handleBlur}
         >
             {range(0, 11).map(score => {
                 const pressed = score === props.score
@@ -46,11 +51,9 @@ export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<
                     <Button
                         key={score}
                         variant={pressed ? 'primary' : 'secondary'}
-                        className={classNames(radioStyles.ratingBtn, !focused && radioStyles.ratingBtnDefault, {
-                            focus: focused,
-                        })}
+                        className={classNames(radioStyles.ratingBtn, { focus: focused })}
                         as="label"
-                        outline={score !== focusedIndex}
+                        outline={score !== focusedIndex && !pressed}
                     >
                         {/* eslint-disable-next-line react/forbid-elements */}
                         <input
