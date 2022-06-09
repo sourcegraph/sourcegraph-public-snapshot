@@ -86,8 +86,13 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
         openFile(repoName, { path: filePath, revision })
     }
 
+    let tooltip: string | undefined
+    if (truncated) {
+        tooltip = fileBase ? `${fileBase}/${fileName}` : fileName
+    }
+
     return (
-        <Tooltip content={truncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}>
+        <Tooltip content={tooltip}>
             <div ref={titleReference} className={className} onMouseEnter={checkTruncation}>
                 <button onClick={onRepoClick} type="button" className="btn btn-text-link">
                     {repoDisplayName || displayRepoName(repoName)}

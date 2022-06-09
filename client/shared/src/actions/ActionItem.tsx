@@ -222,7 +222,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
         // Simple display if the action is a noop.
         if (!this.props.action.command) {
             return (
-                <Tooltip content={tooltip ?? null}>
+                <Tooltip content={tooltip}>
                     <span
                         data-content={this.props.dataContent}
                         className={this.props.className}
@@ -264,7 +264,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                 content={
                     this.props.showInlineError && isErrorLike(this.state.actionOrError)
                         ? `Error: ${this.state.actionOrError.message}`
-                        : tooltip ?? null
+                        : tooltip
                 }
             >
                 <ButtonLink
