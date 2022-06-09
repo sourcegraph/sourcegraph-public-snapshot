@@ -19,6 +19,7 @@ exports[`<ButtonLink /> renders correctly anchor attributes 1`] = `
   <span
     class="tooltip"
     data-state="closed"
+    data-test-content="sourcegraph.com"
     role="presentation"
   >
     <a

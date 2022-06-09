@@ -64,6 +64,7 @@ exports[`ActionItem actionItem variant 1`] = `
   <span
     class="tooltip"
     data-state="closed"
+    data-test-content="d"
     role="presentation"
   >
     <a
@@ -88,6 +89,7 @@ exports[`ActionItem non-actionItem variant 1`] = `
   <span
     class="tooltip"
     data-state="closed"
+    data-test-content="d"
     role="presentation"
   >
     <a
@@ -133,6 +135,7 @@ exports[`ActionItem noop command 1`] = `
   <span
     class="tooltip"
     data-state="closed"
+    data-test-content="d"
     role="presentation"
   >
     <span
@@ -174,6 +177,7 @@ exports[`ActionItem run command 1`] = `
   <span
     class="tooltip"
     data-state="closed"
+    data-test-content="d"
     role="presentation"
   >
     <a
@@ -198,6 +202,7 @@ exports[`ActionItem run command 2`] = `
   <span
     class="tooltip"
     data-state="closed"
+    data-test-content="d"
     role="presentation"
   >
     <a
@@ -223,6 +228,7 @@ exports[`ActionItem run command with error 1`] = `
     aria-describedby="radix-8"
     class="tooltip"
     data-state="delayed-open"
+    data-test-content="d"
     role="presentation"
   >
     <a
@@ -248,6 +254,7 @@ exports[`ActionItem run command with error with showInlineError 1`] = `
     aria-describedby="radix-9"
     class="tooltip"
     data-state="delayed-open"
+    data-test-content="Error: x"
     role="presentation"
   >
     <a
@@ -273,6 +280,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
     aria-describedby="radix-7"
     class="tooltip"
     data-state="delayed-open"
+    data-test-content="d"
     role="presentation"
   >
     <a
@@ -307,6 +315,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
     aria-describedby="radix-7"
     class="tooltip"
     data-state="delayed-open"
+    data-test-content="d"
     role="presentation"
   >
     <a
@@ -331,6 +340,7 @@ exports[`ActionItem title element 1`] = `
   <span
     class="tooltip"
     data-state="closed"
+    data-test-content="d"
     role="presentation"
   >
     <a
