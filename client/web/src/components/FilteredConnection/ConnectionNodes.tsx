@@ -82,6 +82,8 @@ export interface ConnectionNodesDisplayProps {
     compact?: boolean
 
     withCenteredSummary?: boolean
+
+    ariaLabelFunction?: string
 }
 
 interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}, HP = {}>
@@ -155,21 +157,15 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
             centered={withCenteredSummary}
         />
     )
-    {
-        console.log(nodeComponentProps)
-    }
+
     const nodes = connection.nodes.map((node, index) => (
+        // console.log(node)
         <NodeComponent
             key={hasID(node) ? node.id : index}
             node={node}
-            ariaLabel={
-                nodeComponentProps &&
-                nodeComponentProps.ariaLabelFunction &&
-                nodeComponentProps.ariaLabelFunction(node.displayName)
-            }
+            ariaLabel={nodeComponentProps?.ariaLabelFunction && nodeComponentProps?.ariaLabelFunction(node.displayName)}
             {...nodeComponentProps!}
         />
-        //
     ))
 
     return (

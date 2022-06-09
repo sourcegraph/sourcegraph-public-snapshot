@@ -535,7 +535,7 @@ export class FilteredConnection<
                         withCenteredSummary={this.props.withCenteredSummary}
                     />
                 )}
-                {console.log(this.props)}
+                {/* {console.log(this.props)} */}
                 {this.state.loading && (
                     <ConnectionLoading compact={this.props.compact} className={this.props.loaderClassName} />
                 )}
