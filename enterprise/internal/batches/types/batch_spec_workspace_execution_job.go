@@ -63,7 +63,7 @@ type BatchSpecWorkspaceExecutionJob struct {
 	WorkerHostname  string
 	Cancel          bool
 
-	PlaceInTenantQueue int64
+	PlaceInUserQueue   int64
 	PlaceInGlobalQueue int64
 
 	CreatedAt time.Time

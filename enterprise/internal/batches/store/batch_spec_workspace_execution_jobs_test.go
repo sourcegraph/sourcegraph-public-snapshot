@@ -45,8 +45,8 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				t.Fatal(diff)
 			}
 
-			// Always one, since every job is in a separate tenant queue (see l.23).
-			job.PlaceInTenantQueue = 1
+			// Always one, since every job is in a separate user queue (see l.23).
+			job.PlaceInUserQueue = 1
 			job.PlaceInGlobalQueue = int64(idx + 1)
 		}
 	})
@@ -102,14 +102,14 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				job.State = btypes.BatchSpecWorkspaceExecutionJobStateQueued
 				job.Cancel = true
 				job.PlaceInGlobalQueue = 1
-				job.PlaceInTenantQueue = 1
+				job.PlaceInUserQueue = 1
 			case 1:
 				job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
-				job.PlaceInTenantQueue = 0
+				job.PlaceInUserQueue = 0
 				job.PlaceInGlobalQueue = 0
 			case 2:
 				job.State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
-				job.PlaceInTenantQueue = 0
+				job.PlaceInUserQueue = 0
 				job.PlaceInGlobalQueue = 0
 			}
 

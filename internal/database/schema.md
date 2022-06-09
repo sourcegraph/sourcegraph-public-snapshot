@@ -2737,7 +2737,7 @@ Foreign-key constraints:
 ## View query:
 
 ```sql
- WITH tenant_queues AS (
+ WITH user_queues AS (
          SELECT exec.user_id,
             max(exec.started_at) AS latest_dequeue
            FROM batch_spec_workspace_execution_jobs exec
@@ -2761,9 +2761,9 @@ Foreign-key constraints:
             exec.access_token_id,
             exec.queued_at,
             exec.user_id,
-            rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS place_in_tenant_queue
+            rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS place_in_user_queue
            FROM (batch_spec_workspace_execution_jobs exec
-             JOIN tenant_queues queue ON ((queue.user_id = exec.user_id)))
+             JOIN user_queues queue ON ((queue.user_id = exec.user_id)))
           WHERE (exec.state = 'queued'::text)
           ORDER BY (rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id)), queue.latest_dequeue NULLS FIRST
         )
@@ -2786,7 +2786,7 @@ Foreign-key constraints:
     materialized_queue_candidates.access_token_id,
     materialized_queue_candidates.queued_at,
     materialized_queue_candidates.user_id,
-    materialized_queue_candidates.place_in_tenant_queue
+    materialized_queue_candidates.place_in_user_queue
    FROM materialized_queue_candidates;
 ```
 

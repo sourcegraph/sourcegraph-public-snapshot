@@ -35,7 +35,7 @@ var BatchSpecWorkspaceExecutionJobColumns = SQLColumns{
 	"batch_spec_workspace_execution_jobs.worker_hostname",
 	"batch_spec_workspace_execution_jobs.cancel",
 
-	"exec.place_in_tenant_queue",
+	"exec.place_in_user_queue",
 	"exec.place_in_global_queue",
 
 	"batch_spec_workspace_execution_jobs.created_at",
@@ -60,7 +60,7 @@ var batchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
 	"batch_spec_workspace_execution_jobs.worker_hostname",
 	"batch_spec_workspace_execution_jobs.cancel",
 
-	"NULL AS place_in_tenant_queue",
+	"NULL AS place_in_user_queue",
 	"NULL AS place_in_global_queue",
 
 	"batch_spec_workspace_execution_jobs.created_at",
@@ -69,7 +69,7 @@ var batchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
 
 const executionPlaceInQueueFragment = `
 SELECT
-	id, place_in_tenant_queue, place_in_global_queue
+	id, place_in_user_queue, place_in_global_queue
 FROM batch_spec_workspace_execution_queue
 `
 
@@ -456,7 +456,7 @@ func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 		pq.Array(&executionLogs),
 		&wj.WorkerHostname,
 		&wj.Cancel,
-		&dbutil.NullInt64{N: &wj.PlaceInTenantQueue},
+		&dbutil.NullInt64{N: &wj.PlaceInUserQueue},
 		&dbutil.NullInt64{N: &wj.PlaceInGlobalQueue},
 		&wj.CreatedAt,
 		&wj.UpdatedAt,

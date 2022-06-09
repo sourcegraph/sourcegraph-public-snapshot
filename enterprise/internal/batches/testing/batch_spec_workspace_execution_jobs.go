@@ -102,7 +102,7 @@ func CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, s createBatchSpec
 			"batch_spec_workspace_execution_jobs.execution_logs",
 			"batch_spec_workspace_execution_jobs.worker_hostname",
 			"batch_spec_workspace_execution_jobs.cancel",
-			"NULL as place_in_tenant_queue",
+			"NULL as place_in_user_queue",
 			"NULL as place_in_global_queue",
 			"batch_spec_workspace_execution_jobs.created_at",
 			"batch_spec_workspace_execution_jobs.updated_at",

@@ -405,7 +405,7 @@ func (r *batchSpecWorkspaceResolver) PlaceInQueue() *int32 {
 		return nil
 	}
 
-	i32 := int32(r.execution.PlaceInTenantQueue)
+	i32 := int32(r.execution.PlaceInUserQueue)
 	return &i32
 }
 
