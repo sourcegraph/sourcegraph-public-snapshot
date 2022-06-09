@@ -226,7 +226,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                         {extension.manifest ? (
                             isErrorLike(extension.manifest) ? (
                                 <span className="text-danger small" title={extension.manifest.message}>
-                                    <Icon role="img" as={WarningIcon} aria-hidden={true} /> Invalid manifest
+                                    <Icon as={WarningIcon} aria-hidden={true} /> Invalid manifest
                                 </span>
                             ) : (
                                 extension.manifest.description && (
@@ -235,7 +235,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                             )
                         ) : (
                             <span className="text-warning small">
-                                <Icon role="img" as={WarningIcon} aria-hidden={true} /> No manifest
+                                <Icon as={WarningIcon} aria-hidden={true} /> No manifest
                             </span>
                         )}
                     </div>

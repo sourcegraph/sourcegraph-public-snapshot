@@ -137,7 +137,6 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                     >
                                         <span className={navItemStyles.itemFocusableContent}>
                                             <Icon
-                                                role="img"
                                                 className={navItemStyles.icon}
                                                 as={toggleItem.icon}
                                                 aria-hidden={true}
@@ -161,7 +160,6 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                     >
                                         <span className={navItemStyles.itemFocusableContent}>
                                             <Icon
-                                                role="img"
                                                 className={navItemStyles.icon}
                                                 as={isExpanded ? ChevronUpIcon : ChevronDownIcon}
                                                 aria-hidden={true}

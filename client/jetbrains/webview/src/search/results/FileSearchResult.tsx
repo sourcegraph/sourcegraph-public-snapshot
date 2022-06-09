@@ -80,7 +80,7 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({ match, select
     const title = (
         <SearchResultHeader>
             <div className={classNames(styles.headerTitle)} data-testid="result-container-header">
-                <Icon role="img" aria-label="File" className="flex-shrink-0" as={FileDocumentIcon} />
+                <Icon aria-label="File" className="flex-shrink-0" as={FileDocumentIcon} />
                 <div className={classNames('mx-1', styles.headerDivider)} />
                 <CodeHostIcon repoName={match.repository} className="text-muted flex-shrink-0" />
                 <RepoFileLinkWithoutTabStop

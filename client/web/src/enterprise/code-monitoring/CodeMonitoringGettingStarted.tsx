@@ -88,7 +88,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                     </ul>
                     {isSignedIn ? (
                         <Button to="/code-monitoring/new" className={styles.createButton} variant="primary" as={Link}>
-                            <Icon role="img" aria-hidden={true} className="mr-2" as={PlusIcon} />
+                            <Icon aria-hidden={true} className="mr-2" as={PlusIcon} />
                             Create a code monitor
                         </Button>
                     ) : (
