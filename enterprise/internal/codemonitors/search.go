@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"sync"
 
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/opentracing/opentracing-go"
@@ -201,7 +202,14 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 		return err
 	}
 
+	// HACK: Synchronize calls to the db because db might be a transaction, which can't be used in parallel.
+	// TODO(camdencheek): This doesn't completely solve the problem because we run this in parallel with the
+	// repo pagination requests. However, this will temporarily alleviate the issue while I come up with an
+	// actual solution.
+	var mux sync.Mutex
 	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, _ commit.DoSearchFunc) error {
+		mux.Lock()
+		defer mux.Unlock()
 		return snapshotHook(ctx, db, gs, args, monitorID, repoID)
 	}
 
