@@ -12,7 +12,7 @@ import radioStyles from './SurveyRatingRadio.module.scss'
 interface SurveyRatingRadio {
     ariaLabelledby?: string
     score?: number
-    onChange?: (score: number) => void
+    onChange: (score: number) => void
     openSurveyInNewTab?: boolean
 }
 
@@ -31,6 +31,7 @@ export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<
         }
     }
 
+    console.log(props.score)
     return (
         <fieldset
             aria-labelledby={props.ariaLabelledby}
@@ -44,9 +45,8 @@ export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<
                 return (
                     <Button
                         key={score}
-                        variant={score === focusedIndex ? 'primary' : 'secondary'}
+                        variant={pressed ? 'primary' : 'secondary'}
                         className={classNames(radioStyles.ratingBtn, !focused && radioStyles.ratingBtnDefault, {
-                            active: pressed,
                             focus: focused,
                         })}
                         as="label"

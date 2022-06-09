@@ -9,7 +9,8 @@ import { Toast } from './Toast'
 import styles from './SurveyUserRatingToast.module.scss'
 
 export interface SurveyUserRatingToastProps {
-    onChange?: (score: number) => void
+    score: number
+    onChange: (score: number) => void
     toggleErrorMessage: boolean
     onContinue: () => void
     onDismiss: () => void
@@ -17,6 +18,7 @@ export interface SurveyUserRatingToastProps {
 }
 
 export const SurveyUserRatingToast: React.FunctionComponent<SurveyUserRatingToastProps> = ({
+    score,
     onChange,
     toggleErrorMessage,
     onDismiss,
@@ -30,7 +32,7 @@ export const SurveyUserRatingToast: React.FunctionComponent<SurveyUserRatingToas
         }
         cta={
             <>
-                <SurveyRatingRadio ariaLabelledby="survey-toast-scores" onChange={onChange} />
+                <SurveyRatingRadio ariaLabelledby="survey-toast-scores" score={score} onChange={onChange} />
                 {toggleErrorMessage && (
                     <div className={styles.alertDanger} role="alert">
                         Please select a score between 0 to 10

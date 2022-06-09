@@ -115,6 +115,7 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
         case ToastSteps.rate:
             return (
                 <SurveyUserRatingToast
+                    score={userFeedback.score}
                     onChange={score => setUserFeedback(current => ({ ...current, score }))}
                     onDismiss={handleDismiss}
                     onContinue={handleContinue}
