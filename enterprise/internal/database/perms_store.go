@@ -185,7 +185,7 @@ type PermsStore interface {
 	Metrics(ctx context.Context, staleDur time.Duration) (*PermsMetrics, error)
 	// MapUsers takes a list of bind ids and a mapping configuration and maps them to the right user ids.
 	// It filters out empty bindIDs and only returns users that exist in the database.
-	// It a bind id doesn't map to any user, it is ignored.
+	// If a bind id doesn't map to any user, it is ignored.
 	MapUsers(ctx context.Context, bindIDs []string, mapping *schema.PermissionsUserMapping) (map[string]int32, error)
 }
 
@@ -1770,7 +1770,7 @@ func (s *permsStore) observe(ctx context.Context, family, title string) (context
 
 // MapUsers takes a list of bind ids and a mapping configuration and maps them to the right user ids.
 // It filters out empty bindIDs and only returns users that exist in the database.
-// It a bind id doesn't map to any user, it is ignored.
+// If a bind id doesn't map to any user, it is ignored.
 func (s *permsStore) MapUsers(ctx context.Context, bindIDs []string, mapping *schema.PermissionsUserMapping) (map[string]int32, error) {
 	// Filter out bind IDs that only contains whitespaces.
 	filtered := make([]string, 0, len(bindIDs))

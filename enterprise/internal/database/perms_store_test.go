@@ -3000,7 +3000,7 @@ func testPermsStore_MapUsers(db *sql.DB) func(*testing.T) {
 			"shreah": shreah.ID,
 		}, has)
 
-		// user a non-existing mapping
+		// use a non-existing mapping
 		_, err = s.MapUsers(ctx, []string{"igor", "", "shreah", "  	", "carlos"}, &schema.PermissionsUserMapping{BindID: "shoeSize"})
 		assert.Error(t, err)
 	}
