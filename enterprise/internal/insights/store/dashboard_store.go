@@ -23,7 +23,7 @@ type DBDashboardStore struct {
 
 // NewDashboardStore returns a new DBDashboardStore backed by the given Postgres db.
 func NewDashboardStore(db edb.InsightsDB) *DBDashboardStore {
-	return &DBDashboardStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
+	return &DBDashboardStore{Store: basestore.NewWithHandle(db.Handle()), Now: time.Now}
 }
 
 // Handle returns the underlying transactable database handle.

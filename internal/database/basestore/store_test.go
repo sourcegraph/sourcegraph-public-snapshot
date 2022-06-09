@@ -156,8 +156,8 @@ func recurSavepoints(t *testing.T, store *Store, index, rollbackAt int) {
 	recurSavepoints(t, tx, index-1, rollbackAt)
 }
 
-func testStore(db dbutil.DB) *Store {
-	return NewWithDB(db, sql.TxOptions{})
+func testStore(db *sql.DB) *Store {
+	return NewWithHandle(NewHandleWithDB(db, sql.TxOptions{}))
 }
 
 func assertCounts(t *testing.T, db dbutil.DB, expectedCounts map[int]int) {
