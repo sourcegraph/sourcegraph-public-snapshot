@@ -333,6 +333,11 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 		return nil, err
 	}
 
+	// Temporarily prevent mounts for server-side processing.
+	if hasMount(spec) {
+		return nil, errors.Newf("mounts are not allowed for server-side processing")
+	}
+
 	// Check whether the current user has access to either one of the namespaces.
 	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
 	if err != nil {
@@ -341,8 +346,8 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
 	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
-	actor := actor.FromContext(ctx)
-	spec.UserID = actor.UID
+	a := actor.FromContext(ctx)
+	spec.UserID = a.UID
 
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
@@ -575,6 +580,11 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 		return nil, errors.Wrap(err, "parsing batch spec")
 	}
 
+	// Temporarily prevent mounts for server-side processing.
+	if hasMount(spec) {
+		return nil, errors.Newf("mounts are not allowed for server-side processing")
+	}
+
 	// Check whether the current user has access to either one of the namespaces.
 	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
 	if err != nil {
@@ -617,6 +627,15 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 		allowUnsupported: opts.AllowUnsupported,
 		noCache:          opts.NoCache,
 	})
+}
+
+func hasMount(spec *btypes.BatchSpec) bool {
+	for _, step := range spec.Spec.Steps {
+		if len(step.Mount) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // replaceBatchSpec removes a previous batch spec and copies its random ID,
