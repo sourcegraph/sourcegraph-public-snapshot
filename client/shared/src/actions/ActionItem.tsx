@@ -224,6 +224,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
             return (
                 <Tooltip content={tooltip}>
                     <span
+                        aria-label={tooltip}
                         data-content={this.props.dataContent}
                         className={this.props.className}
                         tabIndex={this.props.tabIndex}
@@ -259,15 +260,15 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
               }
             : {}
 
+        const actionTooltip =
+            this.props.showInlineError && isErrorLike(this.state.actionOrError)
+                ? `Error: ${this.state.actionOrError.message}`
+                : tooltip
+
         return (
-            <Tooltip
-                content={
-                    this.props.showInlineError && isErrorLike(this.state.actionOrError)
-                        ? `Error: ${this.state.actionOrError.message}`
-                        : tooltip
-                }
-            >
+            <Tooltip content={actionTooltip}>
                 <ButtonLink
+                    aria-label={actionTooltip}
                     data-content={this.props.dataContent}
                     disabled={
                         !this.props.active ||
