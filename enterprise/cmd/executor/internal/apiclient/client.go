@@ -1,6 +1,7 @@
 package apiclient
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
@@ -10,6 +11,9 @@ import (
 	"strings"
 
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+	io_prometheus_client "github.com/prometheus/client_model/go"
+	"github.com/prometheus/common/expfmt"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -202,6 +206,12 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 	}})
 	defer endObservation(1, observation.Args{})
 
+	// TODO: Add some timeout here so metrics don't wreck heartbeats.
+	metrics, err := collectMetrics()
+	if err != nil {
+		fmt.Printf("Failed to collect prometheus metrics for heartbeat: %s\n", err)
+	}
+
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/heartbeat", queueName), executor.HeartbeatRequest{
 		ExecutorName: c.options.ExecutorName,
 		JobIDs:       jobIDs,
@@ -213,6 +223,8 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 		GitVersion:      c.options.TelemetryOptions.GitVersion,
 		IgniteVersion:   c.options.TelemetryOptions.IgniteVersion,
 		SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
+
+		PrometheusMetrics: metrics,
 	})
 	if err != nil {
 		return nil, err
@@ -262,4 +274,30 @@ func intsToString(ints []int) string {
 	}
 
 	return strings.Join(segments, ", ")
+}
+
+func collectMetrics() (string, error) {
+	mfs, err := prometheus.DefaultGatherer.Gather()
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	enc := expfmt.NewEncoder(&buf, expfmt.FmtText)
+	dec := expfmt.NewDecoder(nil, "")
+	var asdf io_prometheus_client.MetricFamily
+	_ = dec.Decode(&asdf)
+
+	for _, mf := range mfs {
+		if err := enc.Encode(mf); err != nil {
+			return "", err
+		}
+	}
+	if closer, ok := enc.(expfmt.Closer); ok {
+		if err := closer.Close(); err != nil {
+			return "", err
+		}
+	}
+
+	return buf.String(), nil
 }
