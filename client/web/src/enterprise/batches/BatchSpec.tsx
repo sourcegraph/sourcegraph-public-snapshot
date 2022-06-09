@@ -101,7 +101,7 @@ export const BatchSpecDownloadButton: React.FunctionComponent<
             as={BatchSpecDownloadLink}
             asButton={false}
         >
-            <Icon role="img" aria-hidden={true} as={FileDownloadIcon} /> Download YAML
+            <Icon aria-hidden={true} as={FileDownloadIcon} /> Download YAML
         </Button>
     )
 })

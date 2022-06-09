@@ -2,7 +2,6 @@ package shared
 
 import (
 	"context"
-	"database/sql"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -122,7 +121,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	repos.MustRegisterMetrics(db, envvar.SourcegraphDotComMode())
 
-	store := repos.NewStore(logger.Scoped("store", "repo store"), db, sql.TxOptions{Isolation: sql.LevelDefault})
+	store := repos.NewStore(logger.Scoped("store", "repo store"), db)
 	{
 		m := repos.NewStoreMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)

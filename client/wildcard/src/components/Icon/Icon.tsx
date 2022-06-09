@@ -31,7 +31,7 @@ interface HiddenIconProps extends BaseIconProps {
 export type IconProps = HiddenIconProps | ScreenReaderIconProps
 
 export const Icon = React.forwardRef((props, reference) => {
-    const { children, inline = true, className, size, as: Component = 'svg', role, ...attributes } = props
+    const { children, inline = true, className, size, as: Component = 'svg', role = 'img', ...attributes } = props
 
     return (
         <Component

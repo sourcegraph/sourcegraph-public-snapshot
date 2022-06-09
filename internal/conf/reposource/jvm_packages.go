@@ -69,25 +69,29 @@ type MavenDependency struct {
 	Version string
 }
 
-func (m *MavenDependency) Equal(o *MavenDependency) bool {
-	return m == o || (m != nil && o != nil &&
-		m.MavenModule.Equal(o.MavenModule) &&
-		m.Version == o.Version)
+func (d *MavenDependency) Equal(o *MavenDependency) bool {
+	return d == o || (d != nil && o != nil &&
+		d.MavenModule.Equal(o.MavenModule) &&
+		d.Version == o.Version)
 }
 
-func (m *MavenDependency) Less(other PackageDependency) bool {
+func (d *MavenDependency) Less(other PackageDependency) bool {
 	o := other.(*MavenDependency)
 
-	if m.MavenModule.Equal(o.MavenModule) {
-		return versionGreaterThan(m.Version, o.Version)
+	if d.MavenModule.Equal(o.MavenModule) {
+		return versionGreaterThan(d.Version, o.Version)
 	}
 
 	// TODO: This SortText method is quite inefficient and allocates.
-	return m.SortText() > o.SortText()
+	return d.SortText() > o.SortText()
 }
 
 func (d *MavenDependency) PackageManagerSyntax() string {
 	return fmt.Sprintf("%s:%s", d.PackageSyntax(), d.Version)
+}
+
+func (d *MavenDependency) String() string {
+	return d.PackageManagerSyntax()
 }
 
 func (d *MavenDependency) PackageVersion() string {

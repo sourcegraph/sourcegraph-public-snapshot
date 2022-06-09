@@ -60,7 +60,19 @@ const FIRST_TIME_MOCKS = new WildcardMockLink([
             query: getDocumentNode(GET_BATCH_CHANGE_TO_EDIT),
             variables: MATCH_ANY_PARAMETERS,
         },
-        result: { data: { batchChange: mockBatchChange() } },
+        result: {
+            data: {
+                batchChange: mockBatchChange({
+                    batchSpecs: {
+                        nodes: [
+                            mockBatchSpec({
+                                originalInput: insertNameIntoLibraryItem(goImportsSample, 'my-batch-change'),
+                            }),
+                        ],
+                    },
+                }),
+            },
+        },
         nMatches: Number.POSITIVE_INFINITY,
     },
     ACTIVE_EXECUTORS_MOCK,

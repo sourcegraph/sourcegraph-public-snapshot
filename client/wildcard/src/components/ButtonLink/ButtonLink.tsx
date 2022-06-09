@@ -1,13 +1,12 @@
 import React, { AnchorHTMLAttributes, useRef } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import { Key } from 'ts-key-enum'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { isDefined } from '@sourcegraph/common'
+import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
-import { ForwardReferenceComponent } from '../../types'
 import { Button, ButtonProps } from '../Button'
 import { Link, AnchorLink } from '../Link'
 
@@ -24,7 +23,7 @@ const isSelectKeyPress = (event: React.KeyboardEvent): boolean => {
 export type ButtonLinkProps = Omit<ButtonProps, 'as' | 'onSelect'> &
     Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'onSelect'> & {
         /** The link destination URL. */
-        to?: H.LocationDescriptor
+        to?: string
 
         /**
          * Called when the user clicks or presses enter on this element.

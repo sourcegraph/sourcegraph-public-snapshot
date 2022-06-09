@@ -7,7 +7,6 @@ Array [
     aria-disabled="true"
     aria-label="Case sensitivity toggle"
     class="btn btnIcon toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
-    data-tooltip="Query already contains one or more case subexpressions"
     role="checkbox"
     tabindex="0"
   >
@@ -35,7 +34,6 @@ Array [
     aria-disabled="true"
     aria-label="Case sensitivity toggle"
     class="btn btnIcon toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
-    data-tooltip="Query contains one or more patterntype subexpressions, cannot apply global case-sensitivity"
     role="checkbox"
     tabindex="0"
   >
@@ -63,7 +61,6 @@ Array [
     aria-disabled="true"
     aria-label="Regular expression toggle"
     class="btn btnIcon toggle test-regexp-toggle disabled test-regexp-toggle--active"
-    data-tooltip="Query already contains one or more patterntype subexpressions"
     role="checkbox"
     tabindex="0"
   >
