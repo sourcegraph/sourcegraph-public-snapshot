@@ -203,10 +203,9 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 					}()
 					defer checksWg.Done()
 
-					var out strings.Builder
 					cio := IO{
 						Input:  r.in,
-						Writer: std.NewFixedOutput(&out, true),
+						Writer: std.NewFixedOutput(io.Discard, true),
 					}
 
 					if err := check.IsEnabled(ctx, args); err != nil {
@@ -215,11 +214,6 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 					}
 
 					if err := check.Update(ctx, cio, args); err != nil {
-						outStr := out.String()
-						if len(outStr) > 0 {
-							progress.VerboseLine(output.Styledf(output.StyleWarning, "%s: Check failed, output:", check.Name))
-							progress.Verbose(outStr)
-						}
 						progress.StatusBarFailf(i, "Check %s failed: %s", check.Name, err.Error())
 						didErr.Store(true)
 					}
@@ -269,7 +263,12 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 			r.out.WriteFailuref("%d. %s", idx, category.Name)
 			for _, c := range category.Checks {
 				if c.checkErr != nil {
-					r.out.WriteLine(output.Styledf(output.StyleWarning, "\t%s: %s", c.Name, c.checkErr))
+					r.out.WriteLine(output.Styledf(output.CombineStyles(output.StyleBold, output.StyleWarning),
+						"\t%s: %s", c.Name, c.checkErr))
+					// Render additional details
+					if rErr, ok := c.checkErr.(RenderableError); ok {
+						rErr.Render(r.out)
+					}
 				}
 			}
 		}
