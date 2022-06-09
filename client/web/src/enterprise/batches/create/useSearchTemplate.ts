@@ -8,7 +8,9 @@ interface UseSearchQueryResult {
 }
 
 const createRenderTemplate = (query: string): ((title: string) => string) => {
-    const template = insertQueryIntoLibraryItem(helloWorldSample, query)
+    let template: string
+    template = insertQueryIntoLibraryItem(helloWorldSample, query)
+    template = template.replace('# Find all repositories that contain a README.md file.\n', '')
 
     return title => insertNameIntoLibraryItem(template, title)
 }
