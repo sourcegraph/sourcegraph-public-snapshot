@@ -78,7 +78,7 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
             <InsightCardHeader
                 title={
                     <Link to={shareableUrl} target="_blank" rel="noopener noreferrer">
-                        insight.title
+                        {insight.title}
                     </Link>
                 }
             >

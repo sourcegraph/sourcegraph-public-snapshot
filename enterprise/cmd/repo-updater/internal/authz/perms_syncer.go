@@ -13,6 +13,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
@@ -32,7 +34,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

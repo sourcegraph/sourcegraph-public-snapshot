@@ -1737,6 +1737,8 @@ type SettingsExperimentalFeatures struct {
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
 	// Editor description: Specifies which (code) editor to use for query and text input
 	Editor *string `json:"editor,omitempty"`
+	// EnableExtensionsDecorationsColumnView description: If extension supports column view show its decorations in a separate column in the blob view.
+	EnableExtensionsDecorationsColumnView *bool `json:"enableExtensionsDecorationsColumnView,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
 	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
 	// EnableSearchStack description: REMOVED: This feature can now be enabled/disabled via the notepad button on the notebooks list page.
@@ -1787,6 +1789,8 @@ type SettingsExperimentalFeatures struct {
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
+	// RedirectUnsupportedBrowser description: Prompts user to install new browser for non es5
+	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser,omitempty"`
 	// ApiRatelimit description: Configuration for API rate limiting
 	ApiRatelimit *ApiRatelimit `json:"api.ratelimit,omitempty"`
 	// ApidocsSearchIndexSizeLimitFactor description: Deprecated.
@@ -1887,6 +1891,8 @@ type SiteConfiguration struct {
 	EncryptionKeys *EncryptionKeys `json:"encryption.keys,omitempty"`
 	// ExecutorsAccessToken description: The shared secret between Sourcegraph and executors.
 	ExecutorsAccessToken string `json:"executors.accessToken,omitempty"`
+	// ExecutorsFrontendURL description: The frontend URL for Sourcegraph. Only root URLs are allowed. If not set, falls back to externalURL
+	ExecutorsFrontendURL string `json:"executors.frontendURL,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: Configures Sourcegraph extensions.

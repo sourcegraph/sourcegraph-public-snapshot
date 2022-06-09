@@ -12,6 +12,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -25,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type handler struct {

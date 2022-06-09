@@ -45,7 +45,7 @@ export const ActionsMenu: React.FunctionComponent<React.PropsWithChildren<{}>> =
 
 const MemoizedActionsMenu: React.FunctionComponent<
     React.PropsWithChildren<Pick<BatchSpecContextState, 'batchChange' | 'batchSpec' | 'setActionsError'>>
-> = React.memo(({ batchChange, batchSpec, setActionsError }) => {
+> = React.memo(function MemoizedActionsMenu({ batchChange, batchSpec, setActionsError }) {
     const history = useHistory()
     const location = useLocation()
 

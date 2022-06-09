@@ -6,6 +6,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -14,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // InitStore initializes and returns a *store.Store instance.

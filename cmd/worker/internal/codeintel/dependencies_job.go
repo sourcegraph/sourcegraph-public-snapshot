@@ -3,6 +3,8 @@ package codeintel
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -13,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type dependenciesJob struct{}

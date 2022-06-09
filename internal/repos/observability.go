@@ -6,10 +6,11 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // ObservedSource returns a decorator that wraps a Source

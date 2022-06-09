@@ -354,6 +354,8 @@ type BatchSpecResolver interface {
 	AllowUnsupported() *bool
 
 	ViewerCanRetry(context.Context) (bool, error)
+
+	Source() string
 }
 
 type BatchChangeDescriptionResolver interface {
@@ -805,12 +807,14 @@ type BatchSpecWorkspaceResolver interface {
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
 	CachedResultFound() bool
+	StepCacheResultCount() int32
 	BatchSpec(ctx context.Context) (BatchSpecResolver, error)
 	OnlyFetchWorkspace() bool
 	Ignored() bool
 	Unsupported() bool
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	PlaceInQueue() *int32
+	PlaceInGlobalQueue() *int32
 
 	ToHiddenBatchSpecWorkspace() (HiddenBatchSpecWorkspaceResolver, bool)
 	ToVisibleBatchSpecWorkspace() (VisibleBatchSpecWorkspaceResolver, bool)

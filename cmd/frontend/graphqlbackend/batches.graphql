@@ -2097,6 +2097,11 @@ interface BatchSpecWorkspace {
     cachedResultFound: Boolean!
 
     """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
+
+    """
     The time when the workspace was enqueued for processing. Null, if not yet enqueued.
     """
     queuedAt: DateTime
@@ -2117,10 +2122,16 @@ interface BatchSpecWorkspace {
     state: BatchSpecWorkspaceState!
 
     """
-    The rank of this execution in the queue. The value of this field is null if the
+    The rank of this execution in the queue of the user. The value of this field is null if the
     execution has started.
     """
     placeInQueue: Int
+
+    """
+    The rank of this execution in the global queue. The value of this field is null if the
+    execution has started.
+    """
+    placeInGlobalQueue: Int
 
     """
     The diff stat over all created changeset specs. Null, if not yet finished or
@@ -2181,6 +2192,11 @@ type VisibleBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     cachedResultFound: Boolean!
 
     """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
+
+    """
     Executor stages of running in this workspace. Null, if the execution hasn't
     started yet.
     """
@@ -2234,10 +2250,16 @@ type VisibleBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     changesetSpecs: [VisibleChangesetSpec!]
 
     """
-    The rank of this execution in the queue. The value of this field is null if the
+    The rank of this execution in the queue of the user. The value of this field is null if the
     execution has started.
     """
     placeInQueue: Int
+
+    """
+    The rank of this execution in the global queue. The value of this field is null if the
+    execution has started.
+    """
+    placeInGlobalQueue: Int
 
     """
     The diff stat over all created changeset specs. Null, if not yet finished or
@@ -2290,6 +2312,11 @@ type HiddenBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     cachedResultFound: Boolean!
 
     """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
+
+    """
     The time when the workspace was enqueued for processing. Null, if not yet enqueued.
     """
     queuedAt: DateTime
@@ -2310,10 +2337,16 @@ type HiddenBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     state: BatchSpecWorkspaceState!
 
     """
-    The rank of this execution in the queue. The value of this field is null if the
+    The rank of this execution in the queue of the user. The value of this field is null if the
     execution has started.
     """
     placeInQueue: Int
+
+    """
+    The rank of this execution in the global queue. The value of this field is null if the
+    execution has started.
+    """
+    placeInGlobalQueue: Int
 
     """
     The diff stat over all created changeset specs. Null, if not yet finished or
@@ -2847,6 +2880,22 @@ enum BatchSpecState {
 }
 
 """
+The possible sources of a batch spec.
+"""
+enum BatchSpecSource {
+    """
+    The spec was created from the local src-cli workflow.
+    """
+    LOCAL
+
+    """
+    This spec was created for remote server-side execution, e.g. from the web UI editor,
+    or with src batch remote.
+    """
+    REMOTE
+}
+
+"""
 A list of batch specs.
 """
 type BatchSpecConnection {
@@ -3092,6 +3141,12 @@ type BatchSpec implements Node {
     retryBatchSpecExecution.
     """
     viewerCanRetry: Boolean!
+
+    """
+    Whether the batch spec was created from the local src-cli workflow or remotely for
+    server-side execution.
+    """
+    source: BatchSpecSource!
 }
 
 """
