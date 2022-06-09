@@ -70,6 +70,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               <span
                 class="tooltip"
                 data-state="closed"
+                data-test-content="github.com"
                 role="presentation"
               >
                 <svg
@@ -333,6 +334,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               <span
                 class="tooltip"
                 data-state="closed"
+                data-test-content="github.com"
                 role="presentation"
               >
                 <svg
@@ -552,6 +554,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               <span
                 class="tooltip"
                 data-state="closed"
+                data-test-content="github.com"
                 role="presentation"
               >
                 <svg

@@ -32,6 +32,7 @@ exports[`StreamingProgressCount should render correctly for 0 repositories 1`] =
     <span
       class="tooltip"
       data-state="closed"
+      data-test-content="From 0 repositories"
       role="presentation"
     >
       <svg
@@ -63,6 +64,7 @@ exports[`StreamingProgressCount should render correctly for 1 item complete 1`] 
     <span
       class="tooltip"
       data-state="closed"
+      data-test-content="From 1 repository"
       role="presentation"
     >
       <svg
@@ -94,6 +96,7 @@ exports[`StreamingProgressCount should render correctly for 123 items complete 1
     <span
       class="tooltip"
       data-state="closed"
+      data-test-content="From 500 repositories"
       role="presentation"
     >
       <svg
@@ -125,6 +128,7 @@ exports[`StreamingProgressCount should render correctly for big numbers complete
     <span
       class="tooltip"
       data-state="closed"
+      data-test-content="From 8.9k repositories"
       role="presentation"
     >
       <svg
@@ -156,6 +160,7 @@ exports[`StreamingProgressCount should render correctly for limithit 1`] = `
     <span
       class="tooltip"
       data-state="closed"
+      data-test-content="From 500 repositories"
       role="presentation"
     >
       <svg
