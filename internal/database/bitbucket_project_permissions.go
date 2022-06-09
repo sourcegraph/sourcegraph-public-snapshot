@@ -44,7 +44,9 @@ func (s *bitbucketProjectPermissionsStore) Transact(ctx context.Context) (Bitbuc
 	return &bitbucketProjectPermissionsStore{Store: txBase}, err
 }
 
-// Enqueue a local clone request.
+// Enqueue a job to apply permissions to a Bitbucket project.
+// The job will be enqueued to the BitbucketProjectPermissions worker.
+// If a non-empty permissions slice is passed, unrestricted has to be false, and vice versa.
 func (s *bitbucketProjectPermissionsStore) Enqueue(ctx context.Context, projectKey string, externalServiceID int64, permissions []types.UserPermission, unrestricted bool) (int, error) {
 	if len(permissions) > 0 && unrestricted {
 		return 0, errors.New("cannot specify permissions when unrestricted is true")
