@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -164,7 +165,7 @@ func TestFrozenInsightDataSeriesResolver(t *testing.T) {
 		}
 	})
 	t.Run("insight_is_not_frozen_returns_real_resolvers", func(t *testing.T) {
-		insightsDB := dbtest.NewInsightsDB(t)
+		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
 		postgres := database.NewDB(dbtest.NewDB(t))
 		permStore := store.NewInsightPermissionStore(postgres)
 		clock := timeutil.Now
@@ -228,7 +229,7 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 	a := actor.FromUser(1)
 	ctx := actor.WithActor(context.Background(), a)
 
-	insightsDB := dbtest.NewInsightsDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
 	postgresDB := database.NewDB(dbtest.NewDB(t))
 	base := baseInsightResolver{
 		insightStore:   store.NewInsightStore(insightsDB),
