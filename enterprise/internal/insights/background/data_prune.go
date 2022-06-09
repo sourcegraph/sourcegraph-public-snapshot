@@ -7,16 +7,16 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewInsightsDataPrunerJob will periodically delete recorded data series that have been marked `deleted`.
-func NewInsightsDataPrunerJob(ctx context.Context, postgres database.DB, insightsdb dbutil.DB) goroutine.BackgroundRoutine {
+func NewInsightsDataPrunerJob(ctx context.Context, postgres database.DB, insightsdb edb.InsightsDB) goroutine.BackgroundRoutine {
 	interval := time.Minute * 60
 
 	return goroutine.NewPeriodicGoroutine(ctx, interval,
@@ -25,7 +25,7 @@ func NewInsightsDataPrunerJob(ctx context.Context, postgres database.DB, insight
 		}))
 }
 
-func performPurge(ctx context.Context, postgres database.DB, insightsdb dbutil.DB, deletedBefore time.Time) (err error) {
+func performPurge(ctx context.Context, postgres database.DB, insightsdb edb.InsightsDB, deletedBefore time.Time) (err error) {
 	insightStore := store.NewInsightStore(insightsdb)
 	timeseriesStore := store.New(insightsdb, store.NewInsightPermissionStore(postgres))
 

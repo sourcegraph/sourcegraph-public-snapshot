@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"database/sql"
 	"os"
 	"strconv"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/pings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -27,7 +27,7 @@ import (
 
 // GetBackgroundJobs is the main entrypoint which starts background jobs for code insights. It is
 // called from the worker service.
-func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB database.DB, insightsDB *sql.DB) []goroutine.BackgroundRoutine {
+func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB database.DB, insightsDB edb.InsightsDB) []goroutine.BackgroundRoutine {
 	insightPermStore := store.NewInsightPermissionStore(mainAppDB)
 	insightsStore := store.New(insightsDB, insightPermStore)
 
@@ -83,7 +83,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 
 // GetBackgroundQueryRunnerJob is the main entrypoint for starting the background jobs for code
 // insights query runner. It is called from the worker service.
-func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainAppDB database.DB, insightsDB *sql.DB) []goroutine.BackgroundRoutine {
+func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainAppDB database.DB, insightsDB edb.InsightsDB) []goroutine.BackgroundRoutine {
 	insightPermStore := store.NewInsightPermissionStore(mainAppDB)
 	insightsStore := store.New(insightsDB, insightPermStore)
 
