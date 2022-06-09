@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -6,6 +6,7 @@ import { FlexTextArea, H4, Input, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SurveyUseCase } from '../../graphql-operations'
+import { UseCaseFeedbackModifiers, UseCaseFeedbackState } from '../toast/SurveyUseCaseToast'
 
 import { SurveyUseCaseCheckbox } from './SurveyUseCaseCheckbox'
 
@@ -34,48 +35,37 @@ export const OPTIONS = [
     },
 ] as const
 
-interface SurveyUseCaseFormProps {
-    onChangeUseCases: (useCases: SurveyUseCase[]) => void
-    onChangeOtherUseCase: (others: string) => void
-    onChangeAdditionalInformation: (additionalInformation: string) => void
-    onChangeEmail: (email: string) => void
+interface SurveyUseCaseFormProps extends UseCaseFeedbackState, UseCaseFeedbackModifiers {
     formLabelClassName?: string
-    additionalInformation: string
-    otherUseCase: string
-    email: string
     className?: string
     title: string
     authenticatedUser?: AuthenticatedUser | null
 }
 
 export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> = ({
-    onChangeAdditionalInformation,
+    useCases,
+    onChangeUseCase,
+    otherUseCase,
     onChangeOtherUseCase,
-    onChangeUseCases,
+    additionalInformation,
+    onChangeAdditionalInformation,
+    email,
     onChangeEmail,
     formLabelClassName,
-    additionalInformation,
-    otherUseCase,
-    email,
     className,
     title,
     authenticatedUser,
 }) => {
-    const [useCases, setUseCases] = useState<SurveyUseCase[]>([])
     const [showOtherInput, setShowOtherInput] = useState<boolean>(false)
 
-    const handleSelectUseCase = (value: SurveyUseCase): void => {
-        if (useCases.includes(value)) {
-            setUseCases(current => current.filter(instance => instance !== value))
-            return
+    const handleToggleOtherInput = (shouldShow: boolean): void => {
+        if (!shouldShow) {
+            // Clear out any entered information in the "What else..." field
+            onChangeOtherUseCase('')
         }
-        setUseCases(current => [...current, value])
-    }
 
-    useEffect(() => {
-        onChangeUseCases(useCases)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [useCases])
+        setShowOtherInput(shouldShow)
+    }
 
     return (
         <div className={classNames('mb-2', className)}>
@@ -86,7 +76,7 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                 {OPTIONS.map(({ id, labelValue }) => (
                     <SurveyUseCaseCheckbox
                         label={labelValue}
-                        onChange={() => handleSelectUseCase(id)}
+                        onChange={() => onChangeUseCase(id)}
                         key={id}
                         id={id}
                         checked={useCases.includes(id)}
@@ -94,7 +84,7 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                 ))}
                 <SurveyUseCaseCheckbox
                     label="Other"
-                    onChange={() => setShowOtherInput(!showOtherInput)}
+                    onChange={() => handleToggleOtherInput(!showOtherInput)}
                     id="survey_checkbox_other"
                     checked={showOtherInput}
                 />

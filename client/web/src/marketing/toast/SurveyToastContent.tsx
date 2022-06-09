@@ -18,7 +18,7 @@ const SUBMIT_SURVEY = gql`
     }
 `
 
-interface UserFeedbackProps {
+export interface TotalFeedbackState {
     score: number
     useCases: SurveyUseCase[]
     additionalInformation: string
@@ -48,7 +48,7 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
     const [togglePermanentlyDismiss, setTogglePermanentlyDismiss] = useState(false)
     const [toggleErrorMessage, setToggleErrorMessage] = useState<boolean>(false)
     const [activeStep, setActiveStep] = useState<ToastSteps>(ToastSteps.rate)
-    const [userFeedback, setUserFeedback] = useState<UserFeedbackProps>({
+    const [userFeedback, setUserFeedback] = useState<TotalFeedbackState>({
         score: -1,
         useCases: [],
         otherUseCase: '',
@@ -111,6 +111,20 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
         handleContinue()
     }
 
+    const handleUseCase = (value: SurveyUseCase): void => {
+        if (userFeedback.useCases.includes(value)) {
+            setUserFeedback(current => ({
+                ...current,
+                useCases: current.useCases.filter(instance => instance !== value),
+            }))
+            return
+        }
+        setUserFeedback(current => ({
+            ...current,
+            useCases: [...current.useCases, value],
+        }))
+    }
+
     switch (activeStep) {
         case ToastSteps.rate:
             return (
@@ -127,7 +141,16 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
             return (
                 <SurveyUseCaseToast
                     isSubmitting={isSubmitting}
-                    onChange={formState => setUserFeedback(current => ({ ...current, ...formState }))}
+                    useCases={userFeedback.useCases}
+                    onChangeUseCase={handleUseCase}
+                    otherUseCase={userFeedback.otherUseCase}
+                    onChangeOtherUseCase={otherUseCase => setUserFeedback(current => ({ ...current, otherUseCase }))}
+                    additionalInformation={userFeedback.additionalInformation}
+                    onChangeAdditionalInformation={additionalInformation =>
+                        setUserFeedback(current => ({ ...current, additionalInformation }))
+                    }
+                    email={userFeedback.email}
+                    onChangeEmail={email => setUserFeedback(current => ({ ...current, email }))}
                     onDismiss={handleDismiss}
                     onDone={handleUseCaseDone}
                     authenticatedUser={authenticatedUser}
