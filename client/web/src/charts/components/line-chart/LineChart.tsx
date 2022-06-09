@@ -7,9 +7,10 @@ import { voronoi } from '@visx/voronoi'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
+import { AxisLeft, AxisBottom } from '../../core'
 import { SeriesLikeChart } from '../../types'
 
-import { AxisBottom, AxisLeft, Tooltip, TooltipContent, PointGlyph } from './components'
+import { Tooltip, TooltipContent, PointGlyph } from './components'
 import { StackedArea } from './components/stacked-area/StackedArea'
 import { useChartEventHandlers } from './hooks/event-listeners'
 import { Point } from './types'
@@ -94,14 +95,14 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
     const [yAxisElement, setYAxisElement] = useState<SVGGElement | null>(null)
     const [xAxisReference, setXAxisElement] = useState<SVGGElement | null>(null)
 
-    const { width, height, margin } = useMemo(
+    const content = useMemo(
         () =>
             getChartContentSizes({
                 width: outerWidth,
                 height: outerHeight,
                 margin: {
-                    top: 10,
-                    right: 20,
+                    top: 16,
+                    right: 16,
                     left: yAxisElement?.getBBox().width,
                     bottom: xAxisReference?.getBBox().height,
                 },
@@ -119,22 +120,22 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         () =>
             scaleTime({
                 domain: [minX, maxX],
-                range: [margin.left, outerWidth - margin.right],
+                range: [0, content.width],
                 nice: true,
                 clamp: true,
             }),
-        [minX, maxX, margin.left, margin.right, outerWidth]
+        [minX, maxX, content]
     )
 
     const yScale = useMemo(
         () =>
             scaleLinear({
                 domain: [minY, maxY],
-                range: [height, margin.top],
+                range: [content.height, 0],
                 nice: true,
                 clamp: true,
             }),
-        [minY, maxY, margin.top, height]
+        [minY, maxY, content]
     )
 
     const activeSeries = useMemo(() => getActiveSeries(dataSeries), [getActiveSeries, dataSeries])
@@ -198,15 +199,21 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
             <AxisLeft
                 ref={setYAxisElement}
                 scale={yScale}
-                width={width}
-                height={height}
-                top={margin.top}
-                left={margin.left}
+                width={content.width}
+                height={content.height}
+                top={content.top}
+                left={content.left}
             />
 
-            <AxisBottom ref={setXAxisElement} scale={xScale} top={margin.top + height} width={width} />
+            <AxisBottom
+                ref={setXAxisElement}
+                scale={xScale}
+                width={content.width}
+                top={content.bottom}
+                left={content.left}
+            />
 
-            <Group top={margin.top}>
+            <Group top={content.top} left={content.left}>
                 {stacked && <StackedArea dataSeries={activeSeries} xScale={xScale} yScale={yScale} />}
 
                 {sortedSeries.map(line => (

@@ -3,17 +3,12 @@ import { ReactElement, useMemo } from 'react'
 import { isDefined } from '@sourcegraph/common'
 import { H3 } from '@sourcegraph/wildcard'
 
-import { DEFAULT_FALLBACK_COLOR } from '../../../../constants'
 import { Point } from '../../types'
 import { isValidNumber, formatYTick, SeriesWithData, SeriesDatum, getDatumValue } from '../../utils'
 
 import { getListWindow } from './utils/get-list-window'
 
 import styles from './TooltipContent.module.scss'
-
-export function getLineStroke<Datum>(line: SeriesWithData<Datum>): string {
-    return line.color ?? DEFAULT_FALLBACK_COLOR
-}
 
 const MAX_ITEMS_IN_TOOLTIP = 10
 
@@ -77,7 +72,7 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
                     /* eslint-disable react/forbid-dom-props */
                     return (
                         <li key={line.id} className={styles.item} style={{ backgroundColor }}>
-                            <div style={{ backgroundColor: getLineStroke(line) }} className={styles.mark} />
+                            <div style={{ backgroundColor: getLineColor(line) }} className={styles.mark} />
 
                             <span className={styles.legendText}>{line.name}</span>
 
