@@ -30,6 +30,7 @@ exports[`QuickLink should have correct links when quicklinks present 1`] = `
   <span
     class="tooltip"
     data-state="closed"
+    data-test-content="Example QuickLink"
     role="presentation"
   >
     <a

@@ -63,7 +63,7 @@ export const SearchContextDropdown: React.FunctionComponent<
 
     const isContextFilterInQuery = useMemo(() => filterExists(query, FilterType.context), [query])
 
-    const disabledTooltipText = isContextFilterInQuery ? 'Overridden by query' : null
+    const disabledTooltipText = isContextFilterInQuery ? 'Overridden by query' : ''
 
     const selectSearchContextSpec = useCallback(
         (spec: string): void => {
@@ -115,7 +115,7 @@ export const SearchContextDropdown: React.FunctionComponent<
             a11y={false} /* Override default keyboard events in reactstrap */
             className={className}
         >
-            <Tooltip content={disabledTooltipText}>
+            <Tooltip content={disabledTooltipText} data-testid="dropdown-tooltip">
                 <DropdownToggle
                     className={classNames(
                         styles.button,
