@@ -26,10 +26,11 @@ func TestNewFeelingLuckySearchJob(t *testing.T) {
 		for _, next := range fj.generators {
 			for {
 				j, next = next()
-				if j == nil && next == nil {
-					break
-				}
 				if j == nil {
+					if next == nil {
+						// No job and generator is exhausted.
+						break
+					}
 					continue
 				}
 				generated = append(generated, j)
