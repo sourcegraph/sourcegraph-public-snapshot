@@ -28,7 +28,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         executionType: InsightExecutionType.Backend,
         repositories: [],
         type: InsightType.SearchBased,
-        title: 'Backend insight #2',
+        title: 'Backend insight #1',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { days: 1 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
@@ -42,7 +42,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         executionType: InsightExecutionType.Backend,
         repositories: [],
         type: InsightType.SearchBased,
-        title: 'Backend insight #3',
+        title: 'Backend insight #2',
         series: [],
         step: { days: 1 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
@@ -56,7 +56,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         executionType: InsightExecutionType.Backend,
         repositories: [],
         type: InsightType.SearchBased,
-        title: 'Backend insight #1',
+        title: 'Backend insight #3',
         series: [
             { id: '', query: '', stroke: '', name: '' },
             { id: '', query: '', stroke: '', name: '' },
@@ -77,7 +77,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         executionType: InsightExecutionType.Backend,
         repositories: [],
         type: InsightType.SearchBased,
-        title: 'Backend insight #2',
+        title: 'Backend insight #4',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { days: 1 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
@@ -91,7 +91,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         executionType: InsightExecutionType.Backend,
         repositories: [],
         type: InsightType.SearchBased,
-        title: 'Backend insight #2',
+        title: 'Backend insight #5',
         series: [
             { id: '', query: '', stroke: '', name: '' },
             { id: '', query: '', stroke: '', name: '' },
@@ -126,7 +126,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         executionType: InsightExecutionType.Backend,
         repositories: [],
         type: InsightType.SearchBased,
-        title: 'Backend insight #2',
+        title: 'Backend insight #6',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { days: 1 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
@@ -140,7 +140,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         executionType: InsightExecutionType.Backend,
         repositories: [],
         type: InsightType.SearchBased,
-        title: 'Backend insight #2',
+        title: 'Backend insight #7',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { days: 1 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
@@ -566,13 +566,28 @@ const LINE_CHART_TESTS_CASES_EXAMPLE: SeriesChartContent<SeriesDatum> = {
     ],
 }
 
+const LINE_CHART_TESTS_CASES_SINGLE_EXAMPLE: SeriesChartContent<SeriesDatum> = {
+    series: [
+        {
+            id: 'series_001',
+            data: [
+                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 4000 },
+                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 4000 },
+                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 5600 },
+                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 9800 },
+                { x: 1588965700286, value: 12300 },
+            ],
+            name: 'React Test renderer',
+            color: 'var(--blue)',
+            getXValue,
+            getYValue,
+        },
+    ],
+}
+
 function generateSeries(insight: SearchBasedInsight) {
-    let seriesData = LINE_CHART_TESTS_CASES_EXAMPLE
-    if (insight.series.length >= 15) {
-        seriesData = LINE_CHART_WITH_HUGE_NUMBER_OF_LINES
-    } else if (insight.series.length >= 6) {
-        seriesData = LINE_CHART_WITH_MANY_LINES
-    }
+    const seriesData = getTestCases(insight.series.length)
+
     return seriesData.series.map(series => ({
         seriesId: series.id,
         label: series.name,
@@ -640,14 +655,30 @@ function generateMocks(insights: SearchBasedInsight[]) {
     }))
 }
 
+function getTestCases(numberOfSeries: number): SeriesChartContent<SeriesDatum> {
+    if (numberOfSeries === 1) {
+        return LINE_CHART_TESTS_CASES_SINGLE_EXAMPLE
+    }
+
+    if (numberOfSeries < 6) {
+        return LINE_CHART_TESTS_CASES_EXAMPLE
+    }
+
+    if (numberOfSeries >= 6) {
+        return LINE_CHART_WITH_MANY_LINES
+    }
+
+    if (numberOfSeries >= 15) {
+        return LINE_CHART_WITH_HUGE_NUMBER_OF_LINES
+    }
+
+    return LINE_CHART_TESTS_CASES_EXAMPLE
+}
+
 function prepInsightSeries(insights: SearchBasedInsight[]): SearchBasedInsight[] {
     return insights.map(insight => {
-        let seriesData = LINE_CHART_TESTS_CASES_EXAMPLE
-        if (insight.series.length >= 15) {
-            seriesData = LINE_CHART_WITH_HUGE_NUMBER_OF_LINES
-        } else if (insight.series.length >= 6) {
-            seriesData = LINE_CHART_WITH_MANY_LINES
-        }
+        const seriesData = getTestCases(insight.series.length)
+
         const series = seriesData.series.map(data => ({
             id: data.id.toString(),
             query: '',

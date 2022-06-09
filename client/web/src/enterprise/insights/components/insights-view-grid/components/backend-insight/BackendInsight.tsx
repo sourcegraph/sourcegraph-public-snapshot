@@ -228,7 +228,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                     isSeriesSelected={isSeriesSelected}
                     isSeriesHovered={isSeriesHovered}
                     onDatumClick={trackDatumClicks}
-                    onLegendItemClick={toggle}
+                    onLegendItemClick={seriesId => toggle(seriesId, mapSeriesIds(insightData))}
                     setHoveredId={setHoveredId}
                 />
             )}
@@ -240,3 +240,5 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
         </InsightCard>
     )
 }
+
+const mapSeriesIds = (data: BackendInsightData): string[] => data.content.series.map(series => `${series.id}`)

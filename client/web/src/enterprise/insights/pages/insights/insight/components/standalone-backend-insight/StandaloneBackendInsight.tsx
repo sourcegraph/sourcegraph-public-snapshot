@@ -206,7 +206,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         isSeriesSelected={isSeriesSelected}
                         isSeriesHovered={isSeriesHovered}
                         onDatumClick={trackDatumClicks}
-                        onLegendItemClick={toggle}
+                        onLegendItemClick={seriesId => toggle(seriesId, mapSeriesIds(insightData))}
                         setHoveredId={setHoveredId}
                     />
                 )}
@@ -214,3 +214,5 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         </div>
     )
 }
+
+const mapSeriesIds = (data: BackendInsightData): string[] => data.content.series.map(series => `${series.id}`)
