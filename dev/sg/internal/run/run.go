@@ -332,6 +332,20 @@ var installFuncs = map[string]installFunc{
 
 		return download.ArchivedExecutable(ctx, url, target, fmt.Sprintf("%s/jaeger-all-in-one", archiveName))
 	},
+	"installDocsite": func(ctx context.Context, env map[string]string) error {
+		version := env["DOCSITE_VERSION"]
+		if version == "" {
+			return errors.New("could not find DOCSITE_VERSION in env")
+		}
+		root, err := root.RepositoryRoot()
+		if err != nil {
+			return err
+		}
+		archiveName := fmt.Sprintf("docsite_%s_%s_%s", version, runtime.GOOS, runtime.GOARCH)
+		url := fmt.Sprintf("https://github.com/sourcegraph/docsite/releases/download/%s/%s", version, archiveName)
+		target := filepath.Join(root, fmt.Sprintf(".bin/docsite_%s", version))
+		return download.Executable(ctx, url, target)
+	},
 }
 
 func runWatch(

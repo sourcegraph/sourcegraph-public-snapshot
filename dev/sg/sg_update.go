@@ -57,7 +57,7 @@ func updateToPrebuiltSG(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if err := download.Executable(downloadURL, currentExecPath); err != nil {
+	if err := download.Executable(ctx, downloadURL, currentExecPath); err != nil {
 		return "", err
 	}
 	return currentExecPath, nil
