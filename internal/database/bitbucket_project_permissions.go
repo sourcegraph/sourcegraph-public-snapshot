@@ -60,18 +60,18 @@ func (s *bitbucketProjectPermissionsStore) Enqueue(ctx context.Context, projectK
 		perms = append(perms, userPermission(perm))
 	}
 
-	var jobId int
+	var jobID int
 	err := s.QueryRow(ctx, sqlf.Sprintf(`
 -- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.Enqueue
 INSERT INTO
 	explicit_permissions_bitbucket_projects_jobs (project_key, external_service_id, permissions, unrestricted)
 VALUES (%s, %s, %s, %s) RETURNING id
-	`, projectKey, externalServiceID, pq.Array(perms), unrestricted)).Scan(&jobId)
+	`, projectKey, externalServiceID, pq.Array(perms), unrestricted)).Scan(&jobID)
 	if err != nil {
 		return 0, err
 	}
 
-	return jobId, nil
+	return jobID, nil
 }
 
 // ScanFirstBitbucketProjectPermissionsJob scans a single job from the return value of `*Store.query`.
