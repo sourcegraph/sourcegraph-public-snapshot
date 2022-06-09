@@ -113,7 +113,6 @@ export const SymbolIcon: React.FunctionComponent<React.PropsWithChildren<SymbolI
 }) => (
     <Tooltip content={kind.toLowerCase()}>
         <Icon
-            role="img"
             className={classNames(getSymbolIconClassName(kind), className)}
             as={getSymbolIconComponent(kind)}
             aria-label={kind.toLowerCase()}

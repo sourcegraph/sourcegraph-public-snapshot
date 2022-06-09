@@ -48,7 +48,7 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                <Icon role="img" aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
+                <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
             </Button>
             <div className="d-flex flex-column justify-content-center align-items-center px-2 pb-1">
                 <StateIcon state={node.state} />
@@ -59,7 +59,6 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
                     {currentSpecID === node.id && (
                         <>
                             <Icon
-                                role="img"
                                 className="text-warning"
                                 data-tooltip="Currently applied spec"
                                 aria-label="Currently applied spec"
@@ -117,7 +116,6 @@ const StateIcon: React.FunctionComponent<React.PropsWithChildren<{ state: BatchS
         case BatchSpecState.COMPLETED:
             return (
                 <Icon
-                    role="img"
                     aria-hidden={true}
                     className={classNames(styles.nodeStateIcon, 'text-success mb-1')}
                     as={CheckCircleIcon}
@@ -128,7 +126,6 @@ const StateIcon: React.FunctionComponent<React.PropsWithChildren<{ state: BatchS
         case BatchSpecState.QUEUED:
             return (
                 <Icon
-                    role="img"
                     aria-hidden={true}
                     className={classNames(styles.nodeStateIcon, 'text-muted mb-1')}
                     as={TimerSandIcon}
@@ -139,7 +136,6 @@ const StateIcon: React.FunctionComponent<React.PropsWithChildren<{ state: BatchS
         case BatchSpecState.CANCELING:
             return (
                 <Icon
-                    role="img"
                     aria-hidden={true}
                     className={classNames(styles.nodeStateIcon, 'text-muted mb-1')}
                     as={CancelIcon}
@@ -150,7 +146,6 @@ const StateIcon: React.FunctionComponent<React.PropsWithChildren<{ state: BatchS
         default:
             return (
                 <Icon
-                    role="img"
                     aria-hidden={true}
                     className={classNames(styles.nodeStateIcon, 'text-danger mb-1')}
                     as={AlertCircleIcon}

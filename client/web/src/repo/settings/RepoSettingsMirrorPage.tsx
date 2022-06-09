@@ -323,7 +323,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                                     {' '}
                                     Remote repository URL{' '}
                                     <small className="text-info">
-                                        <Icon role="img" as={LockIcon} aria-hidden={true} /> Only visible to site admins
+                                        <Icon as={LockIcon} aria-hidden={true} /> Only visible to site admins
                                     </small>
                                 </>
                             }

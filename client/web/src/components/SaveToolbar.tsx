@@ -51,7 +51,7 @@ export const SaveToolbar: React.FunctionComponent<
         <>
             {error && willShowError() && (
                 <div className={styles.error} role="alert">
-                    <Icon role="img" className={styles.errorIcon} as={AlertCircleIcon} aria-hidden={true} />
+                    <Icon className={styles.errorIcon} as={AlertCircleIcon} aria-hidden={true} />
                     {error.message}
                 </div>
             )}
@@ -64,7 +64,7 @@ export const SaveToolbar: React.FunctionComponent<
                     variant="success"
                     size="sm"
                 >
-                    <Icon role="img" style={{ marginRight: '0.1em' }} as={CheckIcon} aria-hidden={true} /> Save changes
+                    <Icon style={{ marginRight: '0.1em' }} as={CheckIcon} aria-hidden={true} /> Save changes
                 </Button>
                 <Button
                     disabled={disabled}
@@ -74,7 +74,7 @@ export const SaveToolbar: React.FunctionComponent<
                     variant="secondary"
                     size="sm"
                 >
-                    <Icon role="img" as={CloseIcon} aria-hidden={true} /> Discard
+                    <Icon as={CloseIcon} aria-hidden={true} /> Discard
                 </Button>
                 {children}
                 {saving && (
