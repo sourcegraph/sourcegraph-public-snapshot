@@ -5,7 +5,6 @@ import (
 	"database/sql"
 
 	"github.com/inconshreveable/log15"
-	"github.com/jmoiron/sqlx"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -32,12 +31,12 @@ type Store interface {
 }
 
 type store struct {
-	db *sqlx.DB
+	db *sql.DB
 	*basestore.Store
 }
 
 func NewStore(dbFile string) (Store, error) {
-	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
+	db, err := sql.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return nil, err
 	}
