@@ -75,6 +75,9 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps, Co
      * by the user.
      */
     querySubject?: Subject<string>
+
+    /** A function that generates an aria label given a node display name */
+    ariaLabelFunction?: (displayName: string) => string
 }
 
 /**
@@ -533,6 +536,7 @@ export class FilteredConnection<
                         emptyElement={this.props.emptyElement}
                         totalCountSummaryComponent={this.props.totalCountSummaryComponent}
                         withCenteredSummary={this.props.withCenteredSummary}
+                        ariaLabelFunction={this.props.ariaLabelFunction}
                     />
                 )}
                 {/* {console.log(this.props)} */}
