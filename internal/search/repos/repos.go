@@ -11,9 +11,10 @@ import (
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
 	otlog "github.com/opentracing/opentracing-go/log"
-	slog "github.com/sourcegraph/sourcegraph/lib/log"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
+
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -794,9 +795,7 @@ func (MissingRepoRevsError) Error() string { return "missing repo revs" }
 // only the repos directly added by the user. Otherwise it's all repos the user has
 // access to on all connected code hosts / external services.
 func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
-
 	slogger := slog.Scoped("PrivateReposForActor", "Get all private repos for the current actor")
-
 	tr, ctx := trace.New(ctx, "PrivateReposForActor", "")
 	defer tr.Finish()
 

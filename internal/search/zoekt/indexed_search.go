@@ -2,7 +2,6 @@ package zoekt
 
 import (
 	"context"
-	slog "github.com/sourcegraph/sourcegraph/lib/log"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -10,9 +9,10 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-
 	"github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
+
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -180,7 +180,6 @@ func PartitionRepos(
 	containsRefGlobs bool,
 ) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions, err error) {
 	slogger := slog.Scoped("PartitionRepos", "Partition repos")
-
 	// Fallback to Unindexed if the query contains valid ref-globs.
 	if containsRefGlobs {
 		return nil, repos, nil
@@ -605,9 +604,9 @@ func (*GlobalTextSearchJob) Name() string {
 
 func (t *GlobalTextSearchJob) Tags() []log.Field {
 	return []log.Field{
-		trace.Stringer("query", t.GlobalZoektQuery.Query),
-		trace.Printf("repoScope", "%q", t.GlobalZoektQuery.RepoScope),
-		log.Bool("includePrivate", t.GlobalZoektQuery.IncludePrivate),
+		trace.Stringer("query", t.GlobalZoektQuery.query),
+		trace.Printf("repoScope", "%q", t.GlobalZoektQuery.repoScope),
+		log.Bool("includePrivate", t.GlobalZoektQuery.includePrivate),
 		log.String("type", string(t.ZoektArgs.Typ)),
 		log.Int32("fileMatchLimit", t.ZoektArgs.FileMatchLimit),
 		trace.Stringer("select", t.ZoektArgs.Select),

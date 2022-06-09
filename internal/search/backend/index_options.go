@@ -3,12 +3,12 @@ package backend
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 	"sort"
 
 	"github.com/google/zoekt"
 	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -203,7 +203,6 @@ type revsRuleFunc func(*RepoIndexOptions) (revs []string)
 
 func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration) revsRuleFunc {
 	slog := log.Scoped("siteConfigRevisionsRuleFunc", "Site config revisions rule function")
-
 	if c == nil || c.ExperimentalFeatures == nil {
 		return nil
 	}

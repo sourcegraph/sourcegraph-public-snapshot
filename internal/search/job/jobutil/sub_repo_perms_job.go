@@ -2,10 +2,11 @@ package jobutil
 
 import (
 	"context"
-	slog "github.com/sourcegraph/sourcegraph/lib/log"
 	"sync"
 
 	"github.com/opentracing/opentracing-go/log"
+
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -67,7 +68,6 @@ func (s *subRepoPermsFilterJob) Tags() []log.Field {
 // authz.SubRepoPermissionChecker
 func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionChecker, matches []result.Match) ([]result.Match, error) {
 	slogger := slog.Scoped("applySubRepoFiltering", "Filters a set fo matches using the provided")
-
 	if !authz.SubRepoEnabled(checker) {
 		return matches, nil
 	}

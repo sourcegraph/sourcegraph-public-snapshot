@@ -1,14 +1,14 @@
 package jobutil
 
 import (
-	slog "github.com/sourcegraph/sourcegraph/lib/log"
 	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -40,18 +40,7 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 		}
 		children = append(children, child)
 	}
-
-	jobTree := NewOrJob(children...)
-
-	if inputs.PatternType == query.SearchTypeLucky {
-		// generate opportunistic queries and run them after the usual jobTree
-		generatedChildren := NewFeelingLuckySearchJob(inputs, plan)
-		if len(generatedChildren) > 0 {
-			jobTree = NewSequentialJob(true, append([]job.Job{jobTree}, generatedChildren...)...)
-		}
-	}
-
-	return NewAlertJob(inputs, jobTree), nil
+	return NewAlertJob(inputs, NewOrJob(children...)), nil
 }
 
 // NewBasicJob converts a query.Basic into its job tree representation.
@@ -138,6 +127,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				Query:                commit.QueryToGitQuery(b, diff),
 				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
+				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
 			})
@@ -240,12 +230,12 @@ func orderSearcherJob(j job.Job) job.Job {
 			if pager, ok := current.(*repoPagerJob); ok {
 				if _, ok := pager.child.(*zoekt.RepoSubsetTextSearchJob); ok && !seenZoektRepoSearch {
 					seenZoektRepoSearch = true
-					return NewSequentialJob(false, current, pagedSearcherJob)
+					return NewSequentialJob(current, pagedSearcherJob)
 				}
 			}
 			if _, ok := current.(*zoekt.GlobalTextSearchJob); ok && !seenZoektGlobalSearch {
 				seenZoektGlobalSearch = true
-				return NewSequentialJob(false, current, pagedSearcherJob)
+				return NewSequentialJob(current, pagedSearcherJob)
 			}
 			return current
 		},
@@ -299,7 +289,6 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 					PatternInfo:     patternInfo,
 					Indexed:         false,
 					UseFullDeadline: useFullDeadline,
-					Features:        features,
 				}
 
 				addJob(&repoPagerJob{
@@ -345,7 +334,6 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 			searcherArgs := &search.SearcherParameters{
 				PatternInfo:     patternInfo,
 				UseFullDeadline: useFullDeadline,
-				Features:        features,
 			}
 
 			addJob(&structural.SearchJob{
@@ -792,16 +780,15 @@ func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSou
 	return repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos
 }
 
-func toFeatures(flagSet *featureflag.FlagSet) search.Features {
-	if flagSet == nil {
-		flagSet = &featureflag.FlagSet{}
+func toFeatures(flags featureflag.FlagSet) search.Features {
+	if flags == nil {
+		flags = featureflag.FlagSet{}
 		metricFeatureFlagUnavailable.Inc()
 		slog.Scoped("toFeatures", "To Features").Warn("search feature flags are not available")
 	}
 
 	return search.Features{
-		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
-		HybridSearch:            flagSet.GetBoolOr("search-hybrid", false),
+		ContentBasedLangFilters: flags.GetBoolOr("search-content-based-lang-detection", false),
 	}
 }
 

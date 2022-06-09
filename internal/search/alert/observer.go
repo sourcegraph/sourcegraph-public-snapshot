@@ -3,7 +3,6 @@ package alert
 import (
 	"context"
 	"fmt"
-	slog "github.com/sourcegraph/sourcegraph/lib/log"
 	"strings"
 	"sync"
 
@@ -15,15 +14,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type Observer struct {
-	Db database.DB
+	log slog.Logger
+	Db  database.DB
 
 	// Inputs are used to generate alert messages based on the query.
 	*run.SearchInputs
@@ -216,14 +218,12 @@ func (o *Observer) update(alert *search.Alert) {
 // Done returns the highest priority alert and an error.MultiError containing
 // all errors that could not be converted to alerts.
 func (o *Observer) Done() (*search.Alert, error) {
-	slogger := slog.Scoped("Done", "Done returns the highest priority alert and an error.MultiError containing")
-
 	if !o.HasResults && o.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.OriginalQuery) {
 		o.update(search.AlertForStructuralSearchNotSet(o.OriginalQuery))
 	}
 
 	if o.HasResults && o.err != nil {
-		slogger.Error("Errors during search", slog.Error(o.err))
+		o.log.Error("Errors during search", slog.Error(o.err))
 		return o.alert, nil
 	}
 
@@ -241,9 +241,10 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	}
 
 	var (
+		rErr *commit.RepoLimitError
+		tErr *commit.TimeLimitError
 		mErr *searchrepos.MissingRepoRevsError
 		oErr *errOverRepoLimit
-		lErr *ErrLuckyQueries
 	)
 
 	if errors.HasType(err, authz.ErrStalePermissions{}) {
@@ -282,15 +283,6 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		return a, nil
 	}
 
-	if errors.As(err, &lErr) {
-		return &search.Alert{
-			PrometheusType:  "lucky_search_notice",
-			Title:           "Showing additional results for similar queries",
-			Description:     "We returned all the results for your query. We also added results you might be interested in for similar queries. Below are similar queries we ran.",
-			ProposedQueries: lErr.ProposedQueries,
-		}, nil
-	}
-
 	if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
 		return &search.Alert{
 			PrometheusType: "structural_search_needs_more_memory",
@@ -306,6 +298,24 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 			Title:          "Structural search needs more memory",
 			Description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
 			Priority:       4,
+		}, nil
+	}
+
+	if errors.As(err, &rErr) {
+		return &search.Alert{
+			PrometheusType: "exceeded_diff_commit_search_limit",
+			Title:          fmt.Sprintf("Too many matching repositories for %s search to handle", rErr.ResultType),
+			Description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`, strings.Title(rErr.ResultType), rErr.Max),
+			Priority:       2,
+		}, nil
+	}
+
+	if errors.As(err, &tErr) {
+		return &search.Alert{
+			PrometheusType: "exceeded_diff_commit_with_time_search_limit",
+			Title:          fmt.Sprintf("Too many matching repositories for %s search to handle", tErr.ResultType),
+			Description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search.`, strings.Title(tErr.ResultType), tErr.Max),
+			Priority:       1,
 		}, nil
 	}
 
@@ -364,14 +374,6 @@ type errOverRepoLimit struct {
 
 func (e *errOverRepoLimit) Error() string {
 	return "Too many matching repositories"
-}
-
-type ErrLuckyQueries struct {
-	ProposedQueries []*search.ProposedQuery
-}
-
-func (e *ErrLuckyQueries) Error() string {
-	return "We were able to find more results by slightly modifying your query"
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err

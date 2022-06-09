@@ -12,6 +12,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	slog "github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -40,7 +41,6 @@ func NewMeteredSearcher(hostname string, z zoekt.Streamer) zoekt.Streamer {
 
 func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c zoekt.Sender) (err error) {
 	slogger := slog.Scoped("StreamSearch", "Stream search ")
-
 	start := time.Now()
 
 	// isLeaf is true if this is a zoekt.Searcher which does a network

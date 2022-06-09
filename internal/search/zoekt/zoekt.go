@@ -8,6 +8,7 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/opentracing/opentracing-go"
+
 	slog "github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -58,7 +59,6 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 
 func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[string]string) {
 	slogger := slog.Scoped("getSpanContext", "get span context in zoekt")
-
 	if !ot.ShouldTrace(ctx) {
 		return false, nil
 	}
