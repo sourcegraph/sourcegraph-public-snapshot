@@ -132,6 +132,10 @@ func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 			SrcCliVersion:   payload.SrcCliVersion,
 		}
 
+		// TODO: Store metrics for executor.
+
+		fmt.Printf("Received metrics from executor: \n%s\n", payload.PrometheusMetrics)
+
 		unknownIDs, err := h.heartbeat(r.Context(), executor, payload.JobIDs)
 		return http.StatusOK, unknownIDs, err
 	})
