@@ -28,7 +28,7 @@ import TimetableIcon from 'mdi-react/TimetableIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import WrenchIcon from 'mdi-react/WrenchIcon'
 
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { SymbolKind } from '../graphql-operations'
 
@@ -111,10 +111,11 @@ export const SymbolIcon: React.FunctionComponent<React.PropsWithChildren<SymbolI
     kind,
     className = '',
 }) => (
-    <Icon
-        className={classNames(getSymbolIconClassName(kind), className)}
-        data-tooltip={kind.toLowerCase()}
-        as={getSymbolIconComponent(kind)}
-        aria-label={kind.toLowerCase()}
-    />
+    <Tooltip content={kind.toLowerCase()}>
+        <Icon
+            className={classNames(getSymbolIconClassName(kind), className)}
+            as={getSymbolIconComponent(kind)}
+            aria-label={kind.toLowerCase()}
+        />
+    </Tooltip>
 )
