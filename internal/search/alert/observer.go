@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/lib/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
