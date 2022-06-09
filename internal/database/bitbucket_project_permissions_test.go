@@ -9,9 +9,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
+<<<<<<<< HEAD:internal/database/bitbucket_project_permissions_test.go
 func TestBitbucketProjectPermissionsEnqueue(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -61,6 +61,9 @@ func TestBitbucketProjectPermissionsEnqueue(t *testing.T) {
 }
 
 func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
+========
+func TestStore(t *testing.T) {
+>>>>>>>> origin/main:cmd/worker/internal/permissions/bitbucket_projects_test.go
 	if testing.Short() {
 		t.Skip()
 	}
@@ -68,45 +71,12 @@ func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
 	db := NewDB(dbtest.NewDB(t))
 
 	ctx := context.Background()
-	_, err := db.ExecContext(ctx, `--sql
-		INSERT INTO explicit_permissions_bitbucket_projects_jobs
-		(
-			id,
-			state,
-			failure_message,
-			queued_at,
-			started_at,
-			finished_at,
-			process_after,
-			num_resets,
-			num_failures,
-			last_heartbeat_at,
-			execution_logs,
-			worker_hostname,
-			project_key,
-			external_service_id,
-			permissions,
-			unrestricted
-		) VALUES (
-			1,
-			'queued',
-			'failure message',
-			'2020-01-01',
-			'2020-01-02',
-			'2020-01-03',
-			'2020-01-04',
-			1,
-			2,
-			'2020-01-05',
-			E'{"{\\"key\\": \\"key\\", \\"command\\": [\\"command\\"], \\"startTime\\": \\"2020-01-06T00:00:00Z\\", \\"exitCode\\": 1, \\"out\\": \\"out\\", \\"durationMs\\": 1}"}'::json[],
-			'worker-hostname',
-			'project-key',
-			1,
-			E'{"{\\"permission\\": \\"read\\", \\"bindID\\": \\"omar@sourcegraph.com\\"}"}'::json[],
-			false
-		);
-	`)
+	jobID, err := db.BitbucketProjectPermissions().Enqueue(ctx, "project1", 2, []types.UserPermission{
+		{BindID: "user1", Permission: "read"},
+		{BindID: "user2", Permission: "admin"},
+	}, false)
 	require.NoError(t, err)
+<<<<<<<< HEAD:internal/database/bitbucket_project_permissions_test.go
 
 	rows, err := db.QueryContext(ctx, `SELECT * FROM explicit_permissions_bitbucket_projects_jobs WHERE id = 1`)
 	require.NoError(t, err)
@@ -132,6 +102,14 @@ func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
 		Permissions:       []types.UserPermission{{Permission: "read", BindID: "omar@sourcegraph.com"}},
 		Unrestricted:      false,
 	}, record)
+========
+	require.NotZero(t, jobID)
+
+	store := createBitbucketProjectPermissionsStore(db)
+	count, err := store.QueuedCount(ctx, true, nil)
+	require.NoError(t, err)
+	require.Equal(t, 1, count)
+>>>>>>>> origin/main:cmd/worker/internal/permissions/bitbucket_projects_test.go
 }
 
 func intPtr(v int) *int          { return &v }
