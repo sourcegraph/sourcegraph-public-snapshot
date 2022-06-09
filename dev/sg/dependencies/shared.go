@@ -159,6 +159,17 @@ func categoryAdditionalSGConfiguration() category {
 					if err != nil {
 						return err
 					}
+
+					// Compinit needs to be initialized
+					if shell == usershell.ZshShell && !strings.Contains(string(conf), "compinit") {
+						cio.Verbosef("Adding compinit to %s", shellConfig)
+						if err := usershell.Run(ctx,
+							"echo", run.Arg(`autoload -Uz compinit && compinit`), ">>", shellConfig,
+						).Wait(); err != nil {
+							return err
+						}
+					}
+
 					if !strings.Contains(string(conf), autocompletePath) {
 						cio.Verbosef("Adding configuration to %s", shellConfig)
 						if err := usershell.Run(ctx,
