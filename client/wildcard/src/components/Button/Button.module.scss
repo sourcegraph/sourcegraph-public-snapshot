@@ -31,6 +31,10 @@
 
     &:disabled {
         cursor: not-allowed;
+
+        // This is required to properly support tooltips on disabled buttons with our current implementation
+        // Reference: https://www.radix-ui.com/docs/primitives/components/tooltip#displaying-a-tooltip-from-a-disabled-button
+        pointer-events: none;
     }
 
     &:hover {
@@ -434,12 +438,4 @@
 .container {
     display: inline-block;
     position: relative;
-}
-
-.disabled-tooltip {
-    cursor: not-allowed;
-    position: absolute;
-    height: 100%;
-    width: 100%;
-    z-index: 999999;
 }

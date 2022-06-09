@@ -88,12 +88,11 @@ export const DisabledTrigger: Story = () => (
         </div>
 
         <Text>
-            {/**
-             * This is necessary to support our current implementation using Radix.
-             * Reference: https://www.radix-ui.com/docs/primitives/components/tooltip#displaying-a-tooltip-from-a-disabled-button
-             * */}
-            When rendering a Tooltip for a disabled <Code>{'<Button>'}</Code>, the button element also needs to have the
-            CSS property <Code>pointer-events: none</Code>.
+            If you are using the <Code>{'<Button>'}</Code> component from Wildcard, it already supports Tooltips when
+            disabled.
+            <br />
+            If you are rendering a Tooltip with another disabled input, the element also needs to have the CSS property{' '}
+            <Code>pointer-events: none</Code>.
         </Text>
     </Grid>
 )

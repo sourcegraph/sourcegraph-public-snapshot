@@ -12,7 +12,7 @@ interface TooltipProps {
     content: string | null
     /** The open state of the tooltip when it is initially rendered. Defaults to `false`. */
     defaultOpen?: boolean
-    /** The preferred side of the trigger to render against when open. Will be reversed if a collision is detected. Defaults to `right`. */
+    /** The preferred side of the trigger to render against when open. Will be reversed if a collision is detected. Defaults to `bottom`. */
     placement?: TooltipPrimitive.TooltipContentProps['side']
     /** Class name to apply to the wrapping span */
     className?: string
@@ -46,7 +46,7 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = ({
     content,
     className,
     defaultOpen = false,
-    placement = 'right',
+    placement = 'bottom',
 }) => (
     // NOTE: We plan to consolidate this logic with our Popover component in the future, but chose Radix first to support short-term accessibility needs.
     // GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/36080

@@ -4,6 +4,8 @@ import sinon from 'sinon'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
+import { Tooltip } from '..'
+
 import { ButtonLink } from './ButtonLink'
 
 describe('<ButtonLink />', () => {
@@ -33,17 +35,18 @@ describe('<ButtonLink />', () => {
     })
     test('renders correctly anchor attributes', () => {
         const { asFragment } = renderWithBrandedContext(
-            <ButtonLink
-                to="https://sourcegraph.com"
-                variant="secondary"
-                size="lg"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-tooltip="SourceGraph.com"
-                data-pressed="true"
-            >
-                Button link
-            </ButtonLink>
+            <Tooltip content="sourcegraph.com">
+                <ButtonLink
+                    to="https://sourcegraph.com"
+                    variant="secondary"
+                    size="lg"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-pressed="true"
+                >
+                    Button link
+                </ButtonLink>
+            </Tooltip>
         )
         expect(asFragment()).toMatchSnapshot()
     })
@@ -52,19 +55,20 @@ describe('<ButtonLink />', () => {
         const onSelect = sinon.stub()
 
         renderWithBrandedContext(
-            <ButtonLink
-                to=""
-                variant="secondary"
-                size="lg"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-tooltip="SourceGraph.com"
-                data-pressed="true"
-                onClick={onSelect}
-                data-testid="button-link"
-            >
-                Button link
-            </ButtonLink>
+            <Tooltip content="sourcegraph.com">
+                <ButtonLink
+                    to=""
+                    variant="secondary"
+                    size="lg"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-pressed="true"
+                    onClick={onSelect}
+                    data-testid="button-link"
+                >
+                    Button link
+                </ButtonLink>
+            </Tooltip>
         )
 
         userEvent.click(screen.getByTestId('button-link'))

@@ -255,7 +255,6 @@ export const GoToCodeHostAction: React.FunctionComponent<
         id: TARGET_ID,
         onClick,
         onAuxClick: onClick,
-        'data-tooltip': descriptiveText,
         'aria-label': descriptiveText,
         className: 'btn-icon test-go-to-code-host',
     }
@@ -263,7 +262,8 @@ export const GoToCodeHostAction: React.FunctionComponent<
     if (hijackLink) {
         return (
             <Popover isOpen={isPopoverOpen} onOpenChange={onToggle}>
-                <PopoverTrigger as={RepoHeaderActionAnchor} {...commonProps}>
+                {/* TODO(lrhacker): Will migrate this data-tooltip instance ASAP, currently focusing on migration within wildcard first */}
+                <PopoverTrigger as={RepoHeaderActionAnchor} {...commonProps} data-tooltip={descriptiveText}>
                     <Icon role="img" as={exportIcon} aria-hidden={true} />
                 </PopoverTrigger>
                 <InstallBrowserExtensionPopover
