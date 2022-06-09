@@ -478,6 +478,10 @@ func cleanupStaleLockFiles(gitDir string, logger *log.Logger) error {
 
 	// discover lock files that look like refs/remotes/origin/main.lock
 	err := filepath.WalkDir(refsDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
 		if d.IsDir() || !strings.HasSuffix(path, ".lock") {
 			return nil
 		}
