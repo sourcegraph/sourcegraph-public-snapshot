@@ -8,10 +8,11 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func (s *Server) RegisterMetrics(db dbutil.DB, observationContext *observation.Context) {

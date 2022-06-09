@@ -177,6 +177,7 @@ export const batchSpecExecutionFieldsFragment = gql`
     fragment BatchSpecExecutionFields on BatchSpec {
         id
         originalInput
+        source
         state
         description {
             name
