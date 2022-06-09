@@ -24,7 +24,8 @@ import (
 )
 
 type Observer struct {
-	Db database.DB
+	log slog.Logger
+	Db  database.DB
 
 	// Inputs are used to generate alert messages based on the query.
 	*run.SearchInputs
@@ -217,13 +218,12 @@ func (o *Observer) update(alert *search.Alert) {
 // Done returns the highest priority alert and an error.MultiError containing
 // all errors that could not be converted to alerts.
 func (o *Observer) Done() (*search.Alert, error) {
-	slogger := slog.Scoped("Done", "Done returns the highest priority alert and an error.MultiError containing")
 	if !o.HasResults && o.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.OriginalQuery) {
 		o.update(search.AlertForStructuralSearchNotSet(o.OriginalQuery))
 	}
 
 	if o.HasResults && o.err != nil {
-		slogger.Error("Errors during search", slog.Error(o.err))
+		o.log.Error("Errors during search", slog.Error(o.err))
 		return o.alert, nil
 	}
 
