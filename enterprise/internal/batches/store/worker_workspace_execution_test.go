@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -315,6 +316,68 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 	if err != database.ErrAccessTokenNotFound {
 		t.Fatalf("access token was not deleted")
 	}
+}
+
+func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin(t *testing.T) {
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+
+	user := ct.CreateTestUser(t, db, true)
+	user2 := ct.CreateTestUser(t, db, true)
+	user3 := ct.CreateTestUser(t, db, true)
+
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
+
+	s := New(db, &observation.TestContext, nil)
+	workerStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
+
+	// We create multiple jobs for each user because this test ensures jobs are
+	// dequeued in a round-robin fashion, starting with the user who dequeued
+	// the longest ago.
+	job1 := setupBatchSpecAssociation(ctx, s, t, user, repo)  // User_ID: 1
+	job2 := setupBatchSpecAssociation(ctx, s, t, user, repo)  // User_ID: 1
+	job3 := setupBatchSpecAssociation(ctx, s, t, user2, repo) // User_ID: 2
+	job4 := setupBatchSpecAssociation(ctx, s, t, user2, repo) // User_ID: 2
+	job5 := setupBatchSpecAssociation(ctx, s, t, user3, repo) // User_ID: 3
+	job6 := setupBatchSpecAssociation(ctx, s, t, user3, repo) // User_ID: 3
+
+	want := []int64{job1, job3, job5, job2, job4, job6}
+	have := []int64{}
+
+	// We dequeue records until there are no more left. Then, we check in which
+	// order they were returned.
+	for {
+		r, found, _ := workerStore.Dequeue(ctx, "test-worker", nil)
+		if !found {
+			break
+		}
+		have = append(have, int64(r.RecordID()))
+	}
+
+	if diff := cmp.Diff(want, have); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func setupBatchSpecAssociation(ctx context.Context, s *Store, t *testing.T, user *types.User, repo *types.Repo) int64 {
+	batchSpec := &btypes.BatchSpec{UserID: user.ID, NamespaceUserID: user.ID, RawSpec: "horse", Spec: &batcheslib.BatchSpec{
+		ChangesetTemplate: &batcheslib.ChangesetTemplate{},
+	}}
+	if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
+		t.Fatal(err)
+	}
+
+	workspace := &btypes.BatchSpecWorkspace{BatchSpecID: batchSpec.ID, RepoID: repo.ID}
+	if err := s.CreateBatchSpecWorkspace(ctx, workspace); err != nil {
+		t.Fatal(err)
+	}
+
+	job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: workspace.ID, UserID: user.ID}
+	if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
+		t.Fatal(err)
+	}
+
+	return job.ID
 }
 
 func intptr(i int) *int { return &i }

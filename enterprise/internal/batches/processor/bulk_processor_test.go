@@ -25,7 +25,7 @@ func TestBulkProcessor(t *testing.T) {
 	sqlDB := dbtest.NewDB(t)
 	tx := dbtest.NewTx(t, sqlDB)
 	db := database.NewDB(sqlDB)
-	bstore := store.New(tx, &observation.TestContext, nil)
+	bstore := store.New(database.NewDB(tx), &observation.TestContext, nil)
 	user := ct.CreateTestUser(t, db, true)
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
 	ct.CreateTestSiteCredential(t, bstore, repo)

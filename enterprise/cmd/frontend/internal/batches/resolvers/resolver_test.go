@@ -40,7 +40,7 @@ import (
 func TestNullIDResilience(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	sr := New(store.New(db, &observation.TestContext, nil))
 
 	s, err := newSchema(database.NewDB(db), sr)

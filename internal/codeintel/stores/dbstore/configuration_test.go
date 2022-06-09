@@ -7,11 +7,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestGetIndexConfigurationByRepositoryID(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(db)
 
 	expectedConfigurationData := []byte(`{
@@ -24,7 +25,7 @@ func TestGetIndexConfigurationByRepositoryID(t *testing.T) {
 		42,
 		"github.com/baz/honk",
 	)
-	if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error inserting repo: %s", err)
 	}
 
@@ -34,7 +35,7 @@ func TestGetIndexConfigurationByRepositoryID(t *testing.T) {
 		42,
 		expectedConfigurationData,
 	)
-	if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error inserting repo: %s", err)
 	}
 
@@ -52,7 +53,7 @@ func TestGetIndexConfigurationByRepositoryID(t *testing.T) {
 }
 
 func TestUpdateIndexConfigurationByRepositoryID(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(db)
 
 	query := sqlf.Sprintf(
@@ -60,7 +61,7 @@ func TestUpdateIndexConfigurationByRepositoryID(t *testing.T) {
 		42,
 		"github.com/baz/honk",
 	)
-	if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error inserting repo: %s", err)
 	}
 

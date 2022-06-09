@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -27,7 +29,7 @@ type BatchesStore interface {
 }
 
 // transformRecord transforms a *btypes.BatchSpecWorkspaceExecutionJob into an apiclient.Job.
-func transformRecord(ctx context.Context, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob, accessToken string) (apiclient.Job, error) {
+func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob, accessToken string) (apiclient.Job, error) {
 	// MAYBE: We could create a view in which batch_spec and repo are joined
 	// against the batch_spec_workspace_job so we don't have to load them
 	// separately.
@@ -41,9 +43,15 @@ func transformRecord(ctx context.Context, s BatchesStore, job *btypes.BatchSpecW
 		return apiclient.Job{}, errors.Wrap(err, "fetching batch spec")
 	}
 
+	// This should never happen. To get some easier debugging when a user sees strange
+	// behavior, we log some additional context.
+	if job.UserID != batchSpec.UserID {
+		logger.Error("bad DB state: batch spec workspace execution job did not have the same user ID as the associated batch spec")
+	}
+
 	// 🚨 SECURITY: Set the actor on the context so we check for permissions
 	// when loading the repository.
-	ctx = actor.WithActor(ctx, actor.FromUser(batchSpec.UserID))
+	ctx = actor.WithActor(ctx, actor.FromUser(job.UserID))
 
 	repo, err := s.DatabaseDB().Repos().Get(ctx, workspace.RepoID)
 	if err != nil {
@@ -52,7 +60,7 @@ func transformRecord(ctx context.Context, s BatchesStore, job *btypes.BatchSpecW
 
 	// Create an internal access token that will get cleaned up when the job
 	// finishes.
-	token, err := createAndAttachInternalAccessToken(ctx, s, job.ID, batchSpec.UserID)
+	token, err := createAndAttachInternalAccessToken(ctx, s, job.ID, job.UserID)
 	if err != nil {
 		return apiclient.Job{}, errors.Wrap(err, "creating internal access token")
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -31,7 +32,7 @@ var initDBStore = memo.NewMemoizedConstructor(func() (*dbstore.Store, error) {
 		return nil, err
 	}
 
-	return dbstore.NewWithDB(db, observationContext), nil
+	return dbstore.NewWithDB(database.NewDB(db), observationContext), nil
 })
 
 // InitDependencySyncingStore initializes and returns a dependency index store.

@@ -73,7 +73,6 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         submitSearch,
         showCopyQueryButton = true,
         structuralSearchDisabled,
-        ...otherProps
     } = props
 
     const defaultPatternTypeValue = useMemo(
@@ -147,7 +146,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
     )
 
     return (
-        <div className={classNames(className, styles.toggleContainer)} {...otherProps}>
+        <div className={classNames(className, styles.toggleContainer)}>
             {patternType === SearchPatternType.lucky ? (
                 <>
                     <QueryInputToggle

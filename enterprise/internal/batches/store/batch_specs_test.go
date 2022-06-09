@@ -639,6 +639,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 
 			clone := *job
 			clone.BatchSpecWorkspaceID = ws.ID
+			clone.UserID = spec.UserID
 			if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, &clone); err != nil {
 				t.Fatal(err)
 			}
