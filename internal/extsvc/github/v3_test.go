@@ -35,39 +35,6 @@ func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli h
 	return NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli)
 }
 
-func TestNewRepoCache(t *testing.T) {
-	cmpOpts := cmp.AllowUnexported(rcache.Cache{})
-	t.Run("GitHub.com", func(t *testing.T) {
-		url, _ := url.Parse("https://www.github.com")
-		token := &auth.OAuthBearerToken{Token: "asdf"}
-
-		// github.com caches should:
-		// (1) use githubProxyURL for the prefix hash rather than the given url
-		// (2) have a TTL of 10 minutes
-		prefix := "gh_repo:" + token.Hash()
-		got := newRepoCache(url, token)
-		want := rcache.NewWithTTL(prefix, 600)
-		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
-			t.Fatal(diff)
-		}
-	})
-
-	t.Run("GitHub Enterprise", func(t *testing.T) {
-		url, _ := url.Parse("https://www.sourcegraph.com")
-		token := &auth.OAuthBearerToken{Token: "asdf"}
-
-		// GitHub Enterprise caches should:
-		// (1) use the given URL for the prefix hash
-		// (2) have a TTL of 30 seconds
-		prefix := "gh_repo:" + token.Hash()
-		got := newRepoCache(url, token)
-		want := rcache.NewWithTTL(prefix, 30)
-		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
-			t.Fatal(diff)
-		}
-	})
-}
-
 func TestListAffiliatedRepositories(t *testing.T) {
 	tests := []struct {
 		name         string
