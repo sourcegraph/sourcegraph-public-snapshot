@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 
@@ -8,7 +8,9 @@ import { Notice, Settings } from '@sourcegraph/shared/src/schema/settings.schema
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Alert, AlertProps } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../auth'
 import { DismissibleAlert } from '../components/DismissibleAlert'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 import styles from './Notices.module.scss'
 
@@ -79,6 +81,53 @@ export const Notices: React.FunctionComponent<React.PropsWithChildren<Props>> = 
         <div className={classNames(styles.notices, className)}>
             {notices.map((notice, index) => (
                 <NoticeAlert key={index} testId="notice-alert" className={alertClassName} notice={notice} />
+            ))}
+        </div>
+    )
+}
+
+interface VerifyEmailNoticesProps {
+    className?: string
+    /** Apply this class name to each notice (alongside .alert). */
+    alertClassName?: string
+    authenticatedUser: AuthenticatedUser
+}
+
+/**
+ * Displays notices from settings for a specific location.
+ */
+export const VerifyEmailNotices: React.FunctionComponent<VerifyEmailNoticesProps> = ({
+    className,
+    alertClassName,
+    authenticatedUser,
+}) => {
+    const [isEmailVerificationAlertEnabled, status] = useFeatureFlag('ab-email-verification-alert')
+
+    const notices: Notice[] = useMemo(() => {
+        if (status !== 'loaded' || !isEmailVerificationAlertEnabled) {
+            return []
+        }
+        return authenticatedUser.emails
+            .filter(({ verified }) => !verified)
+            .map(
+                ({ email }): Notice => ({
+                    message: `Please, <a href="${
+                        authenticatedUser?.settingsURL as string
+                    }/emails">verify your email</a> <strong>${(email as string).split('@').join('\\@')}</strong>.`,
+                    location: 'top',
+                    dismissible: false,
+                })
+            ) as Notice[]
+    }, [authenticatedUser, isEmailVerificationAlertEnabled, status])
+
+    if (notices.length === 0) {
+        return null
+    }
+
+    return (
+        <div className={classNames(styles.notices, className)}>
+            {notices.map(notice => (
+                <NoticeAlert key={notice.message} testId="notice-alert" className={alertClassName} notice={notice} />
             ))}
         </div>
     )

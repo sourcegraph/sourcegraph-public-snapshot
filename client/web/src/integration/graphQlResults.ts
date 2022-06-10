@@ -79,6 +79,7 @@ export const commonWebGraphQlResults: Partial<
             session: { canSignOut: true },
             viewerCanAdminister: true,
             searchable: true,
+            emails: [],
         },
     }),
     ...createViewerSettingsGraphQLOverride(),

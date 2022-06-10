@@ -10,6 +10,7 @@ export type FeatureFlagName =
     | 'new-repo-page'
     | 'insight-polling-enabled'
     | 'ab-visitor-tour-with-notebooks'
+    | 'ab-email-verification-alert'
 
 interface OrgFlagOverride {
     orgID: string

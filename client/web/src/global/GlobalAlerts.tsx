@@ -22,7 +22,7 @@ import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
 
 import { GlobalAlert } from './GlobalAlert'
-import { Notices } from './Notices'
+import { Notices, VerifyEmailNotices } from './Notices'
 
 import styles from './GlobalAlerts.module.scss'
 
@@ -124,6 +124,12 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                     </DismissibleAlert>
                 )}
                 <Notices alertClassName={styles.alert} location="top" settingsCascade={this.props.settingsCascade} />
+                {this.props.authenticatedUser && (
+                    <VerifyEmailNotices
+                        alertClassName={styles.alert}
+                        authenticatedUser={this.props.authenticatedUser}
+                    />
+                )}
             </div>
         )
     }
