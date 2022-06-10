@@ -207,6 +207,16 @@ If multiple log lines have similar components (such as a message prefix, or the 
 - instead of repeating a message prefix to e.g. indicate a component, [create a scoped sub-logger](#scoped-loggers) instead
 - instead of adding the same field to multiple log calls, [create a fields sub-logger](#fields-sub-loggers) instead
 
+### Log levels
+
+Guidance on when to use each log level is available on the docstrings of each respective logging function on `Logger`:
+
+<div class="embed">
+  <iframe src="https://sourcegraph.com/embed/notebooks/Tm90ZWJvb2s6MTE3Nw=="
+    style="width:100%;height:520px" frameborder="0" sandbox="allow-scripts allow-same-origin allow-popups">
+  </iframe>
+</div>
+
 ## Production usage
 
 See [observability: logs](../../admin/observability/logs.md) in the administration docs.
