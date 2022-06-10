@@ -735,10 +735,7 @@ export function modifyJSONC(
     editFunction: (oldValue: jsonc.Node | undefined) => any
 ): string | undefined {
     const tree = jsonc.parseTree(text)
-    if (!tree) {
-        return undefined
-    }
-    const old = jsonc.findNodeAtLocation(tree, path)
+    const old = tree ? jsonc.findNodeAtLocation(tree, path) : undefined
     return jsonc.applyEdits(
         text,
         jsonc.modify(text, path, editFunction(old), {
