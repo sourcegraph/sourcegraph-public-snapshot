@@ -8,7 +8,6 @@ import { Notice, Settings } from '@sourcegraph/shared/src/schema/settings.schema
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Alert, AlertProps } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
@@ -90,7 +89,8 @@ interface VerifyEmailNoticesProps {
     className?: string
     /** Apply this class name to each notice (alongside .alert). */
     alertClassName?: string
-    authenticatedUser: AuthenticatedUser
+    emails: string[]
+    settingsURL: string
 }
 
 /**
@@ -99,7 +99,8 @@ interface VerifyEmailNoticesProps {
 export const VerifyEmailNotices: React.FunctionComponent<VerifyEmailNoticesProps> = ({
     className,
     alertClassName,
-    authenticatedUser,
+    emails,
+    settingsURL,
 }) => {
     const [isEmailVerificationAlertEnabled, status] = useFeatureFlag('ab-email-verification-alert')
 
@@ -107,18 +108,16 @@ export const VerifyEmailNotices: React.FunctionComponent<VerifyEmailNoticesProps
         if (status !== 'loaded' || !isEmailVerificationAlertEnabled) {
             return []
         }
-        return authenticatedUser.emails
-            .filter(({ verified }) => !verified)
-            .map(
-                ({ email }): Notice => ({
-                    message: `Please, <a href="${
-                        authenticatedUser?.settingsURL as string
-                    }/emails">verify your email</a> <strong>${(email as string).split('@').join('\\@')}</strong>.`,
-                    location: 'top',
-                    dismissible: false,
-                })
-            ) as Notice[]
-    }, [authenticatedUser, isEmailVerificationAlertEnabled, status])
+        return emails.map(
+            (email): Notice => ({
+                message: `Please, <a href="${settingsURL}/emails">verify your email</a> <strong>${email
+                    .split('@')
+                    .join('\\@')}</strong>`,
+                location: 'top',
+                dismissible: false,
+            })
+        )
+    }, [emails, isEmailVerificationAlertEnabled, settingsURL, status])
 
     if (notices.length === 0) {
         return null
