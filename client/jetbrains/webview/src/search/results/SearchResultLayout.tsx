@@ -30,7 +30,7 @@ export const SearchResultLayout: React.FunctionComponent<Props> = ({
         <div className={styles.iconColumn}>
             {iconColumn !== undefined ? (
                 <>
-                    <Icon role="img" aria-label="File" size="sm" as={iconColumn.icon} />
+                    <Icon aria-label="File" size="sm" as={iconColumn.icon} />
                     <div className={classNames('mx-1', styles.divider)} />
                     <CodeHostIcon repoName={iconColumn.repoName} />
                 </>

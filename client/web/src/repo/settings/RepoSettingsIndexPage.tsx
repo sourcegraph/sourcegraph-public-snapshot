@@ -84,7 +84,6 @@ const TextSearchIndexedReference: React.FunctionComponent<
     return (
         <li className={styles.ref}>
             <Icon
-                role="img"
                 className={classNames(styles.refIcon, isCurrent && styles.refIconCurrent)}
                 as={isCurrent ? CheckCircleIcon : LoadingSpinner}
                 aria-hidden={true}

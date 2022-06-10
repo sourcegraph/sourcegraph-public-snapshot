@@ -9,6 +9,7 @@
 
 - [How to add support for a language](add_support_for_a_language.md)
 - [Release Browser Extensions](releasing_browser_extensions.md)
+- [How to implement the authentication process for an IDE extension](ide_auth_flow.md)
 
 ## Implementing Sourcegraph
 

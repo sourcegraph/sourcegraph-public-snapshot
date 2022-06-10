@@ -32,19 +32,19 @@ export const TabNavigation: React.FunctionComponent<React.PropsWithChildren<TabN
 }) => (
     <ButtonGroup>
         <Button onClick={() => setCurrentTab('commits')} variant="secondary" outline={true}>
-            <Icon role="img" as={SourceCommitIcon} aria-hidden={true} /> Commits
+            <Icon as={SourceCommitIcon} aria-hidden={true} /> Commits
         </Button>
         <Button onClick={() => setCurrentTab('branches')} variant="secondary" outline={true}>
-            <Icon role="img" as={SourceBranchIcon} aria-hidden={true} /> Branches
+            <Icon as={SourceBranchIcon} aria-hidden={true} /> Branches
         </Button>
         <Button onClick={() => setCurrentTab('tags')} variant="secondary" outline={true}>
-            <Icon role="img" as={TagIcon} aria-hidden={true} /> Tags
+            <Icon as={TagIcon} aria-hidden={true} /> Tags
         </Button>
         <Button onClick={() => setCurrentTab('compare')} variant="secondary" outline={true}>
-            <Icon role="img" as={HistoryIcon} aria-hidden={true} /> Compare
+            <Icon as={HistoryIcon} aria-hidden={true} /> Compare
         </Button>
         <Button onClick={() => setCurrentTab('contributors')} variant="secondary" outline={true}>
-            <Icon role="img" as={AccountIcon} aria-hidden={true} /> Contributors
+            <Icon as={AccountIcon} aria-hidden={true} /> Contributors
         </Button>
         {codeIntelligenceEnabled && (
             <Button
@@ -53,7 +53,7 @@ export const TabNavigation: React.FunctionComponent<React.PropsWithChildren<TabN
                 outline={true}
                 as={Link}
             >
-                <Icon role="img" as={BrainIcon} aria-hidden={true} /> Code Intelligence
+                <Icon as={BrainIcon} aria-hidden={true} /> Code Intelligence
             </Button>
         )}
         {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
@@ -64,7 +64,7 @@ export const TabNavigation: React.FunctionComponent<React.PropsWithChildren<TabN
                 outline={true}
                 as={Link}
             >
-                <Icon role="img" as={SettingsIcon} aria-hidden={true} /> Settings
+                <Icon as={SettingsIcon} aria-hidden={true} /> Settings
             </Button>
         )}
     </ButtonGroup>

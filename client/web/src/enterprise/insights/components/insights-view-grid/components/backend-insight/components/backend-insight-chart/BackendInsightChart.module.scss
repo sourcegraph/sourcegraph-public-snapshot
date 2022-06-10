@@ -65,7 +65,10 @@
 
 .legend-list-item {
     word-break: break-all;
-    cursor: pointer;
+
+    &.clickable {
+        cursor: pointer;
+    }
 }
 
 .alert-overlay {

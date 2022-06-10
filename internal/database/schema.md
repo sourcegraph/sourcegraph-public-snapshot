@@ -150,9 +150,12 @@ Foreign-key constraints:
  cancel                  | boolean                  |           | not null | false
  access_token_id         | bigint                   |           |          | 
  queued_at               | timestamp with time zone |           |          | now()
+ user_id                 | integer                  |           |          | 
 Indexes:
     "batch_spec_workspace_execution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_workspace_execution_jobs_cancel" btree (cancel)
+    "batch_spec_workspace_execution_jobs_state" btree (state)
+    "batch_spec_workspace_execution_jobs_user_id" btree (user_id)
 Foreign-key constraints:
     "batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey" FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE
     "batch_spec_workspace_execution_jobs_access_token_id_fkey" FOREIGN KEY (access_token_id) REFERENCES access_tokens(id) ON DELETE SET NULL DEFERRABLE
@@ -952,6 +955,7 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
  unrestricted        | boolean                  |           | not null | false
 Indexes:
     "explicit_permissions_bitbucket_projects_jobs_pkey" PRIMARY KEY, btree (id)
+    "explicit_permissions_bitbucket_projects_jobs_project_key_extern" btree (project_key, external_service_id, state)
 Check constraints:
     "explicit_permissions_bitbucket_projects_jobs_check" CHECK (permissions IS NOT NULL AND unrestricted IS FALSE OR permissions IS NULL AND unrestricted IS TRUE)
 
@@ -2727,6 +2731,64 @@ Indexes:
 Foreign-key constraints:
     "webhook_logs_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE
 
+```
+
+# View "public.batch_spec_workspace_execution_queue"
+
+## View query:
+
+```sql
+ WITH user_queues AS (
+         SELECT exec.user_id,
+            max(exec.started_at) AS latest_dequeue
+           FROM batch_spec_workspace_execution_jobs exec
+          GROUP BY exec.user_id
+        ), materialized_queue_candidates AS MATERIALIZED (
+         SELECT exec.id,
+            exec.batch_spec_workspace_id,
+            exec.state,
+            exec.failure_message,
+            exec.started_at,
+            exec.finished_at,
+            exec.process_after,
+            exec.num_resets,
+            exec.num_failures,
+            exec.execution_logs,
+            exec.worker_hostname,
+            exec.last_heartbeat_at,
+            exec.created_at,
+            exec.updated_at,
+            exec.cancel,
+            exec.access_token_id,
+            exec.queued_at,
+            exec.user_id,
+            rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS place_in_user_queue
+           FROM (batch_spec_workspace_execution_jobs exec
+             JOIN user_queues queue ON ((queue.user_id = exec.user_id)))
+          WHERE (exec.state = 'queued'::text)
+          ORDER BY (rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id)), queue.latest_dequeue NULLS FIRST
+        )
+ SELECT row_number() OVER () AS place_in_global_queue,
+    materialized_queue_candidates.id,
+    materialized_queue_candidates.batch_spec_workspace_id,
+    materialized_queue_candidates.state,
+    materialized_queue_candidates.failure_message,
+    materialized_queue_candidates.started_at,
+    materialized_queue_candidates.finished_at,
+    materialized_queue_candidates.process_after,
+    materialized_queue_candidates.num_resets,
+    materialized_queue_candidates.num_failures,
+    materialized_queue_candidates.execution_logs,
+    materialized_queue_candidates.worker_hostname,
+    materialized_queue_candidates.last_heartbeat_at,
+    materialized_queue_candidates.created_at,
+    materialized_queue_candidates.updated_at,
+    materialized_queue_candidates.cancel,
+    materialized_queue_candidates.access_token_id,
+    materialized_queue_candidates.queued_at,
+    materialized_queue_candidates.user_id,
+    materialized_queue_candidates.place_in_user_queue
+   FROM materialized_queue_candidates;
 ```
 
 # View "public.branch_changeset_specs_and_changesets"

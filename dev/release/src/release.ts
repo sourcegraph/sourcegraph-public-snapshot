@@ -231,7 +231,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                         base: 'main',
                         head: `changelog-${release.version}`,
                         title: prMessage,
-                        commitMessage: prMessage,
+                        commitMessage: prMessage + '\n\n ## Test plan\n\nn/a',
                         edits: [
                             (directory: string) => {
                                 console.log(`Updating '${changelogFile} for ${release.format()}'`)

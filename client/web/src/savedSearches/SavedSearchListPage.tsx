@@ -66,7 +66,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
         return (
             <div className={classNames(styles.row, 'list-group-item test-saved-search-list-page-row')}>
                 <div className="d-flex">
-                    <Icon role="img" className={styles.rowIcon} as={MessageTextOutlineIcon} aria-hidden={true} />
+                    <Icon className={styles.rowIcon} as={MessageTextOutlineIcon} aria-hidden={true} />
                     <Link
                         to={
                             '/search?' +
@@ -87,7 +87,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                         size="sm"
                         as={Link}
                     >
-                        <Icon role="img" as={SettingsIcon} aria-hidden={true} /> Settings
+                        <Icon as={SettingsIcon} aria-hidden={true} /> Settings
                     </Button>{' '}
                     <Button
                         className="test-delete-saved-search-button"
@@ -98,7 +98,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                         size="sm"
                         aria-label="Delete saved search"
                     >
-                        <Icon role="img" as={DeleteIcon} aria-hidden={true} />
+                        <Icon as={DeleteIcon} aria-hidden={true} />
                     </Button>
                 </div>
             </div>
@@ -151,7 +151,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                             variant="primary"
                             as={Link}
                         >
-                            <Icon role="img" as={PlusIcon} aria-hidden={true} /> Add saved search
+                            <Icon as={PlusIcon} aria-hidden={true} /> Add saved search
                         </Button>
                     }
                     className="mb-3"
