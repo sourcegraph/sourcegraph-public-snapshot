@@ -1,5 +1,7 @@
 import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { mergeSettings } from '@sourcegraph/shared/src/settings/settings'
 import { testUserID, sharedGraphQlResults } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
 import { WebGraphQlOperations } from '../graphql-operations'
@@ -11,6 +13,46 @@ import {
 } from '../search/panels/utils'
 
 import { builtinAuthProvider, siteGQLID, siteID } from './jscontext'
+
+/**
+ * Helper function for creating user and organization/site settings.
+ */
+export const createViewerSettingsGraphQLOverride = (
+    settings: { user?: Settings; site?: Settings } = {}
+): Pick<SharedGraphQlOperations, 'ViewerSettings'> => {
+    const { user: userSettings = {}, site: siteSettings = {} } = settings
+    return {
+        ViewerSettings: () => ({
+            viewerSettings: {
+                __typename: 'SettingsCascade',
+                subjects: [
+                    {
+                        __typename: 'DefaultSettings',
+                        settingsURL: null,
+                        viewerCanAdminister: false,
+                        latestSettings: {
+                            id: 0,
+                            contents: JSON.stringify(userSettings),
+                        },
+                    },
+                    {
+                        __typename: 'Site',
+                        id: siteGQLID,
+                        siteID,
+                        latestSettings: {
+                            id: 470,
+                            contents: JSON.stringify(siteSettings),
+                        },
+                        settingsURL: '/site-admin/global-settings',
+                        viewerCanAdminister: true,
+                        allowSiteSettingsEdits: true,
+                    },
+                ],
+                final: JSON.stringify(mergeSettings([siteSettings, userSettings])),
+            },
+        }),
+    }
+}
 
 /**
  * Predefined results for GraphQL requests that are made on almost every page.
@@ -39,35 +81,7 @@ export const commonWebGraphQlResults: Partial<
             searchable: true,
         },
     }),
-    ViewerSettings: () => ({
-        viewerSettings: {
-            __typename: 'SettingsCascade',
-            subjects: [
-                {
-                    __typename: 'DefaultSettings',
-                    settingsURL: null,
-                    viewerCanAdminister: false,
-                    latestSettings: {
-                        id: 0,
-                        contents: JSON.stringify({}),
-                    },
-                },
-                {
-                    __typename: 'Site',
-                    id: siteGQLID,
-                    siteID,
-                    latestSettings: {
-                        id: 470,
-                        contents: JSON.stringify({}),
-                    },
-                    settingsURL: '/site-admin/global-settings',
-                    viewerCanAdminister: true,
-                    allowSiteSettingsEdits: true,
-                },
-            ],
-            final: JSON.stringify({}),
-        },
-    }),
+    ...createViewerSettingsGraphQLOverride(),
     SiteFlags: () => ({
         site: {
             needsRepositoryConfiguration: false,
