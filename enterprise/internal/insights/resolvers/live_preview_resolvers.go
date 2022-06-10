@@ -70,8 +70,13 @@ func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend
 		generatedSeries = append(generatedSeries, series...)
 	}
 
+	foundData := false
 	for i := range generatedSeries {
+		foundData = foundData || len(generatedSeries[i].Points) > 0
 		resolvers = append(resolvers, &searchInsightLivePreviewSeriesResolver{series: &generatedSeries[i]})
+	}
+	if !foundData {
+		return nil, errors.New("Data for these repositories not found")
 	}
 
 	return resolvers, nil
