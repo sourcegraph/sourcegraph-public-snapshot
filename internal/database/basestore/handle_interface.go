@@ -9,17 +9,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type ITransactableHandle interface {
+type TransactableHandle interface {
 	DB() dbutil.DB
 	InTransaction() bool
-	Transact(context.Context) (ITransactableHandle, error)
+	Transact(context.Context) (TransactableHandle, error)
 	Done(error) error
 }
 
 var (
-	_ ITransactableHandle = (*dbHandle)(nil)
-	_ ITransactableHandle = (*txHandle)(nil)
-	_ ITransactableHandle = (*savepointHandle)(nil)
+	_ TransactableHandle = (*dbHandle)(nil)
+	_ TransactableHandle = (*txHandle)(nil)
+	_ TransactableHandle = (*savepointHandle)(nil)
 )
 
 type dbHandle struct {
@@ -35,7 +35,7 @@ func (h *dbHandle) InTransaction() bool {
 	return false
 }
 
-func (h *dbHandle) Transact(ctx context.Context) (ITransactableHandle, error) {
+func (h *dbHandle) Transact(ctx context.Context) (TransactableHandle, error) {
 	tx, err := h.db.BeginTx(ctx, &h.txOptions)
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func (h *txHandle) InTransaction() bool {
 	return true
 }
 
-func (h *txHandle) Transact(ctx context.Context) (ITransactableHandle, error) {
+func (h *txHandle) Transact(ctx context.Context) (TransactableHandle, error) {
 	savepointID, err := newTxSavepoint(ctx, h.tx)
 	if err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ func (h *savepointHandle) InTransaction() bool {
 	return true
 }
 
-func (h *savepointHandle) Transact(ctx context.Context) (ITransactableHandle, error) {
+func (h *savepointHandle) Transact(ctx context.Context) (TransactableHandle, error) {
 	savepointID, err := newTxSavepoint(ctx, h.tx)
 	if err != nil {
 		return nil, err
