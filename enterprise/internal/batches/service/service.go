@@ -333,11 +333,6 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 		return nil, err
 	}
 
-	// Temporarily prevent mounts for server-side processing.
-	if hasMount(spec) {
-		return nil, errors.New("mounts are not allowed for server-side processing")
-	}
-
 	// Check whether the current user has access to either one of the namespaces.
 	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
 	if err != nil {
@@ -374,6 +369,11 @@ type createBatchSpecForExecutionOpts struct {
 // transaction, possibly creating ChangesetSpecs if the spec contains
 // importChangesets statements, and finally creating a BatchSpecResolutionJob.
 func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Store, opts createBatchSpecForExecutionOpts) error {
+	// Temporarily prevent mounts for server-side processing.
+	if hasMount(opts.spec) {
+		return errors.New("mounts are not allowed for server-side processing")
+	}
+
 	opts.spec.CreatedFromRaw = true
 	opts.spec.AllowIgnored = opts.allowIgnored
 	opts.spec.AllowUnsupported = opts.allowUnsupported
@@ -389,6 +389,15 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 		BatchSpecID: opts.spec.ID,
 		InitiatorID: opts.spec.UserID,
 	})
+}
+
+func hasMount(spec *btypes.BatchSpec) bool {
+	for _, step := range spec.Spec.Steps {
+		if len(step.Mount) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 type ErrBatchSpecResolutionErrored struct {
@@ -580,11 +589,6 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 		return nil, errors.Wrap(err, "parsing batch spec")
 	}
 
-	// Temporarily prevent mounts for server-side processing.
-	if hasMount(spec) {
-		return nil, errors.New("mounts are not allowed for server-side processing")
-	}
-
 	// Check whether the current user has access to either one of the namespaces.
 	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
 	if err != nil {
@@ -627,15 +631,6 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 		allowUnsupported: opts.AllowUnsupported,
 		noCache:          opts.NoCache,
 	})
-}
-
-func hasMount(spec *btypes.BatchSpec) bool {
-	for _, step := range spec.Spec.Steps {
-		if len(step.Mount) > 0 {
-			return true
-		}
-	}
-	return false
 }
 
 // replaceBatchSpec removes a previous batch spec and copies its random ID,
