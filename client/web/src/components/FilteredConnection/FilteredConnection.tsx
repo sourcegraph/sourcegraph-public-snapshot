@@ -539,7 +539,7 @@ export class FilteredConnection<
                         ariaLabelFunction={this.props.ariaLabelFunction}
                     />
                 )}
-                {/* {console.log(this.props)} */}
+
                 {this.state.loading && (
                     <ConnectionLoading compact={this.props.compact} className={this.props.loaderClassName} />
                 )}
