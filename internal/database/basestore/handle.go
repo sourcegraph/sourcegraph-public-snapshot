@@ -8,10 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// OldTransactableHandle is a wrapper around a database connection that provides nested transactions
-// through registration and finalization of savepoints. A transactable database handler can be
-// shared by multiple stores.
-type OldTransactableHandle struct {
+type oldTransactableHandle struct {
 	db         dbutil.DB
 	savepoints []*savepoint
 	txOptions  sql.TxOptions
@@ -19,16 +16,16 @@ type OldTransactableHandle struct {
 
 // NewHandleWithDB returns a new transactable database handle using the given database connection.
 func NewHandleWithDB(db dbutil.DB, txOptions sql.TxOptions) TransactableHandle {
-	return &OldTransactableHandle{db: db, txOptions: txOptions}
+	return &oldTransactableHandle{db: db, txOptions: txOptions}
 }
 
 // DB returns the underlying database handle.
-func (h *OldTransactableHandle) DB() dbutil.DB {
+func (h *oldTransactableHandle) DB() dbutil.DB {
 	return h.db
 }
 
 // InTransaction returns true if the underlying database handle is in a transaction.
-func (h *OldTransactableHandle) InTransaction() bool {
+func (h *oldTransactableHandle) InTransaction() bool {
 	db := tryUnwrap(h.db)
 	_, ok := db.(dbutil.Tx)
 	return ok
@@ -42,7 +39,7 @@ func (h *OldTransactableHandle) InTransaction() bool {
 // Because we support properly nested transactions via savepoints, calling Transact from two different
 // goroutines on the same handle will not be deterministic: either transaction could nest the other one,
 // and calling Done in one goroutine may not finalize the expected unit of work.
-func (h *OldTransactableHandle) Transact(ctx context.Context) (TransactableHandle, error) {
+func (h *oldTransactableHandle) Transact(ctx context.Context) (TransactableHandle, error) {
 	db := tryUnwrap(h.db)
 
 	if h.InTransaction() {
@@ -65,7 +62,7 @@ func (h *OldTransactableHandle) Transact(ctx context.Context) (TransactableHandl
 		return nil, err
 	}
 
-	return &OldTransactableHandle{db: tx, txOptions: h.txOptions}, nil
+	return &oldTransactableHandle{db: tx, txOptions: h.txOptions}, nil
 }
 
 // Done performs a commit or rollback of the underlying transaction/savepoint depending
@@ -73,7 +70,7 @@ func (h *OldTransactableHandle) Transact(ctx context.Context) (TransactableHandl
 // the error parameter along with any error that occurs during commit or rollback of the
 // transaction/savepoint. If the store does not wrap a transaction the original error value
 // is returned unchanged.
-func (h *OldTransactableHandle) Done(err error) error {
+func (h *oldTransactableHandle) Done(err error) error {
 	db := tryUnwrap(h.db)
 
 	if n := len(h.savepoints); n > 0 {

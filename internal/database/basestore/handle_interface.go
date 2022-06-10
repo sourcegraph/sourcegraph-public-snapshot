@@ -9,6 +9,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// Transactible is a wrapper around a database connection that provides nested
+// transactions through registration and finalization of savepoints. A
+// transactable database handler can be shared by multiple stores.
 type TransactableHandle interface {
 	DB() dbutil.DB
 	InTransaction() bool
@@ -20,6 +23,9 @@ var (
 	_ TransactableHandle = (*dbHandle)(nil)
 	_ TransactableHandle = (*txHandle)(nil)
 	_ TransactableHandle = (*savepointHandle)(nil)
+
+	// The old transactible handle
+	_ TransactableHandle = (*oldTransactableHandle)(nil)
 )
 
 type dbHandle struct {
