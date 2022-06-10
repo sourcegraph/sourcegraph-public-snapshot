@@ -173,4 +173,31 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	)
 	// should fail if the bind ids are wrong
 	require.Error(t, err)
+
+	// ensure this unsets the unrestricted flag
+	_, err = db.ExecContext(ctx, "UPDATE repo_permissions SET unrestricted = true WHERE repo_id = 1")
+	require.NoError(t, err)
+
+	// run the same set of permissions again
+	err = setPermissionsForUsers(
+		ctx,
+		db,
+		[]types.UserPermission{
+			{BindID: "pushpa@example.com", Permission: "read"},
+			{BindID: "igor@example.com", Permission: "read"},
+			{BindID: "sayako", Permission: "read"},
+		},
+		[]api.RepoID{
+			1,
+			2,
+		},
+	)
+	require.NoError(t, err)
+	check()
+
+	// check the unrestricted flag
+	var unrestricted bool
+	err = db.QueryRowContext(ctx, "SELECT unrestricted FROM repo_permissions WHERE repo_id = 1").Scan(&unrestricted)
+	require.NoError(t, err)
+	require.False(t, unrestricted)
 }
