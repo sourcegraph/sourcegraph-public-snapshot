@@ -67,6 +67,32 @@ extend type Mutation {
         """
         userPermissions: [UserSubRepoPermission!]!
     ): EmptyResponse!
+    """
+    Set the repository permissions for a given Bitbucket project. This mutation will apply the user
+    given permissions to all the repositories that are part of the Bitbucket project as identified by the
+    project key and all the users that have access to each repository.
+    """
+    setRepositoryPermissionsForBitbucketProject(
+        """
+        Bitbucket project key of which all repository permissions will be updated.
+        """
+        projectKey: String!
+        """
+        The bitbucket code host's GraphQL ID where this project is located.
+        """
+        codeHost: ID!
+        """
+        A list of user identifiers and their repository permissions, which defines the set of
+        users who may view the repository. All users not included in the list will not be
+        permitted to view the repository on Sourcegraph.
+        """
+        userPermissions: [UserPermission!]!
+
+        """
+        Flag to indicate if ALL repositories under the project will allow unrestricted access to all users who have access to the code host.
+        """
+        unrestricted: Boolean
+    ): EmptyResponse!
 }
 
 extend type Query {

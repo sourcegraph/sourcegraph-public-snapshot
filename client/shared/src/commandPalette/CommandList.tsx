@@ -184,7 +184,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                     <div className="d-flex py-5 align-items-center justify-content-center">
                         <LoadingSpinner inline={false} />
                         <span className="mx-2">Loading Sourcegraph extensions</span>
-                        <Icon role="img" as={PuzzleIcon} aria-hidden={true} />
+                        <Icon as={PuzzleIcon} aria-hidden={true} />
                     </div>
                 </EmptyCommandListContainer>
             )
@@ -385,7 +385,7 @@ export const CommandListPopoverButton: React.FunctionComponent<
     const id = useMemo(() => uniqueId('command-list-popover-button-'), [])
 
     const MenuDropdownIcon = (): JSX.Element => (
-        <Icon role="img" as={isOpen ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
+        <Icon as={isOpen ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
     )
     return (
         <Button
@@ -397,7 +397,7 @@ export const CommandListPopoverButton: React.FunctionComponent<
             variant={variant}
             aria-label="Command list"
         >
-            <Icon role="img" as={ConsoleIcon} size="md" aria-hidden={true} />
+            <Icon as={ConsoleIcon} size="md" aria-hidden={true} />
 
             {showCaret && <MenuDropdownIcon />}
 

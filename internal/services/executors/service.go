@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	postgres "github.com/sourcegraph/sourcegraph/internal/services/executors/store/db"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -18,7 +18,7 @@ type Executor interface {
 	GetByHostname(ctx context.Context, hostname string) (types.Executor, bool, error)
 }
 
-func New(db dbutil.DB) Executor {
+func New(db database.DB) Executor {
 	return &executorService{store: postgres.New(db)}
 }
 

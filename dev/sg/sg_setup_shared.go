@@ -52,6 +52,7 @@ var dependencyCategoryAdditionalSgConfiguration = dependencyCategory{
 
 				var commands []string
 
+				// Write completions script to disk
 				shell := usershell.ShellType(ctx)
 				if shell == "" {
 					return "echo 'Failed to detect shell type' && exit 1"
@@ -62,6 +63,7 @@ var dependencyCategoryAdditionalSgConfiguration = dependencyCategory{
 					fmt.Sprintf(`echo "Writing autocomplete script to %s"`, autocompletePath),
 					fmt.Sprintf(`echo '%s' > %s`, autocompleteScript, autocompletePath))
 
+				// Now prepare to update the shell config
 				shellConfig := usershell.ShellConfigPath(ctx)
 				if shellConfig == "" {
 					return "echo 'Failed to detect shell config path' && exit 1"
@@ -70,6 +72,18 @@ var dependencyCategoryAdditionalSgConfiguration = dependencyCategory{
 				if err != nil {
 					return fmt.Sprintf("echo %s && exit 1", err.Error())
 				}
+
+				// Compinit needs to be initialized
+				if shell == usershell.ZshShell {
+					if !strings.Contains(string(conf), "compinit") {
+						commands = append(commands,
+							fmt.Sprintf(`echo "Adding compinit to %s"`, shellConfig),
+							fmt.Sprintf(`echo "autoload -Uz compinit" >> %s`, shellConfig),
+							fmt.Sprintf(`echo "compinit" >> %s`, shellConfig))
+					}
+				}
+
+				// Then we add completions
 				if !strings.Contains(string(conf), autocompletePath) {
 					commands = append(commands,
 						fmt.Sprintf(`echo "Adding configuration to %s"`, shellConfig),

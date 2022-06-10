@@ -10,6 +10,8 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
@@ -17,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {
@@ -161,8 +162,8 @@ var sg = &cli.App{
 		// Configure logger, for commands that use components that use loggers
 		os.Setenv("SRC_DEVELOPMENT", "true")
 		os.Setenv("SRC_LOG_FORMAT", "console")
-		syncLogs := log.Init(log.Resource{Name: "sg"})
-		interrupt.Register(func() { syncLogs() })
+		liblog := log.Init(log.Resource{Name: "sg"})
+		interrupt.Register(func() { _ = liblog.Sync() })
 
 		// Add autosuggestion hooks to commands with subcommands but no action
 		addSuggestionHooks(cmd.App.Commands)
@@ -220,6 +221,7 @@ var sg = &cli.App{
 		doctorCommand,
 		secretCommand,
 		setupCommand,
+		setupCommandV2,
 
 		// Company
 		teammateCommand,

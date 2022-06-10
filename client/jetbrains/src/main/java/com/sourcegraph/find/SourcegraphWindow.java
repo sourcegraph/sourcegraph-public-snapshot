@@ -1,6 +1,8 @@
 package com.sourcegraph.find;
 
+import com.intellij.ide.DataManager;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -16,7 +18,6 @@ import org.cef.browser.CefBrowser;
 import org.cef.handler.CefKeyboardHandler;
 import org.cef.misc.BoolRef;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -29,8 +30,6 @@ public class SourcegraphWindow implements Disposable {
     private final Project project;
     private final FindPopupPanel mainPanel;
     private JBPopup popup;
-    @Nullable
-    private Window window;
     private static final Logger logger = Logger.getInstance(SourcegraphWindow.class);
 
     public SourcegraphWindow(@NotNull Project project) {
@@ -45,18 +44,8 @@ public class SourcegraphWindow implements Disposable {
             popup = createPopup();
             popup.showCenteredInCurrentWindow(project);
             registerOutsideClickListener();
-
-            if (popup instanceof AbstractPopup) {
-                window = ((AbstractPopup) popup).getPopupWindow();
-            }
         } else {
             popup.setUiVisible(true);
-
-            if (window != null) {
-                // Manually emit a WINDOW_OPENED event if we change the popup to make it visible again. This works around
-                // issues with third-party extensions like the material UI theme that uses these events to display overlays.
-                window.dispatchEvent(new WindowEvent(window, WindowEvent.WINDOW_OPENED));
-            }
         }
 
         // If the popup is already shown, hitting alt + a gain should behave the same as the native find in files
@@ -68,12 +57,7 @@ public class SourcegraphWindow implements Disposable {
 
     public void hidePopup() {
         popup.setUiVisible(false);
-
-        if (window != null) {
-            // Manually emit a WINDOW_CLOSING event if we change the popup to make it invisible. This works around
-            // issues with third-party extensions like the material UI theme that uses these events to display overlays.
-            window.dispatchEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSING));
-        }
+        hideMaterialUiOverlay();
     }
 
     @NotNull
@@ -171,8 +155,12 @@ public class SourcegraphWindow implements Disposable {
                 }
 
                 // Detect if we're focusing the Sourcegraph popup
-                if (windowEvent.getWindow().equals(window)) {
-                    return;
+                if (popup instanceof AbstractPopup) {
+                    Window sourcegraphPopupWindow = ((AbstractPopup) popup).getPopupWindow();
+
+                    if (windowEvent.getWindow().equals(sourcegraphPopupWindow)) {
+                        return;
+                    }
                 }
 
                 // Detect if the newly focused window is a parent of the project root window
@@ -204,5 +192,31 @@ public class SourcegraphWindow implements Disposable {
         }
 
         mainPanel.dispose();
+    }
+
+
+    // We manually emit an action defined by the material UI theme to hide the overlay it opens whenever a popover is
+    // created. This third-party plugin does not work with our approach of keeping the popover alive and thus, when the
+    // Sourcegraph popover is closed, their custom overlay stays active.
+    //
+    //   - https://github.com/sourcegraph/sourcegraph/issues/36479
+    //   - https://github.com/mallowigi/material-theme-issues/issues/179
+    private void hideMaterialUiOverlay() {
+        AnAction materialAction = ActionManager.getInstance().getAction("MTToggleOverlaysAction");
+        if (materialAction != null) {
+            try {
+                materialAction.actionPerformed(
+                    new AnActionEvent(
+                        null,
+                        DataManager.getInstance().getDataContextFromFocusAsync().blockingGet(10),
+                        ActionPlaces.UNKNOWN,
+                        new Presentation(),
+                        ActionManager.getInstance(),
+                        0)
+                );
+            } catch (Exception e) {
+                return;
+            }
+        }
     }
 }

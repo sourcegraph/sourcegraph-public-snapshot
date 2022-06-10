@@ -14,6 +14,9 @@ type FancyLine struct {
 
 	// Prefix can be set to prepend some content to this fancy line.
 	Prefix string
+	// Prompt can be set to indicate this line is a prompt (should not be followed by a
+	// new line).
+	Prompt bool
 }
 
 // Line creates a new FancyLine without a format string.
@@ -66,5 +69,10 @@ func (fl FancyLine) write(w io.Writer, caps capabilities) {
 	}
 
 	fmt.Fprintf(w, "%s"+fl.format+"%s", caps.formatArgs(append(append([]any{fl.style}, fl.args...), StyleReset))...)
-	_, _ = w.Write([]byte("\n"))
+	if fl.Prompt {
+		// Add whitespace for user input
+		_, _ = w.Write([]byte(" "))
+	} else {
+		_, _ = w.Write([]byte("\n"))
+	}
 }

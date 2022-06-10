@@ -4,7 +4,7 @@ import { useMergeRefs } from 'use-callback-ref'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useDeepMemo } from '@sourcegraph/wildcard'
+import { Link, useDeepMemo } from '@sourcegraph/wildcard'
 
 import { ParentSize } from '../../../../../../charts'
 import { CodeInsightsBackendContext, LangStatsInsight } from '../../../../core'
@@ -65,6 +65,8 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
         insightType: getTrackingTypeByInsightType(insight.type),
     })
 
+    const shareableUrl = `${window.location.origin}/insights/insight/${insight.id}`
+
     return (
         <InsightCard
             {...otherProps}
@@ -73,7 +75,13 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
             onMouseEnter={trackMouseEnter}
             onMouseLeave={trackMouseLeave}
         >
-            <InsightCardHeader title={insight.title}>
+            <InsightCardHeader
+                title={
+                    <Link to={shareableUrl} target="_blank" rel="noopener noreferrer">
+                        {insight.title}
+                    </Link>
+                }
+            >
                 {isVisible && (
                     <InsightContextMenu
                         insight={insight}

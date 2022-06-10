@@ -15,11 +15,12 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
+
 	sgslack "github.com/sourcegraph/sourcegraph/dev/sg/internal/slack"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var auditFormatFlag string
@@ -54,7 +55,7 @@ var auditCommand = &cli.Command{
 				&oauth2.Token{AccessToken: auditPRGitHubToken},
 			)))
 
-			logger := log.Scoped("audit pr", "sg audit pr")
+			logger := log.Scoped("auditPR", "sg audit pr")
 			logger.Debug("fetching issues")
 			issues, err := fetchIssues(ctx.Context, logger, ghc)
 			if err != nil {

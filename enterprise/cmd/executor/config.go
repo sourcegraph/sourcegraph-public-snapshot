@@ -26,9 +26,11 @@ type Config struct {
 	FirecrackerImage           string
 	VMStartupScriptPath        string
 	VMPrefix                   string
+	KeepWorkspaces             bool
+	DockerHostMountPath        string
 	UseFirecracker             bool
-	FirecrackerNumCPUs         int
-	FirecrackerMemory          string
+	JobNumCPUs                 int
+	JobMemory                  string
 	FirecrackerDiskSpace       string
 	MaximumRuntimePerJob       time.Duration
 	CleanupTaskInterval        time.Duration
@@ -47,9 +49,11 @@ func (c *Config) Load() {
 	c.FirecrackerImage = c.Get("EXECUTOR_FIRECRACKER_IMAGE", "sourcegraph/ignite-ubuntu:insiders", "The base image to use for virtual machines.")
 	c.VMStartupScriptPath = c.GetOptional("EXECUTOR_VM_STARTUP_SCRIPT_PATH", "A path to a file on the host that is loaded into a fresh virtual machine and executed on startup.")
 	c.VMPrefix = c.Get("EXECUTOR_VM_PREFIX", "executor", "A name prefix for virtual machines controlled by this instance.")
-	c.FirecrackerNumCPUs = c.GetInt("EXECUTOR_FIRECRACKER_NUM_CPUS", "4", "How many CPUs to allocate to each virtual machine or container.")
-	c.FirecrackerMemory = c.Get("EXECUTOR_FIRECRACKER_MEMORY", "12G", "How much memory to allocate to each virtual machine or container.")
-	c.FirecrackerDiskSpace = c.Get("EXECUTOR_FIRECRACKER_DISK_SPACE", "20G", "How much disk space to allocate to each virtual machine or container.")
+	c.KeepWorkspaces = c.GetBool("EXECUTOR_KEEP_WORKSPACES", "false", "Whether to skip deletion of workspaces after a job completes (or fails).")
+	c.DockerHostMountPath = c.GetOptional("EXECUTOR_DOCKER_HOST_MOUNT_PATH", "The target workspace as it resides on the Docker host (used to enable Docker-in-Docker).")
+	c.JobNumCPUs = c.GetInt(env.ChooseFallbackVariableName("EXECUTOR_JOB_NUM_CPUS", "EXECUTOR_FIRECRACKER_NUM_CPUS"), "4", "How many CPUs to allocate to each virtual machine or container. A value of zero sets no resource bound (in Docker, but not VMs).")
+	c.JobMemory = c.Get(env.ChooseFallbackVariableName("EXECUTOR_JOB_MEMORY", "EXECUTOR_FIRECRACKER_MEMORY"), "12G", "How much memory to allocate to each virtual machine or container. A value of zero sets no resource bound (in Docker, but not VMs).")
+	c.FirecrackerDiskSpace = c.Get("EXECUTOR_FIRECRACKER_DISK_SPACE", "20G", "How much disk space to allocate to each virtual machine.")
 	c.MaximumRuntimePerJob = c.GetInterval("EXECUTOR_MAXIMUM_RUNTIME_PER_JOB", "30m", "The maximum wall time that can be spent on a single job.")
 	c.CleanupTaskInterval = c.GetInterval("EXECUTOR_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic cleanup tasks.")
 	c.NumTotalJobs = c.GetInt("EXECUTOR_NUM_TOTAL_JOBS", "0", "The maximum number of jobs that will be dequeued by the worker.")
@@ -61,9 +65,9 @@ func (c *Config) Load() {
 }
 
 func (c *Config) Validate() error {
-	if c.FirecrackerNumCPUs != 1 && c.FirecrackerNumCPUs%2 != 0 {
+	if c.JobNumCPUs != 1 && c.JobNumCPUs%2 != 0 && c.UseFirecracker {
 		// Required by Firecracker: The vCPU number is invalid! The vCPU number can only be 1 or an even number when hyperthreading is enabled
-		c.AddError(errors.Newf("EXECUTOR_FIRECRACKER_NUM_CPUS must be 1 or an even number"))
+		c.AddError(errors.Newf("EXECUTOR_JOB_NUM_CPUS must be 1 or an even number"))
 	}
 
 	return c.BaseConfig.Validate()
@@ -72,6 +76,7 @@ func (c *Config) Validate() error {
 func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) apiworker.Options {
 	return apiworker.Options{
 		VMPrefix:           c.VMPrefix,
+		KeepWorkspaces:     c.KeepWorkspaces,
 		QueueName:          c.QueueName,
 		WorkerOptions:      c.WorkerOptions(),
 		FirecrackerOptions: c.FirecrackerOptions(),
@@ -110,9 +115,10 @@ func (c *Config) FirecrackerOptions() command.FirecrackerOptions {
 
 func (c *Config) ResourceOptions() command.ResourceOptions {
 	return command.ResourceOptions{
-		NumCPUs:   c.FirecrackerNumCPUs,
-		Memory:    c.FirecrackerMemory,
-		DiskSpace: c.FirecrackerDiskSpace,
+		NumCPUs:             c.JobNumCPUs,
+		Memory:              c.JobMemory,
+		DiskSpace:           c.FirecrackerDiskSpace,
+		DockerHostMountPath: c.DockerHostMountPath,
 	}
 }
 

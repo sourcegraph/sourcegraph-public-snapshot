@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type AuthzResolver interface {
@@ -13,6 +14,7 @@ type AuthzResolver interface {
 	ScheduleRepositoryPermissionsSync(ctx context.Context, args *RepositoryIDArgs) (*EmptyResponse, error)
 	ScheduleUserPermissionsSync(ctx context.Context, args *UserPermissionsSyncArgs) (*EmptyResponse, error)
 	SetSubRepositoryPermissionsForUsers(ctx context.Context, args *SubRepoPermsArgs) (*EmptyResponse, error)
+	SetRepositoryPermissionsForBitbucketProject(ctx context.Context, args *RepoPermsBitbucketProjectArgs) (*EmptyResponse, error)
 
 	// Queries
 	AuthorizedUserRepositories(ctx context.Context, args *AuthorizedRepoArgs) (RepositoryConnectionResolver, error)
@@ -63,6 +65,13 @@ type AuthorizedRepoArgs struct {
 	Perm     string
 	First    int32
 	After    *string
+}
+
+type RepoPermsBitbucketProjectArgs struct {
+	ProjectKey      string
+	CodeHost        graphql.ID
+	UserPermissions []types.UserPermission
+	Unrestricted    *bool
 }
 
 type PermissionsInfoResolver interface {

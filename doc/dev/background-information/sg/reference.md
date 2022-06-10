@@ -31,12 +31,12 @@ Available comamndsets in `sg.config.yaml`:
 * api-only
 * batches 🦡
 * codeintel
-* core-app
 * dotcom
 * enterprise
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
 * enterprise-e2e
+* iam
 * monitoring
 * monitoring-alerts
 * oss

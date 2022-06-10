@@ -66,9 +66,9 @@ interface NavItemProps extends Omit<MenuItemProps, 'children' | 'onSelect'> {
 const NavMenuItem = forwardRef(({ content, prefixIcon, suffixIcon, onSelect, to, itemAs, ...rest }, reference) => {
     const contentWithIcon = (
         <>
-            {prefixIcon && <Icon role="img" aria-hidden={true} as={prefixIcon} className="mr-1" />}
+            {prefixIcon && <Icon aria-hidden={true} as={prefixIcon} className="mr-1" />}
             {content}
-            {suffixIcon && <Icon role="img" aria-hidden={true} as={suffixIcon} className="ml-1" />}
+            {suffixIcon && <Icon aria-hidden={true} as={suffixIcon} className="ml-1" />}
         </>
     )
 

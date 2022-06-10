@@ -83,7 +83,7 @@ export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChil
                 description="Access tokens may be used to access the Sourcegraph API."
                 actions={
                     <Button to={`${match.url}/new`} variant="primary" as={Link}>
-                        <Icon role="img" as={AddIcon} aria-hidden={true} /> Generate new token
+                        <Icon as={AddIcon} aria-hidden={true} /> Generate new token
                     </Button>
                 }
                 className="mb-3"

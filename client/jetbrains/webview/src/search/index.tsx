@@ -91,6 +91,9 @@ export function applyTheme(theme: Theme): void {
     // Button color (test)
     root.style.setProperty('--button-color', intelliJTheme['Button.default.startBackground'])
     root.style.setProperty('--primary', intelliJTheme['Button.default.startBackground'])
+
+    root.style.setProperty('--color-bg-3', intelliJTheme['List.selectionBackground'])
+    root.style.setProperty('--light-text', intelliJTheme['List.selectionForeground'])
 }
 
 function applyLastSearch(lastSearch: Search | null): void {

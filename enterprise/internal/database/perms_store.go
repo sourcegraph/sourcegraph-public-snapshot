@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -13,11 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
@@ -180,6 +183,10 @@ type PermsStore interface {
 	// "staleDur" argument indicates how long ago was the last update to be
 	// considered as stale.
 	Metrics(ctx context.Context, staleDur time.Duration) (*PermsMetrics, error)
+	// MapUsers takes a list of bind ids and a mapping configuration and maps them to the right user ids.
+	// It filters out empty bindIDs and only returns users that exist in the database.
+	// If a bind id doesn't map to any user, it is ignored.
+	MapUsers(ctx context.Context, bindIDs []string, mapping *schema.PermissionsUserMapping) (map[string]int32, error)
 }
 
 // It is concurrency-safe and maintains data consistency over the 'user_permissions',
@@ -193,12 +200,12 @@ type permsStore struct {
 var _ PermsStore = (*permsStore)(nil)
 
 // Perms returns a new PermsStore with given parameters.
-func Perms(db dbutil.DB, clock func() time.Time) PermsStore {
+func Perms(db database.DB, clock func() time.Time) PermsStore {
 	return perms(db, clock)
 }
 
-func perms(db dbutil.DB, clock func() time.Time) *permsStore {
-	return &permsStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), clock: clock}
+func perms(db database.DB, clock func() time.Time) *permsStore {
+	return &permsStore{Store: basestore.NewWithHandle(db.Handle()), clock: clock}
 }
 
 func PermsWith(other basestore.ShareableStore, clock func() time.Time) PermsStore {
@@ -1759,6 +1766,60 @@ func (s *permsStore) observe(ctx context.Context, family, title string) (context
 
 		tr.Finish()
 	}
+}
+
+// MapUsers takes a list of bind ids and a mapping configuration and maps them to the right user ids.
+// It filters out empty bindIDs and only returns users that exist in the database.
+// If a bind id doesn't map to any user, it is ignored.
+func (s *permsStore) MapUsers(ctx context.Context, bindIDs []string, mapping *schema.PermissionsUserMapping) (map[string]int32, error) {
+	// Filter out bind IDs that only contains whitespaces.
+	filtered := make([]string, 0, len(bindIDs))
+	for _, bindID := range bindIDs {
+		bindID := strings.TrimSpace(bindID)
+		if bindID == "" {
+			continue
+		}
+		filtered = append(bindIDs, bindID)
+	}
+
+	var userIDs map[string]int32
+
+	switch mapping.BindID {
+	case "email":
+		emails, err := database.UserEmailsWith(s).GetVerifiedEmails(ctx, filtered...)
+		if err != nil {
+			return nil, err
+		}
+
+		userIDs = make(map[string]int32, len(emails))
+		for i := range emails {
+			for _, bindID := range filtered {
+				if emails[i].Email == bindID {
+					userIDs[bindID] = emails[i].UserID
+					break
+				}
+			}
+		}
+	case "username":
+		users, err := database.UsersWith(s).GetByUsernames(ctx, filtered...)
+		if err != nil {
+			return nil, err
+		}
+
+		userIDs = make(map[string]int32, len(users))
+		for i := range users {
+			for _, bindID := range filtered {
+				if users[i].Username == bindID {
+					userIDs[bindID] = users[i].ID
+					break
+				}
+			}
+		}
+	default:
+		return nil, errors.Errorf("unrecognized user mapping bind ID type %q", mapping.BindID)
+	}
+
+	return userIDs, nil
 }
 
 // computeDiff determines which ids were added or removed when comparing the old

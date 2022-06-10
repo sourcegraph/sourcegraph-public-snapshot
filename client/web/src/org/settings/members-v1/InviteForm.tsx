@@ -132,7 +132,7 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
                                 {loading === 'addUserToOrganization' ? (
                                     <LoadingSpinner />
                                 ) : (
-                                    <Icon role="img" as={AddIcon} aria-hidden={true} />
+                                    <Icon as={AddIcon} aria-hidden={true} />
                                 )}{' '}
                                 Add member
                             </Button>
@@ -153,7 +153,7 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
                                 {loading === 'inviteUserToOrganization' ? (
                                     <LoadingSpinner />
                                 ) : (
-                                    <Icon role="img" as={EmailOpenOutlineIcon} aria-hidden={true} />
+                                    <Icon as={EmailOpenOutlineIcon} aria-hidden={true} />
                                 )}{' '}
                                 {emailInvitesEnabled
                                     ? viewerCanAddUserToOrganization
@@ -275,7 +275,7 @@ const InvitedNotification: React.FunctionComponent<React.PropsWithChildren<Invit
             <CopyableText label="Invitation URL" text={invitationURL} size={40} className="mt-2" />
         </div>
         <Button variant="icon" title="Dismiss" onClick={onDismiss}>
-            <Icon role="img" as={CloseIcon} aria-hidden={true} />
+            <Icon as={CloseIcon} aria-hidden={true} />
         </Button>
     </Alert>
 )

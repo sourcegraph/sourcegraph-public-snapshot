@@ -163,8 +163,8 @@ export function createDefaultSuggestionSources(options: {
     globbing: boolean
 }): SuggestionSource<CompletionResult | null, SuggestionContext>[] {
     return [
-        // Static suggestions shown if the the current position is
-        // outside a filter value
+        // Static suggestions shown if the the current position is outside a
+        // filter value
         createDefaultSource((context, _tokens, token) => ({
             from: token ? token.range.start : context.position,
             options: FILTER_SUGGESTIONS,
@@ -249,31 +249,32 @@ export function createDefaultSuggestionSources(options: {
             if (results.length === 0) {
                 return null
             }
+            const filteredResults = results
+                .filter(match => match.type === resolvedFilter.definition.suggestions)
+                .map(match => {
+                    switch (match.type) {
+                        case 'path':
+                            return {
+                                label: match.path,
+                                apply: regexInsertText(match.path, options) + ' ',
+                                info: match.repository,
+                            }
+                        case 'repo':
+                            return {
+                                label: match.repository,
+                                type: Type.repo,
+                                apply:
+                                    repositoryInsertText(match, { ...options, filterValue: token.value?.value }) + ' ',
+                            }
+                    }
+                    return null
+                })
+                .filter(isDefined)
 
             return {
                 from: token.value?.range.start ?? token.range.end,
                 filter: false,
-                options: results
-                    .map(match => {
-                        switch (match.type) {
-                            case 'path':
-                                return {
-                                    label: match.path,
-                                    apply: regexInsertText(match.path, options) + ' ',
-                                    info: match.repository,
-                                }
-                            case 'repo':
-                                return {
-                                    label: match.repository,
-                                    type: Type.repo,
-                                    apply:
-                                        repositoryInsertText(match, { ...options, filterValue: token.value?.value }) +
-                                        ' ',
-                                }
-                        }
-                        return null
-                    })
-                    .filter(isDefined),
+                options: filteredResults,
             }
         }),
     ]

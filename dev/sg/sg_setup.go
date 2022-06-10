@@ -64,6 +64,8 @@ func setupExec(ctx *cli.Context) error {
 	_, err = root.RepositoryRoot()
 	inRepo := err == nil
 
+	// TODO create runner from checks
+
 	failed := []int{}
 	all := []int{}
 	skipped := []int{}
@@ -76,7 +78,7 @@ func setupExec(ctx *cli.Context) error {
 	for len(failed) != 0 {
 		std.Out.ClearScreen()
 
-		printSgSetupWelcomeScreen()
+		printSgSetupWelcomeScreen(std.Out)
 		std.Out.WriteAlertf("                INFO: You can quit any time by typing ctrl-c\n")
 
 		for i, category := range categories {
@@ -422,8 +424,8 @@ func (d *dependency) Update(ctx context.Context) {
 
 type dependencyCategory struct {
 	name               string
-	dependencies       []*dependency
-	requiresRepository bool
+	dependencies       []*dependency // checks
+	requiresRepository bool          // enabler
 
 	// autoFixingDependencies are only accounted for it the user asks to fix the category.
 	// Otherwise, they'll never be checked nor print an error, because the only thing that
@@ -594,7 +596,7 @@ func (l stringCommandBuilder) Build(ctx context.Context) string {
 	return l(ctx)
 }
 
-func printSgSetupWelcomeScreen() {
+func printSgSetupWelcomeScreen(out *std.Output) {
 	genLine := func(style output.Style, content string) string {
 		return fmt.Sprintf("%s%s%s", output.CombineStyles(output.StyleBold, style), content, output.StyleReset)
 	}
@@ -602,19 +604,19 @@ func printSgSetupWelcomeScreen() {
 	boxContent := func(content string) string { return genLine(output.StyleWhiteOnPurple, content) }
 	shadow := func(content string) string { return genLine(output.StyleGreyBackground, content) }
 
-	std.Out.Write(boxContent(`┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ sg ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓`))
-	std.Out.Write(boxContent(`┃            _       __     __                             __                ┃`))
-	std.Out.Write(boxContent(`┃           | |     / /__  / /________  ____ ___  ___     / /_____           ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃           | | /| / / _ \/ / ___/ __ \/ __ '__ \/ _ \   / __/ __ \          ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃           | |/ |/ /  __/ / /__/ /_/ / / / / / /  __/  / /_/ /_/ /          ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃           |__/|__/\___/_/\___/\____/_/ /_/ /_/\___/   \__/\____/           ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃                                           __              __               ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃                  ___________   ________  / /___  ______  / /               ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃                 / ___/ __  /  / ___/ _ \/ __/ / / / __ \/ /                ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃                (__  ) /_/ /  (__  )  __/ /_/ /_/ / /_/ /_/                 ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃               /____/\__, /  /____/\___/\__/\__,_/ .___(_)                  ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┃                    /____/                      /_/                         ┃`) + shadow(`  `))
-	std.Out.Write(boxContent(`┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`) + shadow(`  `))
-	std.Out.Write(`  ` + shadow(`                                                                              `))
-	std.Out.Write(`  ` + shadow(`                                                                              `))
+	out.Write(boxContent(`┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ sg ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓`))
+	out.Write(boxContent(`┃            _       __     __                             __                ┃`))
+	out.Write(boxContent(`┃           | |     / /__  / /________  ____ ___  ___     / /_____           ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃           | | /| / / _ \/ / ___/ __ \/ __ '__ \/ _ \   / __/ __ \          ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃           | |/ |/ /  __/ / /__/ /_/ / / / / / /  __/  / /_/ /_/ /          ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃           |__/|__/\___/_/\___/\____/_/ /_/ /_/\___/   \__/\____/           ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃                                           __              __               ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃                  ___________   ________  / /___  ______  / /               ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃                 / ___/ __  /  / ___/ _ \/ __/ / / / __ \/ /                ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃                (__  ) /_/ /  (__  )  __/ /_/ /_/ / /_/ /_/                 ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃               /____/\__, /  /____/\___/\__/\__,_/ .___(_)                  ┃`) + shadow(`  `))
+	out.Write(boxContent(`┃                    /____/                      /_/                         ┃`) + shadow(`  `))
+	out.Write(boxContent(`┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`) + shadow(`  `))
+	out.Write(`  ` + shadow(`                                                                              `))
+	out.Write(`  ` + shadow(`                                                                              `))
 }

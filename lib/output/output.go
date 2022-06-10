@@ -129,7 +129,12 @@ func (o *Output) SetVerbose() {
 	o.lock.Lock()
 	defer o.lock.Unlock()
 	o.verbose = true
+}
 
+func (o *Output) UnsetVerbose() {
+	o.lock.Lock()
+	defer o.lock.Unlock()
+	o.verbose = false
 }
 
 func (o *Output) Unlock() {
@@ -174,11 +179,6 @@ func (o *Output) WriteLine(line FancyLine) {
 	o.Lock()
 	defer o.Unlock()
 	line.write(o.w, o.caps)
-}
-
-// WriteBytes writes bytes as a string line. It can be provided to run.Cmd(...).StreamLines()
-func (o *Output) WriteBytes(b []byte) {
-	o.Write(string(b))
 }
 
 // Block starts a new block context. This should not be invoked if there is an
