@@ -74,14 +74,14 @@ func (squirrel *SquirrelService) getDefCsharp(ctx context.Context, node Node) (r
 				}, nil
 
 			// Check for field access
-			case "field_access":
-				object := cur.ChildByFieldName("object")
-				if object != nil && nodeId(prev) == nodeId(object) {
+			case "member_access_expression":
+				expression := cur.ChildByFieldName("expression")
+				if expression != nil && nodeId(prev) == nodeId(expression) {
 					continue
 				}
-				field := cur.ChildByFieldName("field")
-				if field != nil {
-					found, err := squirrel.getFieldCsharp(ctx, swapNode(node, object), field.Content(node.Contents))
+				name := cur.ChildByFieldName("name")
+				if name != nil {
+					found, err := squirrel.getFieldCsharp(ctx, swapNode(node, expression), name.Content(node.Contents))
 					if err != nil {
 						return nil, err
 					}
@@ -199,6 +199,22 @@ func (squirrel *SquirrelService) getDefCsharp(ctx context.Context, node Node) (r
 				}
 				continue
 
+			case "namespace_declaration":
+				name := cur.ChildByFieldName("name")
+				if name != nil {
+					if name.Content(node.Contents) == ident {
+						return swapNodePtr(node, name), nil
+					}
+				}
+				found, err := squirrel.lookupFieldCsharp(ctx, ClassType{def: swapNode(node, cur)}, ident)
+				if err != nil {
+					return nil, err
+				}
+				if found != nil {
+					return found, nil
+				}
+				continue
+
 			case "lambda_expression":
 				query := `[
 					(lambda_expression parameters: (identifier) @ident)
@@ -218,7 +234,7 @@ func (squirrel *SquirrelService) getDefCsharp(ctx context.Context, node Node) (r
 				continue
 
 			case "catch_clause":
-				query := `(catch_clause (catch_formal_parameter name: (identifier) @ident))`
+				query := `(catch_clause (catch_declaration name: (identifier) @ident))`
 				captures, err := allCaptures(query, swapNode(node, cur))
 				if err != nil {
 					return nil, err
@@ -231,7 +247,7 @@ func (squirrel *SquirrelService) getDefCsharp(ctx context.Context, node Node) (r
 				continue
 
 			case "for_statement":
-				query := `(for_statement init: (local_variable_declaration declarator: (variable_declarator name: (identifier) @ident)))`
+				query := `(for_statement initializer: (variable_declaration (variable_declarator (identifier) @ident)))`
 				captures, err := allCaptures(query, swapNode(node, cur))
 				if err != nil {
 					return nil, err
@@ -243,8 +259,8 @@ func (squirrel *SquirrelService) getDefCsharp(ctx context.Context, node Node) (r
 				}
 				continue
 
-			case "enhanced_for_statement":
-				query := `(enhanced_for_statement name: (identifier) @ident)`
+			case "for_each_statement":
+				query := `(for_each_statement left: (identifier) @ident)`
 				captures, err := allCaptures(query, swapNode(node, cur))
 				if err != nil {
 					return nil, err
@@ -271,6 +287,7 @@ func (squirrel *SquirrelService) getDefCsharp(ctx context.Context, node Node) (r
 
 			// Skip all other nodes
 			default:
+				squirrel.breadcrumb(swapNode(node, cur), fmt.Sprintf("getDefCsharp: unrecognized parent %q", cur.Type()))
 				continue
 			}
 		}
@@ -501,24 +518,24 @@ func (squirrel *SquirrelService) getTypeDefCsharp(ctx context.Context, node Node
 		if found == nil {
 			return nil, nil
 		}
-		return squirrel.defToType(ctx, *found)
-	case "field_access":
-		object := node.ChildByFieldName("object")
-		if object == nil {
+		return squirrel.defToTypeCsharp(ctx, *found)
+	case "member_access_expression":
+		expression := node.ChildByFieldName("expression")
+		if expression == nil {
 			return nil, nil
 		}
-		field := node.ChildByFieldName("field")
-		if field == nil {
+		name := node.ChildByFieldName("name")
+		if name == nil {
 			return nil, nil
 		}
-		objectType, err := squirrel.getTypeDefCsharp(ctx, swapNode(node, object))
+		objectType, err := squirrel.getTypeDefCsharp(ctx, swapNode(node, expression))
 		if err != nil {
 			return nil, err
 		}
 		if objectType == nil {
 			return nil, nil
 		}
-		found, err := squirrel.lookupFieldCsharp(ctx, objectType, field.Content(node.Contents))
+		found, err := squirrel.lookupFieldCsharp(ctx, objectType, name.Content(node.Contents))
 		if err != nil {
 			return nil, err
 		}
@@ -571,6 +588,57 @@ func (squirrel *SquirrelService) getTypeDefCsharp(ctx context.Context, node Node
 		return PrimType{noad: node, varient: "boolean"}, nil
 	default:
 		squirrel.breadcrumb(node, fmt.Sprintf("getTypeDefCsharp: unrecognized node type %q", node.Type()))
+		return nil, nil
+	}
+}
+
+func (squirrel *SquirrelService) defToTypeCsharp(ctx context.Context, def Node) (Type, error) {
+	parent := def.Node.Parent()
+	if parent == nil {
+		return nil, nil
+	}
+	switch parent.Type() {
+	case "class_declaration":
+		return (Type)(ClassType{def: swapNode(def, parent)}), nil
+	case "method_declaration":
+		retTyNode := parent.ChildByFieldName("type")
+		if retTyNode == nil {
+			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find return type")
+			return (Type)(FnType{
+				ret:  nil,
+				noad: swapNode(def, parent),
+			}), nil
+		}
+		retTy, err := squirrel.getTypeDefCsharp(ctx, swapNode(def, retTyNode))
+		if err != nil {
+			return nil, err
+		}
+		return (Type)(FnType{
+			ret:  retTy,
+			noad: swapNode(def, parent),
+		}), nil
+	case "formal_parameter":
+		fallthrough
+	case "enhanced_for_statement":
+		tyNode := parent.ChildByFieldName("type")
+		if tyNode == nil {
+			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find type")
+			return nil, nil
+		}
+		return squirrel.getTypeDefCsharp(ctx, swapNode(def, tyNode))
+	case "variable_declarator":
+		grandparent := parent.Parent()
+		if grandparent == nil {
+			return nil, nil
+		}
+		tyNode := grandparent.ChildByFieldName("type")
+		if tyNode == nil {
+			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find type")
+			return nil, nil
+		}
+		return squirrel.getTypeDefCsharp(ctx, swapNode(def, tyNode))
+	default:
+		squirrel.breadcrumb(swapNode(def, parent), fmt.Sprintf("unrecognized def parent %q", parent.Type()))
 		return nil, nil
 	}
 }

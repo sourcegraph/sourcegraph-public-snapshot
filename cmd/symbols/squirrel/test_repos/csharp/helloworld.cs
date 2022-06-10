@@ -17,7 +17,7 @@ namespace HelloWorld
         }
 
         //                   vv cs.p1 def
-        static void Main(int p1)
+        static void Main(int p1, params int[] p2)
         {
             //  vv cs.l1 def
             int l1;
@@ -39,8 +39,35 @@ namespace HelloWorld
         //  vv cs.l1 ref
         //            vv cs.l2 ref
         //                 vv cs.l3 ref
-            l1 = f2 + l2 + l3;
+        //                      vv cs.C2 ref
+            l1 = f2 + l2 + l3 + C2.g1;
+
+            //                       v cs.e def
+            //                                           v cs.e ref
+            try { } catch (Exception e) { Exception e2 = e; }
+
+            //       v cs.for.i def
+            //              v cs.for.i ref
+            for (int i = 0; i < 5; i++) { }
+
+            //           v cs.enhanced_for.i def
+            //                           v cs.enhanced_for.i ref
+            foreach (int i in p2) { p1 = i; }
+
+            C2 c2; // < "C2" cs.C2 ref
+
+            //    vv cs.C2 ref
+            Hello.C2 c12; // < "Hello" cs.Hello ref
+
+            //          vv cs.C2.g1 ref
+            int f1 = c2.g1;
         }
+    }
+
+    //    vv cs.C2 def
+    class C2 {
+        //         vv cs.C2.g1 def
+        static int g1;
 
     }
 }
