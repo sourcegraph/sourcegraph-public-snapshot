@@ -119,7 +119,7 @@ export const PreviewSelectRow: React.FunctionComponent<React.PropsWithChildren<P
         <>
             <div className="row align-items-center no-gutters mb-3">
                 <div className="ml-2 col d-flex align-items-center">
-                    <Icon role="img" aria-hidden={true} className="text-muted mr-2" as={InfoCircleOutlineIcon} />
+                    <Icon aria-hidden={true} className="text-muted mr-2" as={InfoCircleOutlineIcon} />
                     {selected === 'all' || allChangesetSpecIDs?.length === selected.size ? (
                         <AllSelectedLabel count={allChangesetSpecIDs?.length} />
                     ) : (

@@ -498,7 +498,7 @@ func logBatch(ctx context.Context, db database.DB, searchInputs *run.SearchInput
 		_ = ev.Send()
 
 		if isSlow {
-			log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
+			log15.Warn("slow search request", "query", searchInputs.OriginalQuery, "type", requestName, "source", requestSource, "status", status, "alertType", alertType, "durationMs", srr.elapsed.Milliseconds(), "resultSize", n, "error", err)
 		}
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/hexops/autogold"
 	"github.com/hexops/valast"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -397,11 +398,11 @@ func TestRestoreDashboard(t *testing.T) {
 }
 
 func TestAddViewsToDashboard(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
-	_, err := insightsDB.Exec(`
+	_, err := insightsDB.ExecContext(context.Background(), `
 		INSERT INTO dashboard (id, title)
 		VALUES (1, 'test dashboard 1'), (2, 'test dashboard 2');
 		INSERT INTO dashboard_grants (dashboard_id, global)
@@ -459,7 +460,7 @@ func TestAddViewsToDashboard(t *testing.T) {
 }
 
 func TestRemoveViewsFromDashboard(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 

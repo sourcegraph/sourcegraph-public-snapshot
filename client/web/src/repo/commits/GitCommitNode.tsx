@@ -123,7 +123,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                     size="sm"
                     aria-label={showCommitMessageBody ? 'Hide commit message body' : 'Show commit message body'}
                 >
-                    <Icon role="img" as={DotsHorizontalIcon} aria-hidden={true} />
+                    <Icon as={DotsHorizontalIcon} aria-hidden={true} />
                 </Button>
             )}
             {compact && (
@@ -172,7 +172,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                         data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
                         aria-label="Copy full SHA"
                     >
-                        <Icon role="img" as={ContentCopyIcon} aria-hidden={true} />
+                        <Icon as={ContentCopyIcon} aria-hidden={true} />
                     </Button>
                 </Code>
             </div>
@@ -197,7 +197,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                     data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
                                     aria-label="Copy full SHA"
                                 >
-                                    <Icon role="img" as={ContentCopyIcon} aria-hidden={true} />
+                                    <Icon as={ContentCopyIcon} aria-hidden={true} />
                                 </Button>
                             </div>
                         ))}
@@ -228,7 +228,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                 size="sm"
                 as={Link}
             >
-                <Icon role="img" className="mr-1" as={FileDocumentIcon} aria-hidden={true} />
+                <Icon className="mr-1" as={FileDocumentIcon} aria-hidden={true} />
                 Browse files at @{node.abbreviatedOID}
             </Button>
             {diffModeSelector()}
@@ -295,12 +295,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                                 size="sm"
                                                 aria-label="Copy full SHA"
                                             >
-                                                <Icon
-                                                    role="img"
-                                                    className="small"
-                                                    as={ContentCopyIcon}
-                                                    aria-hidden={true}
-                                                />
+                                                <Icon className="small" as={ContentCopyIcon} aria-hidden={true} />
                                             </Button>
                                         </ButtonGroup>
                                         {node.tree && (
@@ -312,12 +307,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                                 as={Link}
                                                 aria-label="View files at this commit"
                                             >
-                                                <Icon
-                                                    role="img"
-                                                    className="mr-1"
-                                                    as={FileDocumentIcon}
-                                                    aria-hidden={true}
-                                                />
+                                                <Icon className="mr-1" as={FileDocumentIcon} aria-hidden={true} />
                                             </Button>
                                         )}
                                     </div>

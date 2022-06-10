@@ -16,15 +16,17 @@
     padding: 0.125rem;
 }
 
+.toggle-wrapper {
+    &:not(:last-child) {
+        margin-right: 0.125rem;
+    }
+}
+
 .toggle {
     display: flex;
     cursor: pointer;
     border-radius: 4px;
     border: 2px solid transparent;
-
-    &:not(:last-child) {
-        margin-right: 0.125rem;
-    }
 
     &:hover {
         background-color: var(--color-bg-2);

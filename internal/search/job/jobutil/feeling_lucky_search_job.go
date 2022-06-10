@@ -1,70 +1,212 @@
 package jobutil
 
 import (
+	"context"
+	"sync"
+
+	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// NewFeelingLuckySearchJob generates opportunistic search queries by applying
-// various rules in sequence, transforming the original input plan into various
+// NewFeelingLuckySearchJob creates generators for opportunistic search queries
+// that apply various rules, transforming the original input plan into various
 // queries that alter its interpretation (e.g., search literally for quotes or
-// not, attempt to search the pattern as a regexp, and so on).
-//
-// Generated queries return a resulting list of jobs. The application order of
-// rules is deterministic. This means the query order, and therefore runtime
-// execution, outputs the same search results for the same inputs. I.e., there
-// is no random choice when applying a rule.
-func NewFeelingLuckySearchJob(inputs *run.SearchInputs, plan query.Plan) []job.Job {
-	children := make([]job.Job, 0, len(plan))
+// not, attempt to search the pattern as a regexp, and so on). There is no
+// random choice when applying rules.
+func NewFeelingLuckySearchJob(initialJob job.Job, inputs *run.SearchInputs, plan query.Plan) *FeelingLuckySearchJob {
+	generators := make([]next, 0, len(plan))
 	for _, b := range plan {
-		for _, newBasic := range applyRulesList(b, rulesList...) {
-			child, err := NewBasicJob(inputs, newBasic)
-			if err != nil {
-				return nil
+		generators = append(generators, NewGenerator(inputs, b, rules))
+	}
+	return &FeelingLuckySearchJob{
+		initialJob: initialJob,
+		generators: generators,
+	}
+}
+
+type FeelingLuckySearchJob struct {
+	initialJob job.Job
+	generators []next
+}
+
+func (f *FeelingLuckySearchJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (alert *search.Alert, err error) {
+	_, ctx, parentStream, finish := job.StartSpan(ctx, parentStream, f)
+	defer func() { finish(alert, err) }()
+
+	var maxAlerter search.MaxAlerter
+	var errs errors.MultiError
+
+	var mux sync.Mutex
+	dedup := result.NewDeduper()
+
+	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
+		mux.Lock()
+
+		results := event.Results[:0]
+		for _, match := range event.Results {
+			seen := dedup.Seen(match)
+			if seen {
+				continue
 			}
-			children = append(children, child)
+			dedup.Add(match)
+			results = append(results, match)
+		}
+		event.Results = results
+		mux.Unlock()
+		parentStream.Send(event)
+	})
+
+	alert, err = f.initialJob.Run(ctx, clients, stream)
+	if err != nil {
+		return alert, err
+	}
+	maxAlerter.Add(alert)
+
+	generated := &alertobserver.ErrLuckyQueries{ProposedQueries: []*search.ProposedQuery{}}
+	var j job.Job
+	for _, next := range f.generators {
+		for {
+			j, next = next()
+			if j == nil {
+				if next == nil {
+					// No job and generator is exhausted.
+					break
+				}
+				continue
+			}
+
+			alert, err = j.Run(ctx, clients, parentStream)
+			if ctx.Err() != nil {
+				// Cancellation or Deadline hit implies it's time to stop running jobs.
+				errs = errors.Append(errs, generated)
+				return maxAlerter.Alert, errs
+			}
+
+			var lErr *alertobserver.ErrLuckyQueries
+			if errors.As(err, &lErr) {
+				// collected generated queries, we'll add it after this loop is done running.
+				generated.ProposedQueries = append(generated.ProposedQueries, lErr.ProposedQueries...)
+			} else {
+				errs = errors.Append(errs, err)
+			}
+
+			maxAlerter.Add(alert)
+
+			if next == nil {
+				break
+			}
 		}
 	}
-	return children
+
+	if len(generated.ProposedQueries) > 0 {
+		errs = errors.Append(errs, generated)
+	}
+	return maxAlerter.Alert, errs
 }
 
-var rulesList = [][]rule{
-	{unquotePatterns},
-	{unorderedPatterns},
+func (f *FeelingLuckySearchJob) Name() string {
+	return "FeelingLuckySearchJob"
 }
 
-// rule represents a transformation function on a Basic query. Applying rules
-// cannot fail: either they apply and produce a valid, non-nil, Basic query, or
-// they cannot apply, in which case they return nil. See the `unquotePatterns`
-// rule for an example.
-type rule func(query.Basic) *query.Basic
+func (f *FeelingLuckySearchJob) Tags() []log.Field {
+	return []log.Field{}
+}
 
-// applyRulesList takes a list of lists of rules. The order of rules in the inner
-// lists represent rule composition. Each list of rules in the outer list
-// represent one possible query production, if the sequence of the rules in this
-// list apply successfully. Example:
+// next is the continuation for the query generator.
+type next func() (job.Job, next)
+
+// NewGenerator creates a new generator using rules and a seed Basic query. It
+// returns a `next` function which, when called, returns the next job
+// generated, and the `next` continuation. A `nil` continuation means query
+// generation is exhausted. Currently it implements a simple strategy that tries
+// to apply rule transforms in order, and generates jobs for transforms that
+// apply successfully.
+func NewGenerator(inputs *run.SearchInputs, seed query.Basic, rules []rule) next {
+	var n func(i int) next // i keeps track of rule index in the continuation
+	n = func(i int) next {
+		if i >= len(rules) {
+			return func() (job.Job, next) { return nil, nil }
+		}
+
+		return func() (job.Job, next) {
+			generated := applyTransformation(seed, rules[i].transform)
+			if generated == nil {
+				// Rule doesn't apply, go to next rule.
+				return nil, n(i + 1)
+			}
+
+			child, err := NewBasicJob(inputs, *generated)
+			if err != nil {
+				// Generated invalid job, go to next rule.
+				return nil, n(i + 1)
+			}
+
+			j := &generatedSearchJob{
+				Child: child,
+				ProposedQuery: &search.ProposedQuery{
+					Description: rules[i].description,
+					Query:       query.StringHuman(generated.ToParseTree()),
+					PatternType: query.SearchTypeLiteralDefault,
+				},
+			}
+
+			return j, n(i + 1)
+		}
+	}
+
+	return n(0)
+}
+
+// rule represents a transformation function on a Basic query. Transformation
+// cannot fail: either they apply in sequence and produce a valid, non-nil,
+// Basic query, or they do not apply, in which case they return nil. See the
+// `unquotePatterns` rule for an example.
+type rule struct {
+	description string
+	transform   []func(query.Basic) *query.Basic
+}
+
+type transform []func(query.Basic) *query.Basic
+
+// rules is an ordered list of rules. Each item represents one possible query
+// production, if the sequence of the transformation functions associated with
+// this item apply successfully. Example:
 //
-// If we have input rule list  [ [ R1, R2 ], [ R2 ] ] and input query B0, then:
+// If we have input query B0 and a list with two items like this:
 //
-// - If both inner lists apply, we get an output [ B1, B2] where B1 is generated
+// {
+//   "first rule list"  : [ R1, R2 ],
+//   "second rule list" : [ R2 ],
+// }
+//
+// Then:
+//
+// - If both entries apply, we output [ B1, B2 ] where B1 is generated
 //   from applying R1 then R2, and B2 is generated from just applying R2.
-// - If only the first inner list applies, R1 then R2, we get the output [ B1 ]
-// - If only the second inner list applies, R2 on its own, we get the output [ B2 ]
-func applyRulesList(b query.Basic, rulesList ...[]rule) []query.Basic {
-	bs := []query.Basic{}
-	for _, l := range rulesList {
-		if generated := applyRules(b, l...); generated != nil {
-			bs = append(bs, *generated)
-		}
-	}
-	return bs
+// - If only the first item applies, R1 then R2, we get the output [ B1 ].
+// - If only the second item applies, R2 on its own, we get the output [ B2 ].
+var rules = []rule{
+	{
+		description: "unquote patterns",
+		transform:   transform{unquotePatterns},
+	},
+	{
+		description: "AND patterns together",
+		transform:   transform{unorderedPatterns},
+	},
 }
 
-// applyRules applies every rule in sequence to `b`. If any rule does not apply, it returns nil.
-func applyRules(b query.Basic, rules ...rule) *query.Basic {
-	for _, rule := range rules {
-		res := rule(b)
+// applyTransformation applies a transformation on `b`. If any function does not apply, it returns nil.
+func applyTransformation(b query.Basic, transform transform) *query.Basic {
+	for _, apply := range transform {
+		res := apply(b)
 		if res == nil {
 			return nil
 		}
@@ -157,23 +299,44 @@ func mapConcat(q []query.Node) ([]query.Node, bool) {
 		if n, ok := node.(query.Operator); ok {
 			if n.Kind != query.Concat {
 				// recurse
-				operands, changed := mapConcat(n.Operands)
-				return []query.Node{
-					query.Operator{
-						Kind:     n.Kind,
-						Operands: operands,
-					},
-				}, changed
+				operands, newChanged := mapConcat(n.Operands)
+				mapped = append(mapped, query.Operator{
+					Kind:     n.Kind,
+					Operands: operands,
+				})
+				changed = changed || newChanged
+				continue
 			}
-			// No need to recurse: `concat` nodes only have patterns.
-			return []query.Node{
-				query.Operator{
-					Kind:     query.And,
-					Operands: n.Operands,
-				},
-			}, true
+			// no need to recurse: `concat` nodes only have patterns.
+			mapped = append(mapped, query.Operator{
+				Kind:     query.And,
+				Operands: n.Operands,
+			})
+			changed = true
+			continue
 		}
 		mapped = append(mapped, node)
 	}
 	return mapped, changed
+}
+
+type generatedSearchJob struct {
+	Child         job.Job
+	ProposedQuery *search.ProposedQuery
+}
+
+func (g *generatedSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (*search.Alert, error) {
+	alert, err := g.Child.Run(ctx, clients, stream)
+	err = errors.Append(err, &alertobserver.ErrLuckyQueries{
+		ProposedQueries: []*search.ProposedQuery{g.ProposedQuery},
+	})
+	return alert, err
+}
+
+func (g *generatedSearchJob) Name() string {
+	return "GeneratedSearchJob"
+}
+
+func (g *generatedSearchJob) Tags() []log.Field {
+	return []log.Field{}
 }

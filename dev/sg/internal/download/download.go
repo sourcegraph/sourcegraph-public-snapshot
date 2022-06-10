@@ -17,8 +17,12 @@ import (
 
 // Executable downloads a binary from the given URL, updates the given path if different, and
 // makes the downloaded file executable.
-func Executable(url string, path string) error {
-	resp, err := http.Get(url)
+func Executable(ctx context.Context, url string, path string) error {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -37,7 +41,7 @@ func Executable(url string, path string) error {
 		return errors.Wrapf(err, "saving to %q", path)
 	}
 	if updated {
-		return exec.Command("chmod", "+x", path).Run()
+		return exec.CommandContext(ctx, "chmod", "+x", path).Run()
 	}
 
 	return nil
@@ -94,7 +98,7 @@ func ArchivedExecutable(ctx context.Context, url, targetFile, fileInArchive stri
 		return err
 	}
 
-	return exec.Command("chmod", "+x", targetFile).Run()
+	return exec.CommandContext(ctx, "chmod", "+x", targetFile).Run()
 }
 
 func fileExists(path string) (bool, error) {

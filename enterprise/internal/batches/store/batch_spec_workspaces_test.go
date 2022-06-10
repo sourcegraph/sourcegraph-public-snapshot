@@ -74,7 +74,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 		}
 	})
 
-	if err := s.Exec(ctx, sqlf.Sprintf("INSERT INTO batch_spec_workspace_execution_jobs (batch_spec_workspace_id, state) VALUES (%s, %s)", workspaces[0].ID, btypes.BatchSpecWorkspaceExecutionJobStateCompleted)); err != nil {
+	if err := s.Exec(ctx, sqlf.Sprintf("INSERT INTO batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id, state) VALUES (%s, %s, %s)", workspaces[0].ID, user.ID, btypes.BatchSpecWorkspaceExecutionJobStateCompleted)); err != nil {
 		t.Fatal(err)
 	}
 

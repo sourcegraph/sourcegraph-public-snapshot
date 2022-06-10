@@ -89,6 +89,21 @@
     }
 }
 
+.no-title-task {
+    padding: 0.5rem 0 0 1rem;
+    position: relative;
+    &::after {
+        display: none !important;
+    }
+
+    &::before {
+        content: attr(data-order);
+        display: inline-block;
+        position: absolute;
+        left: 0;
+    }
+}
+
 .completed-items {
     flex-grow: 2 !important;
 
@@ -158,4 +173,8 @@
 .info-icon {
     color: var(--icon-color);
     margin-right: 0.25rem;
+}
+
+.color-link {
+    color: var(--link-color);
 }
