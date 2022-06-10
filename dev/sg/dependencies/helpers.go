@@ -367,7 +367,7 @@ func check1password() check.CheckFunc {
 
 func forceASDFPluginAdd(ctx context.Context, plugin string, source string) error {
 	err := usershell.Run(ctx, "asdf plugin-add", plugin, source).Wait()
-	if strings.Contains(err.Error(), "already added") {
+	if err != nil && strings.Contains(err.Error(), "already added") {
 		return nil
 	}
 	return err
