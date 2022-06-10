@@ -2,7 +2,7 @@
 name: pr-auditor
 on:
   pull_request:
-    types: [ closed, edited, opened, synchronize ]
+    types: [ closed, edited, opened, synchronize, ready_for_review ]
 jobs:
     pr-auditor:
       runs-on: ubuntu-latest
