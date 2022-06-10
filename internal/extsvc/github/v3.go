@@ -296,29 +296,38 @@ func (c *V3Client) GetAuthenticatedUserEmails(ctx context.Context) ([]*UserEmail
 	return emails, nil
 }
 
-func (c *V3Client) getAuthenticatedUserOrgs(ctx context.Context, page int) (
+var MockGetAuthenticatedUserOrgs struct {
+	FnMock    func(ctx context.Context) ([]*Org, bool, int, error)
+	PagesMock map[int][]*Org
+}
+
+// GetAuthenticatedUserOrgsForPage returns given page of 100 organizations associated with the currently
+// authenticated user.
+func (c *V3Client) GetAuthenticatedUserOrgsForPage(ctx context.Context, page int) (
 	orgs []*Org,
 	hasNextPage bool,
 	rateLimitCost int,
 	err error,
 ) {
+	// checking whether the function is mocked
+	if MockGetAuthenticatedUserOrgs.FnMock != nil || MockGetAuthenticatedUserOrgs.PagesMock != nil {
+		if MockGetAuthenticatedUserOrgs.FnMock != nil {
+			return MockGetAuthenticatedUserOrgs.FnMock(ctx)
+		}
+
+		orgsPage, ok := MockGetAuthenticatedUserOrgs.PagesMock[page]
+		if !ok {
+			err = errors.New("cannot find orgs page mock")
+			return
+		}
+		return orgsPage, page < len(MockGetAuthenticatedUserOrgs.PagesMock), 1, err
+	}
+
 	_, err = c.get(ctx, fmt.Sprintf("/user/orgs?per_page=100&page=%d", page), &orgs)
 	if err != nil {
 		return
 	}
 	return orgs, len(orgs) > 0, 1, err
-}
-
-var MockGetAuthenticatedUserOrgs func(ctx context.Context) ([]*Org, error)
-
-// GetAuthenticatedUserOrgs returns the first 100 organizations associated with the currently
-// authenticated user.
-func (c *V3Client) GetAuthenticatedUserOrgs(ctx context.Context) ([]*Org, error) {
-	if MockGetAuthenticatedUserOrgs != nil {
-		return MockGetAuthenticatedUserOrgs(ctx)
-	}
-	orgs, _, _, err := c.getAuthenticatedUserOrgs(ctx, 1)
-	return orgs, err
 }
 
 // OrgDetailsAndMembership is a results container for the results from the API calls made
@@ -338,7 +347,7 @@ func (c *V3Client) GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Cont
 	rateLimitCost int,
 	err error,
 ) {
-	orgNames, hasNextPage, cost, err := c.getAuthenticatedUserOrgs(ctx, page)
+	orgNames, hasNextPage, cost, err := c.GetAuthenticatedUserOrgsForPage(ctx, page)
 	if err != nil {
 		return
 	}
