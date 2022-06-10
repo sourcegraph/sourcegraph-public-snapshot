@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/zoekt"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -71,6 +72,7 @@ type searchResolver struct {
 
 	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map
+	log          log.Logger
 }
 
 var MockDecodedViewerFinalSettings *schema.Settings

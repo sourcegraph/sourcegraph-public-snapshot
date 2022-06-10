@@ -6,6 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log"
+
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -63,6 +65,8 @@ func TestAddCodeMonitorHook(t *testing.T) {
 	})
 
 	t.Run("no errors on allowed queries", func(t *testing.T) {
+		var log log.Logger
+
 		test := func(t *testing.T, input string) {
 			plan, err := query.Pipeline(query.InitRegexp(input))
 			require.NoError(t, err)
@@ -72,7 +76,7 @@ func TestAddCodeMonitorHook(t *testing.T) {
 				Protocol:            search.Streaming,
 				OnSourcegraphDotCom: true,
 			}
-			j, err := jobutil.NewPlanJob(inputs, plan)
+			j, err := jobutil.NewPlanJob(log, inputs, plan)
 			require.NoError(t, err)
 			addCodeMonitorHook(j, nil)
 		}

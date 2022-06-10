@@ -3,6 +3,8 @@ package execute
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
@@ -15,6 +17,7 @@ import (
 // Execute is the top-level entrypoint to executing a search. It will
 // expand predicates, create jobs, and execute those jobs.
 func Execute(
+	log log.Logger,
 	ctx context.Context,
 	stream streaming.Sender,
 	inputs *run.SearchInputs,
@@ -27,12 +30,12 @@ func Execute(
 	}()
 
 	plan := inputs.Plan
-	plan, err = predicate.Expand(ctx, clients, inputs, plan)
+	plan, err = predicate.Expand(log, ctx, clients, inputs, plan)
 	if err != nil {
 		return nil, err
 	}
 
-	planJob, err := jobutil.NewPlanJob(inputs, plan)
+	planJob, err := jobutil.NewPlanJob(log, inputs, plan)
 	if err != nil {
 		return nil, err
 	}

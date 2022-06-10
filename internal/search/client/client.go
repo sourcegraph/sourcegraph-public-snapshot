@@ -5,6 +5,8 @@ import (
 
 	"github.com/google/zoekt"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -49,6 +51,7 @@ type searchClient struct {
 	db           database.DB
 	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map
+	log          log.Logger
 }
 
 func (s *searchClient) Plan(
@@ -68,7 +71,7 @@ func (s *searchClient) Execute(
 	stream streaming.Sender,
 	inputs *run.SearchInputs,
 ) (*search.Alert, error) {
-	return execute.Execute(ctx, stream, inputs, s.JobClients())
+	return execute.Execute(s.log, ctx, stream, inputs, s.JobClients())
 }
 
 func (s *searchClient) JobClients() job.RuntimeClients {
