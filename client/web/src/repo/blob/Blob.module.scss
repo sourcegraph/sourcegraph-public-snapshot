@@ -45,23 +45,6 @@
         }
     }
 
-    td {
-        :global(.top-spacer),
-        :global(.bottom-spacer) {
-            background: var(--code-bg);
-        }
-
-        :global(.top-spacer) {
-            height: 0.5rem;
-        }
-
-        :global(.bottom-spacer) {
-            // Give room to view the last few lines of code
-            // without the floating status bar getting in the way.
-            height: calc(var(--blob-status-bar-height) + var(--blob-status-bar-vertical-gap) + 1.5rem);
-        }
-    }
-
     td:global(.line),
     td:global(.code) {
         padding: 0;
@@ -87,6 +70,21 @@
             margin: 0 0 0 -1rem;
             display: block;
         }
+    }
+
+    :global(.top-spacer),
+    :global(.bottom-spacer) {
+        background: var(--code-bg);
+    }
+
+    :global(.top-spacer) {
+        height: 0.5rem;
+    }
+
+    :global(.bottom-spacer) {
+        // Give room to view the last few lines of code
+        // without the floating status bar getting in the way.
+        height: calc(var(--blob-status-bar-height) + var(--blob-status-bar-vertical-gap) + 1.5rem);
     }
 
     &--wrapped {
