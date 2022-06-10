@@ -7,7 +7,7 @@ This guide shows you how to deploy Sourcegraph via [Docker Compose](https://docs
 ---
 ## Determine server and service requirements 
 
-Use the [resource estimator](../resource_estimator.md) to determine the resource requirements for your environment. You will use this information to set up the instance and configure the docker-compose. yaml file. 
+Use the [resource estimator](../resource_estimator.md) to determine the resource requirements for your environment. You will use this information to set up the instance and configure the docker-compose YAML file. 
 ## Prepare a clone 
 
 To configure your Sourcegraph instance, you must create and use a fork of the reference repository. We strongly recommend that you create and run Sourcegraph from your own fork of the reference repository to track your customizations to the Sourcegraph Docker Compose YAML.
