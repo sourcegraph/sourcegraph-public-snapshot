@@ -31,10 +31,8 @@ func isFirstCommitEmptyRepoError(err error) bool {
 
 func GitFirstEverCommit(ctx context.Context, db database.DB, repoName api.RepoName) (*gitdomain.Commit, error) {
 	commit, err := git.FirstEverCommit(ctx, db, repoName, authz.DefaultSubRepoPermsChecker)
-	if err != nil {
-		if isFirstCommitEmptyRepoError(err) {
-			return nil, errors.Newf("%s: %w", err.Error(), EmptyRepoErr)
-		}
+	if err != nil && isFirstCommitEmptyRepoError(err) {
+		return nil, errors.Wrap(EmptyRepoErr, err.Error())
 	}
 	return commit, err
 }
