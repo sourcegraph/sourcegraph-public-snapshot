@@ -164,7 +164,7 @@ func run(logger log.Logger) error {
 			FilterTar:          search.NewFilter,
 			Path:               filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes:  cacheSizeBytes,
-			Log:                logger,
+			Log:                logger.Scoped("store", "searcher archives store"),
 			ObservationContext: observationContext,
 			DB:                 db,
 		},
@@ -243,7 +243,7 @@ func main() {
 	trace.Init()
 	profiler.Init()
 
-	logger := log.Scoped("service", "the searcher service")
+	logger := log.Scoped("server", "the searcher service")
 
 	err := run(logger)
 	if err != nil {
