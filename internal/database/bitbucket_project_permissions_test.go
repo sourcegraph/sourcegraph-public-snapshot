@@ -77,7 +77,7 @@ func TestBitbucketProjectPermissionsEnqueue(t *testing.T) {
 	// Enqueue two jobs for the same project with different external services
 	_, err = db.BitbucketProjectPermissions().Enqueue(ctx, "project 6", 1, perms, false)
 	require.NoError(t, err)
-	jobID2, err = db.BitbucketProjectPermissions().Enqueue(ctx, "project 6", 2, perms, false)
+	_, err = db.BitbucketProjectPermissions().Enqueue(ctx, "project 6", 2, perms, false)
 	require.NoError(t, err)
 
 	err = db.QueryRowContext(ctx, `SELECT COUNT(*) FROM explicit_permissions_bitbucket_projects_jobs WHERE project_key = 'project 6'`).Scan(&count)
@@ -90,7 +90,7 @@ func TestBitbucketProjectPermissionsEnqueue(t *testing.T) {
 	_, err = db.Handle().DB().ExecContext(ctx, `UPDATE explicit_permissions_bitbucket_projects_jobs SET state = 'failed' WHERE id = $1`, jobID)
 	require.NoError(t, err)
 
-	jobID2, err = db.BitbucketProjectPermissions().Enqueue(ctx, "project 7", 1, perms, false)
+	_, err = db.BitbucketProjectPermissions().Enqueue(ctx, "project 7", 1, perms, false)
 	require.NoError(t, err)
 
 	err = db.QueryRowContext(ctx, `SELECT COUNT(*) FROM explicit_permissions_bitbucket_projects_jobs WHERE project_key = 'project 7'`).Scan(&count)
