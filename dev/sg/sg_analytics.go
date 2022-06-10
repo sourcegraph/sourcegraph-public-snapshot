@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var analyticsCommand = &cli.Command{
@@ -52,6 +53,7 @@ var analyticsCommand = &cli.Command{
 					} {
 						okayToken, err = store.GetExternal(cmd.Context, secret)
 						if err != nil {
+							std.Out.VerboseLine(output.Styled(output.StyleWarning, err.Error()))
 							errs = errors.Append(errs, err)
 							continue // try the next provider
 						}

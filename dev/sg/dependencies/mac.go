@@ -3,7 +3,6 @@ package dependencies
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
@@ -286,26 +285,32 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 						return errors.New("interactive input required")
 					}
 
-					cio.Write("Enter secret key:")
+					cio.Promptf("Enter secret key:")
 					var key string
 					if _, err := fmt.Fscan(cio.Input, &key); err != nil {
 						return err
 					}
-					cio.Write("Enter account email:")
+					cio.Promptf("Enter account email:")
 					var email string
 					if _, err := fmt.Fscan(cio.Input, &email); err != nil {
 						return err
 					}
-					cio.Write("Enter account password:")
+					cio.Promptf("Enter account password:")
 					var password string
 					if _, err := fmt.Fscan(cio.Input, &password); err != nil {
 						return err
 					}
 
-					return usershell.Command(ctx,
-						"op account add --signin --address team-sourcegraph.1password.com --email", email).
-						Env(map[string]string{"OP_SECRET_KEY": key}).
-						Input(strings.NewReader(password)).
+					// 1password does some weird things, and it doesn't seem to want to
+					// accept piped input, so we just echo the input we want inside the
+					// eval command.
+					return usershell.Command(ctx, "eval", fmt.Sprintf(`$(echo "$OP_PASSWORD" | %s)`,
+						`op account add --signin --address team-sourcegraph.1password.com --email "$OP_EMAIL"`)).
+						Env(map[string]string{
+							"OP_SECRET_KEY": key,
+							"OP_PASSWORD":   password,
+							"OP_EMAIL":      email,
+						}).
 						Run().
 						StreamLines(cio.Verbose)
 				},
