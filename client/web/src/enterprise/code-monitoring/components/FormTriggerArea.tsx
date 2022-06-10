@@ -114,7 +114,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
             hasTypeDiffOrCommitFilter &&
             (!isSourcegraphDotCom || hasRepoFilter) &&
             hasValidPatternTypeFilter,
-        [hasRepoFilter, hasTypeDiffOrCommitFilter, hasValidPatternTypeFilter, isValidQuery]
+        [hasRepoFilter, hasTypeDiffOrCommitFilter, hasValidPatternTypeFilter, isValidQuery, isSourcegraphDotCom]
     )
 
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
