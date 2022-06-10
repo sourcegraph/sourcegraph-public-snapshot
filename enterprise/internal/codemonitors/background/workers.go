@@ -8,6 +8,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	slog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -137,7 +139,8 @@ func createDBWorkerStoreForActionJobs(s edb.CodeMonitorStore) dbworkerstore.Stor
 }
 
 type queryRunner struct {
-	db edb.EnterpriseDB
+	db  edb.EnterpriseDB
+	log slog.Logger
 }
 
 func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
@@ -184,7 +187,7 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record work
 		// Only add an after filter when repo-aware monitors is disabled
 		query = newQueryWithAfterFilter(q)
 	}
-	results, searchErr := codemonitors.Search(ctx, r.db, query, m.ID, settings)
+	results, searchErr := codemonitors.Search(r.log, ctx, r.db, query, m.ID, settings)
 
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, searchErr)
