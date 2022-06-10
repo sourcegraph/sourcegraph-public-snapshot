@@ -13,10 +13,6 @@
   "scripts": {
     "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
     "format:check": "yarn -s run format --write=false --check --list-different=false --loglevel=warn",
-    "_lint:js": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" NODE_OPTIONS=\"--max_old_space_size=16192\" eslint",
-    "lint:js:changed": "yarn _lint:js $(git diff --diff-filter=d --name-only main | grep -E '.[tj]sx?$' | xargs)",
-    "lint:js:root": "yarn -s run _lint:js --quiet '*.[tj]s?(x)'",
-    "lint:js:all": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" dev/foreach-ts-project.sh yarn -s run lint:js --quiet && yarn -s lint:js:root",
     "_lint:css": "stylelint --quiet",
     "lint:css:changed": "yarn _lint:css --allow-empty-input \"*.none\" $(git diff --diff-filter=d --name-only main | grep -E '.s?css$' | xargs)",
     "lint:css:all": "yarn _lint:css 'client/*/src/**/*.scss'",
