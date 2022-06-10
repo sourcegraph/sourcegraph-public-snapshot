@@ -41,9 +41,21 @@ func (s *bitbucketProjectPermissionsStore) With(other basestore.ShareableStore) 
 	return &bitbucketProjectPermissionsStore{Store: s.Store.With(other)}
 }
 
+func (s *bitbucketProjectPermissionsStore) copy() *bitbucketProjectPermissionsStore {
+	return &bitbucketProjectPermissionsStore{
+		Store: s.Store,
+	}
+}
+
 func (s *bitbucketProjectPermissionsStore) Transact(ctx context.Context) (BitbucketProjectPermissionsStore, error) {
+	return s.transact(ctx)
+}
+
+func (s *bitbucketProjectPermissionsStore) transact(ctx context.Context) (*bitbucketProjectPermissionsStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &bitbucketProjectPermissionsStore{Store: txBase}, err
+	c := s.copy()
+	c.Store = txBase
+	return c, err
 }
 
 func (s *bitbucketProjectPermissionsStore) Done(err error) error {
