@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
@@ -177,10 +178,21 @@ class FilteredContributorsConnection extends FilteredConnection<
     Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path' | 'globbing'>
 > {}
 
-const contributorsPageInputIds: Record<keyof QuerySpec, string> = {
-    revisionRange: 'repository-stats-contributors-page__revision-range',
-    after: 'repository-stats-contributors-page__after',
-    path: 'repository-stats-contributors-page__path',
+const contributorsPageInputIds: Record<string, string> = {
+    REVISION_RANGE: 'repository-stats-contributors-page__revision-range',
+    AFTER: 'repository-stats-contributors-page__after',
+    PATH: 'repository-stats-contributors-page__path',
+}
+
+// Get query params from spec
+const getUrlQuery = (spec: QuerySpec): string => {
+    const search = new URLSearchParams()
+    for (const [key, value] of Object.entries(spec)) {
+        if (value) {
+            search.set(key, value)
+        }
+    }
+    return search.toString()
 }
 
 /** A page that shows a repository's contributors. */
@@ -190,114 +202,90 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
     repo,
     globbing,
 }) => {
-    // Get state from query params
-    const getDerivedState = React.useCallback(
-        (_location: typeof location = location): QuerySpec => {
-            const query = new URLSearchParams(_location.search)
-            return {
-                revisionRange: query.get('revisionRange'),
-                after: query.get('after'),
-                path: query.get('path'),
-            }
-        },
-        [location]
-    )
+    const query = new URLSearchParams(location.search)
+    const spec: QuerySpec = {
+        revisionRange: query.get('revisionRange'),
+        after: query.get('after'),
+        path: query.get('path'),
+    }
 
-    // Get query params from state
-    const getUrlQuery = React.useCallback((spec: QuerySpec): string => {
-        const search = new URLSearchParams()
-        for (const [key, value] of Object.entries(spec)) {
-            if (value) {
-                search.set(key, value)
-            }
-        }
-        return search.toString()
-    }, [])
-
-    const [state, setState] = React.useState<QuerySpec>(getDerivedState())
-    const [bufferState, setBufferState] = React.useState<QuerySpec>(getDerivedState())
-    const specChanges = React.useRef<Subject<void>>(new Subject<void>())
+    const [revisionRange, setRevisionRange] = useState(spec.revisionRange)
+    const [after, setAfter] = useState(spec.after)
+    const [path, setPath] = useState(spec.path)
+    const specChanges = useRef<Subject<void>>(new Subject<void>())
 
     // Log page view when initially rendered
-    React.useEffect(() => {
+    useEffect(() => {
         eventLogger.logPageView('RepositoryStatsContributors')
     }, [])
 
-    // Update state when search params change
-    React.useEffect(() => {
-        setState(getDerivedState(location))
+    // Update spec when search params change
+    useEffect(() => {
+        setRevisionRange(spec.revisionRange)
+        setAfter(spec.after)
+        setPath(spec.path)
         specChanges.current.next()
-        // We only want to run this effect when `location.search` is updated,
-        // and having `location`, `getDerivedState` is unnecessary.
+        // We only want to run this effect when `location.search` is updated.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.search])
 
-    // Sync state --> bufferState
-    React.useEffect(() => {
-        setBufferState(state)
-    }, [state])
-
     // Update the buffer values, but don't update the URL
-    const onChange = React.useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
+    const onChange: React.ChangeEventHandler<HTMLInputElement> = event => {
         const { value } = event.target
-        // Get the name of the state field to update
-        const updated = Object.entries(contributorsPageInputIds).find(
-            ([_key, id]) => id === event.currentTarget.id
-        )?.[0]
-        if (updated) {
-            setBufferState(previousState => ({ ...previousState, [updated]: value }))
+        switch (event.currentTarget.id) {
+            case contributorsPageInputIds.REVISION_RANGE:
+                setRevisionRange(value)
+                break
+            case contributorsPageInputIds.AFTER:
+                setAfter(value)
+                break
+            case contributorsPageInputIds.PATH:
+                setPath(value)
+                break
         }
-    }, [])
+    }
 
-    // Update the URL to reflect buffer state. `state` change will follow via `useEffect` on `location.search`.
-    const onSubmit = React.useCallback<React.FormEventHandler<HTMLFormElement>>(
-        event => {
-            event.preventDefault()
-            history.push({
-                search: getUrlQuery(bufferState),
-            })
-        },
-        [getUrlQuery, bufferState, history]
-    )
+    // Update the URL to reflect buffer state
+    const onSubmit: React.FormEventHandler<HTMLFormElement> = event => {
+        event.preventDefault()
+        history.push({
+            search: getUrlQuery({ revisionRange, after, path }),
+        })
+    }
 
     // Reset the buffer state to the original state
-    const onCancel = React.useCallback<React.MouseEventHandler<HTMLButtonElement>>(
-        event => {
-            event.preventDefault()
-            setBufferState(state)
-        },
-        [state]
-    )
+    const onCancel: React.MouseEventHandler<HTMLButtonElement> = event => {
+        event.preventDefault()
+        setRevisionRange(spec.revisionRange)
+        setAfter(spec.after)
+        setPath(spec.path)
+    }
 
     // Wrap the gql query with additional variables
-    const wrappedQueryRepositoryContributors = React.useCallback(
-        (args: { first?: number }): Observable<GQL.IRepositoryContributorConnection> => {
-            const { revisionRange, after, path } = state
-            return queryRepositoryContributors({
-                ...args,
-                repo: repo.id,
-                revisionRange: revisionRange || undefined,
-                after: after || undefined,
-                path: path || undefined,
-            })
-        },
-        [state, repo.id]
-    )
+    const wrappedQueryRepositoryContributors = (args: {
+        first?: number
+    }): Observable<GQL.IRepositoryContributorConnection> => {
+        const { revisionRange, after, path } = spec
+        return queryRepositoryContributors({
+            ...args,
+            repo: repo.id,
+            revisionRange: revisionRange || undefined,
+            after: after || undefined,
+            path: path || undefined,
+        })
+    }
 
     // Push new query param to history, state change will follow via `useEffect` on `location.search`
-    const updateAfter = React.useCallback(
-        (after: string | null): void => {
-            history.push({ search: getUrlQuery({ ...state, after }) })
-        },
-        [state, history, getUrlQuery]
-    )
+    const updateAfter = (after: string | null): void => {
+        history.push({ search: getUrlQuery({ ...spec, after }) })
+    }
 
     // Whether the user has entered new option values that differ from what's in the URL query and has not yet
     // submitted the form.
     const stateDiffers =
-        !equalOrEmpty(state.revisionRange, bufferState.revisionRange) ||
-        !equalOrEmpty(state.after, bufferState.after) ||
-        !equalOrEmpty(state.path, bufferState.path)
+        !equalOrEmpty(spec.revisionRange, revisionRange) ||
+        !equalOrEmpty(spec.after, after) ||
+        !equalOrEmpty(spec.path, path)
 
     return (
         <div>
@@ -309,15 +297,15 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
                         <div className={classNames(styles.row, 'form-inline')}>
                             <div className="input-group mb-2 mr-sm-2">
                                 <div className="input-group-prepend">
-                                    <Label htmlFor={contributorsPageInputIds.after} className="input-group-text">
+                                    <Label htmlFor={contributorsPageInputIds.AFTER} className="input-group-text">
                                         Time period
                                     </Label>
                                 </div>
                                 <Input
                                     name="after"
                                     size={12}
-                                    id={contributorsPageInputIds.after}
-                                    value={bufferState.after || ''}
+                                    id={contributorsPageInputIds.AFTER}
+                                    value={after || ''}
                                     placeholder="All time"
                                     onChange={onChange}
                                 />
@@ -326,7 +314,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
                                         <Button
                                             className={classNames(
                                                 styles.btnNoLeftRoundedCorners,
-                                                state.after === '7 days ago' && 'active'
+                                                spec.after === '7 days ago' && 'active'
                                             )}
                                             onClick={() => updateAfter('7 days ago')}
                                             variant="secondary"
@@ -334,21 +322,21 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
                                             Last 7 days
                                         </Button>
                                         <Button
-                                            className={classNames(state.after === '30 days ago' && 'active')}
+                                            className={classNames(spec.after === '30 days ago' && 'active')}
                                             onClick={() => updateAfter('30 days ago')}
                                             variant="secondary"
                                         >
                                             Last 30 days
                                         </Button>
                                         <Button
-                                            className={classNames(state.after === '1 year ago' && 'active')}
+                                            className={classNames(spec.after === '1 year ago' && 'active')}
                                             onClick={() => updateAfter('1 year ago')}
                                             variant="secondary"
                                         >
                                             Last year
                                         </Button>
                                         <Button
-                                            className={classNames(!state.after && 'active')}
+                                            className={classNames(!spec.after && 'active')}
                                             onClick={() => updateAfter(null)}
                                             variant="secondary"
                                         >
@@ -362,7 +350,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
                             <div className="input-group mt-2 mr-sm-2">
                                 <div className="input-group-prepend">
                                     <Label
-                                        htmlFor={contributorsPageInputIds.revisionRange}
+                                        htmlFor={contributorsPageInputIds.REVISION_RANGE}
                                         className="input-group-text"
                                     >
                                         Revision range
@@ -371,8 +359,8 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
                                 <Input
                                     name="revision-range"
                                     size={18}
-                                    id={contributorsPageInputIds.revisionRange}
-                                    value={bufferState.revisionRange || ''}
+                                    id={contributorsPageInputIds.REVISION_RANGE}
+                                    value={revisionRange || ''}
                                     placeholder="Default branch"
                                     onChange={onChange}
                                     autoCapitalize="off"
@@ -383,15 +371,15 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
                             </div>
                             <div className="input-group mt-2 mr-sm-2">
                                 <div className="input-group-prepend">
-                                    <Label htmlFor={contributorsPageInputIds.path} className="input-group-text">
+                                    <Label htmlFor={contributorsPageInputIds.PATH} className="input-group-text">
                                         Path
                                     </Label>
                                 </div>
                                 <Input
                                     name="path"
                                     size={18}
-                                    id={contributorsPageInputIds.path}
-                                    value={bufferState.path || ''}
+                                    id={contributorsPageInputIds.PATH}
+                                    value={path || ''}
                                     placeholder="All files"
                                     onChange={onChange}
                                     autoCapitalize="off"
@@ -423,7 +411,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
                 nodeComponentProps={{
                     repoName: repo.name,
                     globbing,
-                    ...state,
+                    ...spec,
                 }}
                 defaultFirst={20}
                 hideSearch={true}
