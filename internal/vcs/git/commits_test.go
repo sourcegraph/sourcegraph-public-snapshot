@@ -320,7 +320,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 		}
 	})
 
-	// Added for awareness if this error changes. Insights skip empty repos and check against error
+	// Added for awareness if this error message changes. Insights skip over empty repos and check against error message
 	t.Run("empty repo", func(t *testing.T) {
 		repo := MakeGitRepository(t)
 		_, err := FirstEverCommit(ctx, db, repo, nil)
