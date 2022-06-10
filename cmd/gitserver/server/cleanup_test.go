@@ -165,8 +165,6 @@ func TestCleanupWrongShard(t *testing.T) {
 		}
 		s.testSetup(t)
 		s.Hostname = "does-not-exist"
-		// force cleanup of repos
-		wrongShardReposDeleteLimit = 10
 		s.cleanupRepos([]string{"gitserver-0", "gitserver-1"})
 
 		if _, err := os.Stat(repoA); err != nil {
@@ -174,37 +172,6 @@ func TestCleanupWrongShard(t *testing.T) {
 		}
 		if _, err := os.Stat(repoD); err != nil {
 			t.Error("expected repoD assigned to different shard not to be removed")
-		}
-	})
-	t.Run("forced", func(t *testing.T) {
-		root := t.TempDir()
-		// should be allocated to shard gitserver-1
-		testRepoD := "testrepo-D"
-
-		repoA := path.Join(root, testRepoA, ".git")
-		cmd := exec.Command("git", "--bare", "init", repoA)
-		if err := cmd.Run(); err != nil {
-			t.Fatal(err)
-		}
-		repoD := path.Join(root, testRepoD, ".git")
-		cmdD := exec.Command("git", "--bare", "init", repoD)
-		if err := cmdD.Run(); err != nil {
-			t.Fatal(err)
-		}
-
-		s := &Server{ReposDir: root,
-			Logger: logtest.Scoped(t),
-		}
-		s.testSetup(t)
-		// force cleanup of repos
-		wrongShardReposDeleteLimit = 10
-		s.cleanupRepos([]string{"gitserver-0", "gitserver-1"})
-
-		if _, err := os.Stat(repoA); os.IsNotExist(err) {
-			t.Error("expected repoA not to be removed")
-		}
-		if _, err := os.Stat(repoD); !os.IsNotExist(err) {
-			t.Error("expected repoD assigned to different shard to be removed during clean up")
 		}
 	})
 	t.Run("substringShardName", func(t *testing.T) {
@@ -228,8 +195,6 @@ func TestCleanupWrongShard(t *testing.T) {
 		}
 		s.testSetup(t)
 		s.Hostname = "gitserver-0"
-		// force cleanup of repos
-		wrongShardReposDeleteLimit = 10
 		s.cleanupRepos([]string{"gitserver-0.cluster.local:3178", "gitserver-1.cluster.local:3178"})
 
 		if _, err := os.Stat(repoA); err != nil {

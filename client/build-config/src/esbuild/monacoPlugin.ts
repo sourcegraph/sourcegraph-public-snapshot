@@ -4,7 +4,9 @@ import * as esbuild from 'esbuild'
 import { EditorFeature, featuresArr } from 'monaco-editor-webpack-plugin/out/features'
 import { EditorLanguage, languagesArr } from 'monaco-editor-webpack-plugin/out/languages'
 
-import { MONACO_LANGUAGES_AND_FEATURES, ROOT_PATH } from '@sourcegraph/build-config'
+import { MONACO_LANGUAGES_AND_FEATURES } from '@sourcegraph/build-config'
+
+import { ROOT_PATH } from '../paths'
 
 const monacoModulePath = (modulePath: string): string =>
     require.resolve(path.join('monaco-editor/esm', modulePath), {
@@ -57,3 +59,20 @@ export const monacoPlugin = ({
         build.onLoad({ filter }, () => ({ contents: '', loader: 'js' }))
     },
 })
+
+// TODO(sqs): These Monaco Web Workers could be built as part of the main build if we switch to
+// using MonacoEnvironment#getWorker (from #getWorkerUrl), which would then let us use the worker
+// plugin (and in Webpack the worker-loader) to load these instead of needing to hardcode them as
+// build entrypoints.
+export const buildMonaco = async (outdir: string): Promise<void> => {
+    await esbuild.build({
+        entryPoints: {
+            'scripts/editor.worker.bundle': 'monaco-editor/esm/vs/editor/editor.worker.js',
+            'scripts/json.worker.bundle': 'monaco-editor/esm/vs/language/json/json.worker.js',
+        },
+        format: 'iife',
+        target: 'es2021',
+        bundle: true,
+        outdir,
+    })
+}

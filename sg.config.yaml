@@ -830,7 +830,7 @@ commandsets:
       - zoekt-webserver-1
       - batches-executor
 
-  core-app:
+  iam:
     requiresDevPrivate: true
     checks:
       - docker

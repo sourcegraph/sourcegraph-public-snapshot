@@ -5,9 +5,9 @@ import express from 'express'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import signale from 'signale'
 
-import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
+import { STATIC_ASSETS_PATH, buildMonaco } from '@sourcegraph/build-config'
 
-import { buildMonaco, BUILD_OPTIONS } from './build'
+import { BUILD_OPTIONS } from './build'
 import { assetPathPrefix } from './manifestPlugin'
 
 export const esbuildDevelopmentServer = async (
@@ -16,7 +16,7 @@ export const esbuildDevelopmentServer = async (
 ): Promise<void> => {
     // One-time build (these files only change when the monaco-editor npm package is changed, which
     // is rare enough to ignore here).
-    await buildMonaco()
+    await buildMonaco(STATIC_ASSETS_PATH)
 
     // Start esbuild's server on a random local port.
     const { host: esbuildHost, port: esbuildPort, wait: esbuildStopped } = await serve(

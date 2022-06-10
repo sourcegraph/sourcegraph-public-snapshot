@@ -23,6 +23,8 @@ type BitbucketProjectPermissionsStore interface {
 	basestore.ShareableStore
 	With(other basestore.ShareableStore) BitbucketProjectPermissionsStore
 	Enqueue(ctx context.Context, projectKey string, externalServiceID int64, permissions []types.UserPermission, unrestricted bool) (int, error)
+	Transact(ctx context.Context) (BitbucketProjectPermissionsStore, error)
+	Done(err error) error
 }
 
 type bitbucketProjectPermissionsStore struct {
@@ -39,15 +41,31 @@ func (s *bitbucketProjectPermissionsStore) With(other basestore.ShareableStore) 
 	return &bitbucketProjectPermissionsStore{Store: s.Store.With(other)}
 }
 
+func (s *bitbucketProjectPermissionsStore) copy() *bitbucketProjectPermissionsStore {
+	return &bitbucketProjectPermissionsStore{
+		Store: s.Store,
+	}
+}
+
 func (s *bitbucketProjectPermissionsStore) Transact(ctx context.Context) (BitbucketProjectPermissionsStore, error) {
+	return s.transact(ctx)
+}
+
+func (s *bitbucketProjectPermissionsStore) transact(ctx context.Context) (*bitbucketProjectPermissionsStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &bitbucketProjectPermissionsStore{Store: txBase}, err
+	c := s.copy()
+	c.Store = txBase
+	return c, err
+}
+
+func (s *bitbucketProjectPermissionsStore) Done(err error) error {
+	return s.Store.Done(err)
 }
 
 // Enqueue a job to apply permissions to a Bitbucket project.
 // The job will be enqueued to the BitbucketProjectPermissions worker.
 // If a non-empty permissions slice is passed, unrestricted has to be false, and vice versa.
-func (s *bitbucketProjectPermissionsStore) Enqueue(ctx context.Context, projectKey string, externalServiceID int64, permissions []types.UserPermission, unrestricted bool) (int, error) {
+func (s *bitbucketProjectPermissionsStore) Enqueue(ctx context.Context, projectKey string, externalServiceID int64, permissions []types.UserPermission, unrestricted bool) (jobID int, err error) {
 	if len(permissions) > 0 && unrestricted {
 		return 0, errors.New("cannot specify permissions when unrestricted is true")
 	}
@@ -60,8 +78,24 @@ func (s *bitbucketProjectPermissionsStore) Enqueue(ctx context.Context, projectK
 		perms = append(perms, userPermission(perm))
 	}
 
-	var jobID int
-	err := s.QueryRow(ctx, sqlf.Sprintf(`
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// ensure we don't enqueue a job for the same project twice.
+	// if so, cancel the existing jobs and enqueue a new one.
+	// this doesn't apply to running jobs.
+	err = tx.Exec(ctx, sqlf.Sprintf(`--sql
+-- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.Enqueue
+UPDATE explicit_permissions_bitbucket_projects_jobs SET state = 'canceled' WHERE project_key = %s AND external_service_id = %s AND state = 'queued'
+`, projectKey, externalServiceID))
+	if err != nil && err != sql.ErrNoRows {
+		return 0, err
+	}
+
+	err = tx.QueryRow(ctx, sqlf.Sprintf(`--sql
 -- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.Enqueue
 INSERT INTO
 	explicit_permissions_bitbucket_projects_jobs (project_key, external_service_id, permissions, unrestricted)

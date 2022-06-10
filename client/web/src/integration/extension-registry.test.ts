@@ -189,6 +189,7 @@ describe('Extension Registry', () => {
                     session: { canSignOut: true },
                     viewerCanAdminister: true,
                     searchable: true,
+                    emails: [],
                 },
             }),
             RegistryExtensions: () => ({

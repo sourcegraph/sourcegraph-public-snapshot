@@ -7279,6 +7279,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX explicit_permissions_bitbucket_projects_jobs_pkey ON explicit_permissions_bitbucket_projects_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "explicit_permissions_bitbucket_projects_jobs_project_key_extern",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX explicit_permissions_bitbucket_projects_jobs_project_key_extern ON explicit_permissions_bitbucket_projects_jobs USING btree (project_key, external_service_id, state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [

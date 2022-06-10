@@ -1,6 +1,8 @@
 package com.sourcegraph.find;
 
+import com.intellij.ide.DataManager;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -42,9 +44,9 @@ public class SourcegraphWindow implements Disposable {
             popup = createPopup();
             popup.showCenteredInCurrentWindow(project);
             registerOutsideClickListener();
+        } else {
+            popup.setUiVisible(true);
         }
-
-        popup.setUiVisible(true);
 
         // If the popup is already shown, hitting alt + a gain should behave the same as the native find in files
         // feature and focus the search field.
@@ -55,6 +57,7 @@ public class SourcegraphWindow implements Disposable {
 
     public void hidePopup() {
         popup.setUiVisible(false);
+        hideMaterialUiOverlay();
     }
 
     @NotNull
@@ -189,5 +192,31 @@ public class SourcegraphWindow implements Disposable {
         }
 
         mainPanel.dispose();
+    }
+
+
+    // We manually emit an action defined by the material UI theme to hide the overlay it opens whenever a popover is
+    // created. This third-party plugin does not work with our approach of keeping the popover alive and thus, when the
+    // Sourcegraph popover is closed, their custom overlay stays active.
+    //
+    //   - https://github.com/sourcegraph/sourcegraph/issues/36479
+    //   - https://github.com/mallowigi/material-theme-issues/issues/179
+    private void hideMaterialUiOverlay() {
+        AnAction materialAction = ActionManager.getInstance().getAction("MTToggleOverlaysAction");
+        if (materialAction != null) {
+            try {
+                materialAction.actionPerformed(
+                    new AnActionEvent(
+                        null,
+                        DataManager.getInstance().getDataContextFromFocusAsync().blockingGet(10),
+                        ActionPlaces.UNKNOWN,
+                        new Presentation(),
+                        ActionManager.getInstance(),
+                        0)
+                );
+            } catch (Exception e) {
+                return;
+            }
+        }
     }
 }

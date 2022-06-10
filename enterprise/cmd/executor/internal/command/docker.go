@@ -31,7 +31,7 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) com
 		Command: flatten(
 			"docker", "run", "--rm",
 			dockerResourceFlags(options.ResourceOptions),
-			dockerVolumeFlags(dir),
+			dockerVolumeFlags(filepath.Join(options.ResourceOptions.MountPathPrefix, dir)),
 			dockerWorkingdirectoryFlags(spec.Dir),
 			// If the env vars will be part of the command line args, we need to quote them
 			dockerEnvFlags(quoteEnv(spec.Env)),

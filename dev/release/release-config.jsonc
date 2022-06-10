@@ -13,7 +13,7 @@
     "captainSlackUsername": "bolaji",
     "captainGitHubUsername": "BolajiOlajide",
     // Release versions
-    "previousRelease": "3.40.1",
+    "previousRelease": "3.40.2",
     "upcomingRelease": "3.41.0",
     // Release dates
     "oneWorkingWeekBeforeRelease": "15 June 2022 10:00 PST",
