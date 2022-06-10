@@ -27,18 +27,18 @@ describe('BrowserExtensionTracker', () => {
 
     const cases: [string, string | null][] = [
         [
-            'https://sourcegraph.com/github.com/sourcegraph/sourcegraph?utm_source=chrome-extension&utm_campaign=view-on-sourcegraph',
+            '/github.com/sourcegraph/sourcegraph?utm_source=chrome-extension&utm_campaign=view-on-sourcegraph',
             DATE_NOW,
         ],
         [
-            'https://sourcegraph.com/github.com/sourcegraph/sourcegraph?utm_source=firefox-extension&utm_campaign=view-on-sourcegraph',
+            '/github.com/sourcegraph/sourcegraph?utm_source=firefox-extension&utm_campaign=view-on-sourcegraph',
             DATE_NOW,
         ],
         [
-            'https://sourcegraph.com/github.com/sourcegraph/sourcegraph?utm_source=safari-extension&utm_campaign=view-on-sourcegraph',
+            '/github.com/sourcegraph/sourcegraph?utm_source=safari-extension&utm_campaign=view-on-sourcegraph',
             DATE_NOW,
         ],
-        ['https://sourcegraph.com/?something=different', null],
+        ['/?something=different', null],
     ]
     test.each(cases)('Detects query parameters for %p', (url, expectedResult) => {
         expect(localStorage.getItem(BROWSER_EXTENSION_LAST_DETECTION_KEY)).toBeNull()
