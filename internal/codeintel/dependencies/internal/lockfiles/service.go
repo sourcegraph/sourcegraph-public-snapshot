@@ -30,7 +30,7 @@ func newService(gitSvc GitService, observationContext *observation.Context) *Ser
 	}
 }
 
-func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev string) (deps []reposource.PackageDependency, err error) {
+func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev string) (deps []reposource.PackageDependency, graphs []*dependencyGraph, err error) {
 	ctx, _, endObservation := s.operations.listDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(repo)),
 		log.String("rev", rev),
@@ -40,12 +40,15 @@ func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev s
 	err = s.StreamDependencies(ctx, repo, rev, func(d reposource.PackageDependency) error {
 		deps = append(deps, d)
 		return nil
+	}, func(graph *dependencyGraph) error {
+		graphs = append(graphs, graph)
+		return nil
 	})
 
-	return deps, err
+	return deps, graphs, err
 }
 
-func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev string, cb func(reposource.PackageDependency) error) (err error) {
+func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev string, cb func(reposource.PackageDependency) error, graphCb func(*dependencyGraph) error) (err error) {
 	ctx, _, endObservation := s.operations.streamDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(repo)),
 		log.String("rev", rev),
@@ -102,7 +105,7 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 			continue
 		}
 
-		ds, err := parseZipLockfile(f)
+		ds, graph, err := parseZipLockfile(f)
 		if err != nil {
 			return errors.Wrapf(err, "failed to parse %q", f.Name)
 		}
@@ -116,30 +119,36 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 				}
 			}
 		}
+
+		if graph != nil {
+			if err = graphCb(graph); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
 }
 
-func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, error) {
+func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, *dependencyGraph, error) {
 	r, err := f.Open()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer r.Close()
 
-	deps, err := parse(f.Name, r)
+	deps, graph, err := parse(f.Name, r)
 	if err != nil {
 		log15.Warn("failed to parse some lockfile dependencies", "error", err, "file", f.Name)
 	}
 
-	return deps, nil
+	return deps, graph, nil
 }
 
-func parse(file string, r io.Reader) ([]reposource.PackageDependency, error) {
+func parse(file string, r io.Reader) ([]reposource.PackageDependency, *dependencyGraph, error) {
 	parser, ok := parsers[path.Base(file)]
 	if !ok {
-		return nil, ErrUnsupported
+		return nil, nil, ErrUnsupported
 	}
 	return parser(r)
 }

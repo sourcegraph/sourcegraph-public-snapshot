@@ -7,17 +7,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
-type parser func(io.Reader) ([]reposource.PackageDependency, error)
+type parser func(io.Reader) ([]reposource.PackageDependency, *dependencyGraph, error)
+
+type nonGraphParser func(io.Reader) ([]reposource.PackageDependency, error)
+
+func wrapNonGraphParser(f nonGraphParser) parser {
+	return func(r io.Reader) ([]reposource.PackageDependency, *dependencyGraph, error) {
+		deps, err := f(r)
+		return deps, nil, err
+	}
+}
 
 var parsers = map[string]parser{
-	"package-lock.json": parsePackageLockFile,
-	"yarn.lock": func(r io.Reader) ([]reposource.PackageDependency, error) {
-		deps, _, err := parseYarnLockFile(r)
-		return deps, err
-	},
-	"go.mod":       parseGoModFile,
-	"poetry.lock":  parsePoetryLockFile,
-	"Pipfile.lock": parsePipfileLockFile,
+	"package-lock.json": wrapNonGraphParser(parsePackageLockFile),
+	"yarn.lock":         parseYarnLockFile,
+	"go.mod":            wrapNonGraphParser(parseGoModFile),
+	"poetry.lock":       wrapNonGraphParser(parsePoetryLockFile),
+	"Pipfile.lock":      wrapNonGraphParser(parsePipfileLockFile),
 }
 
 // lockfilePathspecs is the list of git pathspecs that match lockfiles.
