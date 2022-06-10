@@ -1498,6 +1498,31 @@ func TestService(t *testing.T) {
 			assertNoChangesetSpecs(t, newSpec.ID)
 			assertNoChangesetSpecs(t, spec.ID)
 		})
+
+		t.Run("mount error", func(t *testing.T) {
+			spec := createBatchSpecWithWorkspacesAndChangesetSpecs(t)
+
+			_, err := svc.ReplaceBatchSpecInput(adminCtx, ReplaceBatchSpecInputOpts{
+				BatchSpecRandID: spec.RandID,
+				RawSpec: `
+name: test-spec
+description: A test spec
+steps:
+  - run: /tmp/sample.sh
+    container: alpine:3
+    mount:
+      - path: /some/path/sample.sh
+        mountpoint: /tmp/sample.sh
+changesetTemplate:
+  title: Test Mount
+  body: Test a mounted path
+  branch: test
+  commit:
+    message: Test
+`,
+			})
+			assert.Equal(t, "mounts are not allowed for server-side processing", err.Error())
+		})
 	})
 
 	t.Run("CreateBatchSpecFromRaw", func(t *testing.T) {
