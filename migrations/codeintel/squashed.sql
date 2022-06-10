@@ -1070,6 +1070,9 @@ ALTER TABLE ONLY lsif_data_docs_search_public
 ALTER TABLE ONLY lsif_data_docs_search_public
     ADD CONSTRAINT lsif_data_docs_search_public_tags_id_fk FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_public(id);
 
+REVOKE USAGE ON SCHEMA public FROM PUBLIC;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
 INSERT INTO lsif_data_apidocs_num_dumps VALUES (0);
 INSERT INTO lsif_data_apidocs_num_dumps_indexed VALUES (0);
 INSERT INTO lsif_data_apidocs_num_pages VALUES (0);

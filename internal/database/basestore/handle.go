@@ -18,7 +18,7 @@ type OldTransactableHandle struct {
 }
 
 // NewHandleWithDB returns a new transactable database handle using the given database connection.
-func NewHandleWithDB(db dbutil.DB, txOptions sql.TxOptions) *OldTransactableHandle {
+func NewHandleWithDB(db dbutil.DB, txOptions sql.TxOptions) TransactableHandle {
 	return &OldTransactableHandle{db: db, txOptions: txOptions}
 }
 
@@ -42,7 +42,7 @@ func (h *OldTransactableHandle) InTransaction() bool {
 // Because we support properly nested transactions via savepoints, calling Transact from two different
 // goroutines on the same handle will not be deterministic: either transaction could nest the other one,
 // and calling Done in one goroutine may not finalize the expected unit of work.
-func (h *OldTransactableHandle) Transact(ctx context.Context) (*OldTransactableHandle, error) {
+func (h *OldTransactableHandle) Transact(ctx context.Context) (TransactableHandle, error) {
 	db := tryUnwrap(h.db)
 
 	if h.InTransaction() {
