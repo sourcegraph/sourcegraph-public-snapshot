@@ -23,7 +23,7 @@ type InsightStore struct {
 
 // NewInsightStore returns a new InsightStore backed by the given Postgres db.
 func NewInsightStore(db edb.InsightsDB) *InsightStore {
-	return &InsightStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
+	return &InsightStore{Store: basestore.NewWithHandle(db.Handle()), Now: time.Now}
 }
 
 // NewInsightStoreWith returns a new InsightStore backed by the given Postgres db.

@@ -106,7 +106,7 @@ func (s *Service) ApplyBatchChange(
 	}
 	defer func() { err = tx.Done(err) }()
 
-	l := locker.NewWithDB(nil, "batches_apply").With(tx)
+	l := locker.NewWith(tx, "batches_apply")
 	locked, err := l.LockInTransaction(ctx, int32(batchChange.ID), false)
 	if err != nil {
 		return nil, err
