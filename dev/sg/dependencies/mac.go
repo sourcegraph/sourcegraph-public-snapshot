@@ -3,6 +3,7 @@ package dependencies
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
@@ -299,6 +300,21 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 					}
 					if cio.Input == nil {
 						return errors.New("interactive input required")
+					}
+
+					accounts, err := usershell.Run(ctx, "op account list").String()
+					if err == nil {
+						if strings.Contains(accounts, "team-sourcegraph.1password.com") {
+							// Account already added, we just need to sign in again.
+							// However, we also can't seem to automate this login without
+							// going through the same setup as the initial flow because
+							// the 'op signin' command refuses to accept any input, so we
+							// just tell the user to log in separately and exit.
+							cio.WriteNoticef("Unfortunately I can't easily fix this for you :( You should run the following command:")
+							loginCmd := "eval $(op signin --account=team-sourcegraph.1password.com)"
+							cio.WriteMarkdown("```sh\n" + loginCmd + "\n```")
+							return errors.Newf("Cannot be fixed by automatically")
+						}
 					}
 
 					cio.Promptf("Enter secret key:")
