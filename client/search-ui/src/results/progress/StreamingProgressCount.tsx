@@ -52,9 +52,7 @@ export const StreamingProgressCount: React.FunctionComponent<
                 data-testid="streaming-progress-count"
             >
                 <VisuallyHidden aria-live="polite">{readingContent}</VisuallyHidden>
-                <span aria-hidden={true} role="presentation">
-                    {content}
-                </span>
+                <span aria-hidden={true}>{content}</span>
                 {progress.repositoriesCount !== undefined && (
                     <Tooltip
                         content={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
