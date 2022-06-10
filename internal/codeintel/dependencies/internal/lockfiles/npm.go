@@ -3,7 +3,6 @@ package lockfiles
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"io"
 	"strings"
 
@@ -158,34 +157,18 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, graph 
 		}
 	}
 
-	graph = &dependencyGraph{
-		roots:        make(map[*reposource.NpmDependency]struct{}),
-		dependencies: make(map[*reposource.NpmDependency][]*reposource.NpmDependency),
-		edges:        map[edge]struct{}{},
-	}
-
+	graph = newDependencyGraph()
 	for pkg, depNames := range dependencyNames {
-		graph.roots[pkg] = struct{}{}
+		graph.addPackage(pkg)
 
 		for _, depname := range depNames {
 			depPkg, ok := byName[depname]
 			if !ok {
-				fmt.Printf("couldn't find dep by name: %q\n", depname)
 				continue
 			}
 
-			if deps, ok := graph.dependencies[pkg]; !ok {
-				graph.dependencies[pkg] = []*reposource.NpmDependency{depPkg}
-			} else {
-				graph.dependencies[pkg] = append(deps, depPkg)
-			}
-
-			graph.edges[edge{pkg, depPkg}] = struct{}{}
+			graph.addDependency(pkg, depPkg)
 		}
-	}
-
-	for edge := range graph.edges {
-		delete(graph.roots, edge.target)
 	}
 
 	return deps, graph, errs
@@ -244,41 +227,4 @@ func validProtocol(protocol string) (valid bool) {
 		return true
 	}
 	return false
-}
-
-type edge struct {
-	source, target *reposource.NpmDependency
-}
-
-type dependencyGraph struct {
-	roots        map[*reposource.NpmDependency]struct{}
-	dependencies map[*reposource.NpmDependency][]*reposource.NpmDependency
-
-	edges map[edge]struct{}
-
-	nodes []*reposource.NpmDependency
-}
-
-func printGraph(graph *dependencyGraph) string {
-	var out strings.Builder
-
-	for root := range graph.roots {
-		printDependencies(&out, graph, 0, root)
-	}
-
-	return out.String()
-}
-
-func printDependencies(out io.Writer, graph *dependencyGraph, level int, node *reposource.NpmDependency) {
-	deps, ok := graph.dependencies[node]
-	if !ok {
-		fmt.Fprintf(out, "%s%s\n", strings.Repeat("\t", level), node.RepoName())
-		return
-	}
-
-	fmt.Fprintf(out, "%s%s:\n", strings.Repeat("\t", level), node.RepoName())
-
-	for _, dep := range deps {
-		printDependencies(out, graph, level+1, dep)
-	}
 }

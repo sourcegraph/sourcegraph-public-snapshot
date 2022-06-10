@@ -113,7 +113,8 @@ tinygradient 1.1.5
 		t.Fatalf("+want,-got\n%s", d)
 	}
 
-	wantGraph := `npm/gradient-string:
+	wantGraph := `` +
+		`npm/gradient-string:
 	npm/chalk:
 		npm/ansi-styles:
 			npm/color-convert:
@@ -125,7 +126,7 @@ tinygradient 1.1.5
 		npm/tinycolor2
 `
 
-	gotGraph := printGraph(graph)
+	gotGraph := graph.String()
 	fmt.Println(gotGraph)
 
 	if d := cmp.Diff(wantGraph, gotGraph); d != "" {
