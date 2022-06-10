@@ -9,6 +9,8 @@ import { MockedStoryProvider, MockedStoryProviderProps, usePrependStyles, useThe
 // eslint-disable-next-line no-restricted-imports
 import { DeprecatedTooltip, WildcardThemeContext } from '@sourcegraph/wildcard'
 
+import { setExperimentalFeaturesFromSettings } from '../stores'
+
 import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
 
 import webStyles from '../SourcegraphWebApp.scss'
@@ -36,6 +38,7 @@ export const WebStory: React.FunctionComponent<React.PropsWithChildren<WebStoryP
     const Children = useMemo(() => withRouter(children), [children])
 
     usePrependStyles('web-styles', webStyles)
+    setExperimentalFeaturesFromSettings({ subjects: null, final: null })
 
     return (
         <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
