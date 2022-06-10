@@ -8,13 +8,15 @@ import styles from './PanelContainer.module.scss'
 
 interface Props {
     title: string
-    state: 'loading' | 'populated' | 'empty'
+    state: 'loading' | 'populated' | 'empty' | 'gitPopulated'
     // the content displayed when state is 'loading'
     loadingContent?: JSX.Element
     // the content displayed when state is 'empty'
     emptyContent?: JSX.Element
     // the content displayed when state is 'populated'
     populatedContent: JSX.Element
+    // the content displayed when state is 'gitPopulated'
+    gitPopulatedContent?: JSX.Element
     actionButtons?: JSX.Element
     className?: string
     insideTabPanel?: boolean

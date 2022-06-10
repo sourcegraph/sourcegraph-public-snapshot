@@ -2,12 +2,11 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { gql } from '@apollo/client'
 import classNames from 'classnames'
-import { streamComputeQuery } from '../../../../shared/src/search/stream'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Link, useObservable } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -88,29 +87,6 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
     const logSearchClicked = useCallback(() => telemetryService.log('RecentSearchesPanelSearchClicked'), [
         telemetryService,
     ])
-
-    // a constant to hold git commits history
-    // get the user's git commit history
-    // call streamComputeQuery from stream
-
-    const URL =
-        'content:output((.|\n)* -> $repo) author:"adham.khalifa@sourcegraph.com" type:commit after:"1 year ago" count:all'
-    const computeStreamUrl = '/.api/compute/stream'
-    const query = streamComputeQuery(URL, computeStreamUrl)
-    // use useobservable
-    const gitCommit = useObservable(useMemo(() => streamComputeQuery(URL, computeStreamUrl), [query]))
-    //console.log(gitCommit)
-
-    /*
-        Get the user’s code search history.
-        If the user’s search history is not empty
-        Show that
-        If the user’s search history is empty
-        Check if the user has a git commit history (email)
-        Show that
-        Else
-        Call the empty history view
-    */
 
     const loadingDisplay = <LoadingPanelView text="Loading recent searches" />
     const emptyDisplay = (
@@ -220,69 +196,6 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
             {searchEventLogs?.pageInfo.hasNextPage && <ShowMoreButton onClick={loadMoreItems} />}
         </>
     )
-
-    // A new display for git commits
-    // convert gitCommit to a list of git commits
-    const gitCommitDisplay = (
-        <>
-            <table className={classNames('mt-2', styles.resultsTable)}>
-                <thead>
-                    <tr className={styles.resultsTableRow}>
-                        <th>
-                            <small>Commit</small>
-                        </th>
-                        <th>
-                            <small>Date</small>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {(
-                        gitCommit: {
-                            url: LocationDescriptor<any>
-                            searchText: string
-                            timestamp: string | number | Date
-                        },
-                        index: React.Key | null | undefined
-                    ) => (
-                        <tr key={index} className={styles.resultsTableRow}>
-                            <td>
-                                <small className={styles.recentQuery}>
-                                    <Link to={gitCommit.url} onClick={logSearchClicked}>
-                                        <SyntaxHighlightedSearchQuery query={gitCommit.searchText} />
-                                    </Link>
-                                </small>
-                            </td>
-                            <td className={styles.resultsTableDateCol}>
-                                <Timestamp noAbout={true} date={gitCommit.timestamp} now={now} strict={true} />
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
-            {searchEventLogs?.pageInfo.hasNextPage && <ShowMoreButton onClick={loadMoreItems} />}
-        </>
-    )
-
-    // get the user's code search history
-    const codeSearchHistory = processedResults?.map(recentSearch => recentSearch.searchText)
-
-    // if the user's code search history is not empty
-    // show that
-    // if the user's code search history is empty
-    // check if the user has a git commit history (email)
-    // show that
-    // else
-    // call the empty history view
-
-    if (processedResults !== null && processedResults.length > 0) {
-        // return the contentDisplay
-        return contentDisplay
-        // check if the user has a git commit history (email)
-    } else if (processedResults !== null && processedResults.length === 0 && gitCommit !== null) {
-        // return the contentDisplay
-        gitCommitDisplay
-    }
 
     return (
         <PanelContainer

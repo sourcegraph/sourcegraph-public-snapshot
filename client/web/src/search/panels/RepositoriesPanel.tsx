@@ -1,15 +1,17 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState, useMemo } from 'react'
 
 import { gql } from '@apollo/client'
 import classNames from 'classnames'
+import { of } from 'rxjs'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Text } from '@sourcegraph/wildcard'
+import { Link, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { parseSearchURLQuery } from '..'
+import { streamComputeQuery } from '../../../../shared/src/search/stream'
 import { AuthenticatedUser } from '../../auth'
 import { RecentlySearchedRepositoriesFragment } from '../../graphql-operations'
 import { EventLogResult } from '../backend'
@@ -51,6 +53,7 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     telemetryService,
     recentlySearchedRepositories,
     fetchMore,
+    authenticatedUser,
 }) => {
     const [searchEventLogs, setSearchEventLogs] = useState<
         null | RecentlySearchedRepositoriesFragment['recentlySearchedRepositoriesLogs']
@@ -148,13 +151,95 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
         </div>
     )
 
+    // a constant to hold git commits history
+    // call streamComputeQuery from stream
+
+    const gitRepository = useObservable(useMemo(() =>
+    authenticatedUser ? streamComputeQuery(`content:output((.|\n)* -> $repo) author:${authenticatedUser.email} type:commit after:"1 year ago" count:all`): of([]), [authenticatedUser]))
+    console.log(gitRepository)
+    let gitRepositoryParsedString
+    if (gitRepository) {
+        gitRepositoryParsedString = gitRepository.map(value => JSON.parse(value))
+    }
+    /*
+    Algorithm:
+        1.Get the user's git history
+        2.Get the user's search history
+        3.If the user has git history,
+            then show the git history
+        4.If the user has no git history,
+            then check if the user has search history
+        5.If the user has search history,
+            then show the search history
+        6.If the user has no search history,
+            then show the empty display
+    */
+
+    // A new display for git history
+    const gitHistoryDisplay = (
+        <div className="mt-2">
+            <div className="d-flex mb-1">
+                <small>Git history</small>
+            </div>
+            {gitRepositoryParsedString?.length && (
+                <ul className="list-group">
+                    {gitRepositoryParsedString.map(repo =>
+                        <li key={`${repo.value}-`} className="text-monospace text-break mb-2">
+                            <small>
+                                <Link to={`/search?q=repo:${repo.value}`} onClick={logRepoClicked}>
+                                    <SyntaxHighlightedSearchQuery query={`repo:${repo.value}`} />
+                                </Link>
+                            </small>
+                        </li>
+                    )}
+                </ul>
+            )}
+            {searchEventLogs?.pageInfo.hasNextPage && (
+                <ShowMoreButton className="test-repositories-panel-show-more" onClick={loadMoreItems} />
+            )}
+        </div>
+    )
+    // 1. Get the user's git history
+    // create a SET object to hold the git commit history
+    const gitSet = new Set<string>()
+    let element: string
+    if (gitRepositoryParsedString) {
+        for (let index = 0; index < gitRepositoryParsedString.toString.length; index++) {
+            element = gitRepositoryParsedString[index].value
+            gitSet.add(element)
+        }
+    }
+    console.log(gitSet)
+
+    // gitSet.add(gitRepository)
+
+    // 2. Get the user's search history
+    const codeSearchHistory = useMemo(() => processRepositories(searchEventLogs), [searchEventLogs])
+    // 3. If the user has git history,
+    // then show the git history
+    if (gitSet.size > 0) {
+        return gitHistoryDisplay
+    }
+        // 4. If the user has no git history,
+        // then check if the user has search history
+    if (codeSearchHistory.length > 0) {
+        // 5. If the user has search history,
+        // then show the search history
+        return contentDisplay
+    } /* else {
+        // 6. If the user has no search history,
+        // then show the empty display
+        return emptyDisplay
+    }*/
+
     return (
         <PanelContainer
             className={classNames(className, 'repositories-panel')}
             title="Repositories"
-            state={repoFilterValues ? (repoFilterValues.length > 0 ? 'populated' : 'empty') : 'loading'}
+            state={repoFilterValues ? (repoFilterValues.length > 0 ? 'populated' : 'empty') ? (gitSet.size > 0 ? 'gitPopulated' : 'empty') : 'loading' : 'loading'}
             loadingContent={loadingDisplay}
             populatedContent={contentDisplay}
+            gitPopulatedContent={gitHistoryDisplay}
             emptyContent={emptyDisplay}
         />
     )
