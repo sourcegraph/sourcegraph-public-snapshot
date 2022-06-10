@@ -1,7 +1,6 @@
 .blob {
     position: relative;
     overflow: auto;
-    padding-top: 0.5rem;
     tab-size: 4;
     display: flex;
     background-color: var(--code-bg);
@@ -12,15 +11,6 @@
 
     table {
         border-collapse: collapse;
-
-        // Give room to view the last few lines of code
-        // without the floating status bar getting in the way.
-        &::after {
-            content: '';
-            display: inline-block;
-            padding-bottom: calc(var(--blob-status-bar-height) + var(--blob-status-bar-vertical-gap) + 0.5rem);
-            // Extra 0.5rem padding on top of the minimum required to expose code;
-        }
     }
 
     td:global(.line) {
@@ -35,15 +25,23 @@
         user-select: none;
         vertical-align: top;
         color: var(--line-number-color);
+
+        :global(.top-spacer),
+        :global(.bottom-spacer) {
+            margin: 0 -0.5rem;
+        }
     }
 
     tr {
-        &:global(.selected) {
+        &:global(.selected),
+        &:global(.highlighted) {
             background: var(--code-selection-bg);
         }
 
-        &:global(.highlighted) {
-            background: var(--code-selection-bg);
+        &:first-child td:global(.line) {
+            // place bottom spacer below the line number set with ::before pseudo-element
+            display: flex;
+            flex-direction: column-reverse;
         }
     }
 
@@ -66,6 +64,27 @@
                 content: attr(data-contents);
             }
         }
+
+        :global(.top-spacer),
+        :global(.bottom-spacer) {
+            margin: 0 0 0 -1rem;
+            display: block;
+        }
+    }
+
+    :global(.top-spacer),
+    :global(.bottom-spacer) {
+        background: var(--code-bg);
+    }
+
+    :global(.top-spacer) {
+        height: 0.5rem;
+    }
+
+    :global(.bottom-spacer) {
+        // Give room to view the last few lines of code
+        // without the floating status bar getting in the way.
+        height: calc(var(--blob-status-bar-height) + var(--blob-status-bar-vertical-gap) + 1.5rem);
     }
 
     &--wrapped {
