@@ -353,7 +353,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) setChangesetSpecIDs(ctx context
 	}
 
 	if c != 1 {
-		return errors.New("incorrect number of changeset_specs updated")
+		return errors.New("incorrect number of batch_spec_workspaces updated")
 	}
 
 	return nil
