@@ -22,6 +22,8 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 >  1. [Fork the reference repo](index.md#fork-the-sourcegraph-reference-repository)
 >  2. [Clone your fork](index.md#clone-your-fork)
 >  3. [Configure a release branch](index.md#configure-a-release-branch)
+>  4. [Configure the YAML file](index.md#configure-the-yaml-file)
+>  5. [Publish changes to your branch](index.md#publish-your-changes-to-the-release-branch)
 
 * Under the **Management** section, add the following in the **Startup script** field:
 
