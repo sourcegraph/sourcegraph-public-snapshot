@@ -1,8 +1,6 @@
 package search
 
 import (
-	"archive/tar"
-	"bytes"
 	"context"
 	"fmt"
 	"github.com/inconshreveable/log15"
@@ -159,7 +157,17 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 
 	client := getZoektClient(endpoints)
 	err = client.StreamSearch(ctx, q, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		onZoektMatches(ctx, args, event, repo, sender)
+		var extensionHint string
+		if len(event.Files) > 0 {
+			filename := event.Files[0].FileName
+			extensionHint = filepath.Ext(filename)
+		}
+
+		err := structuralSearch(ctx, event, all, extensionHint, args.Pattern, args.CombyRule, args.Languages, repo, sender)
+		if err != nil {
+			log15.Error("error during structural search", err)
+		}
+		//onZoektMatches(ctx, args, event, repo, sender)
 	}))
 	if err != nil {
 		return err
@@ -171,38 +179,47 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 	return nil
 }
 
-func onZoektMatches(ctx context.Context, args *search.TextPatternInfo, event *zoekt.SearchResult, repo api.RepoName, sender matchSender) {
-	var buf bytes.Buffer
-	tw := tar.NewWriter(&buf)
-	defer tw.Close()
-
-	var extensionHint string
-	if len(event.Files) > 0 {
-		filename := event.Files[0].FileName
-		extensionHint = filepath.Ext(filename)
-	}
-
-	for _, fm := range event.Files {
-		hdr := tar.Header{
-			Name: fm.FileName,
-			Mode: 0600,
-			Size: int64(len(fm.Content)),
-		}
-		if err := tw.WriteHeader(&hdr); err != nil {
-			log15.Warn("failed to write tar header for file", fm.FileName)
-			continue
-		}
-		if _, err := tw.Write(fm.Content); err != nil {
-			log15.Warn("failed to write file content to tar format", fm.FileName)
-			continue
-		}
-	}
-
-	err := structuralSearch(ctx, buf.Bytes(), all, extensionHint, args.Pattern, args.CombyRule, args.Languages, repo, sender)
-	if err != nil {
-		log15.Warn("skipping zoekt-found candidate file match, structural search error", err)
-	}
-}
+//func onZoektMatches(ctx context.Context, args *search.TextPatternInfo, event *zoekt.SearchResult, repo api.RepoName, sender matchSender) {
+//	matcher := toMatcher(args.Languages, extensionHint)
+//
+//	var combyArgs comby.Args
+//	combyArgs = comby.Args{
+//		Input:         comby.Tar{},
+//		Matcher:       matcher,
+//		MatchTemplate: args.Pattern,
+//		ResultKind:    comby.MatchOnly,
+//		FilePatterns:  []string{},
+//		Rule:          args.CombyRule,
+//		NumWorkers:    numWorkers,
+//	}
+//
+//
+//
+//	var buf bytes.Buffer
+//	tw := tar.NewWriter(&buf)
+//	defer tw.Close()
+//
+//	for _, fm := range event.Files {
+//		hdr := tar.Header{
+//			Name: fm.FileName,
+//			Mode: 0600,
+//			Size: int64(len(fm.Content)),
+//		}
+//		if err := tw.WriteHeader(&hdr); err != nil {
+//			log15.Warn("failed to write tar header for file", fm.FileName)
+//			continue
+//		}
+//		if _, err := tw.Write(fm.Content); err != nil {
+//			log15.Warn("failed to write file content to tar format", fm.FileName)
+//			continue
+//		}
+//	}
+//
+//	err := structuralSearch(ctx, buf.Bytes(), all, extensionHint, args.Pattern, args.CombyRule, args.Languages, repo, sender)
+//	if err != nil {
+//		log15.Warn("skipping zoekt-found candidate file match, structural search error", err)
+//	}
+//}
 
 var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 

@@ -2,10 +2,12 @@ package search
 
 import (
 	"archive/tar"
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
-	"io"
+	"github.com/google/zoekt"
+	"github.com/inconshreveable/log15"
 	"sort"
 	"strings"
 	"time"
@@ -298,7 +300,7 @@ type subset []string
 
 var all universalSet = struct{}{}
 
-func structuralSearch(ctx context.Context, tarBytes []byte, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) (err error) {
+func structuralSearch(ctx context.Context, event *zoekt.SearchResult, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) (err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "StructuralSearch")
 	span.SetTag("repo", repo)
 	defer func() {
@@ -331,39 +333,91 @@ func structuralSearch(ctx context.Context, tarBytes []byte, paths filePatterns, 
 		NumWorkers:    numWorkers,
 	}
 
-	combyMatches, err := comby.Matches(ctx, args, tarBytes)
+	cmd, stdin, stdout, stderr, err := comby.SetupCmdWithPipes(args)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("numCombyMatches: %v\n", len(combyMatches))
-	tr := tar.NewReader(bytes.NewBuffer(tarBytes))
-	for _, combyMatch := range combyMatches {
-		// Get the next file from tarball
-		_, err := tr.Next()
-		if err == io.EOF {
-			continue
+	scanner := bufio.NewScanner(stdout)
+	// increase the scanner buffer size for potentially long lines
+	scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
+	go func() {
+		for scanner.Scan() {
+			b := scanner.Bytes()
+			fmt.Printf("scanner.Bytes: %v\n", string(b))
+			if err := scanner.Err(); err != nil {
+				// warn on scanner errors and skip
+				log15.Warn("comby error: skipping scanner error line", "err", err.Error())
+				continue
+			}
+			if r := comby.ToCombyFileMatch(b); r != nil {
+				fm, err := toFileMatch(b, r.(*comby.FileMatch))
+				if err != nil {
+					sender.Send(fm)
+				}
+			}
 		}
-		if err != nil {
-			continue
-		}
+	}()
 
-		// Read the file contents into b
-		var b bytes.Buffer
-		_, err = io.Copy(&b, tr)
-		if err != nil {
-			continue
-		}
+	go func() {
+		tw := tar.NewWriter(stdin)
+		defer tw.Close()
 
-		if ctx.Err() != nil {
-			return nil
+		for _, file := range event.Files {
+			hdr := tar.Header{
+				Name: file.FileName,
+				Mode: 0600,
+				Size: int64(len(file.Content)),
+			}
+			if err := tw.WriteHeader(&hdr); err != nil {
+				log15.Warn("failed to write tar header for file", file.FileName)
+				continue
+			}
+			if _, err := tw.Write(file.Content); err != nil {
+				log15.Warn("failed to write file content to tar format", file.FileName)
+				continue
+			}
 		}
-		fm, err := toFileMatch(b.Bytes(), combyMatch)
-		if err != nil {
-			return err
-		}
-		sender.Send(fm)
+	}()
+
+	err = comby.WaitForCompletion(ctx, cmd, stdout, stderr)
+	if err != nil {
+		return err
 	}
+
+	//combyMatches, err := comby.Matches(ctx, args, tarBytes)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//fmt.Printf("numCombyMatches: %v\n", len(combyMatches))
+	//tr := tar.NewReader(bytes.NewBuffer(tarBytes))
+	//for _, combyMatch := range combyMatches {
+	//	// Get the next file from tarball
+	//	_, err := tr.Next()
+	//	if err == io.EOF {
+	//		continue
+	//	}
+	//	if err != nil {
+	//		continue
+	//	}
+	//
+	//	// Read the file contents into b
+	//	var b bytes.Buffer
+	//	_, err = io.Copy(&b, tr)
+	//	if err != nil {
+	//		continue
+	//	}
+	//
+	//	if ctx.Err() != nil {
+	//		return nil
+	//	}
+	//	fm, err := toFileMatch(b.Bytes(), combyMatch)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	sender.Send(fm)
+	//}
 
 	return nil
 }

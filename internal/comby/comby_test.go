@@ -109,7 +109,7 @@ func main() {
 	for _, test := range cases {
 		b := new(bytes.Buffer)
 		w := bufio.NewWriter(b)
-		err := PipeTo(ctx, test.args, w)
+		err := SetupCmdWithPipes(ctx, test.args, w)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -132,7 +132,7 @@ func Test_stdin(t *testing.T) {
 		defer cancel()
 		b := new(bytes.Buffer)
 		w := bufio.NewWriter(b)
-		err := PipeTo(ctx, args, w)
+		err := SetupCmdWithPipes(ctx, args, w)
 		if err != nil {
 			t.Fatal(err)
 		}

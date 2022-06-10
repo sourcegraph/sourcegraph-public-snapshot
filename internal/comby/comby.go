@@ -1,7 +1,6 @@
 package comby
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -13,7 +12,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -74,7 +72,7 @@ func rawArgs(args Args) (rawArgs []string) {
 	return rawArgs
 }
 
-func waitForCompletion(cmd *exec.Cmd, stdin io.WriteCloser, tarBytes []byte, stdout, stderr io.ReadCloser, w io.Writer) (err error) {
+func waitForCompletion(cmd *exec.Cmd, stdout, stderr io.ReadCloser) (err error) {
 	// Read stderr in goroutine so we don't potentially block reading stdout
 	stderrMsgC := make(chan []byte, 1)
 	go func() {
@@ -83,15 +81,11 @@ func waitForCompletion(cmd *exec.Cmd, stdin io.WriteCloser, tarBytes []byte, std
 		close(stderrMsgC)
 	}()
 
-	go func() {
-		defer stdin.Close()
-		stdin.Write(tarBytes)
-	}()
-	_, err = io.Copy(w, stdout)
-	if err != nil {
-		log15.Error("failed to copy comby output to writer", "error", err.Error())
-		return errors.Wrap(err, "failed to copy comby output to writer")
-	}
+	//_, err = io.Copy(w, stdout)
+	//if err != nil {
+	//	log15.Error("failed to copy comby output to writer", "error", err.Error())
+	//	return errors.Wrap(err, "failed to copy comby output to writer")
+	//}
 
 	stderrMsg := <-stderrMsgC
 
@@ -120,19 +114,16 @@ func kill(pid int) {
 	_ = syscall.Kill(-pid, syscall.SIGKILL)
 }
 
-func PipeTo(ctx context.Context, args Args, tar []byte, w io.Writer) (err error) {
+func SetupCmdWithPipes(args Args) (cmd *exec.Cmd, stdin io.WriteCloser, stdout, stderr io.ReadCloser, err error) {
 	if !Exists() {
 		log15.Error("comby is not installed (it could not be found on the PATH)")
-		return errors.New("comby is not installed")
+		return nil, nil, nil, nil, errors.New("comby is not installed")
 	}
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	rawArgs := rawArgs(args)
 	log15.Info("running comby", "args", args.String())
 
-	cmd := exec.Command(combyPath, rawArgs...)
+	cmd = exec.Command(combyPath, rawArgs...)
 	// Ensure forked child processes are killed
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
@@ -140,30 +131,37 @@ func PipeTo(ctx context.Context, args Args, tar []byte, w io.Writer) (err error)
 		cmd.Stdin = bytes.NewReader(content)
 	}
 
-	stdin, err := cmd.StdinPipe()
+	stdin, err = cmd.StdinPipe()
 	if err != nil {
 		log15.Error("could not connect to comby command stdin", "error", err.Error())
-		return errors.Wrap(err, "failed to connect to comby command stdin")
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to connect to comby command stdin")
 	}
-	stdout, err := cmd.StdoutPipe()
+	stdout, err = cmd.StdoutPipe()
 	if err != nil {
 		log15.Error("could not connect to comby command stdout", "error", err.Error())
-		return errors.Wrap(err, "failed to connect to comby command stdout")
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to connect to comby command stdout")
 	}
-	stderr, err := cmd.StderrPipe()
+	stderr, err = cmd.StderrPipe()
 	if err != nil {
 		log15.Error("could not connect to comby command stderr", "error", err.Error())
-		return errors.Wrap(err, "failed to connect to comby command stderr")
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to connect to comby command stderr")
 	}
 
+	return cmd, stdin, stdout, stderr, nil
+}
+
+func WaitForCompletion(ctx context.Context, cmd *exec.Cmd, stdout, stderr io.ReadCloser) error {
 	if err := cmd.Start(); err != nil {
 		log15.Error("failed to start comby command", "error", err.Error())
 		return errors.Wrap(err, "failed to start comby command")
 	}
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	errorC := make(chan error, 1)
 	go func() {
-		errorC <- waitForCompletion(cmd, stdin, tar, stdout, stderr, w)
+		errorC <- waitForCompletion(cmd, stdout, stderr)
 	}()
 
 	select {
@@ -183,7 +181,7 @@ func PipeTo(ctx context.Context, args Args, tar []byte, w io.Writer) (err error)
 
 type unmarshaller func([]byte) Result
 
-func toFileMatch(b []byte) Result {
+func ToCombyFileMatch(b []byte) Result {
 	var m *FileMatch
 	err := json.Unmarshal(b, &m)
 	if err == io.EOF {
@@ -192,7 +190,7 @@ func toFileMatch(b []byte) Result {
 	}
 	if err != nil {
 		log15.Info("bytes: " + string(b))
-		log15.Warn("toFileMatch() comby error: skipping unmarshaling error", "err", err.Error())
+		log15.Warn("ToCombyFileMatch() comby error: skipping unmarshaling error", "err", err.Error())
 		return nil
 	}
 	return m
@@ -211,82 +209,84 @@ func toOutput(b []byte) Result {
 	return &Output{Value: b}
 }
 
-func Run(ctx context.Context, args Args, tar []byte, unmarshal unmarshaller) (results []Result, err error) {
-	b := new(bytes.Buffer)
-	w := bufio.NewWriter(b)
-
-	err = PipeTo(ctx, args, tar, w)
-	if err != nil {
-		return nil, err
-	}
-
-	scanner := bufio.NewScanner(b)
-	// increase the scanner buffer size for potentially long lines
-	scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
-	for scanner.Scan() {
-		b := scanner.Bytes()
-		if err := scanner.Err(); err != nil {
-			// warn on scanner errors and skip
-			log15.Warn("comby error: skipping scanner error line", "err", err.Error())
-			continue
-		}
-		if r := unmarshal(b); r != nil {
-			results = append(results, r)
-		}
-	}
-
-	if len(results) > 0 {
-		log15.Info("comby invocation", "num_matches", strconv.Itoa(len(results)))
-	}
-	return results, nil
-}
+//func Run(ctx context.Context, args Args, tar []byte, unmarshal unmarshaller) (results []Result, err error) {
+//	b := new(bytes.Buffer)
+//	w := bufio.NewWriter(b)
+//
+//	err = PipeTo(ctx, args, tar, w)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	scanner := bufio.NewScanner(b)
+//	// increase the scanner buffer size for potentially long lines
+//	scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
+//	for scanner.Scan() {
+//		b := scanner.Bytes()
+//		if err := scanner.Err(); err != nil {
+//			// warn on scanner errors and skip
+//			log15.Warn("comby error: skipping scanner error line", "err", err.Error())
+//			continue
+//		}
+//		if r := unmarshal(b); r != nil {
+//			results = append(results, r)
+//		}
+//	}
+//
+//	if len(results) > 0 {
+//		log15.Info("comby invocation", "num_matches", strconv.Itoa(len(results)))
+//	}
+//	return results, nil
+//}
 
 // Matches returns all matches in all files for which comby finds matches.
-func Matches(ctx context.Context, args Args, tar []byte) ([]*FileMatch, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Matches")
-	defer span.Finish()
-
-	args.ResultKind = MatchOnly
-	results, err := Run(ctx, args, tar, toFileMatch)
-	if err != nil {
-		return nil, err
-	}
-	var matches []*FileMatch
-	for _, r := range results {
-		matches = append(matches, r.(*FileMatch))
-	}
-	return matches, nil
-}
+//func Matches(ctx context.Context, args Args, tar []byte) ([]*FileMatch, error) {
+//	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Matches")
+//	defer span.Finish()
+//
+//	args.ResultKind = MatchOnly
+//	results, err := Run(ctx, args, tar, ToCombyFileMatch)
+//	if err != nil {
+//		return nil, err
+//	}
+//	var matches []*FileMatch
+//	for _, r := range results {
+//		matches = append(matches, r.(*FileMatch))
+//	}
+//	return matches, nil
+//}
 
 // Replacements performs in-place replacement for match and rewrite template.
 func Replacements(ctx context.Context, args Args) ([]*FileReplacement, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Replacements")
-	defer span.Finish()
-
-	results, err := Run(ctx, args, nil, toFileReplacement)
-	if err != nil {
-		return nil, err
-	}
-	var matches []*FileReplacement
-	for _, r := range results {
-		matches = append(matches, r.(*FileReplacement))
-	}
-	return matches, nil
+	//span, ctx := ot.StartSpanFromContext(ctx, "Comby.Replacements")
+	//defer span.Finish()
+	//
+	//results, err := Run(ctx, args, nil, toFileReplacement)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//var matches []*FileReplacement
+	//for _, r := range results {
+	//	matches = append(matches, r.(*FileReplacement))
+	//}
+	//return matches, nil
+	return nil, nil
 }
 
 // Outputs performs substitution of all variables captured in a match
 // pattern in a rewrite template and outputs the result, newline-sparated.
 func Outputs(ctx context.Context, args Args) (string, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Outputs")
-	defer span.Finish()
-
-	results, err := Run(ctx, args, nil, toOutput)
-	if err != nil {
-		return "", err
-	}
-	var values []string
-	for _, r := range results {
-		values = append(values, string(r.(*Output).Value))
-	}
-	return strings.Join(values, "\n"), nil
+	//span, ctx := ot.StartSpanFromContext(ctx, "Comby.Outputs")
+	//defer span.Finish()
+	//
+	//results, err := Run(ctx, args, nil, toOutput)
+	//if err != nil {
+	//	return "", err
+	//}
+	//var values []string
+	//for _, r := range results {
+	//	values = append(values, string(r.(*Output).Value))
+	//}
+	//return strings.Join(values, "\n"), nil
+	return "", nil
 }
