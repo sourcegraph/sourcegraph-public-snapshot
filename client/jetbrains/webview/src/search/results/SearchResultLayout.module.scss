@@ -7,7 +7,6 @@
     white-space: nowrap;
     padding: 0 0.5rem;
 
-
     // The below options are extracted from the native JetBrains find in files
     // model.
 
@@ -28,7 +27,7 @@
     align-items: center;
     justify-content: center;
     // @TODO: Make configurable, this is copied from the Figma file
-    color: #6E6E6E;
+    color: #6e6e6e;
     width: 2.85rem;
 }
 
@@ -42,7 +41,7 @@
 
 .info-column {
     // @TODO: Make configurable, this is copied from the Figma file
-    color: #8C8C8C;
+    color: #8c8c8c;
     text-align: right;
     font-variant-numeric: tabular-nums;
     display: flex;
