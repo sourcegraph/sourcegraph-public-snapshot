@@ -39,6 +39,7 @@ type IndexedRepoRevs struct {
 	// branchRepos is used to construct a zoektquery.BranchesRepos to efficiently
 	// marshal and send to zoekt
 	branchRepos map[string]*zoektquery.BranchRepos
+	slog.Logger
 }
 
 // add will add reporev and repo to the list of repository and branches to
@@ -179,7 +180,6 @@ func PartitionRepos(
 	useIndex query.YesNoOnly,
 	containsRefGlobs bool,
 ) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions, err error) {
-	slogger := slog.Scoped("PartitionRepos", "Partition repos")
 	// Fallback to Unindexed if the query contains valid ref-globs.
 	if containsRefGlobs {
 		return nil, repos, nil
@@ -214,7 +214,7 @@ func PartitionRepos(
 				return nil, nil, errors.New("index:only failed since indexed search is not available yet")
 			}
 
-			slogger.Warn("zoektIndexedRepos failed", slog.Error(err))
+			indexed.Warn("zoektIndexedRepos failed", slog.Error(err))
 		}
 
 		return nil, repos, ctx.Err()
