@@ -16,6 +16,8 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/rjeczalik/notify"
 
+	"github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -346,6 +348,31 @@ var installFuncs = map[string]installFunc{
 		target := filepath.Join(root, fmt.Sprintf(".bin/docsite_%s", version))
 		return download.Executable(ctx, url, target)
 	},
+	"installEnterpriseFrontend": func(ctx context.Context, env map[string]string) error {
+		dir, err := root.RepositoryRoot()
+		if err != nil {
+			return err
+		}
+		err = os.WriteFile(filepath.Join(dir, "enterprise", "dev", "site-config.json"),
+			[]byte(env["PRIVATE_SITECONFIG_DATA"]), 0600)
+		if err != nil {
+			return err
+		}
+		err = os.WriteFile(filepath.Join(dir, "enterprise", "dev", "external-services-config.json"),
+			[]byte(env["PRIVATE_EXTSVC_DATA"]), 0600)
+		if err != nil {
+			return err
+		}
+
+		if env["DELVE"] != "" {
+			env["GCFLAGS"] = "all=-N -l"
+		}
+
+		return root.Run(run.Bash(ctx,
+			`go build -gcflags="$GCFLAGS" -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend`).
+			Env(env)).
+			Wait()
+	},
 }
 
 func runWatch(
@@ -385,20 +412,24 @@ func runWatch(
 	for {
 		// Build it
 		if cmd.Install != "" || cmd.InstallFunc != "" {
+
 			if startedOnce {
 				std.Out.WriteLine(output.Styledf(output.StylePending, "Installing %s...", cmd.Name))
 			}
 
 			var cmdOut string
 			var err error
-			if cmd.Install != "" && cmd.InstallFunc == "" {
-				cmdOut, err = BashInRoot(ctx, cmd.Install, makeEnv(parentEnv, cmd.Env))
-			} else if cmd.Install == "" && cmd.InstallFunc != "" {
-				fn, ok := installFuncs[cmd.InstallFunc]
-				if !ok {
-					return errors.New("nope, no install func with that name")
+			secretsEnv, err := getSecrets(ctx, cmd)
+			if err == nil {
+				if cmd.Install != "" && cmd.InstallFunc == "" {
+					cmdOut, err = BashInRoot(ctx, cmd.Install, makeEnv(parentEnv, secretsEnv, cmd.Env))
+				} else if cmd.Install == "" && cmd.InstallFunc != "" {
+					fn, ok := installFuncs[cmd.InstallFunc]
+					if !ok {
+						return errors.New("nope, no install func with that name")
+					}
+					err = fn(ctx, makeEnvMap(parentEnv, secretsEnv, cmd.Env))
 				}
-				err = fn(ctx, makeEnvMap(parentEnv, cmd.Env))
 			}
 
 			if err != nil {

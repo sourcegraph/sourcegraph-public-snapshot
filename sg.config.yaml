@@ -133,18 +133,24 @@ commands:
   enterprise-frontend:
     cmd: |
       .bin/enterprise-frontend
-    install: |
-      if [ -n "$DELVE" ]; then
-        export GCFLAGS='all=-N -l'
-      fi
-      go build -gcflags="$GCFLAGS" -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
-    checkBinary: .bin/enterprise-frontend
+    install_func: installEnterpriseFrontend
+    #checkBinary: .bin/enterprise-frontend
     external_secrets:
       SOURCEGRAPH_LICENSE_GENERATION_KEY:
         provider: "1pass"
         project: "Shared"
         name: "DevPrivate"
         field: "test-license-generation.pem"
+      PRIVATE_SITECONFIG_DATA:
+        provider: "1pass"
+        project: "Shared"
+        name: "DevPrivate"
+        field: "site-config.json"
+      PRIVATE_EXTSVC_DATA:
+        provider: "1pass"
+        project: "Shared"
+        name: "DevPrivate"
+        field: "external-services-config.json"
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
