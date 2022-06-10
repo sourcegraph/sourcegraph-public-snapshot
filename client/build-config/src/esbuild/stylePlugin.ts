@@ -1,16 +1,16 @@
 import fs from 'fs'
 import path from 'path'
 
+import { ResolverFactory, CachedInputFileSystem } from 'enhanced-resolve'
 import esbuild from 'esbuild'
 import postcss from 'postcss'
 import postcssModules from 'postcss-modules'
 import sass from 'sass'
 
-import { ROOT_PATH } from '@sourcegraph/build-config'
-
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import postcssConfig from '../../../../postcss.config'
+import { NODE_MODULES_PATH, ROOT_PATH } from '../paths'
 
 /**
  * An esbuild plugin that builds .css and .scss stylesheets (including support for CSS modules).
@@ -98,14 +98,29 @@ export const stylePlugin: esbuild.Plugin = {
             return output
         }
 
+        const resolver = ResolverFactory.createResolver({
+            fileSystem: new CachedInputFileSystem(fs, 4000),
+            extensions: ['.css', '.scss'],
+            symlinks: true, // Resolve workspace symlinks
+            modules: [NODE_MODULES_PATH],
+        })
+
         build.onResolve({ filter: /\.s?css$/, namespace: 'file' }, async args => {
-            const inputPath = path.join(args.resolveDir, args.path)
+            const inputPath = await new Promise<string>((resolve, reject) => {
+                resolver.resolve({}, args.resolveDir, args.path, {}, (error, filepath) => {
+                    if (filepath) {
+                        resolve(filepath)
+                    } else {
+                        reject(error ?? new Error(`Could not resolve file path for ${args.path}`))
+                    }
+                })
+            })
+
             const { outputPath, outputContents, includedFiles } = await cachedTransform({
                 inputPath,
                 inputContents: await fs.promises.readFile(inputPath, 'utf8'),
             })
             const isCSSModule = outputPath.endsWith('.module.css')
-
             return {
                 path: outputPath,
                 namespace: isCSSModule ? 'css-module' : 'css',
