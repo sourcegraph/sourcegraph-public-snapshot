@@ -109,7 +109,11 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     const [hasPatternTypeFilter, setHasPatternTypeFilter] = useState(false)
     const [hasValidPatternTypeFilter, setHasValidPatternTypeFilter] = useState(true)
     const isTriggerQueryComplete = useMemo(
-        () => isValidQuery && hasTypeDiffOrCommitFilter && hasRepoFilter && hasValidPatternTypeFilter,
+        () =>
+            isValidQuery &&
+            hasTypeDiffOrCommitFilter &&
+            (!isSourcegraphDotCom || hasRepoFilter) &&
+            hasValidPatternTypeFilter,
         [hasRepoFilter, hasTypeDiffOrCommitFilter, hasValidPatternTypeFilter, isValidQuery]
     )
 
@@ -276,15 +280,18 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     Contains a <Code>type:diff</Code> or <Code>type:commit</Code> filter
                                 </ValidQueryChecklistItem>
                             </li>
-                            <li>
-                                <ValidQueryChecklistItem
-                                    checked={hasRepoFilter}
-                                    hint="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
-                                    dataTestid="repo-checkbox"
-                                >
-                                    Contains a <Code>repo:</Code> filter
-                                </ValidQueryChecklistItem>
-                            </li>
+                            {/* Enforce repo filter on sourcegraph.com because otherwise it's too easy to generate a lot of load */}
+                            {isSourcegraphDotCom && (
+                                <li>
+                                    <ValidQueryChecklistItem
+                                        checked={hasRepoFilter}
+                                        hint="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
+                                        dataTestid="repo-checkbox"
+                                    >
+                                        Contains a <Code>repo:</Code> filter
+                                    </ValidQueryChecklistItem>
+                                </li>
+                            )}
                             <li>
                                 <ValidQueryChecklistItem checked={isValidQuery} dataTestid="valid-checkbox">
                                     Is a valid search query
