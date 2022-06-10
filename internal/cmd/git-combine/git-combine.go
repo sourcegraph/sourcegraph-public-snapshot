@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"hash/crc32"
@@ -21,7 +22,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Options are configurables for Combine.
@@ -362,7 +362,7 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 
 	err := cleanupStaleLockFiles(dir, opt.Logger)
 	if err != nil {
-		return errors.Wrap(err, "removing stale git lock files")
+		return fmt.Errorf("removing stale git lock files: %w", err)
 	}
 
 	for {
@@ -491,7 +491,7 @@ func cleanupStaleLockFiles(gitDir string, logger *log.Logger) error {
 	})
 
 	if err != nil {
-		return errors.Wrapf(err, "finding stale lockfiles in %q", refsDir)
+		return fmt.Errorf("finding stale lockfiles in %q: %w", refsDir, err)
 	}
 
 	// remove all stale lock files
@@ -502,7 +502,7 @@ func cleanupStaleLockFiles(gitDir string, logger *log.Logger) error {
 				continue
 			}
 
-			return errors.Wrapf(err, "removing stale lock file %q", f)
+			return fmt.Errorf("removing stale lock file %q: %w", f, err)
 		}
 
 		logger.Printf("removed stale lock file %q", f)
