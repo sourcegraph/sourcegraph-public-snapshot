@@ -231,6 +231,7 @@ var sg = &cli.App{
 		opsCommand,
 		auditCommand,
 		analyticsCommand,
+		feedbackCommand,
 
 		// Util
 		helpCommand,
