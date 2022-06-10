@@ -1,6 +1,6 @@
 import { Optional } from 'utility-types'
 
-import { createRectangle, Rectangle } from '@sourcegraph/wildcard';
+import { createRectangle, Rectangle } from '@sourcegraph/wildcard'
 
 interface GetChartContentSizesInput {
     width: number
@@ -41,10 +41,5 @@ export function getChartContentSizes(input: GetChartContentSizesInput): Rectangl
         left: Math.round(margin.left ?? 0),
     }
 
-    return createRectangle(
-        left,
-        top,
-        width - left - right,
-        height - top - bottom
-    )
+    return createRectangle(left, top, width - left - right, height - top - bottom)
 }

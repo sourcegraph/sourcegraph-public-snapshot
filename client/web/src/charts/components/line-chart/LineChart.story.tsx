@@ -43,27 +43,27 @@ const STANDARD_SERIES: Series<StandardDatum>[] = [
         id: 'series_001',
         data: [
             {
-                x: new Date(2020,5,5),
+                x: new Date(2020, 5, 5),
                 value: 4000,
                 link: 'https://google.com/search',
             },
             {
-                x: new Date(2020,5,6),
+                x: new Date(2020, 5, 6),
                 value: 4000,
                 link: 'https://google.com/search',
             },
             {
-                x: new Date(2020,5,7),
+                x: new Date(2020, 5, 7),
                 value: 5600,
                 link: 'https://google.com/search',
             },
             {
-                x: new Date(2020,5,8),
+                x: new Date(2020, 5, 8),
                 value: 9800,
                 link: 'https://google.com/search',
             },
             {
-                x: new Date(2020,5,9),
+                x: new Date(2020, 5, 9),
                 value: 6000,
             },
         ],
@@ -77,27 +77,27 @@ const STANDARD_SERIES: Series<StandardDatum>[] = [
         id: 'series_003',
         data: [
             {
-                x: new Date(2020,5,5),
+                x: new Date(2020, 5, 5),
                 value: 5000,
                 link: 'https://twitter.com/search',
             },
             {
-                x: new Date(2020,5,6),
+                x: new Date(2020, 5, 6),
                 value: 5000,
                 link: 'https://twitter.com/search',
             },
             {
-                x: new Date(2020,5,7),
+                x: new Date(2020, 5, 7),
                 value: 5000,
                 link: 'https://twitter.com/search',
             },
             {
-                x: new Date(2020,5,8),
+                x: new Date(2020, 5, 8),
                 value: 5000,
                 link: 'https://twitter.com/search',
             },
             {
-                x: new Date(2020,5,9),
+                x: new Date(2020, 5, 9),
                 value: 5000,
                 link: 'https://twitter.com/search',
             },
@@ -112,27 +112,27 @@ const STANDARD_SERIES: Series<StandardDatum>[] = [
         id: 'series_002',
         data: [
             {
-                x: new Date(2020,5,5),
+                x: new Date(2020, 5, 5),
                 value: 15000,
                 link: 'https://yandex.com/search',
             },
             {
-                x: new Date(2020,5,6),
+                x: new Date(2020, 5, 6),
                 value: 26000,
                 link: 'https://yandex.com/search',
             },
             {
-                x: new Date(2020,5,7),
+                x: new Date(2020, 5, 7),
                 value: 20000,
                 link: 'https://yandex.com/search',
             },
             {
-                x: new Date(2020,5,8),
+                x: new Date(2020, 5, 8),
                 value: 19000,
                 link: 'https://yandex.com/search',
             },
             {
-                x: new Date(2020,5,9),
+                x: new Date(2020, 5, 9),
                 value: 17000,
                 link: 'https://yandex.com/search',
             },

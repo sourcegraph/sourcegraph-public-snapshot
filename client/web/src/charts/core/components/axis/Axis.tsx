@@ -1,12 +1,12 @@
 import { forwardRef, memo } from 'react'
 
 import { AxisLeft as VisxAxisLeft, AxisBottom as VisxAsixBottom } from '@visx/axis'
-import { AxisScale } from '@visx/axis/lib/types'
+import { AxisScale, TickFormatter } from '@visx/axis/lib/types'
 import { GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
 import classNames from 'classnames'
 
-import { formatXTick, formatYTick, getXScaleTicks, getYScaleTicks } from '../../../components/line-chart/utils'
+import { formatYTick, getXScaleTicks, getYScaleTicks } from '../../../components/line-chart/utils'
 
 import { getTickXProps, getTickYProps, Tick } from './Tick'
 
@@ -57,18 +57,19 @@ interface AxisBottomProps {
     left: number
     width: number
     scale: AxisScale
+    tickFormat?: TickFormatter<AxisScale>
 }
 
 export const AxisBottom = memo(
     forwardRef<SVGGElement, AxisBottomProps>((props, reference) => {
-        const { scale, top, left, width } = props
+        const { scale, top, left, width, tickFormat } = props
 
         return (
             <Group innerRef={reference} top={top} left={left}>
                 <VisxAsixBottom
                     scale={scale}
                     tickValues={getXScaleTicks({ scale, space: width })}
-                    tickFormat={formatXTick}
+                    tickFormat={tickFormat}
                     tickLabelProps={getTickXProps}
                     tickComponent={Tick}
                     axisLineClassName={styles.axisLine}
