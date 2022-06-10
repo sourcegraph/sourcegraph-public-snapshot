@@ -23,6 +23,8 @@ type BitbucketProjectPermissionsStore interface {
 	basestore.ShareableStore
 	With(other basestore.ShareableStore) BitbucketProjectPermissionsStore
 	Enqueue(ctx context.Context, projectKey string, externalServiceID int64, permissions []types.UserPermission, unrestricted bool) (int, error)
+	Transact(ctx context.Context) (BitbucketProjectPermissionsStore, error)
+	Done(err error) error
 }
 
 type bitbucketProjectPermissionsStore struct {
@@ -39,9 +41,25 @@ func (s *bitbucketProjectPermissionsStore) With(other basestore.ShareableStore) 
 	return &bitbucketProjectPermissionsStore{Store: s.Store.With(other)}
 }
 
+func (s *bitbucketProjectPermissionsStore) copy() *bitbucketProjectPermissionsStore {
+	return &bitbucketProjectPermissionsStore{
+		Store: s.Store,
+	}
+}
+
 func (s *bitbucketProjectPermissionsStore) Transact(ctx context.Context) (BitbucketProjectPermissionsStore, error) {
+	return s.transact(ctx)
+}
+
+func (s *bitbucketProjectPermissionsStore) transact(ctx context.Context) (*bitbucketProjectPermissionsStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &bitbucketProjectPermissionsStore{Store: txBase}, err
+	c := s.copy()
+	c.Store = txBase
+	return c, err
+}
+
+func (s *bitbucketProjectPermissionsStore) Done(err error) error {
+	return s.Store.Done(err)
 }
 
 // Enqueue a job to apply permissions to a Bitbucket project.
