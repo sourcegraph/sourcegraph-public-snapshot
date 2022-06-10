@@ -395,7 +395,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 			if unauthorized || accountSuspended || forbidden {
 				// These are fatal errors that mean we should continue as if the account no
-				// longer has any access
+				// longer has any access.
 				err = accounts.TouchExpired(ctx, acct.ID)
 				if err != nil {
 					return nil, nil, errors.Wrapf(err, "set expired for external account %d", acct.ID)
@@ -426,10 +426,11 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				// If we have a temporary issue, we should instead return any permissions we
 				// already know about to ensure that we don't temporarily remove access for the
 				// user because of intermittent errors.
+				acctLogger.Warn("temporary error, returning previously synced permissions", log.Error(err))
 
 				extPerms = new(authz.ExternalUserPermissions)
 
-				// Load last synced sub-repo perms
+				// Load last synced sub-repo perms for this user and provider
 				currentSubRepoPerms, err := s.db.SubRepoPerms().GetByUserAndService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
 				if err != nil {
 					return nil, nil, errors.Wrap(err, "fetching existing sub-repo permissions")
@@ -440,7 +441,16 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 					extPerms.SubRepoPermissions[extsvc.RepoID(k.ID)] = &v
 				}
 
-				// TODO: Load list of last synced repos for this user, for this provider
+				// Load last synced repos for this user and provider
+				currentRepos, err := s.permsStore.FetchReposByUserAndExternalService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
+				if err != nil {
+					return nil, nil, errors.Wrap(err, "fetching existing repo permissions")
+				}
+				for _, id := range currentRepos {
+					repoIDs = append(repoIDs, uint32(id))
+				}
+
+				continue
 			}
 
 			// Process partial results if this is an initial fetch.
@@ -525,7 +535,11 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	}
 
 	// repoIDs represents repos the user is allowed to read
-	repoIDs = make([]uint32, 0, len(repoNames))
+	if len(repoIDs) == 0 {
+		// We may already have some repos if we hit a temporary error above in which case
+		// we don't want to clear it out
+		repoIDs = make([]uint32, 0, len(repoNames))
+	}
 	for _, r := range repoNames {
 		repoIDs = append(repoIDs, uint32(r.ID))
 	}
