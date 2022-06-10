@@ -472,9 +472,10 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 				},
 			)
 
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			require.NotNil(t, result)
 			require.Equal(t, &graphqlbackend.EmptyResponse{}, result)
+
 		})
 
 		t.Run("unrestricted set to false", func(t *testing.T) {
@@ -486,7 +487,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 				},
 			)
 
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			require.NotNil(t, result)
 			require.Equal(t, &graphqlbackend.EmptyResponse{}, result)
 		})
@@ -500,7 +501,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 				},
 			)
 
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			require.NotNil(t, result)
 			require.Equal(t, &graphqlbackend.EmptyResponse{}, result)
 		})
