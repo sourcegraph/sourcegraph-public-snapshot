@@ -221,6 +221,7 @@ var sg = &cli.App{
 		doctorCommand,
 		secretCommand,
 		setupCommand,
+		setupCommandV2,
 
 		// Company
 		teammateCommand,
