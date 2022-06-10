@@ -93,7 +93,7 @@ DELETE FROM explicit_permissions_bitbucket_projects_jobs WHERE project_key = %s 
 		return 0, err
 	}
 
-	err = s.QueryRow(ctx, sqlf.Sprintf(`--sql
+	err = tx.QueryRow(ctx, sqlf.Sprintf(`--sql
 -- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.Enqueue
 INSERT INTO
 	explicit_permissions_bitbucket_projects_jobs (project_key, external_service_id, permissions, unrestricted)
