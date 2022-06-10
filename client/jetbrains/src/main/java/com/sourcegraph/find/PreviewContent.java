@@ -67,7 +67,7 @@ public class PreviewContent {
             isNotNull(json, "content") ? json.get("content").getAsString() : null,
             isNotNull(json, "lineNumber") ? json.get("lineNumber").getAsInt() : -1,
             absoluteOffsetAndLengths,
-            json.get("relativeUrl").getAsString());
+            isNotNull(json, "relativeUrl") ? json.get("relativeUrl").getAsString() : null);
     }
 
     private static boolean isNotNull(@NotNull JsonObject json, String key) {
