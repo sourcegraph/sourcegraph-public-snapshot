@@ -19,7 +19,7 @@ import (
 )
 
 func TestDeleteIndexesWithoutRepository(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := New(db, &observation.TestContext)
 
 	var indexes []Index
@@ -42,7 +42,7 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 	for repositoryID, deletedAt := range deletions {
 		query := sqlf.Sprintf(`UPDATE repo SET deleted_at=%s WHERE id=%s`, deletedAt, repositoryID)
 
-		if _, err := db.Query(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		if _, err := db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("Failed to update repository: %s", err)
 		}
 	}
@@ -63,7 +63,7 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 }
 
 // insertIndexes populates the lsif_indexes table with the given index models.
-func insertIndexes(t testing.TB, db *sql.DB, indexes ...Index) {
+func insertIndexes(t testing.TB, db database.DB, indexes ...Index) {
 	for _, index := range indexes {
 		if index.Commit == "" {
 			index.Commit = makeCommit(index.ID)
@@ -136,9 +136,8 @@ func insertIndexes(t testing.TB, db *sql.DB, indexes ...Index) {
 }
 
 func TestDeleteUploadsWithoutRepository(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
+	sqlDB := database.NewDB(dbtest.NewDB(t))
 	db := database.NewDB(sqlDB)
-	// store := testStore(db)
 	store := New(db, &observation.TestContext)
 
 	var uploads []Upload
@@ -253,7 +252,7 @@ func intsToQueries(values []int) []*sqlf.Query {
 
 // insertRepo creates a repository record with the given id and name. If there is already a repository
 // with the given identifier, nothing happens
-func insertRepo(t testing.TB, db *sql.DB, id int, name string) {
+func insertRepo(t testing.TB, db database.DB, id int, name string) {
 	if name == "" {
 		name = fmt.Sprintf("n-%d", id)
 	}
@@ -280,7 +279,7 @@ func makeCommit(i int) string {
 }
 
 // insertUploads populates the lsif_uploads table with the given upload models.
-func insertUploads(t testing.TB, db *sql.DB, uploads ...Upload) {
+func insertUploads(t testing.TB, db database.DB, uploads ...Upload) {
 	for _, upload := range uploads {
 		if upload.Commit == "" {
 			upload.Commit = makeCommit(upload.ID)

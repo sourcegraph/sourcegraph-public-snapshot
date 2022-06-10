@@ -14,7 +14,7 @@ Each section comprehensively describes the steps needed to upgrade, and any manu
 
 - The Postgres DBs `frontend` and `codeintel-db` are now given 1 hour to begin accepting connections before Kubernetes restarts the containers. [#4136](https://github.com/sourcegraph/deploy-sourcegraph/pull/4136)
 
-## 3.39 -> 3.40.1
+## 3.39 -> 3.40.2
 
 - `cadvisor` now defaults to run in `privileged` mode. This allows `cadvisor` to collect out of memory events happening to containers which can be used to discover underprovisoned resources. [#804](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/804)
 

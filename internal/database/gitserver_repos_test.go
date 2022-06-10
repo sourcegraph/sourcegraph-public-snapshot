@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
@@ -463,7 +462,7 @@ func TestGitserverReposGetByNames(t *testing.T) {
 	}
 
 	repoIdx := 0
-	gitserverRepoStore := &gitserverRepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	gitserverRepoStore := &gitserverRepoStore{Store: basestore.NewWithHandle(db.Handle())}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Creating tc.reposNumber repos

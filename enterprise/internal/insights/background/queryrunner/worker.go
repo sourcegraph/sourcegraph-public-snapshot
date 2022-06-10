@@ -10,6 +10,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
@@ -24,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // This file contains all the methods required to:
@@ -77,11 +78,11 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 	}))
 
 	return dbworker.NewWorker(ctx, workerStore, &workHandler{
-		baseWorkerStore: basestore.NewWithDB(workerStore.Handle().DB(), sql.TxOptions{}),
+		baseWorkerStore: basestore.NewWithHandle(workerStore.Handle()),
 		insightsStore:   insightsStore,
 		repoStore:       repoStore,
 		limiter:         limiter,
-		metadadataStore: store.NewInsightStore(insightsStore.Handle().DB()),
+		metadadataStore: store.NewInsightStoreWith(insightsStore),
 		seriesCache:     sharedCache,
 		search:          query.Search,
 		searchStream: func(ctx context.Context, query string) (*streaming.TabulationResult, error) {

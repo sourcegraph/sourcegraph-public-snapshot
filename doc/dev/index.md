@@ -67,6 +67,7 @@ Clarification and discussion about key concepts, architecture, and development s
 ### Overview
 
 - [Tech stack](background-information/tech_stack.md)
+- [Current Sourcegraph tech radar](https://radar.thoughtworks.com/?sheetId=https%3A%2F%2Fraw.githubusercontent.com%2Fsourcegraph%2Fsourcegraph%2Fmain%2Fdoc%2Fdev%2Fradar%2Ftech-radar.csv) (also see [how to maintain the radar](how-to/maintain-tech-radar.md))
 
 ### [Architecture](background-information/architecture/index.md)
 

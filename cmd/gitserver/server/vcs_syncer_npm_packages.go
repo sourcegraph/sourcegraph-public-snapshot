@@ -8,12 +8,13 @@ import (
 	"os"
 	"path"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -80,7 +81,7 @@ func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 	defer tgz.Close()
 
 	if err = decompressTgz(tgz, dir); err != nil {
-		return errors.Wrapf(err, "failed to decompress gzipped tarball for %s", dep.PackageManagerSyntax())
+		return errors.Wrapf(err, "failed to decompress gzipped tarball for %s", dep)
 	}
 
 	return nil

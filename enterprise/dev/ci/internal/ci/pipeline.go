@@ -219,7 +219,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
 			publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
 			buildExecutorDockerMirror(c.Version),
-			publishExecutorDockerMirror(c.Version))
+			publishExecutorDockerMirror(c.Version),
+		)
 
 	default:
 		// Slow async pipeline

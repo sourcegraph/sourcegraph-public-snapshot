@@ -103,7 +103,7 @@ export const CodeIntelligenceBadgeMenu: React.FunctionComponent<
                     onClick={() => setBadgeUsed(true)}
                     aria-label="Code intelligence"
                 >
-                    <Icon role="img" aria-hidden={true} as={BrainIcon} />
+                    <Icon aria-hidden={true} as={BrainIcon} />
                 </MenuButton>
 
                 <MenuList position={Position.bottomEnd} className={styles.dropdownMenu} isOpen={isStorybook}>

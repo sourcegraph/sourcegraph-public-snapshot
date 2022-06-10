@@ -14,23 +14,23 @@ import styles from './ExecutionStatsBar.module.scss'
 export const ExecutionStatsBar: React.FunctionComponent<React.PropsWithChildren<BatchSpecWorkspaceStats>> = stats => (
     <div className="d-flex align-items-center">
         <ExecutionStat>
-            <Icon role="img" aria-hidden={true} as={AlertCircleIcon} className="text-danger" />
+            <Icon aria-hidden={true} as={AlertCircleIcon} className="text-danger" />
             {stats.errored} {pluralize('error', stats.errored)}
         </ExecutionStat>
         <ExecutionStat>
-            <Icon role="img" aria-hidden={true} as={CheckBoldIcon} className="text-success" />
+            <Icon aria-hidden={true} as={CheckBoldIcon} className="text-success" />
             {stats.completed} complete
         </ExecutionStat>
         <ExecutionStat>
-            <Icon role="img" aria-hidden={true} as={TimerSandIcon} />
+            <Icon aria-hidden={true} as={TimerSandIcon} />
             {stats.processing} working
         </ExecutionStat>
         <ExecutionStat>
-            <Icon role="img" aria-hidden={true} as={TimelineClockOutlineIcon} />
+            <Icon aria-hidden={true} as={TimelineClockOutlineIcon} />
             {stats.queued} queued
         </ExecutionStat>
         <ExecutionStat>
-            <Icon role="img" aria-hidden={true} as={CircleOffOutlineIcon} />
+            <Icon aria-hidden={true} as={CircleOffOutlineIcon} />
             {stats.ignored} ignored
         </ExecutionStat>
     </div>
