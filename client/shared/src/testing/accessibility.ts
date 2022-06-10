@@ -52,6 +52,12 @@ export async function accessibilityAudit(page: Page, config: AccessibilityAuditC
         // https://github.com/microsoft/monaco-editor/issues/2448
         .exclude('.monaco-status')
         /*
+         * TODO: Design review on some CodeMirror query input features to choose
+         * a color that fulfill contrast requirements:
+         * https://github.com/sourcegraph/sourcegraph/issues/36534
+         */
+        .exclude('.cm-content .cm-line')
+        /*
             Rule: "aria-dialog-name" (ARIA dialog and alertdialog nodes should have an accessible name)
             Since shephered.js doesn't support aria attributes, adding title attribute to the tour-card element
             Would generate UI diff, as well as heading-order accessibility error since title is rendered as h3.

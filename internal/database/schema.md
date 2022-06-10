@@ -153,6 +153,7 @@ Foreign-key constraints:
  user_id                 | integer                  |           |          | 
 Indexes:
     "batch_spec_workspace_execution_jobs_pkey" PRIMARY KEY, btree (id)
+    "batch_spec_workspace_execution_jobs_batch_spec_workspace_id" btree (batch_spec_workspace_id)
     "batch_spec_workspace_execution_jobs_cancel" btree (cancel)
     "batch_spec_workspace_execution_jobs_state" btree (state)
     "batch_spec_workspace_execution_jobs_user_id" btree (user_id)
@@ -184,6 +185,7 @@ Foreign-key constraints:
  step_cache_results   | jsonb                    |           | not null | '{}'::jsonb
 Indexes:
     "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
+    "batch_spec_workspaces_batch_spec_id" btree (batch_spec_id)
 Foreign-key constraints:
     "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     "batch_spec_workspaces_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
@@ -305,6 +307,7 @@ Foreign-key constraints:
  fork_namespace    | citext                   |           |          | 
 Indexes:
     "changeset_specs_pkey" PRIMARY KEY, btree (id)
+    "changeset_specs_batch_spec_id" btree (batch_spec_id)
     "changeset_specs_external_id" btree (external_id)
     "changeset_specs_head_ref" btree (head_ref)
     "changeset_specs_rand_id" btree (rand_id)
@@ -955,6 +958,7 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
  unrestricted        | boolean                  |           | not null | false
 Indexes:
     "explicit_permissions_bitbucket_projects_jobs_pkey" PRIMARY KEY, btree (id)
+    "explicit_permissions_bitbucket_projects_jobs_project_key_extern" btree (project_key, external_service_id, state)
 Check constraints:
     "explicit_permissions_bitbucket_projects_jobs_check" CHECK (permissions IS NOT NULL AND unrestricted IS FALSE OR permissions IS NULL AND unrestricted IS TRUE)
 

@@ -10,20 +10,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hexops/autogold"
+
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
-
-	"github.com/hexops/autogold"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 )
 
 func TestGenerateComputeRecordings(t *testing.T) {
@@ -1349,7 +1348,7 @@ func mockComputeSearch(results []computeSearch) func(context.Context, string) ([
 }
 
 func TestGetSeries(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
 	now := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	metadataStore := store.NewInsightStore(insightsDB)
 	metadataStore.Now = func() time.Time {

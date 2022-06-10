@@ -110,6 +110,8 @@ func TestNonLocalDefinition(t *testing.T) {
 		}
 	}
 
+	testCount := 0
+
 	symbolToTagToAnnotations := groupBySymbolAndTag(annotations)
 	symbols := []string{}
 	for symbol := range symbolToTagToAnnotations {
@@ -171,6 +173,8 @@ func TestNonLocalDefinition(t *testing.T) {
 				t.Errorf("want: %s%s/%s:%d:%d\n", itermSource(filepath.Join(cwd, "test_repos", want.Repo, want.Path), want.Point.Row, "src"), want.Repo, want.Path, want.Point.Row, want.Point.Column)
 				t.Errorf("got : %s%s/%s:%d:%d\n", itermSource(filepath.Join(cwd, "test_repos", got.Repo, got.Path), got.Point.Row, "src"), got.Repo, got.Path, got.Point.Row, got.Point.Column)
 			}
+
+			testCount += 1
 		}
 	}
 
@@ -196,9 +200,13 @@ func TestNonLocalDefinition(t *testing.T) {
 					squirrel.breadcrumbs.prettyPrint(squirrel.readFile)
 					t.Fatalf("expected path %s, got %s", a.symbol, gotSymbolInfo.Definition.RepoCommitPath.Path)
 				}
+
+				testCount += 1
 			}
 		}
 	}
+
+	t.Logf("%d tests in total", testCount)
 }
 
 func groupBySymbolAndTag(annotations []annotation) map[string]map[string][]annotation {

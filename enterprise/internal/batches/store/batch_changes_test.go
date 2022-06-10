@@ -959,7 +959,9 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 
 			// Both batch specs should still be in place, at least until we add
 			// a foreign key constraint to batch_specs.namespace_user_id.
-			specs, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{})
+			specs, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{
+				IncludeLocallyExecutedSpecs: true,
+			})
 			if err != nil {
 				t.Fatal(err)
 			}

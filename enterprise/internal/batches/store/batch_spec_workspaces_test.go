@@ -46,7 +46,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 			OnlyFetchWorkspace: true,
 			Unsupported:        true,
 			Ignored:            true,
-			Skipped:            true,
+			Skipped:            i == 1,
 			CachedResultFound:  i == 1,
 		}
 
@@ -74,7 +74,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 		}
 	})
 
-	if err := s.Exec(ctx, sqlf.Sprintf("INSERT INTO batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id, state) VALUES (%s, %s, %s)", workspaces[0].ID, user.ID, btypes.BatchSpecWorkspaceExecutionJobStateCompleted)); err != nil {
+	if err := s.Exec(ctx, sqlf.Sprintf("INSERT INTO batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id, state, cancel) VALUES (%s, %s, %s, %s)", workspaces[0].ID, user.ID, btypes.BatchSpecWorkspaceExecutionJobStateCompleted, true)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -225,6 +225,42 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 			}
 
 			if diff := cmp.Diff(have, workspaces[:2]); diff != "" {
+				t.Fatalf("invalid jobs returned: %s", diff)
+			}
+		})
+
+		t.Run("Cancel", func(t *testing.T) {
+			tr := true
+			have, _, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
+				Cancel: &tr,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(have) != 1 {
+				t.Fatalf("wrong number of results. have=%d", len(have))
+			}
+
+			if diff := cmp.Diff(have, workspaces[:1]); diff != "" {
+				t.Fatalf("invalid jobs returned: %s", diff)
+			}
+		})
+
+		t.Run("Skipped", func(t *testing.T) {
+			tr := true
+			have, _, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
+				Skipped: &tr,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(have) != 1 {
+				t.Fatalf("wrong number of results. have=%d", len(have))
+			}
+
+			if diff := cmp.Diff(have, workspaces[1:2]); diff != "" {
 				t.Fatalf("invalid jobs returned: %s", diff)
 			}
 		})

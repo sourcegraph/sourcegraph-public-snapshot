@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func cleanupPermsTables(t *testing.T, s *permsStore) {
@@ -2935,6 +2936,70 @@ func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db database.DB) func(
 		has, err = s.UserIsMemberOfOrgHasCodeHostConnection(ctx, cindy.ID)
 		assert.NoError(t, err)
 		assert.True(t, has)
+	}
+}
+
+func testPermsStore_MapUsers(db database.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		s := perms(db, clock)
+		ctx := context.Background()
+		t.Cleanup(func() {
+			if t.Failed() {
+				return
+			}
+
+			q := `TRUNCATE TABLE external_services, orgs, users CASCADE`
+			if err := s.execute(ctx, sqlf.Sprintf(q)); err != nil {
+				t.Fatal(err)
+			}
+		})
+
+		// Set up 3 users
+		users := db.Users()
+		igor, err := users.Create(ctx,
+			database.NewUser{
+				Email:           "igor@example.com",
+				Username:        "igor",
+				EmailIsVerified: true,
+			},
+		)
+		require.NoError(t, err)
+		shreah, err := users.Create(ctx,
+			database.NewUser{
+				Email:           "shreah@example.com",
+				Username:        "shreah",
+				EmailIsVerified: true,
+			},
+		)
+		require.NoError(t, err)
+		omar, err := users.Create(ctx,
+			database.NewUser{
+				Email:           "omar@example.com",
+				Username:        "omar",
+				EmailIsVerified: true,
+			},
+		)
+		require.NoError(t, err)
+
+		// emails: map with a mixed load of existing, space only and non existing users
+		has, err := s.MapUsers(ctx, []string{"igor@example.com", "", "omar@example.com", "  	", "sayako@example.com"}, &schema.PermissionsUserMapping{BindID: "email"})
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]int32{
+			"igor@example.com": igor.ID,
+			"omar@example.com": omar.ID,
+		}, has)
+
+		// usernames: map with a mixed load of existing, space only and non existing users
+		has, err = s.MapUsers(ctx, []string{"igor", "", "shreah", "  	", "carlos"}, &schema.PermissionsUserMapping{BindID: "username"})
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]int32{
+			"igor":   igor.ID,
+			"shreah": shreah.ID,
+		}, has)
+
+		// use a non-existing mapping
+		_, err = s.MapUsers(ctx, []string{"igor", "", "shreah", "  	", "carlos"}, &schema.PermissionsUserMapping{BindID: "shoeSize"})
+		assert.Error(t, err)
 	}
 }
 

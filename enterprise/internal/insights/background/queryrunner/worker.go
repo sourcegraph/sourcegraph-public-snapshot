@@ -82,7 +82,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		insightsStore:   insightsStore,
 		repoStore:       repoStore,
 		limiter:         limiter,
-		metadadataStore: store.NewInsightStore(insightsStore.Handle().DB()),
+		metadadataStore: store.NewInsightStoreWith(insightsStore),
 		seriesCache:     sharedCache,
 		search:          query.Search,
 		searchStream: func(ctx context.Context, query string) (*streaming.TabulationResult, error) {

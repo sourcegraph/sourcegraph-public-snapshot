@@ -146,7 +146,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             data-tooltip={typeof isPreviewDisabled === 'string' ? isPreviewDisabled : undefined}
             onClick={() => preview(debouncedCode)}
         >
-            <Icon role="img" aria-hidden={true} className="mr-1" as={SearchIcon} />
+            <Icon aria-hidden={true} className="mr-1" as={SearchIcon} />
             {error ? 'Retry preview' : 'Preview workspaces'}
         </Button>
     )
@@ -202,7 +202,6 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                     !isWorkspacesPreviewInProgress &&
                     !isReadOnly && (
                         <Icon
-                            role="img"
                             className={classNames('text-muted ml-1', styles.warningIcon)}
                             data-tooltip="The workspaces previewed below may not be up-to-date."
                             as={WarningIcon}

@@ -1,10 +1,23 @@
 # Install Sourcegraph with Docker Compose on Digital Ocean
 
-This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://docs.docker.com/compose/) to a single Droplet running on DigitalOcean.
+This guide shows you how to deploy Sourcegraph via [Docker Compose](https://docs.docker.com/compose/) to a single Droplet running on DigitalOcean.
 
 > NOTE: Trying to decide how to deploy Sourcegraph? See [our recommendations](../index.md) for how to choose a deployment type that suits your needs.
 
 ---
+## Determine server and service requirements 
+
+Use the [resource estimator](../resource_estimator.md) to determine the resource requirements for your environment. You will use this information to set up the instance and configure the docker-compose YAML file. 
+
+## Prepare a fork 
+
+We strongly recommend that you create and run Sourcegraph from your own fork of the reference repository. You will make changes to the default configuration, for example to the docker-compose YAML file, in your fork. The fork will also enable you to keep track of your customizations when upgrading your fork from the reference repo. Refer to the following steps for preparing a clone, which use GitHub as an example, then return to this page:
+
+1. [Fork the reference repo](index.md#fork-the-sourcegraph-reference-repository)
+2. [Clone your fork](index.md#clone-your-fork)
+3. [Configure a release branch](index.md#configure-a-release-branch)
+4. [Configure the YAML file](index.md#configure-the-yaml-file)
+5. [Publish changes to your branch](index.md#publish-your-changes-to-the-release-branch)
 
 ## Run Sourcegraph on a Digital Ocean Droplet
 
@@ -15,13 +28,13 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
   * (**optional, recommended**) Set up SSH access (Authentication > SSH keys) for convenient access to the droplet.
   * (**optional, recommended**) Check the "Enable backups" checkbox to enable weekly backups of all your data.
 
-> WARNING: To configure your Sourcegraph instance, you must create and use a fork of the reference repository - refer to the [Configuration section](index.md#configuration) of the [Docker Compose deployment docs](index.md) for more details. Then update the following variables in the script below:
->
-> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: Your fork's git clone URL
-> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. Most likely, `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='release'` if you followed our branching recommendations in the [Configuration section](index.md#configuration) of the [Docker Compose deployment docs](index.md)
-
 * In the "Select additional options" section of the Droplet creation page, select the "User Data" and "Monitoring" boxes,
    and paste the following script in the "`Enter user data here...`" text box:
+
+> NOTE: Replace the following variables in the script based on how you created your fork and release branch:
+>
+> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: Your fork's git clone URL
+> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. In the [example](index.md#configure-a-release-branch) the revision is the `release` branch. 
 
 ```bash
 #!/usr/bin/env bash
@@ -141,8 +154,8 @@ And refer to the [Upgrade section](index.md#upgrade) of the [Docker Compose depl
 
 ## Storage and Backups
 
-The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. The script above [configures Docker](https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file) to store all Docker data on the additional block storage volume that was attached to the droplet (mounted at `/mnt/docker-data` - the volumes themselves are stored under `/mnt/docker-data/volumes`) There are a few different ways to backup this data:
+The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. The preceding script [configures Docker](https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file) to store all Docker data on the additional block storage volume that was attached to the droplet (mounted at `/mnt/docker-data` - the volumes themselves are stored under `/mnt/docker-data/volumes`) There are a few different ways to backup this data:
 
 * (**recommended**) The most straightfoward method to backup this data is to [snapshot the entire `/mnt/docker-data` block storage volume on an automatic scheduled basis](https://www.digitalocean.com/docs/images/snapshots/).
 
-* Using an external Postgres instance (see below) lets a service such as [Digital Ocean's Managed Database for Postgres](https://www.digitalocean.com/products/managed-databases-postgresql/) take care of backing up all of Sourcegraph's user data for you. If the droplet running Sourcegraph ever dies or is destroyed, creating a fresh droplet that's connected to that external Postgres will leave Sourcegraph in the same state that it was before.
+* Using an external Postgres instance lets a service such as [Digital Ocean's Managed Database for Postgres](https://www.digitalocean.com/products/managed-databases-postgresql/) take care of backing up all of Sourcegraph's user data for you. If the droplet running Sourcegraph ever dies or is destroyed, creating a fresh droplet that's connected to that external Postgres will leave Sourcegraph in the same state that it was before.

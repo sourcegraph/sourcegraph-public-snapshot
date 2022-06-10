@@ -81,7 +81,7 @@ export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<
     if ((loading || batchChangeLoading) && (!data || !batchChangeData)) {
         return (
             <div className="w-100 text-center">
-                <Icon role="img" aria-label="Loading" className="m-2" as={LoadingSpinner} />
+                <Icon aria-label="Loading" className="m-2" as={LoadingSpinner} />
             </div>
         )
     }

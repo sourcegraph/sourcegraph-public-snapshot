@@ -3478,17 +3478,23 @@ CREATE UNIQUE INDEX batch_changes_unique_org_id ON batch_changes USING btree (na
 
 CREATE UNIQUE INDEX batch_changes_unique_user_id ON batch_changes USING btree (name, namespace_user_id) WHERE (namespace_user_id IS NOT NULL);
 
+CREATE INDEX batch_spec_workspace_execution_jobs_batch_spec_workspace_id ON batch_spec_workspace_execution_jobs USING btree (batch_spec_workspace_id);
+
 CREATE INDEX batch_spec_workspace_execution_jobs_cancel ON batch_spec_workspace_execution_jobs USING btree (cancel);
 
 CREATE INDEX batch_spec_workspace_execution_jobs_state ON batch_spec_workspace_execution_jobs USING btree (state);
 
 CREATE INDEX batch_spec_workspace_execution_jobs_user_id ON batch_spec_workspace_execution_jobs USING btree (user_id);
 
+CREATE INDEX batch_spec_workspaces_batch_spec_id ON batch_spec_workspaces USING btree (batch_spec_id);
+
 CREATE INDEX batch_specs_rand_id ON batch_specs USING btree (rand_id);
 
 CREATE INDEX changeset_jobs_bulk_group_idx ON changeset_jobs USING btree (bulk_group);
 
 CREATE INDEX changeset_jobs_state_idx ON changeset_jobs USING btree (state);
+
+CREATE INDEX changeset_specs_batch_spec_id ON changeset_specs USING btree (batch_spec_id);
 
 CREATE INDEX changeset_specs_external_id ON changeset_specs USING btree (external_id);
 
@@ -3555,6 +3561,8 @@ CREATE INDEX event_logs_timestamp ON event_logs USING btree ("timestamp");
 CREATE INDEX event_logs_timestamp_at_utc ON event_logs USING btree (date(timezone('UTC'::text, "timestamp")));
 
 CREATE INDEX event_logs_user_id ON event_logs USING btree (user_id);
+
+CREATE INDEX explicit_permissions_bitbucket_projects_jobs_project_key_extern ON explicit_permissions_bitbucket_projects_jobs USING btree (project_key, external_service_id, state);
 
 CREATE INDEX external_service_repos_clone_url_idx ON external_service_repos USING btree (clone_url);
 

@@ -311,7 +311,13 @@ const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<Code
             editor?.dispatch({ effects: [setQueryParseOptions.of({ patternType, interpretComments })] })
         }, [editor, patternType, interpretComments])
 
-        return <div ref={setContainer} className={classNames(styles.root, className)} id="monaco-query-input" />
+        return (
+            <div
+                ref={setContainer}
+                className={classNames(styles.root, className)}
+                data-test-id="codemirror-query-input"
+            />
+        )
     }
 )
 

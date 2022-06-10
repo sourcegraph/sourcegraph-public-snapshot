@@ -218,9 +218,9 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
                         />
                         {uploadOrError.isLatestForRepo && (
                             <div>
-                                <Icon role="img" aria-hidden={true} as={InformationOutlineIcon} /> This upload can
-                                answer queries for the tip of the default branch and are targets of cross-repository
-                                find reference operations.
+                                <Icon aria-hidden={true} as={InformationOutlineIcon} /> This upload can answer queries
+                                for the tip of the default branch and are targets of cross-repository find reference
+                                operations.
                             </div>
                         )}
                     </Container>

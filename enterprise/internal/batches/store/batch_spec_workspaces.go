@@ -203,6 +203,8 @@ type ListBatchSpecWorkspacesOpts struct {
 	State                            btypes.BatchSpecWorkspaceExecutionJobState
 	OnlyWithoutExecutionAndNotCached bool
 	OnlyCachedOrCompleted            bool
+	Cancel                           *bool
+	Skipped                          *bool
 	TextSearch                       []search.TextSearchTerm
 }
 
@@ -246,6 +248,15 @@ func (opts ListBatchSpecWorkspacesOpts) SQLConds(ctx context.Context, db databas
 	if opts.OnlyCachedOrCompleted {
 		ensureJoinExecution()
 		preds = append(preds, sqlf.Sprintf("(batch_spec_workspaces.cached_result_found OR batch_spec_workspace_execution_jobs.state = %s)", btypes.BatchSpecWorkspaceExecutionJobStateCompleted))
+	}
+
+	if opts.Cancel != nil {
+		ensureJoinExecution()
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.cancel = %s", *opts.Cancel))
+	}
+
+	if opts.Skipped != nil {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.skipped = %s", *opts.Skipped))
 	}
 
 	if len(opts.TextSearch) != 0 {

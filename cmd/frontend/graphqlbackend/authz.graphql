@@ -87,6 +87,11 @@ extend type Mutation {
         permitted to view the repository on Sourcegraph.
         """
         userPermissions: [UserPermission!]!
+
+        """
+        Flag to indicate if ALL repositories under the project will allow unrestricted access to all users who have access to the code host.
+        """
+        unrestricted: Boolean
     ): EmptyResponse!
 }
 

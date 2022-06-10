@@ -9,6 +9,7 @@ import (
 	"github.com/hexops/autogold"
 	"github.com/keegancsmith/sqlf"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -24,7 +25,7 @@ func TestSeriesPoints(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := dbtest.NewInsightsDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
 
 	postgres := database.NewDB(dbtest.NewDB(t))
 	permStore := NewInsightPermissionStore(postgres)
@@ -38,7 +39,7 @@ func TestSeriesPoints(t *testing.T) {
 	autogold.Want("SeriesPoints", []SeriesPoint{}).Equal(t, points)
 
 	// Insert some fake data.
-	_, err = insightsDB.Exec(`
+	_, err = insightsDB.ExecContext(context.Background(), `
 INSERT INTO repo_names(name) VALUES ('github.com/gorilla/mux-original');
 INSERT INTO repo_names(name) VALUES ('github.com/gorilla/mux-renamed');
 INSERT INTO metadata(metadata) VALUES ('{"hello": "world", "languages": ["Go", "Python", "Java"]}');
@@ -132,7 +133,7 @@ func TestCountData(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := dbtest.NewInsightsDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
 	postgres := database.NewDB(dbtest.NewDB(t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
@@ -229,7 +230,7 @@ func TestRecordSeriesPoints(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := dbtest.NewInsightsDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
 	postgres := database.NewDB(dbtest.NewDB(t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
@@ -332,7 +333,7 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := dbtest.NewInsightsDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
 	postgres := database.NewDB(dbtest.NewDB(t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
@@ -397,7 +398,7 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := dbtest.NewInsightsDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
 	postgres := database.NewDB(dbtest.NewDB(t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
@@ -462,7 +463,7 @@ func TestDeleteSnapshots(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := dbtest.NewInsightsDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
 	postgres := database.NewDB(dbtest.NewDB(t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
@@ -543,7 +544,7 @@ func TestDelete(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsdb := dbtest.NewInsightsDB(t)
+	insightsdb := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
 
 	repoName := "reallygreatrepo"
 	repoId := api.RepoID(5)
