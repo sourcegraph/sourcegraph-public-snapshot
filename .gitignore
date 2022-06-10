@@ -177,3 +177,7 @@ go.work.sum
 
 # binary
 /sg
+
+# dev-private
+enterprise/dev/site-config.json
+enterprise/dev/external-services-config.json

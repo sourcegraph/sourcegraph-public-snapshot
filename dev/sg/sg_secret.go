@@ -2,12 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -27,6 +30,12 @@ sg secret reset buildkite
 `,
 		Category: CategoryEnv,
 		Subcommands: []*cli.Command{
+			{
+				Name:      "download-config",
+				ArgsUsage: "",
+				Usage:     "TODO",
+				Action:    downloadDevPrivate,
+			},
 			{
 				Name:      "reset",
 				ArgsUsage: "<...key>",
@@ -50,6 +59,53 @@ sg secret reset buildkite
 		},
 	}
 )
+
+var (
+	siteConfig = secrets.ExternalSecret{
+		Provider: secrets.ExternalProvider1Pass,
+		Project:  "Shared",
+		Name:     "DevPrivate",
+		Field:    "site-config.json",
+	}
+
+	externalServicesConfig = secrets.ExternalSecret{
+		Provider: secrets.ExternalProvider1Pass,
+		Project:  "Shared",
+		Name:     "DevPrivate",
+		Field:    "external-services-config.json",
+	}
+)
+
+func downloadDevPrivate(ctx *cli.Context) error {
+	store, err := secrets.FromContext(ctx.Context)
+	if err != nil {
+		return err
+	}
+
+	root, err := root.RepositoryRoot()
+	if err != nil {
+		return err
+	}
+
+	s, err := store.GetExternal(ctx.Context, siteConfig)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(filepath.Join(root, "enterprise", "dev", "site-config.json"), []byte(s), 0600)
+	if err != nil {
+		return err
+	}
+	s, err = store.GetExternal(ctx.Context, externalServicesConfig)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(filepath.Join(root, "enterprise", "dev", "external-services-config.json"), []byte(s), 0600)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func resetSecretExec(ctx *cli.Context) error {
 	args := ctx.Args().Slice()

@@ -132,8 +132,6 @@ commands:
 
   enterprise-frontend:
     cmd: |
-      # TODO: This should be fixed
-      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
       .bin/enterprise-frontend
     install: |
       if [ -n "$DELVE" ]; then
@@ -141,12 +139,18 @@ commands:
       fi
       go build -gcflags="$GCFLAGS" -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
     checkBinary: .bin/enterprise-frontend
+    external_secrets:
+      SOURCEGRAPH_LICENSE_GENERATION_KEY:
+        provider: "1pass"
+        project: "Shared"
+        name: "DevPrivate"
+        field: "test-license-generation.pem"
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
       ENTERPRISE: 1
-      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
-      EXTSVC_CONFIG_FILE: '../dev-private/enterprise/dev/external-services-config.json'
+      SITE_CONFIG_FILE: 'enterprise/dev/site-config.json'
+      EXTSVC_CONFIG_FILE: 'enterprise/dev/external-services-config.json'
       SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
       # frontend processes need this to be so that the paths to the assets are rendered correctly
       WEBPACK_DEV_SERVER: 1
@@ -201,13 +205,18 @@ commands:
 
   enterprise-worker:
     cmd: |
-      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
       .bin/worker
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
       go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
+    external_secrets:
+      SOURCEGRAPH_LICENSE_GENERATION_KEY:
+        provider: "1pass"
+        project: "Shared"
+        name: "DevPrivate"
+        field: "test-license-generation.pem"
     watch:
       - lib
       - internal
@@ -690,7 +699,6 @@ commandsets:
       - zoekt-webserver-1
 
   enterprise: &enterprise_set
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -724,9 +732,19 @@ commandsets:
     <<: *enterprise_set
     env:
       SOURCEGRAPHDOTCOM_MODE: true
+    external_secrets:
+      STRIPE_SECRET_KEY:
+        provider: "1pass"
+        project: "Shared"
+        name: "DevPrivate"
+        field: "STRIPE_SECRET_KEY"
+      STRIPE_PUBLISHABLE_KEY:
+        provider: "1pass"
+        project: "Shared"
+        name: "DevPrivate"
+        field: "STRIPE_PUBLISHABLE_KEY"
 
   codeintel: &codeintel_set
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -759,7 +777,6 @@ commandsets:
     <<: *codeintel_set
 
   enterprise-codeinsights:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -786,7 +803,6 @@ commandsets:
       DISABLE_CODE_INSIGHTS: false
 
   api-only:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -806,7 +822,6 @@ commandsets:
       - zoekt-webserver-1
 
   batches:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -831,7 +846,6 @@ commandsets:
       - batches-executor
 
   iam:
-    requiresDevPrivate: true
     checks:
       - docker
       - redis
