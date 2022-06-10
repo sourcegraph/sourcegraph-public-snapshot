@@ -49,8 +49,9 @@
     font-size: 0.625rem;
     flex-shrink: 0;
     align-items: center;
-    justify-content: center;
-    padding-left: 0.25rem;
+    justify-content: flex-end;
+    padding-left: 1rem;
+    flex-basis: 7.5rem;
 }
 
 .spacer {
