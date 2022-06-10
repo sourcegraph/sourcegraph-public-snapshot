@@ -42,7 +42,6 @@ export const StreamingProgressCount: React.FunctionComponent<
     return (
         <>
             {isLoading && <VisuallyHidden aria-live="polite">Searching</VisuallyHidden>}
-            <VisuallyHidden aria-live="polite">{readingContent}</VisuallyHidden>
             <small
                 className={classNames(
                     'd-flex align-items-center',
@@ -52,7 +51,10 @@ export const StreamingProgressCount: React.FunctionComponent<
                 )}
                 data-testid="streaming-progress-count"
             >
-                <span aria-label={readingContent}>{content}</span>
+                <VisuallyHidden aria-live="polite">{readingContent}</VisuallyHidden>
+                <span aria-hidden={true} role="presentation">
+                    {content}
+                </span>
                 {progress.repositoriesCount !== undefined && (
                     <Tooltip
                         content={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
