@@ -73,7 +73,7 @@ func rawArgs(args Args) (rawArgs []string) {
 	return rawArgs
 }
 
-func waitForCompletion(cmd *exec.Cmd, stdout, stderr io.ReadCloser, w io.Writer) (err error) {
+func waitForCompletion(cmd *exec.Cmd, stdout, stderr io.ReadCloser, w ...io.Writer) (err error) {
 	// Read stderr in goroutine so we don't potentially block reading stdout
 	stderrMsgC := make(chan []byte, 1)
 	go func() {
@@ -82,10 +82,12 @@ func waitForCompletion(cmd *exec.Cmd, stdout, stderr io.ReadCloser, w io.Writer)
 		close(stderrMsgC)
 	}()
 
-	_, err = io.Copy(w, stdout)
-	if err != nil {
-		log15.Error("failed to copy comby output to writer", "error", err.Error())
-		return errors.Wrap(err, "failed to copy comby output to writer")
+	if len(w) > 0 {
+		_, err = io.Copy(w[0], stdout)
+		if err != nil {
+			log15.Error("failed to copy comby output to writer", "error", err.Error())
+			return errors.Wrap(err, "failed to copy comby output to writer")
+		}
 	}
 
 	stderrMsg := <-stderrMsgC
@@ -223,6 +225,71 @@ func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Resu
 		log15.Info("comby invocation", "num_matches", strconv.Itoa(len(results)))
 	}
 	return results, nil
+}
+
+func SetupCmdWithPipes(args Args) (cmd *exec.Cmd, stdin io.WriteCloser, stdout, stderr io.ReadCloser, err error) {
+	if !Exists() {
+		log15.Error("comby is not installed (it could not be found on the PATH)")
+		return nil, nil, nil, nil, errors.New("comby is not installed")
+	}
+
+	rawArgs := rawArgs(args)
+	log15.Info("running comby", "args", args.String())
+
+	cmd = exec.Command(combyPath, rawArgs...)
+	// Ensure forked child processes are killed
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
+	if content, ok := args.Input.(FileContent); ok {
+		cmd.Stdin = bytes.NewReader(content)
+	}
+
+	stdin, err = cmd.StdinPipe()
+	if err != nil {
+		log15.Error("could not connect to comby command stdin", "error", err.Error())
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to connect to comby command stdin")
+	}
+	stdout, err = cmd.StdoutPipe()
+	if err != nil {
+		log15.Error("could not connect to comby command stdout", "error", err.Error())
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to connect to comby command stdout")
+	}
+	stderr, err = cmd.StderrPipe()
+	if err != nil {
+		log15.Error("could not connect to comby command stderr", "error", err.Error())
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to connect to comby command stderr")
+	}
+
+	return cmd, stdin, stdout, stderr, nil
+}
+
+func StartAndWaitForCompletion(ctx context.Context, cmd *exec.Cmd, stdout, stderr io.ReadCloser) error {
+	if err := cmd.Start(); err != nil {
+		log15.Error("failed to start comby command", "error", err.Error())
+		return errors.Wrap(err, "failed to start comby command")
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	errorC := make(chan error, 1)
+	go func() {
+		errorC <- waitForCompletion(cmd, stdout, stderr)
+	}()
+
+	select {
+	case <-ctx.Done():
+		log15.Error("comby context deadline reached")
+		kill(cmd.Process.Pid)
+	case err := <-errorC:
+		if err != nil {
+			err = errors.Wrap(err, "failed to wait for executing comby command")
+			kill(cmd.Process.Pid)
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Matches returns all matches in all files for which comby finds matches.
