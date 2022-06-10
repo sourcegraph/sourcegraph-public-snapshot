@@ -14,7 +14,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
-	slog "github.com/sourcegraph/log"
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -824,7 +824,7 @@ func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions searc
 	})
 
 	if err != nil {
-		log.Error("doResults: failed to list user private repos", slog.Error(err), slog.Int32("user-id", userID))
+		log.Error("doResults: failed to list user private repos", slog.Error(err), slog.Int("user-id", int(userID)))
 		tr.LazyPrintf("error resolving user private repos: %v", err)
 	}
 	return userPrivateRepos

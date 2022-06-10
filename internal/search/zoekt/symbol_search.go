@@ -6,7 +6,8 @@ import (
 
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/opentracing/opentracing-go/log"
-	slog "github.com/sourcegraph/log"
+
+	slog "github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
