@@ -9,6 +9,7 @@ export interface UseSeriesToggleReturn {
     // contained in the hook
     isSeriesSelected: (id: string) => boolean
     isSeriesHovered: (id: string) => boolean
+    hasSelections: () => boolean
     setHoveredId: Dispatch<SetStateAction<string | undefined>>
     toggle: (id: string, availableSeriesIds: string[]) => void
 }
@@ -51,6 +52,7 @@ export const useSeriesToggle = (): UseSeriesToggleReturn => {
         // functions
         isSeriesSelected: isSelected,
         isSeriesHovered: (seriesId: string) => seriesId === hoveredId,
+        hasSelections: () => selectedSeriesIds.length > 0,
         setHoveredId,
         toggle,
     }

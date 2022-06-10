@@ -7,6 +7,7 @@ import { voronoi } from '@visx/voronoi'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
+import { UseSeriesToggleReturn } from '../../../insights/utils/use-series-toggle'
 import { SeriesLikeChart } from '../../types'
 
 import { AxisBottom, AxisLeft, Tooltip, TooltipContent, PointGlyph } from './components'
@@ -29,8 +30,7 @@ export interface LineChartContentProps<Datum> extends SeriesLikeChart<Datum>, SV
     width: number
     height: number
     zeroYAxisMin?: boolean
-    isSeriesSelected: (id: string) => boolean
-    isSeriesHovered: (id: string) => boolean
+    seriesToggleState: UseSeriesToggleReturn
 }
 
 const sortByDataKey = (dataKey: string | number | symbol, activeDataKey: string): number =>
@@ -49,14 +49,26 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         zeroYAxisMin = false,
         onDatumClick = noop,
         className,
-        isSeriesSelected,
-        isSeriesHovered,
+        seriesToggleState,
         ...attributes
     } = props
+
+    const { hoveredId, isSeriesSelected, setHoveredId, hasSelections } = seriesToggleState
 
     const [activePoint, setActivePoint] = useState<Point<D> & { element?: Element }>()
     const [yAxisElement, setYAxisElement] = useState<SVGGElement | null>(null)
     const [xAxisReference, setXAxisElement] = useState<SVGGElement | null>(null)
+
+    const handlePointHover = (point: (Point<D> & { element?: Element }) | undefined): void => {
+        setActivePoint(point)
+
+        // TODO DON'T MERGE THIS COMMENT
+        // Remove this if check if Alicja wants the lines to hover
+        // whether selected or not
+        if (point?.seriesId && isSeriesSelected(point?.seriesId)) {
+            setHoveredId(point?.seriesId)
+        }
+    }
 
     const { width, height, margin } = useMemo(
         () =>
@@ -124,10 +136,10 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             const closestPoint = voronoiLayout.find(point.x, point.y)
 
             if (closestPoint && closestPoint.data.id !== activePoint?.id) {
-                setActivePoint(closestPoint.data)
+                handlePointHover(closestPoint.data)
             }
         },
-        onPointerLeave: () => setActivePoint(undefined),
+        onPointerLeave: () => handlePointHover(undefined),
         onClick: event => {
             if (activePoint?.linkUrl) {
                 onDatumClick(event)
@@ -136,8 +148,43 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         },
     })
 
+    const getOpacity = (id: string): number => {
+        // Nothing is selected and nothing is hovered then return 1
+        if (!hasSelections() && !hoveredId) {
+            return 1
+        }
+
+        // Nothing is selected and this series is hovered return 1
+        if (!hasSelections() && hoveredId === id) {
+            return 1
+        }
+
+        // Nothing is selected and some other series is hovered return 0.5
+        if (!hasSelections() && hoveredId && hoveredId !== id) {
+            return 0.5
+        }
+
+        // This series is selected and hovered return 1
+        if (isSeriesSelected(id) && hoveredId === id) {
+            return 1
+        }
+
+        // This series is selected and some other series is hovered return 0.5
+        if (isSeriesSelected(id) && hoveredId !== id) {
+            return 0.5
+        }
+
+        // This series is not selected but is hovered then return 0.5
+        if (!isSeriesSelected(id) && hoveredId === id) {
+            return 0.5
+        }
+
+        // This series is not selected or hovered return 0
+        return 0
+    }
+
     const getHoverStyle = (id: string): CSSProperties => {
-        const opacity = isSeriesSelected(id) ? 1 : isSeriesHovered(id) ? 0.5 : 0
+        const opacity = getOpacity(id)
 
         return {
             opacity,
@@ -200,8 +247,8 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                                 color={point.color}
                                 linkURL={point.linkUrl}
                                 onClick={onDatumClick}
-                                onFocus={event => setActivePoint({ ...point, element: event.target })}
-                                onBlur={() => setActivePoint(undefined)}
+                                onFocus={event => handlePointHover({ ...point, element: event.target })}
+                                onBlur={() => handlePointHover(undefined)}
                             />
                         ))}
                     </Group>

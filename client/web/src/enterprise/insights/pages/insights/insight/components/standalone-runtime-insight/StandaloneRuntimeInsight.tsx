@@ -6,6 +6,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { ParentSize } from '../../../../../../../charts'
+import { useSeriesToggle } from '../../../../../../../insights/utils/use-series-toggle'
 import {
     CategoricalBasedChartTypes,
     CategoricalChart,
@@ -33,6 +34,7 @@ interface StandaloneRuntimeInsightProps extends TelemetryProps {
 export function StandaloneRuntimeInsight(props: StandaloneRuntimeInsightProps): React.ReactElement {
     const { insight, telemetryService, className } = props
     const { getBuiltInInsightData } = useContext(CodeInsightsBackendContext)
+    const seriesToggleState = useSeriesToggle()
 
     const insightCardReference = useRef<HTMLDivElement>(null)
 
@@ -80,6 +82,7 @@ export function StandaloneRuntimeInsight(props: StandaloneRuntimeInsightProps): 
                                     zeroYAxisMin={zeroYAxisMin}
                                     locked={insight.isFrozen}
                                     onDatumClick={trackDatumClicks}
+                                    seriesToggleState={seriesToggleState}
                                     {...state.data.content}
                                 />
                             ) : (

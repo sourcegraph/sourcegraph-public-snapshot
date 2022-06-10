@@ -7,6 +7,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Link, useDeepMemo } from '@sourcegraph/wildcard'
 
 import { ParentSize } from '../../../../../../charts'
+import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
 import { CodeInsightsBackendContext, LangStatsInsight } from '../../../../core'
 import { InsightContentType } from '../../../../core/types/insight/common'
 import { LazyQueryStatus } from '../../../../hooks/use-parallel-requests/use-parallel-request'
@@ -46,6 +47,7 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
     const { insight, resizing, telemetryService, innerRef, ...otherProps } = props
     const { getBuiltInInsightData } = useContext(CodeInsightsBackendContext)
     const { currentDashboard, dashboards } = useContext(InsightContext)
+    const seriesToggleState = useSeriesToggle()
 
     const insightCardReference = useRef<HTMLDivElement>(null)
     const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
@@ -111,6 +113,7 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
                                     locked={insight.isFrozen}
                                     className={styles.chart}
                                     onDatumClick={trackDatumClicks}
+                                    seriesToggleState={seriesToggleState}
                                     {...state.data.content}
                                 />
                             ) : (

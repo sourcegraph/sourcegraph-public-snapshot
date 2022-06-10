@@ -15,6 +15,7 @@ import {
     GetInsightViewResult,
     GetInsightViewVariables,
 } from '../../../../../../graphql-operations'
+import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
 import { BackendInsight, BackendInsightData, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend/gql/GetInsightView'
 import { createBackendInsightData } from '../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
@@ -32,7 +33,6 @@ import {
     DrillDownInsightCreationFormValues,
     BackendInsightChart,
 } from './components'
-import { useSeriesToggle } from './components/backend-insight-chart/use-series-toggle'
 import { parseSeriesDisplayOptions } from './components/drill-down-filters-panel/drill-down-filters/utils'
 
 import styles from './BackendInsight.module.scss'
@@ -54,7 +54,9 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
 
     const { currentDashboard, dashboards } = useContext(InsightContext)
     const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
-    const { toggle, isSeriesSelected, isSeriesHovered, setHoveredId } = useSeriesToggle()
+    // seriesToggleState is instantiated at this level to prevent the state from being
+    // deleted when the insight is scrolled out of view
+    const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
     const [enablePolling] = useFeatureFlag('insight-polling-enabled')
     const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
@@ -225,11 +227,9 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                     {...insightData}
                     locked={insight.isFrozen}
                     zeroYAxisMin={zeroYAxisMin}
-                    isSeriesSelected={isSeriesSelected}
-                    isSeriesHovered={isSeriesHovered}
+                    seriesToggleState={seriesToggleState}
                     onDatumClick={trackDatumClicks}
-                    onLegendItemClick={seriesId => toggle(seriesId, mapSeriesIds(insightData))}
-                    setHoveredId={setHoveredId}
+                    onLegendItemClick={seriesId => seriesToggleState.toggle(seriesId, mapSeriesIds(insightData))}
                 />
             )}
             {

@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction } from 'react'
+import React from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
@@ -7,6 +7,7 @@ import useResizeObserver from 'use-resize-observer'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import { getLineColor, LegendItem, LegendList, ScrollBox } from '../../../../../../../../charts'
+import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
 import { BackendInsightData } from '../../../../../../core'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
@@ -41,12 +42,10 @@ export const MINIMAL_SERIES_FOR_ASIDE_LEGEND = 3
 interface BackendInsightChartProps<Datum> extends BackendInsightData {
     locked: boolean
     zeroYAxisMin: boolean
-    isSeriesSelected: (id: string) => boolean
-    isSeriesHovered: (id: string) => boolean
     className?: string
     onLegendItemClick: (id: string) => void
     onDatumClick: () => void
-    setHoveredId: Dispatch<SetStateAction<string | undefined>>
+    seriesToggleState: UseSeriesToggleReturn
 }
 
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
@@ -55,14 +54,13 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
         isFetchingHistoricalData,
         content,
         zeroYAxisMin,
-        isSeriesSelected,
-        isSeriesHovered,
         className,
         onDatumClick,
         onLegendItemClick,
-        setHoveredId,
+        seriesToggleState,
     } = props
     const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
+    const { setHoveredId, isSeriesSelected, isSeriesHovered } = seriesToggleState
 
     const hasViewManySeries = content.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
@@ -93,9 +91,8 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     locked={locked}
                                     className={styles.chart}
                                     onDatumClick={onDatumClick}
-                                    isSeriesSelected={isSeriesSelected}
-                                    isSeriesHovered={isSeriesHovered}
                                     zeroYAxisMin={zeroYAxisMin}
+                                    seriesToggleState={seriesToggleState}
                                     {...content}
                                 />
                             </>

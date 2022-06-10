@@ -7,7 +7,14 @@ import { useSeriesToggle } from './use-series-toggle'
 
 const UseSeriesToggleExample: React.FunctionComponent = () => {
     const availableSeriesIds = ['foo', 'bar', 'baz']
-    const { toggle, selectedSeriesIds, isSeriesHovered, isSeriesSelected, setHoveredId } = useSeriesToggle()
+    const {
+        toggle,
+        selectedSeriesIds,
+        isSeriesHovered,
+        isSeriesSelected,
+        setHoveredId,
+        hasSelections,
+    } = useSeriesToggle()
 
     return (
         <div>
@@ -20,6 +27,7 @@ const UseSeriesToggleExample: React.FunctionComponent = () => {
             ))}
 
             <div>Selected series: {selectedSeriesIds.join(',')}</div>
+            {hasSelections() && <div>Something is selected.</div>}
         </div>
     )
 }
@@ -77,5 +85,12 @@ describe('useSeriesToggle', () => {
         expect(screen.getByText('bar is selected')).toBeInTheDocument()
         expect(screen.getByText('baz is selected')).toBeInTheDocument()
         expect(screen.queryByText('Selected series: foo,bar,baz')).not.toBeInTheDocument()
+    })
+
+    it('renders that something is selected', () => {
+        render(<UseSeriesToggleExample />)
+        userEvent.click(screen.getByRole('button', { name: 'foo' }))
+
+        expect(screen.getByText('Something is selected.')).toBeInTheDocument()
     })
 })
