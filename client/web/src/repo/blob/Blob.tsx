@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { Remote } from 'comlink'
@@ -754,12 +754,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         ]
     )
 
-    // `ColumnDecorator` uses `useLayoutEffect` instead of `useEffect` in order to synchronously re-render
-    // after mount/decoration updates, but before the browser has painted DOM updates.
-    // This prevents users from seeing inconsistent states where changes handled by React have been
-    // painted, but DOM manipulation handled by these effects are painted on the next tick.
-
-    useLayoutEffect(() => {
+    useEffect(() => {
         const subscription = codeViewElements.subscribe(codeView => {
             if (codeView) {
                 const table = codeView.firstElementChild as HTMLTableElement
