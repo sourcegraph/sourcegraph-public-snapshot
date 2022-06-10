@@ -5,6 +5,19 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 > NOTE: Trying to decide how to deploy Sourcegraph? See [our recommendations](../index.md) for how to choose a deployment type that suits your needs.
 
 ---
+## Determine server and service requirements 
+
+Use the [resource estimator](../resource_estimator.md) to determine the resource requirements for your environment. You will use this information to set up the instance and configure the docker-compose YAML file. 
+
+## Prepare a fork 
+
+We strongly recommend that you create and run Sourcegraph from your own fork of the reference repository. You will make changes to the default configuration, for example to the docker-compose YAML file, in your fork. The fork will also enable you to keep track of your customizations when upgrading your fork from the reference repo. Refer to the following steps for preparing a clone, which use GitHub as an example, then return to this page:
+
+1. [Fork the reference repo](index.md#fork-the-sourcegraph-reference-repository)
+2. [Clone your fork](index.md#clone-your-fork)
+3. [Configure a release branch](index.md#configure-a-release-branch)
+4. [Configure the YAML file](index.md#configure-the-yaml-file)
+5. [Publish changes to your branch](index.md#publish-your-changes-to-the-release-branch)
 
 ## Deploy to Google Cloud VM
 
@@ -16,13 +29,6 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
   * **Boot disk type**: SSD persistent disk
 * Check the boxes for **Allow HTTP traffic** and **Allow HTTPS traffic** in the **Firewall** section
 * Open the **Management, disks, networking, and SSH keys** dropdown section
-
-> WARNING: To configure your Sourcegraph instance, you must create and use a fork of the reference repository - refer to the following steps, which use GitHub as an example, then return to this page:
->
->  1. [Fork the reference repo](index.md#fork-the-sourcegraph-reference-repository)
->  2. [Clone your fork](index.md#clone-your-fork)
->  3. [Configure a release branch](index.md#configure-a-release-branch)
-
 * Under the **Management** section, add the following in the **Startup script** field:
 
 > NOTE: replace the following variables in the script based on how you created your fork and release branch
