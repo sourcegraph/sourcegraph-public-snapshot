@@ -25,7 +25,7 @@ func storeTest(db *sql.DB, key encryption.Key, f storeTestFunc) func(*testing.T)
 		// of the tests, so that foreign key constraints can be deferred and we
 		// don't need to insert a lot of dependencies into the DB (users,
 		// repos, ...) to setup the tests.
-		tx := database.NewDB(dbtest.NewTx(t, db))
+		tx := database.NewUntypedDB(dbtest.NewTx(t, db))
 		s := NewWithClock(tx, &observation.TestContext, key, c.Now)
 
 		f(t, context.Background(), s, c)

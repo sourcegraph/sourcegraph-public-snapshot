@@ -163,7 +163,7 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 
 			hook := NewAfterCreateUserHook()
 			if hook != nil {
-				err := NewAfterCreateUserHook()(context.Background(), database.NewDB(db), user)
+				err := NewAfterCreateUserHook()(context.Background(), database.NewUntypedDB(db), user)
 				if err != nil {
 					t.Fatal(err)
 				}

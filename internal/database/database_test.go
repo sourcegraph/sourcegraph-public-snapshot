@@ -224,7 +224,7 @@ func TestDBTransactions(t *testing.T) {
 		db := NewDB(sqlDB)
 		// this ill-advised, but possible, so make sure we can handle it.
 		// In the future, this ideally not be possible by typing this more strictly.
-		db = NewDB(db)
+		db = NewUntypedDB(db)
 
 		// Lifetime of tx
 		{

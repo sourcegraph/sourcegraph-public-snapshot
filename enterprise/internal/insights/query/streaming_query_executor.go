@@ -26,7 +26,7 @@ type StreamingQueryExecutor struct {
 func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *StreamingQueryExecutor {
 	return &StreamingQueryExecutor{
 		justInTimeExecutor: justInTimeExecutor{
-			db:        database.NewDB(postgres),
+			db:        postgres,
 			repoStore: postgres.Repos(),
 			filter:    &compression.NoopFilter{},
 			clock:     clock,
