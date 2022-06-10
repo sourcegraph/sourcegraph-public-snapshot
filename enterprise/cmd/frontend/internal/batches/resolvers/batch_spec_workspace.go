@@ -287,6 +287,9 @@ func (r *batchSpecWorkspaceResolver) FailureMessage() *string {
 	if r.execution == nil {
 		return nil
 	}
+	if r.execution.Cancel {
+		return nil
+	}
 	return r.execution.FailureMessage
 }
 
@@ -299,6 +302,12 @@ func (r *batchSpecWorkspaceResolver) State() string {
 	}
 	if r.execution == nil {
 		return "PENDING"
+	}
+	if r.execution.Cancel {
+		if r.execution.State == btypes.BatchSpecWorkspaceExecutionJobStateFailed {
+			return "CANCELED"
+		}
+		return "CANCELING"
 	}
 	return r.execution.State.ToGraphQL()
 }
