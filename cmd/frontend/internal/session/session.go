@@ -344,8 +344,9 @@ func authenticateByCookie(db database.DB, r *http.Request, w http.ResponseWriter
 	if err := GetData(r, "actor", &info); err != nil {
 		if strings.Contains(err.Error(), "connect: connection refused") {
 			// If fetching session info failed because of a Redis error, return empty Context
-			// without deleting the session cookie. This prevents background requests
-			// made by off-screen tabs from signing the user out during a server update.
+			// without deleting the session cookie and throw an internal server error.
+			// This prevents background requests made by off-screen tabs from signing
+			// the user out during a server update.
 			w.WriteHeader(http.StatusInternalServerError)
 			return r.Context()
 		}
