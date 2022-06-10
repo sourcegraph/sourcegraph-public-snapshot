@@ -8,7 +8,8 @@ import (
 	"github.com/google/zoekt"
 	"github.com/grafana/regexp"
 
-	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -87,7 +88,7 @@ type getRepoIndexOptsFn func(repoID int32) (*RepoIndexOptions, error)
 func GetIndexOptions(
 	c *schema.SiteConfiguration,
 	getRepoIndexOptions getRepoIndexOptsFn,
-	getSearchContextRevisions func(repoID int32) ([]string, error),
+	getSearchContextRevisions func(repoID int32) ([]string, error), slog log.Logger,
 	repos ...int32,
 ) []byte {
 	// Limit concurrency to 32 to avoid too many active network requests and
@@ -95,7 +96,7 @@ func GetIndexOptions(
 	// future we want a more intelligent global limit based on scale.
 	sema := make(chan struct{}, 32)
 	results := make([][]byte, len(repos))
-	getSiteConfigRevisions := siteConfigRevisionsRuleFunc(c)
+	getSiteConfigRevisions := siteConfigRevisionsRuleFunc(c, slog)
 
 	for i := range repos {
 		sema <- struct{}{}
@@ -201,8 +202,7 @@ func getIndexOptions(
 
 type revsRuleFunc func(*RepoIndexOptions) (revs []string)
 
-func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration) revsRuleFunc {
-	slog := log.Scoped("siteConfigRevisionsRuleFunc", "Site config revisions rule function")
+func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration, slog log.Logger) revsRuleFunc {
 	if c == nil || c.ExperimentalFeatures == nil {
 		return nil
 	}

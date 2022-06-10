@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -46,6 +47,7 @@ func TestGetIndexOptions(t *testing.T) {
 		searchContextRevs []string
 		repo              int32
 		want              zoektIndexOptions
+		log.Logger
 	}
 
 	cases := []caseT{{
@@ -258,7 +260,7 @@ func TestGetIndexOptions(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			getSearchContextRevisions := func(int32) ([]string, error) { return tc.searchContextRevs, nil }
 
-			b := GetIndexOptions(&tc.conf, getRepoIndexOptions, getSearchContextRevisions, tc.repo)
+			b := GetIndexOptions(&tc.conf, getRepoIndexOptions, getSearchContextRevisions, tc.Logger, tc.repo)
 
 			var got zoektIndexOptions
 			if err := json.Unmarshal(b, &got); err != nil {
@@ -282,6 +284,7 @@ func TestGetIndexOptions_getVersion(t *testing.T) {
 		f       func(string) (string, error)
 		want    []zoekt.RepositoryBranch
 		wantErr string
+		log.Logger
 	}{{
 		name: "error",
 		f: func(_ string) (string, error) {
@@ -330,7 +333,7 @@ func TestGetIndexOptions_getVersion(t *testing.T) {
 				}, nil
 			}
 
-			b := GetIndexOptions(&conf, getRepoIndexOptions, getSearchContextRevs, 1)
+			b := GetIndexOptions(&conf, getRepoIndexOptions, getSearchContextRevs, tc.Logger, 1)
 
 			var got zoektIndexOptions
 			if err := json.Unmarshal(b, &got); err != nil {
@@ -358,6 +361,7 @@ func TestGetIndexOptions_batch(t *testing.T) {
 	var (
 		repos []int32
 		want  []zoektIndexOptions
+		log   log.Logger
 	)
 	for repo := int32(1); repo < 100; repo++ {
 		repos = append(repos, repo)
@@ -385,7 +389,7 @@ func TestGetIndexOptions_batch(t *testing.T) {
 
 	getSearchContextRevs := func(int32) ([]string, error) { return nil, nil }
 
-	b := GetIndexOptions(&schema.SiteConfiguration{}, getRepoIndexOptions, getSearchContextRevs, repos...)
+	b := GetIndexOptions(&schema.SiteConfiguration{}, getRepoIndexOptions, getSearchContextRevs, log, repos...)
 	dec := json.NewDecoder(bytes.NewReader(b))
 	got := make([]zoektIndexOptions, len(repos))
 	for i := range repos {
