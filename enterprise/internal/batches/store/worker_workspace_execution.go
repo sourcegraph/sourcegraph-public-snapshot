@@ -255,7 +255,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 
 	executionResults, stepResults, err := extractCacheEntries(events)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to extract cache entries: %s")
+		return false, errors.Wrap(err, "failed to extract cache entries")
 	}
 
 	for _, entry := range stepResults {
