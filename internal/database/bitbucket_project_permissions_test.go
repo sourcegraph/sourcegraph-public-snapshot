@@ -60,17 +60,16 @@ func TestBitbucketProjectPermissionsEnqueue(t *testing.T) {
 	require.Error(t, err)
 
 	// Enqueue two jobs for the same project
-	_, err = db.BitbucketProjectPermissions().Enqueue(ctx, "project 5", 1, perms, false)
+	jobID1, err := db.BitbucketProjectPermissions().Enqueue(ctx, "project 5", 1, perms, false)
 	require.NoError(t, err)
 	jobID2, err := db.BitbucketProjectPermissions().Enqueue(ctx, "project 5", 1, perms, false)
 	require.NoError(t, err)
 
-	var count int
-	err = db.QueryRowContext(ctx, `SELECT COUNT(*) FROM explicit_permissions_bitbucket_projects_jobs WHERE project_key = 'project 5'`).Scan(&count)
+	err = db.QueryRowContext(ctx, `SELECT id FROM explicit_permissions_bitbucket_projects_jobs WHERE project_key = 'project 5' AND state = 'canceled'`).Scan(&jobID)
 	require.NoError(t, err)
-	require.Equal(t, 1, count)
+	require.Equal(t, jobID1, jobID)
 
-	err = db.QueryRowContext(ctx, `SELECT id FROM explicit_permissions_bitbucket_projects_jobs WHERE project_key = 'project 5'`).Scan(&jobID)
+	err = db.QueryRowContext(ctx, `SELECT id FROM explicit_permissions_bitbucket_projects_jobs WHERE project_key = 'project 5' AND state = 'queued'`).Scan(&jobID)
 	require.NoError(t, err)
 	require.Equal(t, jobID2, jobID)
 
@@ -80,7 +79,8 @@ func TestBitbucketProjectPermissionsEnqueue(t *testing.T) {
 	_, err = db.BitbucketProjectPermissions().Enqueue(ctx, "project 6", 2, perms, false)
 	require.NoError(t, err)
 
-	err = db.QueryRowContext(ctx, `SELECT COUNT(*) FROM explicit_permissions_bitbucket_projects_jobs WHERE project_key = 'project 6'`).Scan(&count)
+	var count int
+	err = db.QueryRowContext(ctx, `SELECT COUNT(*) FROM explicit_permissions_bitbucket_projects_jobs WHERE project_key = 'project 6' AND state = 'queued'`).Scan(&count)
 	require.NoError(t, err)
 	require.Equal(t, 2, count)
 
@@ -90,12 +90,12 @@ func TestBitbucketProjectPermissionsEnqueue(t *testing.T) {
 	_, err = db.Handle().DB().ExecContext(ctx, `UPDATE explicit_permissions_bitbucket_projects_jobs SET state = 'failed' WHERE id = $1`, jobID)
 	require.NoError(t, err)
 
-	_, err = db.BitbucketProjectPermissions().Enqueue(ctx, "project 7", 1, perms, false)
+	jobID2, err = db.BitbucketProjectPermissions().Enqueue(ctx, "project 7", 1, perms, false)
 	require.NoError(t, err)
 
-	err = db.QueryRowContext(ctx, `SELECT COUNT(*) FROM explicit_permissions_bitbucket_projects_jobs WHERE project_key = 'project 7'`).Scan(&count)
+	err = db.QueryRowContext(ctx, `SELECT id FROM explicit_permissions_bitbucket_projects_jobs WHERE project_key = 'project 7' AND state = 'queued'`).Scan(&jobID)
 	require.NoError(t, err)
-	require.Equal(t, 2, count)
+	require.Equal(t, jobID2, jobID)
 }
 
 func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {

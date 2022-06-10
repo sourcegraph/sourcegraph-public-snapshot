@@ -84,10 +84,12 @@ func (s *bitbucketProjectPermissionsStore) Enqueue(ctx context.Context, projectK
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// ensure we don't enqueue a job for the same project twice
+	// ensure we don't enqueue a job for the same project twice.
+	// if so, cancel the existing jobs and enqueue a new one.
+	// this doesn't apply to running jobs.
 	err = tx.Exec(ctx, sqlf.Sprintf(`--sql
 -- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.Enqueue
-DELETE FROM explicit_permissions_bitbucket_projects_jobs WHERE project_key = %s AND external_service_id = %s AND state = 'queued'
+UPDATE explicit_permissions_bitbucket_projects_jobs SET state = 'canceled' WHERE project_key = %s AND external_service_id = %s AND state = 'queued'
 `, projectKey, externalServiceID))
 	if err != nil && err != sql.ErrNoRows {
 		return 0, err
