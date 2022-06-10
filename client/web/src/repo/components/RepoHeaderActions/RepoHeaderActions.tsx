@@ -23,8 +23,9 @@ export const RepoHeaderActionButtonLink: React.FunctionComponent<
 
 export const RepoHeaderActionDropdownToggle: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({
     children,
+    ...rest
 }) => (
-    <Button as={MenuButton} className={classNames('btn-icon', styles.action)}>
+    <Button as={MenuButton} className={classNames('btn-icon', styles.action)} {...rest}>
         {children}
     </Button>
 )
