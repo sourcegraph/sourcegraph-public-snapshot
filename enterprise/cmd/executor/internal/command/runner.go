@@ -67,6 +67,11 @@ type ResourceOptions struct {
 
 	// DiskSpace is the maximum amount of disk a container or VM can use.
 	DiskSpace string
+
+	// MountPathPrefix is attached to the left-hand side of volume mounts for Docker containers.
+	// This option is used when running privilegled executors in k8s using docker-desktop.
+	// Because there's a mismatch between host and VM paths, we need to add a small shim here.
+	MountPathPrefix string
 }
 
 // NewRunner creates a new runner with the given options.
