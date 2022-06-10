@@ -187,6 +187,24 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 				}
 				return nil
 			})
+			perms.MapUsersFunc.SetDefaultHook(func(ctx context.Context, s []string, pum *schema.PermissionsUserMapping) (map[string]int32, error) {
+				if pum.BindID != test.config.BindID {
+					return nil, errors.Errorf("unexpected BindID: %q", pum.BindID)
+				}
+
+				m := make(map[string]int32)
+				if pum.BindID == "username" {
+					for _, u := range test.mockUsers {
+						m[u.Username] = u.ID
+					}
+				} else {
+					for _, u := range test.mockVerifiedEmails {
+						m[u.Email] = u.UserID
+					}
+				}
+
+				return m, nil
+			})
 
 			db := edb.NewStrictMockEnterpriseDB()
 			db.UsersFunc.SetDefaultReturn(users)
@@ -1203,6 +1221,16 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(usersStore)
 		db.SubRepoPermsFunc.SetDefaultReturn(subReposStore)
 		db.ReposFunc.SetDefaultReturn(reposStore)
+
+		perms := edb.NewStrictMockPermsStore()
+		perms.TransactFunc.SetDefaultReturn(perms, nil)
+		perms.DoneFunc.SetDefaultReturn(nil)
+		perms.MapUsersFunc.SetDefaultHook(func(ctx context.Context, s []string, pum *schema.PermissionsUserMapping) (map[string]int32, error) {
+			return map[string]int32{
+				"alice": 1,
+			}, nil
+		})
+		db.PermsFunc.SetDefaultReturn(perms)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 

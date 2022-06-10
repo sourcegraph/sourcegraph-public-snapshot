@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
@@ -181,6 +183,10 @@ type PermsStore interface {
 	// "staleDur" argument indicates how long ago was the last update to be
 	// considered as stale.
 	Metrics(ctx context.Context, staleDur time.Duration) (*PermsMetrics, error)
+	// MapUsers takes a list of bind ids and a mapping configuration and maps them to the right user ids.
+	// It filters out empty bindIDs and only returns users that exist in the database.
+	// If a bind id doesn't map to any user, it is ignored.
+	MapUsers(ctx context.Context, bindIDs []string, mapping *schema.PermissionsUserMapping) (map[string]int32, error)
 }
 
 // It is concurrency-safe and maintains data consistency over the 'user_permissions',
@@ -1760,6 +1766,60 @@ func (s *permsStore) observe(ctx context.Context, family, title string) (context
 
 		tr.Finish()
 	}
+}
+
+// MapUsers takes a list of bind ids and a mapping configuration and maps them to the right user ids.
+// It filters out empty bindIDs and only returns users that exist in the database.
+// If a bind id doesn't map to any user, it is ignored.
+func (s *permsStore) MapUsers(ctx context.Context, bindIDs []string, mapping *schema.PermissionsUserMapping) (map[string]int32, error) {
+	// Filter out bind IDs that only contains whitespaces.
+	filtered := make([]string, 0, len(bindIDs))
+	for _, bindID := range bindIDs {
+		bindID := strings.TrimSpace(bindID)
+		if bindID == "" {
+			continue
+		}
+		filtered = append(bindIDs, bindID)
+	}
+
+	var userIDs map[string]int32
+
+	switch mapping.BindID {
+	case "email":
+		emails, err := database.UserEmailsWith(s).GetVerifiedEmails(ctx, filtered...)
+		if err != nil {
+			return nil, err
+		}
+
+		userIDs = make(map[string]int32, len(emails))
+		for i := range emails {
+			for _, bindID := range filtered {
+				if emails[i].Email == bindID {
+					userIDs[bindID] = emails[i].UserID
+					break
+				}
+			}
+		}
+	case "username":
+		users, err := database.UsersWith(s).GetByUsernames(ctx, filtered...)
+		if err != nil {
+			return nil, err
+		}
+
+		userIDs = make(map[string]int32, len(users))
+		for i := range users {
+			for _, bindID := range filtered {
+				if users[i].Username == bindID {
+					userIDs[bindID] = users[i].ID
+					break
+				}
+			}
+		}
+	default:
+		return nil, errors.Errorf("unrecognized user mapping bind ID type %q", mapping.BindID)
+	}
+
+	return userIDs, nil
 }
 
 // computeDiff determines which ids were added or removed when comparing the old

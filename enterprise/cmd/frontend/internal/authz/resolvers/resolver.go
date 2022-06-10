@@ -83,57 +83,32 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		return nil, err
 	}
 
-	// Filter out bind IDs that only contains whitespaces.
 	bindIDs := make([]string, 0, len(args.UserPermissions))
-	for _, perms := range args.UserPermissions {
-		bindID := strings.TrimSpace(perms.BindID)
-		if bindID == "" {
-			continue
-		}
-		bindIDs = append(bindIDs, bindID)
+	for _, up := range args.UserPermissions {
+		bindIDs = append(bindIDs, up.BindID)
 	}
 
-	bindIDSet := make(map[string]struct{})
-	for i := range bindIDs {
-		bindIDSet[bindIDs[i]] = struct{}{}
+	mapping, err := r.db.Perms().MapUsers(ctx, bindIDs, globals.PermissionsUserMapping())
+	if err != nil {
+		return nil, err
+	}
+
+	pendingBindIDs := make([]string, 0, len(bindIDs))
+	for _, bindID := range bindIDs {
+		if _, ok := mapping[bindID]; !ok {
+			pendingBindIDs = append(pendingBindIDs, bindID)
+		}
+	}
+
+	userIDs := make(map[int32]struct{}, len(mapping))
+	for _, id := range mapping {
+		userIDs[id] = struct{}{}
 	}
 
 	p := &authz.RepoPermissions{
 		RepoID:  int32(repoID),
 		Perm:    authz.Read, // Note: We currently only support read for repository permissions.
-		UserIDs: map[int32]struct{}{},
-	}
-	cfg := globals.PermissionsUserMapping()
-	switch cfg.BindID {
-	case "email":
-		emails, err := r.db.UserEmails().GetVerifiedEmails(ctx, bindIDs...)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := range emails {
-			p.UserIDs[emails[i].UserID] = struct{}{}
-			delete(bindIDSet, emails[i].Email)
-		}
-
-	case "username":
-		users, err := r.db.Users().GetByUsernames(ctx, bindIDs...)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := range users {
-			p.UserIDs[users[i].ID] = struct{}{}
-			delete(bindIDSet, users[i].Username)
-		}
-
-	default:
-		return nil, errors.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
-	}
-
-	pendingBindIDs := make([]string, 0, len(bindIDSet))
-	for id := range bindIDSet {
-		pendingBindIDs = append(pendingBindIDs, id)
+		UserIDs: userIDs,
 	}
 
 	txs, err := r.db.Perms().Transact(ctx)
@@ -267,26 +242,20 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 		return nil, err
 	}
 
-	cfg := globals.PermissionsUserMapping()
+	bindIDs := make([]string, 0, len(args.UserPermissions))
+	for _, up := range args.UserPermissions {
+		bindIDs = append(bindIDs, up.BindID)
+	}
+
+	mapping, err := r.db.Perms().MapUsers(ctx, bindIDs, globals.PermissionsUserMapping())
+	if err != nil {
+		return nil, err
+	}
+
 	for _, perm := range args.UserPermissions {
-		var userID int32
-		switch cfg.BindID {
-		case "email":
-			user, err := db.Users().GetByVerifiedEmail(ctx, perm.BindID)
-			if err != nil {
-				return nil, errors.Wrap(err, "getting user by email")
-			}
-			userID = user.ID
-
-		case "username":
-			user, err := db.Users().GetByUsername(ctx, perm.BindID)
-			if err != nil {
-				return nil, errors.Wrap(err, "getting user by username")
-			}
-			userID = user.ID
-
-		default:
-			return nil, errors.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
+		userID, ok := mapping[perm.BindID]
+		if !ok {
+			return nil, errors.Errorf("user %q not found", perm.BindID)
 		}
 
 		if err := db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
