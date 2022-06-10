@@ -567,11 +567,11 @@ retryLoop:
 
 const defaultTestTableName = "test_migrations_table"
 
-func testStore(db dbutil.DB) *Store {
+func testStore(db *sql.DB) *Store {
 	return testStoreWithName(db, defaultTestTableName)
 }
 
-func testStoreWithName(db dbutil.DB, name string) *Store {
+func testStoreWithName(db *sql.DB, name string) *Store {
 	return NewWithDB(db, name, NewOperations(&observation.TestContext))
 }
 

@@ -2,10 +2,12 @@ package locker
 
 import (
 	"context"
+	"database/sql"
 	"math/rand"
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -14,7 +16,8 @@ func TestLock(t *testing.T) {
 		t.Skip()
 	}
 	db := dbtest.NewDB(t)
-	locker := NewWithDB(db, "test")
+	handle := basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{}))
+	locker := NewWith(handle, "test")
 
 	key := rand.Int31n(1000)
 
@@ -56,7 +59,8 @@ func TestLockBlockingAcquire(t *testing.T) {
 		t.Skip()
 	}
 	db := dbtest.NewDB(t)
-	locker := NewWithDB(db, "test")
+	handle := basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{}))
+	locker := NewWith(handle, "test")
 
 	key := rand.Int31n(1000)
 
@@ -112,7 +116,8 @@ func TestLockBadTransactionState(t *testing.T) {
 		t.Skip()
 	}
 	db := dbtest.NewDB(t)
-	locker := NewWithDB(db, "test")
+	handle := basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{}))
+	locker := NewWith(handle, "test")
 
 	key := rand.Int31n(1000)
 

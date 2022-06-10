@@ -106,7 +106,7 @@ var tlsExternal = conf.Cached(func() any {
 	exp := conf.ExperimentalFeatures()
 	c := exp.TlsExternal
 
-	logger := log.Scoped("tls-external", "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.")
+	logger := log.Scoped("tlsExternal", "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.")
 
 	if c == nil {
 		return &tlsConfig{}
@@ -154,7 +154,7 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		Bytes() []byte
 	}
 
-	logger := log.Scoped("runWith", "runWithRemoteOpts runs the command after applying the remote options.")
+	logger := log.Scoped("runWith", "runWithRemoteOpts runs the command after applying the remote options")
 
 	if progress != nil {
 		var pw progressWriter
@@ -399,10 +399,11 @@ var logUnflushableResponseWriterOnce sync.Once
 func newFlushingResponseWriter(w http.ResponseWriter) *flushingResponseWriter {
 	// We panic if we don't implement the needed interfaces.
 	flusher := hackilyGetHTTPFlusher(w)
-	logger := log.Scoped("newFlushingResponseWriter", "creates a new flushing response writer")
+	logger := log.Scoped("flushingResponseWriter", "")
 	if flusher == nil {
 		logUnflushableResponseWriterOnce.Do(func() {
-			logger.Warn("Unable to flush HTTP response bodies. Diff search performance and completeness will be affected.", log.String("type", reflect.TypeOf(w).String()))
+			logger.Warn("unable to flush HTTP response bodies - Diff search performance and completeness will be affected",
+				log.String("type", reflect.TypeOf(w).String()))
 		})
 		return nil
 	}
@@ -570,7 +571,7 @@ func isPaused(dir string) (string, bool) {
 // disappears between readdir and the stat of the file. In either case this
 // error can be ignored for best effort code.
 func bestEffortWalk(root string, walkFn func(path string, info fs.FileInfo) error) error {
-	logger := log.Scoped("bestEffortWalk", "bestEffortWalk is a filepath.Walk which ignores errors that can be passed to walkFn.")
+	logger := log.Scoped("bestEffortWalk", "bestEffortWalk is a filepath.Walk which ignores errors that can be passed to walkFn")
 	return filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return nil

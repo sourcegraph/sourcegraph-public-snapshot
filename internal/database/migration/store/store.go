@@ -9,7 +9,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
@@ -23,9 +22,9 @@ type Store struct {
 	operations *Operations
 }
 
-func NewWithDB(db dbutil.DB, migrationsTable string, operations *Operations) *Store {
+func NewWithDB(db *sql.DB, migrationsTable string, operations *Operations) *Store {
 	return &Store{
-		Store:      basestore.NewWithDB(db, sql.TxOptions{}),
+		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
 		schemaName: migrationsTable,
 		operations: operations,
 	}

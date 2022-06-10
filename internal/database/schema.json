@@ -2010,6 +2010,16 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
+          "Name": "batch_spec_workspace_execution_jobs_batch_spec_workspace_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX batch_spec_workspace_execution_jobs_batch_spec_workspace_id ON batch_spec_workspace_execution_jobs USING btree (batch_spec_workspace_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "batch_spec_workspace_execution_jobs_cancel",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -2281,6 +2291,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX batch_spec_workspaces_pkey ON batch_spec_workspaces USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "batch_spec_workspaces_batch_spec_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX batch_spec_workspaces_batch_spec_id ON batch_spec_workspaces USING btree (batch_spec_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -3204,6 +3224,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX changeset_specs_pkey ON changeset_specs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "changeset_specs_batch_spec_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX changeset_specs_batch_spec_id ON changeset_specs USING btree (batch_spec_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         },
         {
           "Name": "changeset_specs_external_id",

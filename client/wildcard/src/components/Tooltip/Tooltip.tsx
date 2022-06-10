@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react'
 
 import * as TooltipPrimitive from '@radix-ui/react-tooltip'
 import classNames from 'classnames'
+import { isEmpty } from 'lodash'
 
 import styles from './Tooltip.module.scss'
 
@@ -69,7 +70,7 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = ({
 
                 {
                     // The rest of the Tooltip components still need to be rendered for the content to correctly be shown conditionally.
-                    content === null ? null : (
+                    isEmpty(content) ? null : (
                         /*
                          * Rendering the Content within the Trigger is a workaround to support being able to hover over the Tooltip content itself.
                          * Refrence: https://github.com/radix-ui/primitives/issues/620#issuecomment-1079147761

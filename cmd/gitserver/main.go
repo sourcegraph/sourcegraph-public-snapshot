@@ -363,6 +363,8 @@ func editGitHubAppExternalServiceConfigToken(
 	installationID int64,
 	cli httpcli.Doer,
 ) (string, error) {
+	logger := log.Scoped("editGitHubAppExternalServiceConfigToken", "updates the 'token' field of the given external service")
+
 	baseURL, err := url.Parse(gjson.Get(svc.Config, "url").String())
 	if err != nil {
 		return "", errors.Wrap(err, "parse base URL")
@@ -383,7 +385,7 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", errors.Wrap(err, "new authenticator with GitHub App")
 	}
 
-	client := github.NewV3Client(log.Scoped("github.v3", "github v3 client"), svc.URN(), apiURL, auther, cli)
+	client := github.NewV3Client(logger, svc.URN(), apiURL, auther, cli)
 
 	token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, externalServiceStore, svc, client, installationID)
 	if err != nil {
@@ -500,7 +502,7 @@ func syncSiteLevelExternalServiceRateLimiters(ctx context.Context, store databas
 func syncRateLimiters(ctx context.Context, store database.ExternalServiceStore, perSecond int) {
 	backoff := 5 * time.Second
 	batchSize := 50
-	logger := log.Scoped("sync rate limiter", "Sync rate limiters from config.")
+	logger := log.Scoped("syncRateLimiters", "sync rate limiters from config")
 
 	// perSecond should be spread across all gitserver instances and we want to wait
 	// until we know about at least one instance.
