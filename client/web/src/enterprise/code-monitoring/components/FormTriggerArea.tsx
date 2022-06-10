@@ -285,7 +285,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                 <li>
                                     <ValidQueryChecklistItem
                                         checked={hasRepoFilter}
-                                        hint="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
+                                        hint="The repo: filter is required to narrow down your search."
                                         dataTestid="repo-checkbox"
                                     >
                                         Contains a <Code>repo:</Code> filter
