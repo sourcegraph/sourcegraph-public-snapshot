@@ -71,8 +71,6 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
             editorComponent = editor.getComponent();
             add(editorComponent, BorderLayout.CENTER);
 
-            addHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
-
             revalidate();
             repaint();
 
