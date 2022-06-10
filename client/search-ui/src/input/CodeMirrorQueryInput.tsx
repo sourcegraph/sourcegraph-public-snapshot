@@ -85,7 +85,6 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     // but added for future compatibility)
     fetchStreamSuggestions = defaultFetchStreamSuggestions,
     onCompletionItemSelected,
-    onSuggestionsInitialized,
     // Not supported:
     // editorClassName: This only seems to be used by MonacoField to position
     // placeholder text properly. CodeMirror has built-in support for
@@ -105,9 +104,13 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         (editor: EditorView) => {
             setEditor(editor)
             editorReference.current = editor
-            onEditorCreated?.(editor)
-            onSuggestionsInitialized?.({
-                trigger: () => startCompletion(editor),
+            onEditorCreated?.({
+                focus() {
+                    editor.focus()
+                },
+                showSuggestions() {
+                    startCompletion(editor)
+                },
             })
         },
         [editorReference, onEditorCreated]

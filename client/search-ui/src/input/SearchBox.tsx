@@ -36,7 +36,6 @@ export interface SearchBoxProps
     onFocus?: () => void
     fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
     onCompletionItemSelected?: () => void
-    onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
     className?: string
