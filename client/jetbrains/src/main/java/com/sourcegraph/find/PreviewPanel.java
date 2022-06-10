@@ -121,7 +121,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         }
     }
 
-    private void addAndScrollToHighlights(Editor editor, @NotNull int[][] absoluteOffsetAndLengths) {
+    private void addAndScrollToHighlights(Editor editor, int[][] absoluteOffsetAndLengths) {
         int firstOffset = -1;
         HighlightManager highlightManager = HighlightManager.getInstance(project);
         for (int[] offsetAndLength : absoluteOffsetAndLengths) {
