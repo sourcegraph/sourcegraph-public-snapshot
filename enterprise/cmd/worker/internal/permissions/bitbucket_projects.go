@@ -269,16 +269,22 @@ func setRepoPermissions(ctx context.Context, db edb.EnterpriseDB, repoID api.Rep
 		AccountIDs:  pendingBindIDs,
 	}
 
+	// make sure the repo is not unrestricted
+	err = txs.SetRepoPermissionsUnrestricted(ctx, []int32{int32(repoID)}, false)
+	if err != nil {
+		return errors.Wrapf(err, "failed to set repo %d to restricted", repoID)
+	}
+
 	// set repo permissions (and user permissions)
 	err = txs.SetRepoPermissions(ctx, &p)
 	if err != nil {
-		return errors.Wrap(err, "failed to set repository permissions")
+		return errors.Wrapf(err, "failed to set repo permissions for repo %d", repoID)
 	}
 
 	// set pending permissions
 	err = txs.SetRepoPendingPermissions(ctx, accounts, &p)
 	if err != nil {
-		return errors.Wrap(err, "set repository pending permissions")
+		return errors.Wrapf(err, "failed to set pending permissions for repo %d", repoID)
 	}
 
 	return nil
