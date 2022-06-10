@@ -8,14 +8,13 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type IndexConnectionResolver struct {
 	db               database.DB
-	gitserver        policies.GitserverClient
+	gitserver        GitserverClient
 	resolver         resolvers.Resolver
 	indexesResolver  *resolvers.IndexesResolver
 	prefetcher       *Prefetcher
@@ -23,9 +22,10 @@ type IndexConnectionResolver struct {
 	errTracer        *observation.ErrCollector
 }
 
-func NewIndexConnectionResolver(db database.DB, gitserver policies.GitserverClient, resolver resolvers.Resolver, indexesResolver *resolvers.IndexesResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.LSIFIndexConnectionResolver {
+func NewIndexConnectionResolver(db database.DB, gitserver GitserverClient, resolver resolvers.Resolver, indexesResolver *resolvers.IndexesResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.LSIFIndexConnectionResolver {
 	return &IndexConnectionResolver{
 		db:               db,
+		gitserver:        gitserver,
 		resolver:         resolver,
 		indexesResolver:  indexesResolver,
 		prefetcher:       prefetcher,

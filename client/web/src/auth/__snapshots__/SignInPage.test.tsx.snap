@@ -53,25 +53,32 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
           <form
             class=""
           >
-            <div
-              class="form-group d-flex flex-column align-content-start"
+            <label
+              class="label w-100 form-group"
             >
-              <label
-                class="label align-self-start"
-                for="username-or-email"
+              <div
+                class="mb-2"
               >
-                Username or email
-              </label>
-              <input
-                autocapitalize="off"
-                autocomplete="username"
-                class="form-control"
-                id="username-or-email"
-                required=""
-                type="text"
-                value=""
-              />
-            </div>
+                <p
+                  class="alignLeft"
+                >
+                  Username or email
+                </p>
+              </div>
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  autocapitalize="off"
+                  autocomplete="username"
+                  class="form-control with-invalid-icon"
+                  id="username-or-email"
+                  required=""
+                  type="text"
+                  value=""
+                />
+              </div>
+            </label>
             <div
               class="form-group d-flex flex-column align-content-start position-relative"
             >
@@ -81,16 +88,20 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
               >
                 Password
               </label>
-              <input
-                autocomplete="current-password"
-                class="form-control"
-                id="password"
-                name="password"
-                placeholder=" "
-                required=""
-                type="password"
-                value=""
-              />
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  autocomplete="current-password"
+                  class="form-control with-invalid-icon"
+                  id="password"
+                  name="password"
+                  placeholder=" "
+                  required=""
+                  type="password"
+                  value=""
+                />
+              </div>
               <small
                 class="form-text text-muted align-self-end position-absolute"
               >
@@ -139,6 +150,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
                 class="mdi-icon iconInline"
                 fill="currentColor"
                 height="24"
+                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >
@@ -150,7 +162,9 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
             </a>
           </div>
         </div>
-        <p>
+        <p
+          class=""
+        >
           New to Sourcegraph? 
           <a
             class="anchorLink"
@@ -211,25 +225,32 @@ exports[`SignInPage renders sign in page (server) 1`] = `
           <form
             class=""
           >
-            <div
-              class="form-group d-flex flex-column align-content-start"
+            <label
+              class="label w-100 form-group"
             >
-              <label
-                class="label align-self-start"
-                for="username-or-email"
+              <div
+                class="mb-2"
               >
-                Username or email
-              </label>
-              <input
-                autocapitalize="off"
-                autocomplete="username"
-                class="form-control"
-                id="username-or-email"
-                required=""
-                type="text"
-                value=""
-              />
-            </div>
+                <p
+                  class="alignLeft"
+                >
+                  Username or email
+                </p>
+              </div>
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  autocapitalize="off"
+                  autocomplete="username"
+                  class="form-control with-invalid-icon"
+                  id="username-or-email"
+                  required=""
+                  type="text"
+                  value=""
+                />
+              </div>
+            </label>
             <div
               class="form-group d-flex flex-column align-content-start position-relative"
             >
@@ -239,16 +260,20 @@ exports[`SignInPage renders sign in page (server) 1`] = `
               >
                 Password
               </label>
-              <input
-                autocomplete="current-password"
-                class="form-control"
-                id="password"
-                name="password"
-                placeholder=" "
-                required=""
-                type="password"
-                value=""
-              />
+              <div
+                class="container loader-input loaderInput"
+              >
+                <input
+                  autocomplete="current-password"
+                  class="form-control with-invalid-icon"
+                  id="password"
+                  name="password"
+                  placeholder=" "
+                  required=""
+                  type="password"
+                  value=""
+                />
+              </div>
               <small
                 class="form-text text-muted align-self-end position-absolute"
               >
@@ -297,6 +322,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
                 class="mdi-icon iconInline"
                 fill="currentColor"
                 height="24"
+                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >
@@ -308,7 +334,9 @@ exports[`SignInPage renders sign in page (server) 1`] = `
             </a>
           </div>
         </div>
-        <p>
+        <p
+          class=""
+        >
           New to Sourcegraph? 
           <a
             class="anchorLink"

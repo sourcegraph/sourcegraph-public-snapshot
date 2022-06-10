@@ -11,7 +11,7 @@ import { panels } from '@sourcegraph/branded/src/components/panel/TabbedPanelCon
 import { EmptyPanelView } from '@sourcegraph/branded/src/components/panel/views/EmptyPanelView'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Typography } from '../..'
+import { H1, H2 } from '../..'
 import { Button } from '../../Button'
 import { Grid } from '../../Grid'
 import { Icon } from '../../Icon'
@@ -78,8 +78,8 @@ export const Simple: Story = () => {
             <Grid columnCount={4}>
                 <div />
                 <div>
-                    <Typography.H1>Panel</Typography.H1>
-                    <Typography.H2>Positions</Typography.H2>
+                    <H1>Panel</H1>
+                    <H2>Positions</H2>
                     <div className="mb-2">
                         <Button variant="secondary" onClick={() => showPanelWithPosition('left')}>
                             Show left panel
@@ -146,7 +146,7 @@ export const WithChildren: Story = props => {
                             data-placement="left"
                             variant="icon"
                         >
-                            <Icon role="img" aria-hidden={true} as={CloseIcon} />
+                            <Icon aria-hidden={true} as={CloseIcon} />
                         </Button>
                     </div>
                 </div>

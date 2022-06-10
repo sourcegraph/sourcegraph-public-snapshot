@@ -4,4 +4,8 @@ export { ParentSize } from '@visx/responsive'
 export * from './components/line-chart'
 export * from './components/pie-chart'
 
+// Low-level chart related (core) components
+export * from './components/scroll-box'
+
+// Types
 export * from './types'

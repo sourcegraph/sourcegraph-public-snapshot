@@ -8,7 +8,7 @@ import { Observable, merge, of } from 'rxjs'
 import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { Button, Icon, TooltipController, useEventObservable } from '@sourcegraph/wildcard'
+import { Button, Icon, DeprecatedTooltipController, useEventObservable, Tooltip } from '@sourcegraph/wildcard'
 
 interface Props {
     fullQuery: string
@@ -36,7 +36,7 @@ export const CopyQueryButton: React.FunctionComponent<React.PropsWithChildren<Pr
                 clicks.pipe(
                     tap(copyFullQuery),
                     switchMapTo(merge(of(true), of(false).pipe(delay(2000)))),
-                    tap(() => TooltipController.forceUpdate()),
+                    tap(() => DeprecatedTooltipController.forceUpdate()),
                     startWith(false)
                 ),
             [copyFullQuery]
@@ -45,21 +45,20 @@ export const CopyQueryButton: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const copyFullQueryTooltip = `Copy full query\n${props.isMacPlatform ? '⌘' : 'Ctrl'}+⇧+C`
     return (
-        <>
+        <Tooltip content={copied ? 'Copied!' : copyFullQueryTooltip}>
             <Button
                 className={classNames('btn-icon', props.className)}
                 variant="icon"
                 size="sm"
-                data-tooltip={copied ? 'Copied!' : copyFullQueryTooltip}
                 aria-label={copied ? 'Copied!' : copyFullQueryTooltip}
                 aria-live="polite"
                 onClick={nextClick}
             >
-                <Icon role="img" aria-hidden={true} as={ClipboardOutlineIcon} />
+                <Icon aria-hidden={true} as={ClipboardOutlineIcon} />
             </Button>
             {props.keyboardShortcutForFullCopy.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={copyFullQuery} allowDefault={false} ignoreInput={true} />
             ))}
-        </>
+        </Tooltip>
     )
 }

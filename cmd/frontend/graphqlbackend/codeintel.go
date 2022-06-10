@@ -90,6 +90,7 @@ type LSIFUploadRetentionPolicyMatchesArgs struct {
 type LSIFUploadResolver interface {
 	ID() graphql.ID
 	InputCommit() string
+	Tags(ctx context.Context) ([]string, error)
 	InputRoot() string
 	IsLatestForRepo() bool
 	UploadedAt() DateTime
@@ -104,6 +105,7 @@ type LSIFUploadResolver interface {
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 	RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
 	DocumentPaths(ctx context.Context, args *LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error)
+	AuditLogs(ctx context.Context) (*[]LSIFUploadsAuditLogsResolver, error)
 }
 
 type LSIFUploadConnectionResolver interface {
@@ -121,6 +123,26 @@ type LSIFUploadDocumentPathsConnectionResolver interface {
 	TotalCount(ctx context.Context) (*int32, error)
 }
 
+type LSIFUploadsAuditLogsResolver interface {
+	LogTimestamp() DateTime
+	UploadDeletedAt() *DateTime
+	Reason() *string
+	ChangedColumns() []AuditLogColumnChange
+	UploadID() graphql.ID
+	InputCommit() string
+	InputRoot() string
+	InputIndexer() string
+	UploadedAt() DateTime
+	Operation() string
+	// AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
+}
+
+type AuditLogColumnChange interface {
+	Column() string
+	Old() *string
+	New() *string
+}
+
 type LSIFIndexesQueryArgs struct {
 	graphqlutil.ConnectionArgs
 	Query *string
@@ -136,6 +158,7 @@ type LSIFRepositoryIndexesQueryArgs struct {
 type LSIFIndexResolver interface {
 	ID() graphql.ID
 	InputCommit() string
+	Tags(ctx context.Context) ([]string, error)
 	InputRoot() string
 	InputIndexer() string
 	Indexer() CodeIntelIndexerResolver

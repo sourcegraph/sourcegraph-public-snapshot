@@ -13,6 +13,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
@@ -38,7 +40,7 @@ import (
 func TestNullIDResilience(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	sr := New(store.New(db, &observation.TestContext, nil))
 
 	s, err := newSchema(database.NewDB(db), sr)
@@ -1923,6 +1925,170 @@ func TestPublishChangesets(t *testing.T) {
 const mutationPublishChangesets = `
 mutation($batchChange: ID!, $changesets: [ID!]!, $draft: Boolean!) {
 	publishChangesets(batchChange: $batchChange, changesets: $changesets, draft: $draft) { id }
+}
+`
+
+func TestCheckBatchChangesCredential(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ct.MockRSAKeygen(t)
+
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+
+	pruneUserCredentials(t, db, nil)
+
+	userID := ct.CreateTestUser(t, db, true).ID
+
+	cstore := store.New(db, &observation.TestContext, nil)
+
+	authenticator := &auth.OAuthBearerToken{Token: "SOSECRET"}
+	userCred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+		Domain:              database.UserCredentialDomainBatches,
+		ExternalServiceType: extsvc.TypeGitHub,
+		ExternalServiceID:   "https://github.com/",
+		UserID:              userID,
+	}, authenticator)
+	if err != nil {
+		t.Fatal(err)
+	}
+	siteCred := &btypes.SiteCredential{
+		ExternalServiceType: extsvc.TypeGitHub,
+		ExternalServiceID:   "https://github.com/",
+	}
+	if err := cstore.CreateSiteCredential(ctx, siteCred, authenticator); err != nil {
+		t.Fatal(err)
+	}
+
+	r := &Resolver{store: cstore}
+	s, err := newSchema(database.NewDB(db), r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mockValidateAuthenticator := func(t *testing.T, err error) {
+		service.Mocks.ValidateAuthenticator = func(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
+			return err
+		}
+		t.Cleanup(func() {
+			service.Mocks.Reset()
+		})
+	}
+
+	t.Run("valid site credential", func(t *testing.T) {
+		mockValidateAuthenticator(t, nil)
+
+		input := map[string]any{
+			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, true),
+		}
+
+		var response struct{ CheckBatchChangesCredential apitest.EmptyResponse }
+		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+		apitest.MustExec(actorCtx, t, s, input, &response, queryCheckCredential)
+	})
+
+	t.Run("valid user credential", func(t *testing.T) {
+		mockValidateAuthenticator(t, nil)
+
+		input := map[string]any{
+			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, false),
+		}
+
+		var response struct{ CheckBatchChangesCredential apitest.EmptyResponse }
+		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+		apitest.MustExec(actorCtx, t, s, input, &response, queryCheckCredential)
+	})
+
+	t.Run("invalid credential", func(t *testing.T) {
+		mockValidateAuthenticator(t, errors.New("credential is not authorized"))
+
+		input := map[string]any{
+			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, true),
+		}
+
+		var response struct{ CheckBatchChangesCredential apitest.EmptyResponse }
+		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+		errs := apitest.Exec(actorCtx, t, s, input, &response, queryCheckCredential)
+
+		assert.Len(t, errs, 1)
+		assert.Equal(t, errs[0].Extensions["code"], "ErrVerifyCredentialFailed")
+	})
+}
+
+const queryCheckCredential = `
+query($batchChangesCredential: ID!) {
+  checkBatchChangesCredential(batchChangesCredential: $batchChangesCredential) { alwaysNil }
+}
+`
+
+func TestListBatchSpecs(t *testing.T) {
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+
+	user := ct.CreateTestUser(t, db, true)
+	userID := user.ID
+
+	cstore := store.New(db, &observation.TestContext, nil)
+
+	batchSpecs := make([]*btypes.BatchSpec, 0, 10)
+
+	for i := 0; i < cap(batchSpecs); i++ {
+		batchSpec := &btypes.BatchSpec{
+			RawSpec:         ct.TestRawBatchSpec,
+			UserID:          userID,
+			NamespaceUserID: userID,
+		}
+
+		if i%2 == 0 {
+			// 5 batch specs will have `createdFromRaw` set to `true` while the remaining 5
+			// will be set to `false`.
+			batchSpec.CreatedFromRaw = true
+		}
+
+		if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
+			t.Fatal(err)
+		}
+
+		batchSpecs = append(batchSpecs, batchSpec)
+	}
+
+	r := &Resolver{store: cstore}
+	s, err := newSchema(database.NewDB(db), r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("include locally executed batch specs", func(t *testing.T) {
+		input := map[string]any{
+			"includeLocallyExecutedSpecs": true,
+		}
+		var response struct{ BatchSpecs apitest.BatchSpecConnection }
+		apitest.MustExec(ctx, t, s, input, &response, queryListBatchSpecs)
+
+		// All batch specs should be returned here.
+		assert.Len(t, response.BatchSpecs.Nodes, len(batchSpecs))
+	})
+
+	t.Run("exclude locally executed batch specs", func(t *testing.T) {
+		input := map[string]any{
+			"includeLocallyExecutedSpecs": false,
+		}
+		var response struct{ BatchSpecs apitest.BatchSpecConnection }
+		apitest.MustExec(ctx, t, s, input, &response, queryListBatchSpecs)
+
+		// Only 5 batch specs are returned here because we excluded non-SSBC batch specs.
+		assert.Len(t, response.BatchSpecs.Nodes, 5)
+	})
+}
+
+const queryListBatchSpecs = `
+query($includeLocallyExecutedSpecs: Boolean!) {
+	batchSpecs(includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) { nodes { id } }
 }
 `
 

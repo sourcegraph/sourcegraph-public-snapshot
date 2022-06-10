@@ -26,10 +26,10 @@ var setupCommand = &cli.Command{
 	Name:     "setup",
 	Usage:    "Set up your local dev environment!",
 	Category: CategoryEnv,
-	Action:   execAdapter(setupExec),
+	Action:   setupExec,
 }
 
-func setupExec(ctx context.Context, args []string) error {
+func setupExec(ctx *cli.Context) error {
 	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
 		return NewEmptyExitErr(1)
@@ -40,7 +40,7 @@ func setupExec(ctx context.Context, args []string) error {
 		currentOS = overridesOS
 	}
 
-	ctx, err := usershell.Context(ctx)
+	shellCtx, err := usershell.Context(ctx.Context)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func setupExec(ctx context.Context, args []string) error {
 	// additiional actions.
 	interrupt.Register(func() {
 		std.Out.WriteAlertf("\n💡 You may need to restart your shell for the changes to work in this terminal.")
-		std.Out.WriteAlertf("   Close this terminal and open a new one or type the following command and press ENTER: %s", filepath.Base(usershell.ShellPath(ctx)))
+		std.Out.WriteAlertf("   Close this terminal and open a new one or type the following command and press ENTER: %s", filepath.Base(usershell.ShellPath(shellCtx)))
 	})
 
 	var categories []dependencyCategory
@@ -90,7 +90,7 @@ func setupExec(ctx context.Context, args []string) error {
 			}
 
 			pending := std.Out.Pending(output.Styledf(output.StylePending, "%d. %s - Determining status...", idx, category.name))
-			category.Update(ctx)
+			category.Update(shellCtx)
 			pending.Destroy()
 
 			if combined := category.CombinedState(); combined {
@@ -141,7 +141,7 @@ func setupExec(ctx context.Context, args []string) error {
 
 		std.Out.ClearScreen()
 
-		err = presentFailedCategoryWithOptions(ctx, idx, &selectedCategory)
+		err = presentFailedCategoryWithOptions(shellCtx, idx, &selectedCategory)
 		if err != nil {
 			if err == io.EOF {
 				return nil
@@ -259,6 +259,7 @@ func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
 		return nil
 	}
 	cmd := usershell.Cmd(ctx, cmdStr)
+	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {

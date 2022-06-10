@@ -27,7 +27,7 @@ var initDatabaseMemo = memo.NewMemoizedConstructor(func() (*sql.DB, error) {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
-	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.NewDB(db).SubRepoPerms())
 	if err != nil {
 		return nil, errors.Errorf("Failed to create sub-repo client: %v", err)
 	}

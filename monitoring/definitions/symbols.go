@@ -5,10 +5,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func Symbols() *monitoring.Container {
+func Symbols() *monitoring.Dashboard {
 	const containerName = "symbols"
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:        "symbols",
 		Title:       "Symbols",
 		Description: "Handles symbol searches for unindexed branches.",

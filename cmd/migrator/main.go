@@ -13,6 +13,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/log"
+
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -24,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -48,12 +49,12 @@ func main() {
 }
 
 func mainErr(ctx context.Context, args []string) error {
-	syncLogs := sglog.Init(sglog.Resource{
+	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	})
-	defer syncLogs()
+	defer liblog.Sync()
 
 	runnerFactory := newRunnerFactory()
 	outputFactory := func() *output.Output { return out }
@@ -100,7 +101,7 @@ func mainErr(ctx context.Context, args []string) error {
 
 func newRunnerFactory() func(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
 	observationContext := &observation.Context{
-		Logger:     sglog.Scoped("runner", ""),
+		Logger:     log.Scoped("runner", ""),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

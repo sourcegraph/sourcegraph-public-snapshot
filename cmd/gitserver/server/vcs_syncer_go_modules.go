@@ -11,6 +11,8 @@ import (
 	"golang.org/x/mod/module"
 	modzip "golang.org/x/mod/zip"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
@@ -30,6 +32,7 @@ func NewGoModulesSyncer(
 	}
 
 	return &vcsDependenciesSyncer{
+		logger:      log.Scoped("vcs syncer", "vcsDependenciesSyncer implements the VCSSyncer interface for dependency repos"),
 		typ:         "go_modules",
 		scheme:      dependencies.GoModulesScheme,
 		placeholder: placeholder,

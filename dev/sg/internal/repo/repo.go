@@ -1,11 +1,14 @@
 package repo
 
 import (
+	"context"
 	"strings"
 
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/run"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	sgrun "github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -17,6 +20,32 @@ type State struct {
 	Ref string
 	// MergeBase is the common ancestor between Ref and main.
 	MergeBase string
+
+	// mockDiff can be injected for testing with NewMockState()
+	mockDiff Diff
+}
+
+// GetState parses the git state of the root repository.
+func GetState(ctx context.Context) (*State, error) {
+	dirty, err := root.Run(run.Cmd(ctx, "git diff --name-only")).Lines()
+	if err != nil {
+		return nil, err
+	}
+	mergeBase, err := sgrun.TrimResult(sgrun.GitCmd("merge-base", "main", "HEAD"))
+	if err != nil {
+		return nil, err
+	}
+	ref, err := sgrun.TrimResult(sgrun.GitCmd("rev-parse", "HEAD"))
+	if err != nil {
+		return nil, err
+	}
+
+	return &State{Dirty: len(dirty) > 0, Ref: ref, MergeBase: mergeBase}, nil
+}
+
+// NewMockState returns a state that returns the given mocks.
+func NewMockState(mockDiff Diff) *State {
+	return &State{mockDiff: mockDiff}
 }
 
 type Diff map[string][]DiffHunk
@@ -44,6 +73,10 @@ type DiffHunk struct {
 
 // GetDiff retrieves a parsed diff from the workspace, filtered by the given path glob.
 func (s *State) GetDiff(glob string) (Diff, error) {
+	if s.mockDiff != nil {
+		return s.mockDiff, nil
+	}
+
 	// Compare with common ancestor by default
 	target := s.MergeBase
 	if !s.Dirty && s.Ref == s.MergeBase {
@@ -51,7 +84,7 @@ func (s *State) GetDiff(glob string) (Diff, error) {
 		target = "@^"
 	}
 
-	diffOutput, err := run.TrimResult(run.GitCmd("diff", target, "--", glob))
+	diffOutput, err := sgrun.TrimResult(sgrun.GitCmd("diff", target, "--", glob))
 	if err != nil {
 		return nil, err
 	}

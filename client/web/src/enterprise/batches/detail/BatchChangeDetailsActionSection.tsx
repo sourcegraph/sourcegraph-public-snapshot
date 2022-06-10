@@ -62,8 +62,8 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
                 outline={true}
                 variant="danger"
             >
-                {isErrorLike(isDeleting) && <Icon data-tooltip={isDeleting} as={InformationIcon} />}
-                <Icon as={DeleteIcon} /> Delete
+                {isErrorLike(isDeleting) && <Icon aria-hidden={true} data-tooltip={isDeleting} as={InformationIcon} />}
+                <Icon aria-hidden={true} as={DeleteIcon} /> Delete
             </Button>
         )
     }
@@ -71,7 +71,7 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
         <div className="d-flex">
             {showEditButton && (
                 <Button to={`${batchChangeURL}/edit`} className="mr-2" variant="secondary" as={Link}>
-                    <Icon as={PencilIcon} /> Edit
+                    <Icon aria-hidden={true} as={PencilIcon} /> Edit
                 </Button>
             )}
             <Button
@@ -82,7 +82,7 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
                 outline={true}
                 as={Link}
             >
-                <Icon as={DeleteIcon} /> Close
+                <Icon aria-hidden={true} as={DeleteIcon} /> Close
             </Button>
         </div>
     )

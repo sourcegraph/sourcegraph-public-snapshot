@@ -7,7 +7,7 @@ import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, ButtonGroup, TooltipController, Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, DeprecatedTooltipController, Link, Icon, Code } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { GitCommitFields } from '../../graphql-operations'
@@ -89,7 +89,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     }, [showCommitMessageBody])
 
     useEffect(() => {
-        TooltipController.forceUpdate()
+        DeprecatedTooltipController.forceUpdate()
     }, [flashCopiedToClipboardMessage])
 
     const copyToClipboard = useCallback((oid): void => {
@@ -123,7 +123,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                     size="sm"
                     aria-label={showCommitMessageBody ? 'Hide commit message body' : 'Show commit message body'}
                 >
-                    <Icon as={DotsHorizontalIcon} />
+                    <Icon as={DotsHorizontalIcon} aria-hidden={true} />
                 </Button>
             )}
             {compact && (
@@ -163,17 +163,18 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
         <div className={classNames('w-100', styles.shaAndParents)}>
             <div className="d-flex mb-1">
                 <span className={styles.shaAndParentsLabel}>Commit:</span>
-                <Typography.Code className={styles.shaAndParentsSha}>
+                <Code className={styles.shaAndParentsSha}>
                     {node.oid}{' '}
                     <Button
                         variant="icon"
                         className={styles.shaAndParentsCopy}
                         onClick={() => copyToClipboard(node.oid)}
                         data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
+                        aria-label="Copy full SHA"
                     >
-                        <Icon as={ContentCopyIcon} />
+                        <Icon as={ContentCopyIcon} aria-hidden={true} />
                     </Button>
-                </Typography.Code>
+                </Code>
             </div>
             <div className="align-items-center d-flex">
                 {node.parents.length > 0 ? (
@@ -187,15 +188,16 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                         {node.parents.map((parent, index) => (
                             <div className="d-flex" key={index}>
                                 <Link className={styles.shaAndParentsParent} to={parent.url}>
-                                    <Typography.Code>{parent.oid}</Typography.Code>
+                                    <Code>{parent.oid}</Code>
                                 </Link>
                                 <Button
                                     variant="icon"
                                     className={styles.shaAndParentsCopy}
                                     onClick={() => copyToClipboard(parent.oid)}
                                     data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
+                                    aria-label="Copy full SHA"
                                 >
-                                    <Icon as={ContentCopyIcon} />
+                                    <Icon as={ContentCopyIcon} aria-hidden={true} />
                                 </Button>
                             </div>
                         ))}
@@ -226,7 +228,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                 size="sm"
                 as={Link}
             >
-                <Icon className="mr-1" as={FileDocumentIcon} />
+                <Icon className="mr-1" as={FileDocumentIcon} aria-hidden={true} />
                 Browse files at @{node.abbreviatedOID}
             </Button>
             {diffModeSelector()}
@@ -234,9 +236,9 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     )
 
     const oidElement = (
-        <Typography.Code className={styles.oid} data-testid="git-commit-node-oid">
+        <Code className={styles.oid} data-testid="git-commit-node-oid">
             {node.abbreviatedOID}
-        </Typography.Code>
+        </Code>
     )
 
     if (sidebar) {
@@ -293,7 +295,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                                 size="sm"
                                                 aria-label="Copy full SHA"
                                             >
-                                                <Icon className="small" as={ContentCopyIcon} />
+                                                <Icon className="small" as={ContentCopyIcon} aria-hidden={true} />
                                             </Button>
                                         </ButtonGroup>
                                         {node.tree && (
@@ -305,7 +307,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                                 as={Link}
                                                 aria-label="View files at this commit"
                                             >
-                                                <Icon className="mr-1" as={FileDocumentIcon} />
+                                                <Icon className="mr-1" as={FileDocumentIcon} aria-hidden={true} />
                                             </Button>
                                         )}
                                     </div>

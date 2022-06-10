@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { CardBody, Card, Typography, Link } from '@sourcegraph/wildcard'
+import { CardBody, Card, H2, H4, Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
@@ -15,7 +15,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<React.PropsWith
     >
         <Card className={classNames(styles.batchChangesListIntroCard, 'h-100')}>
             <CardBody>
-                <Typography.H4 as={Typography.H2}>Batch Changes updates in version 3.40</Typography.H4>
+                <H4 as={H2}>Batch Changes updates in version 3.40</H4>
                 <ul className="mb-0 pl-3">
                     <li>
                         <Link

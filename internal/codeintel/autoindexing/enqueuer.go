@@ -6,6 +6,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	otlog "github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -20,12 +22,12 @@ type IndexEnqueuer = Service
 // InferIndexConfiguration looks at the repository contents at the lastest commit on the default branch of the given
 // repository and determines an index configuration that is likely to succeed.
 func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryID int, commit string) (_ *config.IndexConfiguration, hints []config.IndexJobHint, err error) {
-	// ctx, trace, endObservation := s.operations.InferIndexConfiguration.With(ctx, &err, observation.Args{
-	// 	LogFields: []log.Field{
-	// 		log.Int("repositoryID", repositoryID),
-	// 	},
-	// })
-	// defer endObservation(1, observation.Args{})
+	ctx, trace, endObservation := s.operations.inferIndexConfiguration.With(ctx, &err, observation.Args{
+		LogFields: []otlog.Field{
+			otlog.Int("repositoryID", repositoryID),
+		},
+	})
+	defer endObservation(1, observation.Args{})
 
 	if commit == "" {
 		var ok bool
@@ -43,7 +45,7 @@ func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryI
 			return nil, nil, errors.Newf("revision %s not found for %d", commit, repositoryID)
 		}
 	}
-	// trace.Log(log.String("commit", commit))
+	trace.Log(otlog.String("commit", commit))
 
 	indexJobs, err := s.inferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit)
 	if err != nil {
@@ -75,19 +77,19 @@ func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryI
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
 func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force bool) (_ []store.Index, err error) {
-	// ctx, trace, endObservation := s.operations.QueueIndex.With(ctx, &err, observation.Args{
-	// 	LogFields: []log.Field{
-	// 		log.Int("repositoryID", repositoryID),
-	// 	},
-	// })
-	// defer endObservation(1, observation.Args{})
+	ctx, trace, endObservation := s.operations.queueIndex.With(ctx, &err, observation.Args{
+		LogFields: []otlog.Field{
+			otlog.Int("repositoryID", repositoryID),
+		},
+	})
+	defer endObservation(1, observation.Args{})
 
 	commitID, err := s.gitserverClient.ResolveRevision(ctx, repositoryID, rev)
 	if err != nil {
 		return nil, errors.Wrap(err, "gitserver.ResolveRevision")
 	}
 	commit := string(commitID)
-	// trace.Log(log.String("commit", commit))
+	trace.Log(otlog.String("commit", commit))
 
 	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, configuration, force, nil) // trace)
 }
@@ -95,21 +97,21 @@ func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev,
 // QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
 // intelligence index.
 func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
-	// ctx, trace, endObservation := s.operations.QueueIndexForPackage.With(ctx, &err, observation.Args{
-	// 	LogFields: []log.Field{
-	// 		log.String("scheme", pkg.Scheme),
-	// 		log.String("name", pkg.Name),
-	// 		log.String("version", pkg.Version),
-	// 	},
-	// })
-	// defer endObservation(1, observation.Args{})
+	ctx, trace, endObservation := s.operations.queueIndexForPackage.With(ctx, &err, observation.Args{
+		LogFields: []otlog.Field{
+			otlog.String("scheme", pkg.Scheme),
+			otlog.String("name", pkg.Name),
+			otlog.String("version", pkg.Version),
+		},
+	})
+	defer endObservation(1, observation.Args{})
 
 	repoName, revision, ok := InferRepositoryAndRevision(pkg)
 	if !ok {
 		return nil
 	}
-	// trace.Log(log.String("repoName", string(repoName)))
-	// trace.Log(log.String("revision", revision))
+	trace.Log(otlog.String("repoName", string(repoName)))
+	trace.Log(otlog.String("revision", revision))
 
 	// if err := s.repoUpdaterLimiter.Wait(ctx); err != nil {
 	// 	return err

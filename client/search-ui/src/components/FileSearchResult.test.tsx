@@ -4,7 +4,6 @@ import FileIcon from 'mdi-react/FileIcon'
 import _VisibilitySensor from 'react-visibility-sensor'
 import sinon from 'sinon'
 
-import { MockVisibilitySensor } from '@sourcegraph/shared/src/components/CodeExcerpt.test'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -15,6 +14,7 @@ import {
     RESULT,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
+import { MockVisibilitySensor } from './CodeExcerpt.test'
 import { FileSearchResult, limitGroup } from './FileSearchResult'
 
 jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children, onChange }) => (
@@ -93,13 +93,11 @@ describe('limitGroup', () => {
                     line: 0,
                     character: 0,
                     highlightLength: 1,
-                    isInContext: false,
                 },
                 {
                     line: 2,
                     character: 0,
                     highlightLength: 1,
-                    isInContext: false,
                 },
             ],
             position: {
@@ -117,7 +115,6 @@ describe('limitGroup', () => {
                     line: 0,
                     character: 0,
                     highlightLength: 1,
-                    isInContext: false,
                 },
             ],
             position: {
@@ -139,7 +136,6 @@ describe('limitGroup', () => {
                     line: 0,
                     character: 0,
                     highlightLength: 1,
-                    isInContext: false,
                 },
             ],
             position: {
@@ -161,13 +157,11 @@ describe('limitGroup', () => {
                     line: 0,
                     character: 0,
                     highlightLength: 1,
-                    isInContext: false,
                 },
                 {
                     line: 1,
                     character: 0,
                     highlightLength: 1,
-                    isInContext: false,
                 },
             ],
             position: {
@@ -185,13 +179,11 @@ describe('limitGroup', () => {
                     line: 0,
                     character: 0,
                     highlightLength: 1,
-                    isInContext: false,
                 },
                 {
                     line: 1,
                     character: 0,
                     highlightLength: 1,
-                    isInContext: false,
                 },
             ],
             position: {
@@ -213,13 +205,11 @@ describe('limitGroup', () => {
                     line: 0,
                     character: 0,
                     highlightLength: 1,
-                    isInContext: false,
                 },
                 {
                     line: 0,
                     character: 2,
                     highlightLength: 3,
-                    isInContext: false,
                 },
             ],
             position: {
@@ -237,13 +227,11 @@ describe('limitGroup', () => {
                     line: 0,
                     character: 0,
                     highlightLength: 1,
-                    isInContext: false,
                 },
                 {
                     line: 0,
                     character: 2,
                     highlightLength: 3,
-                    isInContext: false,
                 },
             ],
             position: {

@@ -149,7 +149,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<
                         >
                             {!isDeleting && (
                                 <>
-                                    <Icon as={DeleteIcon} /> Delete policy
+                                    <Icon aria-hidden={true} as={DeleteIcon} /> Delete policy
                                 </>
                             )}
                             {isDeleting && (

@@ -1,4 +1,4 @@
-import React, { CSSProperties } from 'react'
+import React, { CSSProperties, useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -133,6 +133,14 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
 
     useLogTelemetryEvent(props)
 
+    const [copyLinkText, setCopyLinkText] = useState('Copy link')
+
+    const onCopyLink = useCallback(() => {
+        setCopyLinkText('Copied!')
+        setTimeout(() => setCopyLinkText('Copy link'), 3000)
+        pinOptions?.onCopyLinkButtonClick?.()
+    }, [pinOptions])
+
     if (!hoverOrError && (!actionsOrError || isErrorLike(actionsOrError))) {
         return null
     }
@@ -232,12 +240,12 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                 {pinOptions && (
                     <button
                         className={classNames('d-flex', 'align-items-center', hoverOverlayStyle.actionsCopyLink)}
-                        onClick={pinOptions.onCopyLinkButtonClick}
-                        onKeyPress={pinOptions.onCopyLinkButtonClick}
+                        onClick={onCopyLink}
+                        onKeyPress={onCopyLink}
                         type="button"
                     >
                         <Icon className="mr-1" as={CopyLinkIcon} />
-                        <span className="inline-block">Copy link</span>
+                        <span className="inline-block">{copyLinkText}</span>
                     </button>
                 )}
             </div>

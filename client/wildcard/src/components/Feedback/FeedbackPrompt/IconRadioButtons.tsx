@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { Typography } from '../..'
+import { Label } from '../..'
 
 import styles from './IconRadioButtons.module.scss'
 
@@ -41,7 +41,8 @@ export const IconRadioButtons: React.FunctionComponent<React.PropsWithChildren<P
         <ul className={classNames(className, styles.buttons)}>
             {Object.values(icons).map(({ icon: Icon, name: iconName, value }) => (
                 <li key={iconName} className="d-flex">
-                    <Typography.Label className={styles.label}>
+                    <Label className={styles.label}>
+                        {/* eslint-disable-next-line react/forbid-elements */}
                         <input
                             disabled={disabled}
                             type="radio"
@@ -67,7 +68,7 @@ export const IconRadioButtons: React.FunctionComponent<React.PropsWithChildren<P
                         >
                             <Icon />
                         </span>
-                    </Typography.Label>
+                    </Label>
                 </li>
             ))}
         </ul>

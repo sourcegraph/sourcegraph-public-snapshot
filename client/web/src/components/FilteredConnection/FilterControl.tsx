@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { Select } from '@sourcegraph/wildcard'
+import { Select, Text } from '@sourcegraph/wildcard'
 
 import { RadioButtons } from '../RadioButtons'
 
@@ -90,9 +90,9 @@ export const FilterControl: React.FunctionComponent<React.PropsWithChildren<Filt
                             className={classNames('d-inline-flex flex-row align-center flex-wrap', styles.select)}
                         >
                             <div className="d-inline-flex flex-row mr-3 align-items-baseline">
-                                <p className="text-xl-center text-nowrap mr-2" id={filterLabelId}>
+                                <Text className="text-xl-center text-nowrap mr-2" id={filterLabelId}>
                                     {filter.label}:
-                                </p>
+                                </Text>
                                 <Select
                                     aria-labelledby={filterLabelId}
                                     id=""

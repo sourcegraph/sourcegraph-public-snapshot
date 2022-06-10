@@ -10,6 +10,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -40,16 +41,16 @@ type migrator struct {
 	workerBaseStore            *basestore.Store
 }
 
-func NewMigrator(insightsDB dbutil.DB, postgresDB database.DB) oobmigration.Migrator {
+func NewMigrator(insightsDB edb.InsightsDB, postgresDB database.DB) oobmigration.Migrator {
 	return &migrator{
 		insightsDB:                 insightsDB,
 		postgresDB:                 postgresDB,
 		settingsMigrationJobsStore: store.NewSettingsMigrationJobsStore(postgresDB),
-		settingsStore:              database.Settings(postgresDB),
+		settingsStore:              postgresDB.Settings(),
 		insightStore:               store.NewInsightStore(insightsDB),
 		dashboardStore:             store.NewDashboardStore(insightsDB),
 		orgStore:                   postgresDB.Orgs(),
-		workerBaseStore:            basestore.NewWithDB(postgresDB, sql.TxOptions{}),
+		workerBaseStore:            basestore.NewWithHandle(postgresDB.Handle()),
 	}
 }
 
@@ -161,7 +162,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		migrationContext.userId = int(userId)
 		migrationContext.orgIds = orgIds
 
-		userStore := database.Users(m.postgresDB)
+		userStore := m.postgresDB.Users()
 		user, err := userStore.GetByID(ctx, userId)
 		if err != nil {
 			// If the user doesn't exist, just mark the job complete.

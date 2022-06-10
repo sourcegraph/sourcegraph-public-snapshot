@@ -1,7 +1,9 @@
 import { storiesOf } from '@storybook/react'
+import { addMinutes } from 'date-fns'
 import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import {
     EMPTY_SETTINGS_CASCADE,
     SettingsOrgSubject,
@@ -24,6 +26,7 @@ import {
     EXECUTING_BATCH_SPEC,
     FAILED_BATCH_SPEC,
     mockBatchChange,
+    mockFullBatchSpec,
     mockWorkspaceResolutionStatus,
     mockWorkspaces,
 } from '../batch-spec.mock'
@@ -111,17 +114,27 @@ const buildMocks = (
 
 add('executing', () => (
     <WebStory>
-        {props => (
-            <MockedTestProvider link={new WildcardMockLink(buildMocks(EXECUTING_BATCH_SPEC))}>
-                <ExecuteBatchSpecPage
-                    {...props}
-                    batchSpecID="spec1234"
-                    batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
-                    authenticatedUser={mockAuthenticatedUser}
-                    settingsCascade={SETTINGS_CASCADE}
-                />
-            </MockedTestProvider>
-        )}
+        {props => {
+            const mock = EXECUTING_BATCH_SPEC
+
+            // A true executing batch spec wouldn't have a finishedAt set, but
+            // we need to have one so that Chromatic doesn't exhibit flakiness
+            // based on how long it takes to actually take the snapshot, since
+            // the timer in ExecuteBatchSpecPage is live in that case.
+            mock.finishedAt = addMinutes(Date.parse(mock.startedAt!), 15).toISOString()
+
+            return (
+                <MockedTestProvider link={new WildcardMockLink(buildMocks({ ...EXECUTING_BATCH_SPEC }))}>
+                    <ExecuteBatchSpecPage
+                        {...props}
+                        batchSpecID="spec1234"
+                        batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
+                        authenticatedUser={mockAuthenticatedUser}
+                        settingsCascade={SETTINGS_CASCADE}
+                    />
+                </MockedTestProvider>
+            )
+        }}
     </WebStory>
 ))
 
@@ -182,6 +195,24 @@ add('completed with errors', () => (
                     {...props}
                     batchSpecID="spec1234"
                     batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
+                    authenticatedUser={mockAuthenticatedUser}
+                    settingsCascade={SETTINGS_CASCADE}
+                />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+))
+
+const LOCAL_MOCKS = buildMocks(mockFullBatchSpec({ source: BatchSpecSource.LOCAL }))
+
+add('for a locally-executed spec', () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={new WildcardMockLink(LOCAL_MOCKS)}>
+                <ExecuteBatchSpecPage
+                    {...props}
+                    batchSpecID="spec1234"
+                    batchChange={{ name: 'my-local-batch-change', namespace: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
                     settingsCascade={SETTINGS_CASCADE}
                 />

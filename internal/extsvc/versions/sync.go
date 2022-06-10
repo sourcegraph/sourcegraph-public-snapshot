@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -14,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const syncInterval = 24 * time.Hour
@@ -86,7 +87,7 @@ func loadVersions(ctx context.Context, logger log.Logger, store database.Externa
 	}
 
 	for _, svc := range unique {
-		src, err := sourcer(svc)
+		src, err := sourcer(ctx, svc)
 		if err != nil {
 			return versions, err
 		}

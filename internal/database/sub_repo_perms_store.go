@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -10,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -47,11 +45,6 @@ type SubRepoPermsStore interface {
 // data consistency over sub_repo_permissions table.
 type subRepoPermsStore struct {
 	*basestore.Store
-}
-
-// SubRepoPerms returns a new SubRepoPermsStore with the given parameters.
-func SubRepoPerms(db dbutil.DB) SubRepoPermsStore {
-	return &subRepoPermsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 func SubRepoPermsWith(other basestore.ShareableStore) SubRepoPermsStore {

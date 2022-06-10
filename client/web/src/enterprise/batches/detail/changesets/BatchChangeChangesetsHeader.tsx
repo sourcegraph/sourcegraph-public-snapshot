@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Typography } from '@sourcegraph/wildcard'
+import { H3, H5 } from '@sourcegraph/wildcard'
 
 import { InputTooltip } from '../../../../components/InputTooltip'
 
@@ -30,20 +30,20 @@ export const BatchChangeChangesetsHeader: React.FunctionComponent<
                 }
             />
         )}
-        <Typography.H5 as={Typography.H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
             Status
-        </Typography.H5>
-        <Typography.H5 as={Typography.H3} className="p-2 d-none d-md-block text-uppercase text-nowrap">
+        </H5>
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-nowrap">
             Changeset information
-        </Typography.H5>
-        <Typography.H5 as={Typography.H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+        </H5>
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
             Check state
-        </Typography.H5>
-        <Typography.H5 as={Typography.H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+        </H5>
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
             Review state
-        </Typography.H5>
-        <Typography.H5 as={Typography.H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+        </H5>
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
             Changes
-        </Typography.H5>
+        </H5>
     </>
 )

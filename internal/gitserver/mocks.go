@@ -22,6 +22,7 @@ var Mocks, emptyMocks struct {
 	ReadDir               func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error)
 	ResolveRevision       func(spec string, opt ResolveRevisionOptions) (api.CommitID, error)
 	LsFiles               func(repo api.RepoName, commit api.CommitID) ([]string, error)
+	MergeBase             func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error)
 	GetDefaultBranch      func(repo api.RepoName) (refName string, commit api.CommitID, err error)
 	GetDefaultBranchShort func(repo api.RepoName) (refName string, commit api.CommitID, err error)
 }

@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
@@ -15,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
@@ -69,7 +67,7 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 	}
 
 	// Soft delete one of the repos
-	if err := Repos(db).Delete(ctx, repos[2].ID); err != nil {
+	if err := db.Repos().Delete(ctx, repos[2].ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -143,7 +141,7 @@ func TestIteratePurgeableRepos(t *testing.T) {
 	for _, repo := range []*types.Repo{notCloned} {
 		createTestGitserverRepos(ctx, t, db, false, types.CloneStatusNotCloned, repo.ID)
 	}
-	if err := Repos(db).Delete(ctx, deletedRepo.ID); err != nil {
+	if err := db.Repos().Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
 	// Blocking a repo is currently done manually
@@ -464,7 +462,7 @@ func TestGitserverReposGetByNames(t *testing.T) {
 	}
 
 	repoIdx := 0
-	gitserverRepoStore := &gitserverRepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	gitserverRepoStore := &gitserverRepoStore{Store: basestore.NewWithHandle(db.Handle())}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Creating tc.reposNumber repos
@@ -540,7 +538,7 @@ func TestSetCloneStatus(t *testing.T) {
 	}
 
 	// Create one test repo
-	err = Repos(db).Create(ctx, repo2)
+	err = db.Repos().Create(ctx, repo2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -696,7 +694,7 @@ func TestSetRepoSize(t *testing.T) {
 	}
 
 	// Create one test repo
-	err = Repos(db).Create(ctx, repo2)
+	err = db.Repos().Create(ctx, repo2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -747,7 +745,7 @@ func TestGitserverRepoUpsertNullShard(t *testing.T) {
 	}
 
 	// Create one test repo
-	err := Repos(db).Create(ctx, repo1)
+	err := db.Repos().Create(ctx, repo1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1031,7 +1029,7 @@ func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTes
 	}
 
 	// Create Repo
-	err := Repos(db).Create(ctx, repo)
+	err := db.Repos().Create(ctx, repo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1089,9 +1087,9 @@ type createTestRepoPayload struct {
 	CloneStatus types.CloneStatus
 }
 
-func createTestRepos(ctx context.Context, t *testing.T, db dbutil.DB, repos types.Repos) {
+func createTestRepos(ctx context.Context, t *testing.T, db DB, repos types.Repos) {
 	t.Helper()
-	err := Repos(db).Create(ctx, repos...)
+	err := db.Repos().Create(ctx, repos...)
 	if err != nil {
 		t.Fatal(err)
 	}

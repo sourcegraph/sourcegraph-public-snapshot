@@ -8,7 +8,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -31,6 +31,7 @@ func NewNpmPackagesSyncer(
 	}
 
 	return &vcsDependenciesSyncer{
+		logger:      log.Scoped("vcs syncer", "vcsDependenciesSyncer implements the VCSSyncer interface for dependency repos"),
 		typ:         "npm_packages",
 		scheme:      dependencies.NpmPackagesScheme,
 		placeholder: placeholder,
@@ -80,7 +81,7 @@ func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 	defer tgz.Close()
 
 	if err = decompressTgz(tgz, dir); err != nil {
-		return errors.Wrapf(err, "failed to decompress gzipped tarball for %s", dep.PackageManagerSyntax())
+		return errors.Wrapf(err, "failed to decompress gzipped tarball for %s", dep)
 	}
 
 	return nil
@@ -91,18 +92,22 @@ func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 // Additionally, if all the files in the tarball have paths of the form
 // dir/<blah> for the same directory 'dir', the 'dir' will be stripped.
 func decompressTgz(tgz io.Reader, destination string) error {
+	logger := log.Scoped("decompressTgz", "Decompress a tarball at tgzPath, putting the files under destination.")
 	err := unpack.Tgz(tgz, destination, unpack.Opts{
 		SkipInvalid: true,
 		Filter: func(path string, file fs.FileInfo) bool {
 			size := file.Size()
 
 			const sizeLimit = 15 * 1024 * 1024
+
+			slogger := logger.With(
+				log.String("path", file.Name()),
+				log.Int64("size", size),
+				log.Int("limit", sizeLimit),
+			)
+
 			if size >= sizeLimit {
-				log15.Warn("skipping large file in npm package",
-					"path", file.Name(),
-					"size", size,
-					"limit", sizeLimit,
-				)
+				slogger.Warn("skipping large file in npm package")
 				return false
 			}
 

@@ -9,21 +9,28 @@ exports[`ExternalServiceForm create GitHub 1`] = `
       class="form-group"
     >
       <label
-        class="label fontWeightBold"
-        for="test-external-service-form-display-name"
+        class="label w-100 mb-0"
       >
-        Display name:
+        <div
+          class="mb-2"
+        >
+          Display name:
+        </div>
+        <div
+          class="container loader-input loaderInput"
+        >
+          <input
+            autocomplete="off"
+            autocorrect="off"
+            class="form-control with-invalid-icon"
+            id="test-external-service-form-display-name"
+            required=""
+            spellcheck="false"
+            type="text"
+            value="GitHub"
+          />
+        </div>
       </label>
-      <input
-        autocomplete="off"
-        autocorrect="off"
-        class="form-control"
-        id="test-external-service-form-display-name"
-        required=""
-        spellcheck="false"
-        type="text"
-        value="GitHub"
-      />
     </div>
     <div
       class="form-group"
@@ -56,21 +63,28 @@ exports[`ExternalServiceForm edit GitHub 1`] = `
       class="form-group"
     >
       <label
-        class="label fontWeightBold"
-        for="test-external-service-form-display-name"
+        class="label w-100 mb-0"
       >
-        Display name:
+        <div
+          class="mb-2"
+        >
+          Display name:
+        </div>
+        <div
+          class="container loader-input loaderInput"
+        >
+          <input
+            autocomplete="off"
+            autocorrect="off"
+            class="form-control with-invalid-icon"
+            id="test-external-service-form-display-name"
+            required=""
+            spellcheck="false"
+            type="text"
+            value="GitHub"
+          />
+        </div>
       </label>
-      <input
-        autocomplete="off"
-        autocorrect="off"
-        class="form-control"
-        id="test-external-service-form-display-name"
-        required=""
-        spellcheck="false"
-        type="text"
-        value="GitHub"
-      />
     </div>
     <div
       class="form-group"
@@ -103,22 +117,29 @@ exports[`ExternalServiceForm edit GitHub, loading 1`] = `
       class="form-group"
     >
       <label
-        class="label fontWeightBold"
-        for="test-external-service-form-display-name"
+        class="label w-100 mb-0"
       >
-        Display name:
+        <div
+          class="mb-2"
+        >
+          Display name:
+        </div>
+        <div
+          class="container loader-input loaderInput"
+        >
+          <input
+            autocomplete="off"
+            autocorrect="off"
+            class="form-control with-invalid-icon"
+            disabled=""
+            id="test-external-service-form-display-name"
+            required=""
+            spellcheck="false"
+            type="text"
+            value="GitHub"
+          />
+        </div>
       </label>
-      <input
-        autocomplete="off"
-        autocorrect="off"
-        class="form-control"
-        disabled=""
-        id="test-external-service-form-display-name"
-        required=""
-        spellcheck="false"
-        type="text"
-        value="GitHub"
-      />
     </div>
     <div
       class="form-group"
@@ -138,7 +159,9 @@ exports[`ExternalServiceForm edit GitHub, loading 1`] = `
       type="submit"
     >
       <div
+        aria-label="Loading"
         class="iconInline loadingSpinner"
+        role="img"
       />
       Add repositories
     </button>

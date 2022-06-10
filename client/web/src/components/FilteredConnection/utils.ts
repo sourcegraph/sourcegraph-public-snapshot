@@ -122,7 +122,7 @@ interface AsGraphQLResultParameters<TResult> {
  */
 export const asGraphQLResult = <T>({ data, errors }: AsGraphQLResultParameters<T>): GraphQLResult<T> => {
     if (!data) {
-        return { data: undefined, errors }
+        return { data: null, errors }
     }
     return {
         data,

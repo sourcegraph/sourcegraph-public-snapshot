@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
 import { useHistory } from 'react-router'
 
 import { useMutation } from '@sourcegraph/http-client'
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Alert, Button, Typography } from '@sourcegraph/wildcard'
+import { Button, H4, Link, Text } from '@sourcegraph/wildcard'
 
 import {
     BatchSpecExecutionFields,
@@ -18,6 +19,7 @@ import { WorkspacesPreviewPanel } from '../edit/workspaces-preview/WorkspacesPre
 
 import { CANCEL_BATCH_SPEC_EXECUTION } from './backend'
 import { CancelExecutionModal } from './CancelExecutionModal'
+import { ReadOnlyBatchSpecAlert } from './ReadOnlyBatchSpecAlert'
 
 import editorStyles from '../edit/EditBatchSpecPage.module.scss'
 
@@ -43,7 +45,7 @@ type MemoizedReadOnlyBatchSpecFormProps = ReadOnlyBatchSpecFormProps &
 
 const MemoizedReadOnlyBatchSpecForm: React.FunctionComponent<
     React.PropsWithChildren<MemoizedReadOnlyBatchSpecFormProps>
-> = React.memo(({ isLightTheme, batchChange, batchSpec, setActionsError }) => {
+> = React.memo(function MemoizedReadOnlyBatchSpecForm({ isLightTheme, batchChange, batchSpec, setActionsError }) {
     const history = useHistory()
 
     const [showCancelModal, setShowCancelModal] = useState(false)
@@ -59,36 +61,62 @@ const MemoizedReadOnlyBatchSpecForm: React.FunctionComponent<
         },
     })
 
-    const alert = batchSpec.isExecuting ? (
-        <Alert variant="warning" className="d-flex align-items-center pr-3">
-            <div className="flex-grow-1 pr-3">
-                <Typography.H4>The execution is still running</Typography.H4>
-                You are unable to edit the spec when an execution is running.
-            </div>
-            <Button variant="danger" onClick={() => setShowCancelModal(true)}>
-                Cancel execution
-            </Button>
-        </Alert>
-    ) : (
-        <Alert variant="info" className="d-flex align-items-center pr-3">
-            <div className="flex-grow-1 pr-3">
-                <Typography.H4>This spec is read-only</Typography.H4>
-                We've preserved the original batch spec from this execution for you to inspect.
-            </div>
-            {/* NOTE: As a future design consideration, what does the workflow look like if we
+    const alert: JSX.Element = useMemo(() => {
+        if (batchSpec.source === BatchSpecSource.LOCAL) {
+            return (
+                <ReadOnlyBatchSpecAlert
+                    variant="info"
+                    className="d-flex align-items-center pr-3"
+                    header="This spec is read-only"
+                    message={
+                        <>
+                            This spec is read-only because it was created and executed locally with the{' '}
+                            <Link to="/help/cli">Sourcegraph CLI (src)</Link>.
+                        </>
+                    }
+                >
+                    <Button variant="primary" onClick={() => history.push(`${batchChange.url}/edit`)}>
+                        Edit spec
+                    </Button>
+                </ReadOnlyBatchSpecAlert>
+            )
+        }
+        if (batchSpec.isExecuting) {
+            return (
+                <ReadOnlyBatchSpecAlert
+                    variant="warning"
+                    className="d-flex align-items-center pr-3"
+                    header="The execution is still running"
+                    message="You are unable to edit the spec when an execution is running."
+                >
+                    <Button variant="danger" onClick={() => setShowCancelModal(true)}>
+                        Cancel execution
+                    </Button>
+                </ReadOnlyBatchSpecAlert>
+            )
+        }
+        return (
+            <ReadOnlyBatchSpecAlert
+                variant="info"
+                className="d-flex align-items-center pr-3"
+                header="This spec is read-only"
+                message="We've preserved the original batch spec from this execution for you to inspect."
+            >
+                {/* NOTE: As a future design consideration, what does the workflow look like if we
                 open this in a new tab to allow the user to continue to reference their original
                 batch spec at the same time? */}
-            <Button variant="primary" onClick={() => history.push(`${batchChange.url}/edit`)}>
-                Edit spec
-            </Button>
-        </Alert>
-    )
+                <Button variant="primary" onClick={() => history.push(`${batchChange.url}/edit`)}>
+                    Edit spec
+                </Button>
+            </ReadOnlyBatchSpecAlert>
+        )
+    }, [batchSpec.isExecuting, batchChange.url, batchSpec.source, history])
 
     return (
         <div className={editorStyles.form}>
             <LibraryPane name={batchChange.name} isReadOnly={true} />
             <div className={editorStyles.editorContainer}>
-                <Typography.H4 className={editorStyles.header}>Batch spec</Typography.H4>
+                <H4 className={editorStyles.header}>Batch spec</H4>
                 {alert}
                 <BatchSpec
                     name={batchChange.name}
@@ -97,12 +125,13 @@ const MemoizedReadOnlyBatchSpecForm: React.FunctionComponent<
                     originalInput={batchSpec.originalInput}
                 />
             </div>
-            <WorkspacesPreviewPanel isReadOnly={true} />
+            {/* Hide the workspaces preview panel for locally-executed batch specs. */}
+            {batchSpec.source === BatchSpecSource.REMOTE && <WorkspacesPreviewPanel isReadOnly={true} />}
             <CancelExecutionModal
                 isOpen={showCancelModal}
                 onCancel={() => setShowCancelModal(false)}
                 onConfirm={cancelBatchSpecExecution}
-                modalBody={<p>Are you sure you want to cancel the current execution?</p>}
+                modalBody={<Text>Are you sure you want to cancel the current execution?</Text>}
                 isLoading={isCancelLoading}
             />
         </div>

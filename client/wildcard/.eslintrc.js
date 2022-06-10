@@ -1,5 +1,6 @@
 // @ts-check
 
+// eslint-disable-next-line import/extensions
 const baseConfig = require('../../.eslintrc.js')
 
 module.exports = {

@@ -21,7 +21,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Button, ButtonLink, Link, useLocalStorage, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../../components/CtaIcons'
 import { SearchPatternType } from '../../graphql-operations'
 import { defaultPopperModifiers } from '../input/tour-options'
@@ -34,13 +33,19 @@ import {
 } from '../useFeatureTour'
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
-import { CreateCodeInsightButton } from './components/CreateCodeInsightButton'
-import { CreateSearchContextButton } from './components/CreateSearchContextButton'
+import {
+    getCodeMonitoringCreateAction,
+    getInsightsCreateAction,
+    getSearchContextCreateAction,
+    CreateAction,
+} from './createActions'
+import { CreateActionsMenu } from './CreateActionsMenu'
 
 import featureTourStyles from '../FeatureTour.module.scss'
+import createActionsStyles from './CreateActions.module.scss'
 import styles from './SearchResultsInfoBar.module.scss'
 
-function getFeatureTourElementFn(isAuthenticatedUser: boolean): (onClose: () => void) => HTMLElement {
+function getFeatureTourElementFunc(isAuthenticatedUser: boolean): (onClose: () => void) => HTMLElement {
     return (onClose: () => void): HTMLElement => {
         const container = document.createElement('div')
         container.className = featureTourStyles.featureTourStep
@@ -146,7 +151,7 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<
             data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
         >
             <span>
-                <Icon role="img" aria-hidden={true} as={FormatQuoteOpenIcon} />
+                <Icon aria-hidden={true} as={FormatQuoteOpenIcon} />
                 Searching literally <strong>(including quotes)</strong>
             </span>
         </small>
@@ -178,7 +183,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             canCreateMonitorFromQuery &&
             hasSeenSearchContextsFeatureTour &&
             props.resultsFound,
-        getFeatureTourElementFn(!!props.authenticatedUser),
+        getFeatureTourElementFunc(!!props.authenticatedUser),
         HAS_SEEN_CODE_MONITOR_FEATURE_TOUR_KEY,
         getTourOptions({
             attachTo: {
@@ -200,38 +205,43 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
     const showActionButtonExperimentalVersion = !props.authenticatedUser
 
-    const searchContextButton = useMemo(
-        () => <CreateSearchContextButton query={props.query} authenticatedUser={props.authenticatedUser} />,
-        [props.authenticatedUser, props.query]
-    )
-
-    const codeInsightsButton = useMemo(
-        () => (
-            <CreateCodeInsightButton
-                query={props.query}
-                authenticatedUser={props.authenticatedUser}
-                patternType={props.patternType}
-                enableCodeInsights={props.enableCodeInsights}
-            />
-        ),
+    // When adding a new create action check and update the $collapse-breakpoint in CreateActions.module.scss.
+    // The collapse breakpoint indicates at which window size we hide the buttons and show the collapsed menu instead.
+    const createActions = useMemo(
+        () =>
+            [
+                getSearchContextCreateAction(props.query, props.authenticatedUser),
+                getInsightsCreateAction(
+                    props.query,
+                    props.patternType,
+                    props.authenticatedUser,
+                    props.enableCodeInsights
+                ),
+            ].filter((button): button is CreateAction => button !== null),
         [props.authenticatedUser, props.enableCodeInsights, props.patternType, props.query]
     )
 
+    // The create code monitor action is separated from the rest of the actions, because we use the
+    // <ExperimentalActionButton /> component instead of a regular (button) link, and it has a tour attached.
+    const createCodeMonitorAction = useMemo(
+        () => getCodeMonitoringCreateAction(props.query, props.patternType, props.enableCodeMonitoring),
+        [props.enableCodeMonitoring, props.patternType, props.query]
+    )
+
     const createCodeMonitorButton = useMemo(() => {
-        if (!showCreateCodeMonitoringButton) {
+        if (!createCodeMonitorAction) {
             return null
         }
-        const searchParameters = new URLSearchParams(props.location.search)
-        searchParameters.set('trigger-query', `${props.query ?? ''} patterntype:${props.patternType}`)
-        const toURL = `/code-monitoring/new?${searchParameters.toString()}`
+
         return (
             <li
-                className={classNames('mr-2', styles.navItem)}
+                className={classNames('mr-2', createActionsStyles.button, styles.navItem)}
                 data-tooltip={
                     props.authenticatedUser && !canCreateMonitorFromQuery
                         ? 'Code monitors only support type:diff or type:commit searches.'
                         : undefined
                 }
+                data-placement="bottom"
             >
                 {/*
                     a11y-ignore
@@ -240,14 +250,14 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                 */}
                 <ExperimentalActionButton
                     showExperimentalVersion={showActionButtonExperimentalVersion}
-                    nonExperimentalLinkTo={toURL}
+                    nonExperimentalLinkTo={createCodeMonitorAction.url}
                     isNonExperimentalLinkDisabled={!canCreateMonitorFromQuery}
                     onNonExperimentalLinkClick={onCreateCodeMonitorButtonSelect}
                     className="a11y-ignore create-code-monitor-button"
                     button={
                         <>
-                            <Icon role="img" aria-hidden={true} className="mr-1" as={CodeMonitoringLogo} />
-                            Monitor
+                            <Icon aria-hidden={true} className="mr-1" as={createCodeMonitorAction.icon} />
+                            {createCodeMonitorAction.label}
                         </>
                     }
                     icon={<CodeMonitorRadialGradientIcon />}
@@ -256,20 +266,17 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     telemetryService={props.telemetryService}
                     source="Monitor"
                     viewEventName="SearchResultMonitorCTAShown"
-                    returnTo={toURL}
+                    returnTo={createCodeMonitorAction.url}
                     onToggle={onCreateCodeMonitorButtonSelect}
                 />
             </li>
         )
     }, [
-        showActionButtonExperimentalVersion,
-        showCreateCodeMonitoringButton,
-        props.authenticatedUser,
-        props.location.search,
-        props.query,
-        props.patternType,
+        createCodeMonitorAction,
         props.telemetryService,
+        props.authenticatedUser,
         canCreateMonitorFromQuery,
+        showActionButtonExperimentalVersion,
         onCreateCodeMonitorButtonSelect,
     ])
 
@@ -282,7 +289,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     className="test-save-search-link"
                     button={
                         <>
-                            <Icon role="img" aria-hidden={true} className="mr-1" as={BookmarkOutlineIcon} />
+                            <Icon aria-hidden={true} className="mr-1" as={BookmarkOutlineIcon} />
                             Save search
                         </>
                     }
@@ -327,9 +334,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     size="sm"
                     aria-label={`${showFilters ? 'Hide' : 'Show'} filters`}
                 >
-                    <Icon role="img" aria-hidden={true} className="mr-1" as={MenuIcon} />
+                    <Icon aria-hidden={true} className="mr-1" as={MenuIcon} />
                     Filters
-                    <Icon role="img" aria-hidden={true} as={showFilters ? MenuUpIcon : MenuDownIcon} />
+                    <Icon aria-hidden={true} as={showFilters ? MenuUpIcon : MenuDownIcon} />
                 </Button>
 
                 {props.stats}
@@ -363,13 +370,41 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         )}
                     </ActionsContainer>
 
-                    {(searchContextButton || codeInsightsButton || createCodeMonitorButton || saveSearchButton) && (
+                    {(createActions.length > 0 || createCodeMonitorButton || saveSearchButton) && (
                         <li className={styles.divider} aria-hidden="true" />
                     )}
 
-                    {searchContextButton}
-                    {codeInsightsButton}
+                    {createActions.map(createActionButton => (
+                        <li
+                            key={createActionButton.label}
+                            data-tooltip={createActionButton.tooltip}
+                            data-placement="bottom"
+                            className={classNames('nav-item mr-2', createActionsStyles.button)}
+                        >
+                            <ButtonLink
+                                to={createActionButton.url}
+                                className="text-decoration-none"
+                                variant="secondary"
+                                outline={true}
+                                size="sm"
+                            >
+                                <Icon aria-hidden={true} className="mr-1" as={createActionButton.icon} />
+                                {createActionButton.label}
+                            </ButtonLink>
+                        </li>
+                    ))}
+
                     {createCodeMonitorButton}
+
+                    {(createActions.length > 0 || createCodeMonitorAction) && (
+                        <CreateActionsMenu
+                            createActions={createActions}
+                            createCodeMonitorAction={createCodeMonitorAction}
+                            canCreateMonitor={canCreateMonitorFromQuery}
+                            authenticatedUser={props.authenticatedUser}
+                        />
+                    )}
+
                     {saveSearchButton}
 
                     {props.resultsFound && (
@@ -379,6 +414,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                 <Button
                                     onClick={props.onExpandAllResultsToggle}
                                     className="text-decoration-none"
+                                    data-placement="bottom"
                                     data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
                                     aria-label={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
                                     aria-live="polite"
@@ -388,7 +424,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                     size="sm"
                                 >
                                     <Icon
-                                        role="img"
                                         aria-hidden={true}
                                         className="mr-0"
                                         as={props.allExpanded ? ArrowCollapseUpIcon : ArrowExpandDownIcon}

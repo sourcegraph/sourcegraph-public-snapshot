@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -33,12 +32,7 @@ type savedSearchStore struct {
 	*basestore.Store
 }
 
-// SavedSearches instantiates and returns a new SavedSearchStore with prepared statements.
-func SavedSearches(db dbutil.DB) SavedSearchStore {
-	return &savedSearchStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-// NewSavedSearchStoreWithDB instantiates and returns a new SavedSearchStore using the other store handle.
+// SavedSearchesWith instantiates and returns a new SavedSearchStore using the other store handle.
 func SavedSearchesWith(other basestore.ShareableStore) SavedSearchStore {
 	return &savedSearchStore{Store: basestore.NewWithHandle(other.Handle())}
 }

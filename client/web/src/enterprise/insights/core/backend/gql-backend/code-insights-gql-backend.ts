@@ -1,6 +1,6 @@
 import { ApolloCache, ApolloClient, ApolloQueryResult, gql } from '@apollo/client'
 import { from, Observable, of } from 'rxjs'
-import { map, mapTo, switchMap } from 'rxjs/operators'
+import { catchError, map, mapTo, switchMap } from 'rxjs/operators'
 import {
     AddInsightViewToDashboardResult,
     DeleteDashboardResult,
@@ -18,13 +18,11 @@ import {
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
 import { ALL_INSIGHTS_DASHBOARD } from '../../constants'
-import { BackendInsight, Insight, InsightDashboard, InsightsDashboardOwner } from '../../types'
+import { Insight, InsightDashboard, InsightsDashboardOwner } from '../../types'
 import { CodeInsightsBackend } from '../code-insights-backend'
 import {
     AccessibleInsightInfo,
     AssignInsightsToDashboardInput,
-    BackendInsightData,
-    CaptureInsightSettings,
     DashboardCreateInput,
     DashboardDeleteInput,
     DashboardUpdateInput,
@@ -38,6 +36,7 @@ import {
     SeriesChartContent,
     UiFeaturesConfig,
     DashboardCreateResult,
+    InsightPreviewSettings,
 } from '../code-insights-backend-types'
 import { getRepositorySuggestions } from '../core/api/get-repository-suggestions'
 import { getResolvedSearchRepositories } from '../core/api/get-resolved-search-repositories'
@@ -50,14 +49,13 @@ import { GET_INSIGHTS_GQL } from './gql/GetInsights'
 import { REMOVE_INSIGHT_FROM_DASHBOARD_GQL } from './gql/RemoveInsightFromDashboard'
 import { createDashboard } from './methods/create-dashboard/create-dashboard'
 import { createInsight } from './methods/create-insight/create-insight'
-import { getBackendInsightData } from './methods/get-backend-insight-data/get-backend-insight-data'
 import { getBuiltInInsight } from './methods/get-built-in-insight-data'
 import { getLangStatsInsightContent } from './methods/get-built-in-insight-data/get-lang-stats-insight-content'
 import { getSearchInsightContent } from './methods/get-built-in-insight-data/get-search-insight-content'
-import { getCaptureGroupInsightsPreview } from './methods/get-capture-group-insight-preivew'
 import { getDashboardOwners } from './methods/get-dashboard-owners'
 import { getDashboardById } from './methods/get-dashboards/get-dashboard-by-id'
 import { getDashboards } from './methods/get-dashboards/get-dashboards'
+import { getInsightsPreview } from './methods/get-insight-preview'
 import { updateDashboard } from './methods/update-dashboard'
 import { updateInsight } from './methods/update-insight/update-insight'
 
@@ -105,8 +103,9 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     return null
                 }
 
-                return createInsightView(insightData) ?? null
-            })
+                return createInsightView(insightData)
+            }),
+            catchError(() => of(null))
         )
 
     public hasInsights = (first: number): Observable<boolean> =>
@@ -160,9 +159,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 }))
             )
         )
-
-    public getBackendInsightData = (insight: BackendInsight): Observable<BackendInsightData> =>
-        getBackendInsightData(this.apolloClient, insight)
 
     public getBuiltInInsightData = getBuiltInInsight
 
@@ -252,8 +248,8 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         input: GetLangStatsInsightContentInput
     ): Promise<CategoricalChartContent<any>> => getLangStatsInsightContent(input).then(data => data.content)
 
-    public getCaptureInsightContent = (input: CaptureInsightSettings): Promise<SeriesChartContent<any>> =>
-        getCaptureGroupInsightsPreview(this.apolloClient, input)
+    public getInsightPreviewContent = (input: InsightPreviewSettings): Promise<SeriesChartContent<any>> =>
+        getInsightsPreview(this.apolloClient, input)
 
     // Repositories API
     public getRepositorySuggestions = getRepositorySuggestions

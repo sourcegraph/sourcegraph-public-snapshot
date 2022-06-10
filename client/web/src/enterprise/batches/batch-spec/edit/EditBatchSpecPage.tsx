@@ -6,7 +6,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Icon, LoadingSpinner, Typography } from '@sourcegraph/wildcard'
+import { Button, Icon, LoadingSpinner, H4 } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../components/HeroPage'
 import {
@@ -61,7 +61,7 @@ export const EditBatchSpecPage: React.FunctionComponent<React.PropsWithChildren<
     if (loading && !data) {
         return (
             <div className="w-100 text-center">
-                <Icon className="m-2" as={LoadingSpinner} />
+                <Icon aria-label="Loading" className="m-2" as={LoadingSpinner} />
             </div>
         )
     }
@@ -104,7 +104,13 @@ type MemoizedEditBatchSpecPageContentProps = EditBatchSpecPageContentProps &
 
 const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
     React.PropsWithChildren<MemoizedEditBatchSpecPageContentProps>
-> = React.memo(({ settingsCascade, isLightTheme, batchChange, editor, errors }) => {
+> = React.memo(function MemoizedEditBatchSpecPageContent({
+    settingsCascade,
+    isLightTheme,
+    batchChange,
+    editor,
+    errors,
+}) {
     const { insightTitle } = useInsightTemplates(settingsCascade)
 
     const [activeTabKey, setActiveTabKey] = useState<TabKey>('spec')
@@ -219,7 +225,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 <div className={styles.form}>
                     <LibraryPane name={batchChange.name} onReplaceItem={editor.handleCodeChange} />
                     <div className={styles.editorContainer}>
-                        <Typography.H4 className={styles.header}>Batch spec</Typography.H4>
+                        <H4 className={styles.header}>Batch spec</H4>
                         <MonacoBatchSpecEditor
                             batchChangeName={batchChange.name}
                             className={styles.editor}

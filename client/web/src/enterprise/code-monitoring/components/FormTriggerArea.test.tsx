@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { act } from 'react-dom/test-utils'
 import sinon from 'sinon'
@@ -127,7 +127,7 @@ describe('FormTriggerArea', () => {
         })
     }
 
-    test('Append patternType:literal if no patternType is present', () => {
+    test('Append patternType:literal if no patternType is present', async () => {
         const onQueryChange = sinon.spy()
         renderWithBrandedContext(
             <FormTriggerArea
@@ -142,8 +142,14 @@ describe('FormTriggerArea', () => {
         )
         userEvent.click(screen.getByTestId('trigger-button'))
 
-        const triggerInput = screen.getByRole('textbox')
-        userEvent.type(triggerInput, 'test type:diff repo:test')
+        const triggerInput = screen.getByTestId('trigger-query-edit')
+        userEvent.click(triggerInput)
+
+        await waitFor(() => expect(triggerInput.querySelector('textarea[role="textbox"]')).toBeInTheDocument())
+
+        const textbox = triggerInput.querySelector('textarea[role="textbox"]')!
+        userEvent.type(textbox, 'test type:diff repo:test')
+
         act(() => {
             clock.tick(600)
         })
@@ -152,7 +158,7 @@ describe('FormTriggerArea', () => {
         sinon.assert.calledOnceWithExactly(onQueryChange, 'test type:diff repo:test patternType:literal')
     })
 
-    test('Do not append patternType:literal if patternType is present', () => {
+    test('Do not append patternType:literal if patternType is present', async () => {
         const onQueryChange = sinon.spy()
         renderWithBrandedContext(
             <FormTriggerArea
@@ -167,8 +173,13 @@ describe('FormTriggerArea', () => {
         )
         userEvent.click(screen.getByTestId('trigger-button'))
 
-        const triggerInput = screen.getByRole('textbox')
-        userEvent.type(triggerInput, 'test patternType:regexp type:diff repo:test')
+        const triggerInput = screen.getByTestId('trigger-query-edit')
+        userEvent.click(triggerInput)
+
+        await waitFor(() => expect(triggerInput.querySelector('textarea[role="textbox"]')).toBeInTheDocument())
+
+        const textbox = triggerInput.querySelector('textarea[role="textbox"]')!
+        userEvent.type(textbox, 'test patternType:regexp type:diff repo:test')
         act(() => {
             clock.tick(600)
         })

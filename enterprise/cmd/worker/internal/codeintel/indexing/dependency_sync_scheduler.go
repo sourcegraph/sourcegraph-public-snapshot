@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -18,12 +20,12 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var schemeToExternalService = map[string]string{
-	dependencies.JVMPackagesScheme: extsvc.KindJVMPackages,
-	dependencies.NpmPackagesScheme: extsvc.KindNpmPackages,
+	dependencies.JVMPackagesScheme:  extsvc.KindJVMPackages,
+	dependencies.NpmPackagesScheme:  extsvc.KindNpmPackages,
+	dependencies.RustPackagesScheme: extsvc.KindRustPackages,
 }
 
 // NewDependencySyncScheduler returns a new worker instance that processes
@@ -33,7 +35,12 @@ func NewDependencySyncScheduler(
 	workerStore dbworkerstore.Store,
 	externalServiceStore ExternalServiceStore,
 	metrics workerutil.WorkerMetrics,
+	observationContext *observation.Context,
 ) *workerutil.Worker {
+	// Init metrics here now after we've moved the autoindexing scheduler
+	// into the autoindexing service
+	newOperations(observationContext)
+
 	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
 
 	handler := &dependencySyncSchedulerHandler{
@@ -217,7 +224,8 @@ func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Con
 		upload.Indexer == "lsif-java" ||
 		upload.Indexer == "lsif-tsc" ||
 		upload.Indexer == "scip-typescript" ||
-		upload.Indexer == "lsif-typescript", nil
+		upload.Indexer == "lsif-typescript" ||
+		upload.Indexer == "rust-analyzer", nil
 }
 
 func kindsToArray(k map[string]struct{}) (s []string) {

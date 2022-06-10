@@ -12,7 +12,7 @@ import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/s
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Card, Icon, Checkbox, Typography } from '@sourcegraph/wildcard'
+import { Button, Link, Card, Icon, Checkbox, Code, H2, H3 } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
@@ -204,7 +204,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
 
     return (
         <>
-            <Typography.H3 as={Typography.H2}>Trigger</Typography.H3>
+            <H3 as={H2}>Trigger</H3>
             {showQueryForm && (
                 <Card className={classNames(cardClassName, 'p-3')}>
                     <div className="font-weight-bold">When there are new search results</div>
@@ -249,6 +249,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                 >
                                     Preview results{' '}
                                     <Icon
+                                        aria-hidden={true}
                                         className={classNames('ml-1', styles.queryInputPreviewLinkIcon)}
                                         as={OpenInNewIcon}
                                     />
@@ -263,8 +264,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     hint="Code monitors support literal and regex search. Searches are literal by default."
                                     dataTestid="patterntype-checkbox"
                                 >
-                                    Is <Typography.Code>patternType:literal</Typography.Code> or{' '}
-                                    <Typography.Code>patternType:regexp</Typography.Code>
+                                    Is <Code>patternType:literal</Code> or <Code>patternType:regexp</Code>
                                 </ValidQueryChecklistItem>
                             </li>
                             <li>
@@ -273,8 +273,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     hint="type:diff targets code present in new commits, while type:commit targets commit messages"
                                     dataTestid="type-checkbox"
                                 >
-                                    Contains a <Typography.Code>type:diff</Typography.Code> or{' '}
-                                    <Typography.Code>type:commit</Typography.Code> filter
+                                    Contains a <Code>type:diff</Code> or <Code>type:commit</Code> filter
                                 </ValidQueryChecklistItem>
                             </li>
                             <li>
@@ -283,7 +282,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     hint="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
                                     dataTestid="repo-checkbox"
                                 >
-                                    Contains a <Typography.Code>repo:</Typography.Code> filter
+                                    Contains a <Code>repo:</Code> filter
                                 </ValidQueryChecklistItem>
                             </li>
                             <li>
@@ -331,12 +330,12 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                 When there are new search results
                             </div>
                             {triggerCompleted ? (
-                                <Typography.Code
+                                <Code
                                     className={classNames('text-break text-muted', styles.queryLabel)}
                                     data-testid="trigger-query-existing"
                                 >
                                     {query}
-                                </Typography.Code>
+                                </Code>
                             ) : (
                                 <span className="text-muted">
                                     This trigger will fire when new search results are found for a given search query.

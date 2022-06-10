@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -29,6 +30,7 @@ type Flags struct {
 	BuildkiteToken      string
 	Pipeline            string
 	Branch              string
+	SlackToken          string
 	FailuresThreshold   int
 	FailuresTimeoutMins int
 }
@@ -37,6 +39,8 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.BuildkiteToken, "buildkite.token", "", "mandatory buildkite token")
 	flag.StringVar(&f.Pipeline, "pipeline", "sourcegraph", "name of the pipeline to inspect")
 	flag.StringVar(&f.Branch, "branch", "main", "name of the branch to inspect")
+	flag.StringVar(&f.SlackToken, "slack.token", "", "mandatory slack api token")
+
 	flag.IntVar(&f.FailuresThreshold, "failures.threshold", 3, "failures required to trigger an incident")
 	flag.IntVar(&f.FailuresTimeoutMins, "failures.timeout", 60, "duration of a run required to be considered a failure (minutes)")
 	flag.Parse()
@@ -50,7 +54,6 @@ func main() {
 
 	checkFlags := &cmdCheckFlags{}
 	flag.StringVar(&checkFlags.githubToken, "github.token", "", "mandatory github token")
-	flag.StringVar(&checkFlags.slackToken, "slack.token", "", "mandatory slack api token")
 	flag.StringVar(&checkFlags.slackAnnounceWebhooks, "slack.announce-webhook", "", "Slack Webhook URL to post the results on (comma-delimited for multiple values)")
 	flag.StringVar(&checkFlags.slackDebugWebhook, "slack.debug-webhook", "", "Slack Webhook URL to post debug results on")
 	flag.StringVar(&checkFlags.slackDiscussionChannel, "slack.discussion-channel", "#buildkite-main", "Slack channel to ask everyone to head over to for discusison")
@@ -64,6 +67,7 @@ func main() {
 	flag.StringVar(&historyFlags.honeycombDataset, "honeycomb.dataset", "", "honeycomb dataset to publish to")
 	flag.StringVar(&historyFlags.honeycombToken, "honeycomb.token", "", "honeycomb API token")
 	flag.StringVar(&historyFlags.okayHQToken, "okayhq.token", "", "okayhq API token")
+	flag.StringVar(&historyFlags.slackReportWebHook, "slack.report-webhook", "", "Slack Webhook URL to post weekly report on ")
 
 	flags.Parse()
 
@@ -83,7 +87,6 @@ func main() {
 }
 
 type cmdCheckFlags struct {
-	slackToken  string
 	githubToken string
 
 	slackAnnounceWebhooks  string
@@ -105,7 +108,7 @@ func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
 	)))
 
 	// Slack client
-	slc := slack.New(checkFlags.slackToken)
+	slc := slack.New(flags.SlackToken)
 
 	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
 	builds, _, err := bkc.Builds.ListByPipeline("sourcegraph", flags.Pipeline, &buildkite.BuildsListOptions{
@@ -179,6 +182,8 @@ type cmdHistoryFlags struct {
 	honeycombToken   string
 
 	okayHQToken string
+
+	slackReportWebHook string
 }
 
 func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags) {
@@ -346,7 +351,6 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 			}
 		}
 	}
-
 	if historyFlags.okayHQToken != "" {
 		okayCli := okay.NewClient(http.DefaultClient, historyFlags.okayHQToken)
 
@@ -384,7 +388,31 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 			log.Fatal("Error posting to OKAYHQ okay.Flush: ", err.Error())
 		}
 	}
+	if historyFlags.slackReportWebHook != "" {
+		var totalBuilds int
+		var totalTime int
+		var totalFlakes int
 
+		for _, total := range totals {
+			totalBuilds += total
+		}
+
+		for _, incident := range incidents {
+			totalTime += incident
+		}
+
+		for _, flake := range flakes {
+			totalFlakes += flake
+		}
+
+		avgFlakes := math.Round(float64(totalFlakes) / float64(totalBuilds) * 100)
+
+		message := generateSummaryMessage(historyFlags.createdFromDate, historyFlags.createdToDate, totalBuilds, totalFlakes, avgFlakes, time.Duration(totalTime*int(time.Minute)))
+
+		if _, err := postSlackUpdate([]string{historyFlags.slackReportWebHook}, message); err != nil {
+			log.Fatal("postSlackUpdate: ", err)
+		}
+	}
 	log.Println("done!")
 }
 
@@ -395,4 +423,16 @@ func writeCSV(p string, records [][]string) error {
 	}
 	fCsv := csv.NewWriter(f)
 	return fCsv.WriteAll(records)
+}
+
+func generateSummaryMessage(dateFrom, dateTo string, builds, flakes int, avgFlakes float64, downtime time.Duration) string {
+
+	return fmt.Sprintf(`:bar_chart: Welcome to your weekly CI report for period *%s* to *%s*!
+	• Total builds: *%d*
+	• Total flakes: *%d*
+	• Average %% of build flakes: *%v%%*
+	• Total incident duration: *%v*
+
+	For more information, view the dashboards at <https://app.okayhq.com/dashboards/3856903d-33ea-4d60-9719-68fec0eb4313/build-stats-kpis|OkayHQ>.
+`, dateFrom, dateTo, builds, flakes, avgFlakes, downtime)
 }

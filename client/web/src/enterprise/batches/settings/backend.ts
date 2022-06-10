@@ -158,3 +158,11 @@ export const useGlobalBatchChangesCodeHostConnection = (): UseConnectionResult<B
             return batchChangesCodeHosts
         },
     })
+
+export const CHECK_BATCH_CHANGES_CREDENTIAL = gql`
+    query CheckBatchChangesCredential($id: ID!) {
+        checkBatchChangesCredential(batchChangesCredential: $id) {
+            alwaysNil
+        }
+    }
+`

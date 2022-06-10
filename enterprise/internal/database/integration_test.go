@@ -4,6 +4,7 @@ import (
 	"flag"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -28,7 +29,7 @@ func TestIntegration_PermsStore(t *testing.T) {
 
 	t.Parallel()
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	for _, tc := range []struct {
 		name string
@@ -49,7 +50,6 @@ func TestIntegration_PermsStore(t *testing.T) {
 		{"DeleteAllUserPendingPermissions", testPermsStore_DeleteAllUserPendingPermissions(db)},
 		{"DatabaseDeadlocks", testPermsStore_DatabaseDeadlocks(db)},
 
-		{"ListExternalAccounts", testPermsStore_ListExternalAccounts(db)},
 		{"GetUserIDsByExternalAccounts", testPermsStore_GetUserIDsByExternalAccounts(db)},
 
 		{"UserIDsWithOutdatedPerms", testPermsStore_UserIDsWithOutdatedPerms(db)},

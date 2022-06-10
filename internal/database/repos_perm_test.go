@@ -174,7 +174,7 @@ func TestRepoStore_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
 	ctx := context.Background()
 
 	// Add a single user who is NOT a site admin
-	alice, err := Users(db).Create(ctx, NewUser{
+	alice, err := db.Users().Create(ctx, NewUser{
 		Email:                 "alice@example.com",
 		Username:              "alice",
 		Password:              "alice",
@@ -183,7 +183,7 @@ func TestRepoStore_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = Users(db).SetIsSiteAdmin(ctx, alice.ID, false)
+	err = db.Users().SetIsSiteAdmin(ctx, alice.ID, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,7 +252,7 @@ VALUES
 
 	// Alice should be able to see both her public and private repos
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
-	repos, err := Repos(db).List(aliceCtx, ReposListOptions{})
+	repos, err := db.Repos().List(aliceCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -271,7 +271,7 @@ func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
 	ctx := context.Background()
 
 	// Add a single user who is NOT a site admin
-	alice, err := Users(db).Create(ctx,
+	alice, err := db.Users().Create(ctx,
 		NewUser{
 			Email:                 "alice@example.com",
 			Username:              "alice",
@@ -282,7 +282,7 @@ func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = Users(db).SetIsSiteAdmin(ctx, alice.ID, false)
+	err = db.Users().SetIsSiteAdmin(ctx, alice.ID, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -339,7 +339,7 @@ VALUES (%s, 'read', %s)
 
 	// Alice should NOT be able to see the private repo
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
-	repos, err := Repos(db).List(aliceCtx, ReposListOptions{})
+	repos, err := db.Repos().List(aliceCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -360,7 +360,7 @@ UPDATE repo_permissions SET unrestricted = true
 
 	// Alice should now be able to see the repo
 	aliceCtx = actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
-	repos, err = Repos(db).List(aliceCtx, ReposListOptions{})
+	repos, err = db.Repos().List(aliceCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -379,7 +379,7 @@ func TestRepoStore_nonSiteAdminCanViewOrgPrivateCode(t *testing.T) {
 	ctx := context.Background()
 
 	// Add a single user who is NOT a site admin
-	alice, err := Users(db).Create(ctx,
+	alice, err := db.Users().Create(ctx,
 		NewUser{
 			Email:                 "alice@example.com",
 			Username:              "alice",
@@ -390,7 +390,7 @@ func TestRepoStore_nonSiteAdminCanViewOrgPrivateCode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = Users(db).SetIsSiteAdmin(ctx, alice.ID, false)
+	err = db.Users().SetIsSiteAdmin(ctx, alice.ID, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -472,7 +472,7 @@ VALUES
 
 	// Alice should be able to see both her public and private repos
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
-	repos, err := Repos(db).List(aliceCtx, ReposListOptions{})
+	repos, err := db.Repos().List(aliceCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -510,7 +510,7 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 	ctx := context.Background()
 
 	// Set up three users: alice, bob and admin
-	alice, err := Users(db).Create(ctx, NewUser{
+	alice, err := db.Users().Create(ctx, NewUser{
 		Email:                 "alice@example.com",
 		Username:              "alice",
 		Password:              "alice",
@@ -519,7 +519,7 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bob, err := Users(db).Create(ctx, NewUser{
+	bob, err := db.Users().Create(ctx, NewUser{
 		Email:                 "bob@example.com",
 		Username:              "bob",
 		Password:              "bob",
@@ -528,7 +528,7 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	admin, err := Users(db).Create(ctx, NewUser{
+	admin, err := db.Users().Create(ctx, NewUser{
 		Email:                 "admin@example.com",
 		Username:              "admin",
 		Password:              "admin",
@@ -540,11 +540,11 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 
 	// Ensure only "admin" is the site admin, alice was prompted as site admin
 	// because it was the first user.
-	err = Users(db).SetIsSiteAdmin(ctx, admin.ID, true)
+	err = db.Users().SetIsSiteAdmin(ctx, admin.ID, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = Users(db).SetIsSiteAdmin(ctx, alice.ID, false)
+	err = db.Users().SetIsSiteAdmin(ctx, alice.ID, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -700,7 +700,7 @@ VALUES
 	// "bob_public_repo", "cindy_private_repo". The "cindy_private_repo" comes from
 	// an unrestricted external service
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
-	repos, err := Repos(db).List(aliceCtx, ReposListOptions{})
+	repos, err := db.Repos().List(aliceCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -713,7 +713,7 @@ VALUES
 	// "cindy_private_repo". The "cindy_private_repo" comes from an unrestricted
 	// external service
 	bobCtx := actor.WithActor(ctx, &actor.Actor{UID: bob.ID})
-	repos, err = Repos(db).List(bobCtx, ReposListOptions{})
+	repos, err = db.Repos().List(bobCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -724,7 +724,7 @@ VALUES
 
 	// By default, site admins can see all repos
 	adminCtx := actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
-	repos, err = Repos(db).List(adminCtx, ReposListOptions{})
+	repos, err = db.Repos().List(adminCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -740,7 +740,7 @@ VALUES
 		conf.Get().AuthzEnforceForSiteAdmins = false
 	})
 	adminCtx = actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
-	repos, err = Repos(db).List(adminCtx, ReposListOptions{})
+	repos, err = db.Repos().List(adminCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -751,7 +751,7 @@ VALUES
 
 	// A random user should only see "alice_public_repo", "bob_public_repo", "cindy_private_repo"
 	// "cindy_private_repos" comes from an unrestricted external service
-	repos, err = Repos(db).List(ctx, ReposListOptions{})
+	repos, err = db.Repos().List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -771,7 +771,7 @@ func TestRepoStore_List_permissionsUserMapping(t *testing.T) {
 	ctx := context.Background()
 
 	// Set up three users: alice, bob and admin
-	alice, err := Users(db).Create(ctx, NewUser{
+	alice, err := db.Users().Create(ctx, NewUser{
 		Email:                 "alice@example.com",
 		Username:              "alice",
 		Password:              "alice",
@@ -780,7 +780,7 @@ func TestRepoStore_List_permissionsUserMapping(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bob, err := Users(db).Create(ctx, NewUser{
+	bob, err := db.Users().Create(ctx, NewUser{
 		Email:                 "bob@example.com",
 		Username:              "bob",
 		Password:              "bob",
@@ -789,7 +789,7 @@ func TestRepoStore_List_permissionsUserMapping(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	admin, err := Users(db).Create(ctx, NewUser{
+	admin, err := db.Users().Create(ctx, NewUser{
 		Email:                 "admin@example.com",
 		Username:              "admin",
 		Password:              "admin",
@@ -801,11 +801,11 @@ func TestRepoStore_List_permissionsUserMapping(t *testing.T) {
 
 	// Ensure only "admin" is the site admin, alice was prompted as site admin
 	// because it was the first user.
-	err = Users(db).SetIsSiteAdmin(ctx, admin.ID, true)
+	err = db.Users().SetIsSiteAdmin(ctx, admin.ID, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = Users(db).SetIsSiteAdmin(ctx, alice.ID, false)
+	err = db.Users().SetIsSiteAdmin(ctx, alice.ID, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -921,7 +921,7 @@ VALUES
 
 	// Alice should see "alice_private_repo" but not "alice_public_repo", "bob_public_repo", "bob_private_repo"
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
-	repos, err := Repos(db).List(aliceCtx, ReposListOptions{})
+	repos, err := db.Repos().List(aliceCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -932,7 +932,7 @@ VALUES
 
 	// Bob should see "bob_private_repo" but not "alice_public_repo" or "bob_public_repo"
 	bobCtx := actor.WithActor(ctx, &actor.Actor{UID: bob.ID})
-	repos, err = Repos(db).List(bobCtx, ReposListOptions{})
+	repos, err = db.Repos().List(bobCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -943,7 +943,7 @@ VALUES
 
 	// By default, admins can see all repos
 	adminCtx := actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
-	repos, err = Repos(db).List(adminCtx, ReposListOptions{})
+	repos, err = db.Repos().List(adminCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -959,7 +959,7 @@ VALUES
 		conf.Get().AuthzEnforceForSiteAdmins = false
 	})
 	adminCtx = actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
-	repos, err = Repos(db).List(adminCtx, ReposListOptions{})
+	repos, err = db.Repos().List(adminCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -969,7 +969,7 @@ VALUES
 	}
 
 	// A random user sees nothing
-	repos, err = Repos(db).List(ctx, ReposListOptions{})
+	repos, err = db.Repos().List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

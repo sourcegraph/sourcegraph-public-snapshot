@@ -26,7 +26,7 @@ import (
 // A global limiter on number of concurrent searcher searches.
 var textSearchLimiter = mutablelimiter.New(32)
 
-type SearcherJob struct {
+type TextSearchJob struct {
 	PatternInfo *search.TextPatternInfo
 	Repos       []*search.RepositoryRevisions // the set of repositories to search with searcher.
 
@@ -43,10 +43,12 @@ type SearcherJob struct {
 	// repository if this field is true. Another example is we set this field
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
+
+	Features search.Features
 }
 
 // Run calls the searcher service on a set of repositories.
-func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
@@ -108,7 +110,7 @@ func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, strea
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.LogFields(log.String("repo", string(repoRev.Repo.Name)), log.Error(err), log.Bool("timeout", errcode.IsTimeout(err)), log.Bool("temporary", errcode.IsTemporary(err)))
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
@@ -132,11 +134,11 @@ func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, strea
 	return nil, g.Wait()
 }
 
-func (s *SearcherJob) Name() string {
-	return "SearcherJob"
+func (s *TextSearchJob) Name() string {
+	return "SearcherTextSearchJob"
 }
 
-func (s *SearcherJob) Tags() []log.Field {
+func (s *TextSearchJob) Tags() []log.Field {
 	return []log.Field{
 		trace.Stringer("patternInfo", s.PatternInfo),
 		log.Int("numRepos", len(s.Repos)),
@@ -155,7 +157,7 @@ var MockSearchFilesInRepo func(
 	stream streaming.Sender,
 ) (limitHit bool, err error)
 
-func searchFilesInRepo(
+func (s *TextSearchJob) searchFilesInRepo(
 	ctx context.Context,
 	db database.DB,
 	searcherURLs *endpoint.Map,
@@ -188,66 +190,70 @@ func searchFilesInRepo(
 		return false, err
 	}
 
+	// Structural and hybrid search both speak to zoekt so need the endpoints.
 	var indexerEndpoints []string
-	if info.IsStructuralPat {
+	if info.IsStructuralPat || s.Features.HybridSearch {
 		indexerEndpoints, err = search.Indexers().Map.Endpoints()
 		if err != nil {
 			return false, err
 		}
 	}
 
-	toMatches := newToMatches(repo, commit, &rev)
 	onMatches := func(searcherMatches []*protocol.FileMatch) {
 		stream.Send(streaming.SearchEvent{
-			Results: toMatches(searcherMatches),
+			Results: convertMatches(repo, commit, &rev, searcherMatches),
 		})
 	}
 
-	return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, indexerEndpoints, onMatches)
+	return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, indexerEndpoints, s.Features, onMatches)
 }
 
-// newToMatches returns a closure that converts []*protocol.FileMatch to []result.Match.
-func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func([]*protocol.FileMatch) []result.Match {
-	return func(searcherMatches []*protocol.FileMatch) []result.Match {
-		matches := make([]result.Match, 0, len(searcherMatches))
-		for _, fm := range searcherMatches {
-			multilineMatches := make([]result.MultilineMatch, 0, len(fm.LineMatches))
-			for _, lm := range fm.LineMatches {
-				for _, ol := range lm.OffsetAndLengths {
-					multilineMatches = append(multilineMatches, result.MultilineMatch{
-						Start: result.LineColumn{
-							Line:   int32(lm.LineNumber),
-							Column: int32(ol[0]),
-						},
-						End: result.LineColumn{
-							Line:   int32(lm.LineNumber),
-							Column: int32(ol[0] + ol[1]),
-						},
-						Preview: lm.Preview,
-					})
-				}
-			}
-			for _, mm := range fm.MultilineMatches {
-				multilineMatches = append(multilineMatches, result.MultilineMatch{
-					Preview: mm.Preview,
-					Start:   result.LineColumn{Line: mm.Start.Line, Column: mm.Start.Column},
-					End:     result.LineColumn{Line: mm.End.Line, Column: mm.End.Column},
+// convert converts a set of searcher matches into []result.Match
+func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, searcherMatches []*protocol.FileMatch) []result.Match {
+	matches := make([]result.Match, 0, len(searcherMatches))
+	for _, fm := range searcherMatches {
+		chunkMatches := make(result.ChunkMatches, 0, len(fm.ChunkMatches))
+
+		for _, cm := range fm.ChunkMatches {
+			ranges := make(result.Ranges, 0, len(cm.Ranges))
+			for _, rr := range cm.Ranges {
+				ranges = append(ranges, result.Range{
+					Start: result.Location{
+						Offset: int(rr.Start.Offset),
+						Line:   int(rr.Start.Line),
+						Column: int(rr.Start.Column),
+					},
+					End: result.Location{
+						Offset: int(rr.End.Offset),
+						Line:   int(rr.End.Line),
+						Column: int(rr.End.Column),
+					},
 				})
 			}
 
-			matches = append(matches, &result.FileMatch{
-				File: result.File{
-					Path:     fm.Path,
-					Repo:     repo,
-					CommitID: commit,
-					InputRev: rev,
+			chunkMatches = append(chunkMatches, result.ChunkMatch{
+				Content: cm.Content,
+				ContentStart: result.Location{
+					Offset: int(cm.ContentStart.Offset),
+					Line:   int(cm.ContentStart.Line),
+					Column: 0,
 				},
-				MultilineMatches: multilineMatches,
-				LimitHit:         fm.LimitHit,
+				Ranges: ranges,
 			})
 		}
-		return matches
+
+		matches = append(matches, &result.FileMatch{
+			File: result.File{
+				Path:     fm.Path,
+				Repo:     repo,
+				CommitID: commit,
+				InputRev: rev,
+			},
+			ChunkMatches: chunkMatches,
+			LimitHit:     fm.LimitHit,
+		})
 	}
+	return matches
 }
 
 // repoShouldBeSearched determines whether a repository should be searched in, based on whether the repository
@@ -296,8 +302,10 @@ func repoHasFilesWithNamesMatching(
 				foundMatches = true
 			}
 		}
+		// TODO(keegancsmith) we should be passing in more state here like
+		// indexer endpoints and features.
 		p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-		_, err := Search(ctx, searcherURLs, repo.Name, repo.ID, "", commit, false, &p, fetchTimeout, []string{}, onMatches)
+		_, err := Search(ctx, searcherURLs, repo.Name, repo.ID, "", commit, false, &p, fetchTimeout, []string{}, search.Features{}, onMatches)
 		if err != nil {
 			return false, err
 		}

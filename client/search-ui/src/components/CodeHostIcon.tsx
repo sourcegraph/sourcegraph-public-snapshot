@@ -5,7 +5,7 @@ import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 /**
  * Returns the icon for the repository's code host
@@ -25,9 +25,9 @@ export const CodeHostIcon: React.FunctionComponent<
 
     if (CodehostIcon) {
         return (
-            <span role="img" aria-label={hostName} title={hostName}>
-                <Icon role="img" className={className} as={CodehostIcon} aria-hidden={true} />
-            </span>
+            <Tooltip content={hostName}>
+                <Icon aria-label={hostName} className={className} as={CodehostIcon} />
+            </Tooltip>
         )
     }
 

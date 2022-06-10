@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button, Link, Icon, Text } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -83,7 +83,7 @@ export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChil
                 description="Access tokens may be used to access the Sourcegraph API."
                 actions={
                     <Button to={`${match.url}/new`} variant="primary" as={Link}>
-                        <Icon as={AddIcon} /> Generate new token
+                        <Icon as={AddIcon} aria-hidden={true} /> Generate new token
                     </Button>
                 }
                 className="mb-3"
@@ -106,7 +106,9 @@ export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChil
                     history={history}
                     location={location}
                     emptyElement={
-                        <p className="text-muted text-center w-100 mb-0">You don't have any access tokens.</p>
+                        <Text alignment="center" className="text-muted w-100 mb-0">
+                            You don't have any access tokens.
+                        </Text>
                     }
                 />
             </Container>

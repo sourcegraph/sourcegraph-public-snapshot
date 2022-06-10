@@ -26,7 +26,6 @@ func Submit(okayToken string, gitHubLogin string) error {
 		}
 
 		// clean up data
-		ev.Labels = append(ev.Labels, "sg-analytics")
 		for k, v := range ev.Properties {
 			if len(v) == 0 {
 				delete(ev.Properties, k)

@@ -1,15 +1,14 @@
 import React, { useMemo, useState, useCallback } from 'react'
 
-import classNames from 'classnames'
 import { debounce } from 'lodash'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
 
-import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
+import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { PathMatch } from '@sourcegraph/shared/src/search/stream'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Icon, Button, Typography } from '@sourcegraph/wildcard'
+import { Icon, Button, Input, InputStatus } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlockInput } from '../..'
 import { parseLineRange, serializeLineRange } from '../../serialize'
@@ -84,15 +83,14 @@ export const NotebookFileBlockInputs: React.FunctionComponent<
         [onFileSuggestionSelected]
     )
 
-    const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
+    const isMacPlatform = useMemo(() => isMacPlatformFunc(), [])
 
     return (
         <div className={styles.fileBlockInputs}>
             <div className="text-muted mb-2">
                 <small>
-                    <Icon role="img" aria-hidden={true} as={InfoCircleOutlineIcon} /> To automatically select a file,
-                    copy a Sourcegraph file URL, select the block, and paste the URL ({isMacPlatform ? '⌘' : 'Ctrl'} +
-                    v).
+                    <Icon aria-hidden={true} as={InfoCircleOutlineIcon} /> To automatically select a file, copy a
+                    Sourcegraph file URL, select the block, and paste the URL ({isMacPlatform ? '⌘' : 'Ctrl'} + v).
                 </small>
             </div>
             <SearchTypeSuggestionsInput<PathMatch>
@@ -107,21 +105,19 @@ export const NotebookFileBlockInputs: React.FunctionComponent<
                 {...props}
             />
             <div className="mt-2">
-                <Typography.Label htmlFor={`${id}-line-range-input`}>Line range</Typography.Label>
-                <input
+                <Input
                     id={`${id}-line-range-input`}
-                    type="text"
-                    className={classNames('form-control', isLineRangeValid === false && 'is-invalid')}
+                    status={InputStatus[isLineRangeValid === false ? 'error' : 'initial']}
                     value={lineRangeInput}
                     onChange={onLineRangeInputChange}
                     placeholder="Enter a single line (1), a line range (1-10), or leave empty to show the entire file."
+                    label="Line range"
+                    className="mb-0"
+                    error={
+                        isLineRangeValid === false &&
+                        'Line range is invalid. Enter a single line (1), a line range (1-10), or leave empty to show the entire file.'
+                    }
                 />
-                {isLineRangeValid === false && (
-                    <div className="text-danger mt-1">
-                        Line range is invalid. Enter a single line (1), a line range (1-10), or leave empty to show the
-                        entire file.
-                    </div>
-                )}
             </div>
         </div>
     )

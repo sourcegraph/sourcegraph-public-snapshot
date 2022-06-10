@@ -200,10 +200,10 @@ type ListBatchSpecWorkspacesOpts struct {
 	BatchSpecID int64
 	IDs         []int64
 
-	State                 btypes.BatchSpecWorkspaceExecutionJobState
-	OnlyWithoutExecution  bool
-	OnlyCachedOrCompleted bool
-	TextSearch            []search.TextSearchTerm
+	State                            btypes.BatchSpecWorkspaceExecutionJobState
+	OnlyWithoutExecutionAndNotCached bool
+	OnlyCachedOrCompleted            bool
+	TextSearch                       []search.TextSearchTerm
 }
 
 func (opts ListBatchSpecWorkspacesOpts) SQLConds(ctx context.Context, db database.DB, forCount bool) (where *sqlf.Query, joinStatements *sqlf.Query, err error) {
@@ -238,9 +238,9 @@ func (opts ListBatchSpecWorkspacesOpts) SQLConds(ctx context.Context, db databas
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state = %s", opts.State))
 	}
 
-	if opts.OnlyWithoutExecution {
+	if opts.OnlyWithoutExecutionAndNotCached {
 		ensureJoinExecution()
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id IS NULL"))
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id IS NULL AND NOT batch_spec_workspaces.cached_result_found"))
 	}
 
 	if opts.OnlyCachedOrCompleted {

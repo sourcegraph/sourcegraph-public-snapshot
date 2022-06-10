@@ -1,3 +1,0 @@
-name: return user_id index to sub_repo_permissions table
-parent: 1528395972
-createIndexConcurrently: true

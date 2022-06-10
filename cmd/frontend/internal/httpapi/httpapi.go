@@ -82,7 +82,7 @@ func NewHandler(
 
 	webhookhandlers.Init(db, &gh)
 	webhookMiddleware := webhooks.NewLogMiddleware(
-		database.WebhookLogs(db, keyring.Default().WebhookLogKey),
+		db.WebhookLogs(keyring.Default().WebhookLogKey),
 	)
 
 	handlers.GitHubWebhook.Register(&gh)
@@ -141,7 +141,7 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	indexer := &searchIndexerServer{
 		db:            db,
 		ListIndexable: backend.NewRepos(db).ListIndexable,
-		RepoStore:     database.Repos(db),
+		RepoStore:     db.Repos(),
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
 		},
@@ -156,14 +156,11 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	m.Get(apirouter.SettingsGetForSubject).Handler(trace.Route(handler(serveSettingsGetForSubject(db))))
 	m.Get(apirouter.OrgsListUsers).Handler(trace.Route(handler(serveOrgsListUsers(db))))
 	m.Get(apirouter.OrgsGetByName).Handler(trace.Route(handler(serveOrgsGetByName(db))))
-	m.Get(apirouter.UsersGetByUsername).Handler(trace.Route(handler(serveUsersGetByUsername(db))))
 	m.Get(apirouter.UserEmailsGetEmail).Handler(trace.Route(handler(serveUserEmailsGetEmail(db))))
 	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
-	m.Get(apirouter.CanSendEmail).Handler(trace.Route(handler(serveCanSendEmail)))
 	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))
 	m.Get(apirouter.GitExec).Handler(trace.Route(handler(serveGitExec(db))))
 	m.Get(apirouter.GitResolveRevision).Handler(trace.Route(handler(serveGitResolveRevision(db))))
-	m.Get(apirouter.GitTar).Handler(trace.Route(handler(serveGitTar(db))))
 	gitService := &gitServiceHandler{
 		Gitserver: gitserver.NewClient(db),
 	}

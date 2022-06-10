@@ -60,7 +60,7 @@ func InitGitRepository(t *testing.T, cmds ...string) string {
 	t.Helper()
 	root := CreateRepoDir(t)
 	remotes := filepath.Join(root, "remotes")
-	if err := os.MkdirAll(remotes, 0700); err != nil {
+	if err := os.MkdirAll(remotes, 0o700); err != nil {
 		t.Fatal(err)
 	}
 	dir, err := os.MkdirTemp(remotes, strings.ReplaceAll(t.Name(), "/", "__"))
@@ -85,6 +85,9 @@ func CreateGitCommand(dir, name string, args ...string) *exec.Cmd {
 	c := exec.Command(name, args...)
 	c.Dir = dir
 	c.Env = []string{"GIT_CONFIG=" + path.Join(dir, ".git", "config")}
+	if systemPath, ok := os.LookupEnv("PATH"); ok {
+		c.Env = append(c.Env, "PATH="+systemPath)
+	}
 	return c
 }
 

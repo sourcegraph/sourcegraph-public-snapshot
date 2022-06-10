@@ -1,7 +1,9 @@
 import { storiesOf } from '@storybook/react'
+import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../../components/WebStory'
@@ -19,17 +21,11 @@ import { BATCH_SPEC_WORKSPACES, BATCH_SPEC_WORKSPACE_BY_ID, FETCH_BATCH_SPEC_EXE
 
 import { ExecutionWorkspaces } from './ExecutionWorkspaces'
 
-const { add } = storiesOf('web/batches/batch-spec/execute/ExecutionWorkspaces', module)
-    .addDecorator(story => (
-        <div className="p-3 d-flex" style={{ height: '95vh', width: '100%' }}>
-            {story()}
-        </div>
-    ))
-    .addParameters({
-        chromatic: {
-            disableSnapshot: false,
-        },
-    })
+const { add } = storiesOf('web/batches/batch-spec/execute/ExecutionWorkspaces', module).addDecorator(story => (
+    <div className="p-3 d-flex" style={{ height: '95vh', width: '100%' }}>
+        {story()}
+    </div>
+))
 
 const MOCKS = new WildcardMockLink([
     {
@@ -86,12 +82,39 @@ add('list', () => (
     </WebStory>
 ))
 
+const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
+
 add('with workspace selected', () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={MOCKS}>
                 <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={mockFullBatchSpec()}>
-                    <ExecutionWorkspaces {...props} selectedWorkspaceID="spec1234" />
+                    <ExecutionWorkspaces
+                        {...props}
+                        selectedWorkspaceID="spec1234"
+                        queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                    />
+                </BatchSpecContextProvider>
+            </MockedTestProvider>
+        )}
+    </WebStory>
+))
+
+add('for a locally-executed spec', () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={MOCKS}>
+                <BatchSpecContextProvider
+                    batchChange={mockBatchChange()}
+                    batchSpec={mockFullBatchSpec({ source: BatchSpecSource.LOCAL })}
+                >
+                    <div className="container">
+                        <ExecutionWorkspaces
+                            {...props}
+                            selectedWorkspaceID="spec1234"
+                            queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                        />
+                    </div>
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}

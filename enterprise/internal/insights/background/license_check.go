@@ -6,15 +6,16 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewLicenseCheckJob will periodically check for the existence of a Code Insights license and ensure the correct set of insights is frozen.
-func NewLicenseCheckJob(ctx context.Context, postgres dbutil.DB, insightsdb dbutil.DB) goroutine.BackgroundRoutine {
+func NewLicenseCheckJob(ctx context.Context, postgres database.DB, insightsdb edb.InsightsDB) goroutine.BackgroundRoutine {
 	interval := time.Minute * 15
 
 	return goroutine.NewPeriodicGoroutine(ctx, interval,
@@ -23,14 +24,14 @@ func NewLicenseCheckJob(ctx context.Context, postgres dbutil.DB, insightsdb dbut
 		}))
 }
 
-func checkAndEnforceLicense(ctx context.Context, insightsdb dbutil.DB) (err error) {
+func checkAndEnforceLicense(ctx context.Context, insightsdb edb.InsightsDB) (err error) {
 	insightStore := store.NewInsightStore(insightsdb)
 	dashboardStore := store.NewDashboardStore(insightsdb)
 	insightTx, err := insightStore.Transact(ctx)
-	dashboardTx := dashboardStore.With(insightTx)
 	if err != nil {
 		return err
 	}
+	dashboardTx := dashboardStore.With(insightTx)
 	defer func() { err = insightTx.Done(err) }()
 
 	licenseError := licensing.Check(licensing.FeatureCodeInsights)

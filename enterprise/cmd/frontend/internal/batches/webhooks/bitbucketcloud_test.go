@@ -39,7 +39,7 @@ const (
 	bitbucketCloudDestinationHash    = "abcdefabcdefabcdefabcdefabcdefabcdefabcd"
 )
 
-func testBitbucketCloudWebhook(db *sql.DB, userID int32) func(*testing.T) {
+func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 
@@ -424,7 +424,7 @@ func bitbucketCloudTestSetup(t *testing.T, db *sql.DB) *bstore.Store {
 
 	// Note that tx is wrapped in nestedTx to effectively neuter further use of
 	// transactions within the test.
-	return bstore.NewWithClock(&nestedTx{tx}, &observation.TestContext, nil, clock.Now)
+	return bstore.NewWithClock(database.NewDB(&nestedTx{tx}), &observation.TestContext, nil, clock.Now)
 }
 
 // createBitbucketCloudExternalService creates a mock Bitbucket Cloud service

@@ -91,7 +91,7 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
                         className={styles.tabsClose}
                         aria-label="Close"
                     >
-                        <Icon as={CloseIcon} />
+                        <Icon as={CloseIcon} aria-hidden={true} />
                     </Button>
                 }
             >

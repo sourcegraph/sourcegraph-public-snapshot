@@ -12,22 +12,44 @@ import (
 type Output struct {
 	*output.Output
 
-	// Buildkite indicates we are in a Buildkite environment.
-	Buildkite bool
+	// buildkite indicates we are in a buildkite environment.
+	buildkite bool
 }
 
 // Out is the standard output which is instantiated when sg gets run.
 var Out *Output
 
-// NewOutput instantiates a new output instance for local use, such as to get
+// NewOutput instantiates a new output instance for local use with inferred configuration.
 func NewOutput(dst io.Writer, verbose bool) *Output {
+	inBuildkite := os.Getenv("BUILDKITE") == "true"
+
 	return &Output{
 		Output: output.NewOutput(dst, output.OutputOpts{
 			ForceColor: true,
 			ForceTTY:   true,
 			Verbose:    verbose,
+
+			// Buildkite output is always against a dark background, so we disable the
+			// detection. Note that for some reason the dark background detection hangs
+			// indefinitely in Buildkite, so ForceDarkBackground being set is a required.
+			ForceDarkBackground: inBuildkite,
 		}),
-		Buildkite: os.Getenv("BUILDKITE") == "true",
+		buildkite: inBuildkite,
+	}
+}
+
+// NewFixedOutput instantiates a new output instance with fixed configuration, useful for
+// testing or on platforms/scenarios with problematic terminal detection.
+func NewFixedOutput(dst io.Writer, verbose bool) *Output {
+	return &Output{
+		Output: output.NewOutput(dst, output.OutputOpts{
+			ForceColor:          true,
+			ForceTTY:            true,
+			Verbose:             verbose,
+			ForceWidth:          80,
+			ForceHeight:         25,
+			ForceDarkBackground: true,
+		}),
 	}
 }
 
@@ -36,7 +58,7 @@ func NewOutput(dst io.Writer, verbose bool) *Output {
 //
 // Learn more: https://buildkite.com/docs/pipelines/managing-log-output
 func (o *Output) writeExpanded(line output.FancyLine) {
-	if o.Buildkite {
+	if o.buildkite {
 		line.Prefix = "+++"
 	}
 	o.WriteLine(line)
@@ -47,7 +69,7 @@ func (o *Output) writeExpanded(line output.FancyLine) {
 //
 // Learn more: https://buildkite.com/docs/pipelines/managing-log-output
 func (o *Output) writeCollapsed(line output.FancyLine) {
-	if o.Buildkite {
+	if o.buildkite {
 		line.Prefix = "---"
 	}
 	o.WriteLine(line)
@@ -58,7 +80,7 @@ func (o *Output) writeCollapsed(line output.FancyLine) {
 //
 // Learn more: https://buildkite.com/docs/pipelines/managing-log-output
 func (o *Output) writeExpandPrevious(line output.FancyLine) {
-	if o.Buildkite {
+	if o.buildkite {
 		line.Prefix = "^^^ +++" // ensure previous group is expanded
 	}
 	o.WriteLine(line)
@@ -73,7 +95,7 @@ func (o *Output) WriteSuccessf(fmtStr string, args ...any) {
 //
 // In Buildkite it expands the previous and current section to make them visible.
 func (o *Output) WriteFailuref(fmtStr string, args ...any) {
-	o.writeExpandPrevious(output.Linef(output.EmojiFailure, output.StyleWarning, fmtStr, args...))
+	o.writeExpandPrevious(output.Linef(output.EmojiFailure, output.StyleFailure, fmtStr, args...))
 }
 
 // WriteWarningf should be used to communicate a non-blocking failure to the user.

@@ -1,11 +1,11 @@
-const cachedContentRequests = new Map<string, Promise<string>>()
+const cachedContentRequests = new Map<string, Promise<string | null>>()
 
-import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
+import { ContentMatch, PathMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 
-import { getIdForMatch } from '../results/utils'
+import { getMatchId } from '../results/utils'
 
-export async function loadContent(match: ContentMatch): Promise<string> {
-    const cacheKey = getIdForMatch(match)
+export async function loadContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string | null> {
+    const cacheKey = getMatchId(match)
 
     if (cachedContentRequests.has(cacheKey)) {
         return (await cachedContentRequests.get(cacheKey)) as string
@@ -20,7 +20,7 @@ export async function loadContent(match: ContentMatch): Promise<string> {
     return loadPromise
 }
 
-async function fetchBlobContent(match: ContentMatch): Promise<string> {
+async function fetchBlobContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string | null> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
     const response: any = await fetch('https://sourcegraph.com/.api/graphql', {
         method: 'post',
@@ -31,6 +31,11 @@ async function fetchBlobContent(match: ContentMatch): Promise<string> {
                         commit(rev: $commitID) {
                             file(path: $filePath) {
                                 content
+                                // We include the highlight part here even though it is not used to get a server side
+                                // error when previewing binary files.
+                                highlight(disableTimeout: false) {
+                                    aborted
+                                }
                             }
                         }
                     }
@@ -45,7 +50,8 @@ async function fetchBlobContent(match: ContentMatch): Promise<string> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
     const content: undefined | string = response?.data?.repository?.commit?.file?.content
     if (content === undefined) {
-        throw new Error('No content found in query response')
+        console.error('No content found in query response', response)
+        return null
     }
     return content
 }

@@ -3,7 +3,7 @@ import React from 'react'
 import ImportIcon from 'mdi-react/ImportIcon'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Icon, Typography } from '@sourcegraph/wildcard'
+import { Icon, H4 } from '@sourcegraph/wildcard'
 
 import { UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
 import {
@@ -34,7 +34,7 @@ export const ImportingChangesetsPreviewList: React.FunctionComponent<
     React.PropsWithChildren<ImportingChangesetsPreviewListProps>
 > = ({ importingChangesetsConnection: { connection, hasNextPage, fetchMore, loading }, isStale }) => (
     <ConnectionContainer className="w-100">
-        <Typography.H4 className="align-self-start w-100 mt-4">Importing changesets</Typography.H4>
+        <H4 className="align-self-start w-100 mt-4">Importing changesets</H4>
         <ConnectionList className="list-group list-group-flush w-100">
             {connection?.nodes.map(node =>
                 node.__typename === 'VisibleChangesetSpec' ? (
@@ -47,7 +47,7 @@ export const ImportingChangesetsPreviewList: React.FunctionComponent<
                                     : undefined
                             }
                         >
-                            <Icon as={ImportIcon} />{' '}
+                            <Icon aria-hidden={true} as={ImportIcon} />{' '}
                             {node.description.__typename === 'ExistingChangesetReference' &&
                                 node.description.baseRepository.name}
                         </LinkOrSpan>{' '}

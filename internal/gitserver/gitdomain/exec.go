@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 )
 
 var (
@@ -17,7 +17,7 @@ var (
 		"blame":  {"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
 		"branch": {"-r", "-a", "--contains", "--merged", "--format"},
 
-		"rev-parse":    {"--abbrev-ref", "--symbolic-full-name"},
+		"rev-parse":    {"--abbrev-ref", "--symbolic-full-name", "--glob", "--exclude"},
 		"rev-list":     {"--first-parent", "--max-parents", "--reverse", "--max-count", "--count", "--after", "--before", "--", "-n", "--date-order", "--skip", "--left-right"},
 		"ls-remote":    {"--get-url"},
 		"symbolic-ref": {"--short"},
@@ -25,7 +25,7 @@ var (
 		"ls-tree":      {"--name-only", "HEAD", "--long", "--full-name", "--", "-z", "-r", "-t"},
 		"ls-files":     {"--with-tree", "-z"},
 		"for-each-ref": {"--format", "--points-at"},
-		"tag":          {"--list", "--sort", "-creatordate", "--format"},
+		"tag":          {"--list", "--sort", "-creatordate", "--format", "--points-at"},
 		"merge-base":   {"--"},
 		"show-ref":     {"--heads"},
 		"shortlog":     {"-s", "-n", "-e", "--no-merges"},
@@ -74,7 +74,7 @@ func isAllowedGitArg(allowedArgs []string, arg string) bool {
 }
 
 // IsAllowedGitCmd checks if the cmd and arguments are allowed.
-func IsAllowedGitCmd(args []string) bool {
+func IsAllowedGitCmd(logger log.Logger, args []string) bool {
 	if len(args) == 0 || len(gitCmdAllowlist) == 0 {
 		return false
 	}
@@ -83,7 +83,7 @@ func IsAllowedGitCmd(args []string) bool {
 	allowedArgs, ok := gitCmdAllowlist[cmd]
 	if !ok {
 		// Command not allowed
-		log15.Warn("IsAllowedGitCmd: command not allowed", "cmd", cmd)
+		logger.Warn("command not allowed", log.String("cmd", cmd))
 		return false
 	}
 	for _, arg := range args[1:] {
@@ -108,7 +108,7 @@ func IsAllowedGitCmd(args []string) bool {
 			}
 
 			if !isAllowedGitArg(allowedArgs, arg) {
-				log15.Warn("IsAllowedGitCmd.isAllowedGitArgcmd", "cmd", cmd, "arg", arg)
+				logger.Warn("IsAllowedGitCmd.isAllowedGitArgcmd", log.String("cmd", cmd), log.String("arg", arg))
 				return false
 			}
 		}

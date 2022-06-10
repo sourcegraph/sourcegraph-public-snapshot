@@ -5,7 +5,7 @@ import * as uuid from 'uuid'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Input } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CreateNotebookVariables } from '../../graphql-operations'
@@ -77,7 +77,7 @@ export const ImportMarkdownNotebookButton: React.FunctionComponent<
 
     return (
         <>
-            <input
+            <Input
                 type="file"
                 className="d-none"
                 ref={fileInputReference}
@@ -91,7 +91,7 @@ export const ImportMarkdownNotebookButton: React.FunctionComponent<
                 disabled={importState === LOADING}
                 className="ml-2"
             >
-                <Icon role="img" aria-hidden={true} className="mr-1" as={UploadIcon} />
+                <Icon aria-hidden={true} className="mr-1" as={UploadIcon} />
                 <span>{importState === LOADING ? 'Importing...' : 'Import Markdown notebook'}</span>
             </Button>
         </>

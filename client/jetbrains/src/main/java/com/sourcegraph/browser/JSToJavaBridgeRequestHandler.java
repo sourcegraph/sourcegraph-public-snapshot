@@ -13,17 +13,13 @@ import com.sourcegraph.find.Search;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 public class JSToJavaBridgeRequestHandler {
     private final Project project;
     private final PreviewPanel previewPanel;
     private final BrowserAndLoadingPanel topPanel;
-
-    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull PreviewPanel previewPanel, @NotNull BrowserAndLoadingPanel topPanel) {
-        this.project = project;
-        this.previewPanel = previewPanel;
-        this.topPanel = topPanel;
-    }
 
     public JBCefJSQuery.Response handle(@NotNull JsonObject request) {
         String action = request.get("action").getAsString();
@@ -56,6 +52,11 @@ public class JSToJavaBridgeRequestHandler {
                     return createSuccessResponse(new JsonObject());
                 case "loadLastSearch":
                     Search lastSearch = ConfigUtil.getLastSearch(this.project);
+
+                    if (lastSearch == null) {
+                        return createSuccessResponse(null);
+                    }
+
                     JsonObject lastSearchAsJson = new JsonObject();
                     lastSearchAsJson.addProperty("query", lastSearch.getQuery());
                     lastSearchAsJson.addProperty("caseSensitive", lastSearch.isCaseSensitive());
@@ -65,7 +66,7 @@ public class JSToJavaBridgeRequestHandler {
                 case "preview":
                     arguments = request.getAsJsonObject("arguments");
                     previewContent = gson.fromJson(arguments, PreviewContent.class);
-                    previewPanel.setContent(previewContent, false);
+                    previewPanel.setContent(previewContent);
                     return createSuccessResponse(null);
                 case "clearPreview":
                     previewPanel.clearContent();
@@ -73,31 +74,48 @@ public class JSToJavaBridgeRequestHandler {
                 case "open":
                     arguments = request.getAsJsonObject("arguments");
                     previewContent = gson.fromJson(arguments, PreviewContent.class);
-                    previewPanel.setContent(previewContent, true);
+                    try {
+                        previewPanel.openInEditorOrBrowser(previewContent);
+                    } catch (Exception e) {
+                        return createErrorResponse("Error while opening link: " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
+                    }
                     return createSuccessResponse(null);
                 case "indicateFinishedLoading":
                     topPanel.setBrowserVisible(true);
                     return createSuccessResponse(null);
                 default:
-                    return createErrorResponse(2, "Unknown action: " + action);
+                    return createErrorResponse("Unknown action: '" + action + "'.", "No stack trace");
             }
         } catch (Exception e) {
-            return createErrorResponse(3, action + ": " + e.getClass().getName() + ": " + e.getMessage());
+            return createErrorResponse(action + ": " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
         }
     }
 
+    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull PreviewPanel previewPanel, @NotNull BrowserAndLoadingPanel topPanel) {
+        this.project = project;
+        this.previewPanel = previewPanel;
+        this.topPanel = topPanel;
+    }
+
     public JBCefJSQuery.Response handleInvalidRequest(Exception e) {
-        return createErrorResponse(1, "Invalid JSON passed to bridge. The error is: " + e.getClass() + ": " + e.getMessage());
+        return createErrorResponse("Invalid JSON passed to bridge. The error is: " + e.getClass() + ": " + e.getMessage(), convertStackTraceToString(e));
     }
 
     @NotNull
     private JBCefJSQuery.Response createSuccessResponse(@Nullable JsonObject result) {
-        return new JBCefJSQuery.Response(result != null ? result.toString() : "{}");
+        return new JBCefJSQuery.Response(result != null ? result.toString() : "null");
     }
 
     @NotNull
-    private JBCefJSQuery.Response createErrorResponse(int errorCode, @Nullable String errorMessage) {
-        return new JBCefJSQuery.Response(null, errorCode, errorMessage);
+    private JBCefJSQuery.Response createErrorResponse(@NotNull String errorMessage, @NotNull String stackTrace) {
+        return new JBCefJSQuery.Response(null, 0, errorMessage + "\n" + stackTrace);
+    }
+
+    @NotNull
+    private String convertStackTraceToString(@NotNull Exception e) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+        return sw.toString();
     }
 }
-

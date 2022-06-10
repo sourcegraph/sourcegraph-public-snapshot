@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Typography } from '@sourcegraph/wildcard'
+import { Code } from '@sourcegraph/wildcard'
 
 import styles from './LogOutput.module.scss'
 
@@ -20,12 +20,12 @@ export const LogOutput: React.FunctionComponent<React.PropsWithChildren<LogOutpu
                 // lifetime (note: it's also memoized).
                 /* eslint-disable react/no-array-index-key */
                 text.split('\n').map((line, index) => (
-                    <Typography.Code
+                    <Code
                         key={index}
                         className={classNames('d-block', line.startsWith('stderr:') ? 'text-danger' : '')}
                     >
                         {line.replace(/^std(out|err): /, '')}
-                    </Typography.Code>
+                    </Code>
                 ))
             }
         </pre>

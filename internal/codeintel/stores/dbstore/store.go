@@ -2,12 +2,11 @@ package dbstore
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -17,7 +16,7 @@ type Store struct {
 	operations *operations
 }
 
-func NewWithDB(db dbutil.DB, observationContext *observation.Context) *Store {
+func NewWithDB(db database.DB, observationContext *observation.Context) *Store {
 	operationsMetrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_dbstore",
@@ -26,7 +25,7 @@ func NewWithDB(db dbutil.DB, observationContext *observation.Context) *Store {
 	)
 
 	return &Store{
-		Store:      basestore.NewWithDB(db, sql.TxOptions{}),
+		Store:      basestore.NewWithHandle(db.Handle()),
 		operations: newOperations(observationContext, operationsMetrics),
 	}
 }

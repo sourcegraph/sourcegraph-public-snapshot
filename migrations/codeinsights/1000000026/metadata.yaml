@@ -1,2 +1,4 @@
-name: 'commit indexer debug fields'
-parent: 1000000025
+name: squashed migrations (privileged)
+parents: []
+privileged: true
+nonIdempotent: true

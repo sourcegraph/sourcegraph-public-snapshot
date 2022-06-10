@@ -9,6 +9,14 @@
   ],
   "Enums": [
     {
+      "Name": "audit_log_operation",
+      "Labels": [
+        "create",
+        "modify",
+        "delete"
+      ]
+    },
+    {
       "Name": "batch_changes_changeset_ui_publication_state",
       "Labels": [
         "UNPUBLISHED",
@@ -82,7 +90,7 @@
     },
     {
       "Name": "func_configuration_policies_insert",
-      "Definition": "CREATE OR REPLACE FUNCTION public.func_configuration_policies_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        INSERT INTO configuration_policies_audit_logs\n        (policy_id, transition_columns)\n        VALUES (\n            NEW.id,\n            func_configuration_policies_transition_columns_diff(\n                (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),\n                func_row_to_configuration_policies_transition_columns(NEW)\n            )\n        );\n        RETURN NULL;\n    END;\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.func_configuration_policies_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        INSERT INTO configuration_policies_audit_logs\n        (policy_id, operation, transition_columns)\n        VALUES (\n            NEW.id, 'create',\n            func_configuration_policies_transition_columns_diff(\n                (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),\n                func_row_to_configuration_policies_transition_columns(NEW)\n            )\n        );\n        RETURN NULL;\n    END;\n$function$\n"
     },
     {
       "Name": "func_configuration_policies_transition_columns_diff",
@@ -90,7 +98,7 @@
     },
     {
       "Name": "func_configuration_policies_update",
-      "Definition": "CREATE OR REPLACE FUNCTION public.func_configuration_policies_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    DECLARE\n        diff hstore[];\n    BEGIN\n        diff = func_configuration_policies_transition_columns_diff(\n            func_row_to_configuration_policies_transition_columns(OLD),\n            func_row_to_configuration_policies_transition_columns(NEW)\n        );\n\n        IF (array_length(diff, 1) \u003e 0) THEN\n            INSERT INTO configuration_policies_audit_logs\n            (policy_id, transition_columns)\n            VALUES (\n                NEW.id,\n                diff\n            );\n        END IF;\n\n        RETURN NEW;\n    END;\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.func_configuration_policies_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    DECLARE\n        diff hstore[];\n    BEGIN\n        diff = func_configuration_policies_transition_columns_diff(\n            func_row_to_configuration_policies_transition_columns(OLD),\n            func_row_to_configuration_policies_transition_columns(NEW)\n        );\n\n        IF (array_length(diff, 1) \u003e 0) THEN\n            INSERT INTO configuration_policies_audit_logs\n            (policy_id, operation, transition_columns)\n            VALUES (NEW.id, 'modify', diff);\n        END IF;\n\n        RETURN NEW;\n    END;\n$function$\n"
     },
     {
       "Name": "func_insert_gitserver_repo",
@@ -102,7 +110,7 @@
     },
     {
       "Name": "func_lsif_uploads_insert",
-      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        INSERT INTO lsif_uploads_audit_logs\n        (upload_id, commit, root, repository_id, uploaded_at,\n        indexer, indexer_version, upload_size, associated_index_id,\n        transition_columns)\n        VALUES (\n            NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,\n            NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,\n            func_lsif_uploads_transition_columns_diff(\n                (NULL, NULL, NULL, NULL, NULL, NULL),\n                func_row_to_lsif_uploads_transition_columns(NEW)\n            )\n        );\n        RETURN NULL;\n    END;\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        INSERT INTO lsif_uploads_audit_logs\n        (upload_id, commit, root, repository_id, uploaded_at,\n        indexer, indexer_version, upload_size, associated_index_id,\n        operation, transition_columns)\n        VALUES (\n            NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,\n            NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,\n            'create', func_lsif_uploads_transition_columns_diff(\n                (NULL, NULL, NULL, NULL, NULL, NULL),\n                func_row_to_lsif_uploads_transition_columns(NEW)\n            )\n        );\n        RETURN NULL;\n    END;\n$function$\n"
     },
     {
       "Name": "func_lsif_uploads_transition_columns_diff",
@@ -110,7 +118,7 @@
     },
     {
       "Name": "func_lsif_uploads_update",
-      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    DECLARE\n        diff hstore[];\n    BEGIN\n        diff = func_lsif_uploads_transition_columns_diff(\n            func_row_to_lsif_uploads_transition_columns(OLD),\n            func_row_to_lsif_uploads_transition_columns(NEW)\n        );\n\n        IF (array_length(diff, 1) \u003e 0) THEN\n            INSERT INTO lsif_uploads_audit_logs\n            (reason, upload_id, commit, root, repository_id, uploaded_at,\n            indexer, indexer_version, upload_size, associated_index_id,\n            transition_columns)\n            VALUES (\n                COALESCE(current_setting('codeintel.lsif_uploads_audit.reason', true), ''),\n                NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,\n                NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,\n                diff\n            );\n        END IF;\n\n        RETURN NEW;\n    END;\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    DECLARE\n        diff hstore[];\n    BEGIN\n        diff = func_lsif_uploads_transition_columns_diff(\n            func_row_to_lsif_uploads_transition_columns(OLD),\n            func_row_to_lsif_uploads_transition_columns(NEW)\n        );\n\n        IF (array_length(diff, 1) \u003e 0) THEN\n            INSERT INTO lsif_uploads_audit_logs\n            (reason, upload_id, commit, root, repository_id, uploaded_at,\n            indexer, indexer_version, upload_size, associated_index_id,\n            operation, transition_columns)\n            VALUES (\n                COALESCE(current_setting('codeintel.lsif_uploads_audit.reason', true), ''),\n                NEW.id, NEW.commit, NEW.root, NEW.repository_id, NEW.uploaded_at,\n                NEW.indexer, NEW.indexer_version, NEW.upload_size, NEW.associated_index_id,\n                'modify', diff\n            );\n        END IF;\n\n        RETURN NEW;\n    END;\n$function$\n"
     },
     {
       "Name": "func_row_to_configuration_policies_transition_columns",
@@ -358,6 +366,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "configuration_policies_audit_logs_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "critical_and_site_config_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
@@ -404,6 +421,15 @@
     },
     {
       "Name": "executor_heartbeats_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "explicit_permissions_bitbucket_projects_jobs_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
       "MinimumValue": 1,
@@ -552,6 +578,15 @@
       "StartValue": 1,
       "MinimumValue": 1,
       "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "lsif_uploads_audit_logs_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
       "Increment": 1,
       "CycleOption": "NO"
     },
@@ -1937,6 +1972,19 @@
           "Comment": ""
         },
         {
+          "Name": "user_id",
+          "Index": 18,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "worker_hostname",
           "Index": 11,
           "TypeName": "text",
@@ -1968,6 +2016,26 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX batch_spec_workspace_execution_jobs_cancel ON batch_spec_workspace_execution_jobs USING btree (cancel)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "batch_spec_workspace_execution_jobs_state",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX batch_spec_workspace_execution_jobs_state ON batch_spec_workspace_execution_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "batch_spec_workspace_execution_jobs_user_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX batch_spec_workspace_execution_jobs_user_id ON batch_spec_workspace_execution_jobs USING btree (user_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -2022,7 +2090,7 @@
         },
         {
           "Name": "cached_result_found",
-          "Index": 16,
+          "Index": 15,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
@@ -2061,7 +2129,7 @@
         },
         {
           "Name": "created_at",
-          "Index": 11,
+          "Index": 10,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
@@ -2100,7 +2168,7 @@
         },
         {
           "Name": "ignored",
-          "Index": 13,
+          "Index": 12,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
@@ -2152,32 +2220,6 @@
         },
         {
           "Name": "skipped",
-          "Index": 15,
-          "TypeName": "boolean",
-          "IsNullable": false,
-          "Default": "false",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "step_cache_results",
-          "Index": 18,
-          "TypeName": "jsonb",
-          "IsNullable": false,
-          "Default": "'{}'::jsonb",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "unsupported",
           "Index": 14,
           "TypeName": "boolean",
           "IsNullable": false,
@@ -2190,8 +2232,34 @@
           "Comment": ""
         },
         {
+          "Name": "step_cache_results",
+          "Index": 16,
+          "TypeName": "jsonb",
+          "IsNullable": false,
+          "Default": "'{}'::jsonb",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "unsupported",
+          "Index": 13,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "updated_at",
-          "Index": 12,
+          "Index": 11,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
@@ -5723,6 +5791,19 @@
           "Comment": "Timestamp for this log entry."
         },
         {
+          "Name": "operation",
+          "Index": 6,
+          "TypeName": "audit_log_operation",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "policy_id",
           "Index": 3,
           "TypeName": "integer",
@@ -5747,6 +5828,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "Set once the upload this entry is associated with is deleted. Once NOW() - record_deleted_at is above a certain threshold, this log entry will be deleted."
+        },
+        {
+          "Name": "sequence",
+          "Index": 5,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('configuration_policies_audit_logs_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
         },
         {
           "Name": "transition_columns",
@@ -6963,6 +7057,242 @@
       "Triggers": []
     },
     {
+      "Name": "explicit_permissions_bitbucket_projects_jobs",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "execution_logs",
+          "Index": 11,
+          "TypeName": "json[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "external_service_id",
+          "Index": 14,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "failure_message",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "finished_at",
+          "Index": 6,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('explicit_permissions_bitbucket_projects_jobs_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "last_heartbeat_at",
+          "Index": 10,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_failures",
+          "Index": 9,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_resets",
+          "Index": 8,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "permissions",
+          "Index": 15,
+          "TypeName": "json[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "process_after",
+          "Index": 7,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "project_key",
+          "Index": 13,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "queued_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "started_at",
+          "Index": 5,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "state",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "'queued'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "unrestricted",
+          "Index": 16,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "worker_hostname",
+          "Index": 12,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "explicit_permissions_bitbucket_projects_jobs_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX explicit_permissions_bitbucket_projects_jobs_pkey ON explicit_permissions_bitbucket_projects_jobs USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "explicit_permissions_bitbucket_projects_jobs_check",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (permissions IS NOT NULL AND unrestricted IS FALSE OR permissions IS NULL AND unrestricted IS TRUE)"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "external_service_repos",
       "Comment": "",
       "Columns": [
@@ -7562,6 +7892,26 @@
           "IndexDefinition": "CREATE UNIQUE INDEX external_services_pkey ON external_services USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "external_services_unique_kind_org_id",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX external_services_unique_kind_org_id ON external_services USING btree (kind, namespace_org_id) WHERE deleted_at IS NULL AND namespace_user_id IS NULL AND namespace_org_id IS NOT NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "external_services_unique_kind_user_id",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX external_services_unique_kind_user_id ON external_services USING btree (kind, namespace_user_id) WHERE deleted_at IS NULL AND namespace_org_id IS NULL AND namespace_user_id IS NOT NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         },
         {
           "Name": "kind_cloud_default",
@@ -8186,7 +8536,7 @@
         },
         {
           "Name": "last_changed",
-          "Index": 8,
+          "Index": 7,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
@@ -8199,7 +8549,7 @@
         },
         {
           "Name": "last_error",
-          "Index": 5,
+          "Index": 4,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -8212,7 +8562,7 @@
         },
         {
           "Name": "last_fetched",
-          "Index": 7,
+          "Index": 6,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
@@ -8238,7 +8588,7 @@
         },
         {
           "Name": "repo_size_bytes",
-          "Index": 9,
+          "Index": 8,
           "TypeName": "bigint",
           "IsNullable": true,
           "Default": "",
@@ -8251,7 +8601,7 @@
         },
         {
           "Name": "shard_id",
-          "Index": 4,
+          "Index": 3,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
@@ -8264,7 +8614,7 @@
         },
         {
           "Name": "updated_at",
-          "Index": 6,
+          "Index": 5,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
@@ -11383,6 +11733,19 @@
           "Comment": "Timestamp for this log entry."
         },
         {
+          "Name": "operation",
+          "Index": 16,
+          "TypeName": "audit_log_operation",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "reason",
           "Index": 14,
           "TypeName": "text",
@@ -11427,6 +11790,19 @@
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "sequence",
+          "Index": 15,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('lsif_uploads_audit_logs_seq'::regclass)",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -17007,6 +17383,10 @@
     }
   ],
   "Views": [
+    {
+      "Name": "batch_spec_workspace_execution_queue",
+      "Definition": " WITH user_queues AS (\n         SELECT exec.user_id,\n            max(exec.started_at) AS latest_dequeue\n           FROM batch_spec_workspace_execution_jobs exec\n          GROUP BY exec.user_id\n        ), materialized_queue_candidates AS MATERIALIZED (\n         SELECT exec.id,\n            exec.batch_spec_workspace_id,\n            exec.state,\n            exec.failure_message,\n            exec.started_at,\n            exec.finished_at,\n            exec.process_after,\n            exec.num_resets,\n            exec.num_failures,\n            exec.execution_logs,\n            exec.worker_hostname,\n            exec.last_heartbeat_at,\n            exec.created_at,\n            exec.updated_at,\n            exec.cancel,\n            exec.access_token_id,\n            exec.queued_at,\n            exec.user_id,\n            rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS place_in_user_queue\n           FROM (batch_spec_workspace_execution_jobs exec\n             JOIN user_queues queue ON ((queue.user_id = exec.user_id)))\n          WHERE (exec.state = 'queued'::text)\n          ORDER BY (rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id)), queue.latest_dequeue NULLS FIRST\n        )\n SELECT row_number() OVER () AS place_in_global_queue,\n    materialized_queue_candidates.id,\n    materialized_queue_candidates.batch_spec_workspace_id,\n    materialized_queue_candidates.state,\n    materialized_queue_candidates.failure_message,\n    materialized_queue_candidates.started_at,\n    materialized_queue_candidates.finished_at,\n    materialized_queue_candidates.process_after,\n    materialized_queue_candidates.num_resets,\n    materialized_queue_candidates.num_failures,\n    materialized_queue_candidates.execution_logs,\n    materialized_queue_candidates.worker_hostname,\n    materialized_queue_candidates.last_heartbeat_at,\n    materialized_queue_candidates.created_at,\n    materialized_queue_candidates.updated_at,\n    materialized_queue_candidates.cancel,\n    materialized_queue_candidates.access_token_id,\n    materialized_queue_candidates.queued_at,\n    materialized_queue_candidates.user_id,\n    materialized_queue_candidates.place_in_user_queue\n   FROM materialized_queue_candidates;"
+    },
     {
       "Name": "branch_changeset_specs_and_changesets",
       "Definition": " SELECT changeset_specs.id AS changeset_spec_id,\n    COALESCE(changesets.id, (0)::bigint) AS changeset_id,\n    changeset_specs.repo_id,\n    changeset_specs.batch_spec_id,\n    changesets.owned_by_batch_change_id AS owner_batch_change_id,\n    repo.name AS repo_name,\n    changeset_specs.title AS changeset_name,\n    changesets.external_state,\n    changesets.publication_state,\n    changesets.reconciler_state\n   FROM ((changeset_specs\n     LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.current_spec_id IS NOT NULL) AND (EXISTS ( SELECT 1\n           FROM changeset_specs changeset_specs_1\n          WHERE ((changeset_specs_1.id = changesets.current_spec_id) AND (changeset_specs_1.head_ref = changeset_specs.head_ref)))))))\n     JOIN repo ON ((changeset_specs.repo_id = repo.id)))\n  WHERE ((changeset_specs.external_id IS NULL) AND (repo.deleted_at IS NULL));"

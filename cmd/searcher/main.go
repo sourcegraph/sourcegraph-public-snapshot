@@ -17,6 +17,11 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/keegancsmith/tmpfriend"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -38,7 +43,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var (
@@ -85,6 +89,30 @@ func shutdownOnSignal(ctx context.Context, server *http.Server) error {
 	return server.Shutdown(ctx)
 }
 
+// setupTmpDir sets up a temporary directory on the same volume as the
+// cacheDir.
+//
+// Structural search relies on temporary files created from zoekt responses.
+// Additionally we shell out to programs that may or may not need a temporary
+// directory.
+//
+// search.Store will also take into account the files in tmp when deciding on
+// evicting items due to disk pressure. It won't delete those files unless
+// they are zip files. In the case of comby the files are temporary so them
+// being deleted while read by comby is fine since it will maintain an open
+// FD.
+func setupTmpDir() error {
+	tmpRoot := filepath.Join(cacheDir, ".searcher.tmp")
+	if err := os.MkdirAll(tmpRoot, 0755); err != nil {
+		return err
+	}
+	if !tmpfriend.IsTmpFriendDir(tmpRoot) {
+		_, err := tmpfriend.RootTempDir(tmpRoot)
+		return err
+	}
+	return nil
+}
+
 func run(logger log.Logger) error {
 	// Ready immediately
 	ready := make(chan struct{})
@@ -96,6 +124,16 @@ func run(logger log.Logger) error {
 		return errors.Wrapf(err, "invalid int %q for SEARCHER_CACHE_SIZE_MB", cacheSizeMB)
 	} else {
 		cacheSizeBytes = i * 1000 * 1000
+	}
+
+	if err := setupTmpDir(); err != nil {
+		return errors.Wrap(err, "failed to setup TMPDIR")
+	}
+
+	observationContext := &observation.Context{
+		Logger:     logger,
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
 	}
 
 	db, err := frontendDB()
@@ -123,11 +161,16 @@ func run(logger log.Logger) error {
 					Pathspecs: pathspecs,
 				})
 			},
-			FilterTar:         search.NewFilter,
-			Path:              filepath.Join(cacheDir, "searcher-archives"),
-			MaxCacheSizeBytes: cacheSizeBytes,
-			Log:               logger,
-			DB:                db,
+			FilterTar:          search.NewFilter,
+			Path:               filepath.Join(cacheDir, "searcher-archives"),
+			MaxCacheSizeBytes:  cacheSizeBytes,
+			Log:                logger,
+			ObservationContext: observationContext,
+			DB:                 db,
+		},
+		GitOutput: func(ctx context.Context, repo api.RepoName, args ...string) ([]byte, error) {
+			c := git.GitCommand(repo, args...)
+			return c.Output(ctx)
 		},
 		Log: logger,
 	}
@@ -135,7 +178,7 @@ func run(logger log.Logger) error {
 
 	// Set up handler middleware
 	handler := actor.HTTPMiddleware(service)
-	handler = trace.HTTPMiddleware(handler, conf.DefaultClient())
+	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = ot.HTTPMiddleware(handler)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -188,12 +231,13 @@ func main() {
 	stdlog.SetFlags(0)
 	conf.Init()
 	logging.Init()
-	syncLogs := log.Init(log.Resource{
+	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	})
-	defer syncLogs()
+	}, log.NewSentrySink())
+	defer liblog.Sync()
+	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()

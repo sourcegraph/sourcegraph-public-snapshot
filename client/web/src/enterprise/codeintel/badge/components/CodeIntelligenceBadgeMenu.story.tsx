@@ -18,6 +18,7 @@ import { CodeIntelligenceBadgeMenu } from './CodeIntelligenceBadgeMenu'
 const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
     __typename: 'LSIFUpload',
     inputCommit: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
+    tags: [],
     inputRoot: 'web/',
     inputIndexer: 'scip-typescript',
     indexer: { name: 'scip-typescript', url: 'https://github.com/sourcegraph/scip-typescript' },
@@ -40,6 +41,7 @@ const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
         },
     },
     associatedIndex: null,
+    auditLogs: [],
 }
 
 const executionLogPrototype: ExecutionLogEntryFields = {
@@ -54,6 +56,7 @@ const executionLogPrototype: ExecutionLogEntryFields = {
 const indexPrototype: Omit<LsifIndexFields, 'id' | 'state' | 'queuedAt'> = {
     __typename: 'LSIFIndex',
     inputCommit: '',
+    tags: [],
     inputRoot: 'web/',
     inputIndexer: 'scip-typescript',
     indexer: { name: 'scip-typescript', url: 'https://github.com/sourcegraph/scip-typescript' },

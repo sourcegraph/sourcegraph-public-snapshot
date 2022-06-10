@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-type ZoektSymbolSearchJob struct {
+type SymbolSearchJob struct {
 	Repos          *IndexedRepoRevs // the set of indexed repository revisions to search.
 	Query          zoektquery.Q
 	FileMatchLimit int32
@@ -24,7 +24,7 @@ type ZoektSymbolSearchJob struct {
 }
 
 // Run calls the zoekt backend to search symbols
-func (z *ZoektSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (z *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, z)
 	defer func() { finish(alert, err) }()
 
@@ -55,11 +55,11 @@ func (z *ZoektSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClien
 	return nil, nil
 }
 
-func (z *ZoektSymbolSearchJob) Name() string {
+func (z *SymbolSearchJob) Name() string {
 	return "ZoektSymbolSearchJob"
 }
 
-func (z *ZoektSymbolSearchJob) Tags() []log.Field {
+func (z *SymbolSearchJob) Tags() []log.Field {
 	tags := []log.Field{
 		trace.Stringer("query", z.Query),
 		log.Int32("fileMatchLimit", z.FileMatchLimit),
@@ -73,13 +73,13 @@ func (z *ZoektSymbolSearchJob) Tags() []log.Field {
 	return tags
 }
 
-type ZoektGlobalSymbolSearchJob struct {
+type GlobalSymbolSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
 	RepoOpts         search.RepoOptions
 }
 
-func (s *ZoektGlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *GlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
@@ -100,15 +100,15 @@ func (s *ZoektGlobalSymbolSearchJob) Run(ctx context.Context, clients job.Runtim
 	return nil, nil
 }
 
-func (*ZoektGlobalSymbolSearchJob) Name() string {
+func (*GlobalSymbolSearchJob) Name() string {
 	return "ZoektGlobalSymbolSearchJob"
 }
 
-func (s *ZoektGlobalSymbolSearchJob) Tags() []log.Field {
+func (s *GlobalSymbolSearchJob) Tags() []log.Field {
 	return []log.Field{
-		trace.Stringer("query", s.GlobalZoektQuery.query),
-		trace.Printf("repoScope", "%q", s.GlobalZoektQuery.repoScope),
-		log.Bool("includePrivate", s.GlobalZoektQuery.includePrivate),
+		trace.Stringer("query", s.GlobalZoektQuery.Query),
+		trace.Printf("repoScope", "%q", s.GlobalZoektQuery.RepoScope),
+		log.Bool("includePrivate", s.GlobalZoektQuery.IncludePrivate),
 		log.String("type", string(s.ZoektArgs.Typ)),
 		log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
 		trace.Stringer("select", s.ZoektArgs.Select),

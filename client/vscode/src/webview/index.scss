@@ -111,9 +111,12 @@ code {
 
 .btn-text-link {
     color: var(--vscode-textLink-foreground);
-    padding: 0;
+    padding: 0 !important;
+    margin: 0 !important;
     font-weight: var(--vscode-editor-font-weight) !important;
     font-size: var(--vscode-editor-font-size) !important;
+    background-color: transparent !important;
+    text-align: left;
 }
 
 .input,

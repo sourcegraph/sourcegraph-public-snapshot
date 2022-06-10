@@ -1,4 +1,4 @@
-import { PropsWithChildren, ReactElement } from 'react'
+import { FunctionComponent, HTMLAttributes, PropsWithChildren, ReactElement } from 'react'
 
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
@@ -11,7 +11,7 @@ import { TruncatedText } from '../../../../../../trancated-text/TruncatedText'
 
 import styles from './FilterCollapseSection.module.scss'
 
-interface FilterCollapseSectionProps {
+interface FilterCollapseSectionProps extends HTMLAttributes<HTMLButtonElement> {
     open: boolean
     title: string
     preview: string
@@ -22,26 +22,31 @@ interface FilterCollapseSectionProps {
 }
 
 export function FilterCollapseSection(props: PropsWithChildren<FilterCollapseSectionProps>): ReactElement {
-    const { open, title, preview, hasActiveFilter, className, withSeparators, children, onOpenChange } = props
+    const {
+        open,
+        title,
+        preview,
+        hasActiveFilter,
+        className,
+        withSeparators,
+        children,
+        onOpenChange,
+        ...attributes
+    } = props
 
     return (
         <div className={classNames(className, { [styles.rootNoCollapse]: !withSeparators })}>
             <Collapse isOpen={open} onOpenChange={onOpenChange}>
-                <CollapseHeader
-                    as={Button}
-                    aria-label={open ? 'Expand' : 'Collapse'}
-                    outline={true}
-                    className={styles.collapseButton}
-                >
-                    <Icon className={styles.collapseIcon} as={open ? ChevronUpIcon : ChevronDownIcon} />
+                <CollapseHeader {...attributes} as={Button} outline={true} className={styles.collapseButton}>
+                    <Icon
+                        aria-hidden={true}
+                        className={styles.collapseIcon}
+                        as={open ? ChevronUpIcon : ChevronDownIcon}
+                    />
 
                     <span className={styles.buttonText}>{title}</span>
 
-                    {!open && preview && (
-                        <TruncatedText className={styles.filterBadge}>
-                            <SyntaxHighlightedSearchQuery query={preview} />
-                        </TruncatedText>
-                    )}
+                    {!open && preview && <FilterPreviewPill text={preview} className={styles.panelPreview} />}
                     {hasActiveFilter && <div className={styles.changedFilterMarker} />}
                 </CollapseHeader>
 
@@ -50,5 +55,20 @@ export function FilterCollapseSection(props: PropsWithChildren<FilterCollapseSec
                 {withSeparators && <hr />}
             </Collapse>
         </div>
+    )
+}
+
+export interface FilterPreviewPillProps {
+    text: string
+    className?: string
+}
+
+export const FilterPreviewPill: FunctionComponent<FilterPreviewPillProps> = props => {
+    const { text, className } = props
+
+    return (
+        <TruncatedText className={classNames(className, styles.filterBadge)}>
+            <SyntaxHighlightedSearchQuery query={text} />
+        </TruncatedText>
     )
 }

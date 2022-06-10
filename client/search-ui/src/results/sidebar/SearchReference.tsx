@@ -32,6 +32,7 @@ import {
     CollapseHeader,
     CollapsePanel,
     Icon,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import styles from './SearchReference.module.scss'
@@ -430,7 +431,7 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                         aria-label={collapsed ? 'Show filter description' : 'Hide filter description'}
                     >
                         <small className="text-monospace">i</small>
-                        <Icon role="img" aria-hidden={true} as={CollapseIcon} />
+                        <Icon aria-hidden={true} as={CollapseIcon} />
                     </CollapseHeader>
                 </span>
                 <CollapsePanel>
@@ -439,16 +440,16 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                             <Markdown dangerousInnerHTML={renderMarkdown(searchReference.description)} />
                         )}
                         {searchReference.alias && (
-                            <p>
+                            <Text>
                                 Alias:{' '}
                                 <span className="text-code search-filter-keyword">
                                     {searchReference.alias}
                                     {isFilterInfo(searchReference) ? ':' : ''}
                                 </span>
-                            </p>
+                            </Text>
                         )}
                         {isFilterInfo(searchReference) && isNegatableFilter(searchReference.field) && (
-                            <p>
+                            <Text>
                                 Negation:{' '}
                                 <span className="test-code search-filter-keyword">-{searchReference.field}:</span>
                                 {searchReference.alias && (
@@ -462,16 +463,16 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                                 )}
                                 <br />
                                 <span className={styles.placeholder}>(opt + click filter in reference list)</span>
-                            </p>
+                            </Text>
                         )}
                         {searchReference.examples && (
                             <>
                                 <div className="font-weight-medium">Examples</div>
                                 <div className={classNames('text-code', styles.examples)}>
                                     {searchReference.examples.map(example => (
-                                        <p key={example}>
+                                        <Text key={example}>
                                             <SearchReferenceExample example={example} onClick={onExampleClick} />
-                                        </p>
+                                        </Text>
                                     ))}
                                 </div>
                             </>
@@ -599,13 +600,13 @@ const SearchReference = React.memo(
                         </TabPanels>
                     </Tabs>
                 )}
-                <p className={sidebarStyles.sidebarSectionFooter}>
+                <Text className={sidebarStyles.sidebarSectionFooter}>
                     <small>
                         <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
-                            Search syntax <Icon role="img" aria-hidden={true} as={ExternalLinkIcon} />
+                            Search syntax <Icon aria-hidden={true} as={ExternalLinkIcon} />
                         </Link>
                     </small>
-                </p>
+                </Text>
             </div>
         )
     }

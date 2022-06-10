@@ -13,5 +13,6 @@ export const EncryptedDataIcon = React.forwardRef(({ className, ...rest }, refer
         className={classNames('text-muted', styles.iconInside, className)}
         {...rest}
         ref={reference}
+        aria-label="Encrypted Data"
     />
 )) as ForwardReferenceComponent<'svg', IconProps>

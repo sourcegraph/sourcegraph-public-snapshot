@@ -2,7 +2,7 @@ import React, { useContext, useMemo } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 
-import { Badge, LoadingSpinner, useObservable, Link, PageHeader } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner, useObservable, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
@@ -70,12 +70,12 @@ export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<Ed
                 className="mb-3"
                 path={[{ icon: CodeInsightsIcon }, { text: 'Edit insight' }]}
                 description={
-                    <p className="text-muted">
+                    <Text className="text-muted">
                         Insights analyze your code based on any search query.{' '}
                         <Link to="/help/code_insights" target="_blank" rel="noopener">
                             Learn more.
                         </Link>
-                    </p>
+                    </Text>
                 }
             />
 

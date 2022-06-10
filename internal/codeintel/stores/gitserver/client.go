@@ -3,6 +3,7 @@ package gitserver
 import (
 	"context"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
@@ -459,6 +460,19 @@ func (c *Client) ResolveRevision(ctx context.Context, repositoryID int, versionS
 	}
 
 	return commitID, nil
+}
+
+func (c *Client) ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error) {
+	ctx, _, endObservation := c.operations.listTags.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("commitObjs", strings.Join(commitObjs, ",")),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	tags, err := gitserver.NewClient(c.db).ListTags(ctx, repo, commitObjs...)
+	if err != nil {
+		return nil, errors.Wrap(err, "git.ListTags")
+	}
+	return tags, nil
 }
 
 // repositoryIDToRepo creates a api.RepoName from a repository identifier.

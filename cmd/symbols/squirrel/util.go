@@ -4,11 +4,15 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
 	sitter "github.com/smacker/go-tree-sitter"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -115,7 +119,7 @@ func bracket(text string) string {
 
 // forEachCapture runs the given tree-sitter query on the given node and calls f(captureName, node) for
 // each capture.
-func forEachCapture(query string, node Node, f func(captureName string, node Node)) error {
+func forEachCapture(query string, node *Node, f func(captureName string, node Node)) error {
 	sitterQuery, err := sitter.NewQuery([]byte(query), node.LangSpec.language)
 	if err != nil {
 		return errors.Newf("failed to parse query: %s\n%s", err, query)
@@ -140,6 +144,33 @@ func forEachCapture(query string, node Node, f func(captureName string, node Nod
 	}
 
 	return nil
+}
+
+func allCaptures(query string, node Node) ([]Node, error) {
+	sitterQuery, err := sitter.NewQuery([]byte(query), node.LangSpec.language)
+	if err != nil {
+		return nil, errors.Newf("failed to parse query: %s\n%s", err, query)
+	}
+	defer sitterQuery.Close()
+	cursor := sitter.NewQueryCursor()
+	defer cursor.Close()
+	cursor.Exec(sitterQuery, node.Node)
+
+	var captures []Node
+	match, _, hasCapture := cursor.NextCapture()
+	for hasCapture {
+		for _, capture := range match.Captures {
+			captures = append(captures, Node{
+				RepoCommitPath: node.RepoCommitPath,
+				Node:           capture.Node,
+				Contents:       node.Contents,
+				LangSpec:       node.LangSpec,
+			})
+		}
+		match, _, hasCapture = cursor.NextCapture()
+	}
+
+	return captures, nil
 }
 
 // nodeToRange returns the range of the node.
@@ -190,7 +221,7 @@ type Node struct {
 	LangSpec LangSpec
 }
 
-func WithNode(other Node, newNode *sitter.Node) Node {
+func swapNode(other Node, newNode *sitter.Node) Node {
 	return Node{
 		RepoCommitPath: other.RepoCommitPath,
 		Node:           newNode,
@@ -199,13 +230,9 @@ func WithNode(other Node, newNode *sitter.Node) Node {
 	}
 }
 
-func WithNodePtr(other Node, newNode *sitter.Node) *Node {
-	return &Node{
-		RepoCommitPath: other.RepoCommitPath,
-		Node:           newNode,
-		Contents:       other.Contents,
-		LangSpec:       other.LangSpec,
-	}
+func swapNodePtr(other Node, newNode *sitter.Node) *Node {
+	ret := swapNode(other, newNode)
+	return &ret
 }
 
 var unrecognizedFileExtensionError = errors.New("unrecognized file extension")
@@ -242,8 +269,46 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 	if root == nil {
 		return nil, errors.New("root is nil")
 	}
+	if s.errorOnParseFailure && root.HasError() {
+		return nil, errors.Newf("parse error in %+v, try pasting it in https://tree-sitter.github.io/tree-sitter/playground to find the ERROR node", repoCommitPath)
+	}
 
 	return &Node{RepoCommitPath: repoCommitPath, Node: root, Contents: contents, LangSpec: langSpec}, nil
+}
+
+func (s *SquirrelService) getSymbols(ctx context.Context, repoCommitPath types.RepoCommitPath) (result.Symbols, error) {
+	root, err := s.parse(context.Background(), repoCommitPath)
+	if err != nil {
+		return nil, err
+	}
+
+	symbols := result.Symbols{}
+
+	query := root.LangSpec.topLevelSymbolsQuery
+	if query == "" {
+		return nil, nil
+	}
+
+	captures, err := allCaptures(query, *root)
+	if err != nil {
+		return nil, err
+	}
+	for _, capture := range captures {
+		symbols = append(symbols, result.Symbol{
+			Name:        capture.Node.Content(root.Contents),
+			Path:        root.RepoCommitPath.Path,
+			Line:        int(capture.Node.StartPoint().Row),
+			Character:   int(capture.Node.StartPoint().Column),
+			Kind:        "",
+			Language:    root.LangSpec.name,
+			Parent:      "",
+			ParentKind:  "",
+			Signature:   "",
+			FileLimited: false,
+		})
+	}
+
+	return symbols, nil
 }
 
 func fatalIfError(t *testing.T, err error) {
@@ -254,6 +319,103 @@ func fatalIfError(t *testing.T, err error) {
 
 func fatalIfErrorLabel(t *testing.T, err error, label string) {
 	if err != nil {
-		t.Fatalf("%s: %s", label, err)
+		_, file, no, ok := runtime.Caller(1)
+		if !ok {
+			t.Fatalf("%s: %s\n", label, err)
+		}
+		fmt.Printf("%s:%d %s\n", file, no, err)
+		t.FailNow()
 	}
+}
+
+func children(node *sitter.Node) []*sitter.Node {
+	var children []*sitter.Node
+	for i := 0; i < int(node.NamedChildCount()); i++ {
+		children = append(children, node.NamedChild(i))
+	}
+	return children
+}
+
+func snippet(node *Node) string {
+	contextChars := 5
+	start := node.StartByte() - uint32(contextChars)
+	if start < 0 {
+		start = 0
+	}
+	end := node.StartByte() + uint32(contextChars)
+	if end > uint32(len(node.Contents)) {
+		end = uint32(len(node.Contents))
+	}
+	ret := string(node.Contents[start:end])
+	ret = strings.ReplaceAll(ret, "\n", "\\n")
+	ret = strings.ReplaceAll(ret, "\t", "\\t")
+	return ret
+}
+
+type String string
+
+func (f String) String() string {
+	return string(f)
+}
+
+type Tuple []interface{}
+
+func (t *Tuple) String() string {
+	s := []string{}
+	for _, v := range *t {
+		s = append(s, fmt.Sprintf("%v", v))
+	}
+	return strings.Join(s, ", ")
+}
+
+func lazyNodeStringer(node **Node) func() fmt.Stringer {
+	return func() fmt.Stringer {
+		if node != nil && *node != nil {
+			if (*node).Node != nil {
+				return String(fmt.Sprintf("%s ...%s...", (*node).Type(), snippet(*node)))
+			} else {
+				return String(fmt.Sprintf("%s", (*node).RepoCommitPath.Path))
+			}
+		} else {
+			return String("<nil>")
+		}
+	}
+}
+
+func (s *SquirrelService) symbolSearchOne(ctx context.Context, repo string, commit string, include []string, ident string) (*Node, error) {
+	symbols, err := s.symbolSearch(ctx, search.SymbolsParameters{
+		Repo:            api.RepoName(repo),
+		CommitID:        api.CommitID(commit),
+		Query:           fmt.Sprintf("^%s$", ident),
+		IsRegExp:        true,
+		IsCaseSensitive: true,
+		IncludePatterns: include,
+		ExcludePattern:  "",
+		First:           1,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(symbols) == 0 {
+		return nil, nil
+	}
+	symbol := symbols[0]
+	file, err := s.parse(ctx, types.RepoCommitPath{
+		Repo:   repo,
+		Commit: commit,
+		Path:   symbol.Path,
+	})
+	if err != nil {
+		return nil, err
+	}
+	point := sitter.Point{
+		Row:    uint32(symbol.Line),
+		Column: uint32(symbol.Character),
+	}
+	symbolNode := file.NamedDescendantForPointRange(point, point)
+	if symbolNode == nil {
+		return nil, nil
+	}
+	ret := swapNode(*file, symbolNode)
+	return &ret, nil
 }

@@ -4,7 +4,7 @@ Workers are the consumer side of a producer/consumer relationship.
 
 Examples:
 
-- [Precise code-intel worker that handles LSIF uploads](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b946a20362ee7dfedb3b1fbc7f8bb002135d7283/-/blob/enterprise/cmd/precise-code-intel-worker/internal/worker/worker.go)
+- [Precise code-intel worker that handles uploads](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b946a20362ee7dfedb3b1fbc7f8bb002135d7283/-/blob/enterprise/cmd/precise-code-intel-worker/internal/worker/worker.go)
 - [Insights query runner worker](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b946a20362ee7dfedb3b1fbc7f8bb002135d7283/-/blob/enterprise/internal/insights/background/queryrunner/worker.go?subtree=true#L29)
 - [Batch Changes background worker that reconciles changesets](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b946a20362ee7dfedb3b1fbc7f8bb002135d7283/-/blob/enterprise/internal/batches/background/workers.go?subtree=true#L26)
 
@@ -345,7 +345,7 @@ func (h *handler) Handle(ctx context.Context, tx store.Store, rawRecord workerut
 }
 ```
 
-#### Step 4: Configure the worker and resetter
+#### Step 5: Configure the worker and resetter
 
 Now that we have all of our constituent parts ready, we can finally construct our root objects that orchestrate the consumer behavior. Here, we make constructor functions for a worker instance as well as a resetter instance.
 
@@ -379,7 +379,7 @@ func makeResetter(workerStore store.Store) {
 }
 ```
 
-#### Step 5: Register the worker and resetter
+#### Step 6: Register the worker and resetter
 
 The results of `makeWorker` and `makeResetter` can then be passed to `goroutine.MonitorBackgroundRoutines`.
 

@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
-import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, H2, H5, Input } from '@sourcegraph/wildcard'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
 
@@ -113,31 +113,24 @@ export const SearchSidebarSection: React.FunctionComponent<
                         outline={true}
                         variant="secondary"
                     >
-                        <Typography.H5 as={Typography.H2} className="flex-grow-1">
+                        <H5 as={H2} className="flex-grow-1">
                             {header}
-                        </Typography.H5>
-                        <Icon
-                            role="img"
-                            aria-hidden={true}
-                            className="mr-1"
-                            as={isOpened ? ChevronDownIcon : ChevronLeftIcon}
-                        />
+                        </H5>
+                        <Icon aria-hidden={true} className="mr-1" as={isOpened ? ChevronDownIcon : ChevronLeftIcon} />
                     </CollapseHeader>
 
                     <CollapsePanel>
                         <div className={classNames('pb-4', !searchVisible && 'border-top')}>
                             {searchVisible && (
-                                <input
+                                <Input
                                     type="search"
                                     placeholder="Find..."
                                     aria-label="Find filters"
                                     value={filter}
                                     onChange={event => setFilter(event.currentTarget.value)}
                                     data-testid="sidebar-section-search-box"
-                                    className={classNames(
-                                        'form-control form-control-sm',
-                                        styles.sidebarSectionSearchBox
-                                    )}
+                                    inputClassName={styles.sidebarSectionSearchBox}
+                                    variant="small"
                                 />
                             )}
                             {body}

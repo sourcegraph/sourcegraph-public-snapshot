@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 import { pluralize } from '@sourcegraph/common'
-import { Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { Link, Icon, H3 } from '@sourcegraph/wildcard'
 
 import {
     NormalizedUploadRetentionMatch,
@@ -42,12 +42,10 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<
             <div className="m-0">
                 {match.configurationPolicy ? (
                     <Link to={`../configuration/${match.configurationPolicy.id}`} className="p-0">
-                        <Typography.H3 className="m-0 d-block d-md-inline">
-                            {match.configurationPolicy.name}
-                        </Typography.H3>
+                        <H3 className="m-0 d-block d-md-inline">{match.configurationPolicy.name}</H3>
                     </Link>
                 ) : (
-                    <Typography.H3 className="m-0 d-block d-md-inline">{retentionByBranchTipTitle}</Typography.H3>
+                    <H3 className="m-0 d-block d-md-inline">{retentionByBranchTipTitle}</H3>
                 )}
                 <div className="mr-2 d-block d-mdinline-block">
                     Retained: {match.matches ? 'yes' : 'no'}
@@ -61,6 +59,7 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<
                                 .join(', ')}
                             <Icon
                                 className="ml-1"
+                                aria-label="This upload is retained to service code-intel queries for commit(s) with applicable retention policies."
                                 data-tooltip="This upload is retained to service code-intel queries for commit(s) with applicable retention policies."
                                 as={InformationOutlineIcon}
                             />
@@ -69,6 +68,7 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<
                     {!match.configurationPolicy && (
                         <Icon
                             className="ml-1"
+                            aria-label="Uploads at the tip of the default branch are always retained indefinitely."
                             data-tooltip="Uploads at the tip of the default branch are always retained indefinitely."
                             as={InformationOutlineIcon}
                         />
@@ -87,7 +87,7 @@ const UploadReferenceRetentionMatchNode: FunctionComponent<
 
         <div className={classNames(styles.information, 'd-flex flex-column')}>
             <div className="m-0">
-                <Typography.H3 className="m-0 d-block d-md-inline">{retentionByUploadTitle}</Typography.H3>
+                <H3 className="m-0 d-block d-md-inline">{retentionByUploadTitle}</H3>
                 <div className="mr-2 d-block d-mdinline-block">
                     Referenced by {match.total} {pluralize('upload', match.total, 'uploads')}, including{' '}
                     {match.uploadSlice
@@ -100,6 +100,7 @@ const UploadReferenceRetentionMatchNode: FunctionComponent<
                         .reduce((previous, current) => [previous, ', ', current])}
                     <Icon
                         className="ml-1"
+                        aria-label="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries."
                         data-tooltip="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries."
                         as={InformationOutlineIcon}
                     />

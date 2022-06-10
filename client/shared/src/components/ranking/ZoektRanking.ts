@@ -79,7 +79,6 @@ function results(matches: MatchItem[], maxResults: number, context: number): Ran
                     line: match.line,
                     character: range.start,
                     highlightLength: range.highlightLength,
-                    isInContext: false,
                 })
             }
         }

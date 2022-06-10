@@ -13,7 +13,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, Button, Link, PageHeader, Container, Icon, Typography } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, PageHeader, Container, Icon, Code, Label } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -144,7 +144,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                                     rel="noopener"
                                     to="/help/extensions/authoring"
                                 >
-                                    <Icon as={HelpCircleOutline} />
+                                    <Icon aria-hidden={true} as={HelpCircleOutline} />
                                 </Link>
                             </>
                         }
@@ -164,19 +164,19 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             />
                             {extensionID && (
                                 <div className="form-group d-flex flex-wrap align-items-baseline mb-0">
-                                    <Typography.Label
+                                    <Label
                                         htmlFor="extension-registry-create-extension-page__extensionID"
                                         className="mr-1 mb-0 mt-1"
                                     >
                                         Extension ID:
-                                    </Typography.Label>
-                                    <Typography.Code
+                                    </Label>
+                                    <Code
                                         id="extension-registry-create-extension-page__extensionID"
                                         className={classNames('mt-1', styles.extensionId)}
                                         weight="bold"
                                     >
                                         {extensionID}
-                                    </Typography.Code>
+                                    </Code>
                                 </div>
                             )}
                             {isErrorLike(this.state.creationOrError) && (

@@ -182,6 +182,7 @@ type CountBatchSpecsOpts struct {
 	BatchChangeID int64
 
 	ExcludeCreatedFromRawNotOwnedByUser int32
+	IncludeLocallyExecutedSpecs         bool
 }
 
 // CountBatchSpecs returns the number of code mods in the database.
@@ -220,6 +221,10 @@ ON
 
 	if opts.ExcludeCreatedFromRawNotOwnedByUser != 0 {
 		preds = append(preds, sqlf.Sprintf("(batch_specs.user_id = %s OR batch_specs.created_from_raw IS FALSE)", opts.ExcludeCreatedFromRawNotOwnedByUser))
+	}
+
+	if !opts.IncludeLocallyExecutedSpecs {
+		preds = append(preds, sqlf.Sprintf("batch_specs.created_from_raw IS TRUE"))
 	}
 
 	if len(preds) == 0 {
@@ -375,6 +380,7 @@ type ListBatchSpecsOpts struct {
 	NewestFirst   bool
 
 	ExcludeCreatedFromRawNotOwnedByUser int32
+	IncludeLocallyExecutedSpecs         bool
 }
 
 // ListBatchSpecs lists BatchSpecs with the given filters.
@@ -431,6 +437,10 @@ ON
 		preds = append(preds, sqlf.Sprintf("(batch_specs.user_id = %s OR batch_specs.created_from_raw IS FALSE)", opts.ExcludeCreatedFromRawNotOwnedByUser))
 	}
 
+	if !opts.IncludeLocallyExecutedSpecs {
+		preds = append(preds, sqlf.Sprintf("batch_specs.created_from_raw IS TRUE"))
+	}
+
 	if opts.NewestFirst {
 		order = sqlf.Sprintf("batch_specs.id DESC")
 		if opts.Cursor != 0 {
@@ -481,6 +491,7 @@ func (s *Store) GetBatchSpecStats(ctx context.Context, ids []int64) (stats map[i
 			&s.ResolutionDone,
 			&s.Workspaces,
 			&s.SkippedWorkspaces,
+			&s.CachedWorkspaces,
 			&dbutil.NullTime{Time: &s.StartedAt},
 			&dbutil.NullTime{Time: &s.FinishedAt},
 			&s.Executions,
@@ -517,6 +528,7 @@ SELECT
 	COALESCE(res_job.state IN ('completed', 'failed'), FALSE) AS resolution_done,
 	COUNT(ws.id) AS workspaces,
 	COUNT(ws.id) FILTER (WHERE ws.skipped) AS skipped_workspaces,
+	COUNT(ws.id) FILTER (WHERE ws.cached_result_found) AS cached_workspaces,
 	MIN(jobs.started_at) AS started_at,
 	MAX(jobs.finished_at) AS finished_at,
 	COUNT(jobs.id) AS executions,

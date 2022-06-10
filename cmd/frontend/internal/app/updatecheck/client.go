@@ -98,7 +98,7 @@ func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 
 func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return database.Users(db).Count(ctx, &database.UsersListOptions{})
+	return db.Users().Count(ctx, &database.UsersListOptions{})
 }
 
 func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
@@ -110,7 +110,7 @@ func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
 // soft-deleted nor blocked.
 func hasRepos(ctx context.Context, db database.DB) (_ bool, err error) {
 	defer recordOperation("hasRepos")(&err)
-	rs, err := database.Repos(db).List(ctx, database.ReposListOptions{
+	rs, err := db.Repos().List(ctx, database.ReposListOptions{
 		LimitOffset: &database.LimitOffset{Limit: 1},
 	})
 	return len(rs) > 0, err
@@ -123,7 +123,7 @@ func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
 
 func getInitialSiteAdminInfo(ctx context.Context, db database.DB) (_ string, _ bool, err error) {
 	defer recordOperation("getInitialSiteAdminInfo")(&err)
-	return database.UserEmails(db).GetInitialSiteAdminInfo(ctx)
+	return db.UserEmails().GetInitialSiteAdminInfo(ctx)
 }
 
 func getAndMarshalBatchChangesUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {

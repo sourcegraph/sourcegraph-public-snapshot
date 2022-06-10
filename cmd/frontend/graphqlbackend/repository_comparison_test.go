@@ -39,14 +39,14 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 		CreatedAt: time.Now(),
 	}
 
-	t.Cleanup(git.ResetMocks)
+	t.Cleanup(gitserver.ResetMocks)
 	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec != wantBaseRevision && spec != wantHeadRevision {
 			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
 		}
 		return api.CommitID(spec), nil
 	}
-	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+	gitserver.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
 		return "", errors.Errorf("merge base doesn't exist!")
 	}
 
@@ -87,17 +87,20 @@ func TestRepositoryComparison(t *testing.T) {
 		if len(args) < 1 && args[0] != "diff" {
 			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
 		}
+		if args[len(args)-1] == "JOKES.md" {
+			return io.NopCloser(strings.NewReader(testDiffJokesOnly)), nil
+		}
 		return io.NopCloser(strings.NewReader(testDiff + testCopyDiff)), nil
 	}
 	t.Cleanup(func() { gitserver.Mocks.ExecReader = nil })
 
-	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+	gitserver.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
 		if string(a) != wantBaseRevision || string(b) != wantHeadRevision {
 			t.Fatalf("gitserver.MergeBase received wrong args: %s %s", a, b)
 		}
 		return api.CommitID(wantMergeBaseRevision), nil
 	}
-	t.Cleanup(func() { git.Mocks.MergeBase = nil })
+	t.Cleanup(func() { gitserver.Mocks.MergeBase = nil })
 
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
 	repoResolver := NewRepositoryResolver(db, repo)
@@ -204,6 +207,32 @@ func TestRepositoryComparison(t *testing.T) {
 			want := "2 added, 7 changed, 1 deleted"
 			if have := fmt.Sprintf("%d added, %d changed, %d deleted", diffStat.Added(), diffStat.Changed(), diffStat.Deleted()); have != want {
 				t.Fatalf("wrong diffstat. want=%q, have=%q", want, have)
+			}
+		})
+
+		t.Run("LimitedPaths", func(t *testing.T) {
+			paths := []string{"JOKES.md"}
+			diffConnection, err := comp.FileDiffs(ctx, &FileDiffsConnectionArgs{Paths: &paths})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			nodes, err := diffConnection.Nodes(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(nodes) != 1 {
+				t.Fatalf("expected 1 file node, got %d", len(nodes))
+			}
+
+			oldPath := nodes[0].OldPath()
+			if oldPath == nil {
+				t.Fatalf("expected non-nil oldPath")
+			}
+
+			if *oldPath != "JOKES.md" {
+				t.Fatalf("expected JOKES.md, got %s", *oldPath)
 			}
 		})
 
@@ -731,6 +760,27 @@ const testDiffFirstHunk = ` Line 1
 +Foobar Line 8
  Line 9
  Line 10
+`
+
+const testDiffJokesOnly = `
+diff --git JOKES.md JOKES.md
+index ea80abf..1b86505 100644
+--- JOKES.md
++++ JOKES.md
+@@ -4,10 +4,10 @@ Joke #1
+ Joke #2
+ Joke #3
+ Joke #4
+-Joke #5
++This is not funny: Joke #5
+ Joke #6
+-Joke #7
++This one is good: Joke #7
+ Joke #8
+-Joke #9
++Waffle: Joke #9
+ Joke #10
+ Joke #11
 `
 
 func TestFileDiffHighlighter(t *testing.T) {

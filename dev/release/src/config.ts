@@ -71,7 +71,7 @@ export async function releaseVersions(
     const now = new Date()
     const cachedVersionResponse = `${cacheFolder}/current_release_${now.getUTCFullYear()}_${getWeekNumber(now)}.txt`
     const confirmVersion = await readLine(
-        `Please confirm the upcoming release version configured in '${configPath}' (currently '${config.upcomingRelease}'): `,
+        `Please confirm the upcoming release version configured in '${configPath}' (currently '${config.upcomingRelease}') by entering it again: `,
         cachedVersionResponse
     )
     const parsedConfirmed = semver.parse(confirmVersion, parseOptions)

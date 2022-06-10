@@ -94,7 +94,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	actor := actor.FromContext(ctx)
 	if actor.IsAuthenticated() {
 		uid = &actor.UID
-		e, _, err := database.UserEmails(r.db).GetPrimaryEmail(ctx, actor.UID)
+		e, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, actor.UID)
 		if err != nil && !errcode.IsNotFound(err) {
 			return nil, err
 		}
@@ -159,7 +159,7 @@ func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *stru
 
 		// If user is authenticated, use their uid and set the email field.
 		if actor.IsAuthenticated() {
-			e, _, err := database.UserEmails(r.db).GetPrimaryEmail(ctx, actor.UID)
+			e, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, actor.UID)
 			if err != nil && !errcode.IsNotFound(err) {
 				return nil, err
 			}

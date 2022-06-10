@@ -1,7 +1,7 @@
 import { ReactElement, useMemo } from 'react'
 
 import { isDefined } from '@sourcegraph/common'
-import { Typography } from '@sourcegraph/wildcard'
+import { H3 } from '@sourcegraph/wildcard'
 
 import { DEFAULT_FALLBACK_COLOR } from '../../../../constants'
 import { Series } from '../../../../types'
@@ -65,7 +65,7 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
 
     return (
         <>
-            <Typography.H3>{activePoint.time.toDateString()}</Typography.H3>
+            <H3>{activePoint.time.toDateString()}</H3>
 
             <ul className={styles.tooltipList}>
                 {lines.leftRemaining > 0 && <li className={styles.item}>... and {lines.leftRemaining} more</li>}

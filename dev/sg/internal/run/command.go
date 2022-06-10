@@ -136,7 +136,7 @@ func getSecrets(ctx context.Context, cmd Command) (map[string]string, error) {
 
 	secretsStore, err := secrets.FromContext(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to create secretmanager client: %v", err)
+		return nil, errors.Errorf("failed to get secrets store: %v", err)
 	}
 
 	var errs error

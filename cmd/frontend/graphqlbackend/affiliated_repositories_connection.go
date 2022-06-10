@@ -82,7 +82,7 @@ func (a *affiliatedRepositoriesConnection) getNodesAndErrors(ctx context.Context
 		)
 		for _, svc := range svcs {
 			svcsByID[svc.ID] = svc
-			src, err := repos.NewSource(a.db, svc, cf)
+			src, err := repos.NewSource(ctx, a.db, svc, cf)
 			if err != nil {
 				a.err = err
 				return

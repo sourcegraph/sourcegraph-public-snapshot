@@ -7,7 +7,7 @@ import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
-import { Button, Link, Icon, Typography, ForwardReferenceComponent } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, H1, ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../routes.constants'
 
@@ -63,11 +63,11 @@ const useOutsideClickDetector = (
 export const NavBar = forwardRef(
     ({ children, logo }, reference): JSX.Element => (
         <nav aria-label="Main Menu" className={navBarStyles.navbar} ref={reference}>
-            <Typography.H1 className={navBarStyles.logo}>
+            <H1 className={navBarStyles.logo}>
                 <RouterLink className="d-flex align-items-center" to={PageRoutes.Search}>
                     {logo}
                 </RouterLink>
-            </Typography.H1>
+            </H1>
             <hr className={navBarStyles.divider} aria-hidden={true} />
             {children}
         </nav>
@@ -81,8 +81,8 @@ export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
     return (
         <div className={navBarStyles.menu} ref={menuReference}>
             <Button className={navBarStyles.menuButton} onClick={() => setOpen(!open)} aria-label="Sections Navigation">
-                <Icon role="img" as={MenuIcon} aria-hidden={true} />
-                <Icon role="img" as={open ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
+                <Icon as={MenuIcon} aria-hidden={true} />
+                <Icon as={open ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
             </Button>
             <ul className={classNames(navBarStyles.list, { [navBarStyles.menuClose]: !open })}>{children}</ul>
         </div>
@@ -131,7 +131,7 @@ export const NavLink: React.FunctionComponent<React.PropsWithChildren<NavLinkPro
 }) => {
     const content = (
         <span className={classNames(navItemStyles.linkContent, className)}>
-            {LinkIcon ? <Icon role="img" className={navItemStyles.icon} as={LinkIcon} aria-hidden={true} /> : null}
+            {LinkIcon ? <Icon className={navItemStyles.icon} as={LinkIcon} aria-hidden={true} /> : null}
             <span
                 className={classNames(navItemStyles.text, {
                     [navItemStyles.iconIncluded]: Icon,

@@ -5,14 +5,14 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/dghubble/gologin/v2"
+	"github.com/dghubble/gologin"
 	"golang.org/x/oauth2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -37,7 +37,7 @@ func parseProvider(db database.DB, callbackURL string, p *schema.GitLabAuthProvi
 				RedirectURL:  callbackURL,
 				ClientID:     p.ClientID,
 				ClientSecret: p.ClientSecret,
-				Scopes:       requestedScopes(p.ApiScope, extraScopes),
+				Scopes:       gitlab.RequestedOAuthScopes(p.ApiScope, extraScopes),
 				Endpoint: oauth2.Endpoint{
 					AuthURL:  codeHost.BaseURL.ResolveReference(&url.URL{Path: "/oauth/authorize"}).String(),
 					TokenURL: codeHost.BaseURL.ResolveReference(&url.URL{Path: "/oauth/token"}).String(),
@@ -55,9 +55,11 @@ func parseProvider(db database.DB, callbackURL string, p *schema.GitLabAuthProvi
 			return CallbackHandler(
 				&oauth2Cfg,
 				oauth.SessionIssuer(db, &sessionIssuerHelper{
-					db:       db,
-					CodeHost: codeHost,
-					clientID: p.ClientID,
+					db:          db,
+					CodeHost:    codeHost,
+					clientID:    p.ClientID,
+					allowSignup: p.AllowSignup,
+					allowGroups: p.AllowGroups,
 				}, sessionKey),
 				nil,
 			)
@@ -74,36 +76,4 @@ func getStateConfig() gologin.CookieConfig {
 		Secure:   conf.IsExternalURLSecure(),
 	}
 	return cfg
-}
-
-func requestedScopes(defaultAPIScope string, extraScopes []string) []string {
-	scopes := []string{"read_user"}
-	if defaultAPIScope == "" {
-		defaultAPIScope = "api"
-	}
-	if envvar.SourcegraphDotComMode() {
-		// By default, request `read_api`. User's who are allowed to add private code
-		// will request full `api` access via extraScopes.
-		scopes = append(scopes, "read_api")
-	} else {
-		// For customer instances we default to api scope so that they can clone private
-		// repos but in they can optionally override this in config.
-		scopes = append(scopes, defaultAPIScope)
-	}
-	// Append extra scopes and ensure there are no duplicates
-	for _, s := range extraScopes {
-		var found bool
-		for _, inner := range scopes {
-			if inner == s {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			scopes = append(scopes, s)
-		}
-	}
-
-	return scopes
 }

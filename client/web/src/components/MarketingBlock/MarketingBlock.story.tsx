@@ -1,7 +1,7 @@
 import { DecoratorFn, Meta } from '@storybook/react'
 import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
 
-import { Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { Link, Icon, H3 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../WebStory'
 
@@ -18,12 +18,12 @@ export default config
 
 export const Basic = (): JSX.Element => (
     <MarketingBlock>
-        <Typography.H3 className="pr-3">Need help getting started?</Typography.H3>
+        <H3 className="pr-3">Need help getting started?</H3>
 
         <div>
             <Link to="https://sourcegraph.com/search">
                 Speak to an engineer
-                <Icon role="img" className="ml-2" as={ArrowRightIcon} aria-hidden={true} />
+                <Icon className="ml-2" as={ArrowRightIcon} aria-hidden={true} />
             </Link>
         </div>
     </MarketingBlock>

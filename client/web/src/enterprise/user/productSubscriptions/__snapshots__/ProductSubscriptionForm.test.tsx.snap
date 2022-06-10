@@ -26,16 +26,20 @@ exports[`ProductSubscriptionForm edit existing subscription 1`] = `
             <div
               class="d-flex align-items-center"
             >
-              <input
-                class="form-control w-auto"
-                id="product-subscription-user-count-control__userCount"
-                max="50000"
-                min="25"
-                required=""
-                step="25"
-                type="number"
-                value="123"
-              />
+              <div
+                class="container loader-input loaderInput w-auto"
+              >
+                <input
+                  class="form-control with-invalid-icon"
+                  id="product-subscription-user-count-control__userCount"
+                  max="50000"
+                  min="25"
+                  required=""
+                  step="25"
+                  type="number"
+                  value="123"
+                />
+              </div>
             </div>
           </div>
           <h4
@@ -112,16 +116,20 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
             <div
               class="d-flex align-items-center"
             >
-              <input
-                class="form-control w-auto"
-                id="product-subscription-user-count-control__userCount"
-                max="50000"
-                min="25"
-                required=""
-                step="25"
-                type="number"
-                value="25"
-              />
+              <div
+                class="container loader-input loaderInput w-auto"
+              >
+                <input
+                  class="form-control with-invalid-icon"
+                  id="product-subscription-user-count-control__userCount"
+                  max="50000"
+                  min="25"
+                  required=""
+                  step="25"
+                  type="number"
+                  value="25"
+                />
+              </div>
             </div>
           </div>
           <h4
@@ -215,16 +223,20 @@ exports[`ProductSubscriptionForm new subscription for existing account 1`] = `
             <div
               class="d-flex align-items-center"
             >
-              <input
-                class="form-control w-auto"
-                id="product-subscription-user-count-control__userCount"
-                max="50000"
-                min="25"
-                required=""
-                step="25"
-                type="number"
-                value="25"
-              />
+              <div
+                class="container loader-input loaderInput w-auto"
+              >
+                <input
+                  class="form-control with-invalid-icon"
+                  id="product-subscription-user-count-control__userCount"
+                  max="50000"
+                  min="25"
+                  required=""
+                  step="25"
+                  type="number"
+                  value="25"
+                />
+              </div>
             </div>
           </div>
           <h4

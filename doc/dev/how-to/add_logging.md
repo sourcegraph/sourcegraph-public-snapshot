@@ -4,15 +4,15 @@ This guide describes best practices for adding logging to Sourcegraph's backend 
 
 > NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](../../admin/observability/index.md).
 
-The recommended logger at Sourcegraph is [`github.com/sourcegraph/sourcegraph/lib/log`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/lib/log), which exports:
+The recommended logger at Sourcegraph is [`github.com/sourcegraph/log`](https://sourcegraph.com/github.com/sourcegraph/log), which exports:
 
-1. A standardized, strongly-typed, and structured logging interface, [`log.Logger`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/lib/log/logger.go)
+1. A standardized, strongly-typed, and structured logging interface, [`log.Logger`](https://sourcegraph.com/github.com/sourcegraph/log/-/blob/logger.go)
    1. Production output from this logger (`SRC_LOG_FORMAT=json`) complies with the [OpenTelemetry log data model](https://opentelemetry.io/docs/reference/specification/logs/data-model/) (also see: [Logging: OpenTelemetry](../../admin/observability/logs.md#opentelemetry))
    2. `log.Logger` has a variety of constructors for spawning new loggers with context, namely `Scoped`, `WithTrace`, and `WithFields`.
 2. An initialization function to be called in `func main()`, `log.Init()`, that must be called.
    1. Log level can be configured with `SRC_LOG_LEVEL` (also see: [Logging: Log levels](../../admin/observability/logs.md#log-levels))
    2. Do not use this in an `init()` function - we want to explicitly avoid tying logger instances as a compile-time dependency.
-3. A getter to retrieve a `log.Logger` instance, [`log.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+log.Scoped+-file:lib/log+lang:go&patternType=literal)
+3. A getter to retrieve a `log.Logger` instance, [`log.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+log.Scoped+lang:go&patternType=literal)
 4. [Testing utilities](#testing-usage)
 
 Logging is also available via the all-in-one `internal/observation` package: [How to add observability](add_observability.md)
@@ -29,11 +29,12 @@ Logging is also available via the all-in-one `internal/observation` package: [Ho
 
 ## Handling loggers
 
-Initialize `lib/log` package within your program's `main()` function, for example:
+Initialize `github.com/sourcegraph/log` package within your program's `main()` function, for example:
 
 ```go
 import (
-  "github.com/sourcegraph/sourcegraph/lib/log"
+  "github.com/sourcegraph/log"
+
   "github.com/sourcegraph/sourcegraph/internal/env"
   "github.com/sourcegraph/sourcegraph/internal/version"
   "github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -56,6 +57,24 @@ func main() {
 }
 ```
 
+### Sub-loggers
+
+In a particular scope some fields might be repeatedly emitted. Consider creating a sub-logger in the scope by using `logger.With(...fields)`.
+
+```go
+func (s *Service) MyService(ctx context.Context, logger log.Logger) {
+    subLogger := logger.With(log.Int("id", s.ID), log.String("service", s.Name))
+
+    subLogger.Info("starting up")
+
+    if err := s.Start(); err != nil {
+        subLogger.Error(err)
+    }
+
+    subLogger.Info("done")
+}
+```
+
 ### Attaching context
 
 When your service starts logging, obtain a `log.Logger` instance, attach some relevant context, and start propagating your logger for use.
@@ -64,7 +83,7 @@ This allows you to easily trace, for example, the execution of an event or a par
 For example:
 
 ```go
-import "github.com/sourcegraph/sourcegraph/lib/log"
+import "github.com/sourcegraph/log"
 
 func newWorker(/* ... */) *Worker {
   logger := log.Scoped("worker", "the worker process handles ...").
@@ -107,14 +126,55 @@ func (w *Worker) DoSomething(params ...int) {
 If you are kicking off a long-running process, you can spawn a child logger and use it directly to maintain relevant context:
 
 ```go
-func (w *Worker) DoBigThing(params ...int) {
-  doLog := w.logger.WithTrace(/* ... */).With("params", params)
+func (w *Worker) DoBigThing(ctx context.Context, params ...int) {
+  doLog := trace.Logger(ctx, w.logger).With("params", params)
 
   // subsequent entries will have trace and params attached
   doLog.Info("starting the big thing")
 
   // pass the logger to maintain context across function boundaries
   doSubTask(doLog, /*... */)
+}
+```
+
+## Writing log messages
+
+The message in a log line should be in lowercase.
+
+```
+log.Info("this is my lowercase log line")
+log.Debug("this is a debug log line")
+log.Error("this is an error!")
+```
+
+If each word of log message is not a sentence and referring to a func/component ex. `logger.Error("component.update"` prefer to follow the go scoping standard ie. capatalize if it is public accessible, lowercase if it is private.
+
+Furthermore, if there are more than one line that uses this naming scheme (referring to a func/component) consider creating a [sub-logger](#sub-loggers) with the component name.
+
+```go
+func (c *component) update(logger log.Logger) {
+    logger.Error("component.update")
+}
+
+
+func (p *Public) private(logger log.Logger) {
+    logger.Info("Public.private")
+}
+
+func (p *Public) Action(logger log.Logger) {
+    logger.Info("Public.Action")
+}
+
+func (p *Public) Process(logger log.Logger) {
+    pLog := logger.Scoped("Public.Process")
+
+    pLog.Info("starting tasks")
+    // ... things ...
+
+    pLog.Debug("mid checkpoint")
+
+    // ... things ...
+    p.Log.Info("finalizing some things!")
 }
 ```
 
@@ -137,19 +197,19 @@ Additionally, in `SRC_DEVELOPMENT=true` using `log.Scoped` without calling `log.
 
 For testing purposes, we also provide:
 
-1. An optional initialization function to be called in `func TestMain(*testing.M)`, [`logtest.Init`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Init+-file:lib/log+lang:go&patternType=literal)
-2. A getter to retrieve a `log.Logger` instance and a callback to programmatically iterate log output, [`logtest.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Scoped+-file:lib/log+lang:go&patternType=literal)
+1. An optional initialization function to be called in `func TestMain(*testing.M)`, [`logtest.Init`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/log%24+logtest.Init+lang:go&patternType=literal)
+2. A getter to retrieve a `log.Logger` instance and a callback to programmatically iterate log output, [`logtest.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/log%24+logtest.Scoped+lang:go&patternType=literal)
    1. The standard `log.Scoped` will also work after `logtest.Init`
    2. Programatically iterable logs are available from the `logtest.Captured` logger instance
 
-In the absense of `log.Init` in `main()`, `lib/log` can be initialized using `libtest` in packages that use `log.Scoped`:
+In the absense of `log.Init` in `main()`, `github.com/sourcegraph/log` can be initialized using `libtest` in packages that use `log.Scoped`:
 
 ```go
 import (
   "os"
   "testing"
 
-  "github.com/sourcegraph/sourcegraph/lib/log/logtest"
+  "github.com/sourcegraph/log/logtest"
 )
 
 func TestMain(m *testing.M) {
@@ -166,7 +226,7 @@ If the code you are testing accepts `Logger` instances as a parameter, you can s
 import (
   "testing"
 
-  "github.com/sourcegraph/sourcegraph/lib/log/logtest"
+  "github.com/sourcegraph/log/logtest"
 )
 
 func TestFooBar(t *testing.T) {
@@ -180,3 +240,11 @@ func TestFooBar(t *testing.T) {
   logs := exportLogs()
 }
 ```
+
+When writing a test, ensure that `logtest.Scope` in the tightest scope possible. This ensures that if a test fails, that the logging is closely tied to the test that failed. Especially if you testcase has sub tests with `t.Run`, prefer to created the test logger inside `t.Run`.
+
+## Conventions
+
+* The first scope of the logger should be the name of the service and following the same naming of the service. In general, if the logger is initialized as described in [handling logging](#handling-logging) the name should be correct.
+* The logger parameter should either be immediately after `ctx context.Context`, or be the first parameter.
+* In some cases there might already be a `log` module imported. Use the alias `sglog` to refer to `github.com/sourcegraph/log`, for example `import sglog "github.com/sourcegraph/log"`.

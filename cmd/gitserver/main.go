@@ -14,7 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -22,6 +21,8 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
@@ -39,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
@@ -59,7 +61,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -84,12 +85,15 @@ func main() {
 
 	conf.Init()
 	logging.Init()
-	syncLogs := log.Init(log.Resource{
+
+	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	})
-	defer syncLogs()
+	}, log.NewSentrySink())
+	defer liblog.Sync()
+	go conf.Watch(liblog.Update(conf.GetLogSinks))
+
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
@@ -115,7 +119,7 @@ func main() {
 	}
 	db := database.NewDB(sqlDB)
 
-	repoStore := database.Repos(db)
+	repoStore := db.Repos()
 	depsSvc := livedependencies.GetService(db, nil)
 	externalServiceStore := db.ExternalServices()
 
@@ -125,6 +129,7 @@ func main() {
 	}
 
 	gitserver := server.Server{
+		Logger:             logger,
 		ReposDir:           reposDir,
 		DesiredPercentFree: wantPctFree2,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
@@ -158,7 +163,7 @@ func main() {
 	// TODO: Why do we set server state as a side effect of creating our handler?
 	handler := gitserver.Handler()
 	handler = actor.HTTPMiddleware(handler)
-	handler = ot.HTTPMiddleware(trace.HTTPMiddleware(handler, conf.DefaultClient()))
+	handler = ot.HTTPMiddleware(trace.HTTPMiddleware(logger, handler, conf.DefaultClient()))
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -469,6 +474,14 @@ func getVCSSyncer(
 		}
 		cli := pypi.NewClient(urn, c.Urls, httpcli.ExternalDoer)
 		return server.NewPythonPackagesSyncer(&c, depsSvc, cli), nil
+	case extsvc.TypeRustPackages:
+		var c schema.RustPackagesConnection
+		urn, err := extractOptions(&c)
+		if err != nil {
+			return nil, err
+		}
+		cli := crates.NewClient(urn, httpcli.ExternalDoer)
+		return server.NewRustPackagesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
 }
@@ -487,6 +500,7 @@ func syncSiteLevelExternalServiceRateLimiters(ctx context.Context, store databas
 func syncRateLimiters(ctx context.Context, store database.ExternalServiceStore, perSecond int) {
 	backoff := 5 * time.Second
 	batchSize := 50
+	logger := log.Scoped("sync rate limiter", "Sync rate limiters from config.")
 
 	// perSecond should be spread across all gitserver instances and we want to wait
 	// until we know about at least one instance.
@@ -496,8 +510,8 @@ func syncRateLimiters(ctx context.Context, store database.ExternalServiceStore, 
 		if instanceCount > 0 {
 			break
 		}
-		log15.Warn("found zero gitserver instance, trying again in %s", backoff)
-		time.Sleep(backoff)
+
+		logger.Warn("found zero gitserver instance, trying again after backoff", log.Duration("backoff", backoff))
 	}
 
 	limiter := rate.NewLimiter(rate.Limit(float64(perSecond)/float64(instanceCount)), batchSize)
@@ -511,7 +525,7 @@ func syncRateLimiters(ctx context.Context, store database.ExternalServiceStore, 
 	for {
 		start := time.Now()
 		if err := syncer.SyncLimitersSince(ctx, lastSuccessfulSync); err != nil {
-			log15.Warn("syncRateLimiters: error syncing rate limits", "error", err)
+			logger.Warn("syncRateLimiters: error syncing rate limits", log.Error(err))
 		} else {
 			lastSuccessfulSync = start
 		}

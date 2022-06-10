@@ -140,7 +140,7 @@ func overrideGlobalSettings(ctx context.Context, db database.DB) error {
 	if path == "" {
 		return nil
 	}
-	settings := database.Settings(db)
+	settings := db.Settings()
 	update := func(ctx context.Context) error {
 		globalSettingsBytes, err := os.ReadFile(path)
 		if err != nil {

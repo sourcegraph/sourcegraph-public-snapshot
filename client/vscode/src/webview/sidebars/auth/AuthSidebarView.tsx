@@ -1,13 +1,12 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
+import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert, Typography, Button, Link } from '@sourcegraph/wildcard'
+import { Alert, Text, Link, Input, H5 } from '@sourcegraph/wildcard'
 
 import {
     VSCE_LINK_DOTCOM,
@@ -36,11 +35,13 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
     authenticatedUser,
 }) => {
     const [state, setState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
-    const [hasAccount, setHasAccount] = useState(!authenticatedUser)
+    const [hasAccount, setHasAccount] = useState(authenticatedUser?.username !== undefined)
     const [usePrivateInstance, setUsePrivateInstance] = useState(false)
     const signUpURL = VSCE_LINK_AUTH('sign-up')
     const instanceHostname = useMemo(() => new URL(instanceURL).hostname, [instanceURL])
     const [hostname, setHostname] = useState(instanceHostname)
+    const [accessToken, setAccessToken] = useState<string | undefined>('initial')
+    const [endpointUrl, setEndpointUrl] = useState(instanceURL)
     const isSourcegraphDotCom = useMemo(() => {
         const hostname = new URL(instanceURL).hostname
         if (hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com') {
@@ -52,21 +53,44 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
         return null
     }, [instanceURL])
 
+    useEffect(() => {
+        // Get access token from setting
+        if (accessToken === 'initial') {
+            extensionCoreAPI.getAccessToken
+                .then(token => {
+                    setAccessToken(token)
+                    // If an access token and endpoint url exist at initial load,
+                    // assumes the extension was started with a bad token because
+                    // user should be autheticated automatically if token is valid
+                    if (endpointUrl && token) {
+                        setState('failure')
+                    }
+                })
+                .catch(error => console.error(error))
+        }
+    }, [accessToken, endpointUrl, extensionCoreAPI.getAccessToken])
+
+    const onTokenInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        setAccessToken(event.target.value)
+    }, [])
+
+    const onInstanceURLInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        setEndpointUrl(event.target.value)
+    }, [])
+
     const validateAccessToken: React.FormEventHandler<HTMLFormElement> = (event): void => {
         event.preventDefault()
-        if (state !== 'validating') {
-            const newAccessToken = (event.currentTarget.elements.namedItem('token') as HTMLInputElement).value
-            let authStateVariables = {
+        if (state !== 'validating' && accessToken) {
+            const authStateVariables = {
                 request: currentAuthStateQuery,
                 variables: {},
                 mightContainPrivateInfo: true,
-                overrideAccessToken: newAccessToken,
+                overrideAccessToken: accessToken,
+                overrideSourcegraphURL: '',
             }
-            let newInstanceUrl: string
             if (usePrivateInstance) {
-                newInstanceUrl = (event.currentTarget.elements.namedItem('instance-url') as HTMLInputElement).value
-                setHostname(newInstanceUrl)
-                authStateVariables = { ...authStateVariables, ...{ overrideSourcegraphURL: newInstanceUrl } }
+                setHostname(new URL(endpointUrl).hostname)
+                authStateVariables.overrideSourcegraphURL = endpointUrl
             }
             setState('validating')
             const currentAuthStateResult = platformContext
@@ -77,10 +101,9 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                 .then(async ({ data }) => {
                     if (data?.currentUser) {
                         setState('success')
-                        if (newInstanceUrl) {
-                            await extensionCoreAPI.setEndpointUri(newInstanceUrl)
-                        }
-                        return extensionCoreAPI.setAccessToken(newAccessToken)
+                        // Update access token and instance url in user config for the extension
+                        await extensionCoreAPI.setEndpointUri(endpointUrl, accessToken)
+                        return
                     }
                     setState('failure')
                     return
@@ -104,53 +127,57 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
     }
 
     const renderCommon = (content: JSX.Element): JSX.Element => (
-        <>
-            <div className={classNames(styles.ctaContainer)}>
-                <Form onSubmit={validateAccessToken}>
-                    <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
-                        <Typography.H5 className="flex-grow-1">Search your private code</Typography.H5>
-                    </button>
-                    {content}
-                </Form>
-            </div>
-        </>
+        <div className={classNames(styles.ctaContainer)}>
+            <Form onSubmit={validateAccessToken}>
+                <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
+                    <H5 className="flex-grow-1">Search your private code</H5>
+                </button>
+                {content}
+            </Form>
+        </div>
     )
 
-    if (!hasAccount) {
+    if (!hasAccount && !accessToken) {
         return renderCommon(
             <>
-                <p className={classNames(styles.ctaParagraph)}>
+                <Text className={classNames(styles.ctaParagraph)}>
                     Create an account to search across your private repositories and access advanced features: search
                     multiple repositories & commit history, monitor code changes, save searches, and more.
-                </p>
-                <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
-                    <Button
-                        variant="primary"
-                        className={classNames(styles.ctaButton, 'btn-text-link p-0 text-left my-1')}
+                </Text>
+                <Link to={signUpURL}>
+                    <VSCodeButton
+                        type="button"
                         onClick={onSignUpClick}
-                        as={Link}
-                        to={signUpURL}
+                        className={classNames(
+                            'btn my-1 p-0',
+                            styles.ctaButton,
+                            styles.ctaButtonWrapperWithContextBelow
+                        )}
+                        autofocus={false}
                     >
                         Create an account
-                    </Button>
-                </p>
-                <VSCodeButton
-                    type="button"
-                    className={classNames(styles.ctaParagraph, 'btn btn-text-link text-left')}
-                    onClick={() => setHasAccount(true)}
-                >
+                    </VSCodeButton>
+                </Link>
+                <VSCodeLink className="my-0" onClick={() => setHasAccount(true)}>
                     Have an account?
-                </VSCodeButton>
+                </VSCodeLink>
             </>
         )
     }
 
+    enum InputStates {
+        initial = 'initial',
+        validating = 'loading',
+        success = 'valid',
+        failure = 'error',
+    }
+
     return renderCommon(
         <>
-            <p className={classNames(styles.ctaParagraph)}>
-                Sign in by entering an access token created through your user settings on {hostname}.
-            </p>
-            <p className={classNames(styles.ctaParagraph)}>
+            <Text className={classNames(styles.ctaParagraph)}>
+                Sign in by entering an access token created through your user settings on Sourcegraph.
+            </Text>
+            <Text className={classNames(styles.ctaParagraph)}>
                 See our {/* eslint-disable-next-line react/forbid-elements */}{' '}
                 <a
                     href={VSCE_LINK_USER_DOCS}
@@ -159,10 +186,10 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     user docs
                 </a>{' '}
                 for a video guide on how to create an access token.
-            </p>
-            {/* TODO: UPDATE LINK BACK TO CLOUD */}
-            {isSourcegraphDotCom && (
-                <p className={classNames(styles.ctaParagraph)}>
+            </Text>
+            {/* ---------- UNRELEASED FEATURE ---------- */}
+            {isSourcegraphDotCom && authenticatedUser?.displayName === 'sourcegraph' && (
+                <Text className={classNames(styles.ctaParagraph)}>
                     <Link to={isSourcegraphDotCom}>
                         <VSCodeButton
                             type="button"
@@ -176,41 +203,44 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                             Continue in browser
                         </VSCodeButton>
                     </Link>
-                </p>
+                </Text>
             )}
-            <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
-                <LoaderInput loading={state === 'validating'}>
-                    <Typography.Label htmlFor="access-token-input">Access Token</Typography.Label>
-                    <input
-                        className={classNames('input form-control', styles.ctaInput)}
-                        id="access-token-input"
-                        type="text"
-                        name="token"
+            <Text className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
+                <Input
+                    inputClassName={classNames('input', styles.ctaInput)}
+                    id="access-token-input"
+                    value={accessToken}
+                    onChange={onTokenInputChange}
+                    name="token"
+                    required={true}
+                    autoFocus={true}
+                    spellCheck={false}
+                    disabled={state === 'validating'}
+                    placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
+                    label="Access Token"
+                    className="mb-0"
+                    status={InputStates[state]}
+                />
+            </Text>
+            {usePrivateInstance && (
+                <Text className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
+                    <Input
+                        inputClassName={classNames('input', styles.ctaInput)}
+                        id="instance-url-input"
+                        value={endpointUrl}
+                        type="url"
+                        name="instance-url"
+                        onChange={onInstanceURLInputChange}
                         required={true}
                         autoFocus={true}
                         spellCheck={false}
                         disabled={state === 'validating'}
-                        placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
+                        placeholder="ex https://sourcegraph.example.com"
+                        label="Sourcegraph Instance URL"
+                        className="mb-0"
+                        status={InputStates[state]}
                     />
-                </LoaderInput>
-            </p>
-            {usePrivateInstance && (
-                <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
-                    <LoaderInput loading={state === 'validating'}>
-                        <Typography.Label htmlFor="instance-url-input">Sourcegraph Instance URL</Typography.Label>
-                        <input
-                            className={classNames('input form-control', styles.ctaInput)}
-                            id="instance-url-input"
-                            type="url"
-                            name="instance-url"
-                            required={true}
-                            autoFocus={true}
-                            spellCheck={false}
-                            disabled={state === 'validating'}
-                            placeholder="ex https://sourcegraph.example.com"
-                        />
-                    </LoaderInput>
-                </p>
+                </Text>
             )}
             <VSCodeButton
                 type="submit"
@@ -221,37 +251,20 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
             </VSCodeButton>
             {state === 'failure' && (
                 <Alert variant="danger" className={classNames(styles.ctaParagraph, 'my-1')}>
-                    Unable to verify your access token for {hostname}. Please try again with a new access token.
+                    Unable to verify your access token for {hostname}. Please try again with a new access token or
+                    restart VS Code if the instance URL has been updated.
                 </Alert>
             )}
-            {!usePrivateInstance ? (
-                <Button
-                    variant="link"
-                    className={classNames(styles.ctaParagraph, 'btn-text-link p-0 text-left my-0')}
-                    onClick={() => setUsePrivateInstance(true)}
-                >
-                    Need to connect to a private instance?
-                </Button>
-            ) : (
-                <Button
-                    variant="link"
-                    className={classNames(styles.ctaParagraph, 'btn-text-link p-0 text-left my-0')}
-                    onClick={() => setUsePrivateInstance(false)}
-                >
-                    Not a private instance user?
-                </Button>
-            )}
-            <div className="my-0">
-                <Button
-                    variant="link"
-                    className={classNames(styles.ctaParagraph, 'btn-text-link p-0 text-left my-0')}
-                    onClick={onSignUpClick}
-                    as={Link}
-                    to={signUpURL}
-                >
+            <Text className="my-0">
+                <VSCodeLink onClick={() => setUsePrivateInstance(!usePrivateInstance)}>
+                    {!usePrivateInstance ? 'Need to connect to a private instance?' : 'Not a private instance user?'}
+                </VSCodeLink>
+            </Text>
+            <Text className="my-0">
+                <VSCodeLink href={signUpURL} onClick={onSignUpClick}>
                     Create an account
-                </Button>
-            </div>
+                </VSCodeLink>
+            </Text>
         </>
     )
 }
@@ -265,31 +278,25 @@ export const AuthSidebarCta: React.FunctionComponent<React.PropsWithChildren<Aut
     return (
         <div>
             <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
-                <Typography.H5 className="flex-grow-1">Welcome</Typography.H5>
+                <H5 className="flex-grow-1">Welcome</H5>
             </button>
-            <p className={classNames(styles.ctaParagraph)}>
+            <Text className={classNames(styles.ctaParagraph)}>
                 The Sourcegraph extension allows you to search millions of open source repositories without cloning them
                 to your local machine.
-            </p>
-            <p className={classNames(styles.ctaParagraph)}>
+            </Text>
+            <Text className={classNames(styles.ctaParagraph)}>
                 Developers use Sourcegraph every day to onboard to new code bases, find code to reuse, resolve
                 incidents, fix security vulnerabilities, and more.
-            </p>
+            </Text>
             <div className={classNames(styles.ctaParagraph)}>
-                <p className="mb-0">Learn more:</p>
-                {/* eslint-disable-next-line react/forbid-elements */}
-                <a
-                    href={VSCE_LINK_DOTCOM + VSCE_SIDEBAR_PARAMS}
-                    className="my-0"
-                    onClick={() => onLinkClick('Sourcegraph')}
-                >
+                <Text className="mb-0">Learn more:</Text>
+                <VSCodeLink href={VSCE_LINK_DOTCOM + VSCE_SIDEBAR_PARAMS} onClick={() => onLinkClick('Sourcegraph')}>
                     Sourcegraph.com
-                </a>
+                </VSCodeLink>
                 <br />
-                {/* eslint-disable-next-line react/forbid-elements */}
-                <a href={VSCE_LINK_MARKETPLACE} className="my-0" onClick={() => onLinkClick('Extension')}>
+                <VSCodeLink href={VSCE_LINK_MARKETPLACE} onClick={() => onLinkClick('Extension')}>
                     Sourcegraph VS Code extension
-                </a>
+                </VSCodeLink>
             </div>
         </div>
     )

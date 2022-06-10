@@ -2,7 +2,7 @@ import React, { ElementType } from 'react'
 
 import classNames from 'classnames'
 
-import { Typography } from '@sourcegraph/wildcard'
+import { Code, Text } from '@sourcegraph/wildcard'
 
 import styles from './TextVariants.module.scss'
 
@@ -68,12 +68,12 @@ export const TextVariants: React.FunctionComponent<React.PropsWithChildren<unkno
                 <td>Body Text</td>
                 <td>
                     {WEIGHT_VARIANTS.map(weight => (
-                        <p key={`Base/${weight}`} className={styles.textVariant}>
+                        <Text key={`Base/${weight}`} className={styles.textVariant}>
                             <TextLabel size="Base" name="Body" weight={weight} />
-                        </p>
+                        </Text>
                     ))}
                     {WEIGHT_VARIANTS.map(weight => (
-                        <p key={`Small/${weight}`} className={styles.textVariant}>
+                        <Text key={`Small/${weight}`} className={styles.textVariant}>
                             <small>
                                 <TextLabel
                                     size="Small"
@@ -82,13 +82,13 @@ export const TextVariants: React.FunctionComponent<React.PropsWithChildren<unkno
                                     className={classNames({ 'font-weight-bold': weight === 'Strong' })}
                                 />
                             </small>
-                        </p>
+                        </Text>
                     ))}
                 </td>
             </tr>
             <tr>
                 <td>
-                    <Typography.Code>{'<label>'}</Typography.Code>
+                    <Code>{'<label>'}</Code>
                 </td>
                 <td>
                     <TextVariations component="label" name="Label" />
@@ -97,7 +97,7 @@ export const TextVariants: React.FunctionComponent<React.PropsWithChildren<unkno
             </tr>
             <tr>
                 <td>
-                    <Typography.Code>{'<input class="form-control">'}</Typography.Code>
+                    <Code>{'<input class="form-control">'}</Code>
                 </td>
                 <td>
                     <span className={classNames('form-control', styles.inputVariant, styles.textVariant)}>
@@ -112,7 +112,7 @@ export const TextVariants: React.FunctionComponent<React.PropsWithChildren<unkno
             </tr>
             <tr>
                 <td>
-                    <Typography.Code>{'<code>'}</Typography.Code>
+                    <Code>{'<code>'}</Code>
                 </td>
                 <td>
                     <TextVariations component="code" name="Code" weights={['Regular', 'Strong']} />

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
-	"database/sql"
 	"encoding/binary"
 	"encoding/gob"
 	"encoding/json"
@@ -17,25 +16,23 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/cespare/xxhash/v2"
-	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/go-rendezvous"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -84,6 +81,7 @@ func ResetClientMocks() {
 // and httpcli.Doer.
 func NewClient(db database.DB) *ClientImplementor {
 	return &ClientImplementor{
+		logger: sglog.Scoped("NewClient", "returns a new gitserver.Client instantiated with default arguments and httpcli.Doer."),
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
 		},
@@ -107,6 +105,7 @@ func NewClient(db database.DB) *ClientImplementor {
 
 func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImplementor {
 	return &ClientImplementor{
+		logger: sglog.Scoped("NewTestClient", "Test New client"),
 		addrs: func() []string {
 			return addrs
 		},
@@ -127,6 +126,9 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImpl
 
 // ClientImplementor is a gitserver client.
 type ClientImplementor struct {
+	// logger is a standardized, strongly-typed, and structured logging interface
+	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
+	logger sglog.Logger
 	// HTTP client to use
 	HTTPClient httpcli.Doer
 
@@ -160,7 +162,6 @@ type RawBatchLogResult struct {
 }
 type BatchLogCallback func(repoCommit api.RepoCommit, gitLogResult RawBatchLogResult) error
 
-//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i Client -o mock_client.go
 type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
 	AddrForRepo(context.Context, api.RepoName) (string, error)
@@ -171,10 +172,6 @@ type Client interface {
 
 	// Archive produces an archive from a Git repository.
 	Archive(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
-
-	// ArchiveURL returns a URL from which an archive of the given Git repository can
-	// be downloaded from.
-	ArchiveURL(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)
 
 	// BatchLog invokes the given callback with the `git log` output for a batch of repository
 	// and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
@@ -204,6 +201,9 @@ type Client interface {
 
 	// ListGitolite lists Gitolite repositories.
 	ListGitolite(_ context.Context, gitoliteHost string) ([]*gitolite.Repo, error)
+
+	// MergeBase returns the merge base commit for the specified commits.
+	MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (api.CommitID, error)
 
 	// P4Exec sends a p4 command with given arguments and returns an io.ReadCloser for the output.
 	P4Exec(_ context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error)
@@ -321,25 +321,6 @@ var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Number of times gitserver.AddrForRepo was invoked",
 }, []string{"user_agent"})
 
-// AddrForRepoCounter is used to track the number of times AddrForRepo is called
-// and is used to determine if we can read the gitserver location from the database.
-// See AddrForRepo for more details.
-var AddrForRepoCounter uint64
-
-// addrForRepoAddrMismatch is used to count the number of times the state of
-// the gitserver_repos table and the hashing algorithm disagree.
-var addrForRepoAddrMismatch = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_gitserver_addr_for_repo_addr_mismatch",
-	Help: "Number of times the gitserver_repos state and the result of gitserver.AddrForRepo are mismatched",
-}, []string{"user_agent"})
-
-// addrForRepoAddrFromDB is used to count the number of times we called the
-// database to get the gitserver address for a repo.
-var addrForRepoAddrFromDB = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_gitserver_addr_for_repo_addr_from_db",
-	Help: "Number of times the gitserver address for a repo is retrieved from the database",
-}, []string{"user_agent"})
-
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with a nil addresses pointer.
 func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api.RepoName, addresses GitServerAddresses) (string, error) {
@@ -351,65 +332,15 @@ func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api
 		return addr, nil
 	}
 
-	var shardID string
 	useRendezvous, err := shouldUseRendezvousHashing(ctx, db, rs)
 	if err != nil {
 		return "", err
 	}
 	if useRendezvous {
-		shardID, err = RendezvousAddrForRepo(repo, addresses.Addresses), nil
-	} else {
-		shardID, err = addrForKey(rs, addresses.Addresses), nil
-	}
-	if err != nil {
-		return "", err
+		return RendezvousAddrForRepo(repo, addresses.Addresses), nil
 	}
 
-	// This is an experiment to determine the impact on using the database to determine the location of a repo.
-	// It is meant to be used exclusively on Cloud and the rate will be increased progressively.
-	// Once we determine the impact of this experiment, we can remove it.
-	cfg := conf.Get()
-	if envvar.SourcegraphDotComMode() && cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.EnableGitserverClientLookupTable {
-		// get the rate from the configuration. The rate is a percentage, and defaults to 0.
-		var rate uint64 = uint64(conf.Get().ExperimentalFeatures.GitserverClientLookupTableRate)
-		if rate > 100 {
-			rate = 0
-		}
-
-		// We are using a modulo operation to spread the calls to the database across the rate.
-		var mod uint64
-		if rate > 0 {
-			mod = 100 / rate
-		}
-
-		if rate != 0 && atomic.AddUint64(&AddrForRepoCounter, 1)%mod == 0 {
-			span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.AddrForRepoFromDB")
-			span.SetTag("Repo", repo)
-			defer func() {
-				if err != nil {
-					ext.Error.Set(span, true)
-					span.LogFields(otlog.Error(err))
-				}
-				span.Finish()
-			}()
-
-			addrForRepoAddrFromDB.WithLabelValues(userAgent).Inc()
-
-			gr, err := db.GitserverRepos().GetByName(ctx, repo)
-			switch {
-			case err == nil:
-				// if there is a difference between the database state and the hashing result
-				// we should observe it.
-				if gr.ShardID != shardID {
-					addrForRepoAddrMismatch.WithLabelValues(userAgent).Inc()
-				}
-			case !errors.Is(err, sql.ErrNoRows):
-				log15.Warn("gitserver.AddrForRepo: failed to get gitserver repo from the database", "repo", repo, "err", err)
-			}
-		}
-	}
-
-	return shardID, nil
+	return addrForKey(rs, addresses.Addresses), nil
 }
 
 type GitServerAddresses struct {
@@ -487,9 +418,9 @@ func (a *archiveReader) Close() error {
 	return a.base.Close()
 }
 
-// ArchiveURL returns a URL from which an archive of the given Git repository can
+// archiveURL returns a URL from which an archive of the given Git repository can
 // be downloaded from.
-func (c *ClientImplementor) ArchiveURL(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (*url.URL, error) {
+func (c *ClientImplementor) archiveURL(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (*url.URL, error) {
 	q := url.Values{
 		"repo":    {string(repo)},
 		"treeish": {opt.Treeish},
@@ -522,7 +453,7 @@ func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt 
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
-			span.LogFields(otlog.Error(err))
+			span.LogFields(log.Error(err))
 		}
 		span.Finish()
 	}()
@@ -533,7 +464,7 @@ func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt 
 		return nil, err
 	}
 
-	u, err := c.ArchiveURL(ctx, repo, opt)
+	u, err := c.archiveURL(ctx, repo, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -1433,6 +1364,7 @@ func (c *ClientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 func (c *ClientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
 	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)
+
 	if err != nil {
 		return "", err
 	}
@@ -1440,14 +1372,14 @@ func (c *ClientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log15.Warn("reading gitserver create-commit-from-patch response", "err", err.Error())
+		c.logger.Warn("reading gitserver create-commit-from-patch response", sglog.Error(err))
 		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: errors.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, err.Error())}
 	}
 
 	var res protocol.CreateCommitFromPatchResponse
 	err = json.Unmarshal(data, &res)
 	if err != nil {
-		log15.Warn("decoding gitserver create-commit-from-patch response", "err", err.Error())
+		c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
 		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: errors.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, string(data))}
 	}
 
@@ -1474,14 +1406,14 @@ func (c *ClientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log15.Warn("reading gitserver get-object response", "err", err.Error())
+		c.logger.Warn("reading gitserver get-object response", sglog.Error(err))
 		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "GetObject", Err: errors.Errorf("GetObject: http status %d %s", resp.StatusCode, err.Error())}
 	}
 
 	var res protocol.GetObjectResponse
 	err = json.Unmarshal(data, &res)
 	if err != nil {
-		log15.Warn("decoding gitserver get-object response", "err", err.Error())
+		c.logger.Warn("decoding gitserver get-object response", sglog.Error(err))
 		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "GetObject", Err: errors.Errorf("GetObject: http status %d %s", resp.StatusCode, string(data))}
 	}
 

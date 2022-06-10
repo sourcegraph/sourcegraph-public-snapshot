@@ -1,16 +1,21 @@
-import type { Request } from './jsToJavaBridgeUtil'
+import type { SearchPatternType } from '@sourcegraph/search'
+
+import type { ActionName } from './java-to-js-bridge'
+import type { Request } from './js-to-java-bridge'
 
 /* Add global functions to global window object */
 declare global {
     interface Window {
-        initializeSourcegraph: () => void
+        initializeSourcegraph: () => Promise<void>
         callJava: (request: Request) => Promise<object>
+        callJS: (action: ActionName, data: string, callback: (result: string) => void) => void
     }
 }
 
 export interface Theme {
     isDarkTheme: boolean
-    buttonColor: string
+    intelliJTheme: { [key: string]: string }
+    syntaxTheme: { [key: string]: string }
 }
 
 export interface PluginConfig {

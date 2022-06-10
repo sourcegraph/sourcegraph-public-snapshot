@@ -54,7 +54,7 @@ export const InstallIntegrationsAlert: React.FunctionComponent<
 
     const ctaToDisplay = useMemo<CtaToDisplay | undefined>(
         (): CtaToDisplay | undefined => {
-            if (tourQueryParameters?.isTour) {
+            if (tourQueryParameters.isTour) {
                 return
             }
 

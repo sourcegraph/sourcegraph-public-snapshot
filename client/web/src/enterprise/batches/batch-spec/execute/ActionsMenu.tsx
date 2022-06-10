@@ -9,7 +9,18 @@ import SyncIcon from 'mdi-react/SyncIcon'
 import { useHistory, useLocation } from 'react-router'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { Button, Icon, Link, Menu, MenuButton, MenuItem, MenuList, Position, useMeasure } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Icon,
+    Link,
+    Menu,
+    MenuButton,
+    MenuItem,
+    MenuList,
+    Position,
+    Text,
+    useMeasure,
+} from '@sourcegraph/wildcard'
 
 import {
     BatchSpecExecutionFields,
@@ -34,7 +45,7 @@ export const ActionsMenu: React.FunctionComponent<React.PropsWithChildren<{}>> =
 
 const MemoizedActionsMenu: React.FunctionComponent<
     React.PropsWithChildren<Pick<BatchSpecContextState, 'batchChange' | 'batchSpec' | 'setActionsError'>>
-> = React.memo(({ batchChange, batchSpec, setActionsError }) => {
+> = React.memo(function MemoizedActionsMenu({ batchChange, batchSpec, setActionsError }) {
     const history = useHistory()
     const location = useLocation()
 
@@ -100,7 +111,7 @@ const MemoizedActionsMenu: React.FunctionComponent<
                             : undefined
                     }
                 >
-                    {failed && <Icon className="mr-1" as={AlertCircleIcon} />}
+                    {failed && <Icon aria-hidden={true} className="mr-1" as={AlertCircleIcon} />}
                     Preview
                 </Button>
             )}
@@ -108,21 +119,21 @@ const MemoizedActionsMenu: React.FunctionComponent<
                 <div className="d-inline-block" ref={menuReference} aria-hidden={showPreviewButton}>
                     <MenuButton variant="secondary" className={showPreviewButton ? styles.menuButtonHidden : undefined}>
                         Actions
-                        <Icon as={ChevronDownIcon} className={styles.chevronIcon} />
+                        <Icon aria-hidden={true} as={ChevronDownIcon} className={styles.chevronIcon} />
                     </MenuButton>
                 </div>
                 <MenuList position={Position.bottomEnd}>
                     <MenuItem onSelect={onSelectEdit}>
-                        <Icon as={PencilIcon} /> Edit spec{isExecuting ? '...' : ''}
+                        <Icon aria-hidden={true} as={PencilIcon} /> Edit spec{isExecuting ? '...' : ''}
                     </MenuItem>
                     {isExecuting && (
                         <MenuItem onSelect={onSelectCancel}>
-                            <Icon as={CloseIcon} className={styles.cancelIcon} /> Cancel execution...
+                            <Icon aria-hidden={true} as={CloseIcon} className={styles.cancelIcon} /> Cancel execution...
                         </MenuItem>
                     )}
                     {state !== BatchSpecState.COMPLETED && batchSpec.viewerCanRetry && (
                         <MenuItem onSelect={retryBatchSpecExecution} disabled={isRetryLoading}>
-                            <Icon as={SyncIcon} /> Retry failed workspaces
+                            <Icon aria-hidden={true} as={SyncIcon} /> Retry failed workspaces
                         </MenuItem>
                     )}
                 </MenuList>
@@ -133,11 +144,11 @@ const MemoizedActionsMenu: React.FunctionComponent<
                 onConfirm={cancelModalType === 'cancel' ? cancelBatchSpecExecution : cancelAndEdit}
                 modalHeader={cancelModalType === 'cancel' ? 'Cancel execution' : 'The execution is still running'}
                 modalBody={
-                    <p>
+                    <Text>
                         {cancelModalType === 'cancel'
                             ? 'Are you sure you want to cancel the current execution?'
                             : 'You are unable to edit the spec when an execution is running.'}
-                    </p>
+                    </Text>
                 }
                 isLoading={isCancelLoading}
             />

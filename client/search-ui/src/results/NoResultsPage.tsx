@@ -12,7 +12,7 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Code, H2, H3, H4, Text, createLinkUrl } from '@sourcegraph/wildcard'
 
 import { ModalVideo } from '../documentation/ModalVideo'
 
@@ -60,7 +60,7 @@ const SearchInputExample: React.FunctionComponent<React.PropsWithChildren<Search
                                     'text-monospace dropdown-toggle'
                                 )}
                             >
-                                <Typography.Code className={searchContextDropDownStyles.buttonContent}>
+                                <Code className={searchContextDropDownStyles.buttonContent}>
                                     {/*
                                        a11y-ignore
                                        Rule: "color-contrast" (Elements must have sufficient color contrast)
@@ -68,7 +68,7 @@ const SearchInputExample: React.FunctionComponent<React.PropsWithChildren<Search
                                      */}
                                     <span className="search-filter-keyword a11y-ignore">context:</span>
                                     global
-                                </Typography.Code>
+                                </Code>
                             </Button>
                         </div>
                         <div className={classNames(searchBoxStyle.searchBoxSeparator, styles.fakeSearchboxSeparator)} />
@@ -110,7 +110,7 @@ const SearchInputExample: React.FunctionComponent<React.PropsWithChildren<Search
     if (runnable) {
         const builtURLQuery = buildSearchURLQuery(query, patternType, false, 'global')
         return (
-            <Link onClick={onRun} to={{ pathname: '/search', search: builtURLQuery }}>
+            <Link onClick={onRun} to={createLinkUrl({ pathname: '/search', search: builtURLQuery })}>
                 <div className={styles.searchInputExample}>
                     {example}
                     <span className="ml-2 text-nowrap">Run Search</span>
@@ -137,14 +137,14 @@ const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>
     className = '',
 }) => (
     <div className={classNames(styles.container, className)}>
-        <Typography.H3 className={styles.title}>
+        <H3 className={styles.title}>
             <span className="flex-1">{title}</span>
             {sectionID && (
                 <Button variant="icon" aria-label="Hide Section" onClick={() => onClose?.(sectionID)}>
-                    <Icon role="img" aria-hidden={true} as={CloseIcon} />
+                    <Icon aria-hidden={true} as={CloseIcon} />
                 </Button>
             )}
-        </Typography.H3>
+        </H3>
         <div className={styles.content}>{children}</div>
     </div>
 )
@@ -205,7 +205,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
-            <Typography.H2>Sourcegraph basics</Typography.H2>
+            <H2>Sourcegraph basics</H2>
             <div className={styles.panels}>
                 {!hiddenSectionIDs?.includes(SectionID.VIDEOS) && (
                     <div className="mr-3">
@@ -252,21 +252,20 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                             title="Search is literal by default"
                             onClose={onClose}
                         >
-                            <p>
-                                If you type <Typography.Code>facebook react</Typography.Code>, we will search for file
-                                names, file contents, repo names, etc. for the exact, ordered phrase{' '}
-                                <Typography.Code>facebook react</Typography.Code>. If you add quotes around your search
-                                phrase, we will include the quotes in the search. Literal search makes it easy to find
-                                code like:{' '}
-                                <Typography.Code>
+                            <Text>
+                                If you type <Code>facebook react</Code>, we will search for file names, file contents,
+                                repo names, etc. for the exact, ordered phrase <Code>facebook react</Code>. If you add
+                                quotes around your search phrase, we will include the quotes in the search. Literal
+                                search makes it easy to find code like:{' '}
+                                <Code>
                                     {'{'} url: "https://sourcegraph.com" {'}'}
-                                </Typography.Code>{' '}
+                                </Code>{' '}
                                 without escaping.
-                            </p>
-                            <p>
+                            </Text>
+                            <Text>
                                 Try searching in regexp mode to match terms independently, similar to an AND search, but
                                 term ordering is maintained.
-                            </p>
+                            </Text>
                             <SearchInputExample
                                 showSearchContext={searchContextsEnabled && showSearchContext}
                                 query="repo:sourcegraph const Authentication"
@@ -280,8 +279,8 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                     )}
                     {!hiddenSectionIDs?.includes(SectionID.COMMON_PROBLEMS) && (
                         <Container sectionID={SectionID.COMMON_PROBLEMS} title="Common Problems" onClose={onClose}>
-                            <Typography.H4>Finding a specific repository</Typography.H4>
-                            <p>Repositories are specified by their org/repository-name convention:</p>
+                            <H4>Finding a specific repository</H4>
+                            <Text>Repositories are specified by their org/repository-name convention:</Text>
                             <SearchInputExample
                                 showSearchContext={searchContextsEnabled && showSearchContext}
                                 query="repo:sourcegraph/about lang:go publish"
@@ -292,10 +291,10 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                     })
                                 }
                             />
-                            <p>
+                            <Text>
                                 To search within all of an org’s repositories, specify only the org name and a trailing
                                 slash:
-                            </p>
+                            </Text>
                             <SearchInputExample
                                 showSearchContext={searchContextsEnabled && showSearchContext}
                                 query="repo:sourcegraph/ lang:go publish"
@@ -306,19 +305,19 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                     })
                                 }
                             />
-                            <p>
+                            <Text>
                                 <small>
                                     <Link
                                         target="blank"
                                         to="https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet#searching-an-organizations-repository"
                                     >
-                                        Learn more <Icon role="img" aria-hidden={true} as={ExternalLinkIcon} />
+                                        Learn more <Icon aria-hidden={true} as={ExternalLinkIcon} />
                                     </Link>
                                 </small>
-                            </p>
+                            </Text>
 
-                            <Typography.H4>AND, OR, NOT</Typography.H4>
-                            <p>Conditionals and grouping are possible within queries:</p>
+                            <H4>AND, OR, NOT</H4>
+                            <Text>Conditionals and grouping are possible within queries:</Text>
                             <SearchInputExample
                                 showSearchContext={searchContextsEnabled && showSearchContext}
                                 query="repo:sourcegraph/ (lang:typescript OR lang:go) auth"
@@ -326,11 +325,11 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                 onRun={() => telemetryService.log('NoResultsCommonProblems', { search: 'and or' })}
                             />
 
-                            <Typography.H4>Escaping</Typography.H4>
-                            <p>
+                            <H4>Escaping</H4>
+                            <Text>
                                 Because our default mode is literal, escaping requires a dedicated filter. Use the
                                 content filter to include spaces and filter keywords in searches.
-                            </p>
+                            </Text>
                             <SearchInputExample
                                 showSearchContext={searchContextsEnabled && showSearchContext}
                                 query={'content:"class Vector"'}
@@ -341,17 +340,17 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                     )}
 
                     <Container title="More resources">
-                        <p>
+                        <Text>
                             Check out the learn site, including the cheat sheet for more tips on getting the most from
                             Sourcegraph.
-                        </p>
-                        <p>
+                        </Text>
+                        <Text>
                             <Link
                                 onClick={() => telemetryService.log('NoResultsMore', { link: 'Learn site' })}
                                 target="blank"
                                 to="https://learn.sourcegraph.com/"
                             >
-                                Sourcegraph Learn <Icon role="img" aria-hidden={true} as={ExternalLinkIcon} />
+                                Sourcegraph Learn <Icon aria-hidden={true} as={ExternalLinkIcon} />
                             </Link>
                             <br />
                             <Link
@@ -359,13 +358,13 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                 target="blank"
                                 to="https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet"
                             >
-                                Sourcegraph cheat sheet <Icon role="img" aria-hidden={true} as={ExternalLinkIcon} />
+                                Sourcegraph cheat sheet <Icon aria-hidden={true} as={ExternalLinkIcon} />
                             </Link>
-                        </p>
+                        </Text>
                     </Container>
 
                     {hiddenSectionIDs && hiddenSectionIDs.length > 0 && (
-                        <p>
+                        <Text>
                             Some help panels are hidden.{' '}
                             <Button
                                 className="p-0 border-0 align-baseline"
@@ -377,7 +376,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                             >
                                 Show all panels.
                             </Button>
-                        </p>
+                        </Text>
                     )}
                 </div>
             </div>

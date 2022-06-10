@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -33,12 +32,7 @@ type settingsStore struct {
 	*basestore.Store
 }
 
-// Settings instantiates and returns a new SettingStore with prepared statements.
-func Settings(db dbutil.DB) SettingsStore {
-	return &settingsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-// NewSettingStoreWithDB instantiates and returns a new SettingStore using the other store handle.
+// SettingsWith instantiates and returns a new SettingsStore using the other store handle.
 func SettingsWith(other basestore.ShareableStore) SettingsStore {
 	return &settingsStore{Store: basestore.NewWithHandle(other.Handle())}
 }

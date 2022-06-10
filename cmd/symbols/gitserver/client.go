@@ -23,6 +23,9 @@ type GitserverClient interface {
 
 	// GitDiff returns the paths that have changed between two commits.
 	GitDiff(context.Context, api.RepoName, api.CommitID, api.CommitID) (Changes, error)
+
+	// GetRepoSize returns the repo size in bytes.
+	GetRepoSize(context.Context, api.RepoName) (int64, error)
 }
 
 // Changes are added, deleted, and modified paths.
@@ -82,6 +85,18 @@ func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commit
 	}
 
 	return changes, nil
+}
+
+func (c *gitserverClient) GetRepoSize(ctx context.Context, repo api.RepoName) (int64, error) {
+	repoToInfo, err := gitserver.NewClient(c.db).RepoInfo(ctx, repo)
+	if err != nil {
+		return 0, err
+	}
+	info := repoToInfo.Results[repo]
+	if info == nil {
+		return 0, errors.Errorf("repo %q not found", repo)
+	}
+	return info.Size, nil
 }
 
 var NUL = []byte{0}

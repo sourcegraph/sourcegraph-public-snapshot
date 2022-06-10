@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -268,8 +267,8 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}
 
 	repos := makeRepositoryRevisions("foo@master:mybranch:*refs/heads/")
-	repos[0].ListRefs = func(context.Context, database.DB, api.RepoName) ([]git.Ref, error) {
-		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
+	repos[0].ListRefs = func(context.Context, database.DB, api.RepoName) ([]gitdomain.Ref, error) {
+		return []gitdomain.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
 
 	matches, _, err := RunRepoSubsetTextSearch(
@@ -334,24 +333,24 @@ func mkRepos(names ...string) []types.MinimalRepo {
 
 func TestFileMatch_Limit(t *testing.T) {
 	tests := []struct {
-		numMultilineMatches    int
-		numSymbolMatches       int
-		limit                  int
-		expNumMultilineMatches int
-		expNumSymbolMatches    int
-		expRemainingLimit      int
-		wantLimitHit           bool
+		numHunkRanges       int
+		numSymbolMatches    int
+		limit               int
+		expNumHunkRanges    int
+		expNumSymbolMatches int
+		expRemainingLimit   int
+		wantLimitHit        bool
 	}{
 		{
-			numMultilineMatches:    3,
-			numSymbolMatches:       0,
-			limit:                  1,
-			expNumMultilineMatches: 1,
-			expRemainingLimit:      0,
-			wantLimitHit:           true,
+			numHunkRanges:     3,
+			numSymbolMatches:  0,
+			limit:             1,
+			expNumHunkRanges:  1,
+			expRemainingLimit: 0,
+			wantLimitHit:      true,
 		},
 		{
-			numMultilineMatches: 0,
+			numHunkRanges:       0,
 			numSymbolMatches:    3,
 			limit:               1,
 			expNumSymbolMatches: 1,
@@ -359,15 +358,15 @@ func TestFileMatch_Limit(t *testing.T) {
 			wantLimitHit:        true,
 		},
 		{
-			numMultilineMatches:    3,
-			numSymbolMatches:       0,
-			limit:                  5,
-			expNumMultilineMatches: 3,
-			expRemainingLimit:      2,
-			wantLimitHit:           false,
+			numHunkRanges:     3,
+			numSymbolMatches:  0,
+			limit:             5,
+			expNumHunkRanges:  3,
+			expRemainingLimit: 2,
+			wantLimitHit:      false,
 		},
 		{
-			numMultilineMatches: 0,
+			numHunkRanges:       0,
 			numSymbolMatches:    3,
 			limit:               5,
 			expNumSymbolMatches: 3,
@@ -375,15 +374,15 @@ func TestFileMatch_Limit(t *testing.T) {
 			wantLimitHit:        false,
 		},
 		{
-			numMultilineMatches:    3,
-			numSymbolMatches:       0,
-			limit:                  3,
-			expNumMultilineMatches: 3,
-			expRemainingLimit:      0,
-			wantLimitHit:           false,
+			numHunkRanges:     3,
+			numSymbolMatches:  0,
+			limit:             3,
+			expNumHunkRanges:  3,
+			expRemainingLimit: 0,
+			wantLimitHit:      false,
 		},
 		{
-			numMultilineMatches: 0,
+			numHunkRanges:       0,
 			numSymbolMatches:    3,
 			limit:               3,
 			expNumSymbolMatches: 3,
@@ -392,27 +391,27 @@ func TestFileMatch_Limit(t *testing.T) {
 		},
 		{
 			// An empty FileMatch should still count against the limit
-			numMultilineMatches:    0,
-			numSymbolMatches:       0,
-			limit:                  1,
-			expNumSymbolMatches:    0,
-			expNumMultilineMatches: 0,
-			wantLimitHit:           false,
+			numHunkRanges:       0,
+			numSymbolMatches:    0,
+			limit:               1,
+			expNumSymbolMatches: 0,
+			expNumHunkRanges:    0,
+			wantLimitHit:        false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
 			fileMatch := &result.FileMatch{
-				File:             result.File{},
-				MultilineMatches: make([]result.MultilineMatch, tt.numMultilineMatches),
-				Symbols:          make([]*result.SymbolMatch, tt.numSymbolMatches),
-				LimitHit:         false,
+				File:         result.File{},
+				ChunkMatches: result.ChunkMatches{{Ranges: make(result.Ranges, tt.numHunkRanges)}},
+				Symbols:      make([]*result.SymbolMatch, tt.numSymbolMatches),
+				LimitHit:     false,
 			}
 
 			got := fileMatch.Limit(tt.limit)
 
-			require.Equal(t, tt.expNumMultilineMatches, len(fileMatch.MultilineMatches))
+			require.Equal(t, tt.expNumHunkRanges, fileMatch.ChunkMatches.MatchCount())
 			require.Equal(t, tt.expNumSymbolMatches, len(fileMatch.Symbols))
 			require.Equal(t, tt.expRemainingLimit, got)
 			require.Equal(t, tt.wantLimitHit, fileMatch.LimitHit)
@@ -475,7 +474,7 @@ func RunRepoSubsetTextSearch(
 			return nil, streaming.Stats{}, err
 		}
 
-		zoektJob := &zoektutil.ZoektRepoSubsetSearchJob{
+		zoektJob := &zoektutil.RepoSubsetTextSearchJob{
 			Repos:          indexed,
 			Query:          zoektQuery,
 			Typ:            search.TextRequest,
@@ -493,7 +492,7 @@ func RunRepoSubsetTextSearch(
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
-		searcherJob := &searcher.SearcherJob{
+		searcherJob := &searcher.TextSearchJob{
 			PatternInfo:     searcherArgs.PatternInfo,
 			Repos:           unindexed,
 			Indexed:         false,

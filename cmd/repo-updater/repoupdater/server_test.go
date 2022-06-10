@@ -3,7 +3,6 @@ package repoupdater
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,8 +14,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -35,14 +35,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestServer_handleRepoLookup(t *testing.T) {
-	s := &Server{}
+	logger := logtest.Scoped(t)
+	s := &Server{Logger: logger}
 
 	h := ObservedHandler(
-		log15.Root(),
+		logger,
 		NewHandlerMetrics(),
 		opentracing.NoopTracer{},
 	)(s.Handler())
@@ -55,6 +55,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 			t.Fatal(err)
 		}
 		req := httptest.NewRequest("GET", "/repo-lookup", bytes.NewReader(body))
+		fmt.Printf("h: %v rr: %v req: %v\n", h, rr, req)
 		h.ServeHTTP(rr, req)
 		if rr.Code == http.StatusOK {
 			if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
@@ -161,7 +162,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 	}
 
 	initStore := func(db database.DB) repos.Store {
-		store := repos.NewStore(db, sql.TxOptions{})
+		store := repos.NewStore(logtest.Scoped(t), db)
 		if err := store.ExternalServiceStore().Upsert(ctx, &svc); err != nil {
 			t.Fatal(err)
 		}
@@ -205,6 +206,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		},
 	}}
 
+	logger := logtest.Scoped(t)
 	for _, tc := range testCases {
 		tc := tc
 		ctx := context.Background()
@@ -212,7 +214,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			sqlDB := dbtest.NewDB(t)
 			store := tc.init(database.NewDB(sqlDB))
-			s := &Server{Store: store, Scheduler: &fakeScheduler{}}
+			s := &Server{Logger: logger, Store: store, Scheduler: &fakeScheduler{}}
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
 			cli := repoupdater.NewClient(srv.URL)
@@ -235,7 +237,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 
 func TestServer_RepoLookup(t *testing.T) {
 	db := dbtest.NewDB(t)
-	store := repos.NewStore(database.NewDB(db), sql.TxOptions{})
+	store := repos.NewStore(logtest.Scoped(t), database.NewDB(db))
 	ctx := context.Background()
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
@@ -616,7 +618,9 @@ func TestServer_RepoLookup(t *testing.T) {
 			}
 
 			clock := clock
+			logger := logtest.Scoped(t)
 			syncer := &repos.Syncer{
+				Logger:  logger,
 				Now:     clock.Now,
 				Store:   store,
 				Sourcer: repos.NewFakeSourcer(nil, tc.src),
@@ -625,6 +629,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			scheduler := repos.NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
 
 			s := &Server{
+				Logger:    logger,
 				Syncer:    syncer,
 				Store:     store,
 				Scheduler: scheduler,
@@ -734,12 +739,13 @@ func TestServer_handleSchedulePermsSync(t *testing.T) {
 			wantBody:       "null",
 		},
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			r := httptest.NewRequest("POST", "/schedule-perms-sync", strings.NewReader(test.body))
 			w := httptest.NewRecorder()
 
-			s := &Server{}
+			s := &Server{Logger: logtest.Scoped(t)}
 			// NOTE: An interface has nil value is not a nil interface,
 			// so should only assign to the interface when the value is not nil.
 			if test.permsSyncer != nil {
@@ -778,6 +784,7 @@ func TestServer_handleExternalServiceSync(t *testing.T) {
 			wantErrCode: 500,
 		},
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			src := testSource{
@@ -787,7 +794,7 @@ func TestServer_handleExternalServiceSync(t *testing.T) {
 			}
 			r := httptest.NewRequest("POST", "/sync-external-service", strings.NewReader(`{"ExternalService": {"ID":1,"kind":"GITHUB"}}}`))
 			w := httptest.NewRecorder()
-			s := &Server{Syncer: &repos.Syncer{Sourcer: repos.NewFakeSourcer(nil, src)}}
+			s := &Server{Logger: logtest.Scoped(t), Syncer: &repos.Syncer{Sourcer: repos.NewFakeSourcer(nil, src)}}
 			s.handleExternalServiceSync(w, r)
 			if w.Code != test.wantErrCode {
 				t.Errorf("Code: want %v but got %v", test.wantErrCode, w.Code)

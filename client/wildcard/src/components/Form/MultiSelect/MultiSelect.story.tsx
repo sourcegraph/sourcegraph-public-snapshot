@@ -5,7 +5,7 @@ import { Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Typography } from '../..'
+import { H1, H2 } from '../..'
 import { Grid } from '../../Grid/Grid'
 
 import { MultiSelect, MultiSelectProps, MultiSelectState, MultiSelectOption } from '.'
@@ -66,27 +66,27 @@ const SelectWithValues = () => {
 
 export const MultiSelectExamples: Story = () => (
     <>
-        <Typography.H1>Multi Select</Typography.H1>
+        <H1>Multi Select</H1>
         <Grid columnCount={4}>
             <div>
-                <Typography.H2>Standard</Typography.H2>
+                <H2>Standard</H2>
                 <BaseSelect />
             </div>
             <div>
-                <Typography.H2>Valid</Typography.H2>
+                <H2>Valid</H2>
                 <BaseSelect isValid={true} />
             </div>
             <div>
-                <Typography.H2>Invalid</Typography.H2>
+                <H2>Invalid</H2>
                 <BaseSelect isValid={false} />
             </div>
             <div>
-                <Typography.H2>Disabled</Typography.H2>
+                <H2>Disabled</H2>
                 <BaseSelect isDisabled={true} />
             </div>
         </Grid>
 
-        <Typography.H2>Pre-selected values (300px wide container)</Typography.H2>
+        <H2>Pre-selected values (300px wide container)</H2>
         <div style={{ width: '300px ' }}>
             <SelectWithValues />
         </div>

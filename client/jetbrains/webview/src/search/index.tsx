@@ -1,19 +1,23 @@
 import { render } from 'react-dom'
 
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
+import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
+
 import { App } from './App'
+import { handleRequest } from './java-to-js-bridge'
 import {
-    getConfig,
-    getTheme,
+    getConfigAlwaysFulfill,
+    getThemeAlwaysFulfill,
     indicateFinishedLoading,
-    loadLastSearch,
+    loadLastSearchAlwaysFulfill,
     onOpen,
     onPreviewChange,
     onPreviewClear,
-} from './jsToJavaBridgeUtil'
-import type { Theme, PluginConfig, Search } from './types'
+} from './js-to-java-bridge'
+import type { PluginConfig, Search, Theme } from './types'
 
 setLinkComponent(AnchorLink)
 
@@ -22,13 +26,23 @@ let instanceURL = 'https://sourcegraph.com'
 let isGlobbingEnabled = false
 let accessToken: string | null = null
 let initialSearch: Search | null = null
+let initialAuthenticatedUser: AuthenticatedUser | null
 
 window.initializeSourcegraph = async () => {
-    const [theme, config, lastSearch] = await Promise.all([getTheme(), getConfig(), loadLastSearch()])
+    const [theme, config, lastSearch, authenticatedUser] = await Promise.allSettled([
+        getThemeAlwaysFulfill(),
+        getConfigAlwaysFulfill(),
+        loadLastSearchAlwaysFulfill(),
+        getAuthenticatedUser(instanceURL, accessToken),
+    ])
 
-    applyConfig(config)
-    applyTheme(theme)
-    applyLastSearch(lastSearch)
+    applyConfig((config as PromiseFulfilledResult<PluginConfig>).value)
+    applyTheme((theme as PromiseFulfilledResult<Theme>).value)
+    applyLastSearch((lastSearch as PromiseFulfilledResult<Search | null>).value)
+    applyAuthenticatedUser(authenticatedUser.status === 'fulfilled' ? authenticatedUser.value : null)
+    if (accessToken && authenticatedUser.status === 'rejected') {
+        console.warn(`No initial authenticated user with access token “${accessToken}”`)
+    }
 
     polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
 
@@ -37,7 +51,9 @@ window.initializeSourcegraph = async () => {
     await indicateFinishedLoading()
 }
 
-function renderReactApp(): void {
+window.callJS = handleRequest
+
+export function renderReactApp(): void {
     const node = document.querySelector('#main') as HTMLDivElement
     render(
         <App
@@ -49,33 +65,38 @@ function renderReactApp(): void {
             onOpen={onOpen}
             onPreviewChange={onPreviewChange}
             onPreviewClear={onPreviewClear}
+            initialAuthenticatedUser={initialAuthenticatedUser}
         />,
         node
     )
 }
 
-function applyConfig(config: PluginConfig): void {
+export function applyConfig(config: PluginConfig): void {
     instanceURL = config.instanceURL
     isGlobbingEnabled = config.isGlobbingEnabled || false
     accessToken = config.accessToken || null
 }
 
-function applyTheme(theme: Theme): void {
+export function applyTheme(theme: Theme): void {
     // Dark/light theme
     document.documentElement.classList.add('theme')
     document.documentElement.classList.remove(theme.isDarkTheme ? 'theme-light' : 'theme-dark')
     document.documentElement.classList.add(theme.isDarkTheme ? 'theme-dark' : 'theme-light')
     isDarkTheme = theme.isDarkTheme
 
-    // Button color (test)
-    const buttonColor = theme.buttonColor
+    // Find the name of properties here: https://plugins.jetbrains.com/docs/intellij/themes-metadata.html#key-naming-scheme
+    const intelliJTheme = theme.intelliJTheme
     const root = document.querySelector(':root') as HTMLElement
-    if (buttonColor) {
-        root.style.setProperty('--button-color', buttonColor)
-    }
-    root.style.setProperty('--primary', buttonColor)
+
+    // Button color (test)
+    root.style.setProperty('--button-color', intelliJTheme['Button.default.startBackground'])
+    root.style.setProperty('--primary', intelliJTheme['Button.default.startBackground'])
 }
 
 function applyLastSearch(lastSearch: Search | null): void {
     initialSearch = lastSearch
+}
+
+function applyAuthenticatedUser(authenticatedUser: AuthenticatedUser | null): void {
+    initialAuthenticatedUser = authenticatedUser
 }

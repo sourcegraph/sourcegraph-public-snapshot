@@ -231,7 +231,7 @@ const config = {
         use: {
           loader: 'elm-webpack-loader',
           options: {
-            cwd: path.resolve(ROOT_PATH, 'client/web/src/notebooks/blocks/compute/component'),
+            cwd: path.resolve(ROOT_PATH, 'client/web/src/search/results/components/compute'),
             report: 'json',
             pathToElm: path.resolve(ROOT_PATH, 'node_modules/.bin/elm'),
           },

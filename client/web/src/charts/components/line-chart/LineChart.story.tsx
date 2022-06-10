@@ -28,6 +28,11 @@ export const LineChartsVitrina: Story = () => (
     </div>
 )
 
+const sharedProps = {
+    isSeriesSelected: () => true,
+    isSeriesHovered: () => true,
+}
+
 interface StandardDatum {
     value: number | null
     x: number
@@ -148,7 +153,9 @@ const STANDARD_SERIES: Series<StandardDatum>[] = [
 const PlainChart = () => (
     <div style={{ width: 400, height: 400 }}>
         <ParentSize className="flex-1">
-            {({ width, height }) => <LineChart width={width} height={height} series={STANDARD_SERIES} />}
+            {({ width, height }) => (
+                <LineChart width={width} height={height} series={STANDARD_SERIES} {...sharedProps} />
+            )}
         </ParentSize>
     </div>
 )
@@ -161,7 +168,14 @@ const PlainStackedChart = () => {
             <button className="d-block" onClick={() => setActive(!active)}>
                 Toggle zero Y axis state
             </button>
-            <LineChart width={400} height={400} series={STANDARD_SERIES} stacked={true} zeroYAxisMin={active} />
+            <LineChart
+                width={400}
+                height={400}
+                series={STANDARD_SERIES}
+                stacked={true}
+                zeroYAxisMin={active}
+                {...sharedProps}
+            />
         </section>
     )
 }
@@ -169,7 +183,9 @@ const PlainStackedChart = () => {
 const WithLegendExample = () => (
     <div className="d-flex flex-column" style={{ width: 400, height: 400 }}>
         <ParentSize className="flex-1">
-            {({ width, height }) => <LineChart<StandardDatum> width={width} height={height} series={STANDARD_SERIES} />}
+            {({ width, height }) => (
+                <LineChart<StandardDatum> width={width} height={height} series={STANDARD_SERIES} {...sharedProps} />
+            )}
         </ParentSize>
         <LegendList>
             {STANDARD_SERIES.map(line => (
@@ -228,7 +244,9 @@ const WithHugeData = () => {
     return (
         <div style={{ width: 400, height: 400 }}>
             <ParentSize>
-                {({ width, height }) => <LineChart<StandardDatum> width={width} height={height} series={SERIES} />}
+                {({ width, height }) => (
+                    <LineChart<StandardDatum> width={width} height={height} series={SERIES} {...sharedProps} />
+                )}
             </ParentSize>
         </div>
     )
@@ -252,7 +270,9 @@ const WithZeroOneData = () => {
     return (
         <div style={{ width: 400, height: 400 }}>
             <ParentSize>
-                {({ width, height }) => <LineChart<StandardDatum> width={width} height={height} series={SERIES} />}
+                {({ width, height }) => (
+                    <LineChart<StandardDatum> width={width} height={height} series={SERIES} {...sharedProps} />
+                )}
             </ParentSize>
         </div>
     )
@@ -287,7 +307,9 @@ const WithDataSteps = () => {
     return (
         <div style={{ width: 400, height: 400 }}>
             <ParentSize>
-                {({ width, height }) => <LineChart<StandardDatum> width={width} height={height} series={SERIES} />}
+                {({ width, height }) => (
+                    <LineChart<StandardDatum> width={width} height={height} series={SERIES} {...sharedProps} />
+                )}
             </ParentSize>
         </div>
     )
@@ -333,7 +355,13 @@ const WithDataMissingValues = () => {
         <div style={{ width: 400, height: 400 }}>
             <ParentSize>
                 {({ width, height }) => (
-                    <LineChart<StandardDatum> width={width} height={height} series={SERIES} zeroYAxisMin={true} />
+                    <LineChart<StandardDatum>
+                        width={width}
+                        height={height}
+                        series={SERIES}
+                        zeroYAxisMin={true}
+                        {...sharedProps}
+                    />
                 )}
             </ParentSize>
         </div>
@@ -405,7 +433,13 @@ const StackedWithDataMissingValues = () => {
         <div style={{ width: 400, height: 400 }}>
             <ParentSize>
                 {({ width, height }) => (
-                    <LineChart<StandardDatum> width={width} height={height} series={SERIES} stacked={true} />
+                    <LineChart<StandardDatum>
+                        width={width}
+                        height={height}
+                        series={SERIES}
+                        stacked={true}
+                        {...sharedProps}
+                    />
                 )}
             </ParentSize>
         </div>

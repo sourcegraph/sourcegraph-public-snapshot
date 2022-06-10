@@ -68,6 +68,9 @@ func add(database db.Database, migrationName, upMigrationFileTemplate, downMigra
 	block.Writef("Down query file: %s", rootRelative(files.DownFile))
 	block.Writef("Metadata file: %s", rootRelative(files.MetadataFile))
 	block.Close()
+	line := output.Styled(output.StyleUnderline, "https://docs.sourcegraph.com/dev/background-information/sql/migrations")
+	line.Prefix = "Checkout the development docs for migrations: "
+	std.Out.WriteLine(line)
 
 	return nil
 }

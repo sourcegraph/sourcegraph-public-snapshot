@@ -35,8 +35,8 @@ add('GitHub', () => (
             }, [])
             return (
                 <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
-                    <PopoverTrigger as={Button} id={targetID}>
-                        <Icon as={GithubIcon} />
+                    <PopoverTrigger as={Button} id={targetID} aria-label="Github">
+                        <Icon as={GithubIcon} aria-hidden="true" />
                     </PopoverTrigger>
                     <InstallBrowserExtensionPopover
                         url=""
@@ -66,8 +66,8 @@ add(
                 }, [])
                 return (
                     <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
-                        <PopoverTrigger as={Button} id={targetID}>
-                            <Icon as={GitlabIcon} />
+                        <PopoverTrigger as={Button} id={targetID} aria-label="Gitlab">
+                            <Icon as={GitlabIcon} aria-hidden={true} />
                         </PopoverTrigger>
                         <InstallBrowserExtensionPopover
                             url=""
@@ -101,8 +101,8 @@ add(
                 }, [])
                 return (
                     <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
-                        <PopoverTrigger as={Button} id={targetID}>
-                            <Icon as={PhabricatorIcon} />
+                        <PopoverTrigger as={Button} id={targetID} aria-label="Phabricator">
+                            <Icon as={PhabricatorIcon} aria-hidden={true} />
                         </PopoverTrigger>
                         <InstallBrowserExtensionPopover
                             url=""
@@ -136,8 +136,8 @@ add(
                 }, [])
                 return (
                     <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
-                        <PopoverTrigger as={Button} id={targetID}>
-                            <Icon as={BitbucketIcon} />
+                        <PopoverTrigger as={Button} id={targetID} aria-label="Bitbucket">
+                            <Icon as={BitbucketIcon} aria-hidden={true} />
                         </PopoverTrigger>
                         <InstallBrowserExtensionPopover
                             url=""

@@ -20,7 +20,7 @@ import (
 )
 
 func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	cs := make([]*btypes.BatchChange, 0, 4)
+	cs := make([]*btypes.BatchChange, 0, 5)
 
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(cs); i++ {
@@ -39,10 +39,20 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 			}
 
 			if i != 0 {
-				// The very first batch change is a draft, the rest are not
+				// The very first batch change is a draft, the rest are not.
 				c.CreatorID = int32(i) + 50
 				c.LastAppliedAt = clock.Now()
 				c.LastApplierID = int32(i) + 99
+			}
+
+			// the fifth batch change is a closed batch change that wasn't applied.
+			// it shouldn't show up in the draft batch change list, it should instead
+			// show up in the closed batch change list.
+			if i == 5 {
+				c.ClosedAt = clock.Now()
+				c.LastAppliedAt = time.Time{}
+				c.LastApplierID = 0
+				c.CreatorID = 0
 			}
 
 			if i%2 == 0 {
@@ -442,7 +452,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		}
 
 		draftAndClosed := []*btypes.BatchChange{}
-		draftAndClosed = append(draftAndClosed, reversedBatchChanges[:2]...)
+		draftAndClosed = append(draftAndClosed, reversedBatchChanges[:3]...)
 		draftAndClosed = append(draftAndClosed, reversedBatchChanges[len(reversedBatchChanges)-1:]...)
 
 		multiFilterTests := []struct {
@@ -949,7 +959,9 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 
 			// Both batch specs should still be in place, at least until we add
 			// a foreign key constraint to batch_specs.namespace_user_id.
-			specs, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{})
+			specs, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{
+				IncludeLocallyExecutedSpecs: true,
+			})
 			if err != nil {
 				t.Fatal(err)
 			}

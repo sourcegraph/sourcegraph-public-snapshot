@@ -51,31 +51,31 @@ describe('ResultContainer', () => {
         ],
         grouped: [
             {
-                matches: [{ line: 11, character: 15, highlightLength: 4, isInContext: true }],
+                matches: [{ line: 11, character: 15, highlightLength: 4 }],
                 position: { line: 11, character: 15 },
                 startLine: 11,
                 endLine: 12,
             },
             {
-                matches: [{ line: 39, character: 11, highlightLength: 4, isInContext: true }],
+                matches: [{ line: 39, character: 11, highlightLength: 4 }],
                 position: { line: 39, character: 11 },
                 startLine: 39,
                 endLine: 40,
             },
             {
-                matches: [{ line: 73, character: 5, highlightLength: 4, isInContext: true }],
+                matches: [{ line: 73, character: 5, highlightLength: 4 }],
                 position: { line: 73, character: 5 },
                 startLine: 73,
                 endLine: 74,
             },
             {
-                matches: [{ line: 117, character: 11, highlightLength: 4, isInContext: true }],
+                matches: [{ line: 117, character: 11, highlightLength: 4 }],
                 position: { line: 117, character: 11 },
                 startLine: 117,
                 endLine: 118,
             },
             {
-                matches: [{ line: 134, character: 8, highlightLength: 4, isInContext: true }],
+                matches: [{ line: 134, character: 8, highlightLength: 4 }],
                 position: { line: 134, character: 8 },
                 startLine: 134,
                 endLine: 135,
@@ -93,7 +93,7 @@ describe('ResultContainer', () => {
         ],
         grouped: [
             {
-                matches: [{ line: 11, character: 15, highlightLength: 4, isInContext: true }],
+                matches: [{ line: 11, character: 15, highlightLength: 4 }],
                 position: { line: 11, character: 15 },
                 startLine: 11,
                 endLine: 12,
@@ -118,6 +118,7 @@ describe('ResultContainer', () => {
         collapsible: true,
         defaultExpanded: false,
         icon: FileIcon,
+        repoName: 'example.com/my/repo',
         title: (
             <RepoFileLink
                 repoName="example.com/my/repo"
@@ -139,6 +140,7 @@ describe('ResultContainer', () => {
         collapsible: true,
         defaultExpanded: true,
         icon: FileIcon,
+        repoName: 'example.com/my/repo',
         title: (
             <RepoFileLink
                 repoName="example.com/my/repo"

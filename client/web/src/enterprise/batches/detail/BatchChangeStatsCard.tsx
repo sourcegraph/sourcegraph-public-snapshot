@@ -5,7 +5,7 @@ import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
 
 import { pluralize } from '@sourcegraph/common'
-import { Badge, Icon, Typography } from '@sourcegraph/wildcard'
+import { Badge, Icon, H1, H2 } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { BatchChangeFields } from '../../../graphql-operations'
@@ -45,7 +45,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
     return (
         <div className={classNames(className)}>
             <div className="d-flex flex-wrap align-items-center flex-grow-1">
-                <Typography.H2 className="m-0">
+                <H2 className="m-0">
                     {/*
                         a11y-ignore
                         Rule: "color-contrast" (Elements must have sufficient color contrast)
@@ -55,16 +55,16 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                         state={batchChange.state}
                         className={classNames('a11y-ignore', styles.batchChangeStatsCardStateBadge)}
                     />
-                </Typography.H2>
+                </H2>
                 <div className={classNames(styles.batchChangeStatsCardDivider, 'mx-3')} />
                 <div className="d-flex align-items-center">
-                    <Typography.H1 className="d-inline mb-0" aria-label="Batch Change Status">
+                    <H1 className="d-inline mb-0" aria-label="Batch Change Status">
                         <Icon
                             className={classNames('mr-2', isCompleted ? 'text-success' : 'text-muted')}
                             as={BatchChangeStatusIcon}
                             aria-label="Batch Change Status Icon"
                         />
-                    </Typography.H1>{' '}
+                    </H1>{' '}
                     <span className={classNames(styles.batchChangeStatsCardCompleteness, 'lead text-nowrap')}>
                         {formatDisplayPercent(percentComplete)} complete
                     </span>

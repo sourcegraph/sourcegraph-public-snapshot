@@ -1,6 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 
-import { Typography } from '@sourcegraph/wildcard'
+import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../components/WebStory'
 import { Series } from '../../../../types'
@@ -85,17 +85,17 @@ const ACTIVE_POINT: MinimumPointInfo<Datum> = {
 export const TooltipLayouts: Story = () => (
     <div className="d-flex flex-column" style={{ gap: 20 }}>
         <div>
-            <Typography.H2>Regular tooltip</Typography.H2>
+            <H2>Regular tooltip</H2>
             <TooltipContent stacked={false} series={SERIES} activePoint={ACTIVE_POINT} />
         </div>
 
         <div>
-            <Typography.H2>With stacked value</Typography.H2>
+            <H2>With stacked value</H2>
             <TooltipContent stacked={true} series={SERIES} activePoint={ACTIVE_POINT} />
         </div>
 
         <div>
-            <Typography.H2>With long named series</Typography.H2>
+            <H2>With long named series</H2>
             <TooltipContent stacked={true} series={LONG_NAMED_SERIES} activePoint={ACTIVE_POINT} />
         </div>
     </div>

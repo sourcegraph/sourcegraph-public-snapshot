@@ -26,10 +26,7 @@ func (cd *CommitDiffMatch) RepoName() types.MinimalRepo {
 // path when the associated file is modified. When it is created or removed, it
 // returns the path of the associated file being created or removed.
 func (cm *CommitDiffMatch) Path() string {
-	var nonEmptyPath string
-	if cm.OrigName == "/dev/null" {
-		nonEmptyPath = cm.NewName
-	}
+	nonEmptyPath := cm.NewName
 	if cm.NewName == "/dev/null" {
 		nonEmptyPath = cm.OrigName
 	}

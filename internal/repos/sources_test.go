@@ -17,7 +17,8 @@ import (
 	"github.com/dnaeon/go-vcr/recorder"
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -618,11 +619,9 @@ func TestSources_ListRepos(t *testing.T) {
 				cf, save := newClientFactory(t, name)
 				defer save(t)
 
-				lg := log15.New()
-				lg.SetHandler(log15.DiscardHandler())
-
-				obs := ObservedSource(lg, NewSourceMetrics())
-				src, err := NewSourcer(database.NewMockDB(), cf, obs)(svc)
+				logger := logtest.Scoped(t)
+				obs := ObservedSource(logger, NewSourceMetrics())
+				src, err := NewSourcer(database.NewMockDB(), cf, obs)(tc.ctx, svc)
 				if err != nil {
 					t.Fatal(err)
 				}

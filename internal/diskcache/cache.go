@@ -313,9 +313,18 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 	err = filepath.Walk(s.dir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
+				if os.IsNotExist(err) {
+					// we can race with diskcache renaming tmp files to final
+					// destination. Just ignore these files rather than returning
+					// early.
+					return nil
+				}
+
 				return err
 			}
-			entries = append(entries, absFileInfo{absPath: path, info: info})
+			if !info.IsDir() {
+				entries = append(entries, absFileInfo{absPath: path, info: info})
+			}
 			return nil
 		})
 	if err != nil {
@@ -328,9 +337,7 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 	// Sum up the total size of all zips
 	var size int64
 	for _, entry := range entries {
-		if isZip(entry.info) {
-			size += entry.info.Size()
-		}
+		size += entry.info.Size()
 	}
 	stats.CacheSize = size
 

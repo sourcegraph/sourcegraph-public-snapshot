@@ -10,7 +10,9 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
       href="/s"
     >
       <arrowlefticon
+        aria-hidden="true"
         class="iconInline"
+        role="img"
       />
        Subscription
     </a>
@@ -43,16 +45,20 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
               <div
                 class="d-flex align-items-center"
               >
-                <input
-                  class="form-control w-auto"
-                  id="product-subscription-user-count-control__userCount"
-                  max="50000"
-                  min="25"
-                  required=""
-                  step="25"
-                  type="number"
-                  value="123"
-                />
+                <div
+                  class="container loader-input loaderInput w-auto"
+                >
+                  <input
+                    class="form-control with-invalid-icon"
+                    id="product-subscription-user-count-control__userCount"
+                    max="50000"
+                    min="25"
+                    required=""
+                    step="25"
+                    type="number"
+                    value="123"
+                  />
+                </div>
               </div>
             </div>
             <h4
@@ -64,7 +70,9 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
               class="product-plan-form-control"
             >
               <div
+                aria-label="Loading"
                 class="iconInline loadingSpinner"
+                role="img"
               />
             </div>
           </div>
@@ -83,7 +91,9 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
                 class="form-text mb-2"
               >
                 <div
+                  aria-label="Loading"
                   class="iconInline loadingSpinner"
+                  role="img"
                 />
               </div>
             </div>

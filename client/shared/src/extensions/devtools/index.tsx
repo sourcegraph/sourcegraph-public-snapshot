@@ -87,7 +87,7 @@ export const ExtensionDevelopmentToolsPopover = React.memo<ExtensionsDevelopment
             variant="link"
             aria-label="Open extensions developer tools"
         >
-            <span className="text-muted">Ext</span> <Icon role="img" as={MenuUpIcon} aria-hidden={true} />
+            <span className="text-muted">Ext</span> <Icon as={MenuUpIcon} aria-hidden={true} />
         </PopoverTrigger>
         <PopoverContent position={Position.leftEnd}>
             <ExtensionDevelopmentTools {...props} />

@@ -1,11 +1,9 @@
 import { asError } from '@sourcegraph/common'
 import { checkOk, GraphQLResult, GRAPHQL_URI, isHTTPAuthError } from '@sourcegraph/http-client'
-
 import { accessTokenSetting, handleAccessTokenError } from '../settings/accessTokenSetting'
 import { endpointSetting, endpointRequestHeadersSetting } from '../settings/endpointSetting'
 
 let invalidated = false
-
 /**
  * To be called when Sourcegraph URL changes.
  */
@@ -47,7 +45,6 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
                     query: request,
                     variables,
                 }),
-                credentials: 'include',
                 method: 'POST',
                 headers,
             })
@@ -59,7 +56,7 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
         // If `overrideAccessToken` is set, we're validating the token
         // and errors will be displayed in the UI.
         if (isHTTPAuthError(error) && !overrideAccessToken) {
-            handleAccessTokenError(accessToken).then(
+            handleAccessTokenError(accessToken, sourcegraphURL).then(
                 () => {},
                 () => {}
             )

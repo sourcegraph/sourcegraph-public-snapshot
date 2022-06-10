@@ -91,11 +91,6 @@ type repoStore struct {
 	*basestore.Store
 }
 
-// Repos instantiates and returns a new RepoStore with prepared statements.
-func Repos(db dbutil.DB) RepoStore {
-	return &repoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
 // ReposWith instantiates and returns a new RepoStore using the other
 // store handle.
 func ReposWith(other basestore.ShareableStore) RepoStore {
@@ -504,6 +499,8 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 	case extsvc.TypeGoModules:
 		r.Metadata = &struct{}{}
 	case extsvc.TypePythonPackages:
+		r.Metadata = &struct{}{}
+	case extsvc.TypeRustPackages:
 		r.Metadata = &struct{}{}
 	default:
 		log15.Warn("scanRepo - unknown service type", "type", typ)

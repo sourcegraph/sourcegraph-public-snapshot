@@ -7,7 +7,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	ts "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -21,11 +20,6 @@ type TemporarySettingsStore interface {
 
 type temporarySettingsStore struct {
 	*basestore.Store
-}
-
-// TemporarySettings instantiates and returns a new TemporarySettingsStore with prepared statements.
-func TemporarySettings(db dbutil.DB) TemporarySettingsStore {
-	return &temporarySettingsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // TemporarySettingsWith instantiates and returns a new TemporarySettingsStore using the other store handle.

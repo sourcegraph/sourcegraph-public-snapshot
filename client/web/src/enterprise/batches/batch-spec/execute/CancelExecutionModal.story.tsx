@@ -2,6 +2,8 @@ import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 
+import { Text } from '@sourcegraph/wildcard'
+
 import { WebStory } from '../../../../components/WebStory'
 
 import { CancelExecutionModal } from './CancelExecutionModal'
@@ -15,7 +17,7 @@ add('CancelExecutionModal', () => (
         {props => (
             <CancelExecutionModal
                 {...props}
-                modalBody={<p>Are you sure you want to cancel the current execution?</p>}
+                modalBody={<Text>Are you sure you want to cancel the current execution?</Text>}
                 isOpen={true}
                 isLoading={boolean('isLoading', false)}
                 onCancel={noop}

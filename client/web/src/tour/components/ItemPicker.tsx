@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Text } from '@sourcegraph/wildcard'
 
 import styles from './ItemPicker.module.scss'
 
@@ -27,7 +27,7 @@ export const ItemPicker = <TItem extends string>({
 }: ItemPickerProps<TItem>): React.ReactElement => (
     <div className={className}>
         <div className="d-flex justify-content-between">
-            <p className="mt-0 mb-1">{title}</p>
+            <Text className="mt-0 mb-1">{title}</Text>
             <CloseIcon onClick={onClose} size="1rem" />
         </div>
         <div className="d-flex flex-wrap">

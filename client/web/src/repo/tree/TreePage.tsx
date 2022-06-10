@@ -34,6 +34,7 @@ import {
     ButtonGroup,
     Button,
     Badge,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
@@ -203,7 +204,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     }
 
     // To start using the feature flag bellow, you can go to /site-admin/feature-flags and
-    // create a new featurFlag named 'new-repo-page' and set its value to true.
+    // create a new featureFlag named 'new-repo-page' and set its value to true.
     // https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag
     const [isNewRepoPageEnabled] = useFeatureFlag('new-repo-page')
 
@@ -262,7 +263,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                         path={[{ icon: SourceRepositoryIcon, text: displayRepoName(repo.name) }]}
                         className="mb-3 test-tree-page-title"
                     />
-                    {repo.description && <p>{repo.description}</p>}
+                    {repo.description && <Text>{repo.description}</Text>}
                 </div>
                 {isNewRepoPageEnabled && (
                     <ButtonGroup>
@@ -275,7 +276,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             as={Link}
                             className="ml-1"
                         >
-                            <Icon as={CodeJsonIcon} /> Search dependencies{' '}
+                            <Icon as={CodeJsonIcon} aria-hidden={true} /> Search dependencies{' '}
                             <Badge variant="info" className={classNames('text-uppercase')}>
                                 NEW
                             </Badge>
@@ -289,7 +290,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 as={Link}
                                 className="ml-1"
                             >
-                                <Icon as={BatchChangesIcon} /> Create batch change
+                                <Icon as={BatchChangesIcon} aria-hidden={true} /> Create batch change
                             </Button>
                         )}
 
@@ -302,7 +303,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 className="ml-1"
                                 aria-label="Repository settings"
                             >
-                                <Icon as={SettingsIcon} role="img" aria-hidden={true} />
+                                <Icon as={SettingsIcon} aria-hidden={true} />
                             </Button>
                         )}
                     </ButtonGroup>

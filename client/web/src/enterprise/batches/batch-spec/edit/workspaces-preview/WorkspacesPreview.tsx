@@ -7,7 +7,7 @@ import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, useAccordion, useStopwatch, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, useAccordion, useStopwatch, Icon, H4 } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../../components/FilteredConnection'
 import {
@@ -71,7 +71,7 @@ type MemoizedWorkspacesPreviewProps = WorkspacesPreviewProps &
 
 const MemoizedWorkspacesPreview: React.FunctionComponent<
     React.PropsWithChildren<MemoizedWorkspacesPreviewProps>
-> = React.memo(({ isReadOnly, batchSpec, editor, workspacesPreview }) => {
+> = React.memo(function MemoizedWorkspacesPreview({ isReadOnly, batchSpec, editor, workspacesPreview }) {
     const { debouncedCode, excludeRepo, isServerStale } = editor
     const {
         resolutionState,
@@ -146,7 +146,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             data-tooltip={typeof isPreviewDisabled === 'string' ? isPreviewDisabled : undefined}
             onClick={() => preview(debouncedCode)}
         >
-            <Icon className="mr-1" as={SearchIcon} />
+            <Icon aria-hidden={true} className="mr-1" as={SearchIcon} />
             {error ? 'Retry preview' : 'Preview workspaces'}
         </Button>
     )
@@ -169,12 +169,10 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             })}
         </div>
     ) : isServerStale ? (
-        <Typography.H4 className={styles.instruction}>
-            Finish editing your batch spec, then manually preview repositories.
-        </Typography.H4>
+        <H4 className={styles.instruction}>Finish editing your batch spec, then manually preview repositories.</H4>
     ) : (
         <>
-            <Typography.H4 className={styles.instruction}>
+            <H4 className={styles.instruction}>
                 {hasPreviewed ? 'Modify your' : 'Add an'} <span className="text-monospace">on:</span> statement to
                 preview repositories.
                 {!hasPreviewed && (
@@ -186,7 +184,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                         {exampleOpen ? 'Close example' : 'See example'}
                     </Button>
                 )}
-            </Typography.H4>
+            </H4>
             <animated.div style={exampleStyle} className={styles.onExample}>
                 <div ref={exampleReference} className="pt-2 pb-3">
                     <CodeSnippet className="w-100 m-0" code={ON_STATEMENT} language="yaml" withCopyButton={true} />
@@ -207,6 +205,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                             className={classNames('text-muted ml-1', styles.warningIcon)}
                             data-tooltip="The workspaces previewed below may not be up-to-date."
                             as={WarningIcon}
+                            aria-label="The workspaces previewed below may not be up-to-date."
                         />
                     )}
             </WorkspacesListHeader>

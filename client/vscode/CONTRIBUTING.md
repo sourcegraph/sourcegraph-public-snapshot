@@ -12,6 +12,70 @@ Your feedback is important to us and is greatly appreciated. Please do not hesit
 
 New issues and feature requests can be filed through our [issue tracker](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board) using the `vscode-extension` & `team/integrations` label.
 
+## Architecture Diagram
+
+                                   ┌──────────────────────────┐
+                                   │  env: Node OR Web Worker │
+                       ┌───────────┤ VS Code extension "Core" ├───────────────┐
+                       │           │                          │               │
+                       │           └──────────────────────────┘               │
+                       │                                                      │
+         ┌─────────────▼────────────┐                          ┌──────────────▼───────────┐
+         │         env: Web         │                          │          env: Web        │
+     ┌───┤ "search sidebar" webview │                          │  "search panel" webview  │
+     │   │                          │                          │                          │
+     │   └──────────────────────────┘                          └──────────────────────────┘
+     │
+    ┌▼───────────────────────────┐
+    │       env: Web Worker      │
+    │ Sourcegraph Extension host │
+    │                            │
+    └────────────────────────────┘
+
+- See below for documentation on state management.
+  - One state machine that lives in Core
+- See './contract.ts' to see the APIs for the three main components:
+  - Core, search sidebar, and search panel.
+  - The extension host API is exposed through the search sidebar.
+- See './webview/comlink' for documentation on _how_ communication between contexts works.
+  - It is _not_ important to understand this layer to add features to the VS Code extension (that's why it exists, after all).
+
+## State Management
+
+This extension runs code in 4 (and counting) different execution contexts.
+Coordinating state between these contexts is a difficult task. So, instead of managing shared state in each context, we maintain one state machine in the "Core" context (see above for architecure diagram).
+All contexts listen for state updates and emit events on which the state machine may transition.
+
+For example:
+
+- Commands from VS Code extension core
+- The first submitted search in a session will cause the state machine to transition from the `search-home` state to the `search-results` state.
+- This new state will be reflected in both the search sidebar and search panel UIs
+
+We represent a hierarchical state machine in a "flat" manner to reduce code complexity and because our state machine is simple enough to not necessitate bringing in a library.
+
+```
+┌───►home
+│
+search
+│
+└───►results
+```
+
+- remote-browsing
+- idle
+- context-invalidated
+  becomes:
+- [search-home, search-results, remote-browsing, idle, context-invalidated]
+
+Example user flow state transitions:
+
+- User clicks on Sourcegraph logo in VS Code sidebar.
+- Extension activates with initial state of `search-home`
+- User submits search -> state === `search-results`
+- User clicks on a search result, which opens a file -> state === `remote-browsing`
+- User copies some code, then focuses an editor for a local file -> state === `idle`
+
 ## Development
 
 ### Build and Run

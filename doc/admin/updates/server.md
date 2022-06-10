@@ -9,15 +9,15 @@ This document describes the exact changes needed to update a single-node Sourceg
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-## 3.39 -> 3.40
+## 3.39 -> 3.40.2
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#operation).
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.40).*
 
 ## 3.39.0 -> 3.39.1
 
-Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#operation).
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39.1).*
 
@@ -115,11 +115,11 @@ Follow the [standard upgrade procedure](../deploy/docker-single-container/index.
 
 This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database as described in the [external database documentation](../external_services/postgres.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
 
-### If you wish to keep existing LSIF data
+### If you wish to keep existing precise code intel indexes
 
-> WARNING: **Do not upgrade out of the 3.21.x release branch** until you have seen the log message indicating the completion of the LSIF data migration, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty. Otherwise, you risk data loss for precise code intelligence.
+> WARNING: **Do not upgrade out of the 3.21.x release branch** until you have seen the log message indicating the completion of the precise code intel data migration, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty. Otherwise, you risk data loss for precise code intelligence.
 
-If you had LSIF data uploaded prior to upgrading to 3.21.0, there is a background migration that moves all existing LSIF data into the `codeintel-db` upon upgrade. Once this process completes, the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume should be empty, and the bundle manager should print the following log message:
+If you had precise code intel indexes uploaded prior to upgrading to 3.21.0, there is a background migration that moves all existing indexes into the `codeintel-db` upon upgrade. Once this process completes, the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume should be empty, and the bundle manager should print the following log message:
 
 > Migration to Postgres has completed. All existing LSIF bundles have moved to the path /lsif-storage/db-backups and can be removed from the filesystem to reclaim space.
 

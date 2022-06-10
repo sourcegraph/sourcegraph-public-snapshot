@@ -6,7 +6,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
@@ -109,10 +109,10 @@ export const OrgSettingsArea: React.FunctionComponent<React.PropsWithChildren<Pr
                                                                 Viewing settings for <strong>{props.org.name}</strong>
                                                             </SiteAdminAlert>
                                                         )}
-                                                    <p>
+                                                    <Text>
                                                         Organization settings apply to all members. User settings
                                                         override organization settings.
-                                                    </p>
+                                                    </Text>
                                                 </>
                                             }
                                         />

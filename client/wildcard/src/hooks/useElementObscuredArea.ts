@@ -15,7 +15,10 @@ const SCROLL_THROTTLE_WAIT = 50
 export function useElementObscuredArea<T extends HTMLElement>(
     elementReference: React.MutableRefObject<T | null>
 ): ElementObscuredArea {
-    const [obscured, setObscured] = React.useState<ElementObscuredArea>({ left: 0, right: 0 })
+    const [obscured, setObscured] = React.useState<ElementObscuredArea>({
+        left: 0,
+        right: 0,
+    })
 
     const calculate = React.useMemo(
         () =>
@@ -37,15 +40,12 @@ export function useElementObscuredArea<T extends HTMLElement>(
 
     React.useEffect(() => {
         const element = elementReference?.current
-
         if (element) {
             calculate()
             element.addEventListener('scroll', calculate, { passive: true })
         }
         return () => {
-            if (element) {
-                element.removeEventListener('scroll', calculate)
-            }
+            element?.removeEventListener('scroll', calculate)
         }
     }, [elementReference, calculate])
 

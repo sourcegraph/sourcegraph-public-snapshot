@@ -4,7 +4,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, Link, Modal, Typography } from '@sourcegraph/wildcard'
+import { Button, Link, Modal, H3, H4, Text } from '@sourcegraph/wildcard'
 
 import { BatchSpecDownloadLink, getFileName } from '../../BatchSpec'
 
@@ -33,7 +33,7 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
         className={styles.modal}
     >
         <div>
-            <Typography.H3 id={MODAL_LABEL_ID}>Download spec for src-cli</Typography.H3>
+            <H3 id={MODAL_LABEL_ID}>Download spec for src-cli</H3>
             <Button
                 className={styles.close}
                 onClick={() => {
@@ -47,10 +47,10 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
 
         <div className={styles.container}>
             <div className={styles.left}>
-                <p>
-                    Use the <Link to="https://docs.sourcegraph.com/cli">Sourcegraph CLI (src) </Link>
+                <Text>
+                    Use the <Link to="/help/cli">Sourcegraph CLI (src)</Link>
                     to run this batch change locally.
-                </p>
+                </Text>
 
                 <CodeSnippet
                     code={`src batch preview -f ${getFileName(name)}`}
@@ -58,19 +58,19 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
                     className={styles.codeSnippet}
                 />
 
-                <p className="p-0 m-0">
+                <Text className="p-0 m-0">
                     Follow the URL printed in your terminal to see the preview and (when you're ready) create the batch
                     change.
-                </p>
+                </Text>
             </div>
             <div className={styles.right}>
                 <div>
-                    <Typography.H4>About src-cli </Typography.H4>
-                    <p>
+                    <H4>About src-cli </H4>
+                    <Text>
                         src cli is a command line interface to Sourcegraph. Its{' '}
                         <span className="text-monospace">batch</span> command allows to run batch specification files
                         using Docker.
-                    </p>
+                    </Text>
                     <Link to="https://docs.sourcegraph.com/cli">Download src-cli</Link>
                 </div>
             </div>

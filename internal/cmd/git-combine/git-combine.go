@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"hash/crc32"
+	"io/fs"
 	"log"
 	"math"
 	"os"
@@ -20,6 +21,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Options are configurables for Combine.
@@ -342,6 +344,7 @@ func runGit(dir string, args ...string) error {
 	log.Printf("starting git %s", strings.Join(args, " "))
 	err := cmd.Run()
 	log.Printf("finished git in %s", time.Since(start))
+
 	return err
 }
 
@@ -356,6 +359,11 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 	}
 
 	opt.SetDefaults()
+
+	err := cleanupStaleLockFiles(dir, opt.Logger)
+	if err != nil {
+		return errors.Wrap(err, "removing stale git lock files")
+	}
 
 	for {
 		// convenient way to stop the daemon to do manual operations like add
@@ -438,6 +446,69 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+// cleanupStaleLockFiles removes any "stale" Git lock files inside gitDir that might have been left behind
+// by a crashed git-combine process.
+func cleanupStaleLockFiles(gitDir string, logger *log.Logger) error {
+	if logger == nil {
+		logger = log.Default()
+	}
+
+	var lockFiles []string
+
+	// add "well-known" lock files
+	for _, f := range []string{
+		"gc.pid.lock", // created when git starts a garbage collection run
+		"index.lock",  // created when running "git add" / "git commit"
+
+		// from cmd/gitserver/server/cleanup.go, see
+		// https://github.com/sourcegraph/sourcegraph/blob/55d83e8111d4dfea480ad94813e07d58068fec9c/cmd/gitserver/server/cleanup.go#L325-L359
+		"config.lock",
+		"packed-refs.lock",
+	} {
+		lockFiles = append(lockFiles, filepath.Join(gitDir, f))
+	}
+
+	// from cmd/gitserver/server/cleanup.go, see
+	// https://github.com/sourcegraph/sourcegraph/blob/55d83e8111d4dfea480ad94813e07d58068fec9c/cmd/gitserver/server/cleanup.go#L325-L359
+	lockFiles = append(lockFiles, filepath.Join(gitDir, "objects", "info", "commit-graph.lock"))
+
+	refsDir := filepath.Join(gitDir, "refs")
+
+	// discover lock files that look like refs/remotes/origin/main.lock
+	err := filepath.WalkDir(refsDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() || !strings.HasSuffix(path, ".lock") {
+			return nil
+		}
+
+		lockFiles = append(lockFiles, path)
+		return nil
+	})
+
+	if err != nil {
+		return errors.Wrapf(err, "finding stale lockfiles in %q", refsDir)
+	}
+
+	// remove all stale lock files
+	for _, f := range lockFiles {
+		err := os.Remove(f)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				continue
+			}
+
+			return errors.Wrapf(err, "removing stale lock file %q", f)
+		}
+
+		logger.Printf("removed stale lock file %q", f)
+	}
+
+	return nil
 }
 
 // remoteHead returns the HEAD commit for the given remote.

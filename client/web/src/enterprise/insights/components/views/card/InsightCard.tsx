@@ -3,7 +3,7 @@ import React, { forwardRef, HTMLAttributes, ReactNode } from 'react'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { Card, ForwardReferenceComponent, Typography, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Card, ForwardReferenceComponent, H2, H4, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { getLineColor, LegendItem, LegendList, Series } from '../../../../../charts'
 import { ErrorBoundary } from '../../../../../components/ErrorBoundary'
@@ -23,8 +23,8 @@ const InsightCard = forwardRef((props, reference) => {
 }) as ForwardReferenceComponent<'section'>
 
 export interface InsightCardTitleProps {
-    title: string
-    subtitle?: string
+    title: ReactNode
+    subtitle?: ReactNode
 
     /**
      * It's primarily conceived as a slot for card actions (like filter buttons) that render
@@ -39,9 +39,14 @@ const InsightCardHeader = forwardRef((props, reference) => {
     return (
         <Component {...attributes} ref={reference} className={classNames(styles.header, className)}>
             <div className={styles.headerContent}>
-                <Typography.H4 as={Typography.H2} title={title} className={styles.title}>
+                <H4
+                    // We have to cast this element to H2 because having h4 without h3 and h2
+                    // higher in the hierarchy violates a11y rules about headings structure.
+                    as={H2}
+                    className={styles.title}
+                >
                     {title}
-                </Typography.H4>
+                </H4>
 
                 {children && (
                     // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions

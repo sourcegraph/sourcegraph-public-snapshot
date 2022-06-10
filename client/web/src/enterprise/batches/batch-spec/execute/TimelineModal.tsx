@@ -8,7 +8,7 @@ import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 
 import { isDefined } from '@sourcegraph/common'
-import { Button, Modal, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, Modal, Icon, H3, H4 } from '@sourcegraph/wildcard'
 
 import { ExecutionLogEntry } from '../../../../components/ExecutionLogEntry'
 import { Timeline, TimelineStage } from '../../../../components/Timeline'
@@ -28,16 +28,16 @@ export const TimelineModal: React.FunctionComponent<React.PropsWithChildren<Time
 }) => (
     <Modal className={styles.modalBody} onDismiss={onCancel} aria-label="Execution timeline">
         <div className="d-flex justify-content-between">
-            <Typography.H3 className="mb-0">Execution timeline</Typography.H3>
+            <H3 className="mb-0">Execution timeline</H3>
             <Button className="p-0 ml-2" onClick={onCancel} variant="icon">
                 <VisuallyHidden>Close</VisuallyHidden>
-                <Icon as={CloseIcon} />
+                <Icon aria-hidden={true} as={CloseIcon} />
             </Button>
         </div>
         <ExecutionTimeline node={node} />
         {node.executor && (
             <>
-                <Typography.H4 className="mt-2">Executor</Typography.H4>
+                <H4 className="mt-2">Executor</H4>
                 <ExecutorNode node={node.executor} />
             </>
         )}

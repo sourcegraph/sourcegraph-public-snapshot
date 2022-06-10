@@ -9,7 +9,7 @@ import { Observable } from 'rxjs'
 
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Badge, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Badge, Link, Icon, Text, createLinkUrl } from '@sourcegraph/wildcard'
 
 import { FileDiffFields } from '../../graphql-operations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
@@ -107,7 +107,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                         onClick={toggleExpand}
                         size="sm"
                     >
-                        <Icon role="img" as={expanded ? ChevronDownIcon : ChevronRightIcon} aria-hidden={true} />
+                        <Icon as={expanded ? ChevronDownIcon : ChevronRightIcon} aria-hidden={true} />
                     </Button>
                     <div className={classNames('align-items-baseline', styles.headerPathStat)}>
                         {!node.oldPath && (
@@ -138,7 +138,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                             <span className="ml-2">{path}</span>
                         )}
                         <Link
-                            to={{ ...location, hash: anchor }}
+                            to={createLinkUrl({ ...location, hash: anchor })}
                             className={classNames('ml-2', styles.headerPath)}
                             data-tooltip="Pin diff"
                             aria-label="Pin diff"
@@ -152,7 +152,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                         <div className="text-muted m-2">Binary files can't be rendered.</div>
                     ) : !node.newPath && !renderDeleted ? (
                         <div className="text-muted m-2">
-                            <p className="mb-0">Deleted files aren't rendered by default.</p>
+                            <Text className="mb-0">Deleted files aren't rendered by default.</Text>
                             <Button className="m-0 p-0" onClick={onClickToViewDeleted} variant="link">
                                 Click here to view.
                             </Button>

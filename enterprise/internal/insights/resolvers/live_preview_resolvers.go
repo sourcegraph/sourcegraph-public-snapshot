@@ -55,13 +55,13 @@ func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend
 		var err error
 
 		if seriesArgs.GeneratedFromCaptureGroups {
-			executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, clock)
+			executor := query.NewCaptureGroupExecutor(r.postgresDB, clock)
 			series, err = executor.Execute(ctx, seriesArgs.Query, repos, interval)
 			if err != nil {
 				return nil, err
 			}
 		} else {
-			executor := query.NewStreamingExecutor(r.postgresDB, r.insightsDB, clock)
+			executor := query.NewStreamingExecutor(r.postgresDB, clock)
 			series, err = executor.Execute(ctx, seriesArgs.Query, seriesArgs.Label, seriesArgs.Label, repos, interval)
 			if err != nil {
 				return nil, err

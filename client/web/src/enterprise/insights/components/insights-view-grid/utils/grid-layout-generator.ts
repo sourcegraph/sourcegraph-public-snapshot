@@ -1,6 +1,5 @@
 import { Layout, Layouts as ReactGridLayouts } from 'react-grid-layout'
 
-import { MINIMAL_SERIES_FOR_ASIDE_LEGEND } from '../../../../../views/components/view/content/chart-view-content/charts/line/constants'
 import {
     CaptureGroupInsight,
     Insight,
@@ -17,6 +16,7 @@ import {
     MIN_WIDTHS,
 } from '../components/view-grid/ViewGrid'
 
+const MINIMAL_SERIES_FOR_ASIDE_LEGEND = 3
 const MIN_WIDTHS_LANDSCAPE_MODE: Record<BreakpointName, number> = { xs: 1, sm: 3, md: 4, lg: 4 }
 
 type InsightWithLegend = SearchBasedInsight | CaptureGroupInsight

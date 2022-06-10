@@ -8,8 +8,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -29,6 +30,7 @@ import (
 type Server struct {
 	repos.Store
 	*repos.Syncer
+	Logger                log.Logger
 	SourcegraphDotComMode bool
 	Scheduler             interface {
 		UpdateOnce(id api.RepoID, name api.RepoName)
@@ -70,11 +72,11 @@ func (s *Server) Handler() http.Handler {
 }
 
 // TODO(tsenart): Reuse this function in all handlers.
-func respond(w http.ResponseWriter, code int, v any) {
+func (s *Server) respond(w http.ResponseWriter, code int, v any) {
 	switch val := v.(type) {
 	case error:
 		if val != nil {
-			log15.Error(val.Error())
+			s.Logger.Error("response value error", log.String("err", val.Error()))
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(code)
 			fmt.Fprintf(w, "%v", val)
@@ -83,13 +85,13 @@ func respond(w http.ResponseWriter, code int, v any) {
 		w.Header().Set("Content-Type", "application/json")
 		bs, err := json.Marshal(v)
 		if err != nil {
-			respond(w, http.StatusInternalServerError, err)
+			s.respond(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		w.WriteHeader(code)
 		if _, err = w.Write(bs); err != nil {
-			log15.Error("failed to write response", "error", err)
+			s.Logger.Error("failed to write response", log.Error(err))
 		}
 	}
 }
@@ -121,7 +123,12 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "request canceled", http.StatusGatewayTimeout)
 			return
 		}
-		log15.Error("repoLookup failed", "args", &args, "error", err)
+		s.Logger.Error("repoLookup failed",
+			log.Object("repo",
+				log.String("name", string(args.Repo)),
+				log.Bool("update", args.Update),
+			),
+			log.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -135,22 +142,22 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respond(w, http.StatusBadRequest, err)
+		s.respond(w, http.StatusBadRequest, err)
 		return
 	}
 	result, status, err := s.enqueueRepoUpdate(r.Context(), &req)
 	if err != nil {
-		log15.Error("enqueueRepoUpdate failed", "req", req, "error", err)
-		respond(w, status, err)
+		s.Logger.Error("enqueueRepoUpdate failed", log.String("req", fmt.Sprint(req)), log.Error(err))
+		s.respond(w, status, err)
 		return
 	}
-	respond(w, status, result)
+	s.respond(w, status, result)
 }
 
 func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) (resp *protocol.RepoUpdateResponse, httpStatus int, err error) {
 	tr, ctx := trace.New(ctx, "enqueueRepoUpdate", req.String())
 	defer func() {
-		log15.Debug("enqueueRepoUpdate", "httpStatus", httpStatus, "resp", resp, "error", err)
+		s.Logger.Debug("enqueueRepoUpdate", log.Object("http", log.Int("status", httpStatus), log.String("resp", fmt.Sprint(resp)), log.Error(err)))
 		if resp != nil {
 			tr.LogFields(
 				otlog.Int32("resp.id", int32(resp.ID)),
@@ -190,6 +197,9 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	logger := s.Logger.With(log.Object("ExternalService",
+		log.Int64("id", req.ExternalService.ID), log.String("kind", req.ExternalService.Kind)),
+	)
 
 	var sourcer repos.Sourcer
 	if sourcer = s.Sourcer; sourcer == nil {
@@ -197,7 +207,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		depsSvc := livedependencies.GetService(db, nil)
 		sourcer = repos.NewSourcer(db, httpcli.ExternalClientFactory, repos.WithDependenciesService(depsSvc))
 	}
-	src, err := sourcer(&types.ExternalService{
+	src, err := sourcer(ctx, &types.ExternalService{
 		ID:              req.ExternalService.ID,
 		Kind:            req.ExternalService.Kind,
 		DisplayName:     req.ExternalService.DisplayName,
@@ -205,50 +215,51 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		NamespaceUserID: req.ExternalService.NamespaceUserID,
 		NamespaceOrgID:  req.ExternalService.NamespaceOrgID,
 	})
+
 	if err != nil {
-		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+		logger.Error("server.external-service-sync", log.Error(err))
 		return
 	}
 
 	err = externalServiceValidate(ctx, req, src)
 	if err == github.ErrIncompleteResults {
-		log15.Info("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+		logger.Info("server.external-service-sync", log.Error(err))
 		syncResult := &protocol.ExternalServiceSyncResult{
 			ExternalService: req.ExternalService,
 			Error:           err.Error(),
 		}
-		respond(w, http.StatusOK, syncResult)
+		s.respond(w, http.StatusOK, syncResult)
 		return
 	} else if ctx.Err() != nil {
 		// client is gone
 		return
 	} else if err != nil {
-		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+		logger.Error("server.external-service-sync", log.Error(err))
 		if errcode.IsUnauthorized(err) {
-			respond(w, http.StatusUnauthorized, err)
+			s.respond(w, http.StatusUnauthorized, err)
 			return
 		}
 		if errcode.IsForbidden(err) {
-			respond(w, http.StatusForbidden, err)
+			s.respond(w, http.StatusForbidden, err)
 			return
 		}
-		respond(w, http.StatusInternalServerError, err)
+		s.respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	if s.RateLimitSyncer != nil {
 		err = s.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalService.ID)
 		if err != nil {
-			log15.Warn("Handling rate limiter sync", "err", err, "id", req.ExternalService.ID)
+			logger.Warn("Handling rate limiter sync", log.Error(err))
 		}
 	}
 
 	if err := s.Syncer.TriggerExternalServiceSync(ctx, req.ExternalService.ID); err != nil {
-		log15.Warn("Enqueueing external service sync job", "error", err, "id", req.ExternalService.ID)
+		logger.Warn("Enqueueing external service sync job", log.Error(err))
 	}
 
-	log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
-	respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
+	logger.Info("server.external-service-sync", log.Bool("synced", true))
+	s.respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
 		ExternalService: req.ExternalService,
 	})
 }
@@ -299,7 +310,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 
 	tr, ctx := trace.New(ctx, "repoLookup", args.String())
 	defer func() {
-		log15.Debug("repoLookup", "result", result, "error", err)
+		s.Logger.Debug("repoLookup", log.String("result", fmt.Sprint(result)), log.Error(err))
 		if result != nil {
 			tr.LazyPrintf("result: %s", result)
 		}
@@ -342,47 +353,47 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 
 func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Request) {
 	if s.ChangesetSyncRegistry == nil {
-		log15.Warn("ChangesetSyncer is nil")
-		respond(w, http.StatusForbidden, nil)
+		s.Logger.Warn("ChangesetSyncer is nil")
+		s.respond(w, http.StatusForbidden, nil)
 		return
 	}
 
 	var req protocol.ChangesetSyncRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respond(w, http.StatusBadRequest, err)
+		s.respond(w, http.StatusBadRequest, err)
 		return
 	}
 	if len(req.IDs) == 0 {
-		respond(w, http.StatusBadRequest, errors.New("no ids provided"))
+		s.respond(w, http.StatusBadRequest, errors.New("no ids provided"))
 		return
 	}
 	err := s.ChangesetSyncRegistry.EnqueueChangesetSyncs(r.Context(), req.IDs)
 	if err != nil {
 		resp := protocol.ChangesetSyncResponse{Error: err.Error()}
-		respond(w, http.StatusInternalServerError, resp)
+		s.respond(w, http.StatusInternalServerError, resp)
 		return
 	}
-	respond(w, http.StatusOK, nil)
+	s.respond(w, http.StatusOK, nil)
 }
 
 func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request) {
 	if s.PermsSyncer == nil {
-		respond(w, http.StatusForbidden, nil)
+		s.respond(w, http.StatusForbidden, nil)
 		return
 	}
 
 	var req protocol.PermsSyncRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respond(w, http.StatusBadRequest, err)
+		s.respond(w, http.StatusBadRequest, err)
 		return
 	}
 	if len(req.UserIDs) == 0 && len(req.RepoIDs) == 0 {
-		respond(w, http.StatusBadRequest, errors.New("neither user IDs nor repo IDs was provided in request (must provide at least one)"))
+		s.respond(w, http.StatusBadRequest, errors.New("neither user IDs nor repo IDs was provided in request (must provide at least one)"))
 		return
 	}
 
 	s.PermsSyncer.ScheduleUsers(r.Context(), req.Options, req.UserIDs...)
 	s.PermsSyncer.ScheduleRepos(r.Context(), req.RepoIDs...)
 
-	respond(w, http.StatusOK, nil)
+	s.respond(w, http.StatusOK, nil)
 }

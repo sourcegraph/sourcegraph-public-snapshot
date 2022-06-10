@@ -1,13 +1,18 @@
 import React, { useCallback } from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
+import CloseIcon from 'mdi-react/CloseIcon'
 import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Card, CardBody, Panel, Typography } from '@sourcegraph/wildcard'
+import { Card, CardBody, Panel, H3, H1, Icon, Text, Code } from '@sourcegraph/wildcard'
 
 import { BatchSpecExecutionFields } from '../../../../../graphql-operations'
+import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
 import { BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
+import { queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs } from '../backend'
 
 import { WorkspaceDetails } from './WorkspaceDetails'
 import { Workspaces } from './Workspaces'
@@ -18,12 +23,29 @@ const WORKSPACES_LIST_SIZE = 'batch-changes.ssbc-workspaces-list-size'
 
 interface ExecutionWorkspacesProps extends ThemeProps {
     selectedWorkspaceID?: string
+    /** For testing purposes only */
+    queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
+    queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
 }
 
 export const ExecutionWorkspaces: React.FunctionComponent<
     React.PropsWithChildren<ExecutionWorkspacesProps>
 > = props => {
     const { batchSpec, errors } = useBatchSpecContext<BatchSpecExecutionFields>()
+
+    if (batchSpec.source === BatchSpecSource.LOCAL) {
+        return (
+            <>
+                <H1 className="text-center text-muted mt-5">
+                    <Icon role="img" aria-hidden={true} as={CloseIcon} />
+                    <VisuallyHidden>No Execution</VisuallyHidden>
+                </H1>
+                <Text alignment="center">
+                    This batch spec was executed locally with <Code>src-cli</Code>.
+                </Text>
+            </>
+        )
+    }
 
     return <MemoizedExecutionWorkspaces {...props} batchSpec={batchSpec} errors={errors} />
 }
@@ -32,7 +54,14 @@ type MemoizedExecutionWorkspacesProps = ExecutionWorkspacesProps & Pick<BatchSpe
 
 const MemoizedExecutionWorkspaces: React.FunctionComponent<
     React.PropsWithChildren<MemoizedExecutionWorkspacesProps>
-> = React.memo(({ selectedWorkspaceID, isLightTheme, batchSpec, errors }) => {
+> = React.memo(function MemoizedExecutionWorkspaces({
+    selectedWorkspaceID,
+    isLightTheme,
+    batchSpec,
+    errors,
+    queryBatchSpecWorkspaceStepFileDiffs,
+    queryChangesetSpecFileDiffs,
+}) {
     const history = useHistory()
 
     const deselectWorkspace = useCallback(() => history.push(batchSpec.executionURL), [batchSpec.executionURL, history])
@@ -57,11 +86,11 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<
                                     id={selectedWorkspaceID}
                                     isLightTheme={isLightTheme}
                                     deselectWorkspace={deselectWorkspace}
+                                    queryBatchSpecWorkspaceStepFileDiffs={queryBatchSpecWorkspaceStepFileDiffs}
+                                    queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                                 />
                             ) : (
-                                <Typography.H3 className="text-center my-3">
-                                    Select a workspace to view details.
-                                </Typography.H3>
+                                <H3 className="text-center my-3">Select a workspace to view details.</H3>
                             )}
                         </CardBody>
                     </div>

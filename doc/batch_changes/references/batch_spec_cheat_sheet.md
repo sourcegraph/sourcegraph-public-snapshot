@@ -195,7 +195,7 @@ steps:
       mkdir -p .github/workflows
 
       cat <<EOF >.github/workflows/lsif.yml
-      name: LSIF
+      name: Index
       on:
         - push
       jobs:

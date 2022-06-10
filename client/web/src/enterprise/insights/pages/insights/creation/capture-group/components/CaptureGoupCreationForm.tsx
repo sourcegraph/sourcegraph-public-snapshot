@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Card, Checkbox, Input, Typography, Link, useObservable } from '@sourcegraph/wildcard'
+import { Button, Card, Checkbox, Input, Label, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CodeInsightTimeStepPicker, CodeInsightDashboardsVisibility } from '../../../../../components/creation-ui-kit'
@@ -140,7 +140,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<
                 }
             >
                 <Card className="p-3">
-                    <Typography.Label className="w-100">
+                    <Label className="w-100">
                         <div className="mb-2">Search query</div>
                         <QueryFieldSubtitle className="mb-3" />
 
@@ -152,7 +152,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<
                             className="mb-3"
                             {...getDefaultInputProps(query)}
                         />
-                    </Typography.Label>
+                    </Label>
 
                     <SearchQueryChecks checks={searchQueryValidator(query.input.value, query.meta.touched)} />
 

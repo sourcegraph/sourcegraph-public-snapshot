@@ -5,7 +5,7 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { ButtonLink, Typography } from '..'
+import { ButtonLink, H1, H2, Text } from '..'
 import { BUTTON_VARIANTS } from '../Button/constants'
 import { Grid } from '../Grid'
 import { Icon } from '../Icon'
@@ -44,8 +44,8 @@ export default Config
 
 export const Overview: Story = () => (
     <>
-        <Typography.H1>ButtonLink</Typography.H1>
-        <Typography.H2>Variants</Typography.H2>
+        <H1>ButtonLink</H1>
+        <H2>Variants</H2>
         <Grid className="mb-3" columnCount={3}>
             {BUTTON_VARIANTS.map(variant => (
                 <div key={variant}>
@@ -55,7 +55,7 @@ export const Overview: Story = () => (
                 </div>
             ))}
         </Grid>
-        <Typography.H2>Outline</Typography.H2>
+        <H2>Outline</H2>
         <ButtonLink
             variant="danger"
             outline={true}
@@ -66,8 +66,8 @@ export const Overview: Story = () => (
         >
             Outline
         </ButtonLink>
-        <Typography.H2>Icons</Typography.H2>
-        <p>We can use icons with our buttons.</p>{' '}
+        <H2>Icons</H2>
+        <Text>We can use icons with our buttons.</Text>{' '}
         <ButtonLink
             variant="secondary"
             to="https://sourcegraph.com"
@@ -75,11 +75,11 @@ export const Overview: Story = () => (
             onClick={console.log}
             className="mb-2"
         >
-            <Icon role="img" aria-hidden={true} as={SearchIcon} className="mr-1" />
+            <Icon aria-hidden={true} as={SearchIcon} className="mr-1" />
             Search
         </ButtonLink>
-        <Typography.H2>Smaller</Typography.H2>
-        <p>We can make our buttons smaller.</p>
+        <H2>Smaller</H2>
+        <Text>We can make our buttons smaller.</Text>
         <ButtonLink
             variant="secondary"
             to="https://sourcegraph.com"

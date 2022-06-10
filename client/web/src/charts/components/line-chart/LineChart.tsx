@@ -1,6 +1,5 @@
-import { ReactElement, useMemo, useState, SVGProps } from 'react'
+import { ReactElement, useMemo, useState, SVGProps, CSSProperties } from 'react'
 
-import { curveLinear } from '@visx/curve'
 import { Group } from '@visx/group'
 import { scaleTime, scaleLinear } from '@visx/scale'
 import { LinePath } from '@visx/shape'
@@ -30,6 +29,8 @@ export interface LineChartContentProps<Datum> extends SeriesLikeChart<Datum>, SV
     width: number
     height: number
     zeroYAxisMin?: boolean
+    isSeriesSelected: (id: string) => boolean
+    isSeriesHovered: (id: string) => boolean
 }
 
 const sortByDataKey = (dataKey: string | number | symbol, activeDataKey: string): number =>
@@ -48,6 +49,8 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         zeroYAxisMin = false,
         onDatumClick = noop,
         className,
+        isSeriesSelected,
+        isSeriesHovered,
         ...attributes
     } = props
 
@@ -108,7 +111,7 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                 y: point => point.y,
                 width: outerWidth,
                 height: outerHeight,
-            })(points),
+            })(Object.values(points).flat()),
         [outerWidth, outerHeight, points]
     )
 
@@ -128,6 +131,28 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             }
         },
     })
+
+    const getHoverStyle = (id: string): CSSProperties => {
+        const opacity = isSeriesSelected(id) ? 1 : isSeriesHovered(id) ? 0.5 : 0
+
+        return {
+            opacity,
+            transitionProperty: 'opacity',
+            transitionDuration: '200ms',
+            transitionTimingFunction: 'ease-out',
+        }
+    }
+
+    const sortedSeries = useMemo(
+        () =>
+            [...dataSeries]
+                // resorts array based on hover state
+                // this is to make sure the hovered series is always rendered on top
+                // since SVGs do not support z-index, we have to render the hovered
+                // series last
+                .sort(series => sortByDataKey(series.id, activePoint?.seriesId || '')),
+        [dataSeries, activePoint]
+    )
 
     return (
         <svg
@@ -151,37 +176,32 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             <Group top={margin.top}>
                 {stacked && <StackedArea dataSeries={dataSeries} xScale={xScale} yScale={yScale} />}
 
-                {[...dataSeries]
-                    .sort(series => sortByDataKey(series.id, activePoint?.seriesId || ''))
-                    .map(line => (
+                {sortedSeries.map(line => (
+                    <Group key={line.id} style={getHoverStyle(`${line.id}`)}>
                         <LinePath
-                            key={line.id}
                             data={line.data as SeriesDatum<D>[]}
                             defined={isDatumWithValidNumber}
                             x={data => xScale(data.x)}
                             y={data => yScale(getDatumValue(data))}
                             stroke={line.color}
-                            curve={curveLinear}
                             strokeLinecap="round"
                             strokeWidth={2}
                         />
-                    ))}
-
-                {[...points]
-                    .sort(point => sortByDataKey(point.seriesId, activePoint?.seriesId || ''))
-                    .map(point => (
-                        <PointGlyph
-                            key={point.id}
-                            left={point.x}
-                            top={point.y}
-                            active={activePoint?.id === point.id}
-                            color={point.color}
-                            linkURL={point.linkUrl}
-                            onClick={onDatumClick}
-                            onFocus={event => setActivePoint({ ...point, element: event.target })}
-                            onBlur={() => setActivePoint(undefined)}
-                        />
-                    ))}
+                        {points[line.id].map(point => (
+                            <PointGlyph
+                                key={point.id}
+                                left={point.x}
+                                top={point.y}
+                                active={activePoint?.id === point.id}
+                                color={point.color}
+                                linkURL={point.linkUrl}
+                                onClick={onDatumClick}
+                                onFocus={event => setActivePoint({ ...point, element: event.target })}
+                                onBlur={() => setActivePoint(undefined)}
+                            />
+                        ))}
+                    </Group>
+                ))}
             </Group>
 
             {activePoint && (

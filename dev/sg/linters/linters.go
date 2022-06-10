@@ -36,7 +36,8 @@ var Targets = []lint.Target{
 		Name: "docs",
 		Help: "Documentation checks",
 		Linters: []lint.Runner{
-			lint.RunScript("Docsite lint", "dev/check/docsite.sh"),
+			// lint.RunScript("Docsite lint", "dev/docsite.sh check"),
+			lint.RunScript("Docsite lint", "echo 'disabled for now'"),
 		},
 	},
 	{

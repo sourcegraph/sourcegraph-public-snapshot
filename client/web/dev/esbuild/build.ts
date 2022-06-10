@@ -4,6 +4,8 @@ import * as esbuild from 'esbuild'
 
 import {
     MONACO_LANGUAGES_AND_FEATURES,
+    ROOT_PATH,
+    STATIC_ASSETS_PATH,
     stylePlugin,
     packageResolutionPlugin,
     workerPlugin,
@@ -14,7 +16,7 @@ import {
     buildTimerPlugin,
 } from '@sourcegraph/build-config'
 
-import { ENVIRONMENT_CONFIG, ROOT_PATH, STATIC_ASSETS_PATH } from '../utils'
+import { ENVIRONMENT_CONFIG } from '../utils'
 
 import { manifestPlugin } from './manifestPlugin'
 

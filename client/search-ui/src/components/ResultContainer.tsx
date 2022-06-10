@@ -11,6 +11,7 @@ import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { formatRepositoryStarCount } from '../util/stars'
 
+import { CodeHostIcon } from './CodeHostIcon'
 import { SearchResultStar } from './SearchResultStar'
 
 import styles from './ResultContainer.module.scss'
@@ -87,6 +88,11 @@ export interface ResultContainerProps {
     resultType?: string
 
     /**
+     * The name of the repository
+     */
+    repoName: string
+
+    /**
      * The number of stars for the result's associated repo
      */
     repoStars?: number
@@ -123,6 +129,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     titleClassName,
     description,
     matchCountLabel,
+    repoName,
     repoStars,
     onResultClicked,
     className,
@@ -154,8 +161,13 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
             role="none"
         >
             <div className={styles.header}>
-                <Icon role="img" className="flex-shrink-0" as={icon} aria-hidden={true} />
+                <Icon
+                    className="flex-shrink-0"
+                    as={icon}
+                    aria-label={resultType ? `${resultType} result` : undefined}
+                />
                 <div className={classNames('mx-1', styles.headerDivider)} />
+                <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0" />
                 <div className={classNames(styles.headerTitle, titleClassName)} data-testid="result-container-header">
                     {title}
                     {description && <span className={classNames('ml-2', styles.headerDescription)}>{description}</span>}
@@ -176,19 +188,15 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                     >
                         {expanded ? (
                             <>
-                                {collapseLabel && (
-                                    <Icon role="img" className="mr-1" as={ArrowCollapseUpIcon} aria-hidden={true} />
-                                )}
+                                {collapseLabel && <Icon className="mr-1" as={ArrowCollapseUpIcon} aria-hidden={true} />}
                                 {collapseLabel}
-                                {!collapseLabel && <Icon role="img" as={ChevronDownIcon} aria-hidden={true} />}
+                                {!collapseLabel && <Icon as={ChevronDownIcon} aria-hidden={true} />}
                             </>
                         ) : (
                             <>
-                                {expandLabel && (
-                                    <Icon role="img" className="mr-1" as={ArrowExpandDownIcon} aria-hidden={true} />
-                                )}
+                                {expandLabel && <Icon className="mr-1" as={ArrowExpandDownIcon} aria-hidden={true} />}
                                 {expandLabel}
-                                {!expandLabel && <Icon role="img" as={ChevronLeftIcon} aria-hidden={true} />}
+                                {!expandLabel && <Icon as={ChevronLeftIcon} aria-hidden={true} />}
                             </>
                         )}
                     </Button>
@@ -198,8 +206,8 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                 )}
                 {formattedRepositoryStarCount && (
                     <>
-                        <SearchResultStar />
-                        {formattedRepositoryStarCount}
+                        <SearchResultStar aria-label={`${repoStars} stars`} />
+                        <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
                     </>
                 )}
             </div>

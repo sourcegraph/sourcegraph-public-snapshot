@@ -2,10 +2,10 @@ import React from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Text } from '@sourcegraph/wildcard'
 
 export const EmptyUploads: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <p className="text-muted text-center w-100 mb-0 mt-1">
+    <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
         <MapSearchIcon className="mb-2" />
         <br />
         No uploads yet. Enable precise code intelligence by{' '}
@@ -17,5 +17,5 @@ export const EmptyUploads: React.FunctionComponent<React.PropsWithChildren<unkno
             uploading LSIF data
         </Link>
         .
-    </p>
+    </Text>
 )

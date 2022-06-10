@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
@@ -12,6 +11,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -28,9 +29,9 @@ func TestStatusMessages(t *testing.T) {
 	}
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := NewStore(database.NewDB(db), sql.TxOptions{})
+	store := NewStore(logtest.Scoped(t), database.NewDB(db))
 
-	admin, err := database.Users(db).Create(ctx, database.NewUser{
+	admin, err := db.Users().Create(ctx, database.NewUser{
 		Email:                 "a1@example.com",
 		Username:              "a1",
 		Password:              "p",
@@ -38,7 +39,7 @@ func TestStatusMessages(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	nonAdmin, err := database.Users(db).Create(ctx, database.NewUser{
+	nonAdmin, err := db.Users().Create(ctx, database.NewUser{
 		Email:                 "u1@example.com",
 		Username:              "u1",
 		Password:              "p",
@@ -221,6 +222,7 @@ func TestStatusMessages(t *testing.T) {
 		},
 	}
 
+	logger := logtest.Scoped(t)
 	for _, tc := range testCases {
 		tc := tc
 		ctx := context.Background()
@@ -235,7 +237,7 @@ func TestStatusMessages(t *testing.T) {
 				}
 			}
 
-			err := database.Repos(db).Create(ctx, stored...)
+			err := db.Repos().Create(ctx, stored...)
 			require.NoError(t, err)
 
 			t.Cleanup(func() {
@@ -243,7 +245,7 @@ func TestStatusMessages(t *testing.T) {
 				for _, r := range stored {
 					ids = append(ids, r.ID)
 				}
-				err := database.Repos(db).Delete(ctx, ids...)
+				err := db.Repos().Delete(ctx, ids...)
 				require.NoError(t, err)
 			})
 
@@ -302,8 +304,9 @@ func TestStatusMessages(t *testing.T) {
 
 			clock := timeutil.NewFakeClock(time.Now(), 0)
 			syncer := &Syncer{
-				Store: store,
-				Now:   clock.Now,
+				Logger: logger,
+				Store:  store,
+				Now:    clock.Now,
 			}
 
 			mockDB := database.NewMockDBFrom(database.NewDB(db))

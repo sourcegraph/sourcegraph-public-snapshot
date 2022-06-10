@@ -11,7 +11,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -96,11 +95,6 @@ type userExternalAccountsStore struct {
 	*basestore.Store
 
 	key encryption.Key
-}
-
-// ExternalAccounts instantiates and returns a new UserExternalAccountsStore with prepared statements.
-func ExternalAccounts(db dbutil.DB) UserExternalAccountsStore {
-	return &userExternalAccountsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // ExternalAccountsWith instantiates and returns a new UserExternalAccountsStore using the other store handle.

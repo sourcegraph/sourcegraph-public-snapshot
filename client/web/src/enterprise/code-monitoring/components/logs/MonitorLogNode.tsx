@@ -89,7 +89,7 @@ export const MonitorLogNode: React.FunctionComponent<
                     rel="noopener noreferrer"
                     onClick={clickCatcher}
                 >
-                    Monitor details <Icon as={OpenInNewIcon} />
+                    Monitor details <Icon aria-hidden={true} as={OpenInNewIcon} />
                 </Link>
             </Button>
             <span className="text-nowrap mr-2">

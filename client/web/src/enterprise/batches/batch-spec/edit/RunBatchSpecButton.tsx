@@ -15,7 +15,8 @@ import {
     PopoverContent,
     PopoverTrigger,
     Icon,
-    Typography,
+    H3,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { ExecutionOptions } from '../BatchSpecContext'
@@ -67,7 +68,7 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
             </ButtonGroup>
 
             <PopoverContent className={styles.menuList} position={Position.bottomEnd}>
-                <Typography.H3 className="pb-2 pt-3 pl-3 pr-3 m-0">Execution options</Typography.H3>
+                <H3 className="pb-2 pt-3 pl-3 pr-3 m-0">Execution options</H3>
                 <ExecutionOption moreInfo="When this batch spec is executed, it will not use cached results from any previous execution.">
                     <Checkbox
                         name="run-without-cache"
@@ -105,10 +106,17 @@ const ExecutionOption: React.FunctionComponent<React.PropsWithChildren<Execution
     const [infoReference, infoOpen, setInfoOpen, infoStyle] = useAccordion<HTMLParagraphElement>()
 
     const info = props.disabled ? (
-        <Icon className="ml-2" data-tooltip={props.disabledTooltip} tabIndex={0} as={InfoCircleOutlineIcon} />
+        <Icon
+            className="ml-2"
+            data-tooltip={props.disabledTooltip}
+            aria-label={props.disabledTooltip}
+            tabIndex={0}
+            as={InfoCircleOutlineIcon}
+        />
     ) : props.moreInfo ? (
         <Button className="m-0 ml-2 p-0 border-0" onClick={() => setInfoOpen(!infoOpen)}>
             <Icon aria-hidden={true} as={InfoCircleOutlineIcon} />
+
             <VisuallyHidden>More info</VisuallyHidden>
         </Button>
     ) : null
@@ -121,9 +129,9 @@ const ExecutionOption: React.FunctionComponent<React.PropsWithChildren<Execution
             </div>
             {!props.disabled && props.moreInfo && (
                 <animated.div className={styles.expandedInfo} style={infoStyle}>
-                    <p className="m-0 pb-2" ref={infoReference}>
+                    <Text className="m-0 pb-2" ref={infoReference}>
                         {props.moreInfo}
-                    </p>
+                    </Text>
                 </animated.div>
             )}
         </div>

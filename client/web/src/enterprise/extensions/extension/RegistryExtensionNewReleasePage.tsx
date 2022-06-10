@@ -24,7 +24,11 @@ import {
     useEventObservable,
     Link,
     Icon,
-    Typography,
+    Label,
+    Code,
+    H2,
+    H3,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -139,33 +143,33 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
         ) : (
             <div className="registry-extension-new-release-page">
                 <PageTitle title="Publish new release" />
-                <Typography.H2>Publish new release</Typography.H2>
-                <p>
+                <H2>Publish new release</H2>
+                <Text>
                     Use the{' '}
                     <Link to="https://github.com/sourcegraph/src-cli" target="_blank" rel="noopener noreferrer">
-                        <Typography.Code>src</Typography.Code> CLI tool
+                        <Code>src</Code> CLI tool
                     </Link>{' '}
                     to publish a new release:
-                </p>
+                </Text>
                 <pre>
-                    <Typography.Code>$ src extensions publish</Typography.Code>
+                    <Code>$ src extensions publish</Code>
                 </pre>
                 {showEditor ? (
                     <>
                         <hr className="my-4" />
-                        <Typography.H2>Extension editor (experimental)</Typography.H2>
-                        <p>
+                        <H2>Extension editor (experimental)</H2>
+                        <Text>
                             Edit or paste in an extension JSON manifest and JavaScript bundle. The JavaScript bundle
                             source must be self-contained; dependency bundling and TypeScript transpilation is not yet
                             supported.
-                        </p>
+                        </Text>
                         <Form onSubmit={onSubmit} className="mb-3">
                             <div className="row">
                                 <div className="col-lg-6">
                                     <div className="form-group">
-                                        <Typography.Label htmlFor="registry-extension-new-release-page__manifest">
-                                            <Typography.H3>Manifest</Typography.H3>
-                                        </Typography.Label>
+                                        <Label htmlFor="registry-extension-new-release-page__manifest">
+                                            <H3>Manifest</H3>
+                                        </Label>
                                         <DynamicallyImportedMonacoSettingsEditor
                                             id="registry-extension-new-release-page__manifest"
                                             className="d-block"
@@ -181,9 +185,9 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                 </div>
                                 <div className="col-lg-6">
                                     <div className="form-group">
-                                        <Typography.Label htmlFor="registry-extension-new-release-page__bundle">
-                                            <Typography.H3>Source</Typography.H3>
-                                        </Typography.Label>
+                                        <Label htmlFor="registry-extension-new-release-page__bundle">
+                                            <H3>Source</H3>
+                                        </Label>
                                         {bundleOrError === undefined ? (
                                             <div>
                                                 <LoadingSpinner />
@@ -224,7 +228,8 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                         <LoadingSpinner />
                                     ) : (
                                         <span className="text-success">
-                                            <Icon as={CheckCircleIcon} /> Published release successfully.
+                                            <Icon aria-hidden={true} as={CheckCircleIcon} /> Published release
+                                            successfully.
                                         </span>
                                     ))}
                             </div>

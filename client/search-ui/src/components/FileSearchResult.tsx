@@ -8,7 +8,6 @@ import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike, pluralize } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { LineRanking } from '@sourcegraph/shared/src/components/ranking/LineRanking'
 import { MatchGroup, MatchItem } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
@@ -26,7 +25,7 @@ import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/s
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge } from '@sourcegraph/wildcard'
 
-import { CodeHostIcon } from './CodeHostIcon'
+import { FetchFileParameters } from './CodeExcerpt'
 import { FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { ResultContainerProps, ResultContainer } from './ResultContainer'
@@ -102,7 +101,6 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
     }, [settings])
     const renderTitle = (): JSX.Element => (
         <>
-            <CodeHostIcon repoName={result.repository} className="text-muted flex-shrink-0" />
             <RepoFileLink
                 repoName={result.repository}
                 repoURL={repoAtRevisionURL}
@@ -125,7 +123,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
             const contextLinesSetting =
                 isSettingsValid(props.settingsCascade) &&
                 props.settingsCascade.final &&
-                props.settingsCascade.final['search.contextLines']
+                (props.settingsCascade.final['search.contextLines'] as number | undefined)
 
             if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
                 return contextLinesSetting
@@ -187,24 +185,20 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
     if (result.type === 'content' && result.hunks) {
         // We should only get here if the new streamed highlight format is sent
         const grouped: MatchGroup[] =
-            result.hunks?.map(
-                hunk =>
-                    ({
-                        blobLines: hunk.content.html?.split(/\r?\n/),
-                        matches: hunk.matches.map(match => ({
-                            line: match.start.line,
-                            character: match.start.column,
-                            highlightLength: match.end.column - match.start.column,
-                            isInContext: false, // TODO(camdencheek) what is this for?
-                        })),
-                        startLine: hunk.lineStart,
-                        endLine: hunk.lineStart + hunk.lineCount,
-                        position: {
-                            line: hunk.matches[0].start.line + hunk.lineStart + 1,
-                            character: hunk.matches[0].start.column + 1,
-                        },
-                    } as MatchGroup)
-            ) || []
+            result.hunks?.map(hunk => ({
+                blobLines: hunk.content.html?.split(/\r?\n/),
+                matches: hunk.matches.map(match => ({
+                    line: match.start.line,
+                    character: match.start.column,
+                    highlightLength: match.end.column - match.start.column,
+                })),
+                startLine: hunk.lineStart,
+                endLine: hunk.lineStart + hunk.lineCount,
+                position: {
+                    line: hunk.matches[0].start.line + hunk.lineStart + 1,
+                    character: hunk.matches[0].start.column + 1,
+                },
+            })) || []
 
         const matchCount = grouped.reduce((previous, group) => previous + group.matches.length, 0)
         const matchCountLabel = `${matchCount} ${pluralize('match', matchCount, 'matches')}`
@@ -242,6 +236,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
                 collapsedChildren: <FileMatchChildren {...props} result={result} grouped={limitedGrouped} />,
                 expandedChildren: <FileMatchChildren {...props} result={result} grouped={grouped} />,
                 matchCountLabel,
+                repoName: result.repository,
                 repoStars: result.repoStars,
                 repoLastFetched: result.repoLastFetched,
                 onResultClicked: props.onSelect,
@@ -262,6 +257,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
                 expandLabel: `${hideCount} more`,
                 allExpanded: props.allExpanded,
                 matchCountLabel,
+                repoName: result.repository,
                 repoStars: result.repoStars,
                 repoLastFetched: result.repoLastFetched,
                 onResultClicked: props.onSelect,
@@ -279,6 +275,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
             expandedChildren,
             allExpanded: props.allExpanded,
             matchCountLabel,
+            repoName: result.repository,
             repoStars: result.repoStars,
             repoLastFetched: result.repoLastFetched,
             onResultClicked: props.onSelect,
@@ -299,6 +296,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
             expandLabel: `${length} more`,
             allExpanded: props.allExpanded,
             matchCountLabel,
+            repoName: result.repository,
             repoStars: result.repoStars,
             repoLastFetched: result.repoLastFetched,
             onResultClicked: props.onSelect,

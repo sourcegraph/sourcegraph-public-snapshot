@@ -3,7 +3,6 @@ package webhooks
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -35,7 +34,7 @@ import (
 )
 
 // Run from integration_test.go
-func testBitbucketServerWebhook(db *sql.DB, userID int32) func(*testing.T) {
+func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 	return func(t *testing.T) {
 		now := timeutil.Now()
 		clock := func() time.Time { return now }
@@ -50,8 +49,8 @@ func testBitbucketServerWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		defer save()
 
 		secret := "secret"
-		repoStore := database.Repos(db)
-		esStore := database.NewDB(db).ExternalServices()
+		repoStore := db.Repos()
+		esStore := db.ExternalServices()
 		bitbucketServerToken := os.Getenv("BITBUCKET_SERVER_TOKEN")
 		if bitbucketServerToken == "" {
 			bitbucketServerToken = "test-token"

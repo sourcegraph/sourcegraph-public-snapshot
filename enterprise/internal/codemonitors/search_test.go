@@ -28,9 +28,9 @@ func TestAddCodeMonitorHook(t *testing.T) {
 
 	t.Run("errors on non-commit search", func(t *testing.T) {
 		erroringJobs := []job.Job{
-			jobutil.NewParallelJob(&run.RepoSearchJob{}, &commit.CommitSearchJob{}),
+			jobutil.NewParallelJob(&run.RepoSearchJob{}, &commit.SearchJob{}),
 			&run.RepoSearchJob{},
-			jobutil.NewAndJob(&searcher.SymbolSearcherJob{}, &commit.CommitSearchJob{}),
+			jobutil.NewAndJob(&searcher.SymbolSearchJob{}, &commit.SearchJob{}),
 			jobutil.NewTimeoutJob(0, &run.RepoSearchJob{}),
 		}
 
@@ -43,15 +43,15 @@ func TestAddCodeMonitorHook(t *testing.T) {
 	})
 
 	t.Run("error on multiple commit search jobs", func(t *testing.T) {
-		_, err := addCodeMonitorHook(jobutil.NewAndJob(&commit.CommitSearchJob{}, &commit.CommitSearchJob{}), nil)
+		_, err := addCodeMonitorHook(jobutil.NewAndJob(&commit.SearchJob{}, &commit.SearchJob{}), nil)
 		require.Error(t, err)
 	})
 
 	t.Run("no errors on only commit search", func(t *testing.T) {
 		nonErroringJobs := []job.Job{
-			jobutil.NewLimitJob(1000, &commit.CommitSearchJob{}),
-			&commit.CommitSearchJob{},
-			jobutil.NewTimeoutJob(0, &commit.CommitSearchJob{}),
+			jobutil.NewLimitJob(1000, &commit.SearchJob{}),
+			&commit.SearchJob{},
+			jobutil.NewTimeoutJob(0, &commit.SearchJob{}),
 		}
 
 		for _, j := range nonErroringJobs {
