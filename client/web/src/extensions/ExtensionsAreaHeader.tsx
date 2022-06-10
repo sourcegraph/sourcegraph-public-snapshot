@@ -41,7 +41,7 @@ export const ExtensionsAreaHeader: React.FunctionComponent<
                                 variant="secondary"
                                 as={Link}
                             >
-                                {ButtonIcon && <Icon role="img" as={ButtonIcon} aria-hidden={true} />} {label}
+                                {ButtonIcon && <Icon as={ButtonIcon} aria-hidden={true} />} {label}
                             </Button>
                         )
                 )}

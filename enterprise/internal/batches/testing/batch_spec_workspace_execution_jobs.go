@@ -69,6 +69,7 @@ func CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, s createBatchSpec
 			if err := inserter.Insert(
 				ctx,
 				job.BatchSpecWorkspaceID,
+				job.UserID,
 				job.CreatedAt,
 				job.UpdatedAt,
 			); err != nil {
@@ -84,11 +85,12 @@ func CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, s createBatchSpec
 		s.Handle().DB(),
 		"batch_spec_workspace_execution_jobs",
 		batch.MaxNumPostgresParameters,
-		[]string{"batch_spec_workspace_id", "created_at", "updated_at"},
+		[]string{"batch_spec_workspace_id", "user_id", "created_at", "updated_at"},
 		"",
 		[]string{
 			"batch_spec_workspace_execution_jobs.id",
 			"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
+			"batch_spec_workspace_execution_jobs.user_id",
 			"batch_spec_workspace_execution_jobs.access_token_id",
 			"batch_spec_workspace_execution_jobs.state",
 			"batch_spec_workspace_execution_jobs.failure_message",
@@ -100,7 +102,8 @@ func CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, s createBatchSpec
 			"batch_spec_workspace_execution_jobs.execution_logs",
 			"batch_spec_workspace_execution_jobs.worker_hostname",
 			"batch_spec_workspace_execution_jobs.cancel",
-			"NULL as place_in_queue",
+			"NULL as place_in_user_queue",
+			"NULL as place_in_global_queue",
 			"batch_spec_workspace_execution_jobs.created_at",
 			"batch_spec_workspace_execution_jobs.updated_at",
 		},

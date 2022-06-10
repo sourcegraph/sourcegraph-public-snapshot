@@ -1972,6 +1972,19 @@
           "Comment": ""
         },
         {
+          "Name": "user_id",
+          "Index": 18,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "worker_hostname",
           "Index": 11,
           "TypeName": "text",
@@ -2003,6 +2016,26 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX batch_spec_workspace_execution_jobs_cancel ON batch_spec_workspace_execution_jobs USING btree (cancel)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "batch_spec_workspace_execution_jobs_state",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX batch_spec_workspace_execution_jobs_state ON batch_spec_workspace_execution_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "batch_spec_workspace_execution_jobs_user_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX batch_spec_workspace_execution_jobs_user_id ON batch_spec_workspace_execution_jobs USING btree (user_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -17350,6 +17383,10 @@
     }
   ],
   "Views": [
+    {
+      "Name": "batch_spec_workspace_execution_queue",
+      "Definition": " WITH user_queues AS (\n         SELECT exec.user_id,\n            max(exec.started_at) AS latest_dequeue\n           FROM batch_spec_workspace_execution_jobs exec\n          GROUP BY exec.user_id\n        ), materialized_queue_candidates AS MATERIALIZED (\n         SELECT exec.id,\n            exec.batch_spec_workspace_id,\n            exec.state,\n            exec.failure_message,\n            exec.started_at,\n            exec.finished_at,\n            exec.process_after,\n            exec.num_resets,\n            exec.num_failures,\n            exec.execution_logs,\n            exec.worker_hostname,\n            exec.last_heartbeat_at,\n            exec.created_at,\n            exec.updated_at,\n            exec.cancel,\n            exec.access_token_id,\n            exec.queued_at,\n            exec.user_id,\n            rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS place_in_user_queue\n           FROM (batch_spec_workspace_execution_jobs exec\n             JOIN user_queues queue ON ((queue.user_id = exec.user_id)))\n          WHERE (exec.state = 'queued'::text)\n          ORDER BY (rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id)), queue.latest_dequeue NULLS FIRST\n        )\n SELECT row_number() OVER () AS place_in_global_queue,\n    materialized_queue_candidates.id,\n    materialized_queue_candidates.batch_spec_workspace_id,\n    materialized_queue_candidates.state,\n    materialized_queue_candidates.failure_message,\n    materialized_queue_candidates.started_at,\n    materialized_queue_candidates.finished_at,\n    materialized_queue_candidates.process_after,\n    materialized_queue_candidates.num_resets,\n    materialized_queue_candidates.num_failures,\n    materialized_queue_candidates.execution_logs,\n    materialized_queue_candidates.worker_hostname,\n    materialized_queue_candidates.last_heartbeat_at,\n    materialized_queue_candidates.created_at,\n    materialized_queue_candidates.updated_at,\n    materialized_queue_candidates.cancel,\n    materialized_queue_candidates.access_token_id,\n    materialized_queue_candidates.queued_at,\n    materialized_queue_candidates.user_id,\n    materialized_queue_candidates.place_in_user_queue\n   FROM materialized_queue_candidates;"
+    },
     {
       "Name": "branch_changeset_specs_and_changesets",
       "Definition": " SELECT changeset_specs.id AS changeset_spec_id,\n    COALESCE(changesets.id, (0)::bigint) AS changeset_id,\n    changeset_specs.repo_id,\n    changeset_specs.batch_spec_id,\n    changesets.owned_by_batch_change_id AS owner_batch_change_id,\n    repo.name AS repo_name,\n    changeset_specs.title AS changeset_name,\n    changesets.external_state,\n    changesets.publication_state,\n    changesets.reconciler_state\n   FROM ((changeset_specs\n     LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.current_spec_id IS NOT NULL) AND (EXISTS ( SELECT 1\n           FROM changeset_specs changeset_specs_1\n          WHERE ((changeset_specs_1.id = changesets.current_spec_id) AND (changeset_specs_1.head_ref = changeset_specs.head_ref)))))))\n     JOIN repo ON ((changeset_specs.repo_id = repo.id)))\n  WHERE ((changeset_specs.external_id IS NULL) AND (repo.deleted_at IS NULL));"

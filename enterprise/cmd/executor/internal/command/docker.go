@@ -44,10 +44,15 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) com
 }
 
 func dockerResourceFlags(options ResourceOptions) []string {
-	return []string{
-		"--cpus", strconv.Itoa(options.NumCPUs),
-		"--memory", options.Memory,
+	flags := make([]string, 0, 2)
+	if options.NumCPUs != 0 {
+		flags = append(flags, "--cpus", strconv.Itoa(options.NumCPUs))
 	}
+	if options.Memory != "0" {
+		flags = append(flags, "--memory", options.Memory)
+	}
+
+	return flags
 }
 
 func dockerVolumeFlags(wd string) []string {

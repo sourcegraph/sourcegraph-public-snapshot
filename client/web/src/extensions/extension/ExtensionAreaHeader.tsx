@@ -216,9 +216,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                                                     exact={exact}
                                                 >
                                                     <span>
-                                                        {ItemIcon && (
-                                                            <Icon role="img" as={ItemIcon} aria-hidden={true} />
-                                                        )}{' '}
+                                                        {ItemIcon && <Icon as={ItemIcon} aria-hidden={true} />}{' '}
                                                         <span className="text-content" data-tab-content={label}>
                                                             {label}
                                                         </span>

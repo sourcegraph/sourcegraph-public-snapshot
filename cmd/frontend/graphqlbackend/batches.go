@@ -579,8 +579,9 @@ type ListChangesetsArgs struct {
 }
 
 type ListBatchSpecArgs struct {
-	First int32
-	After *string
+	First                       int32
+	After                       *string
+	IncludeLocallyExecutedSpecs *bool
 }
 
 type AvailableBulkOperationsArgs struct {
@@ -814,6 +815,7 @@ type BatchSpecWorkspaceResolver interface {
 	Unsupported() bool
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	PlaceInQueue() *int32
+	PlaceInGlobalQueue() *int32
 
 	ToHiddenBatchSpecWorkspace() (HiddenBatchSpecWorkspaceResolver, bool)
 	ToVisibleBatchSpecWorkspace() (VisibleBatchSpecWorkspaceResolver, bool)

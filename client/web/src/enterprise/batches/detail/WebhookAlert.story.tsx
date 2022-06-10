@@ -1,6 +1,7 @@
 import { storiesOf } from '@storybook/react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 
 import { WebStory } from '../../../components/WebStory'
 
@@ -16,6 +17,7 @@ const currentSpec = {
     id: 'specID1',
     originalInput: '',
     supersedingBatchSpec: null,
+    source: BatchSpecSource.REMOTE,
 }
 
 const batchChange = (totalCount: number, hasNextPage: boolean) => ({
