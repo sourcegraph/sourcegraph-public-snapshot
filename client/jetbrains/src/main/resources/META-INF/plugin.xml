@@ -33,7 +33,7 @@
             id="sourcegraph.searchSelection"
             class="com.sourcegraph.website.SearchSelection"
             text="Search Selection on Sourcegraph Web"
-            description="Search Selection on Sourcegraph Web"
+            description="Search selection on Sourcegraph web"
             icon="/icons/icon.png">
             <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
         </action>
@@ -41,7 +41,7 @@
             id="sourcegraph.searchRepository"
             class="com.sourcegraph.website.SearchRepository"
             text="Search Selection in Repository on Sourcegraph Web"
-            description="Search Selection in Repository on Sourcegraph Web"
+            description="Search selection in repository on Sourcegraph web"
             icon="/icons/icon.png">
             <keyboard-shortcut first-keystroke="alt r" keymap="$default"/>
         </action>
@@ -49,7 +49,7 @@
             id="sourcegraph.copy"
             class="com.sourcegraph.website.Copy"
             text="Copy Sourcegraph File Link"
-            description="Copy Sourcegraph File Link"
+            description="Copy Sourcegraph file link"
             icon="/icons/icon.png">
             <keyboard-shortcut first-keystroke="alt c" keymap="$default"/>
         </action>
@@ -66,7 +66,7 @@
             id="sourcegraph.openSearch"
             class="com.sourcegraph.find.OpenSearchAction"
             text="Open Sourcegraph Search View"
-            description="Open Sourcegraph Search View"
+            description="Open Sourcegraph search view"
             icon="/icons/icon.png">
             <keyboard-shortcut first-keystroke="alt a" keymap="$default"/>
         </action>
