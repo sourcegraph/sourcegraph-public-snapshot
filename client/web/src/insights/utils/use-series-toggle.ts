@@ -1,8 +1,9 @@
 import { Dispatch, SetStateAction, useState } from 'react'
 
-interface UseSeriesToggleReturn {
+export interface UseSeriesToggleReturn {
     /* List of currently selected series ids */
     selectedSeriesIds: string[]
+    hoveredId: string | undefined
 
     // These functions are exposed to keep all of the state
     // contained in the hook
@@ -45,6 +46,7 @@ export const useSeriesToggle = (): UseSeriesToggleReturn => {
     return {
         // state
         selectedSeriesIds,
+        hoveredId,
 
         // functions
         isSeriesSelected: isSelected,
