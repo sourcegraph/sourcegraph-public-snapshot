@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -80,7 +82,12 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		t.Fatal(err)
 	}
 
-	executionStore := &batchSpecWorkspaceExecutionWorkerStore{Store: workStore, observationContext: &observation.TestContext, accessTokenDeleterForTX: func(tx *Store) accessTokenHardDeleter { return tx.DatabaseDB().AccessTokens().HardDeleteByID }}
+	executionStore := &batchSpecWorkspaceExecutionWorkerStore{
+		Store:                   workStore,
+		observationContext:      &observation.TestContext,
+		logger:                  logtest.Scoped(t),
+		accessTokenDeleterForTX: func(tx *Store) accessTokenHardDeleter { return tx.DatabaseDB().AccessTokens().HardDeleteByID },
+	}
 	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
 
 	setProcessing := func(t *testing.T) {
