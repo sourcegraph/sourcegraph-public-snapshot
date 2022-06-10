@@ -21,12 +21,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestCreateCodeMonitor(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(dbtest.NewDB(t))
 	r := newTestResolver(t, db)
+
+	graphqlbackend.MockDecodedViewerFinalSettings = &schema.Settings{}
 
 	user := insertTestUser(t, db, "cm-user1", true)
 

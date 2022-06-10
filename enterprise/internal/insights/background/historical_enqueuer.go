@@ -227,7 +227,7 @@ func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer 
 		statistics:         statistics,
 		frameFilter:        &compression.NoopFilter{},
 		limiter:            limiter,
-		gitFirstEverCommit: (&cachedGitFirstEverCommit{impl: gitFirstEverCommit}).gitFirstEverCommit,
+		gitFirstEverCommit: (&cachedGitFirstEverCommit{impl: discovery.GitFirstEverCommit}).gitFirstEverCommit,
 		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
 			return git.Commits(ctx, frontend, repoName, git.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 		},
@@ -466,7 +466,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 			log15.Warn("insights backfill repository skipped - missing rev/repo", "repo_id", id, "repo_name", repoName)
 			return nil, nil, nil, softErr // no error - repo may not be cloned yet (or not even pushed to code host yet)
 		}
-		if strings.Contains(err.Error(), `failed (output: "usage: git rev-list [OPTION] <commit-id>...`) {
+		if errors.Is(err, discovery.EmptyRepoErr) {
 			log15.Warn("insights backfill repository skipped - empty repo", "repo_id", id, "repo_name", repoName)
 			return nil, nil, nil, softErr // repository is empty
 		}
@@ -666,8 +666,4 @@ func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, db da
 	}
 	c.cache[repoName] = entry
 	return entry, nil
-}
-
-func gitFirstEverCommit(ctx context.Context, db database.DB, repoName api.RepoName) (*gitdomain.Commit, error) {
-	return git.FirstEverCommit(ctx, db, repoName, authz.DefaultSubRepoPermsChecker)
 }

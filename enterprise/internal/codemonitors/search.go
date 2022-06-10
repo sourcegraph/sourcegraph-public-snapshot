@@ -126,7 +126,7 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 		return nil, errcode.MakeNonRetryable(err)
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
 		hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, doSearch commit.DoSearchFunc) error {
 			return hookWithID(ctx, db, gs, monitorID, repoID, args, doSearch)
 		}
