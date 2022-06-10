@@ -369,7 +369,7 @@ func checkRustVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 func check1password() check.CheckFunc {
 	return check.Combine(
 		check.WrapErrMessage(check.InPath("op"), "The 1password CLI, 'op', is required"),
-		check.CommandOutputContains("op account list", "team-sourcegraph.1password.com"))
+		check.CommandOutputContains("op account get --account team-sourcegraph.1password.com", "ACTIVE"))
 }
 
 func forceASDFPluginAdd(ctx context.Context, plugin string, source string) error {
