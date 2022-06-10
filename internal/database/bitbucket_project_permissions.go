@@ -23,7 +23,7 @@ type BitbucketProjectPermissionsStore interface {
 	basestore.ShareableStore
 	With(other basestore.ShareableStore) BitbucketProjectPermissionsStore
 	Enqueue(ctx context.Context, projectKey string, externalServiceID int64, permissions []types.UserPermission, unrestricted bool) (int, error)
-	Transact(ctx context.Context) (ExternalServiceStore, error)
+	Transact(ctx context.Context) (BitbucketProjectPermissionsStore, error)
 	Done(err error) error
 }
 
