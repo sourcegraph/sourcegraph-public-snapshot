@@ -6,7 +6,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
-	slog "github.com/sourcegraph/sourcegraph/lib/log"
+	slog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -25,6 +25,7 @@ func NewFilterJob(child job.Job) job.Job {
 
 type subRepoPermsFilterJob struct {
 	child job.Job
+	log   slog.Logger
 }
 
 func (s *subRepoPermsFilterJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -40,7 +41,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, clients job.RuntimeClie
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applySubRepoFiltering(ctx, checker, event.Results)
+		event.Results, err = applySubRepoFiltering(ctx, checker, event.Results, s.log)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -66,8 +67,7 @@ func (s *subRepoPermsFilterJob) Tags() []log.Field {
 
 // applySubRepoFiltering filters a set of matches using the provided
 // authz.SubRepoPermissionChecker
-func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionChecker, matches []result.Match) ([]result.Match, error) {
-	slogger := slog.Scoped("applySubRepoFiltering", "Filters a set fo matches using the provided")
+func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionChecker, matches []result.Match, log slog.Logger) ([]result.Match, error) {
 	if !authz.SubRepoEnabled(checker) {
 		return matches, nil
 	}
@@ -119,6 +119,6 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 
 	// We don't want to return sensitive authz information or excluded paths to the
 	// user so we'll return generic error and log something more specific.
-	slogger.Warn("Applying sub-repo permissions to search results", slog.Error(errs))
+	log.Warn("Applying sub-repo permissions to search results", slog.Error(errs))
 	return filtered, errors.New("subRepoFilterFunc")
 }

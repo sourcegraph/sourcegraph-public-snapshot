@@ -12,6 +12,7 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/opentracing/opentracing-go/log"
+	slog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
@@ -121,7 +122,7 @@ const defaultMaxSearchResults = 30
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, since func(t time.Time) time.Duration, endpoints []string, c chan<- zoektSearchStreamEvent) (fm []zoekt.FileMatch, limitHit bool, partial map[api.RepoID]struct{}, err error) {
+func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, since func(t time.Time) time.Duration, endpoints []string, c chan<- zoektSearchStreamEvent, log slog.Logger) (fm []zoekt.FileMatch, limitHit bool, partial map[api.RepoID]struct{}, err error) {
 	defer func() {
 		if c != nil {
 			c <- zoektSearchStreamEvent{
@@ -143,7 +144,7 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 
 	// Choose sensible values for k when we generalize this.
 	k := zoektutil.ResultCountFactor(numRepos, args.FileMatchLimit, false)
-	searchOpts := zoektutil.SearchOpts(ctx, k, args.FileMatchLimit, nil)
+	searchOpts := zoektutil.SearchOpts(ctx, k, args.FileMatchLimit, nil, log)
 	searchOpts.Whole = true
 
 	filePathPatterns, err := handleFilePathPatterns(args)

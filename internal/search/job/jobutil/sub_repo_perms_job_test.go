@@ -8,6 +8,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -45,6 +47,7 @@ func TestApplySubRepoFiltering(t *testing.T) {
 		args        args
 		wantMatches []result.Match
 		wantErr     string
+		log         log.Logger
 	}{
 		{
 			name: "read from user with no perms",
@@ -172,7 +175,7 @@ func TestApplySubRepoFiltering(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), tt.args.ctxActor)
-			matches, err := applySubRepoFiltering(ctx, checker, tt.args.matches)
+			matches, err := applySubRepoFiltering(ctx, checker, tt.args.matches, tt.log)
 			if diff := cmp.Diff(matches, tt.wantMatches, cmpopts.IgnoreUnexported(search.RepoStatusMap{})); diff != "" {
 				t.Fatal(diff)
 			}
