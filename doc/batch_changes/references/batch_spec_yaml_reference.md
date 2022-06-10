@@ -418,6 +418,60 @@ steps:
     container: golang
 ```
 
+## [`steps.mount`](#steps-mount)
+
+> NOTE: This feature is only available for <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.xx.x and later.
+
+Mounts a local path to a path in a Docker container. Mounted paths are accessible to the step's `run` command.
+
+A `path` can point to a file or a directory. The `path` can be an absolute path or a relative path. Regardless if the 
+path is absolute or relative, the path must be within the same directory as the batch spec that is being ran (the batch 
+spec directory is considered the "working directory").
+
+### Examples
+
+```yaml
+# Mount a Python script and run the script
+steps:
+  run: python /tmp/some-script.py # execute the script located at the mountpoint
+  container: python:latest
+  mount:
+    - path: ./some-script.py # or absolute path /my/local/path/some-script.py
+      mountpoint: /tmp/some-script.py
+```
+
+```yaml
+# Mount a binary and run the binary
+steps:
+  run: /tmp/some-binary # execute the binary located at the mountpoint
+  container: alpine:latest
+  mount:
+    - path: ./some-binary # or absolute path /my/local/path/some-binary
+      mountpoint: /tmp/some-binary
+```
+
+```yaml
+# Mount a directory containing scripts and run a script from the directory
+steps:
+  run: python /tmp/scripts/some-script.py
+  container: python:latest
+  mount:
+    - path: ./scripts # or absolute path /my/local/path/scripts
+      mountpoint: /tmp/scripts
+```
+
+```yaml
+# Mount a Python script and a directory with supporting files for the script and run the script
+steps:
+  run: python /tmp/some-script.py
+  container: python:latest
+  mount:
+    - path: ./some-script.py # or absolute path /my/local/path/some-script.py
+      mountpoint: /tmp/some-script.py
+    - path: ./supporting-files # or absolute path /my/local/path/supporting-files
+      mountpoint: /tmp/supporting-files
+```
+
 ## [`importChangesets`](#importchangesets)
 
 An array describing which already-existing changesets should be imported from the code host into the batch change.
