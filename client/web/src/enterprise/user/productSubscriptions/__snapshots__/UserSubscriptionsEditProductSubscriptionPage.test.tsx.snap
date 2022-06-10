@@ -70,7 +70,9 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
               class="product-plan-form-control"
             >
               <div
+                aria-label="Loading"
                 class="iconInline loadingSpinner"
+                role="img"
               />
             </div>
           </div>
@@ -89,7 +91,9 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
                 class="form-text mb-2"
               >
                 <div
+                  aria-label="Loading"
                   class="iconInline loadingSpinner"
+                  role="img"
                 />
               </div>
             </div>

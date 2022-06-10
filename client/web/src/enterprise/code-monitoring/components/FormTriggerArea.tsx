@@ -53,14 +53,12 @@ const ValidQueryChecklistItem: React.FunctionComponent<
             <div className="d-flex align-items-center mb-1">
                 {checked ? (
                     <Icon
-                        role="img"
                         className={classNames('text-success', styles.checklistCheckbox)}
                         aria-hidden={true}
                         as={CheckIcon}
                     />
                 ) : (
                     <Icon
-                        role="img"
                         className={classNames(styles.checklistCheckbox, styles.checklistCheckboxUnchecked)}
                         aria-hidden={true}
                         as={RadioboxBlankIcon}
@@ -75,7 +73,6 @@ const ValidQueryChecklistItem: React.FunctionComponent<
 
                         <span data-tooltip={hint} data-placement="bottom" className="d-inline-flex">
                             <Icon
-                                role="img"
                                 className={classNames(styles.checklistHint, checked && styles.checklistHintFaded)}
                                 aria-hidden={true}
                                 as={HelpCircleIcon}
@@ -252,7 +249,6 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                 >
                                     Preview results{' '}
                                     <Icon
-                                        role="img"
                                         aria-hidden={true}
                                         className={classNames('ml-1', styles.queryInputPreviewLinkIcon)}
                                         as={OpenInNewIcon}

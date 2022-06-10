@@ -62,10 +62,9 @@ export const StreamingProgressCount: React.FunctionComponent<
                         )}`}
                     >
                         <Icon
-                            role="img"
                             className="ml-1"
-                            tabIndex={0}
                             as={InformationOutlineIcon}
+                            tabIndex={0}
                             aria-label={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
                                 'repository',
                                 progress.repositoriesCount,

@@ -22,7 +22,7 @@ export const SiteAdminAlert: React.FunctionComponent<React.PropsWithChildren<Sit
 }) => (
     <Alert className={classNames(styles.siteAdminAlert, className)} variant={variant}>
         <H5 as={H2}>
-            <Icon role="img" as={LockIcon} aria-hidden={true} /> Site admin
+            <Icon as={LockIcon} aria-hidden={true} /> Site admin
         </H5>
         <div>{children}</div>
     </Alert>

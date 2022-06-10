@@ -170,11 +170,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         className="test-create-access-token-submit"
                         variant="primary"
                     >
-                        {creationOrError === 'loading' ? (
-                            <LoadingSpinner />
-                        ) : (
-                            <Icon role="img" as={AddIcon} aria-hidden={true} />
-                        )}{' '}
+                        {creationOrError === 'loading' ? <LoadingSpinner /> : <Icon as={AddIcon} aria-hidden={true} />}{' '}
                         Generate token
                     </Button>
                     <Button

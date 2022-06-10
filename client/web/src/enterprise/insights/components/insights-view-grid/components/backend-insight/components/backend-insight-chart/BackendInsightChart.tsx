@@ -111,7 +111,9 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     name={series.name}
                                     selected={isSeriesSelected(`${series.id}`)}
                                     hovered={isSeriesHovered(`${series.id}`)}
-                                    className={styles.legendListItem}
+                                    className={classNames(styles.legendListItem, {
+                                        [styles.clickable]: content.series.length > 1,
+                                    })}
                                     onClick={() => onLegendItemClick(`${series.id}`)}
                                     onMouseEnter={() => setHoveredId(`${series.id}`)}
                                     // prevent accidental dragging events

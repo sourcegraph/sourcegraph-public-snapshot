@@ -72,7 +72,7 @@ const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = 
                         size="sm"
                         as={Link}
                     >
-                        <Icon role="img" as={SettingsIcon} aria-hidden={true} /> Settings
+                        <Icon as={SettingsIcon} aria-hidden={true} /> Settings
                     </Button>{' '}
                     <Button
                         to={`${orgURL(node.name)}/settings/members`}
@@ -81,7 +81,7 @@ const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = 
                         size="sm"
                         as={Link}
                     >
-                        <Icon role="img" as={AccountIcon} aria-hidden={true} />{' '}
+                        <Icon as={AccountIcon} aria-hidden={true} />{' '}
                         {node.members && (
                             <>
                                 {node.members.totalCount} {pluralize('member', node.members.totalCount)}
@@ -96,7 +96,7 @@ const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = 
                         size="sm"
                         aria-label="Delete organization"
                     >
-                        <Icon role="img" as={DeleteIcon} aria-hidden={true} />
+                        <Icon as={DeleteIcon} aria-hidden={true} />
                     </Button>
                 </div>
             </div>
@@ -128,7 +128,7 @@ export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <H2 className="mb-0">Organizations</H2>
                 <Button to="/organizations/new" className="test-create-org-button" variant="primary" as={Link}>
-                    <Icon role="img" as={AddIcon} aria-hidden={true} /> Create organization
+                    <Icon as={AddIcon} aria-hidden={true} /> Create organization
                 </Button>
             </div>
             <Text>

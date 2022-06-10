@@ -19,7 +19,6 @@ export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Pro
     return (
         <Tooltip content={`Last synced: ${formattedTime}`}>
             <Icon
-                role="img"
                 tabIndex={0}
                 className={classNames(props.className, styles.lastSyncedIcon, 'text-muted')}
                 as={WeatherCloudyClockIcon}

@@ -26,7 +26,7 @@ export const CodeHostIcon: React.FunctionComponent<
     if (CodehostIcon) {
         return (
             <Tooltip content={hostName}>
-                <Icon role="img" aria-label={hostName} className={className} as={CodehostIcon} />
+                <Icon aria-label={hostName} className={className} as={CodehostIcon} />
             </Tooltip>
         )
     }

@@ -203,7 +203,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                         </>
                     ) : (
                         <>
-                            <Icon role="img" as={DeleteIcon} aria-hidden={true} /> Delete
+                            <Icon as={DeleteIcon} aria-hidden={true} /> Delete
                         </>
                     )}
                 </Button>

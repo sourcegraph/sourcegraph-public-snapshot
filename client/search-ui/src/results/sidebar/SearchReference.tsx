@@ -431,7 +431,7 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                         aria-label={collapsed ? 'Show filter description' : 'Hide filter description'}
                     >
                         <small className="text-monospace">i</small>
-                        <Icon role="img" aria-hidden={true} as={CollapseIcon} />
+                        <Icon aria-hidden={true} as={CollapseIcon} />
                     </CollapseHeader>
                 </span>
                 <CollapsePanel>

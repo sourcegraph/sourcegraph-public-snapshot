@@ -141,7 +141,7 @@ const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>
             <span className="flex-1">{title}</span>
             {sectionID && (
                 <Button variant="icon" aria-label="Hide Section" onClick={() => onClose?.(sectionID)}>
-                    <Icon role="img" aria-hidden={true} as={CloseIcon} />
+                    <Icon aria-hidden={true} as={CloseIcon} />
                 </Button>
             )}
         </H3>
@@ -311,8 +311,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                         target="blank"
                                         to="https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet#searching-an-organizations-repository"
                                     >
-                                        Learn more{' '}
-                                        <Icon role="img" aria-label="Open in a new tab" as={ExternalLinkIcon} />
+                                        Learn more <Icon aria-label="Open in a new tab" as={ExternalLinkIcon} />
                                     </Link>
                                 </small>
                             </Text>
@@ -351,8 +350,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                 target="blank"
                                 to="https://learn.sourcegraph.com/"
                             >
-                                Sourcegraph Learn{' '}
-                                <Icon role="img" as={ExternalLinkIcon} aria-label="Open in a new tab" />
+                                Sourcegraph Learn <Icon as={ExternalLinkIcon} aria-label="Open in a new tab" />
                             </Link>
                             <br />
                             <Link
@@ -360,8 +358,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                 target="blank"
                                 to="https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet"
                             >
-                                Sourcegraph cheat sheet{' '}
-                                <Icon role="img" as={ExternalLinkIcon} aria-label="Open in a new tab" />
+                                Sourcegraph cheat sheet <Icon as={ExternalLinkIcon} aria-label="Open in a new tab" />
                             </Link>
                         </Text>
                     </Container>

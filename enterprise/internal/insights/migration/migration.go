@@ -10,6 +10,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -40,7 +41,7 @@ type migrator struct {
 	workerBaseStore            *basestore.Store
 }
 
-func NewMigrator(insightsDB dbutil.DB, postgresDB database.DB) oobmigration.Migrator {
+func NewMigrator(insightsDB edb.InsightsDB, postgresDB database.DB) oobmigration.Migrator {
 	return &migrator{
 		insightsDB:                 insightsDB,
 		postgresDB:                 postgresDB,
