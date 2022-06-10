@@ -1,7 +1,13 @@
 .decoration {
     max-width: 240px;
     padding: 0 0.75rem;
-    background-color: var(--body-bg);
+    background: var(--body-bg);
+
+    :global(.top-spacer),
+    :global(.bottom-spacer) {
+        background: var(--body-bg) !important;
+        margin: 0 -0.75rem;
+    }
 }
 
 tr:global(.selected),
@@ -12,6 +18,8 @@ tr:global(.highlighted) {
 }
 
 .wrapper {
+    height: 1rem;
+
     > * {
         max-width: 100%;
     }

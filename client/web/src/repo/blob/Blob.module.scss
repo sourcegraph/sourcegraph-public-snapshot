@@ -25,6 +25,11 @@
         user-select: none;
         vertical-align: top;
         color: var(--line-number-color);
+
+        :global(.top-spacer),
+        :global(.bottom-spacer) {
+            margin: 0 -0.5rem;
+        }
     }
 
     tr {
@@ -33,25 +38,27 @@
             background: var(--code-selection-bg);
         }
 
-        &:first-child {
-            vertical-align: bottom;
+        &:first-child td:global(.line) {
+            // place bottom spacer below the line number set with ::before pseudo-element
+            display: flex;
+            flex-direction: column-reverse;
+        }
+    }
 
-            td {
-                padding-top: 0.5rem;
-            }
+    td {
+        :global(.top-spacer),
+        :global(.bottom-spacer) {
+            background: var(--code-bg);
         }
 
-        &:last-child {
-            vertical-align: top;
+        :global(.top-spacer) {
+            height: 0.5rem;
+        }
 
+        :global(.bottom-spacer) {
             // Give room to view the last few lines of code
             // without the floating status bar getting in the way.
-            &::after {
-                content: '';
-                display: block;
-                height: calc(var(--blob-status-bar-height) + var(--blob-status-bar-vertical-gap) + 1.5rem);
-                background: green;
-            }
+            height: calc(var(--blob-status-bar-height) + var(--blob-status-bar-vertical-gap) + 1.5rem);
         }
     }
 
@@ -73,6 +80,12 @@
             span::before {
                 content: attr(data-contents);
             }
+        }
+
+        :global(.top-spacer),
+        :global(.bottom-spacer) {
+            margin: 0 0 0 -1rem;
+            display: block;
         }
     }
 

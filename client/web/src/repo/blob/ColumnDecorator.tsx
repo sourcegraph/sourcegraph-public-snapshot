@@ -85,9 +85,17 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                             // add line number cell extra horizontal padding
                             row.querySelector('td.line')?.classList.add('px-2')
 
+                            // add decorations wrapper
                             const wrapper = document.createElement('div')
                             wrapper.classList.add(styles.wrapper)
-                            cell.prepend(wrapper)
+                            cell.append(wrapper)
+
+                            // add extra spacers to first and last rows
+                            if (index === 0 || index === table.rows.length - 1) {
+                                const spacer = document.createElement('div')
+                                spacer.classList.add(index === 0 ? 'top-spacer' : 'bottom-spacer')
+                                cell[index === 0 ? 'prepend' : 'append'](spacer)
+                            }
                         }
 
                         const currentLineDecorations = decorations.get(index + 1)
@@ -128,6 +136,7 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                             portalRoot.dataset.line ?? ''
                                         }`}
                                         content={attachment.hoverMessage || null}
+                                        placement="top"
                                     >
                                         <LinkOrSpan
                                             className={styles.item}
@@ -156,7 +165,7 @@ export const ColumnDecorator = React.memo<LineDecoratorProps>(
                                     </Tooltip>
                                 )
                             }),
-                            portalRoot.firstChild as HTMLDivElement
+                            portalRoot.querySelector(`.${styles.wrapper}`) as HTMLDivElement
                         )
                     )
                     .toArray()}

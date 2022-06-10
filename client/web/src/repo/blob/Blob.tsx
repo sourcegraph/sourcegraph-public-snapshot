@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { Remote } from 'comlink'
@@ -753,6 +753,41 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             props.history,
         ]
     )
+
+    // `ColumnDecorator` uses `useLayoutEffect` instead of `useEffect` in order to synchronously re-render
+    // after mount/decoration updates, but before the browser has painted DOM updates.
+    // This prevents users from seeing inconsistent states where changes handled by React have been
+    // painted, but DOM manipulation handled by these effects are painted on the next tick.
+
+    useLayoutEffect(() => {
+        const subscription = codeViewElements.subscribe(codeView => {
+            if (codeView) {
+                const table = codeView.firstElementChild as HTMLTableElement
+                const firstRow = table.rows[0]
+                const lastRow = table.rows[table.rows.length - 1]
+
+                if (!firstRow.querySelector('.top-spacer')) {
+                    for (const cell of firstRow.cells) {
+                        const spacer = document.createElement('div')
+                        spacer.classList.add('top-spacer')
+                        cell.prepend(spacer)
+                    }
+                }
+
+                if (!lastRow.querySelector('.bottom-spacer')) {
+                    for (const cell of lastRow.cells) {
+                        const spacer = document.createElement('div')
+                        spacer.classList.add('bottom-spacer')
+                        cell.append(spacer)
+                    }
+                }
+            }
+        })
+
+        return () => {
+            subscription.unsubscribe()
+        }
+    }, [codeViewElements])
 
     return (
         <>
