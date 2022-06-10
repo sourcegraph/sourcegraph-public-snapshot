@@ -754,6 +754,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         ]
     )
 
+    // Add top and bottom spacers to improve code readability.
     useEffect(() => {
         const subscription = codeViewElements.subscribe(codeView => {
             if (codeView) {
