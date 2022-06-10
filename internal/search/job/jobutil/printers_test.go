@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -168,13 +169,14 @@ func TestPrettyJSON(t *testing.T) {
 							NewNoopJob(),
 							NewNoopJob()))))))))
 	test := func(input string) string {
+		var log log.Logger
 		q, _ := query.ParseLiteral(input)
 		b, _ := query.ToBasicQuery(q)
 		inputs := &run.SearchInputs{
 			UserSettings: &schema.Settings{},
 			Protocol:     search.Streaming,
 		}
-		j, _ := NewBasicJob(inputs, b)
+		j, _ := NewBasicJob(log, inputs, b)
 		return PrettyJSONVerbose(j)
 	}
 
