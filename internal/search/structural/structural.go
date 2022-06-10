@@ -6,7 +6,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 
-	slog "github.com/sourcegraph/sourcegraph/lib/log"
+	slog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -108,8 +108,7 @@ func retryStructuralSearch(ctx context.Context, clients job.RuntimeClients, args
 	return streamStructuralSearch(ctx, clients, args, repos, stream)
 }
 
-func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
-	slogger := slog.Scoped("runStructuralSearch", "Function runs structural search")
+func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender, log slog.Logger) error {
 	if args.PatternInfo.FileMatchLimit != limits.DefaultMaxSearchResults {
 		// streamStructuralSearch performs a streaming search when the user sets a value
 		// for `count`. The first return parameter indicates whether the request was
@@ -133,7 +132,7 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 		event = agg.SearchEvent
 		if len(event.Results) == 0 {
 			// Still no results? Give up.
-			slogger.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
+			log.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
 			event.Stats.IsLimitHit = false // Ensure we don't display "Show more".
 		}
 	}
@@ -160,6 +159,7 @@ type SearchJob struct {
 	ContainsRefGlobs bool
 
 	RepoOpts search.RepoOptions
+	slog.Logger
 }
 
 func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -184,7 +184,7 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		if indexed != nil {
 			repoSet = append(repoSet, IndexedMap(indexed.RepoRevs))
 		}
-		return runStructuralSearch(ctx, clients, s.SearcherArgs, repoSet, stream)
+		return runStructuralSearch(ctx, clients, s.SearcherArgs, repoSet, stream, s.Logger)
 	})
 }
 
