@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -86,9 +87,13 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	pivoted := make(map[string]timeCounts)
 
 	for _, repository := range repositories {
-		firstCommit, err := git.FirstEverCommit(ctx, c.db, api.RepoName(repository), authz.DefaultSubRepoPermsChecker)
+		firstCommit, err := discovery.GitFirstEverCommit(ctx, c.db, api.RepoName(repository))
 		if err != nil {
-			return nil, errors.Wrapf(err, "FirstEverCommit")
+			if errors.Is(err, discovery.EmptyRepoErr) {
+				continue
+			} else {
+				return nil, errors.Wrapf(err, "FirstEverCommit")
+			}
 		}
 		// uncompressed plan for now, because there is some complication between the way compressed plans are generated and needing to resolve revhashes
 		plan := c.filter.FilterFrames(ctx, frames, repoIds[repository])
