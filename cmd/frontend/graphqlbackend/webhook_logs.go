@@ -224,7 +224,7 @@ func (r *webhookLogResolver) ExternalService(ctx context.Context) (*externalServ
 		return nil, nil
 	}
 
-	return externalServiceByID(ctx, r.db, marshalExternalServiceID(*r.log.ExternalServiceID))
+	return externalServiceByID(ctx, r.db, MarshalExternalServiceID(*r.log.ExternalServiceID))
 }
 
 func (r *webhookLogResolver) StatusCode() int32 {

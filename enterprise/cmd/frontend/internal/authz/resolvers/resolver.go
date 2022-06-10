@@ -284,13 +284,23 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 		return nil, err
 	}
 
-	_, err := graphqlbackend.UnmarshalExternalServiceID(args.CodeHost)
+	codeHostID, err := graphqlbackend.UnmarshalExternalServiceID(args.CodeHost)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: Returns an empty response for now. This API is a stub and will create a background
-	// worker job to schedule a permissions sync for the given project key under the given codehost.
+	unrestricted := false
+	if args.Unrestricted != nil {
+		unrestricted = *args.Unrestricted
+	}
+
+	jobID, err := r.db.BitbucketProjectPermissions().Enqueue(ctx, args.ProjectKey, codeHostID, args.UserPermissions, unrestricted)
+	if err != nil {
+		return nil, err
+	}
+
+	log15.Debug("SetRepositoryPermissionsForBitbucketProject: job enqueued", "jobID", jobID)
+
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 

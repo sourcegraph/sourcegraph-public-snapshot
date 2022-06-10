@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -465,6 +466,63 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		if result != nil {
 			t.Errorf("result: want nil but got %v", result)
 		}
+	})
+
+	t.Run("job enqueued", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		bb := database.NewMockBitbucketProjectPermissionsStore()
+		bb.EnqueueFunc.SetDefaultReturn(1, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.BitbucketProjectPermissionsFunc.SetDefaultReturn(bb)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		t.Run("unrestricted not set", func(t *testing.T) {
+			result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx,
+				&graphqlbackend.RepoPermsBitbucketProjectArgs{
+					CodeHost: graphqlbackend.MarshalExternalServiceID(1),
+				},
+			)
+
+			assert.NoError(t, err)
+			require.NotNil(t, result)
+			require.Equal(t, &graphqlbackend.EmptyResponse{}, result)
+
+		})
+
+		t.Run("unrestricted set to false", func(t *testing.T) {
+			u := false
+			result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx,
+				&graphqlbackend.RepoPermsBitbucketProjectArgs{
+					CodeHost:     graphqlbackend.MarshalExternalServiceID(1),
+					Unrestricted: &u,
+				},
+			)
+
+			assert.NoError(t, err)
+			require.NotNil(t, result)
+			require.Equal(t, &graphqlbackend.EmptyResponse{}, result)
+		})
+
+		t.Run("unrestricted set to true", func(t *testing.T) {
+			u := true
+			result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx,
+				&graphqlbackend.RepoPermsBitbucketProjectArgs{
+					CodeHost:     graphqlbackend.MarshalExternalServiceID(1),
+					Unrestricted: &u,
+				},
+			)
+
+			assert.NoError(t, err)
+			require.NotNil(t, result)
+			require.Equal(t, &graphqlbackend.EmptyResponse{}, result)
+		})
 	})
 }
 
