@@ -44,6 +44,10 @@ func (s *bitbucketProjectPermissionsStore) Transact(ctx context.Context) (Bitbuc
 	return &bitbucketProjectPermissionsStore{Store: txBase}, err
 }
 
+func (s *bitbucketProjectPermissionsStore) Done(err error) error {
+	return s.Store.Done(err)
+}
+
 // Enqueue a job to apply permissions to a Bitbucket project.
 // The job will be enqueued to the BitbucketProjectPermissions worker.
 // If a non-empty permissions slice is passed, unrestricted has to be false, and vice versa.
