@@ -17,9 +17,10 @@ A query used in a "When new search results are detected" trigger must be a diff 
 ## Actions
 
 An _action_ is executed in response to a trigger event. Currently, code monitoring supports three different actions:
-- Sending a notification email to the owner of the code monitor
-- <span class="badge badge-beta">Beta</span> Sending a Slack message to a preconfigured channel
-- <span class="badge badge-beta">Beta</span> Sending a webhook event to an endpoint of your choosing
+
+* Sending a notification email to the owner of the code monitor
+* <span class="badge badge-beta">Beta</span> Sending a Slack message to a preconfigured channel
+* <span class="badge badge-beta">Beta</span> Sending a webhook event to an endpoint of your choosing
 
 ## Current flow
 
