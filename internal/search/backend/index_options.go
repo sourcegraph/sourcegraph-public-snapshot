@@ -88,7 +88,7 @@ type getRepoIndexOptsFn func(repoID int32) (*RepoIndexOptions, error)
 func GetIndexOptions(
 	c *schema.SiteConfiguration,
 	getRepoIndexOptions getRepoIndexOptsFn,
-	getSearchContextRevisions func(repoID int32) ([]string, error), slog log.Logger,
+	getSearchContextRevisions func(repoID int32) ([]string, error), log log.Logger,
 	repos ...int32,
 ) []byte {
 	// Limit concurrency to 32 to avoid too many active network requests and
@@ -96,7 +96,7 @@ func GetIndexOptions(
 	// future we want a more intelligent global limit based on scale.
 	sema := make(chan struct{}, 32)
 	results := make([][]byte, len(repos))
-	getSiteConfigRevisions := siteConfigRevisionsRuleFunc(c, slog)
+	getSiteConfigRevisions := siteConfigRevisionsRuleFunc(c, log)
 
 	for i := range repos {
 		sema <- struct{}{}

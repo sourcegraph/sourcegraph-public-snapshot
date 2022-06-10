@@ -159,7 +159,7 @@ type SearchJob struct {
 	ContainsRefGlobs bool
 
 	RepoOpts search.RepoOptions
-	slog.Logger
+	log      slog.Logger
 }
 
 func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -184,7 +184,7 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		if indexed != nil {
 			repoSet = append(repoSet, IndexedMap(indexed.RepoRevs))
 		}
-		return runStructuralSearch(ctx, clients, s.SearcherArgs, repoSet, stream, s.Logger)
+		return runStructuralSearch(ctx, clients, s.SearcherArgs, repoSet, stream, s.log)
 	})
 }
 

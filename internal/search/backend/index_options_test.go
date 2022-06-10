@@ -47,7 +47,7 @@ func TestGetIndexOptions(t *testing.T) {
 		searchContextRevs []string
 		repo              int32
 		want              zoektIndexOptions
-		log.Logger
+		log               log.Logger
 	}
 
 	cases := []caseT{{
@@ -260,7 +260,7 @@ func TestGetIndexOptions(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			getSearchContextRevisions := func(int32) ([]string, error) { return tc.searchContextRevs, nil }
 
-			b := GetIndexOptions(&tc.conf, getRepoIndexOptions, getSearchContextRevisions, tc.Logger, tc.repo)
+			b := GetIndexOptions(&tc.conf, getRepoIndexOptions, getSearchContextRevisions, tc.log, tc.repo)
 
 			var got zoektIndexOptions
 			if err := json.Unmarshal(b, &got); err != nil {
