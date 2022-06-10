@@ -80,7 +80,7 @@ func main() {
 	close(ready)
 	go debugserver.NewServerRoutine(ready).Start()
 
-	logger := log.Scoped("service", "the github-proxy service")
+	logger := log.Scoped("server", "the github-proxy service")
 
 	p := &githubProxy{
 		logger: logger,

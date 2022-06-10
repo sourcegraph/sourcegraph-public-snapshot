@@ -251,6 +251,8 @@ func shouldPersistEntry(e *ctags.Entry) bool {
 }
 
 func SpawnCtags(logger log.Logger, ctagsConfig types.CtagsConfig) (ctags.Parser, error) {
+	logger = logger.Scoped("ctags", "ctags processes")
+
 	options := ctags.Options{
 		Bin:                ctagsConfig.Command,
 		PatternLengthLimit: ctagsConfig.PatternLengthLimit,

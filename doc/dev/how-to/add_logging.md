@@ -12,7 +12,7 @@ The recommended logger at Sourcegraph is [`github.com/sourcegraph/log`](https://
 2. An initialization function to be called in `func main()`, `log.Init()`, that must be called.
    1. Log level can be configured with `SRC_LOG_LEVEL` (also see: [Logging: Log levels](../../admin/observability/logs.md#log-levels))
    2. Do not use this in an `init()` function - we want to explicitly avoid tying logger instances as a compile-time dependency.
-3. A getter to retrieve a `log.Logger` instance, [`log.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+log.Scoped+lang:go&patternType=literal)
+3. A getter to retrieve a `log.Logger` instance, [`log.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+log.Scoped+lang:go&patternType=literal), and [`(Logger).Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logger.Scoped+lang:go&patternType=literal) for [creating sub-loggers](#sub-loggers).
 4. [Testing utilities](#testing-usage)
 
 Logging is also available via the all-in-one `internal/observation` package: [How to add observability](add_observability.md)
@@ -21,15 +21,18 @@ Logging is also available via the all-in-one `internal/observation` package: [Ho
 
 ## Core concepts
 
-1. `lib/log` intentionally does not export directly usable log functions. Users should hold their own references to loggers, so that fields can be attached and log output can be more useful with additional context, and pass `Logger` instances to components as required.
-   1. Do not call `log.Scoped` wherever you need to log - consider passing a `Logger` around explicitly.
+1. `github.com/sourcegraph/log` intentionally does not export directly usable (global) log functions. Users should hold their own references to `Logger` instances, so that fields can be attached and log output can be more useful with additional context, and pass `Logger`s to components as required.
+   1. Do not call the package-level `log.Scoped` wherever you need to log - consider passing a `Logger` around explicitly, and [creating sub-scoped loggers using `(Logger).Scoped()`](#scoped-loggers).
    2. [Do not add `Logger` to `context.Context`](https://dave.cheney.net/2017/01/26/context-is-for-cancelation).
    3. [Do not create package-level logger instances](https://dave.cheney.net/2017/01/23/the-package-level-logger-anti-pattern).
-2. `lib/log` should export everything that is required for logging - do not directly import a third-party logging package such as `zap`, `log15`, or `log`.
+2. `github.com/sourcegraph/log` should export everything that is required for logging - do not directly import a third-party logging package such as `zap`, `log15`, or the standard `log` library.
 
 ## Handling loggers
 
-Initialize `github.com/sourcegraph/log` package within your program's `main()` function, for example:
+Before creating loggers, you must initialize `github.com/sourcegraph/log` package within your program's `main()` function.
+Initialization includes metadata about your service, as well as log sinks to tee log entries to additional destinations.
+
+For example, a typical initialization process looks like this:
 
 ```go
 import (
@@ -46,150 +49,191 @@ func main() {
   // you should make sure to call before application exit (namely via `defer`)
   //
   // Repeated calls to `log.Init` will panic. Make sure to call this exactly once in `main`!
-  syncLogs := sglog.Init(sglog.Resource{
+  liblog := sglog.Init(sglog.Resource{
     Name:       env.MyName,
     Version:    version.Version(),
     InstanceID: hostname.Get(),
-  })
-  defer syncLogs()
+  }, log.NewSentrySink())
+  defer liblog.Sync()
 
-  service.Start(/* ... */)
+  // Now we register a hook to update log sinks.
+  //
+  // Note that the call to conf.Watch must be run in a goroutine, because the initial call
+  // is blocking if a connection cannot be established.
+  conf.Init()
+  go conf.Watch(liblog.Update(conf.GetLogSinks))
 }
 ```
+
+Once initialized, you can use `log.Scoped()` to create some top-level loggers to propagate, from which you can:
+
+- [create sub-loggers](#sub-loggers)
+- [write log entries](#writing-log-messages)
+
+The first top-level scoped logger is typically `"server"`, since most logging is related to server initialization and service-level logging - the name of the service itself is already logged as part of the [`Resource` field](https://opentelemetry.io/docs/reference/specification/logs/data-model/#field-resource) provided during initialization.
+
+Background jobs, etc. can have additional top-level loggers created that better describe each components.
+
+### Basic conventions
+
+- The logger parameter should either be immediately after `ctx context.Context`, or be the first parameter.
+- In some cases there might already be a `log` module imported. Use the alias `sglog` to refer to `github.com/sourcegraph/log`, for example `import sglog "github.com/sourcegraph/log"`.
 
 ### Sub-loggers
 
-In a particular scope some fields might be repeatedly emitted. Consider creating a sub-logger in the scope by using `logger.With(...fields)`.
-
-```go
-func (s *Service) MyService(ctx context.Context, logger log.Logger) {
-    subLogger := logger.With(log.Int("id", s.ID), log.String("service", s.Name))
-
-    subLogger.Info("starting up")
-
-    if err := s.Start(); err != nil {
-        subLogger.Error(err)
-    }
-
-    subLogger.Info("done")
-}
-```
-
-### Attaching context
-
 When your service starts logging, obtain a `log.Logger` instance, attach some relevant context, and start propagating your logger for use.
-Attached context from `logger.With` and `logger.WithTrace` will be present on all log entries logged by `logger`.
-This allows you to easily trace, for example, the execution of an event or a particular execution type by looking for shared log fields.
-For example:
+From a parent logger, you can create sub-loggers that have additional context attached to them using functions on the `log.Logger` instance that returns a new `log.Logger` instance:
+
+1. [Scoped loggers](#scoped-loggers)
+2. [Fields sub-loggers](#fields-sub-loggers)
+3. [Traced sub-loggers](#traced-sub-loggers)
+
+All the above mechanisms attach metadata to *all* log entries created by the sub-logger, and they do not modify the parent logger.
+Using sub-loggers allows you to easily trace, for example, the execution of an event or a particular execution type by looking for shared log fields.
+
+#### Scoped loggers
+
+Scopes are used to identify the component of a system a log message comes from, and generally should provide enough information for an uninitiated reader (such as a new teammate, or a Sourcegraph administrator) to get a rough idea the context in which a log message might have occured.
+
+There are several ways to create scoped loggers:
+
+- a top-level scoped logger, from the package-level `log.Scoped()` function, is used mostly in a `main()`-type function or in places where no logger has been propagated.
+- a scoped sub-logger, which can be created from an existing logger with `(Logger).Scoped()`. The sub-scope is appended onto the parent scope with a `.` separator.
+
+In general:
+
+- From the caller, only add a scope if, as a caller, you care that the log output enough to want to differentiate it
+  - For example, if you create multiple clients for a service, you will probably want to create a separate scoped logger for each
+- From the callee, add a scope if you will be logging output that should be meaningfully differentiated (e.g. inside a client, or inside a significant helper function)
+
+Scope names should be `CamelCase` or `camelCase`, and the scope description should follow [the same conventions as a log message](#writing-log-messages).
 
 ```go
-import "github.com/sourcegraph/log"
-
-func newWorker(/* ... */) *Worker {
-  logger := log.Scoped("worker", "the worker process handles ...").
-    WithTrace(/* ... */).
-    With(log.String("name", options.Name))
-  // ...
-  return &Worker{
-    logger: logger,
-
-    /* ... */
-  }
+func NewClient() *Client {
+  return &Client{logger: log.Scoped("Client", "client for a certain thing")}
 }
 
-func (w *Worker) DoSomething(params ...int) {
-  _, err := doTheThing()
-  if err != nil {
-    w.logger.Warn("Failed to do the thing",
-      log.Ints("params", params),
-      log.Error(err))
-    /**
-      {
-        "InstrumentationScope": "worker",
-        "TraceID": "...",
-        "Attributes": { "name": "...", "params": [...], "error": "..." },
-      }
-     */
-  } else {
-    w.logger.Info("thing happened successfully")
-    /**
-      {
-        "InstrumentationScope": "worker",
-        "TraceID": "...",
-        "Attributes": { "name": "..." },
-      }
-     */
-  }
+func (p *Client) Request(logger log.Logger) {
+  requestLog := p.logger.Scoped("Request", "executes a request") // creates scope "Public.Process"
+
+  requestLog.Info("starting tasks")
+  // ... things ...
+
+  requestLog.Debug("mid checkpoint")
+
+  helperFunc(requestLog)
+
+  // ... things ...
+  requestLog.Info("finalizing some things!")
+}
+
+func helperFunc(logger log.Logger) {
+  // This is a small helper function, so no need to create another scope
+  logger.Info("I'm helping!")
 }
 ```
 
-If you are kicking off a long-running process, you can spawn a child logger and use it directly to maintain relevant context:
+#### Fields sub-loggers
+
+In a particular scope, some fields might be repeatedly emitted - most commonly, you might want to associate a set of log entries to an ID of some sort (user ID, iteration ID, etc). In these scenarios you should create a sub-logger with prepended fields by using `logger.With(...fields)`, and use it directly to maintain relevant context:
 
 ```go
-func (w *Worker) DoBigThing(ctx context.Context, params ...int) {
-  doLog := trace.Logger(ctx, w.logger).With("params", params)
+func (w *Worker) DoBigThing(ctx context.Context, id int) {
+  doLog := w.logger.Scoped(ctx).
+    With(log.Int("id", id))
 
   // subsequent entries will have trace and params attached
   doLog.Info("starting the big thing")
+  // {
+  //   "InstrumentationScope": "...",
+  //   "Message": "starting the big thing",
+  //   "Attributes": { "id": 1 },
+  // }
 
   // pass the logger to maintain context across function boundaries
   doSubTask(doLog, /*... */)
 }
 ```
 
-## Writing log messages
+### Traced sub-loggers
 
-The message in a log line should be in lowercase.
+Traced loggers are loggers with trace context (trace and span IDs) attached to them. These loggers can be created in several ways:
 
-```
-log.Info("this is my lowercase log line")
-log.Debug("this is a debug log line")
-log.Error("this is an error!")
-```
+1. [`internal/trace.Logger(ctx, logger)`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/internal/trace) creates a sub-logger with trace context from `context.Context`
+2. [`(internal/observation.Operation).With`](add_observability.md) creates a sub-logger with trace context and fields from the operation
+3. `(Logger).WithTrace(...)` creates a sub-logger with explicitly provided trace context
 
-If each word of log message is not a sentence and referring to a func/component ex. `logger.Error("component.update"` prefer to follow the go scoping standard ie. capatalize if it is public accessible, lowercase if it is private.
-
-Furthermore, if there are more than one line that uses this naming scheme (referring to a func/component) consider creating a [sub-logger](#sub-loggers) with the component name.
+For example:
 
 ```go
-func (c *component) update(logger log.Logger) {
-    logger.Error("component.update")
+import (
+  "github.com/sourcegraph/log"
+
+  "github.com/sourcegraph/sourcegraph/internal/trace"
+)
+
+func (w *Worker) DoBigThing(ctx context.Context, id int) {
+  // ...
+
+  // start a trace in the context
+  tr, ctx := trace.New(ctx, /* ... */)
+  logger := trace.Logger(ctx, w.logger)
+  doSubTask(logger, /*... */)
 }
 
-
-func (p *Public) private(logger log.Logger) {
-    logger.Info("Public.private")
-}
-
-func (p *Public) Action(logger log.Logger) {
-    logger.Info("Public.Action")
-}
-
-func (p *Public) Process(logger log.Logger) {
-    pLog := logger.Scoped("Public.Process")
-
-    pLog.Info("starting tasks")
-    // ... things ...
-
-    pLog.Debug("mid checkpoint")
-
-    // ... things ...
-    p.Log.Info("finalizing some things!")
+func doSubTask(logger log.Logger) {
+  logger.Info("a message")
+  // {
+  //   "InstrumentationScope": "...",
+  //   "TraceID": "...",
+  //   "Message": "a message",
+  // }
 }
 ```
+
+## Writing log messages
+
+The message in a log line should generally be in lowercase, and should generally not have ending punctuation.
+
+```go
+log.Info("this is my lowercase log line")
+log.Error("this is an error")
+```
+
+If writing log messages that, for example, indicate the results of a function, simply use the Go conventions for naming (i.e. just copy the function name).
+
+If multiple log lines have similar components (such as a message prefix, or the same log fields) prefer to [create a sub-logger](#sub-loggers) instead. For example:
+
+- instead of repeating a message prefix to e.g. indicate a component, [create a scoped sub-logger](#scoped-loggers) instead
+- instead of adding the same field to multiple log calls, [create a fields sub-logger](#fields-sub-loggers) instead
+
+### Log levels
+
+Guidance on when to use each log level is available on the docstrings of each respective logging function on `Logger`:
+
+<div class="embed">
+  <iframe src="https://sourcegraph.com/embed/notebooks/Tm90ZWJvb2s6MTE3Nw=="
+    style="width:100%;height:520px" frameborder="0" sandbox="allow-scripts allow-same-origin allow-popups">
+  </iframe>
+</div>
+
+## Production usage
+
+See [observability: logs](../../admin/observability/logs.md) in the administration docs.
 
 ## Development usage
 
 With `SRC_DEVELOPMENT=true` and `SRC_LOG_FORMAT=condensed` or `SRC_LOG_FORMAT=console`, loggers will generate a human-readable summary format like the following:
 
 ```none
-DEBUG   TestInitLogger  log/logger_test.go:15   a debug message {"Attributes": {}}
-INFO    TestInitLogger  log/logger_test.go:18   hello world     {"Attributes": {"some": "field", "hello": "world"}}
-INFO    TestInitLogger  log/logger_test.go:21   goodbye {"TraceId": "asdf", "Attributes": {"some": "field", "world": "hello"}}
-WARN    TestInitLogger  log/logger_test.go:22   another message {"TraceId": "asdf", "Attributes": {"some": "field"}}
+DEBUG TestLogger log/logger_test.go:22 a debug message
+INFO TestLogger log/logger_test.go:26 hello world {"some": "field", "hello": "world"}
+INFO TestLogger log/logger_test.go:29 goodbye {"TraceId": "1234abcde", "some": "field", "world": "hello"}
+WARN TestLogger log/logger_test.go:30 another message {"TraceId": "1234abcde", "some": "field"}
+ERROR TestLogger log/logger_test.go:32 object of fields {"TraceId": "1234abcde", "some": "field", "object": {"field1": "value", "field2": "value"}}
 ```
 
-This format omits fields like OpenTelemetry Resource and renders certain field types in a more friendly manner. Levels are also coloured, and the caller link with `filename:line` should be clickable in iTerm and VS Code such that you can jump straight to the source of the log entry.
+This format omits fields like OpenTelemetry `Resource` and renders certain field types in a more friendly manner. Levels are also coloured, and the caller link with `filename:line` should be clickable in iTerm and VS Code such that you can jump straight to the source of the log entry.
 
 Additionally, in `SRC_DEVELOPMENT=true` using `log.Scoped` without calling `log.Init` will panic (in production, a no-op logger will be returned).
 
@@ -197,8 +241,8 @@ Additionally, in `SRC_DEVELOPMENT=true` using `log.Scoped` without calling `log.
 
 For testing purposes, we also provide:
 
-1. An optional initialization function to be called in `func TestMain(*testing.M)`, [`logtest.Init`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/log%24+logtest.Init+lang:go&patternType=literal)
-2. A getter to retrieve a `log.Logger` instance and a callback to programmatically iterate log output, [`logtest.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/log%24+logtest.Scoped+lang:go&patternType=literal)
+1. An optional initialization function to be called in `func TestMain(*testing.M)`, [`logtest.Init`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Init+lang:go&patternType=literal)
+2. A getter to retrieve a `log.Logger` instance and a callback to programmatically iterate log output, [`logtest.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Scoped+lang:go&patternType=literal)
    1. The standard `log.Scoped` will also work after `logtest.Init`
    2. Programatically iterable logs are available from the `logtest.Captured` logger instance
 
@@ -243,8 +287,4 @@ func TestFooBar(t *testing.T) {
 
 When writing a test, ensure that `logtest.Scope` in the tightest scope possible. This ensures that if a test fails, that the logging is closely tied to the test that failed. Especially if you testcase has sub tests with `t.Run`, prefer to created the test logger inside `t.Run`.
 
-## Conventions
-
-* The first scope of the logger should be the name of the service and following the same naming of the service. In general, if the logger is initialized as described in [handling logging](#handling-logging) the name should be correct.
-* The logger parameter should either be immediately after `ctx context.Context`, or be the first parameter.
-* In some cases there might already be a `log` module imported. Use the alias `sglog` to refer to `github.com/sourcegraph/log`, for example `import sglog "github.com/sourcegraph/log"`.
+If you can provide a `Logger` instance, `logtest.NoOp()` can be used to silence output. Levels can also be adjusted using `(Logger).IncreaseLevel`.

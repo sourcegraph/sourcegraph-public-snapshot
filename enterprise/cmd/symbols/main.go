@@ -3,11 +3,10 @@ package main
 import (
 	"context"
 	"database/sql"
-	"log"
 	"net/http"
 	"strings"
 
-	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
@@ -64,15 +63,17 @@ func main() {
 }
 
 func SetupRockskip(observationContext *observation.Context, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
+	logger := log.Scoped("rockskip", "rockskip-based symbols")
+
 	baseConfig := env.BaseConfig{}
 	config := LoadRockskipConfig(baseConfig)
 	if err := baseConfig.Validate(); err != nil {
-		log.Fatalf("Failed to load configuration: %s", err)
+		logger.Fatal("failed to load configuration", log.Error(err))
 	}
 
-	db := mustInitializeCodeIntelDB()
+	db := mustInitializeCodeIntelDB(logger)
 	git := NewGitserver(repositoryFetcher)
-	createParser := func() (rockskip.ParseSymbolsFunc, error) { return createParserWithConfig(config.Ctags) }
+	createParser := func() (rockskip.ParseSymbolsFunc, error) { return createParserWithConfig(logger, config.Ctags) }
 	server, err := rockskip.NewService(db, git, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize)
 	if err != nil {
 		return nil, nil, nil, config.Ctags.Command, err
@@ -105,8 +106,10 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 	}
 }
 
-func createParserWithConfig(config types.CtagsConfig) (rockskip.ParseSymbolsFunc, error) {
-	parser, err := symbolsParser.SpawnCtags(sglog.Scoped("ctags", "ctags processes"), config)
+func createParserWithConfig(log log.Logger, config types.CtagsConfig) (rockskip.ParseSymbolsFunc, error) {
+	logger := log.Scoped("parser", "ctags parser")
+
+	parser, err := symbolsParser.SpawnCtags(logger, config)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +134,7 @@ func createParserWithConfig(config types.CtagsConfig) (rockskip.ParseSymbolsFunc
 	}, nil
 }
 
-func mustInitializeCodeIntelDB() *sql.DB {
+func mustInitializeCodeIntelDB(logger log.Logger) *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
@@ -141,7 +144,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 	)
 	db, err = connections.EnsureNewCodeIntelDB(dsn, "symbols", &observation.TestContext)
 	if err != nil {
-		log.Fatalf("Failed to connect to codeintel database: %s", err)
+		logger.Fatal("failed to connect to codeintel database", log.Error(err))
 	}
 
 	return db

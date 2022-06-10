@@ -109,10 +109,11 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, resource, &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V3Client{
-		log: logger.With(
-			log.String("urn", urn),
-			log.String("resource", resource),
-		),
+		log: logger.Scoped("github.v3", "github v3 client").
+			With(
+				log.String("urn", urn),
+				log.String("resource", resource),
+			),
 		urn:              urn,
 		apiURL:           apiURL,
 		githubDotCom:     urlIsGitHubDotCom(apiURL),
