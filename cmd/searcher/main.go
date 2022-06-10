@@ -130,8 +130,9 @@ func run(logger log.Logger) error {
 		return errors.Wrap(err, "failed to setup TMPDIR")
 	}
 
-	observationContext := &observation.Context{
-		Logger:     logger,
+	storeObservationContext := &observation.Context{
+		// Explicitly don't scope Store logger under the parent logger
+		Logger:     log.Scoped("Store", "searcher archives store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -164,8 +165,8 @@ func run(logger log.Logger) error {
 			FilterTar:          search.NewFilter,
 			Path:               filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes:  cacheSizeBytes,
-			Log:                logger.Scoped("store", "searcher archives store"),
-			ObservationContext: observationContext,
+			Log:                storeObservationContext.Logger,
+			ObservationContext: storeObservationContext,
 			DB:                 db,
 		},
 		GitOutput: func(ctx context.Context, repo api.RepoName, args ...string) ([]byte, error) {
