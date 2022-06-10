@@ -181,7 +181,7 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record work
 	}
 
 	query := q.QueryString
-	if !featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+	if !featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
 		// Only add an after filter when repo-aware monitors is disabled
 		query = newQueryWithAfterFilter(q)
 	}
