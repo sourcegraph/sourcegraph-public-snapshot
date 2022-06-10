@@ -126,7 +126,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         HighlightManager highlightManager = HighlightManager.getInstance(project);
         for (int[] offsetAndLength : absoluteOffsetAndLengths) {
             if (firstOffset == -1) {
-                firstOffset = offsetAndLength[0];
+                firstOffset = offsetAndLength[0] + offsetAndLength[1];
             }
 
             highlightManager.addOccurrenceHighlight(editor, offsetAndLength[0], offsetAndLength[0] + offsetAndLength[1], EditorColors.TEXT_SEARCH_RESULT_ATTRIBUTES, 0, null);
