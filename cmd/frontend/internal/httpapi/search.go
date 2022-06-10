@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/google/zoekt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -19,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -74,6 +77,8 @@ type searchIndexerServer struct {
 	// MinLastChangedDisabled is a feature flag for disabling more efficient
 	// polling by zoekt. This can be removed after v3.34 is cut (Dec 2021).
 	MinLastChangedDisabled bool
+
+	log log.Logger
 }
 
 // serveConfiguration is _only_ used by the zoekt index server. Zoekt does
@@ -201,6 +206,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		&siteConfig,
 		getRepoIndexOptions,
 		getSearchContextRevisions,
+		h.log,
 		repoIDs...,
 	)
 	_, _ = w.Write(b)
