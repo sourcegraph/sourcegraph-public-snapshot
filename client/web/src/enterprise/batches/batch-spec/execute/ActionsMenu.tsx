@@ -131,7 +131,7 @@ const MemoizedActionsMenu: React.FunctionComponent<
                             <Icon aria-hidden={true} as={CloseIcon} className={styles.cancelIcon} /> Cancel execution...
                         </MenuItem>
                     )}
-                    {state !== BatchSpecState.COMPLETED && batchSpec.viewerCanRetry && (
+                    {state === BatchSpecState.FAILED && batchSpec.viewerCanRetry && (
                         <MenuItem onSelect={retryBatchSpecExecution} disabled={isRetryLoading}>
                             <Icon aria-hidden={true} as={SyncIcon} /> Retry failed workspaces
                         </MenuItem>

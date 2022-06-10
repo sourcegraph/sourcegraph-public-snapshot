@@ -39,6 +39,7 @@ import {
     H3,
     H4,
     Text,
+    Alert,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../../components/Collapsible'
@@ -236,7 +237,10 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
                 toggleShowTimeline={toggleShowTimeline}
                 workspace={workspace}
             />
-            {workspace.failureMessage && (
+            {workspace.state === BatchSpecWorkspaceState.CANCELED && (
+                <Alert variant="warning">Execution of this workspace has been canceled.</Alert>
+            )}
+            {workspace.state === BatchSpecWorkspaceState.FAILED && workspace.failureMessage && (
                 <>
                     <div className="d-flex my-3 w-100">
                         <ErrorAlert error={workspace.failureMessage} className="flex-grow-1 mb-0" />
@@ -306,7 +310,7 @@ const IgnoredWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<I
             This workspace has been skipped because a <Code>.batchignore</Code> file is present in the workspace
             repository.
         </Text>
-        <Text alignment="center">Enable the execution option to "allow ignored" to override.</Text>
+        <Text alignment="center">Enable the execution option ignored" to override.</Text>
     </>
 )
 
@@ -324,7 +328,7 @@ const UnsupportedWorkspaceDetails: React.FunctionComponent<
             <VisuallyHidden>Unsupported Workspace</VisuallyHidden>
         </H1>
         <Text alignment="center">This workspace has been skipped because it is from an unsupported codehost.</Text>
-        <Text alignment="center">Enable the execution option to "allow unsupported" to override.</Text>
+        <Text alignment="center">Enable the execution option "allow unsupported" to override.</Text>
     </>
 )
 
