@@ -33,7 +33,7 @@ func NewInsightStoreWith(other basestore.ShareableStore) *InsightStore {
 
 // Handle returns the underlying transactable database handle.
 // Needed to implement the ShareableStore interface.
-func (s *InsightStore) Handle() *basestore.TransactableHandle { return s.Store.Handle() }
+func (s *InsightStore) Handle() *basestore.OldTransactableHandle { return s.Store.Handle() }
 
 // With creates a new InsightStore with the given basestore.Shareable store as the underlying basestore.Store.
 // Needed to implement the basestore.Store interface

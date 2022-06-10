@@ -28,7 +28,7 @@ func NewDashboardStore(db edb.InsightsDB) *DBDashboardStore {
 
 // Handle returns the underlying transactable database handle.
 // Needed to implement the ShareableStore interface.
-func (s *DBDashboardStore) Handle() *basestore.TransactableHandle { return s.Store.Handle() }
+func (s *DBDashboardStore) Handle() *basestore.OldTransactableHandle { return s.Store.Handle() }
 
 // With creates a new DBDashboardStore with the given basestore. Shareable store as the underlying basestore.Store.
 // Needed to implement the basestore.Store interface

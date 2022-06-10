@@ -64,7 +64,7 @@ var _ basestore.ShareableStore = &Store{}
 
 // Handle returns the underlying transactable database handle.
 // Needed to implement the ShareableStore interface.
-func (s *Store) Handle() *basestore.TransactableHandle { return s.Store.Handle() }
+func (s *Store) Handle() *basestore.OldTransactableHandle { return s.Store.Handle() }
 
 // With creates a new Store with the given basestore.Shareable store as the
 // underlying basestore.Store.

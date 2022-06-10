@@ -32,7 +32,7 @@ func NewSettingsMigrationJobsStore(db database.DB) *DBSettingsMigrationJobsStore
 	return &DBSettingsMigrationJobsStore{Store: basestore.NewWithHandle(db.Handle()), Now: time.Now}
 }
 
-func (s *DBSettingsMigrationJobsStore) Handle() *basestore.TransactableHandle {
+func (s *DBSettingsMigrationJobsStore) Handle() *basestore.OldTransactableHandle {
 	return s.Store.Handle()
 }
 

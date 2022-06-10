@@ -40,7 +40,7 @@ import (
 //         return &SprocketStore{Store: txBase}, err
 //     }
 type Store struct {
-	handle *TransactableHandle
+	handle *OldTransactableHandle
 }
 
 // ShareableStore is implemented by stores to explicitly allow distinct store instances
@@ -48,18 +48,18 @@ type Store struct {
 // multiple stores. See `Store.With` for additional details.
 type ShareableStore interface {
 	// Handle returns the underlying transactable database handle.
-	Handle() *TransactableHandle
+	Handle() *OldTransactableHandle
 }
 
 var _ ShareableStore = &Store{}
 
 // NewWithHandle returns a new base store using the given database handle.
-func NewWithHandle(handle *TransactableHandle) *Store {
+func NewWithHandle(handle *OldTransactableHandle) *Store {
 	return &Store{handle: handle}
 }
 
 // Handle returns the underlying transactable database handle.
-func (s *Store) Handle() *TransactableHandle {
+func (s *Store) Handle() *OldTransactableHandle {
 	return s.handle
 }
 

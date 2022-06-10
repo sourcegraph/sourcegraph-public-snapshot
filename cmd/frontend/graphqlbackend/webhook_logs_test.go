@@ -139,7 +139,7 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 
 	// We also need a fake TransactableHandle to be able to construct
 	// webhookLogResolvers.
-	db := &basestore.TransactableHandle{}
+	db := &basestore.OldTransactableHandle{}
 
 	createMockStore := func(logs []*types.WebhookLog, next int64, err error) *database.MockWebhookLogStore {
 		store := database.NewMockWebhookLogStore()
