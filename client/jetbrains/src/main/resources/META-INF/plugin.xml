@@ -26,15 +26,14 @@
             id="sourcegraph.openFile"
             class="com.sourcegraph.website.OpenFile"
             text="Open Selection in Sourcegraph Web"
-            description="Open selection in Sourcegraph Web"
-            icon="/icons/icon.png">
+            description="Open selection in Sourcegraph Web">
             <keyboard-shortcut first-keystroke="alt shift a" keymap="$default"/>
         </action>
         <action
             id="sourcegraph.searchSelection"
             class="com.sourcegraph.website.SearchSelection"
             text="Search Selection on Sourcegraph Web"
-            description="Search selection on Sourcegraph Web"
+            description="Search Selection on Sourcegraph Web"
             icon="/icons/icon.png">
             <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
         </action>
@@ -56,7 +55,6 @@
         </action>
         <action
             id="com.sourcegraph.website.OpenRevisionAction"
-            icon="/icons/icon.png"
             class="com.sourcegraph.website.OpenRevisionAction"
             text="Open Revision Diff in Sourcegraph Web">
             <add-to-group group-id="VcsHistoryActionsGroup" anchor="last"/>
