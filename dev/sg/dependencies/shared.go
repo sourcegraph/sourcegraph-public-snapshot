@@ -64,18 +64,18 @@ https://docs.github.com/en/authentication/connecting-to-github-with-ssh`,
 			{
 				Name: "github.com/sourcegraph/dev-private",
 				Description: `In order to run the local development environment as a Sourcegraph teammate,
-	you'll need to clone another repository: github.com/sourcegraph/dev-private.
+you'll need to clone another repository: github.com/sourcegraph/dev-private.
 
-	It contains convenient preconfigured settings and code host connections.
+It contains convenient preconfigured settings and code host connections.
 
-	It needs to be cloned into the same folder as sourcegraph/sourcegraph,
-	so they sit alongside each other, like this:
+It needs to be cloned into the same folder as sourcegraph/sourcegraph,
+so they sit alongside each other, like this:
 
-	/dir
-	|-- dev-private
-	+-- sourcegraph
+    /dir
+    |-- dev-private
+    +-- sourcegraph
 
-	NOTE: You can ignore this if you're not a Sourcegraph teammate.`,
+NOTE: You can ignore this if you're not a Sourcegraph teammate.`,
 				Enabled: enableForTeammatesOnly(),
 				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
 					ok, err := pathExists("dev-private")

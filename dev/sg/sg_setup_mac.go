@@ -83,9 +83,9 @@ It contains convenient preconfigured settings and code host connections.
 It needs to be cloned into the same folder as sourcegraph/sourcegraph,
 so they sit alongside each other, like this:
 
-   /dir
-   |-- dev-private
-   +-- sourcegraph
+    /dir
+    |-- dev-private
+    +-- sourcegraph
 
 NOTE: You can ignore this if you're not a Sourcegraph teammate.
 `,
