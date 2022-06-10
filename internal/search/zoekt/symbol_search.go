@@ -90,7 +90,7 @@ func (s *GlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClie
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 
 	// always search for symbols in indexed repositories when searching the repo universe.
-	err = DoZoektSearchGlobal(ctx, clients.Zoekt, s.ZoektArgs, stream)
+	err = DoZoektSearchGlobal(ctx, clients.Zoekt, s.ZoektArgs, stream, s.log)
 	if err != nil {
 		tr.LogFields(log.Error(err))
 		// Only record error if we haven't timed out.

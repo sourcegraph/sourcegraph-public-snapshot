@@ -39,7 +39,7 @@ type IndexedRepoRevs struct {
 	// branchRepos is used to construct a zoektquery.BranchesRepos to efficiently
 	// marshal and send to zoekt
 	branchRepos map[string]*zoektquery.BranchRepos
-	slog.Logger
+	log         slog.Logger
 }
 
 // add will add reporev and repo to the list of repository and branches to
@@ -214,7 +214,7 @@ func PartitionRepos(
 				return nil, nil, errors.New("index:only failed since indexed search is not available yet")
 			}
 
-			indexed.Warn("zoektIndexedRepos failed", slog.Error(err))
+			indexed.log.Warn("zoektIndexedRepos failed", slog.Error(err))
 		}
 
 		return nil, repos, ctx.Err()
@@ -238,9 +238,9 @@ func PartitionRepos(
 	return indexed, unindexed, nil
 }
 
-func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *search.ZoektParameters, c streaming.Sender) error {
+func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *search.ZoektParameters, c streaming.Sender, log slog.Logger) error {
 	k := ResultCountFactor(0, args.FileMatchLimit, true)
-	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit, args.Select)
+	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit, args.Select, log)
 
 	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -287,7 +287,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
 
 	k := ResultCountFactor(len(repos.RepoRevs), fileMatchLimit, false)
-	searchOpts := SearchOpts(ctx, k, fileMatchLimit, selector)
+	searchOpts := SearchOpts(ctx, k, fileMatchLimit, selector, repos.log)
 
 	// Start event stream.
 	t0 := time.Now()
@@ -596,7 +596,7 @@ func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClient
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 
-	return nil, DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektArgs, stream)
+	return nil, DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektArgs, stream, t.log)
 }
 
 func (*GlobalTextSearchJob) Name() string {

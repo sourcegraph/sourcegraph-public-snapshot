@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
