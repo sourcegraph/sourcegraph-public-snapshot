@@ -137,7 +137,7 @@ func addDocs(pipeline *bk.Pipeline) {
 //	pipeline.AddStep(":lock: Checkov Terraform scanning",
 //		bk.Cmd("dev/ci/ci-checkov.sh"),
 //		bk.SoftFail(222))
-//}
+// }
 
 // Adds the static check test step.
 func addCheck(pipeline *bk.Pipeline) {
@@ -181,9 +181,9 @@ func addTypescriptCheck(pipeline *bk.Pipeline) {
 
 // Adds client linters to check all files.
 func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":eslint: ESLint (all)",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh lint:js:all"))
+	// pipeline.AddStep(":eslint: ESLint (all)",
+	// 	withYarnCache(),
+	// 	bk.Cmd("dev/ci/yarn-run.sh lint:js:all"))
 
 	pipeline.AddStep(":stylelint: Stylelint (all)",
 		withYarnCache(),
@@ -192,9 +192,9 @@ func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
 
 // Adds client linters to check changed in PR files.
 func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":eslint: ESLint (changed)",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh lint:js:changed"))
+	// pipeline.AddStep(":eslint: ESLint (changed)",
+	// 	withYarnCache(),
+	// 	bk.Cmd("dev/ci/yarn-run.sh lint:js:changed"))
 
 	pipeline.AddStep(":stylelint: Stylelint (changed)",
 		withYarnCache(),
