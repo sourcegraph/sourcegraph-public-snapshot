@@ -6,6 +6,7 @@ import {
     parse,
     ParseError,
     format as jsoncFormat,
+    printParseErrorCode,
 } from 'jsonc-parser'
 
 import { asError, createAggregateError, ErrorLike } from '../errors'
@@ -35,7 +36,9 @@ function parseJSON(input: string): any {
             errors.map(error => ({
                 ...error,
                 code: error.error,
-                message: `parse error (code: ${error.error}, offset: ${error.offset}, length: ${error.length})`,
+                message: `parse error (code: ${error.error}, error: ${printParseErrorCode(error.error)}, offset: ${
+                    error.offset
+                }, length: ${error.length})`,
             }))
         )
     }
