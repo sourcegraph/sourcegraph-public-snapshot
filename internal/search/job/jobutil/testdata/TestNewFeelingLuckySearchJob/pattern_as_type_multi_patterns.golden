@@ -1,0 +1,24 @@
+{
+  "OR": [
+    {
+      "GeneratedSearchJob": {
+        "Child": {},
+        "ProposedQuery": {
+          "Description": "apply search type for pattern",
+          "Query": "context:global type:commit code monitor",
+          "PatternType": 1
+        }
+      }
+    },
+    {
+      "GeneratedSearchJob": {
+        "Child": {},
+        "ProposedQuery": {
+          "Description": "AND patterns together",
+          "Query": "context:global (code AND monitor AND commit)",
+          "PatternType": 1
+        }
+      }
+    }
+  ]
+}
