@@ -39,7 +39,7 @@ import { toHover } from '@sourcegraph/shared/src/search/query/hover'
 import { createCancelableFetchSuggestions } from '@sourcegraph/shared/src/search/query/providers'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
@@ -68,6 +68,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     onChange,
     onSubmit,
     autoFocus,
+    onFocus,
     onBlur,
     isSourcegraphDotCom,
     globbing,
@@ -80,6 +81,15 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     placeholder,
     editorOptions,
     ariaLabel = 'Search query',
+    // Used by the VSCode extension (which doesn't use this component directly,
+    // but added for future compatibility)
+    fetchStreamSuggestions = defaultFetchStreamSuggestions,
+    onCompletionItemSelected,
+    onSuggestionsInitialized,
+    // Not supported:
+    // editorClassName: This only seems to be used by MonacoField to position
+    // placeholder text properly. CodeMirror has built-in support for
+    // placeholders.
 }) => {
     const value = preventNewLine ? queryState.query.replace(replacePattern, '') : queryState.query
     // We use both, state and a ref, for the editor instance because we need to
@@ -96,6 +106,9 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
             setEditor(editor)
             editorReference.current = editor
             onEditorCreated?.(editor)
+            onSuggestionsInitialized?.({
+                trigger: () => startCompletion(editor),
+            })
         },
         [editorReference, onEditorCreated]
     )
@@ -111,7 +124,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                     isSourcegraphDotCom,
                 })
             ),
-        [selectedSearchContextSpec, globbing, isSourcegraphDotCom]
+        [selectedSearchContextSpec, globbing, isSourcegraphDotCom, fetchStreamSuggestions]
     )
 
     const extensions = useMemo(() => {
@@ -126,8 +139,20 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                         changeSource: QueryChangeSource.userInput,
                     })
                 }
-                if (onBlur && update.focusChanged && !update.view.hasFocus) {
-                    onBlur()
+                if (update.focusChanged) {
+                    if (onFocus && update.view.hasFocus) {
+                        onFocus()
+                    }
+                    if (onBlur && !update.view.hasFocus) {
+                        onBlur()
+                    }
+                }
+                // See https://codemirror.net/docs/ref/#state.Transaction^userEvent
+                if (
+                    onCompletionItemSelected &&
+                    update.transactions.some(transaction => transaction.isUserEvent('input.complete'))
+                ) {
+                    onCompletionItemSelected()
                 }
             }),
             autocompletion,
@@ -159,9 +184,11 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     }, [
         ariaLabel,
         autocompletion,
+        onFocus,
         onBlur,
         onChange,
         onHandleFuzzyFinder,
+        onCompletionItemSelected,
         hasSubmitHandler,
         placeholder,
         preventNewLine,
