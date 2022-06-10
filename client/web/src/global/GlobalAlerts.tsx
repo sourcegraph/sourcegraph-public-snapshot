@@ -44,7 +44,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({
             return
         }
         return {
-            emails: authenticatedUser?.emails.filter(({ verified }) => !verified).map(({ email }) => email),
+            emails: authenticatedUser.emails.filter(({ verified }) => !verified).map(({ email }) => email),
             settingsURL: authenticatedUser.settingsURL as string,
         }
     }, [authenticatedUser, isSourcegraphDotCom])
