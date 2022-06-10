@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -40,6 +39,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/instrumented"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -107,10 +108,14 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
-func InitDB() (*sql.DB, error) {
-	sqlDB, err := connections.EnsureNewFrontendDB("", "frontend", &observation.TestContext)
+func InitDB() (sqlDB dbutil.DB, err error) {
+	sqlDB, err = connections.EnsureNewFrontendDB("", "frontend", &observation.TestContext)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
+	}
+
+	if os.Getenv("SRC_DEVELOPMENT") == "true" {
+		sqlDB = instrumented.NewInstrumentedDB(sqlDB)
 	}
 
 	if err := backend.UpdateServiceVersion(context.Background(), database.NewDB(sqlDB), "frontend", version.Version()); err != nil {

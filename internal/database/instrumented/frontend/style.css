@@ -1,0 +1,52 @@
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+#queries {
+    display: grid;
+    grid-template-columns: 1em 8em 1em 1em 1fr;
+    width: 100vw;
+    padding: 0.5em;
+    box-sizing: border-box;
+}
+
+.chevron {
+    grid-column: 1 / 2;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+}
+
+.time {
+    grid-column: 2 / 3;
+}
+.time.slow {
+    color: #400;
+}
+.time.very-slow {
+    color: #a00;
+}
+
+.has-plan {
+    grid-column: 3 / 4;
+}
+
+.has-error {
+    grid-column: 4 / 5;
+}
+
+.queryString {
+    grid-column: 5 / 6;
+    font-family: monospace;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.queryString.expanded {
+    white-space: normal;
+}
+
+.plan {
+    grid-column: 5 / -1;
+    font-family: monospace;
+}
