@@ -432,12 +432,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.State = "CANCELED"
 	want.FinishedAt = graphqlbackend.DateTime{Time: jobs[0].FinishedAt}
 	want.ViewerCanRetry = true
-	want.FailureMessage = `Failures:
-
-* canceled
-* canceled
-* canceled
-`
+	want.FailureMessage = ""
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 1/3 jobs is failed, 2/3 completed, but produced invalid changeset specs
