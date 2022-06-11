@@ -118,7 +118,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                     className="d-flex align-items-center"
                     to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
                 >
-                    <Icon className={styles.backIcon} as={ChevronLeftIcon} />
+                    <Icon className={styles.backIcon} as={ChevronLeftIcon} aria-hidden={true} />
                     Go back
                 </Link>
             </small>

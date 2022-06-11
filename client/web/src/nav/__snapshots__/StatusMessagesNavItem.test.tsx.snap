@@ -7,9 +7,13 @@ exports[`StatusMessagesNavItem no messages 1`] = `
     class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
     type="button"
   >
+    <span
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      Repositories up-to-date
+    </span>
     <svg
-      aria-hidden="false"
-      aria-label="Repositories up-to-date"
+      aria-hidden="true"
       class="phabricator-icon mdi-icon iconInline iconInlineMd"
       data-tooltip="Repositories up-to-date"
       fill="currentColor"
@@ -51,9 +55,13 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
     class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
     type="button"
   >
+    <span
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      Repositories up-to-date
+    </span>
     <svg
-      aria-hidden="false"
-      aria-label="Repositories up-to-date"
+      aria-hidden="true"
       class="phabricator-icon mdi-icon iconInline iconInlineMd"
       data-tooltip="Repositories up-to-date"
       fill="currentColor"
@@ -95,9 +103,13 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
     class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
     type="button"
   >
+    <span
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      Repositories up-to-date
+    </span>
     <svg
-      aria-hidden="false"
-      aria-label="Repositories up-to-date"
+      aria-hidden="true"
       class="phabricator-icon mdi-icon iconInline iconInlineMd"
       data-tooltip="Repositories up-to-date"
       fill="currentColor"
@@ -139,9 +151,13 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
     class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
     type="button"
   >
+    <span
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      Repositories up-to-date
+    </span>
     <svg
-      aria-hidden="false"
-      aria-label="Repositories up-to-date"
+      aria-hidden="true"
       class="phabricator-icon mdi-icon iconInline iconInlineMd"
       data-tooltip="Repositories up-to-date"
       fill="currentColor"
@@ -183,9 +199,13 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
     class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
     type="button"
   >
+    <span
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      Repositories up-to-date
+    </span>
     <svg
-      aria-hidden="false"
-      aria-label="Repositories up-to-date"
+      aria-hidden="true"
       class="phabricator-icon mdi-icon iconInline iconInlineMd"
       data-tooltip="Repositories up-to-date"
       fill="currentColor"
@@ -227,9 +247,13 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
     class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
     type="button"
   >
+    <span
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      Repositories up-to-date
+    </span>
     <svg
-      aria-hidden="false"
-      aria-label="Repositories up-to-date"
+      aria-hidden="true"
       class="phabricator-icon mdi-icon iconInline iconInlineMd"
       data-tooltip="Repositories up-to-date"
       fill="currentColor"
@@ -271,9 +295,13 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
     class="btn btnLink nav-link py-0 px-0 percy-hide chromatic-ignore"
     type="button"
   >
+    <span
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      Repositories up-to-date
+    </span>
     <svg
-      aria-hidden="false"
-      aria-label="Repositories up-to-date"
+      aria-hidden="true"
       class="phabricator-icon mdi-icon iconInline iconInlineMd"
       data-tooltip="Repositories up-to-date"
       fill="currentColor"

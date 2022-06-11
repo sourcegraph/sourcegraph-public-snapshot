@@ -1,6 +1,7 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
 import React, { useEffect, useState } from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
 import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
@@ -161,55 +162,63 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
             role="none"
         >
             <div className={styles.header}>
-                <Icon
-                    className="flex-shrink-0"
-                    as={icon}
-                    aria-label={resultType ? `${resultType} result` : undefined}
-                />
-                <div className={classNames('mx-1', styles.headerDivider)} />
-                <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0" />
-                <div className={classNames(styles.headerTitle, titleClassName)} data-testid="result-container-header">
-                    {title}
-                    {description && <span className={classNames('ml-2', styles.headerDescription)}>{description}</span>}
-                </div>
-                {matchCountLabel && (
-                    <>
-                        <small>{matchCountLabel}</small>
-                        {collapsible && <div className={classNames('mx-2', styles.headerDivider)} />}
-                    </>
-                )}
-                {collapsible && (
-                    <Button
-                        data-testid="toggle-matches-container"
-                        className={classNames('py-0', styles.toggleMatchesContainer)}
-                        onClick={toggle}
-                        variant="link"
-                        size="sm"
+                <>
+                    {resultType && <VisuallyHidden>{`${resultType} result`}</VisuallyHidden>}
+                    <Icon className="flex-shrink-0" as={icon} aria-hidden={true} />
+                    <div className={classNames('mx-1', styles.headerDivider)} />
+                    <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0" />
+                    <div
+                        className={classNames(styles.headerTitle, titleClassName)}
+                        data-testid="result-container-header"
                     >
-                        {expanded ? (
-                            <>
-                                {collapseLabel && <Icon className="mr-1" as={ArrowCollapseUpIcon} aria-hidden={true} />}
-                                {collapseLabel}
-                                {!collapseLabel && <Icon as={ChevronDownIcon} aria-hidden={true} />}
-                            </>
-                        ) : (
-                            <>
-                                {expandLabel && <Icon className="mr-1" as={ArrowExpandDownIcon} aria-hidden={true} />}
-                                {expandLabel}
-                                {!expandLabel && <Icon as={ChevronLeftIcon} aria-hidden={true} />}
-                            </>
+                        {title}
+                        {description && (
+                            <span className={classNames('ml-2', styles.headerDescription)}>{description}</span>
                         )}
-                    </Button>
-                )}
-                {matchCountLabel && formattedRepositoryStarCount && (
-                    <div className={classNames('mx-2', styles.headerDivider)} />
-                )}
-                {formattedRepositoryStarCount && (
-                    <>
-                        <SearchResultStar aria-label={`${repoStars} stars`} />
-                        <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
-                    </>
-                )}
+                    </div>
+                    {matchCountLabel && (
+                        <>
+                            <small>{matchCountLabel}</small>
+                            {collapsible && <div className={classNames('mx-2', styles.headerDivider)} />}
+                        </>
+                    )}
+                    {collapsible && (
+                        <Button
+                            data-testid="toggle-matches-container"
+                            className={classNames('py-0', styles.toggleMatchesContainer)}
+                            onClick={toggle}
+                            variant="link"
+                            size="sm"
+                        >
+                            {expanded ? (
+                                <>
+                                    {collapseLabel && (
+                                        <Icon className="mr-1" as={ArrowCollapseUpIcon} aria-hidden={true} />
+                                    )}
+                                    {collapseLabel}
+                                    {!collapseLabel && <Icon as={ChevronDownIcon} aria-hidden={true} />}
+                                </>
+                            ) : (
+                                <>
+                                    {expandLabel && (
+                                        <Icon className="mr-1" as={ArrowExpandDownIcon} aria-hidden={true} />
+                                    )}
+                                    {expandLabel}
+                                    {!expandLabel && <Icon as={ChevronLeftIcon} aria-hidden={true} />}
+                                </>
+                            )}
+                        </Button>
+                    )}
+                    {matchCountLabel && formattedRepositoryStarCount && (
+                        <div className={classNames('mx-2', styles.headerDivider)} />
+                    )}
+                    {formattedRepositoryStarCount && (
+                        <>
+                            <SearchResultStar aria-label={`${repoStars} stars`} />
+                            <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
+                        </>
+                    )}
+                </>
             </div>
             {!expanded && collapsedChildren}
             {expanded && expandedChildren}
