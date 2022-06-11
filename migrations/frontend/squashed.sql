@@ -4134,9 +4134,6 @@ ALTER TABLE ONLY user_public_repos
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
-REVOKE USAGE ON SCHEMA public FROM PUBLIC;
-GRANT ALL ON SCHEMA public TO PUBLIC;
-
 INSERT INTO out_of_band_migrations VALUES (3, 'core-application', 'frontend-db.external-services', 'Encrypt configuration', 0, '2021-10-08 16:09:36.889968+00', NULL, true, false, false, 3, 26, NULL, NULL, '{}');
 INSERT INTO out_of_band_migrations VALUES (6, 'core-application', 'frontend-db.external-accounts', 'Encrypt auth data', 0, '2021-10-08 16:09:36.986936+00', NULL, true, false, false, 3, 26, NULL, NULL, '{}');
 INSERT INTO out_of_band_migrations VALUES (1, 'code-intelligence', 'codeintel-db.lsif_data_documents', 'Populate num_diagnostics from gob-encoded payload', 0, '2021-06-03 23:21:34.031614+00', NULL, true, false, true, 3, 25, NULL, NULL, '{}');
