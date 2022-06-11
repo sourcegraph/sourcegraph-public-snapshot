@@ -372,6 +372,8 @@ func (s *store) QueuedCount(ctx context.Context, includeProcessing bool, conditi
 	}
 
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
+		// TODO: This query has to respect the states, but it currently doesn't for the worker fairness PR.
+		// This breaks the auto scaling metric.
 		queuedCountQuery,
 		quote(s.options.ViewName),
 		sqlf.Join(stateQueries, ","),
@@ -519,6 +521,7 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 
 	record, exists, err := s.options.Scan(s.Query(ctx, s.formatQuery(
 		dequeueQuery,
+		s.options.OrderByExpression,
 		quote(s.options.ViewName),
 		now,
 		retryAfter,
@@ -527,6 +530,14 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 		s.options.MaxNumRetries,
 		makeConditionSuffix(conditions),
 		s.options.OrderByExpression,
+		quote(s.options.TableName),
+		now,
+		retryAfter,
+		now,
+		retryAfter,
+		s.options.MaxNumRetries,
+		makeConditionSuffix(conditions),
+		quote(s.options.TableName),
 		quote(s.options.TableName),
 		sqlf.Join(s.makeDequeueUpdateStatements(updatedColumns), ", "),
 		sqlf.Join(s.makeDequeueSelectExpressions(updatedColumns), ", "),
@@ -545,8 +556,11 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 
 const dequeueQuery = `
 -- source: internal/workerutil/store.go:Dequeue
-WITH candidate AS (
-	SELECT {id} FROM %s
+WITH potential_candidates AS (
+	SELECT
+		{id} AS candidate_id,
+		ROW_NUMBER() OVER (ORDER BY %s) AS order
+	FROM %s
 	WHERE
 		(
 			(
@@ -561,7 +575,27 @@ WITH candidate AS (
 		)
 		%s
 	ORDER BY %s
-	FOR UPDATE SKIP LOCKED
+),
+candidate AS (
+	SELECT
+		{id} FROM %s
+	JOIN potential_candidates pc ON pc.candidate_id = {id}
+	WHERE
+		-- Recheck conditions.
+		(
+			(
+				{state} = 'queued' AND
+				({process_after} IS NULL OR {process_after} <= %s)
+			) OR (
+				%s > 0 AND
+				{state} = 'errored' AND
+				%s - {finished_at} > (%s * '1 second'::interval) AND
+				{num_failures} < %s
+			)
+		)
+		%s
+	ORDER BY pc.order
+	FOR UPDATE OF %s SKIP LOCKED
 	LIMIT 1
 ),
 updated_record AS (

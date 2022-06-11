@@ -631,7 +631,10 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin(t *testing.T)
 	// We dequeue records until there are no more left. Then, we check in which
 	// order they were returned.
 	for {
-		r, found, _ := workerStore.Dequeue(ctx, "test-worker", nil)
+		r, found, err := workerStore.Dequeue(ctx, "test-worker", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 		if !found {
 			break
 		}

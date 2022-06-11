@@ -11,7 +11,9 @@ CREATE INDEX IF NOT EXISTS batch_spec_workspace_execution_jobs_user_id ON batch_
 
 CREATE INDEX IF NOT EXISTS batch_spec_workspace_execution_jobs_state ON batch_spec_workspace_execution_jobs (state);
 
+DROP VIEW IF EXISTS batch_spec_workspace_execution_jobs_with_rank;
 DROP VIEW IF EXISTS batch_spec_workspace_execution_queue;
+
 CREATE VIEW batch_spec_workspace_execution_queue AS
 WITH user_queues AS (
     SELECT
@@ -20,12 +22,9 @@ WITH user_queues AS (
     FROM batch_spec_workspace_execution_jobs AS exec
     GROUP BY exec.user_id
 ),
--- We are creating this materialized CTE because PostgreSQL doesn't allow `FOR UPDATE` with window functions.
--- Materializing it makes sure that the view query is not inlined into the FOR UPDATE select the Dequeue method
--- performs.
-materialized_queue_candidates AS MATERIALIZED (
+queue_candidates AS (
     SELECT
-        exec.*,
+        exec.id,
         RANK() OVER (
             PARTITION BY queue.user_id
             -- Make sure the jobs are still fulfilled in timely order, and that the ordering is stable.
@@ -43,5 +42,15 @@ materialized_queue_candidates AS MATERIALIZED (
         queue.latest_dequeue ASC NULLS FIRST
 )
 SELECT
-    ROW_NUMBER() OVER () AS place_in_global_queue, materialized_queue_candidates.*
-FROM materialized_queue_candidates;
+    queue_candidates.id, ROW_NUMBER() OVER () AS place_in_global_queue, queue_candidates.place_in_user_queue
+FROM queue_candidates;
+
+CREATE VIEW batch_spec_workspace_execution_jobs_with_rank AS (
+    SELECT
+        j.*,
+        q.place_in_global_queue,
+        q.place_in_user_queue
+    FROM
+        batch_spec_workspace_execution_jobs j
+    LEFT JOIN batch_spec_workspace_execution_queue q ON j.id = q.id
+);

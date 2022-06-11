@@ -455,8 +455,80 @@ commands:
       env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: batches
-      EXECUTOR_MAXIMUM_NUM_JOBS: 8
+      EXECUTOR_MAXIMUM_NUM_JOBS: 2
       SRC_PROF_HTTP: ':6093'
+
+  batches-executor-2:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/batches-executor-temp-2" .bin/executor
+    env:
+      EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_MAXIMUM_NUM_JOBS: 2
+      SRC_PROF_HTTP: ':60093'
+
+  batches-executor-3:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/batches-executor-temp-2" .bin/executor
+    env:
+      EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_MAXIMUM_NUM_JOBS: 2
+      SRC_PROF_HTTP: ':60094'
+
+  batches-executor-4:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/batches-executor-temp-2" .bin/executor
+    env:
+      EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_MAXIMUM_NUM_JOBS: 2
+      SRC_PROF_HTTP: ':60095'
+
+  batches-executor-5:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/batches-executor-temp-2" .bin/executor
+    env:
+      EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_MAXIMUM_NUM_JOBS: 2
+      SRC_PROF_HTTP: ':60096'
+
+  batches-executor-6:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/batches-executor-temp-2" .bin/executor
+    env:
+      EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_MAXIMUM_NUM_JOBS: 2
+      SRC_PROF_HTTP: ':60097'
+
+  batches-executor-7:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/batches-executor-temp-2" .bin/executor
+    env:
+      EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_MAXIMUM_NUM_JOBS: 2
+      SRC_PROF_HTTP: ':60098'
+
+  batches-executor-8:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/batches-executor-temp-2" .bin/executor
+    env:
+      EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_MAXIMUM_NUM_JOBS: 2
+      SRC_PROF_HTTP: ':60099'
+
+  batches-executor-9:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/batches-executor-temp-2" .bin/executor
+    env:
+      EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_MAXIMUM_NUM_JOBS: 2
+      SRC_PROF_HTTP: ':60100'
 
   # If you want to use this, either start it with `sg run batches-executor-firecracker` or
   # modify the `commandsets.batches` in your local `sg.config.overwrite.yaml`
@@ -829,6 +901,14 @@ commandsets:
       - zoekt-webserver-0
       - zoekt-webserver-1
       - batches-executor
+      - batches-executor-2
+      - batches-executor-3
+      - batches-executor-4
+      - batches-executor-5
+      - batches-executor-6
+      - batches-executor-7
+      - batches-executor-8
+      - batches-executor-9
 
   iam:
     requiresDevPrivate: true
