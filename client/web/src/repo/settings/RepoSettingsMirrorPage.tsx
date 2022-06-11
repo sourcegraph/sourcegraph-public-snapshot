@@ -269,6 +269,7 @@ interface RepoSettingsMirrorPageState {
 
     loading: boolean
     error?: string
+    diskSizeBytes?: number
 }
 
 /**

@@ -2687,6 +2687,11 @@ type Repository implements Node & GenericSearchResultInterface {
     The star count the repository has in the code host.
     """
     stars: Int!
+
+    """
+    The size of repo when cloned on disk
+    """
+    diskSizeBytes: BigInt
 }
 
 """

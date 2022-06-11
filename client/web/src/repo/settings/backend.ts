@@ -42,6 +42,7 @@ export const settingsAreaRepositoryFragment = gql`
                 displayName
             }
         }
+        diskSizeBytes
     }
 `
 
