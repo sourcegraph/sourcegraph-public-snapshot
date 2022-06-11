@@ -8,18 +8,18 @@ exports[`StreamingProgressCount should not render a trace link when not opted in
   >
     Searching
   </span>
-  <span
-    aria-live="polite"
-    style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
-  >
-    0 results in 0.00 seconds
-  </span>
   <small
     class="d-flex align-items-center count countInProgress"
     data-testid="streaming-progress-count"
   >
     <span
-      aria-label="0 results in 0.00 seconds"
+      aria-live="polite"
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      0 results in 0.00 seconds
+    </span>
+    <span
+      aria-hidden="true"
     >
       0 results in 0.00s
     </span>
@@ -35,18 +35,18 @@ exports[`StreamingProgressCount should render correctly for 0 items in progress 
   >
     Searching
   </span>
-  <span
-    aria-live="polite"
-    style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
-  >
-    0 results in 0.00 seconds
-  </span>
   <small
     class="d-flex align-items-center count countInProgress"
     data-testid="streaming-progress-count"
   >
     <span
-      aria-label="0 results in 0.00 seconds"
+      aria-live="polite"
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      0 results in 0.00 seconds
+    </span>
+    <span
+      aria-hidden="true"
     >
       0 results in 0.00s
     </span>
@@ -62,18 +62,18 @@ exports[`StreamingProgressCount should render correctly for 0 repositories 1`] =
   >
     Searching
   </span>
-  <span
-    aria-live="polite"
-    style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
-  >
-    0 results in 0.00 seconds
-  </span>
   <small
     class="d-flex align-items-center count countInProgress"
     data-testid="streaming-progress-count"
   >
     <span
-      aria-label="0 results in 0.00 seconds"
+      aria-live="polite"
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      0 results in 0.00 seconds
+    </span>
+    <span
+      aria-hidden="true"
     >
       0 results in 0.00s
     </span>
@@ -104,18 +104,18 @@ exports[`StreamingProgressCount should render correctly for 0 repositories 1`] =
 
 exports[`StreamingProgressCount should render correctly for 1 item complete 1`] = `
 <DocumentFragment>
-  <span
-    aria-live="polite"
-    style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
-  >
-    1 result in 1.25 seconds
-  </span>
   <small
     class="d-flex align-items-center count"
     data-testid="streaming-progress-count"
   >
     <span
-      aria-label="1 result in 1.25 seconds"
+      aria-live="polite"
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      1 result in 1.25 seconds
+    </span>
+    <span
+      aria-hidden="true"
     >
       1 result in 1.25s
     </span>
@@ -146,18 +146,18 @@ exports[`StreamingProgressCount should render correctly for 1 item complete 1`] 
 
 exports[`StreamingProgressCount should render correctly for 123 items complete 1`] = `
 <DocumentFragment>
-  <span
-    aria-live="polite"
-    style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
-  >
-    123 results in 1.25 seconds
-  </span>
   <small
     class="d-flex align-items-center count"
     data-testid="streaming-progress-count"
   >
     <span
-      aria-label="123 results in 1.25 seconds"
+      aria-live="polite"
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      123 results in 1.25 seconds
+    </span>
+    <span
+      aria-hidden="true"
     >
       123 results in 1.25s
     </span>
@@ -188,18 +188,18 @@ exports[`StreamingProgressCount should render correctly for 123 items complete 1
 
 exports[`StreamingProgressCount should render correctly for big numbers complete 1`] = `
 <DocumentFragment>
-  <span
-    aria-live="polite"
-    style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
-  >
-    1.2m results in 52.50 seconds
-  </span>
   <small
     class="d-flex align-items-center count"
     data-testid="streaming-progress-count"
   >
     <span
-      aria-label="1.2m results in 52.50 seconds"
+      aria-live="polite"
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      1.2m results in 52.50 seconds
+    </span>
+    <span
+      aria-hidden="true"
     >
       1.2m results in 52.50s
     </span>
@@ -230,18 +230,18 @@ exports[`StreamingProgressCount should render correctly for big numbers complete
 
 exports[`StreamingProgressCount should render correctly for limithit 1`] = `
 <DocumentFragment>
-  <span
-    aria-live="polite"
-    style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
-  >
-    123+ results in 1.25 seconds
-  </span>
   <small
     class="d-flex align-items-center count"
     data-testid="streaming-progress-count"
   >
     <span
-      aria-label="123+ results in 1.25 seconds"
+      aria-live="polite"
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      123+ results in 1.25 seconds
+    </span>
+    <span
+      aria-hidden="true"
     >
       123+ results in 1.25s
     </span>
@@ -278,18 +278,18 @@ exports[`StreamingProgressCount should render correctly when a trace url is prov
   >
     Searching
   </span>
-  <span
-    aria-live="polite"
-    style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
-  >
-    0 results in 0.00 seconds
-  </span>
   <small
     class="d-flex align-items-center count countInProgress"
     data-testid="streaming-progress-count"
   >
     <span
-      aria-label="0 results in 0.00 seconds"
+      aria-live="polite"
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      0 results in 0.00 seconds
+    </span>
+    <span
+      aria-hidden="true"
     >
       0 results in 0.00s
     </span>
