@@ -19,6 +19,7 @@ func main() {
 	defer liblog.Sync()
 
 	logger := log.Scoped("worker", "worker oss edition")
+	logger.Info("OK WE ARE")
 
 	authz.SetProviders(true, []authz.Provider{})
 	if err := shared.Start(logger, nil, nil); err != nil {
