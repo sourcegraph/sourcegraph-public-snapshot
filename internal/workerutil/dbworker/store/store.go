@@ -372,8 +372,6 @@ func (s *store) QueuedCount(ctx context.Context, includeProcessing bool, conditi
 	}
 
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
-		// TODO: This query has to respect the states, but it currently doesn't for the worker fairness PR.
-		// This breaks the auto scaling metric.
 		queuedCountQuery,
 		quote(s.options.ViewName),
 		sqlf.Join(stateQueries, ","),
