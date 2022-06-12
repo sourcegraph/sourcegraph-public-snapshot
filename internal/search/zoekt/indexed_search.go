@@ -238,9 +238,9 @@ func PartitionRepos(
 	return indexed, unindexed, nil
 }
 
-func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *search.ZoektParameters, c streaming.Sender, log slog.Logger) error {
+func DoZoektSearchGlobal(log slog.Logger, ctx context.Context, client zoekt.Streamer, args *search.ZoektParameters, c streaming.Sender) error {
 	k := ResultCountFactor(0, args.FileMatchLimit, true)
-	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit, args.Select, log)
+	searchOpts := SearchOpts(log, ctx, k, args.FileMatchLimit, args.Select)
 
 	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -287,7 +287,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
 
 	k := ResultCountFactor(len(repos.RepoRevs), fileMatchLimit, false)
-	searchOpts := SearchOpts(ctx, k, fileMatchLimit, selector, repos.log)
+	searchOpts := SearchOpts(repos.log, ctx, k, fileMatchLimit, selector)
 
 	// Start event stream.
 	t0 := time.Now()
@@ -592,11 +592,11 @@ func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClient
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, t)
 	defer func() { finish(alert, err) }()
 
-	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.DB, t.RepoOpts, t.log)
+	userPrivateRepos := searchrepos.PrivateReposForActor(t.log, ctx, clients.DB, t.RepoOpts)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 
-	return nil, DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektArgs, stream, t.log)
+	return nil, DoZoektSearchGlobal(t.log, ctx, clients.Zoekt, t.ZoektArgs, stream)
 }
 
 func (*GlobalTextSearchJob) Name() string {

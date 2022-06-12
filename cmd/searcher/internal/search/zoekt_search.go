@@ -145,7 +145,7 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 
 	// Choose sensible values for k when we generalize this.
 	k := zoektutil.ResultCountFactor(numRepos, args.FileMatchLimit, false)
-	searchOpts := zoektutil.SearchOpts(ctx, k, args.FileMatchLimit, nil, log)
+	searchOpts := zoektutil.SearchOpts(log, ctx, k, args.FileMatchLimit, nil)
 	searchOpts.Whole = true
 
 	filePathPatterns, err := handleFilePathPatterns(args)

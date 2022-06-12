@@ -86,9 +86,10 @@ type getRepoIndexOptsFn func(repoID int32) (*RepoIndexOptions, error)
 // GetIndexOptions returns a json blob for consumption by
 // sourcegraph-zoekt-indexserver. It is for repos based on site settings c.
 func GetIndexOptions(
+	log log.Logger,
 	c *schema.SiteConfiguration,
 	getRepoIndexOptions getRepoIndexOptsFn,
-	getSearchContextRevisions func(repoID int32) ([]string, error), log log.Logger,
+	getSearchContextRevisions func(repoID int32) ([]string, error),
 	repos ...int32,
 ) []byte {
 	// Limit concurrency to 32 to avoid too many active network requests and

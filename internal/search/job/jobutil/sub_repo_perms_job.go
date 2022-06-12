@@ -41,7 +41,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, clients job.RuntimeClie
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applySubRepoFiltering(ctx, checker, event.Results, s.log)
+		event.Results, err = applySubRepoFiltering(s.log, ctx, checker, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -67,7 +67,7 @@ func (s *subRepoPermsFilterJob) Tags() []log.Field {
 
 // applySubRepoFiltering filters a set of matches using the provided
 // authz.SubRepoPermissionChecker
-func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionChecker, matches []result.Match, log slog.Logger) ([]result.Match, error) {
+func applySubRepoFiltering(log slog.Logger, ctx context.Context, checker authz.SubRepoPermissionChecker, matches []result.Match) ([]result.Match, error) {
 	if !authz.SubRepoEnabled(checker) {
 		return matches, nil
 	}

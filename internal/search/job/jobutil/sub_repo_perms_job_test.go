@@ -175,7 +175,7 @@ func TestApplySubRepoFiltering(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), tt.args.ctxActor)
-			matches, err := applySubRepoFiltering(ctx, checker, tt.args.matches, tt.log)
+			matches, err := applySubRepoFiltering(tt.log, ctx, checker, tt.args.matches)
 			if diff := cmp.Diff(matches, tt.wantMatches, cmpopts.IgnoreUnexported(search.RepoStatusMap{})); diff != "" {
 				t.Fatal(diff)
 			}

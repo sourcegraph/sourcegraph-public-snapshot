@@ -260,7 +260,7 @@ func TestGetIndexOptions(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			getSearchContextRevisions := func(int32) ([]string, error) { return tc.searchContextRevs, nil }
 
-			b := GetIndexOptions(&tc.conf, getRepoIndexOptions, getSearchContextRevisions, tc.log, tc.repo)
+			b := GetIndexOptions(tc.log, &tc.conf, getRepoIndexOptions, getSearchContextRevisions, tc.repo)
 
 			var got zoektIndexOptions
 			if err := json.Unmarshal(b, &got); err != nil {
@@ -333,7 +333,7 @@ func TestGetIndexOptions_getVersion(t *testing.T) {
 				}, nil
 			}
 
-			b := GetIndexOptions(&conf, getRepoIndexOptions, getSearchContextRevs, tc.Logger, 1)
+			b := GetIndexOptions(tc.Logger, &conf, getRepoIndexOptions, getSearchContextRevs, 1)
 
 			var got zoektIndexOptions
 			if err := json.Unmarshal(b, &got); err != nil {
@@ -389,7 +389,7 @@ func TestGetIndexOptions_batch(t *testing.T) {
 
 	getSearchContextRevs := func(int32) ([]string, error) { return nil, nil }
 
-	b := GetIndexOptions(&schema.SiteConfiguration{}, getRepoIndexOptions, getSearchContextRevs, log, repos...)
+	b := GetIndexOptions(log, &schema.SiteConfiguration{}, getRepoIndexOptions, getSearchContextRevs, repos...)
 	dec := json.NewDecoder(bytes.NewReader(b))
 	got := make([]zoektIndexOptions, len(repos))
 	for i := range repos {

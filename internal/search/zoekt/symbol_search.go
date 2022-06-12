@@ -86,12 +86,12 @@ func (s *GlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClie
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	userPrivateRepos := repos.PrivateReposForActor(ctx, clients.DB, s.RepoOpts, s.log)
+	userPrivateRepos := repos.PrivateReposForActor(s.log, ctx, clients.DB, s.RepoOpts)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 
 	// always search for symbols in indexed repositories when searching the repo universe.
-	err = DoZoektSearchGlobal(ctx, clients.Zoekt, s.ZoektArgs, stream, s.log)
+	err = DoZoektSearchGlobal(s.log, ctx, clients.Zoekt, s.ZoektArgs, stream)
 	if err != nil {
 		tr.LogFields(log.Error(err))
 		// Only record error if we haven't timed out.

@@ -70,7 +70,7 @@ func getSpanContext(ctx context.Context, slog log.Logger) (shouldTrace bool, spa
 	return true, spanContext
 }
 
-func SearchOpts(ctx context.Context, k int, fileMatchLimit int32, selector filter.SelectPath, log log.Logger) zoekt.SearchOptions {
+func SearchOpts(log log.Logger, ctx context.Context, k int, fileMatchLimit int32, selector filter.SelectPath) zoekt.SearchOptions {
 	shouldTrace, spanContext := getSpanContext(ctx, log)
 	searchOpts := zoekt.SearchOptions{
 		Trace:       shouldTrace,

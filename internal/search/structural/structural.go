@@ -108,7 +108,7 @@ func retryStructuralSearch(ctx context.Context, clients job.RuntimeClients, args
 	return streamStructuralSearch(ctx, clients, args, repos, stream)
 }
 
-func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender, log slog.Logger) error {
+func runStructuralSearch(log slog.Logger, ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
 	if args.PatternInfo.FileMatchLimit != limits.DefaultMaxSearchResults {
 		// streamStructuralSearch performs a streaming search when the user sets a value
 		// for `count`. The first return parameter indicates whether the request was
@@ -184,7 +184,7 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		if indexed != nil {
 			repoSet = append(repoSet, IndexedMap(indexed.RepoRevs))
 		}
-		return runStructuralSearch(ctx, clients, s.SearcherArgs, repoSet, stream, s.log)
+		return runStructuralSearch(s.log, ctx, clients, s.SearcherArgs, repoSet, stream)
 	})
 }
 
