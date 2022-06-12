@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -238,7 +237,7 @@ func TestBitbucketServerSource_ListByReposOnly(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	cases, svc := GetConfig(t, server)
+	cases, svc := GetConfig(t, server.URL, "secret")
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
 			s, err := newBitbucketServerSource(&svc, config, nil)
@@ -311,7 +310,7 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	cases, svc := GetConfig(t, server)
+	cases, svc := GetConfig(t, server.URL, "secret")
 
 	tcs := []struct {
 		queries []string
@@ -366,7 +365,7 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 
 }
 
-func TestBitbucketServerSource_ListByProjectKey(t *testing.T) {
+func TestBitbucketServerSource_ListByProjectKeyMock(t *testing.T) {
 	repos := GetReposFromTestdata(t)
 
 	type Results struct {
@@ -405,7 +404,7 @@ func TestBitbucketServerSource_ListByProjectKey(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	cases, svc := GetConfig(t, server)
+	cases, svc := GetConfig(t, server.URL, "secret")
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
 			s, err := newBitbucketServerSource(&svc, config, nil)
@@ -431,39 +430,16 @@ func TestBitbucketServerSource_ListByProjectKey(t *testing.T) {
 }
 
 func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
-	err := godotenv.Load("local.env")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	url := "https://bitbucket.sgdev.org"
-	TOKEN := os.Getenv("AUTHTOKEN")
-
-	cases := map[string]*schema.BitbucketServerConnection{
-		"simple": {
-			Url:   url,
-			Token: TOKEN,
-		},
-		"ssh": {
-			Url:                         url,
-			Token:                       TOKEN,
-			InitialRepositoryEnablement: true,
-			GitURLType:                  "ssh",
-		},
-		"path-pattern": {
-			Url:                   url,
-			Token:                 TOKEN,
-			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
-		},
-		"username": {
-			Url:                   url,
-			Username:              "foo",
-			Token:                 TOKEN,
-			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
-		},
+	TOKEN := os.Getenv("BITBUCKET_SERVER_TOKEN")
+	var update bool
+	if TOKEN == "" {
+		update = false
+	} else {
+		update = true
 	}
 
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
+	cases, svc := GetConfig(t, url, TOKEN)
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -471,6 +447,8 @@ func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			cli := bitbucketserver.NewTestClient(t, name, update)
+			s.client = cli
 
 			s.config.ProjectKeys = []string{
 				"SOURCEGRAPH",
@@ -496,7 +474,7 @@ func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 				default:
 					if len(got) == 1 {
 						path := filepath.Join("testdata/authentic", "bitbucketserver-repos-"+name+".golden")
-						testutil.AssertGolden(t, path, true, got)
+						testutil.AssertGolden(t, path, update, got)
 						break verify
 					}
 				}
@@ -520,27 +498,27 @@ func GetReposFromTestdata(t *testing.T) []bitbucketserver.Repo {
 	return repos
 }
 
-func GetConfig(t *testing.T, server *httptest.Server) (map[string]*schema.BitbucketServerConnection, types.ExternalService) {
+func GetConfig(t *testing.T, serverUrl string, token string) (map[string]*schema.BitbucketServerConnection, types.ExternalService) {
 	cases := map[string]*schema.BitbucketServerConnection{
 		"simple": {
-			Url:   server.URL,
-			Token: "secret",
+			Url:   serverUrl,
+			Token: token,
 		},
 		"ssh": {
-			Url:                         server.URL,
-			Token:                       "secret",
+			Url:                         serverUrl,
+			Token:                       token,
 			InitialRepositoryEnablement: true,
 			GitURLType:                  "ssh",
 		},
 		"path-pattern": {
-			Url:                   server.URL,
-			Token:                 "secret",
+			Url:                   serverUrl,
+			Token:                 token,
 			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
 		},
 		"username": {
-			Url:                   server.URL,
+			Url:                   serverUrl,
 			Username:              "foo",
-			Token:                 "secret",
+			Token:                 token,
 			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
 		},
 	}
