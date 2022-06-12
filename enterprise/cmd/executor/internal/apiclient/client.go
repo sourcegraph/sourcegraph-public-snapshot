@@ -25,10 +25,11 @@ import (
 
 // Client is the client used to communicate with a remote job queue API.
 type Client struct {
-	options    Options
-	client     *BaseClient
-	logger     log.Logger
-	operations *operations
+	options         Options
+	client          *BaseClient
+	logger          log.Logger
+	metricsGatherer prometheus.Gatherer
+	operations      *operations
 }
 
 type Options struct {
@@ -58,10 +59,11 @@ type EndpointOptions struct {
 
 func New(options Options, observationContext *observation.Context) *Client {
 	return &Client{
-		options:    options,
-		client:     NewBaseClient(options.BaseClientOptions),
-		logger:     log.Scoped("executor-api-client", "The API client adapter for executors to use dbworkers over HTTP"),
-		operations: newOperations(observationContext),
+		options:         options,
+		client:          NewBaseClient(options.BaseClientOptions),
+		logger:          log.Scoped("executor-api-client", "The API client adapter for executors to use dbworkers over HTTP"),
+		metricsGatherer: prometheus.DefaultGatherer,
+		operations:      newOperations(observationContext),
 	}
 }
 
@@ -214,7 +216,7 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 	// Add some timeout here so metrics don't wreck heartbeats.
 	metricCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
-	metrics, err := collectMetrics(metricCtx)
+	metrics, err := collectMetrics(metricCtx, c.metricsGatherer)
 	if err != nil {
 		c.logger.Error("Failed to collect prometheus metrics for heartbeat", log.Error(err))
 		// Continue, no metrics should not prevent heartbeats.
@@ -284,10 +286,10 @@ func intsToString(ints []int) string {
 	return strings.Join(segments, ", ")
 }
 
-// collectMetrics uses the default gatherer for prometheus to collect all current
+// collectMetrics uses the given prometheus gatherer to collect all current
 // metrics and encodes them in the text format to be sent over the wire.
-func collectMetrics(ctx context.Context) (string, error) {
-	mfs, err := prometheus.DefaultGatherer.Gather()
+func collectMetrics(ctx context.Context, gatherer prometheus.Gatherer) (string, error) {
+	mfs, err := gatherer.Gather()
 	if err != nil {
 		return "", errors.Wrap(err, "getting default gatherer")
 	}
