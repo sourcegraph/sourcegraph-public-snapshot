@@ -15,18 +15,20 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // SetupRoutes registers all route handlers required for all configured executor
 // queues with the given router.
-func SetupRoutes(executorStore executor.Store, queueOptionsMap []QueueOptions, router *mux.Router) {
+func SetupRoutes(executorStore executor.Store, metricsStore metricsstore.DistributedStore, queueOptionsMap []QueueOptions, router *mux.Router) {
 	for _, queueOptions := range queueOptionsMap {
-		h := newHandler(executorStore, queueOptions)
+		h := newHandler(executorStore, metricsStore, queueOptions)
 
 		subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(queueOptions.Name))).Subrouter()
 		routes := map[string]func(w http.ResponseWriter, r *http.Request){
@@ -138,49 +140,20 @@ func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 			SrcCliVersion:   payload.SrcCliVersion,
 		}
 
-		// TODO: Store metrics for executor.
-
-		// fmt.Printf("Received metrics from executor: \n%s\n", payload.PrometheusMetrics)
-
-		as := []*dto.MetricFamily{}
-		dec := expfmt.NewDecoder(strings.NewReader(payload.PrometheusMetrics), expfmt.FmtText)
-		for {
-			var a dto.MetricFamily
-			if err := dec.Decode(&a); err != nil {
-				if err == io.EOF {
-					break
-				}
-				panic(err)
-			}
-			strptr := func(s string) *string {
-				return &s
-			}
-			for _, m := range a.Metric {
-				m.Label = append(m.Label, &dto.LabelPair{Name: strptr("instance"), Value: &payload.ExecutorName})
-				m.Label = append(m.Label, &dto.LabelPair{Name: strptr("erick"), Value: strptr("voldemort")})
-				m.Label = append(m.Label, &dto.LabelPair{Name: strptr("voldemort"), Value: strptr("erick")})
-				m.Label = append(m.Label, &dto.LabelPair{Name: strptr("job"), Value: strptr("sourcegraph-executors")})
+		// Handle metrics in the background, this should not delay the heartbeat response being
+		// delivered. It is critical for keeping jobs alive.
+		go func() {
+			metrics, err := decodeAndLabelMetrics(payload.PrometheusMetrics, payload.ExecutorName, payload.ExecutorVersion)
+			if err != nil {
+				// Just log the error but don't panic. The heartbeat is more important.
+				h.logger.Error("failed to decode metrics and apply labels for executor heartbeat", log.Error(err))
 			}
 
-			as = append(as, &a)
-		}
-
-		var enc bytes.Buffer
-		encoder := expfmt.NewEncoder(&enc, expfmt.FmtText)
-
-		for _, a := range as {
-			if err := encoder.Encode(a); err != nil {
-				return http.StatusBadRequest, nil, err
+			if err := h.metricsStore.Ingest(payload.ExecutorName, metrics); err != nil {
+				// Just log the error but don't panic. The heartbeat is more important.
+				h.logger.Error("failed to ingest metrics for executor heartbeat", log.Error(err))
 			}
-		}
-
-		reConn := redispool.Cache.Get()
-		defer reConn.Close()
-
-		err := reConn.Send("SETEX", debugserver.ExecutorsMetricsPrefixForRedis+payload.ExecutorName, 30, enc.String())
-		if err != nil {
-			return http.StatusInternalServerError, nil, err
-		}
+		}()
 
 		unknownIDs, err := h.heartbeat(r.Context(), executor, payload.JobIDs)
 		return http.StatusOK, unknownIDs, err
@@ -233,4 +206,37 @@ func (h *handler) wrapHandler(w http.ResponseWriter, r *http.Request, payload an
 	if status != http.StatusNoContent {
 		_, _ = io.Copy(w, bytes.NewReader(data))
 	}
+}
+
+// decodeAndLabelMetrics decodes the text serialized prometheus metrics dump and then
+// applies common labels and
+func decodeAndLabelMetrics(encodedMetrics, instanceName, executorVersion string) ([]*dto.MetricFamily, error) {
+	data := []*dto.MetricFamily{}
+
+	dec := expfmt.NewDecoder(strings.NewReader(encodedMetrics), expfmt.FmtText)
+	for {
+		var mf dto.MetricFamily
+		if err := dec.Decode(&mf); err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return nil, errors.Wrap(err, "decoding metric family")
+		}
+
+		// Attach the extra labels.
+		metricLabelInstance := "instance"
+		metricLabelVersion := "version"
+		metricLabelJob := "job"
+		job := "sourcegraph-executors"
+		for _, m := range mf.Metric {
+			m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelInstance, Value: &instanceName})
+			m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelVersion, Value: &executorVersion})
+			m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelJob, Value: &job})
+		}
+
+		data = append(data, &mf)
+	}
+
+	return data, nil
 }

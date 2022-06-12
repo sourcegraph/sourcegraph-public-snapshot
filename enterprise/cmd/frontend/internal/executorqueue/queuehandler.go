@@ -13,11 +13,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func newExecutorQueueHandler(executorStore executor.Store, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler) (func() http.Handler, error) {
+	metricsStore := metricsstore.NewDistributedStore("executors:")
+
 	host, port, err := net.SplitHostPort(envvar.HTTPAddrInternal)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("failed to parse internal API address %q", envvar.HTTPAddrInternal))
@@ -37,7 +40,7 @@ func newExecutorQueueHandler(executorStore executor.Store, queueOptions []handle
 		base.Path("/git/{rest:.*/(?:info/refs|git-upload-pack)}").Handler(reverseProxy(frontendOrigin))
 
 		// Serve the executor queue API.
-		handler.SetupRoutes(executorStore, queueOptions, base.PathPrefix("/queue/").Subrouter())
+		handler.SetupRoutes(executorStore, metricsStore, queueOptions, base.PathPrefix("/queue/").Subrouter())
 
 		// Upload LSIF indexes without a sudo access token or github tokens.
 		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)
