@@ -576,7 +576,7 @@ candidate AS (
 	JOIN potential_candidates pc ON pc.candidate_id = {id}
 	WHERE
 		-- Recheck state.
-		{state} = 'queued'
+		{state} IN ('queued', 'errored')
 	ORDER BY pc.order
 	FOR UPDATE OF %s SKIP LOCKED
 	LIMIT 1

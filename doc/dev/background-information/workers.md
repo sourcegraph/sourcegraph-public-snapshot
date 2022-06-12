@@ -384,3 +384,7 @@ func makeResetter(workerStore store.Store) {
 The results of `makeWorker` and `makeResetter` can then be passed to `goroutine.MonitorBackgroundRoutines`.
 
 The worker and resetter may or or may execute in the same process. For example, we run all code intelligence background routines in the frontend, except for our LSIF conversion worker, which runs in a separate process for resource isolation and independent scaling.
+
+#### Step 7: Consider adding indexes
+
+The worker depends on a few columns to dequeue records. To keep it fast, consider adding indexes on the `state` and `process_after` columns.
