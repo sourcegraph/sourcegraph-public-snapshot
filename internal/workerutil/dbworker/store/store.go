@@ -531,12 +531,6 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 		makeConditionSuffix(conditions),
 		s.options.OrderByExpression,
 		quote(s.options.TableName),
-		now,
-		retryAfter,
-		now,
-		retryAfter,
-		s.options.MaxNumRetries,
-		makeConditionSuffix(conditions),
 		quote(s.options.TableName),
 		quote(s.options.TableName),
 		sqlf.Join(s.makeDequeueUpdateStatements(updatedColumns), ", "),
@@ -581,19 +575,8 @@ candidate AS (
 		{id} FROM %s
 	JOIN potential_candidates pc ON pc.candidate_id = {id}
 	WHERE
-		-- Recheck conditions.
-		(
-			(
-				{state} = 'queued' AND
-				({process_after} IS NULL OR {process_after} <= %s)
-			) OR (
-				%s > 0 AND
-				{state} = 'errored' AND
-				%s - {finished_at} > (%s * '1 second'::interval) AND
-				{num_failures} < %s
-			)
-		)
-		%s
+		-- Recheck state.
+		{state} = 'queued'
 	ORDER BY pc.order
 	FOR UPDATE OF %s SKIP LOCKED
 	LIMIT 1

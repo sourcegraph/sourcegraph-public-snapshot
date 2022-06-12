@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"testing"
 	"time"
 
@@ -643,6 +644,66 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin(t *testing.T)
 
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)
+	}
+}
+
+// TODO: This test is slow.
+func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin_NoDoubleDequeue(t *testing.T) {
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+
+	user := ct.CreateTestUser(t, db, true)
+	user2 := ct.CreateTestUser(t, db, true)
+	user3 := ct.CreateTestUser(t, db, true)
+
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
+
+	s := New(db, &observation.TestContext, nil)
+	workerStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
+
+	// We create multiple jobs for each user because this test ensures jobs are
+	// dequeued in a round-robin fashion, starting with the user who dequeued
+	// the longest ago.
+	for i := 0; i < 100; i++ {
+		setupBatchSpecAssociation(ctx, s, t, user, repo)
+		setupBatchSpecAssociation(ctx, s, t, user2, repo)
+		setupBatchSpecAssociation(ctx, s, t, user3, repo)
+	}
+
+	have := []int64{}
+	var haveLock sync.Mutex
+
+	// We dequeue records until there are no more left. Then, we check in which
+	// order they were returned.
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			for {
+				r, found, err := workerStore.Dequeue(ctx, "test-worker", nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !found {
+					break
+				}
+				haveLock.Lock()
+				have = append(have, int64(r.RecordID()))
+				haveLock.Unlock()
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	seen := make(map[int64]struct{})
+	for _, h := range have {
+		if _, ok := seen[h]; ok {
+			t.Fatal("duplicate dequeue")
+		}
+		seen[h] = struct{}{}
 	}
 }
 
