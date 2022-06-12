@@ -239,7 +239,6 @@ type TaskStepMetadata struct {
 
 	Out string `json:"out,omitempty"`
 
-	// TODO: This doesn't need to be here, right? What about other fields here?
 	Diff    string         `json:"diff,omitempty"`
 	Outputs map[string]any `json:"outputs,omitempty"`
 
