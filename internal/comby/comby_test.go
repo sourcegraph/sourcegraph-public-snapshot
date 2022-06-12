@@ -109,7 +109,12 @@ func main() {
 	for _, test := range cases {
 		b := new(bytes.Buffer)
 		w := bufio.NewWriter(b)
-		err := PipeTo(ctx, test.args, w)
+
+		cmd, stdin, stdout, stderr, err := SetupCmdWithPipes(test.args)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = StartAndWaitForCompletion(ctx, cmd, stdin, stdout, stderr, test.args.Input, w)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -132,7 +137,11 @@ func Test_stdin(t *testing.T) {
 		defer cancel()
 		b := new(bytes.Buffer)
 		w := bufio.NewWriter(b)
-		err := PipeTo(ctx, args, w)
+		cmd, stdin, stdout, stderr, err := SetupCmdWithPipes(args)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = StartAndWaitForCompletion(ctx, cmd, stdin, stdout, stderr, args.Input, w)
 		if err != nil {
 			t.Fatal(err)
 		}

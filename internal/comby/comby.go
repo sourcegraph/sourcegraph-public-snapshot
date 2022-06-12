@@ -65,6 +65,8 @@ func rawArgs(args Args) (rawArgs []string) {
 		rawArgs = append(rawArgs, "-directory", string(i))
 	case FileContent:
 		rawArgs = append(rawArgs, "-stdin")
+	case Tar:
+		rawArgs = append(rawArgs, "-tar")
 	default:
 		log15.Error("unrecognized input type", "type", i)
 		panic("unreachable")
@@ -73,7 +75,17 @@ func rawArgs(args Args) (rawArgs []string) {
 	return rawArgs
 }
 
-func waitForCompletion(cmd *exec.Cmd, stdout, stderr io.ReadCloser, w ...io.Writer) (err error) {
+func waitForCompletion(cmd *exec.Cmd, stdin io.WriteCloser, stdout, stderr io.ReadCloser, input Input, w ...io.Writer) (err error) {
+	if bts, ok := input.(FileContent); ok && len(bts) > 0 {
+		go func() {
+			defer stdin.Close()
+			_, err := stdin.Write(bts)
+			if err != nil {
+				log15.Error("failed to write comby input to stdin", "error", err.Error())
+			}
+		}()
+	}
+
 	// Read stderr in goroutine so we don't potentially block reading stdout
 	stderrMsgC := make(chan []byte, 1)
 	go func() {
@@ -117,62 +129,6 @@ func kill(pid int) {
 	_ = syscall.Kill(-pid, syscall.SIGKILL)
 }
 
-func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
-	if !Exists() {
-		log15.Error("comby is not installed (it could not be found on the PATH)")
-		return errors.New("comby is not installed")
-	}
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	rawArgs := rawArgs(args)
-	log15.Info("running comby", "args", args.String())
-
-	cmd := exec.Command(combyPath, rawArgs...)
-	// Ensure forked child processes are killed
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-
-	if content, ok := args.Input.(FileContent); ok {
-		cmd.Stdin = bytes.NewReader(content)
-	}
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		log15.Error("could not connect to comby command stdout", "error", err.Error())
-		return errors.Wrap(err, "failed to connect to comby command stdout")
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		log15.Error("could not connect to comby command stderr", "error", err.Error())
-		return errors.Wrap(err, "failed to connect to comby command stderr")
-	}
-
-	if err := cmd.Start(); err != nil {
-		log15.Error("failed to start comby command", "error", err.Error())
-		return errors.Wrap(err, "failed to start comby command")
-	}
-
-	errorC := make(chan error, 1)
-	go func() {
-		errorC <- waitForCompletion(cmd, stdout, stderr, w)
-	}()
-
-	select {
-	case <-ctx.Done():
-		log15.Error("comby context deadline reached")
-		kill(cmd.Process.Pid)
-	case err := <-errorC:
-		if err != nil {
-			err = errors.Wrap(err, "failed to wait for executing comby command")
-			kill(cmd.Process.Pid)
-			return err
-		}
-	}
-
-	return nil
-}
-
 type unmarshaller func([]byte) Result
 
 func toFileMatch(b []byte) Result {
@@ -201,7 +157,11 @@ func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Resu
 	b := new(bytes.Buffer)
 	w := bufio.NewWriter(b)
 
-	err = PipeTo(ctx, args, w)
+	cmd, stdin, stdout, stderr, err := SetupCmdWithPipes(args)
+	if err != nil {
+		return nil, err
+	}
+	err = StartAndWaitForCompletion(ctx, cmd, stdin, stdout, stderr, args.Input, w)
 	if err != nil {
 		return nil, err
 	}
@@ -240,10 +200,6 @@ func SetupCmdWithPipes(args Args) (cmd *exec.Cmd, stdin io.WriteCloser, stdout, 
 	// Ensure forked child processes are killed
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	if content, ok := args.Input.(FileContent); ok {
-		cmd.Stdin = bytes.NewReader(content)
-	}
-
 	stdin, err = cmd.StdinPipe()
 	if err != nil {
 		log15.Error("could not connect to comby command stdin", "error", err.Error())
@@ -263,18 +219,22 @@ func SetupCmdWithPipes(args Args) (cmd *exec.Cmd, stdin io.WriteCloser, stdout, 
 	return cmd, stdin, stdout, stderr, nil
 }
 
-func StartAndWaitForCompletion(ctx context.Context, cmd *exec.Cmd, stdout, stderr io.ReadCloser) error {
+func StartAndWaitForCompletion(ctx context.Context, cmd *exec.Cmd, stdin io.WriteCloser, stdout, stderr io.ReadCloser, input Input, w ...io.Writer) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	if err := cmd.Start(); err != nil {
 		log15.Error("failed to start comby command", "error", err.Error())
 		return errors.Wrap(err, "failed to start comby command")
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	errorC := make(chan error, 1)
 	go func() {
-		errorC <- waitForCompletion(cmd, stdout, stderr)
+		if len(w) > 0 {
+			errorC <- waitForCompletion(cmd, stdin, stdout, stderr, input, w[0])
+		} else {
+			errorC <- waitForCompletion(cmd, stdin, stdout, stderr, input)
+		}
 	}()
 
 	select {
