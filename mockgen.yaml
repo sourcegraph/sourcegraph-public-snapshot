@@ -350,3 +350,8 @@ mocks:
     path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
     interfaces:
       - Store
+  - filename: internal/metrics/store/mocks_temp.go
+    path: github.com/sourcegraph/sourcegraph/internal/metrics/store
+    interfaces:
+      - Store
+      - DistributedStore
