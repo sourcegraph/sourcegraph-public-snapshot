@@ -192,7 +192,7 @@ func SetupCmdWithPipes(args Args) (cmd *exec.Cmd, stdin io.WriteCloser, stdout, 
 	}
 
 	rawArgs := rawArgs(args)
-	log15.Info("running comby", "args", args.String())
+	log15.Info("preparing to run comby", "args", args.String())
 
 	cmd = exec.Command(combyPath, rawArgs...)
 	// Ensure forked child processes are killed
@@ -220,6 +220,7 @@ func SetupCmdWithPipes(args Args) (cmd *exec.Cmd, stdin io.WriteCloser, stdout, 
 func StartAndWaitForCompletion(ctx context.Context, cmd *exec.Cmd, stdin io.WriteCloser, stdout, stderr io.ReadCloser, input Input, w ...io.Writer) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	log15.Info("starting comby")
 
 	if err := cmd.Start(); err != nil {
 		log15.Error("failed to start comby command", "error", err.Error())
