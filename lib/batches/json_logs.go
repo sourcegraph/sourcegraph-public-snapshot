@@ -247,11 +247,6 @@ type TaskStepMetadata struct {
 	Error    string `json:"error,omitempty"`
 }
 
-type CacheResultMetadata struct {
-	Key   string           `json:"key,omitempty"`
-	Value execution.Result `json:"value,omitempty"`
-}
-
 type CacheAfterStepResultMetadata struct {
 	Key   string                    `json:"key,omitempty"`
 	Value execution.AfterStepResult `json:"value,omitempty"`
