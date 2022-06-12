@@ -244,6 +244,11 @@ func scriptNameFromJobStep(job executor.Job, i int) string {
 
 // writeFiles writes to the filesystem the content in the given map.
 func writeFiles(workspaceFileContentsByPath map[string][]byte, logger *command.Logger) (err error) {
+	// Bail out early if nothing to do, we don't need to spawn an empty log group.
+	if len(workspaceFileContentsByPath) == 0 {
+		return nil
+	}
+
 	handle := logger.Log("setup.fs", nil)
 	defer func() {
 		if err == nil {
@@ -256,9 +261,16 @@ func writeFiles(workspaceFileContentsByPath map[string][]byte, logger *command.L
 	}()
 
 	for path, content := range workspaceFileContentsByPath {
+		// Ensure the path exists.
+		if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
+			return err
+		}
+
 		if err := os.WriteFile(path, content, os.ModePerm); err != nil {
 			return err
 		}
+
+		handle.Write([]byte(fmt.Sprintf("Wrote %s\n", path)))
 	}
 
 	return nil
