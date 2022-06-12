@@ -18,6 +18,7 @@ import (
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/throttled/throttled/v2/store/redigostore"
 
 	sglog "github.com/sourcegraph/log"
@@ -47,6 +48,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
@@ -134,9 +136,14 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	}, sglog.NewSentrySink())
 	defer liblog.Sync()
 
+	executorMetricsStore := metricsstore.NewDistributedStore("executors:")
 	logger := sglog.Scoped("server", "the frontend server program")
 	ready := make(chan struct{})
-	go debugserver.NewServerRoutine(ready).Start()
+	go debugserver.NewServerRoutine(ready, debugserver.Endpoint{
+		Name:    "metrics.executors",
+		Path:    "/metrics-executors",
+		Handler: promhttp.HandlerFor(executorMetricsStore, promhttp.HandlerOpts{}),
+	}).Start()
 
 	sqlDB, err := InitDB()
 	if err != nil {
