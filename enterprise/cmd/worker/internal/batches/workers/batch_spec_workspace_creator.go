@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/log"
 
@@ -27,7 +26,8 @@ import (
 // batchSpecWorkspaceCreator takes in BatchSpecs, resolves them into
 // RepoWorkspaces and then persists those as pending BatchSpecWorkspaces.
 type batchSpecWorkspaceCreator struct {
-	store *store.Store
+	store  *store.Store
+	logger log.Logger
 }
 
 // HandlerFunc returns a workeruitl.HandlerFunc that can be passed to a
@@ -88,7 +88,7 @@ func (r *batchSpecWorkspaceCreator) process(
 		return err
 	}
 
-	log15.Info("resolved workspaces for batch spec", "job", job.ID, "spec", spec.ID, "workspaces", len(workspaces))
+	r.logger.Info("resolved workspaces for batch spec", log.Int64("job", job.ID), log.Int64("spec", spec.ID), log.Int("workspaces", len(workspaces)))
 
 	// Build DB workspaces and check for cache entries.
 	ws := make([]*btypes.BatchSpecWorkspace, 0, len(workspaces))
@@ -215,6 +215,12 @@ func (r *batchSpecWorkspaceCreator) process(
 			}
 		}
 
+		// Validate there is anything to run. If not, we skip execution.
+		if len(spec.Spec.Steps) == len(workspace.skippedSteps) {
+			workspace.dbWorkspace.CachedResultFound = true
+			continue
+		}
+
 		// Find the latest step that is not statically skipped.
 		latestStepIdx := -1
 		for i := len(spec.Spec.Steps) - 1; i >= 0; i-- {
@@ -248,7 +254,6 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		execResult.Diff = res.Value.Diff
 		execResult.ChangedFiles = &changes
-		// TODO: This is not in src-cli, is it missing?
 		execResult.Path = workspace.dbWorkspace.Path
 
 		workspace.dbWorkspace.CachedResultFound = true
