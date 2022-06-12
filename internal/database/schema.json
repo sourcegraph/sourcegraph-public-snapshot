@@ -3236,6 +3236,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "changeset_specs_created_at",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX changeset_specs_created_at ON changeset_specs USING btree (created_at)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "changeset_specs_external_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -3851,6 +3861,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX changesets_bitbucket_cloud_metadata_source_commit_idx ON changesets USING btree ((((metadata -\u003e 'source'::text) -\u003e 'commit'::text) -\u003e\u003e 'hash'::text))",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "changesets_changeset_specs",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX changesets_changeset_specs ON changesets USING btree (current_spec_id, previous_spec_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
