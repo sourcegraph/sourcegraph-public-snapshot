@@ -1,17 +1,6 @@
-ALTER TABLE batch_spec_workspace_execution_jobs ADD COLUMN IF NOT EXISTS user_id INTEGER;
-
-UPDATE batch_spec_workspace_execution_jobs exec SET user_id = (
-    SELECT spec.user_id
-    FROM batch_spec_workspaces AS workspace
-    JOIN batch_specs spec ON spec.id = workspace.batch_spec_id
-    WHERE workspace.id = exec.batch_spec_workspace_id
-);
-
-CREATE INDEX IF NOT EXISTS batch_spec_workspace_execution_jobs_user_id ON batch_spec_workspace_execution_jobs (user_id);
-
-CREATE INDEX IF NOT EXISTS batch_spec_workspace_execution_jobs_state ON batch_spec_workspace_execution_jobs (state);
-
+DROP VIEW IF EXISTS batch_spec_workspace_execution_jobs_with_rank;
 DROP VIEW IF EXISTS batch_spec_workspace_execution_queue;
+
 CREATE VIEW batch_spec_workspace_execution_queue AS
 WITH user_queues AS (
     SELECT
