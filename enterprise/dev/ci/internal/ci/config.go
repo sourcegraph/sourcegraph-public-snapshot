@@ -112,7 +112,7 @@ func NewConfig(now time.Time) Config {
 		tag = fmt.Sprintf("%05d_%10s_%.12s", buildNumber, now.Format("2006-01-02"), commit)
 	default:
 		// Encode branch inside build tag by default.
-		tag = fmt.Sprintf("%s_%05d_%10s_%.12s", strings.ReplaceAll(branch, "/", "-"), buildNumber, now.Format("2006-01-02"), commit)
+		tag = fmt.Sprintf("%s_%05d_%10s_%.12s", strings.ReplaceAll(strings.ReplaceAll(branch, "/", "-"), "+", "/"), buildNumber, now.Format("2006-01-02"), commit)
 	}
 	if runType.Is(runtype.ImagePatch, runtype.ImagePatchNoTest, runtype.ExecutorPatchNoTest) {
 		// Add additional patch suffix
