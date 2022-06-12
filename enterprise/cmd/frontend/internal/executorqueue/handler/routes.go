@@ -143,7 +143,7 @@ func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 		// Handle metrics in the background, this should not delay the heartbeat response being
 		// delivered. It is critical for keeping jobs alive.
 		go func() {
-			metrics, err := decodeAndLabelMetrics(payload.PrometheusMetrics, payload.ExecutorName, payload.ExecutorVersion)
+			metrics, err := decodeAndLabelMetrics(payload.PrometheusMetrics, payload.ExecutorName)
 			if err != nil {
 				// Just log the error but don't panic. The heartbeat is more important.
 				h.logger.Error("failed to decode metrics and apply labels for executor heartbeat", log.Error(err))
@@ -209,8 +209,8 @@ func (h *handler) wrapHandler(w http.ResponseWriter, r *http.Request, payload an
 }
 
 // decodeAndLabelMetrics decodes the text serialized prometheus metrics dump and then
-// applies common labels and
-func decodeAndLabelMetrics(encodedMetrics, instanceName, executorVersion string) ([]*dto.MetricFamily, error) {
+// applies common labels.
+func decodeAndLabelMetrics(encodedMetrics, instanceName string) ([]*dto.MetricFamily, error) {
 	data := []*dto.MetricFamily{}
 
 	dec := expfmt.NewDecoder(strings.NewReader(encodedMetrics), expfmt.FmtText)
@@ -226,12 +226,10 @@ func decodeAndLabelMetrics(encodedMetrics, instanceName, executorVersion string)
 
 		// Attach the extra labels.
 		metricLabelInstance := "instance"
-		metricLabelVersion := "version"
 		metricLabelJob := "job"
 		job := "sourcegraph-executors"
 		for _, m := range mf.Metric {
 			m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelInstance, Value: &instanceName})
-			m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelVersion, Value: &executorVersion})
 			m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelJob, Value: &job})
 		}
 
