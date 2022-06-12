@@ -208,7 +208,7 @@ digraph architecture {
 
     /* Internal routes */
     frontend -> {searcher, symbols, blob_store, gitserver, repo_updater, zoekt_webserver, syntect_server} [fillcolor="#7e78dc"]
-    searcher -> gitserver [fillcolor="#e2a8fd"]
+    searcher -> {gitserver, zoekt_webserver} [fillcolor="#e2a8fd"]
     symbols -> gitserver [fillcolor="#c1eaea"]
     zoekt_indexserver -> {frontend, gitserver} [fillcolor="#aaccff"]
     worker -> {gitserver} [fillcolor="#22ffff"]
