@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -359,7 +361,9 @@ func TestHeartbeat(t *testing.T) {
 			"executorVersion": "test-executor-version",
 			"gitVersion": "test-git-version",
 			"igniteVersion": "test-ignite-version",
-			"srcCliVersion": "test-src-cli-version"
+			"srcCliVersion": "test-src-cli-version",
+
+			"prometheusMetrics": ""
 		}`,
 		responseStatus:  http.StatusOK,
 		responsePayload: `[1]`,
@@ -393,7 +397,9 @@ func TestHeartbeatBadResponse(t *testing.T) {
 			"executorVersion": "test-executor-version",
 			"gitVersion": "test-git-version",
 			"igniteVersion": "test-ignite-version",
-			"srcCliVersion": "test-src-cli-version"
+			"srcCliVersion": "test-src-cli-version",
+
+			"prometheusMetrics": ""
 		}`,
 		responseStatus:  http.StatusInternalServerError,
 		responsePayload: ``,
@@ -438,7 +444,9 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *Client)) {
 		},
 	}
 
-	f(New(options, &observation.TestContext))
+	client := New(options, &observation.TestContext)
+	client.metricsGatherer = prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return nil, nil })
+	f(client)
 }
 
 func testServer(t *testing.T, spec routeSpec) *httptest.Server {
