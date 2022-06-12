@@ -664,6 +664,7 @@ func candidateImageStepKey(app string) string {
 func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		image := strings.ReplaceAll(app, "/", "-")
+		image = strings.ReplaceAll(image, "+", "-")
 		localImage := "sourcegraph/" + image + ":" + version
 
 		cmds := []bk.StepOpt{
