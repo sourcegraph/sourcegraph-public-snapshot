@@ -94,8 +94,7 @@ type Step struct {
 	Files     map[string]string `json:"files,omitempty" yaml:"files,omitempty"`
 	Outputs   Outputs           `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 	Mount     []Mount           `json:"mount,omitempty" yaml:"mount,omitempty"`
-
-	If any `json:"if,omitempty" yaml:"if,omitempty"`
+	If        any               `json:"if,omitempty" yaml:"if,omitempty"`
 }
 
 func (s *Step) IfCondition() string {
@@ -247,7 +246,7 @@ func SkippedStepsForRepo(spec *BatchSpec, repoName string, fileMatches []string)
 	skipped = map[int32]struct{}{}
 
 	for idx, step := range spec.Steps {
-		// If no if condition is given, just go ahead and add the step to the list.
+		// If no if condition is set the step is always run.
 		if step.IfCondition() == "" {
 			continue
 		}

@@ -21,6 +21,7 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
+	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -163,7 +164,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 		return false, err
 	}
 
-	executionResults, stepResults, err := extractCacheEntries(events)
+	stepResults, err := extractCacheEntries(events)
 	if err != nil {
 		return false, err
 	}
@@ -178,10 +179,21 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 		return false, err
 	}
 
-	for _, entry := range append(executionResults, stepResults...) {
-		entry.UserID = spec.UserID
+	// Build DB cache entries for all the results and store them.
+	for _, result := range stepResults {
+		// TODO: This is stupid, because we unmarshal and then marshal again.
+		value, err := json.Marshal(&result.Value)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to marshal cache entry")
+		}
+		entry := &btypes.BatchSpecExecutionCacheEntry{
+			Key:    result.Key,
+			Value:  string(value),
+			UserID: spec.UserID,
+		}
+
 		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
-			return false, err
+			return false, errors.Wrap(err, "failed to save cache entry")
 		}
 	}
 
@@ -253,68 +265,90 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		return false, errors.Wrap(err, "failed to validate repo access")
 	}
 
-	executionResults, stepResults, err := extractCacheEntries(events)
+	stepResults, err := extractCacheEntries(events)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to extract cache entries")
 	}
 
-	for _, entry := range stepResults {
-		// Store the cache entry.
-		entry.UserID = batchSpec.UserID
+	if len(stepResults) == 0 {
+		return false, errors.New("found no step results")
+	}
+
+	// Build DB cache entries for all the results and store them.
+	for _, result := range stepResults {
+		value, err := json.Marshal(&result.Value)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to marshal cache entry")
+		}
+		entry := &btypes.BatchSpecExecutionCacheEntry{
+			Key:    result.Key,
+			Value:  string(value),
+			UserID: batchSpec.UserID,
+		}
+
 		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
 			return false, errors.Wrap(err, "failed to save cache entry")
 		}
 	}
 
-	changesetSpecIDs := []int64{}
-	for _, entry := range executionResults {
-		// Store the cache entry.
-		entry.UserID = batchSpec.UserID
-		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
-			return false, errors.Wrap(err, "failed to save cache entry")
+	var latestStepResult *batcheslib.CacheAfterStepResultMetadata = stepResults[0]
+	for _, r := range stepResults {
+		if r.Value.StepIndex > latestStepResult.Value.StepIndex {
+			latestStepResult = r
 		}
+	}
 
-		// And now build changeset specs from it
-		var executionResult execution.Result
-		if err := json.Unmarshal([]byte(entry.Value), &executionResult); err != nil {
-			return false, errors.Wrap(err, "failed to parse cache entry")
-		}
+	// Convert step result to execution result:
+	var execResult execution.Result
+	// Set the Outputs to the cached outputs
+	execResult.Outputs = latestStepResult.Value.Outputs
 
-		rawSpecs, err := cache.ChangesetSpecsFromCache(
-			batchSpec.Spec,
-			batcheslib.Repository{
-				ID:          string(relay.MarshalID("Repository", repo.ID)),
-				Name:        string(repo.Name),
-				BaseRef:     workspace.Branch,
-				BaseRev:     workspace.Commit,
-				FileMatches: workspace.FileMatches,
-			},
-			executionResult,
-		)
+	changes, err := git.ChangesInDiff([]byte(latestStepResult.Value.Diff))
+	if err != nil {
+		return false, errors.Wrap(err, "parsing cached step diff")
+	}
+
+	execResult.Diff = latestStepResult.Value.Diff
+	execResult.ChangedFiles = &changes
+	// TODO: This is not in src-cli, is it missing?
+	execResult.Path = workspace.Path
+	// Done
+
+	rawSpecs, err := cache.ChangesetSpecsFromCache(
+		batchSpec.Spec,
+		batcheslib.Repository{
+			ID:          string(relay.MarshalID("Repository", repo.ID)),
+			Name:        string(repo.Name),
+			BaseRef:     workspace.Branch,
+			BaseRev:     workspace.Commit,
+			FileMatches: workspace.FileMatches,
+		},
+		execResult,
+	)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to build changeset specs from cache")
+	}
+
+	var specs []*btypes.ChangesetSpec
+	for _, rawSpec := range rawSpecs {
+		changesetSpec, err := btypes.NewChangesetSpecFromSpec(rawSpec)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to build changeset specs from cache")
+			return false, errors.Wrap(err, "failed to build db changeset specs")
 		}
+		changesetSpec.BatchSpecID = batchSpec.ID
+		changesetSpec.RepoID = repo.ID
+		changesetSpec.UserID = batchSpec.UserID
 
-		var specs []*btypes.ChangesetSpec
-		for _, rawSpec := range rawSpecs {
-			changesetSpec, err := btypes.NewChangesetSpecFromSpec(rawSpec)
-			if err != nil {
-				return false, errors.Wrap(err, "failed to build db changeset specs")
-			}
-			changesetSpec.BatchSpecID = batchSpec.ID
-			changesetSpec.RepoID = repo.ID
-			changesetSpec.UserID = batchSpec.UserID
+		specs = append(specs, changesetSpec)
+	}
 
-			specs = append(specs, changesetSpec)
+	changesetSpecIDs := []int64{}
+	if len(specs) > 0 {
+		if err := tx.CreateChangesetSpec(ctx, specs...); err != nil {
+			return false, errors.Wrap(err, "failed to store changeset specs")
 		}
-
-		if len(specs) > 0 {
-			if err := tx.CreateChangesetSpec(ctx, specs...); err != nil {
-				return false, errors.Wrap(err, "failed to store changeset specs")
-			}
-			for _, spec := range specs {
-				changesetSpecIDs = append(changesetSpecIDs, spec.ID)
-			}
+		for _, spec := range specs {
+			changesetSpecIDs = append(changesetSpecIDs, spec.ID)
 		}
 	}
 
@@ -368,39 +402,19 @@ SET
 WHERE id = %s
 `
 
-func extractCacheEntries(events []*batcheslib.LogEvent) (executionResults, stepResults []*btypes.BatchSpecExecutionCacheEntry, err error) {
+func extractCacheEntries(events []*batcheslib.LogEvent) (cacheEntries []*batcheslib.CacheAfterStepResultMetadata, err error) {
 	for _, e := range events {
-		switch m := e.Metadata.(type) {
-		case *batcheslib.CacheResultMetadata:
-			// TODO: This is stupid, because we unmarshal and then marshal again.
-			value, err := json.Marshal(&m.Value)
-			if err != nil {
-				return nil, nil, err
+		if e.Operation == batcheslib.LogEventOperationCacheAfterStepResult {
+			m, ok := e.Metadata.(*batcheslib.CacheAfterStepResultMetadata)
+			if !ok {
+				return nil, errors.Newf("invalid log data, expected *batcheslib.CacheAfterStepResultMetadata got %T", e.Metadata)
 			}
 
-			executionResults = append(executionResults, &btypes.BatchSpecExecutionCacheEntry{
-				Key:   m.Key,
-				Value: string(value),
-			})
-		case *batcheslib.CacheAfterStepResultMetadata:
-			// TODO: This is stupid, because we unmarshal and then marshal again.
-			value, err := json.Marshal(&m.Value)
-			if err != nil {
-				return nil, nil, err
-			}
-
-			stepResults = append(stepResults, &btypes.BatchSpecExecutionCacheEntry{
-				Key:   m.Key,
-				Value: string(value),
-			})
+			cacheEntries = append(cacheEntries, m)
 		}
 	}
 
-	if len(executionResults) > 1 {
-		return nil, nil, errors.New("logs cannot contain more than 1 execution result")
-	}
-
-	return executionResults, stepResults, nil
+	return cacheEntries, nil
 }
 
 var ErrNoSrcCLILogEntry = errors.New("no src-cli log entry found in execution logs")

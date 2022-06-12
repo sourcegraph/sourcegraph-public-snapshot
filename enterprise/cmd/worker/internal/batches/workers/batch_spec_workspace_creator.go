@@ -46,10 +46,15 @@ func (e *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc {
 	}
 }
 
+type stepCacheKey struct {
+	index int
+	key   string
+}
+
 type workspaceCacheKey struct {
 	dbWorkspace   *btypes.BatchSpecWorkspace
 	repo          batcheslib.Repository
-	stepCacheKeys map[int]string
+	stepCacheKeys []stepCacheKey
 	skippedSteps  map[int32]struct{}
 }
 
@@ -88,7 +93,8 @@ func (r *batchSpecWorkspaceCreator) process(
 	// Build DB workspaces and check for cache entries.
 	ws := make([]*btypes.BatchSpecWorkspace, 0, len(workspaces))
 	// Collect all cache keys so we can look them up in a single query.
-	cacheKeyWorkspaces := make(map[string]workspaceCacheKey)
+	cacheKeyWorkspaces := make([]workspaceCacheKey, 0, len(workspaces))
+	allStepCacheKeys := make([]string, 0, len(workspaces))
 
 	// Build workspaces DB objects.
 	for _, w := range workspaces {
@@ -127,6 +133,11 @@ func (r *batchSpecWorkspaceCreator) process(
 			FileMatches: w.FileMatches,
 		}
 
+		skippedSteps, err := batcheslib.SkippedStepsForRepo(spec.Spec, string(w.Repo.Name), w.FileMatches)
+		if err != nil {
+			return err
+		}
+
 		key := cache.KeyForWorkspace(
 			&template.BatchChangeAttributes{
 				Name:        spec.Spec.Name,
@@ -138,66 +149,36 @@ func (r *batchSpecWorkspaceCreator) process(
 			spec.Spec.Steps,
 		)
 
-		rawKey, err := key.Key()
-		if err != nil {
-			return err
-		}
-
-		skippedSteps, err := batcheslib.SkippedStepsForRepo(spec.Spec, string(w.Repo.Name), w.FileMatches)
-		if err != nil {
-			return err
-		}
-
-		stepCacheKeys := make(map[int]string, len(spec.Spec.Steps))
+		stepCacheKeys := make([]stepCacheKey, 0, len(spec.Spec.Steps))
 		// Generate cache keys for all the step results as well.
 		for i := 0; i < len(spec.Spec.Steps); i++ {
 			if _, ok := skippedSteps[int32(i)]; ok {
 				continue
 			}
+
 			key := cache.StepsCacheKey{ExecutionKey: &key, StepIndex: i}
 			rawStepKey, err := key.Key()
 			if err != nil {
 				return nil
 			}
-			stepCacheKeys[i] = rawStepKey
+
+			stepCacheKeys = append(stepCacheKeys, stepCacheKey{index: i, key: rawStepKey})
+			allStepCacheKeys = append(allStepCacheKeys, rawStepKey)
 		}
 
-		cacheKeyWorkspaces[rawKey] = workspaceCacheKey{
+		cacheKeyWorkspaces = append(cacheKeyWorkspaces, workspaceCacheKey{
 			dbWorkspace:   workspace,
 			repo:          r,
 			stepCacheKeys: stepCacheKeys,
 			skippedSteps:  skippedSteps,
-		}
-	}
-
-	// Fetch all cache entries by their keys.
-	cacheKeys := make([]string, 0, len(cacheKeyWorkspaces))
-	stepCacheKeys := make([]string, 0, len(cacheKeyWorkspaces))
-	for key, w := range cacheKeyWorkspaces {
-		cacheKeys = append(cacheKeys, key)
-
-		for _, key := range w.stepCacheKeys {
-			stepCacheKeys = append(stepCacheKeys, key)
-		}
-	}
-	entriesByCacheKey := make(map[string]*btypes.BatchSpecExecutionCacheEntry)
-	if len(cacheKeys) > 0 {
-		entries, err := tx.ListBatchSpecExecutionCacheEntries(ctx, store.ListBatchSpecExecutionCacheEntriesOpts{
-			UserID: spec.UserID,
-			Keys:   cacheKeys,
 		})
-		if err != nil {
-			return err
-		}
-		for _, entry := range entries {
-			entriesByCacheKey[entry.Key] = entry
-		}
 	}
-	stepEntriesByCacheKey := make(map[string]*btypes.BatchSpecExecutionCacheEntry)
-	if len(stepCacheKeys) > 0 {
+
+	stepEntriesByCacheKey := make(map[string]*btypes.BatchSpecExecutionCacheEntry, len(allStepCacheKeys))
+	if len(allStepCacheKeys) > 0 {
 		entries, err := tx.ListBatchSpecExecutionCacheEntries(ctx, store.ListBatchSpecExecutionCacheEntriesOpts{
 			UserID: spec.UserID,
-			Keys:   stepCacheKeys,
+			Keys:   allStepCacheKeys,
 		})
 		if err != nil {
 			return err
@@ -208,14 +189,16 @@ func (r *batchSpecWorkspaceCreator) process(
 	}
 
 	// All changeset specs to be created.
-	cs := make([]*btypes.ChangesetSpec, 0)
+	cs := []*btypes.ChangesetSpec{}
 	// Collect all IDs of used cache entries to mark them as recently used later.
-	usedCacheEntries := make([]int64, 0)
+	usedCacheEntries := []int64{}
 	changesetsByWorkspace := make(map[*btypes.BatchSpecWorkspace][]*btypes.ChangesetSpec)
 
 	// Check for an existing cache entry for each of the workspaces.
-	for rawKey, workspace := range cacheKeyWorkspaces {
-		for idx, key := range workspace.stepCacheKeys {
+	for _, workspace := range cacheKeyWorkspaces {
+		for _, ck := range workspace.stepCacheKeys {
+			key := ck.key
+			idx := ck.index
 			if c, ok := stepEntriesByCacheKey[key]; ok {
 				var res execution.AfterStepResult
 				if err := json.Unmarshal([]byte(c.Value), &res); err != nil {
@@ -232,73 +215,45 @@ func (r *batchSpecWorkspaceCreator) process(
 			}
 		}
 
-		entry, ok := entriesByCacheKey[rawKey]
-		if !ok {
-			// If no cache entry is found, maybe we have a step cache entry for the last step instead.
-			// Since those can be converted without execution, we can recreate that entry here.
-			// TODO: This technically means that we don't need execution entries at all, we could always just
-			// run the code below to create a cache result from the execution cache entry.
-			// This would reduce data stored in the DB. We can then also stop logging it in src-cli which also
-			// makes the logs smaller (often by close to 50%, when there is just 1 step!).
-
-			// Find the latest step that is not statically skipped.
-			latestStepIdx := -1
-			for i := len(spec.Spec.Steps) - 1; i >= 0; i-- {
-				// Keep skipping steps until the first one is hit that we do want to run.
-				if _, ok := workspace.skippedSteps[int32(i)]; ok {
-					continue
-				}
-				// TODO: Is this required?
-				i := i
-				latestStepIdx = i
-				break
-			}
-			if latestStepIdx != -1 {
-				res, found := workspace.dbWorkspace.StepCacheResult(latestStepIdx + 1)
-				if !found {
-					// TODO: this is an error! It should have been set right above in l.222.
-					continue
-				}
-				var execResult execution.Result
-				// Set the Outputs to the cached outputs
-				execResult.Outputs = res.Value.Outputs
-
-				changes, err := git.ChangesInDiff([]byte(res.Value.Diff))
-				if err != nil {
-					return errors.Wrap(err, "parsing cached step diff")
-				}
-
-				execResult.Diff = res.Value.Diff
-				execResult.ChangedFiles = &changes
-				// TODO: This is not in src-cli, is it missing?
-				execResult.Path = workspace.dbWorkspace.Path
-
-				entry, err = btypes.NewCacheEntryFromResult(rawKey, execResult)
-				if err != nil {
-					return errors.Wrap(err, "NewCacheEntryFromResult")
-				}
-				entry.UserID = spec.UserID
-
-				if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
-					return errors.Wrap(err, "storing cache entry")
-				}
-			} else {
+		// Find the latest step that is not statically skipped.
+		latestStepIdx := -1
+		for i := len(spec.Spec.Steps) - 1; i >= 0; i-- {
+			// Keep skipping steps until the first one is hit that we do want to run.
+			if _, ok := workspace.skippedSteps[int32(i)]; ok {
 				continue
 			}
+			// TODO: Is this required?
+			i := i
+			latestStepIdx = i
+			break
 		}
+		if latestStepIdx == -1 {
+			continue
+		}
+
+		var execResult execution.Result
+		// TODO: Empty diff check.
+		res, found := workspace.dbWorkspace.StepCacheResult(latestStepIdx + 1)
+		if !found {
+			// TODO: this is an error! It should have been set right above in l.222.
+			continue
+		}
+		// Set the Outputs to the cached outputs
+		execResult.Outputs = res.Value.Outputs
+
+		changes, err := git.ChangesInDiff([]byte(res.Value.Diff))
+		if err != nil {
+			return errors.Wrap(err, "parsing cached step diff")
+		}
+
+		execResult.Diff = res.Value.Diff
+		execResult.ChangedFiles = &changes
+		// TODO: This is not in src-cli, is it missing?
+		execResult.Path = workspace.dbWorkspace.Path
 
 		workspace.dbWorkspace.CachedResultFound = true
 
-		// Mark the cache entries as used.
-		usedCacheEntries = append(usedCacheEntries, entry.ID)
-
-		// Build the changeset specs from the cache entry.
-		var executionResult execution.Result
-		if err := json.Unmarshal([]byte(entry.Value), &executionResult); err != nil {
-			return err
-		}
-
-		rawSpecs, err := cache.ChangesetSpecsFromCache(spec.Spec, workspace.repo, executionResult)
+		rawSpecs, err := cache.ChangesetSpecsFromCache(spec.Spec, workspace.repo, execResult)
 		if err != nil {
 			return err
 		}

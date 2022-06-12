@@ -75,10 +75,6 @@ func (l *LogEvent) UnmarshalJSON(data []byte) error {
 		l.Metadata = new(TaskPreparingStepMetadata)
 	case LogEventOperationTaskStep:
 		l.Metadata = new(TaskStepMetadata)
-	case LogEventOperationTaskCalculatingDiff:
-		l.Metadata = new(TaskCalculatingDiffMetadata)
-	case LogEventOperationCacheResult:
-		l.Metadata = new(CacheResultMetadata)
 	case LogEventOperationCacheAfterStepResult:
 		l.Metadata = new(CacheAfterStepResultMetadata)
 	default:
@@ -118,8 +114,6 @@ const (
 	LogEventOperationTaskStepSkipped           LogEventOperation = "TASK_STEP_SKIPPED"
 	LogEventOperationTaskPreparingStep         LogEventOperation = "TASK_PREPARING_STEP"
 	LogEventOperationTaskStep                  LogEventOperation = "TASK_STEP"
-	LogEventOperationTaskCalculatingDiff       LogEventOperation = "TASK_CALCULATING_DIFF"
-	LogEventOperationCacheResult               LogEventOperation = "CACHE_RESULT"
 	LogEventOperationCacheAfterStepResult      LogEventOperation = "CACHE_AFTER_STEP_RESULT"
 )
 
@@ -245,15 +239,12 @@ type TaskStepMetadata struct {
 
 	Out string `json:"out,omitempty"`
 
+	// TODO: This doesn't need to be here, right? What about other fields here?
 	Diff    string         `json:"diff,omitempty"`
 	Outputs map[string]any `json:"outputs,omitempty"`
 
 	ExitCode int    `json:"exitCode,omitempty"`
 	Error    string `json:"error,omitempty"`
-}
-
-type TaskCalculatingDiffMetadata struct {
-	TaskID string `json:"taskID,omitempty"`
 }
 
 type CacheResultMetadata struct {
