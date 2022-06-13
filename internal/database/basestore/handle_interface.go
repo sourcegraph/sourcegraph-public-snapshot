@@ -13,6 +13,8 @@ import (
 // nested transactions through registration and finalization of savepoints. A
 // transactable database handler can be shared by multiple stores.
 type TransactableHandle interface {
+	dbutil.DB
+
 	// DBUtilDB returns the underlying dbutil.DBUtilDB, which is usually a *sql.DBUtilDB or a *sql.Tx
 	DBUtilDB() dbutil.DB
 
@@ -44,12 +46,12 @@ var (
 )
 
 type dbHandle struct {
-	db        *sql.DB
+	*sql.DB
 	txOptions sql.TxOptions
 }
 
 func (h *dbHandle) DBUtilDB() dbutil.DB {
-	return h.db
+	return h.DB
 }
 
 func (h *dbHandle) InTransaction() bool {
@@ -57,11 +59,11 @@ func (h *dbHandle) InTransaction() bool {
 }
 
 func (h *dbHandle) Transact(ctx context.Context) (TransactableHandle, error) {
-	tx, err := h.db.BeginTx(ctx, &h.txOptions)
+	tx, err := h.DB.BeginTx(ctx, &h.txOptions)
 	if err != nil {
 		return nil, err
 	}
-	return &txHandle{tx: tx, txOptions: h.txOptions}, nil
+	return &txHandle{Tx: tx, txOptions: h.txOptions}, nil
 }
 
 func (h *dbHandle) Done(err error) error {
@@ -69,12 +71,12 @@ func (h *dbHandle) Done(err error) error {
 }
 
 type txHandle struct {
-	tx        *sql.Tx
+	*sql.Tx
 	txOptions sql.TxOptions
 }
 
 func (h *txHandle) DBUtilDB() dbutil.DB {
-	return h.tx
+	return h.Tx
 }
 
 func (h *txHandle) InTransaction() bool {
@@ -82,28 +84,28 @@ func (h *txHandle) InTransaction() bool {
 }
 
 func (h *txHandle) Transact(ctx context.Context) (TransactableHandle, error) {
-	savepointID, err := newTxSavepoint(ctx, h.tx)
+	savepointID, err := newTxSavepoint(ctx, h.Tx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &savepointHandle{tx: h.tx, savepointID: savepointID}, nil
+	return &savepointHandle{Tx: h.Tx, savepointID: savepointID}, nil
 }
 
 func (h *txHandle) Done(err error) error {
 	if err == nil {
-		return h.tx.Commit()
+		return h.Tx.Commit()
 	}
-	return errors.Append(err, h.tx.Rollback())
+	return errors.Append(err, h.Tx.Rollback())
 }
 
 type savepointHandle struct {
-	tx          *sql.Tx
+	*sql.Tx
 	savepointID string
 }
 
 func (h *savepointHandle) DBUtilDB() dbutil.DB {
-	return h.tx
+	return h.Tx
 }
 
 func (h *savepointHandle) InTransaction() bool {
@@ -111,21 +113,21 @@ func (h *savepointHandle) InTransaction() bool {
 }
 
 func (h *savepointHandle) Transact(ctx context.Context) (TransactableHandle, error) {
-	savepointID, err := newTxSavepoint(ctx, h.tx)
+	savepointID, err := newTxSavepoint(ctx, h.Tx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &savepointHandle{tx: h.tx, savepointID: savepointID}, nil
+	return &savepointHandle{Tx: h.Tx, savepointID: savepointID}, nil
 }
 
 func (h *savepointHandle) Done(err error) error {
 	if err == nil {
-		_, execErr := h.tx.Exec(fmt.Sprintf(commitSavepointQuery, h.savepointID))
+		_, execErr := h.Tx.Exec(fmt.Sprintf(commitSavepointQuery, h.savepointID))
 		return execErr
 	}
 
-	_, execErr := h.tx.Exec(fmt.Sprintf(rollbackSavepointQuery, h.savepointID))
+	_, execErr := h.Tx.Exec(fmt.Sprintf(rollbackSavepointQuery, h.savepointID))
 	return errors.Append(err, execErr)
 }
 

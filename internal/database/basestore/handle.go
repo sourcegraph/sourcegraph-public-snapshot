@@ -9,29 +9,29 @@ import (
 )
 
 type oldTransactableHandle struct {
-	db         dbutil.DB
+	dbutil.DB
 	savepoints []*savepoint
 	txOptions  sql.TxOptions
 }
 
 // NewHandleWithUntypedDB returns a new transactable database handle using the given database connection.
 func NewHandleWithUntypedDB(db dbutil.DB, txOptions sql.TxOptions) TransactableHandle {
-	return &oldTransactableHandle{db: db, txOptions: txOptions}
+	return &oldTransactableHandle{DB: db, txOptions: txOptions}
 }
 
 // NewHandleWithDB returns a new transactable database handle using the given database connection.
 func NewHandleWithDB(db *sql.DB, txOptions sql.TxOptions) TransactableHandle {
-	return &dbHandle{db: db, txOptions: txOptions}
+	return &dbHandle{DB: db, txOptions: txOptions}
 }
 
 // DB returns the underlying database handle.
 func (h *oldTransactableHandle) DBUtilDB() dbutil.DB {
-	return h.db
+	return h.DB
 }
 
 // InTransaction returns true if the underlying database handle is in a transaction.
 func (h *oldTransactableHandle) InTransaction() bool {
-	db := tryUnwrap(h.db)
+	db := tryUnwrap(h.DB)
 	_, ok := db.(dbutil.Tx)
 	return ok
 }
@@ -45,7 +45,7 @@ func (h *oldTransactableHandle) InTransaction() bool {
 // goroutines on the same handle will not be deterministic: either transaction could nest the other one,
 // and calling Done in one goroutine may not finalize the expected unit of work.
 func (h *oldTransactableHandle) Transact(ctx context.Context) (TransactableHandle, error) {
-	db := tryUnwrap(h.db)
+	db := tryUnwrap(h.DB)
 
 	if h.InTransaction() {
 		savepoint, err := newSavepoint(ctx, db)
@@ -67,7 +67,7 @@ func (h *oldTransactableHandle) Transact(ctx context.Context) (TransactableHandl
 		return nil, err
 	}
 
-	return &oldTransactableHandle{db: tx, txOptions: h.txOptions}, nil
+	return &oldTransactableHandle{DB: tx, txOptions: h.txOptions}, nil
 }
 
 // Done performs a commit or rollback of the underlying transaction/savepoint depending
@@ -76,7 +76,7 @@ func (h *oldTransactableHandle) Transact(ctx context.Context) (TransactableHandl
 // transaction/savepoint. If the store does not wrap a transaction the original error value
 // is returned unchanged.
 func (h *oldTransactableHandle) Done(err error) error {
-	db := tryUnwrap(h.db)
+	db := tryUnwrap(h.DB)
 
 	if n := len(h.savepoints); n > 0 {
 		var savepoint *savepoint
