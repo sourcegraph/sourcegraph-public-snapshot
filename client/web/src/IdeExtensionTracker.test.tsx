@@ -1,6 +1,6 @@
 import { cleanup, render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import {CompatRouter } from 'react-router-dom-v5-compat'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'

@@ -26,18 +26,9 @@ describe('BrowserExtensionTracker', () => {
     })
 
     const cases: [string, string | null][] = [
-        [
-            '/github.com/sourcegraph/sourcegraph?utm_source=chrome-extension&utm_campaign=view-on-sourcegraph',
-            DATE_NOW,
-        ],
-        [
-            '/github.com/sourcegraph/sourcegraph?utm_source=firefox-extension&utm_campaign=view-on-sourcegraph',
-            DATE_NOW,
-        ],
-        [
-            '/github.com/sourcegraph/sourcegraph?utm_source=safari-extension&utm_campaign=view-on-sourcegraph',
-            DATE_NOW,
-        ],
+        ['/github.com/sourcegraph/sourcegraph?utm_source=chrome-extension&utm_campaign=view-on-sourcegraph', DATE_NOW],
+        ['/github.com/sourcegraph/sourcegraph?utm_source=firefox-extension&utm_campaign=view-on-sourcegraph', DATE_NOW],
+        ['/github.com/sourcegraph/sourcegraph?utm_source=safari-extension&utm_campaign=view-on-sourcegraph', DATE_NOW],
         ['/?something=different', null],
     ]
     test.each(cases)('Detects query parameters for %p', (url, expectedResult) => {
