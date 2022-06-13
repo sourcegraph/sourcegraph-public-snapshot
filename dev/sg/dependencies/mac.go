@@ -317,19 +317,19 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 						}
 					}
 
-					cio.Promptf("Enter secret key:")
-					var key string
-					if _, err := fmt.Fscan(cio.Input, &key); err != nil {
+					key, err := cio.PromptPasswordf(cio.Input, "Enter secret key:")
+					if err != nil {
 						return err
 					}
+
 					cio.Promptf("Enter account email:")
 					var email string
 					if _, err := fmt.Fscan(cio.Input, &email); err != nil {
 						return err
 					}
-					cio.Promptf("Enter account password:")
-					var password string
-					if _, err := fmt.Fscan(cio.Input, &password); err != nil {
+
+					password, err := cio.PromptPasswordf(cio.Input, "Enter account password:")
+					if err != nil {
 						return err
 					}
 
