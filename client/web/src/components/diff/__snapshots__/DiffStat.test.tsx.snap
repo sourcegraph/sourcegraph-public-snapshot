@@ -2,39 +2,53 @@
 
 exports[`DiffStat expandedCounts 1`] = `
 <DocumentFragment>
-  <div
-    class="diffStat"
-    data-tooltip="1 addition, 2 changes, 3 deletions"
+  <span
+    class="tooltip"
+    data-state="closed"
+    data-test-content="1 addition, 2 changes, 3 deletions"
+    role="presentation"
   >
-    <strong
-      class="a11y-ignore text-success mr-1"
+    <div
+      aria-label="1 addition, 2 changes, 3 deletions"
+      class="diffStat"
     >
-      +1
-    </strong>
-    <strong
-      class="a11y-ignore text-warning mr-1"
-    >
-      •2
-    </strong>
-    <strong
-      class="a11y-ignore text-danger"
-    >
-      −3
-    </strong>
-  </div>
+      <strong
+        class="a11y-ignore text-success mr-1"
+      >
+        +1
+      </strong>
+      <strong
+        class="a11y-ignore text-warning mr-1"
+      >
+        •2
+      </strong>
+      <strong
+        class="a11y-ignore text-danger"
+      >
+        −3
+      </strong>
+    </div>
+  </span>
 </DocumentFragment>
 `;
 
 exports[`DiffStat standard 1`] = `
 <DocumentFragment>
-  <div
-    class="diffStat"
-    data-tooltip="1 addition, 2 changes, 3 deletions"
+  <span
+    class="tooltip"
+    data-state="closed"
+    data-test-content="1 addition, 2 changes, 3 deletions"
+    role="presentation"
   >
-    <small>
-      8
-    </small>
-  </div>
+    <div
+      aria-label="1 addition, 2 changes, 3 deletions"
+      class="diffStat"
+    >
+      <small>
+        8
+      </small>
+    </div>
+  </span>
 </DocumentFragment>
 `;
 
@@ -67,26 +81,33 @@ exports[`DiffStatStack 1`] = `
   <div
     class="d-flex flex-column align-items-center"
   >
-    <div
-      class="diffStat pb-1"
-      data-tooltip="1 addition, 2 changes, 3 deletions"
+    <span
+      class="tooltip"
+      data-state="closed"
+      data-test-content="1 addition, 2 changes, 3 deletions"
+      role="presentation"
     >
-      <strong
-        class="a11y-ignore text-success mr-1"
+      <div
+        aria-label="1 addition, 2 changes, 3 deletions"
+        class="diffStat pb-1"
       >
-        +1
-      </strong>
-      <strong
-        class="a11y-ignore text-warning mr-1"
-      >
-        •2
-      </strong>
-      <strong
-        class="a11y-ignore text-danger"
-      >
-        −3
-      </strong>
-    </div>
+        <strong
+          class="a11y-ignore text-success mr-1"
+        >
+          +1
+        </strong>
+        <strong
+          class="a11y-ignore text-warning mr-1"
+        >
+          •2
+        </strong>
+        <strong
+          class="a11y-ignore text-danger"
+        >
+          −3
+        </strong>
+      </div>
+    </span>
     <div
       class="squares"
     >
