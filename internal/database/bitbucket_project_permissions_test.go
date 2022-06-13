@@ -193,7 +193,7 @@ LIMIT 100
 		got := listWorkerJobsQuery(ListJobsOptions{
 			ProjectKey: "123",
 			Status:     "completed",
-			Count:      1337,
+			Count:      337,
 		})
 
 		gotString := got.Query(sqlf.PostgresBindVar)
@@ -203,7 +203,7 @@ SELECT id, state, failure_message, queued_at, started_at, finished_at, process_a
 FROM explicit_permissions_bitbucket_project_jobs
 WHERE project_key = $1  AND status = $2
 ORDER BY queued_at DESC
-LIMIT 1337
+LIMIT 337
 `
 
 		require.Equal(t, want, gotString)
