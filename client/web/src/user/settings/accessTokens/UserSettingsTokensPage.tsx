@@ -23,7 +23,7 @@ import { accessTokenFragment, AccessTokenNode, AccessTokenNodeProps } from '../.
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 interface Props
-    extends Pick<UserSettingsAreaRouteContext, 'user'>,
+    extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>,
         Pick<RouteComponentProps<{}>, 'history' | 'location' | 'match'>,
         TelemetryProps {
     /**
@@ -47,6 +47,7 @@ export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChil
     history,
     location,
     match,
+    authenticatedUser,
     user,
     newToken,
     onDidPresentNewToken,
@@ -74,6 +75,9 @@ export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChil
         [user.id]
     )
 
+    const siteAdminViewingOtherUser = authenticatedUser && authenticatedUser.id !== user.id
+
+    console.log('here', siteAdminViewingOtherUser)
     return (
         <div className="user-settings-tokens-page">
             <PageTitle title="Access tokens" />
@@ -82,10 +86,10 @@ export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChil
                 path={[{ text: 'Access tokens' }]}
                 description="Access tokens may be used to access the Sourcegraph API."
                 actions={
+                    siteAdminViewingOtherUser && (
                     <Button to={`${match.url}/new`} variant="primary" as={Link}>
                         <Icon role="img" as={AddIcon} aria-hidden={true} /> Generate new token
-                    </Button>
-                }
+                    </Button>)}
                 className="mb-3"
             />
             <Container>
