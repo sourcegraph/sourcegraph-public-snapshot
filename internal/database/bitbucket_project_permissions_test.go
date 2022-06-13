@@ -175,7 +175,7 @@ func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
 
 func TestListWorkerJobsQuery(t *testing.T) {
 	t.Run("no options set", func(t *testing.T) {
-		got := listWorkerJobsQuery(ListWorkerJobsOptions{})
+		got := listWorkerJobsQuery(ListJobsOptions{})
 		gotString := got.Query(sqlf.PostgresBindVar)
 
 		want := `
@@ -190,7 +190,7 @@ LIMIT 100
 		require.Equal(t, want, gotString)
 	})
 	t.Run("all options set", func(t *testing.T) {
-		got := listWorkerJobsQuery(ListWorkerJobsOptions{
+		got := listWorkerJobsQuery(ListJobsOptions{
 			ProjectKey: "123",
 			Status:     "completed",
 			Count:      1337,

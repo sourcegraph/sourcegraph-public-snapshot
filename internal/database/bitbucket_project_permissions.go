@@ -26,7 +26,7 @@ type BitbucketProjectPermissionsStore interface {
 	Enqueue(ctx context.Context, projectKey string, externalServiceID int64, permissions []types.UserPermission, unrestricted bool) (int, error)
 	Transact(ctx context.Context) (BitbucketProjectPermissionsStore, error)
 	Done(err error) error
-	ListWorkerJobs(ctx context.Context, opt ListWorkerJobsOptions) ([]*types.BitbucketProjectPermissionJob, error)
+	ListJobs(ctx context.Context, opt ListJobsOptions) ([]*types.BitbucketProjectPermissionJob, error)
 }
 
 type bitbucketProjectPermissionsStore struct {
@@ -129,26 +129,24 @@ func ScanFirstBitbucketProjectPermissionsJob(rows *sql.Rows, queryErr error) (_ 
 	return nil, false, nil
 }
 
-type ListWorkerJobsOptions struct {
+type ListJobsOptions struct {
 	ProjectKey string
 	Status     string
 	Count      int
 }
 
-// ListWorkerJobs returns a list of types.BitbucketProjectPermissionJob for a given set
-// of query options: ListWorkerJobsOptions
-func (s *bitbucketProjectPermissionsStore) ListWorkerJobs(
+// ListJobs returns a list of types.BitbucketProjectPermissionJob for a given set
+// of query options: ListJobsOptions
+func (s *bitbucketProjectPermissionsStore) ListJobs(
 	ctx context.Context,
-	opt ListWorkerJobsOptions,
+	opt ListJobsOptions,
 ) (jobs []*types.BitbucketProjectPermissionJob, err error) {
 	query := listWorkerJobsQuery(opt)
 
 	rows, err := s.Query(ctx, query)
-
 	if err != nil {
 		return nil, err
 	}
-
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
@@ -200,9 +198,9 @@ func scanOneJob(rows *sql.Rows) (*types.BitbucketProjectPermissionJob, error) {
 	return &job, nil
 }
 
-const maxJobsCount = 10000
+const maxJobsCount = 500
 
-func listWorkerJobsQuery(opt ListWorkerJobsOptions) *sqlf.Query {
+func listWorkerJobsQuery(opt ListJobsOptions) *sqlf.Query {
 	var where []*sqlf.Query
 
 	q := `
