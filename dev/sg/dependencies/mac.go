@@ -295,11 +295,10 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 				Name:  "1password",
 				Check: checkAction(check1password()),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := usershell.Run(ctx, "brew install --cask 1password/tap/1password-cli").StreamLines(cio.Verbose); err != nil {
-						return err
-					}
-					if cio.Input == nil {
-						return errors.New("interactive input required")
+					if err := check.InPath("op")(ctx); err != nil {
+						if err := usershell.Run(ctx, "brew install --cask 1password/tap/1password-cli").StreamLines(cio.Verbose); err != nil {
+							return err
+						}
 					}
 
 					accounts, err := usershell.Run(ctx, "op account list").String()
@@ -315,6 +314,10 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 							cio.WriteMarkdown("```sh\n" + loginCmd + "\n```")
 							return errors.Newf("Cannot be fixed by automatically")
 						}
+					}
+
+					if cio.Input == nil {
+						return errors.New("interactive input required")
 					}
 
 					key, err := cio.PromptPasswordf(cio.Input, "Enter secret key:")
