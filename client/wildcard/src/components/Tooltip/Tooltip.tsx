@@ -62,7 +62,6 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = ({
             <span
                 role="presentation"
                 className={classNames(styles.tooltip, className)}
-                onClick={event => event.preventDefault()}
                 data-testid={dataTestId}
                 data-test-content={content}
             >
