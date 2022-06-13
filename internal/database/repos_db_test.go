@@ -194,7 +194,7 @@ func upsertRepo(ctx context.Context, db DB, op InsertRepoOp) error {
 		return nil
 	}
 
-	_, err = s.Handle().DBUtilDB().ExecContext(
+	_, err = s.Handle().ExecContext(
 		ctx,
 		upsertSQL,
 		op.Name,
@@ -730,7 +730,7 @@ func TestRepos_List_LastChanged(t *testing.T) {
 	})
 
 	// Our test helpers don't do updated_at, so manually doing it.
-	_, err := db.Handle().DBUtilDB().ExecContext(ctx, "update repo set updated_at = $1", now.Add(-24*time.Hour))
+	_, err := db.Handle().ExecContext(ctx, "update repo set updated_at = $1", now.Add(-24*time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -740,7 +740,7 @@ func TestRepos_List_LastChanged(t *testing.T) {
 		CloneStatus: types.CloneStatusCloned,
 		LastChanged: now.Add(-24 * time.Hour),
 	})
-	_, err = db.Handle().DBUtilDB().ExecContext(ctx, "update repo set updated_at = $1 where name = 'newMeta'", now)
+	_, err = db.Handle().ExecContext(ctx, "update repo set updated_at = $1 where name = 'newMeta'", now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -770,7 +770,7 @@ func TestRepos_List_LastChanged(t *testing.T) {
 			}
 		}
 		mkSearchContext("old", ReposListOptions{})
-		_, err = db.Handle().DBUtilDB().ExecContext(ctx, "update search_contexts set updated_at = $1", now.Add(-24*time.Hour))
+		_, err = db.Handle().ExecContext(ctx, "update search_contexts set updated_at = $1", now.Add(-24*time.Hour))
 		if err != nil {
 			t.Fatal(err)
 		}

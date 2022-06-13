@@ -85,7 +85,7 @@ func (r *insightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.In
 		excludeRepo(*r.filters.ExcludeRepoRegex)
 	}
 
-	scLoader := &scLoader{primary: r.workerBaseStore.Handle().DBUtilDB()}
+	scLoader := &scLoader{primary: r.workerBaseStore.Handle()}
 	inc, exc, err := unwrapSearchContexts(ctx, scLoader, r.filters.SearchContexts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unwrapSearchContexts")
@@ -338,7 +338,7 @@ func getRecordedSeriesPointOpts(ctx context.Context, db dbutil.DB, definition ty
 }
 
 func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
-	opts, err := getRecordedSeriesPointOpts(ctx, r.workerBaseStore.Handle().DBUtilDB(), definition, filters)
+	opts, err := getRecordedSeriesPointOpts(ctx, r.workerBaseStore.Handle(), definition, filters)
 	if err != nil {
 		return nil, errors.Wrap(err, "getRecordedSeriesPointOpts")
 	}
@@ -371,7 +371,7 @@ func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r b
 }
 
 func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
-	opts, err := getRecordedSeriesPointOpts(ctx, r.workerBaseStore.Handle().DBUtilDB(), definition, filters)
+	opts, err := getRecordedSeriesPointOpts(ctx, r.workerBaseStore.Handle(), definition, filters)
 	if err != nil {
 		return nil, errors.Wrap(err, "getRecordedSeriesPointOpts")
 	}

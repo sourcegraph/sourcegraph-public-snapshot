@@ -126,7 +126,7 @@ func runJobCleaner(ctx context.Context, handle basestore.TransactableHandle, int
 	defer t.Stop()
 
 	for {
-		_, err := handle.DBUtilDB().ExecContext(ctx, `
+		_, err := handle.ExecContext(ctx, `
 -- source: internal/repos/sync_worker.go:runJobCleaner
 DELETE FROM external_service_sync_jobs
 WHERE

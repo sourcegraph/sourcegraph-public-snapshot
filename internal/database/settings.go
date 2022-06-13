@@ -86,7 +86,7 @@ func (o *settingsStore) CreateIfUpToDate(ctx context.Context, subject api.Settin
 
 	creatorIsUpToDate := latestSetting != nil && lastID != nil && latestSetting.ID == *lastID
 	if latestSetting == nil || creatorIsUpToDate {
-		err := tx.Handle().DBUtilDB().QueryRowContext(
+		err := tx.Handle().QueryRowContext(
 			ctx,
 			"INSERT INTO settings(org_id, user_id, author_user_id, contents) VALUES($1, $2, $3, $4) RETURNING id, created_at",
 			s.Subject.Org, s.Subject.User, s.AuthorUserID, s.Contents).Scan(&s.ID, &s.CreatedAt)

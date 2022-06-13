@@ -733,7 +733,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			// Again, we're going to set up a poisoned store database that will
 			// error if a transaction is started.
 			s := gitLabTestSetup(t, db)
-			store := store.NewWithClock(database.NewUntypedDB(&noNestingTx{s.Handle().DBUtilDB()}), &observation.TestContext, nil, s.Clock())
+			store := store.NewWithClock(database.NewUntypedDB(&noNestingTx{s.Handle()}), &observation.TestContext, nil, s.Clock())
 			h := NewGitLabWebhook(store)
 
 			t.Run("missing merge request", func(t *testing.T) {

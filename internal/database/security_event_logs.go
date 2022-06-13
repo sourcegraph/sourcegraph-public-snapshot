@@ -81,7 +81,7 @@ func (s *securityEventLogsStore) Insert(ctx context.Context, e *SecurityEvent) e
 		argument = []byte(`{}`)
 	}
 
-	_, err := s.Handle().DBUtilDB().ExecContext(
+	_, err := s.Handle().ExecContext(
 		ctx,
 		"INSERT INTO security_event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
 		e.Name,

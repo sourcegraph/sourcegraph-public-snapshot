@@ -919,7 +919,7 @@ func TestGitserverRepoListReposWithoutSize(t *testing.T) {
 	if err := db.GitserverRepos().Upsert(ctx, gitserverRepo); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.Handle().DBUtilDB().ExecContext(ctx, fmt.Sprintf(
+	if _, err := db.Handle().ExecContext(ctx, fmt.Sprintf(
 		`update gitserver_repos set repo_size_bytes = null where repo_id = %d;`,
 		gitserverRepo.RepoID)); err != nil {
 		t.Fatalf("unexpected error while updating gitserver repo: %s", err)

@@ -31,7 +31,7 @@ func (o *orgStatsStore) Upsert(ctx context.Context, orgID int32, codeHostRepoCou
 		OrgID:             orgID,
 		CodeHostRepoCount: codeHostRepoCount,
 	}
-	err := o.Handle().DBUtilDB().QueryRowContext(
+	err := o.Handle().QueryRowContext(
 		ctx,
 		"INSERT INTO org_stats(org_id, code_host_repo_count) VALUES($1, $2) ON CONFLICT (org_id) DO UPDATE SET code_host_repo_count = $2 RETURNING code_host_repo_count;",
 		newStatistic.OrgID, newStatistic.CodeHostRepoCount).Scan(&newStatistic.CodeHostRepoCount)

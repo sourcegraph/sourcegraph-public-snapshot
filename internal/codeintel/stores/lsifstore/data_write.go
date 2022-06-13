@@ -83,7 +83,7 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 	// Bulk insert all the unique column values into the temporary table
 	if err := withBatchInserter(
 		ctx,
-		tx.Handle().DBUtilDB(),
+		tx.Handle(),
 		"t_lsif_data_documents",
 		[]string{
 			"path",
@@ -164,7 +164,7 @@ func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunk
 	// Bulk insert all the unique column values into the temporary table
 	if err := withBatchInserter(
 		ctx,
-		tx.Handle().DBUtilDB(),
+		tx.Handle(),
 		"t_lsif_data_result_chunks",
 		[]string{"idx", "data"},
 		inserter,
@@ -255,7 +255,7 @@ func (s *Store) writeMonikers(ctx context.Context, bundleID int, tableName strin
 	// Bulk insert all the unique column values into the temporary table
 	if err := withBatchInserter(
 		ctx,
-		tx.Handle().DBUtilDB(),
+		tx.Handle(),
 		"t_"+tableName,
 		[]string{"scheme", "identifier", "data", "num_locations"},
 		inserter,

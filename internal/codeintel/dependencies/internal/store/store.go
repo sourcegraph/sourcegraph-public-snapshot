@@ -187,7 +187,7 @@ func (s *store) UpsertLockfileDependencies(ctx context.Context, repoName, commit
 
 	if err := batch.InsertValues(
 		ctx,
-		tx.db.Handle().DBUtilDB(),
+		tx.db.Handle(),
 		"t_codeintel_lockfile_references",
 		batch.MaxNumPostgresParameters,
 		[]string{"repository_name", "revspec", "package_scheme", "package_name", "package_version"},
@@ -512,7 +512,7 @@ func (s *store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (
 
 	err = batch.WithInserterWithReturn(
 		ctx,
-		s.db.Handle().DBUtilDB(),
+		s.db.Handle(),
 		"lsif_dependency_repos",
 		batch.MaxNumPostgresParameters,
 		[]string{"scheme", "name", "version"},

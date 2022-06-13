@@ -88,7 +88,7 @@ func TestBitbucketProjectPermissionsEnqueue(t *testing.T) {
 	// Enqueue two jobs for the same project with different states
 	jobID, err = db.BitbucketProjectPermissions().Enqueue(ctx, "project 7", 1, perms, false)
 	require.NoError(t, err)
-	_, err = db.Handle().DBUtilDB().ExecContext(ctx, `UPDATE explicit_permissions_bitbucket_projects_jobs SET state = 'failed' WHERE id = $1`, jobID)
+	_, err = db.Handle().ExecContext(ctx, `UPDATE explicit_permissions_bitbucket_projects_jobs SET state = 'failed' WHERE id = $1`, jobID)
 	require.NoError(t, err)
 
 	jobID2, err = db.BitbucketProjectPermissions().Enqueue(ctx, "project 7", 1, perms, false)

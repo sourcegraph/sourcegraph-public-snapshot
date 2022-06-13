@@ -622,7 +622,7 @@ func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string
 
 	if err := batch.WithInserterWithReturn(
 		ctx,
-		tx.Handle().DBUtilDB(),
+		tx.Handle(),
 		"gitserver_repos",
 		batch.MaxNumPostgresParameters,
 		[]string{"repo_id", "shard_id", "repo_size_bytes", "updated_at"},

@@ -626,7 +626,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		return err
 	}
 
-	return e.Store.Handle().DBUtilDB().QueryRowContext(
+	return e.Store.Handle().QueryRowContext(
 		ctx,
 		"INSERT INTO external_services(kind, display_name, config, encryption_key_id, created_at, updated_at, namespace_user_id, namespace_org_id, unrestricted, cloud_default, has_webhooks) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
 		es.Kind, es.DisplayName, config, keyID, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), nullInt32Column(es.NamespaceOrgID), es.Unrestricted, es.CloudDefault, es.HasWebhooks,
@@ -968,7 +968,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	}
 
 	q := sqlf.Sprintf("UPDATE external_services SET %s, updated_at = NOW() WHERE id = %d AND deleted_at IS NULL", sqlf.Join(updates, ","), id)
-	res, err := e.Store.Handle().DBUtilDB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	res, err := e.Store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
 	}

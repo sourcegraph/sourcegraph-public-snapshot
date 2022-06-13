@@ -445,7 +445,7 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 			repo.name,
 			repo.deletedAt,
 		)
-		if _, err := db.Handle().DBUtilDB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		if _, err := db.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("unexpected error preparing database: %s", err.Error())
 		}
 	}
@@ -474,7 +474,7 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 			fmt.Sprintf("%040d", i),
 			uploadedAt,
 		)
-		if _, err := db.Handle().DBUtilDB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		if _, err := db.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("unexpected error preparing database: %s", err.Error())
 		}
 
@@ -484,7 +484,7 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 	query := sqlf.Sprintf(
 		"INSERT INTO lsif_index_configuration (repository_id, data, autoindex_enabled) VALUES (1, '', true)",
 	)
-	if _, err := db.Handle().DBUtilDB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	if _, err := db.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error preparing database: %s", err.Error())
 	}
 
@@ -499,7 +499,7 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 		fmt.Sprintf("%040d", 2), time.Now().UTC().Add(-time.Hour*24*5), // 5 days
 		fmt.Sprintf("%040d", 3),
 	)
-	if _, err := db.Handle().DBUtilDB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	if _, err := db.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error preparing database: %s", err.Error())
 	}
 
@@ -1218,7 +1218,7 @@ func TestEventLogs_RequestsByLanguage(t *testing.T) {
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
-	if _, err := db.Handle().DBUtilDB().ExecContext(ctx, `
+	if _, err := db.Handle().ExecContext(ctx, `
 		INSERT INTO codeintel_langugage_support_requests (language_id, user_id)
 		VALUES
 			('foo', 1),

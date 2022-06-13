@@ -82,7 +82,7 @@ func CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, s createBatchSpec
 	i := -1
 	return batch.WithInserterWithReturn(
 		ctx,
-		s.Handle().DBUtilDB(),
+		s.Handle(),
 		"batch_spec_workspace_execution_jobs",
 		batch.MaxNumPostgresParameters,
 		[]string{"batch_spec_workspace_id", "user_id", "created_at", "updated_at"},

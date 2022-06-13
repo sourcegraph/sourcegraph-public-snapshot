@@ -43,7 +43,7 @@ func cleanup(t *testing.T, db DB) func() {
 			// Retain content on failed tests
 			return
 		}
-		_, err := db.Handle().DBUtilDB().ExecContext(
+		_, err := db.Handle().ExecContext(
 			context.Background(),
 			`truncate feature_flags, feature_flag_overrides, users, orgs, org_members cascade;`,
 		)

@@ -15,9 +15,6 @@ import (
 type TransactableHandle interface {
 	dbutil.DB
 
-	// DBUtilDB returns the underlying dbutil.DBUtilDB, which is usually a *sql.DBUtilDB or a *sql.Tx
-	DBUtilDB() dbutil.DB
-
 	// InTransaction returns whether the handle represents a handle to a transaction.
 	InTransaction() bool
 

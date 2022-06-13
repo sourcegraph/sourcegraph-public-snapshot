@@ -403,7 +403,7 @@ func createSearchContext(ctx context.Context, s SearchContextsStore, searchConte
 		nullInt32Column(searchContext.NamespaceOrgID),
 		nullStringColumn(searchContext.Query),
 	)
-	_, err := s.Handle().DBUtilDB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := s.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -423,7 +423,7 @@ func updateSearchContext(ctx context.Context, s SearchContextsStore, searchConte
 		nullStringColumn(searchContext.Query),
 		searchContext.ID,
 	)
-	_, err := s.Handle().DBUtilDB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := s.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}

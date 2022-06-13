@@ -50,7 +50,7 @@ func (m *orgMemberStore) Create(ctx context.Context, orgID, userID int32) (*type
 		OrgID:  orgID,
 		UserID: userID,
 	}
-	err := m.Handle().DBUtilDB().QueryRowContext(
+	err := m.Handle().QueryRowContext(
 		ctx,
 		"INSERT INTO org_members(org_id, user_id) VALUES($1, $2) RETURNING id, created_at, updated_at",
 		om.OrgID, om.UserID).Scan(&om.ID, &om.CreatedAt, &om.UpdatedAt)
@@ -74,7 +74,7 @@ func (m *orgMemberStore) GetByOrgIDAndUserID(ctx context.Context, orgID, userID 
 
 func (m *orgMemberStore) MemberCount(ctx context.Context, orgID int32) (int, error) {
 	var memberCount int
-	err := m.Handle().DBUtilDB().QueryRowContext(ctx, `
+	err := m.Handle().QueryRowContext(ctx, `
 		SELECT COUNT(*)
 		FROM org_members INNER JOIN users ON org_members.user_id = users.id
 		WHERE org_id=$1 AND users.deleted_at IS NULL`, orgID).Scan(&memberCount)
@@ -85,7 +85,7 @@ func (m *orgMemberStore) MemberCount(ctx context.Context, orgID int32) (int, err
 }
 
 func (m *orgMemberStore) Remove(ctx context.Context, orgID, userID int32) error {
-	_, err := m.Handle().DBUtilDB().ExecContext(ctx, "DELETE FROM org_members WHERE (org_id=$1 AND user_id=$2)", orgID, userID)
+	_, err := m.Handle().ExecContext(ctx, "DELETE FROM org_members WHERE (org_id=$1 AND user_id=$2)", orgID, userID)
 	return err
 }
 
@@ -152,7 +152,7 @@ func (m *orgMemberStore) getOneBySQL(ctx context.Context, query string, args ...
 }
 
 func (m *orgMemberStore) getBySQL(ctx context.Context, query string, args ...any) ([]*types.OrgMembership, error) {
-	rows, err := m.Handle().DBUtilDB().QueryContext(ctx, "SELECT org_members.id, org_members.org_id, org_members.user_id, org_members.created_at, org_members.updated_at FROM org_members "+query, args...)
+	rows, err := m.Handle().QueryContext(ctx, "SELECT org_members.id, org_members.org_id, org_members.user_id, org_members.created_at, org_members.updated_at FROM org_members "+query, args...)
 	if err != nil {
 		return nil, err
 	}

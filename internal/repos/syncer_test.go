@@ -148,7 +148,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		}
 
 		q := sqlf.Sprintf(`INSERT INTO users (id, username) VALUES (1, 'u')`)
-		_, err := s.Handle().DBUtilDB().ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...)
+		_, err := s.Handle().ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -711,7 +711,7 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 
 			t.Run(tc.name, func(t *testing.T) {
 				q := sqlf.Sprintf("DELETE FROM repo")
-				_, err := s.Handle().DBUtilDB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+				_, err := s.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -972,7 +972,7 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 		var jobCount int
 		for i := 0; i < 10; i++ {
 			q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs")
-			if err := store.Handle().DBUtilDB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobCount); err != nil {
+			if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobCount); err != nil {
 				t.Fatal(err)
 			}
 			if jobCount == len(services) {
@@ -1005,7 +1005,7 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 		var jobsCompleted int
 		for i := 0; i < 10; i++ {
 			q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs where state = 'completed'")
-			if err := store.Handle().DBUtilDB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobsCompleted); err != nil {
+			if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobsCompleted); err != nil {
 				t.Fatal(err)
 			}
 			if jobsCompleted == len(services) {
@@ -1439,7 +1439,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 
 		var userID int32
 		q := sqlf.Sprintf("INSERT INTO users (username) VALUES ('bbs-admin') RETURNING id")
-		err := store.Handle().DBUtilDB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).
+		err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).
 			Scan(&userID)
 		if err != nil {
 			t.Fatal(err)
@@ -1579,7 +1579,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 			pq.Array([]string{database.TagAllowUserExternalServicePrivate}),
 			userID,
 		)
-		_, err = store.Handle().DBUtilDB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1600,7 +1600,7 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 		// Confirm that there are two relationships
 		assertSourceCount(ctx, t, store, 2)
 		q = sqlf.Sprintf("UPDATE users SET tags = '{}' WHERE id = %s", userID)
-		_, err = store.Handle().DBUtilDB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2085,7 +2085,7 @@ func assertSourceCount(ctx context.Context, t *testing.T, store repos.Store, wan
 	t.Helper()
 	var rowCount int
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_repos")
-	if err := store.Handle().DBUtilDB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&rowCount); err != nil {
+	if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&rowCount); err != nil {
 		t.Fatal(err)
 	}
 	if rowCount != want {
@@ -2097,7 +2097,7 @@ func assertDeletedRepoCount(ctx context.Context, t *testing.T, store repos.Store
 	t.Helper()
 	var rowCount int
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo where deleted_at is not null")
-	if err := store.Handle().DBUtilDB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&rowCount); err != nil {
+	if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&rowCount); err != nil {
 		t.Fatal(err)
 	}
 	if rowCount != want {

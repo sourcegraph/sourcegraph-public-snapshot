@@ -228,7 +228,7 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 
 	return batch.InsertValues(
 		ctx,
-		l.Handle().DBUtilDB(),
+		l.Handle(),
 		"event_logs",
 		batch.MaxNumPostgresParameters,
 		[]string{
@@ -582,7 +582,7 @@ func (l *eventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, en
 }
 
 func (l *eventLogStore) ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error) {
-	rows, err := l.Handle().DBUtilDB().QueryContext(ctx, `SELECT user_id
+	rows, err := l.Handle().QueryContext(ctx, `SELECT user_id
 		FROM event_logs
 		WHERE user_id > 0 AND DATE(TIMEZONE('UTC'::text, timestamp)) >= $1 AND DATE(TIMEZONE('UTC'::text, timestamp)) <= $2
 		GROUP BY user_id`, startDate, endDate)
@@ -606,7 +606,7 @@ func (l *eventLogStore) ListUniqueUsersAll(ctx context.Context, startDate, endDa
 }
 
 func (l *eventLogStore) UsersUsageCounts(ctx context.Context) (counts []types.UserUsageCounts, err error) {
-	rows, err := l.Handle().DBUtilDB().QueryContext(ctx, usersUsageCountsQuery)
+	rows, err := l.Handle().QueryContext(ctx, usersUsageCountsQuery)
 	if err != nil {
 		return nil, err
 	}
