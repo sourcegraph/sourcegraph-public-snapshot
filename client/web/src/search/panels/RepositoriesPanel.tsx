@@ -161,6 +161,7 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     if (gitRepository) {
         gitRepositoryParsedString = gitRepository.map(value => JSON.parse(value))
     }
+    const gitReposList = gitRepositoryParsedString?.flat()
     /*
     Algorithm:
         1.Get the user's git history
@@ -202,27 +203,24 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     // 1. Get the user's git history
     // create a SET object to hold the git commit history
     const gitSet = new Set<string>()
-    let element: string
-    if (gitRepositoryParsedString) {
-        for (let index = 0; index < gitRepositoryParsedString.toString.length; index++) {
-            element = gitRepositoryParsedString[index].value
-            gitSet.add(element)
+    if (gitReposList) {
+        for (const git of gitReposList) {
+            gitSet.add(git.repo)
         }
     }
     console.log(gitSet)
-
-    // gitSet.add(gitRepository)
 
     // 2. Get the user's search history
     const codeSearchHistory = useMemo(() => processRepositories(searchEventLogs), [searchEventLogs])
     // 3. If the user has git history,
     // then show the git history
+    /*
     if (gitSet.size > 0) {
         return gitHistoryDisplay
     }
         // 4. If the user has no git history,
         // then check if the user has search history
-    if (codeSearchHistory.length > 0) {
+    if (codeSearchHistory && codeSearchHistory.length > 0) {
         // 5. If the user has search history,
         // then show the search history
         return contentDisplay
@@ -236,10 +234,11 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
         <PanelContainer
             className={classNames(className, 'repositories-panel')}
             title="Repositories"
+            // state={repoFilterValues ? (repoFilterValues.length > 0 ? 'populated' : 'empty') ? (gitSet.size > 0 ? 'gitPopulated' : 'empty') : 'loading' : 'loading'}
+            // condition ? exprIfTrue : exprIfFalse
             state={repoFilterValues ? (repoFilterValues.length > 0 ? 'populated' : 'empty') ? (gitSet.size > 0 ? 'gitPopulated' : 'empty') : 'loading' : 'loading'}
             loadingContent={loadingDisplay}
             populatedContent={contentDisplay}
-            gitPopulatedContent={gitHistoryDisplay}
             emptyContent={emptyDisplay}
         />
     )

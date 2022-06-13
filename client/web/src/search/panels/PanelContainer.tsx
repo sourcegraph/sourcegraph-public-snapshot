@@ -28,6 +28,7 @@ export const PanelContainer: React.FunctionComponent<React.PropsWithChildren<Pro
     loadingContent = <></>,
     emptyContent = <></>,
     populatedContent,
+    gitPopulatedContent = <></>,
     actionButtons,
     className,
     insideTabPanel,
