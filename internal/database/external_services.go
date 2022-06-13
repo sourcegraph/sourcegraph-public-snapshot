@@ -200,6 +200,7 @@ var ExternalServiceKinds = map[string]ExternalServiceKind{
 	extsvc.KindPerforce:        {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
 	extsvc.KindPhabricator:     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
 	extsvc.KindPythonPackages:  {CodeHost: true, JSONSchema: schema.PythonPackagesSchemaJSON},
+	extsvc.KindRustPackages:    {CodeHost: true, JSONSchema: schema.RustPackagesSchemaJSON},
 }
 
 // ExternalServiceKind describes a kind of external service.
@@ -610,7 +611,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 	// Prior to saving the record, run a validation hook.
 	if BeforeCreateExternalService != nil {
-		if err := BeforeCreateExternalService(ctx, NewDB(e.Store.Handle().DB()).ExternalServices()); err != nil {
+		if err := BeforeCreateExternalService(ctx, NewDBWith(e.Store).ExternalServices()); err != nil {
 			return err
 		}
 	}

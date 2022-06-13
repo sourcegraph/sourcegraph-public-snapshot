@@ -15,9 +15,11 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import TimelineClockOutlineIcon from 'mdi-react/TimelineClockOutlineIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
+import indicator from 'ordinal/indicator'
 import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Badge,
@@ -37,6 +39,7 @@ import {
     H3,
     H4,
     Text,
+    Alert,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../../components/Collapsible'
@@ -118,25 +121,32 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
     <>
         <div className="d-flex align-items-center justify-content-between mb-2">
             <H3 className={styles.workspaceName}>
-                <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />{' '}
+                <WorkspaceStateIcon
+                    cachedResultFound={workspace.cachedResultFound}
+                    state={workspace.state}
+                    className="flex-shrink-0"
+                />{' '}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace'
                     ? workspace.repository.name
                     : 'Workspace in hidden repository'}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
                     <Link to={workspace.repository.url} target="_blank" rel="noopener noreferrer">
-                        <Icon role="img" aria-hidden={true} as={ExternalLinkIcon} />
+                        <Icon aria-hidden={true} as={ExternalLinkIcon} />
                     </Link>
                 )}
             </H3>
             <Button className="p-0 ml-2" onClick={deselectWorkspace} variant="icon">
                 <VisuallyHidden>Deselect Workspace</VisuallyHidden>
-                <Icon role="img" aria-hidden={true} as={CloseIcon} />
+                <Icon aria-hidden={true} as={CloseIcon} />
             </Button>
         </div>
         <div className="d-flex align-items-center">
             {typeof workspace.placeInQueue === 'number' && (
-                <span className={classNames(styles.workspaceDetail, 'd-flex align-items-center')}>
-                    <Icon role="img" aria-hidden={true} as={TimelineClockOutlineIcon} />
+                <span
+                    className={classNames(styles.workspaceDetail, 'd-flex align-items-center')}
+                    data-tooltip={`This workspace is number ${workspace.placeInGlobalQueue} in the global queue`}
+                >
+                    <Icon aria-hidden={true} as={TimelineClockOutlineIcon} />
                     <strong className="ml-1 mr-1">
                         <NumberInQueue number={workspace.placeInQueue} />
                     </strong>
@@ -148,13 +158,13 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
             )}
             {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
                 <span className={styles.workspaceDetail}>
-                    <Icon role="img" aria-hidden={true} as={SourceBranchIcon} /> {workspace.branch.displayName}
+                    <Icon aria-hidden={true} as={SourceBranchIcon} /> {workspace.branch.displayName}
                 </span>
             )}
             {workspace.startedAt && (
-                <span className={styles.workspaceDetail}>
-                    Total time:{' '}
-                    <strong>
+                <span className={classNames(styles.workspaceDetail, 'd-flex align-items-center')}>
+                    Total time:
+                    <strong className="pl-1">
                         <Duration start={workspace.startedAt} end={workspace.finishedAt ?? undefined} />
                     </strong>
                 </span>
@@ -180,7 +190,7 @@ const HiddenWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<Hi
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
         <H1 className="text-center text-muted mt-5">
-            <Icon role="img" aria-hidden={true} as={EyeOffOutlineIcon} />
+            <Icon aria-hidden={true} as={EyeOffOutlineIcon} />
             <VisuallyHidden>Hidden Workspace</VisuallyHidden>
         </H1>
         <Text alignment="center">This workspace is hidden due to permissions.</Text>
@@ -227,7 +237,10 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
                 toggleShowTimeline={toggleShowTimeline}
                 workspace={workspace}
             />
-            {workspace.failureMessage && (
+            {workspace.state === BatchSpecWorkspaceState.CANCELED && (
+                <Alert variant="warning">Execution of this workspace has been canceled.</Alert>
+            )}
+            {workspace.state === BatchSpecWorkspaceState.FAILED && workspace.failureMessage && (
                 <>
                     <div className="d-flex my-3 w-100">
                         <ErrorAlert error={workspace.failureMessage} className="flex-grow-1 mb-0" />
@@ -238,7 +251,7 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
                             outline={true}
                             variant="danger"
                         >
-                            <Icon role="img" aria-hidden={true} as={SyncIcon} /> Retry
+                            <Icon aria-hidden={true} as={SyncIcon} /> Retry
                         </Button>
                     </div>
                     {retryError && <ErrorAlert error={retryError} />}
@@ -290,14 +303,14 @@ const IgnoredWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<I
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
         <H1 className="text-center text-muted mt-5">
-            <Icon role="img" aria-hidden={true} as={LinkVariantRemoveIcon} />
+            <Icon aria-hidden={true} as={LinkVariantRemoveIcon} />
             <VisuallyHidden>Ignored Workspace</VisuallyHidden>
         </H1>
         <Text alignment="center">
             This workspace has been skipped because a <Code>.batchignore</Code> file is present in the workspace
             repository.
         </Text>
-        <Text alignment="center">Enable the execution option to "allow ignored" to override.</Text>
+        <Text alignment="center">Enable the execution option ignored" to override.</Text>
     </>
 )
 
@@ -311,37 +324,20 @@ const UnsupportedWorkspaceDetails: React.FunctionComponent<
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
         <H1 className="text-center text-muted mt-5">
-            <Icon role="img" aria-hidden={true} as={LinkVariantRemoveIcon} />
+            <Icon aria-hidden={true} as={LinkVariantRemoveIcon} />
             <VisuallyHidden>Unsupported Workspace</VisuallyHidden>
         </H1>
         <Text alignment="center">This workspace has been skipped because it is from an unsupported codehost.</Text>
-        <Text alignment="center">Enable the execution option to "allow unsupported" to override.</Text>
+        <Text alignment="center">Enable the execution option "allow unsupported" to override.</Text>
     </>
 )
 
-const NumberInQueue: React.FunctionComponent<React.PropsWithChildren<{ number: number }>> = ({ number }) => {
-    let suffix: string
-    console.log('NumberInQueue', number, number % 10)
-    switch (number % 10) {
-        case 1:
-            suffix = 'st'
-            break
-        case 2:
-            suffix = 'nd'
-            break
-        case 3:
-            suffix = 'rd'
-            break
-        default:
-            suffix = 'th'
-    }
-    return (
-        <>
-            {number}
-            <sup>{suffix}</sup>
-        </>
-    )
-}
+const NumberInQueue: React.FunctionComponent<React.PropsWithChildren<{ number: number }>> = ({ number }) => (
+    <>
+        {number}
+        <sup>{indicator(number)}</sup>
+    </>
+)
 
 interface ChangesetSpecNodeProps extends ThemeProps {
     node: BatchSpecWorkspaceChangesetSpecFields
@@ -385,7 +381,7 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                             )}{' '}
                         </H4>
                         <span className="text-muted">
-                            <Icon role="img" aria-hidden={true} as={SourceBranchIcon} /> {node.description.headRef}
+                            <Icon aria-hidden={true} as={SourceBranchIcon} /> {node.description.headRef}
                         </span>
                     </div>
                     <DiffStat {...node.description.diffStat} expandedCounts={true} />
@@ -494,9 +490,11 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                     {step.diffStat && (
                         <DiffStat className={styles.stepDiffStat} {...step.diffStat} expandedCounts={true} />
                     )}
-                    <span className={classNames('text-monospace text-muted', styles.stepTime)}>
-                        <StepTimer step={step} />
-                    </span>
+                    {step.startedAt && (
+                        <span className={classNames('text-monospace text-muted', styles.stepTime)}>
+                            <StepTimer startedAt={step.startedAt} finishedAt={step.finishedAt} />
+                        </span>
+                    )}
                 </>
             }
         >
@@ -571,7 +569,11 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                         <Text className="mb-0">
                             <strong>
                                 Step has been skipped
-                                {cachedResultFound && <> because a cached result was found for this workspace</>}.
+                                {cachedResultFound && <> because a cached result was found for this workspace</>}
+                                {!cachedResultFound && step.cachedResultFound && (
+                                    <> because a cached result was found for this step</>
+                                )}
+                                .
                             </strong>
                         </Text>
                     )}
@@ -588,8 +590,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
     if (step.cachedResultFound) {
         return (
             <Icon
-                role="img"
-                className="text-success"
+                className="text-success flex-shrink-0"
                 aria-label="A cached result for this step has been found"
                 data-tooltip="A cached result for this step has been found"
                 as={ContentSaveIcon}
@@ -599,8 +600,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
     if (step.skipped) {
         return (
             <Icon
-                role="img"
-                className="text-muted"
+                className="text-muted flex-shrink-0"
                 aria-label="The step has been skipped"
                 data-tooltip="The step has been skipped"
                 as={LinkVariantRemoveIcon}
@@ -610,8 +610,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
     if (!step.startedAt) {
         return (
             <Icon
-                role="img"
-                className="text-muted"
+                className="text-muted flex-shrink-0"
                 aria-label="This step is waiting to be processed"
                 data-tooltip="This step is waiting to be processed"
                 as={TimerSandIcon}
@@ -621,8 +620,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
     if (!step.finishedAt) {
         return (
             <Icon
-                role="img"
-                className="text-muted"
+                className="text-muted flex-shrink-0"
                 aria-label="This step is currently running"
                 data-tooltip="This step is currently running"
                 as={LoadingSpinner}
@@ -632,8 +630,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
     if (step.exitCode === 0) {
         return (
             <Icon
-                role="img"
-                className="text-success"
+                className="text-success flex-shrink-0"
                 aria-label="This step ran successfully"
                 data-tooltip="This step ran successfully"
                 as={CheckBoldIcon}
@@ -642,8 +639,7 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
     }
     return (
         <Icon
-            role="img"
-            className="text-danger"
+            className="text-danger flex-shrink-0"
             aria-label={`This step failed with exit code ${String(step.exitCode)}`}
             data-tooltip={`This step failed with exit code ${String(step.exitCode)}`}
             as={AlertCircleIcon}
@@ -651,14 +647,10 @@ const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIc
     )
 }
 
-const StepTimer: React.FunctionComponent<React.PropsWithChildren<{ step: BatchSpecWorkspaceStepFields }>> = ({
-    step,
-}) => {
-    if (!step.startedAt) {
-        return null
-    }
-    return <Duration start={step.startedAt} end={step.finishedAt ?? undefined} />
-}
+const StepTimer: React.FunctionComponent<React.PropsWithChildren<{ startedAt: string; finishedAt: Maybe<string> }>> = ({
+    startedAt,
+    finishedAt,
+}) => <Duration start={startedAt} end={finishedAt ?? undefined} />
 
 interface WorkspaceStepFileDiffConnectionProps extends ThemeProps {
     workspaceID: Scalars['ID']

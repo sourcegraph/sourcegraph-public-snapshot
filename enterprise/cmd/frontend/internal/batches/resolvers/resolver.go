@@ -98,8 +98,7 @@ func logBackendEvent(ctx context.Context, db database.DB, name string, args any,
 		return err
 	}
 
-	featureFlags := featureflag.FromContext(ctx)
-	return usagestats.LogBackendEvent(db, actor.UID, deviceid.FromContext(ctx), name, jsonArg, jsonPublicArg, featureFlags, nil)
+	return usagestats.LogBackendEvent(db, actor.UID, deviceid.FromContext(ctx), name, jsonArg, jsonPublicArg, featureflag.GetEvaluatedFlagSet(ctx), nil)
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
@@ -1484,6 +1483,10 @@ func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatc
 			Limit: int(args.First),
 		},
 		NewestFirst: true,
+	}
+
+	if args.IncludeLocallyExecutedSpecs != nil {
+		opts.IncludeLocallyExecutedSpecs = *args.IncludeLocallyExecutedSpecs
 	}
 
 	// 🚨 SECURITY: If the user is not an admin, we don't want to include

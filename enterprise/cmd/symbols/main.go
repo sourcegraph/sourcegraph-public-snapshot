@@ -3,12 +3,10 @@ package main
 import (
 	"context"
 	"database/sql"
-	"log"
 	"net/http"
-	"os"
 	"strings"
 
-	"github.com/sourcegraph/go-ctags"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
@@ -26,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -48,7 +47,7 @@ func main() {
 				return nil, nil, nil, "", err
 			}
 
-			searchFunc := func(ctx context.Context, args types.SearchArgs) (results result.Symbols, err error) {
+			searchFunc := func(ctx context.Context, args search.SymbolsParameters) (results result.Symbols, err error) {
 				if sliceContains(repos, string(args.Repo)) {
 					return rockskipSearchFunc(ctx, args)
 				} else {
@@ -64,15 +63,17 @@ func main() {
 }
 
 func SetupRockskip(observationContext *observation.Context, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
+	logger := log.Scoped("rockskip", "rockskip-based symbols")
+
 	baseConfig := env.BaseConfig{}
 	config := LoadRockskipConfig(baseConfig)
 	if err := baseConfig.Validate(); err != nil {
-		log.Fatalf("Failed to load configuration: %s", err)
+		logger.Fatal("failed to load configuration", log.Error(err))
 	}
 
-	db := mustInitializeCodeIntelDB()
+	db := mustInitializeCodeIntelDB(logger)
 	git := NewGitserver(repositoryFetcher)
-	createParser := func() rockskip.ParseSymbolsFunc { return createParserWithConfig(config.Ctags) }
+	createParser := func() (rockskip.ParseSymbolsFunc, error) { return createParserWithConfig(logger, config.Ctags) }
 	server, err := rockskip.NewService(db, git, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize)
 	if err != nil {
 		return nil, nil, nil, config.Ctags.Command, err
@@ -100,13 +101,18 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 		LogQueries:              baseConfig.GetBool("LOG_QUERIES", "false", "print search queries to stdout"),
 		IndexRequestsQueueSize:  baseConfig.GetInt("INDEX_REQUESTS_QUEUE_SIZE", "1000", "how many index requests can be queued at once, at which point new requests will be rejected"),
 		MaxConcurrentlyIndexing: baseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "4", "maximum number of repositories being indexed at a time (also limits ctags processes)"),
-		SymbolsCacheSize:        baseConfig.GetInt("SYMBOLS_CACHE_SIZE", "1000000", "how many tuples of (path, symbol name, int ID) to cache in memory"),
-		PathSymbolsCacheSize:    baseConfig.GetInt("PATH_SYMBOLS_CACHE_SIZE", "100000", "how many sets of symbols for files to cache in memory"),
+		SymbolsCacheSize:        baseConfig.GetInt("SYMBOLS_CACHE_SIZE", "100000", "how many tuples of (path, symbol name, int ID) to cache in memory"),
+		PathSymbolsCacheSize:    baseConfig.GetInt("PATH_SYMBOLS_CACHE_SIZE", "10000", "how many sets of symbols for files to cache in memory"),
 	}
 }
 
-func createParserWithConfig(config types.CtagsConfig) rockskip.ParseSymbolsFunc {
-	parser := mustCreateCtagsParser(config)
+func createParserWithConfig(log log.Logger, config types.CtagsConfig) (rockskip.ParseSymbolsFunc, error) {
+	logger := log.Scoped("parser", "ctags parser")
+
+	parser, err := symbolsParser.SpawnCtags(logger, config)
+	if err != nil {
+		return nil, err
+	}
 
 	return func(path string, bytes []byte) (symbols []rockskip.Symbol, err error) {
 		entries, err := parser.Parse(path, bytes)
@@ -125,30 +131,10 @@ func createParserWithConfig(config types.CtagsConfig) rockskip.ParseSymbolsFunc 
 		}
 
 		return symbols, nil
-	}
+	}, nil
 }
 
-func mustCreateCtagsParser(ctagsConfig types.CtagsConfig) ctags.Parser {
-	options := ctags.Options{
-		Bin:                ctagsConfig.Command,
-		PatternLengthLimit: ctagsConfig.PatternLengthLimit,
-	}
-	if ctagsConfig.LogErrors {
-		options.Info = log.New(os.Stderr, "ctags: ", log.LstdFlags)
-	}
-	if ctagsConfig.DebugLogs {
-		options.Debug = log.New(os.Stderr, "DBUG ctags: ", log.LstdFlags)
-	}
-
-	parser, err := ctags.New(options)
-	if err != nil {
-		log.Fatalf("Failed to create new ctags parser: %s", err)
-	}
-
-	return symbolsParser.NewFilteringParser(parser, ctagsConfig.MaxFileSize, ctagsConfig.MaxSymbols)
-}
-
-func mustInitializeCodeIntelDB() *sql.DB {
+func mustInitializeCodeIntelDB(logger log.Logger) *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
@@ -158,7 +144,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 	)
 	db, err = connections.EnsureNewCodeIntelDB(dsn, "symbols", &observation.TestContext)
 	if err != nil {
-		log.Fatalf("Failed to connect to codeintel database: %s", err)
+		logger.Fatal("failed to connect to codeintel database", log.Error(err))
 	}
 
 	return db
@@ -185,8 +171,8 @@ func (g Gitserver) ArchiveEach(repo string, commit string, paths []string, onFil
 		return nil
 	}
 
-	args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit)}
-	parseRequestOrErrors := g.repositoryFetcher.FetchRepositoryArchive(context.TODO(), args, paths)
+	args := search.SymbolsParameters{Repo: api.RepoName(repo), CommitID: api.CommitID(commit)}
+	parseRequestOrErrors := g.repositoryFetcher.FetchRepositoryArchive(context.TODO(), args.Repo, args.CommitID, paths)
 	defer func() {
 		// Ensure the channel is drained
 		for range parseRequestOrErrors {

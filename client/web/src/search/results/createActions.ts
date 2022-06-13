@@ -6,6 +6,7 @@ import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/que
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 
 import { AuthenticatedUser } from '../../auth'
+import { BatchChangesIcon } from '../../batches/icons'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { CodeInsightsIcon } from '../../insights/Icons'
 
@@ -76,5 +77,27 @@ export function getCodeMonitoringCreateAction(
         icon: CodeMonitoringLogo,
         label: 'Monitor',
         tooltip: 'Create a code monitor based on this query',
+    }
+}
+
+export function getBatchChangeCreateAction(
+    query: string | undefined,
+    patternType: SearchPatternType,
+    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null,
+    isServerSideBatchChangeEnabled: boolean | undefined
+): CreateAction | null {
+    console.log(isServerSideBatchChangeEnabled, query, authenticatedUser, '<====')
+    if (!isServerSideBatchChangeEnabled || !query || !authenticatedUser) {
+        return null
+    }
+    const searchParameters = new URLSearchParams(location.search)
+    searchParameters.set('trigger-query', `${query} patterntype:${patternType}`)
+    const url = `/batch-changes/create?${searchParameters.toString()}`
+
+    return {
+        url,
+        icon: BatchChangesIcon,
+        label: 'Create Batch Change',
+        tooltip: 'Create a batch change based on this query',
     }
 }

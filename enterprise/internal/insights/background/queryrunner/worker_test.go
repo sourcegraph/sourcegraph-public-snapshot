@@ -2,33 +2,30 @@ package queryrunner
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
-
-	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-
 	"github.com/hexops/autogold"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 )
 
 // TestJobQueue tests that EnqueueJob and dequeueJob work mutually to transfer jobs to/from the
 // database.
 func TestJobQueue(t *testing.T) {
 	t.Parallel()
-	mainAppDB := dbtest.NewDB(t)
+	mainAppDB := database.NewDB(dbtest.NewDB(t))
 
 	ctx := actor.WithInternalActor(context.Background())
 
-	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
+	workerBaseStore := basestore.NewWithHandle(mainAppDB.Handle())
 
 	// Check we get no dequeued job first.
 	recordID := 0
@@ -75,10 +72,10 @@ func TestJobQueue(t *testing.T) {
 
 func TestJobQueueDependencies(t *testing.T) {
 	t.Parallel()
-	mainAppDB := dbtest.NewDB(t)
+	mainAppDB := database.NewDB(dbtest.NewDB(t))
 
 	ctx := actor.WithInternalActor(context.Background())
-	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
+	workerBaseStore := basestore.NewWithHandle(mainAppDB.Handle())
 
 	t.Run("enqueue without dependencies, get none back", func(t *testing.T) {
 		id, err := EnqueueJob(ctx, workerBaseStore, &Job{

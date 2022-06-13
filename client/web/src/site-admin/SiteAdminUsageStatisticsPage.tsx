@@ -257,7 +257,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                     variant="secondary"
                     as="a"
                 >
-                    <Icon role="img" as={FileDownloadIcon} aria-hidden={true} /> Download usage stats archive
+                    <Icon as={FileDownloadIcon} aria-hidden={true} /> Download usage stats archive
                 </Button>
 
                 {this.state.stats && (

@@ -21,13 +21,13 @@ export interface DurationProps extends React.HTMLAttributes<HTMLDivElement> {
  * Prints a duration between two given timestamps or one given one and now.
  * Formats as hh:mm:ss.
  */
-export const Duration: React.FunctionComponent<React.PropsWithChildren<DurationProps>> = ({
+export const Duration: React.FunctionComponent<React.PropsWithChildren<DurationProps>> = React.memo(function Duration({
     start,
     end,
     className,
     stableWidth = true,
     ...props
-}) => {
+}) {
     // Parse the start date.
     const startDate = typeof start === 'string' ? parseISO(start) : start
     // Parse the end date.
@@ -71,7 +71,7 @@ export const Duration: React.FunctionComponent<React.PropsWithChildren<DurationP
             </span>
         </div>
     )
-}
+})
 
 /**
  * Returns the number as a string, with a leading 0 if it has only 1 digit.

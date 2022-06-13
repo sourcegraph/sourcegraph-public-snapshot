@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -62,6 +63,14 @@ type SymbolsParameters struct {
 
 	// First indicates that only the first n symbols should be returned.
 	First int
+
+	// Timeout in seconds.
+	Timeout int
+}
+
+type SymbolsResponse struct {
+	Symbols result.Symbols `json:"symbols,omitempty"`
+	Err     string         `json:"error,omitempty"`
 }
 
 // GlobalSearchMode designates code paths which optimize performance for global

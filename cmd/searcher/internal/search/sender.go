@@ -14,82 +14,6 @@ type matchSender interface {
 	LimitHit() bool
 }
 
-type limitedStreamCollector struct {
-	mux       sync.Mutex
-	collected []protocol.FileMatch
-	sentCount int
-	remaining int
-	limitHit  bool
-	cancel    context.CancelFunc
-}
-
-func newLimitedStreamCollector(ctx context.Context, limit int) (context.Context, context.CancelFunc, *limitedStreamCollector) {
-	ctx, cancel := context.WithCancel(ctx)
-	s := &limitedStreamCollector{
-		cancel:    cancel,
-		remaining: limit,
-	}
-	return ctx, cancel, s
-}
-
-func (m *limitedStreamCollector) Send(match protocol.FileMatch) {
-	m.mux.Lock()
-	matchCount := match.MatchCount()
-	if matchCount <= m.remaining {
-		m.collected = append(m.collected, match)
-		m.remaining -= matchCount
-		m.sentCount += matchCount
-		m.mux.Unlock()
-		return
-	}
-
-	m.limitHit = true
-	m.cancel()
-
-	if len(match.ChunkMatches) == 0 {
-		// Can't truncate a path match
-		m.mux.Unlock()
-		return
-	}
-
-	for i, cm := range match.ChunkMatches {
-		if l := len(cm.Ranges); l >= m.remaining {
-			match.ChunkMatches[i].Ranges = cm.Ranges[:m.remaining]
-			match.ChunkMatches = match.ChunkMatches[:i+1]
-			break
-		} else {
-			m.remaining -= l
-		}
-	}
-	match.LimitHit = true
-	m.sentCount += m.remaining
-	m.remaining = 0
-	m.collected = append(m.collected, match)
-	m.mux.Unlock()
-}
-
-func (m *limitedStreamCollector) SentCount() int {
-	m.mux.Lock()
-	defer m.mux.Unlock()
-	return len(m.collected)
-}
-
-func (m *limitedStreamCollector) Collected() []protocol.FileMatch {
-	return m.collected
-}
-
-func (m *limitedStreamCollector) Remaining() int {
-	m.mux.Lock()
-	defer m.mux.Unlock()
-	return m.remaining
-}
-
-func (m *limitedStreamCollector) LimitHit() bool {
-	m.mux.Lock()
-	defer m.mux.Unlock()
-	return m.limitHit
-}
-
 type limitedStream struct {
 	cb        func(protocol.FileMatch)
 	mux       sync.Mutex
@@ -165,4 +89,18 @@ func (m *limitedStream) LimitHit() bool {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 	return m.limitHit
+}
+
+type limitedStreamCollector struct {
+	collected []protocol.FileMatch
+	*limitedStream
+}
+
+func newLimitedStreamCollector(ctx context.Context, limit int) (context.Context, context.CancelFunc, *limitedStreamCollector) {
+	s := &limitedStreamCollector{}
+	ctx, cancel, ls := newLimitedStream(ctx, limit, func(fm protocol.FileMatch) {
+		s.collected = append(s.collected, fm)
+	})
+	s.limitedStream = ls
+	return ctx, cancel, s
 }

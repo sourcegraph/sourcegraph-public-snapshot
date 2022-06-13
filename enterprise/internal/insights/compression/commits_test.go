@@ -8,13 +8,14 @@ import (
 
 	"github.com/hexops/autogold"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 func TestInsertCommits(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(t))
 	commitStore := NewCommitStore(insightsDB)
 
 	commit1 := makeCommit("abc123", time.Date(2021, time.April, 21, 1, 1, 0, 0, time.UTC))

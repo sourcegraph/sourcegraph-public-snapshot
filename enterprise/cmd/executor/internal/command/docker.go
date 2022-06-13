@@ -26,12 +26,17 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) com
 		}
 	}
 
+	hostDir := dir
+	if options.ResourceOptions.DockerHostMountPath != "" {
+		hostDir = filepath.Join(options.ResourceOptions.DockerHostMountPath, filepath.Base(dir))
+	}
+
 	return command{
 		Key: spec.Key,
 		Command: flatten(
 			"docker", "run", "--rm",
 			dockerResourceFlags(options.ResourceOptions),
-			dockerVolumeFlags(dir),
+			dockerVolumeFlags(hostDir),
 			dockerWorkingdirectoryFlags(spec.Dir),
 			// If the env vars will be part of the command line args, we need to quote them
 			dockerEnvFlags(quoteEnv(spec.Env)),
@@ -44,10 +49,15 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) com
 }
 
 func dockerResourceFlags(options ResourceOptions) []string {
-	return []string{
-		"--cpus", strconv.Itoa(options.NumCPUs),
-		"--memory", options.Memory,
+	flags := make([]string, 0, 2)
+	if options.NumCPUs != 0 {
+		flags = append(flags, "--cpus", strconv.Itoa(options.NumCPUs))
 	}
+	if options.Memory != "0" {
+		flags = append(flags, "--memory", options.Memory)
+	}
+
+	return flags
 }
 
 func dockerVolumeFlags(wd string) []string {

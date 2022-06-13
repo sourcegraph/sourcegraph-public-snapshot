@@ -21,6 +21,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -29,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 //go:embed sg_maintenance.sh
@@ -83,6 +84,9 @@ var sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "-1", "the maximum n
 // SRC_ENABLE_SG_MAINTENANCE.
 var enableSGMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "true", "Use sg maintenance during janitorial cleanup phases"))
 
+// The limit of repos cloned on the wrong shard to delete in one janitor run - value <=0 disables delete.
+var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "10", "the maximum number of repos not assigned to this shard we delete in one run"))
+
 var (
 	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_removed",
@@ -112,6 +116,11 @@ var (
 		Name: "src_gitserver_prune_status",
 		Help: "whether git prune was a success (true/false) and whether it was skipped (true/false)",
 	}, []string{"success", "skipped"})
+	janitorTimer = promauto.NewHistogram(prometheus.HistogramOpts{
+		Name:    "src_gitserver_janitor_duration_seconds",
+		Help:    "Duration of gitserver janitor background job",
+		Buckets: []float64{0.1, 1, 10, 60, 300, 3600, 7200},
+	})
 )
 
 const reposStatsName = "repos-stats.json"
@@ -131,8 +140,23 @@ const reposStatsName = "repos-stats.json"
 // 11. Only during first run: Set sizes of repos which don't have it in a database.
 func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	janitorRunning.Set(1)
+	janitorStart := time.Now()
+	defer func() {
+		janitorTimer.Observe(time.Since(janitorStart).Seconds())
+	}()
 	defer janitorRunning.Set(0)
 	cleanupLogger := s.Logger.Scoped("cleanup", "cleanup operation")
+
+	isKnownGitServerShard := false
+	for _, addr := range gitServerAddrs {
+		if s.hostnameMatch(addr) {
+			isKnownGitServerShard = true
+			break
+		}
+	}
+	if !isKnownGitServerShard {
+		s.Logger.Warn("current shard is not included in the list of known gitserver shards, will not delete repos", log.String("current-hostname", s.Hostname), log.Strings("all-shards", gitServerAddrs))
+	}
 
 	bCtx, bCancel := s.serverContext()
 	defer bCancel()
@@ -150,21 +174,34 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		wrongShardReposSizeTotalBytes.Set(float64(wrongShardRepoSize))
 	}()
 
-	computeStats := func(dir GitDir) (done bool, err error) {
+	var wrongShardReposDeleted int64
+	defer func() {
+		// We want to set the gauge only when wrong shard clean-up is enabled
+		if wrongShardReposDeleteLimit > 0 {
+			wrongShardReposDeletedCounter.Add(float64(wrongShardReposDeleted))
+		}
+	}()
+
+	maybeDeleteWrongShardRepos := func(dir GitDir) (done bool, err error) {
 		size := dirSize(dir.Path("."))
 		stats.GitDirBytes += size
 		name := s.name(dir)
 		repoToSize[name] = size
 
 		// Record the number and disk usage used of repos that should
-		// not belong on this instance. This is in preparation to a job that
-		// will actually remove these repos.
+		// not belong on this instance and remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
 		addr := addrForKey(name, gitServerAddrs)
 		if !s.hostnameMatch(addr) {
 			wrongShardRepoCount++
 			wrongShardRepoSize += size
+			if isKnownGitServerShard && wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
+				s.Logger.Info("removing repo cloned on the wrong shard", log.String("dir", string(dir)), log.String("target-shard", addr), log.String("current-shard", s.Hostname), log.Int64("size-bytes", size))
+				if err := s.removeRepoDirectory(dir); err != nil {
+					return false, err
+				}
+				wrongShardReposDeleted++
+			}
 		}
-
 		return false, nil
 	}
 
@@ -342,7 +379,7 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	}
 	cleanups := []cleanupFn{
 		// Compute the amount of space used by the repo
-		{"compute statistics", computeStats},
+		{"compute stats and delete wrong shard repos", maybeDeleteWrongShardRepos},
 		// Do some sanity checks on the repository.
 		{"maybe remove corrupt", maybeRemoveCorrupt},
 		// If git is interrupted it can leave lock files lying around. It does not clean

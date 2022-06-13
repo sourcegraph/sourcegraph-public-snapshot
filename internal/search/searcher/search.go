@@ -199,64 +199,61 @@ func (s *TextSearchJob) searchFilesInRepo(
 		}
 	}
 
-	toMatches := newToMatches(repo, commit, &rev)
 	onMatches := func(searcherMatches []*protocol.FileMatch) {
 		stream.Send(streaming.SearchEvent{
-			Results: toMatches(searcherMatches),
+			Results: convertMatches(repo, commit, &rev, searcherMatches),
 		})
 	}
 
 	return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, indexerEndpoints, s.Features, onMatches)
 }
 
-// newToMatches returns a closure that converts []*protocol.FileMatch to []result.Match.
-func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func([]*protocol.FileMatch) []result.Match {
-	return func(searcherMatches []*protocol.FileMatch) []result.Match {
-		matches := make([]result.Match, 0, len(searcherMatches))
-		for _, fm := range searcherMatches {
-			chunkMatches := make(result.ChunkMatches, 0, len(fm.ChunkMatches))
+// convert converts a set of searcher matches into []result.Match
+func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, searcherMatches []*protocol.FileMatch) []result.Match {
+	matches := make([]result.Match, 0, len(searcherMatches))
+	for _, fm := range searcherMatches {
+		chunkMatches := make(result.ChunkMatches, 0, len(fm.ChunkMatches))
 
-			for _, cm := range fm.ChunkMatches {
-				ranges := make(result.Ranges, 0, len(cm.Ranges))
-				for _, rr := range cm.Ranges {
-					ranges = append(ranges, result.Range{
-						Start: result.Location{
-							Offset: int(rr.Start.Offset),
-							Line:   int(rr.Start.Line),
-							Column: int(rr.Start.Column),
-						},
-						End: result.Location{
-							Offset: int(rr.End.Offset),
-							Line:   int(rr.End.Line),
-							Column: int(rr.End.Column),
-						},
-					})
-				}
-
-				chunkMatches = append(chunkMatches, result.ChunkMatch{
-					Content: cm.Content,
-					ContentStart: result.Location{
-						Offset: int(cm.ContentStart.Offset),
-						Line:   int(cm.ContentStart.Line),
-						Column: 0,
+		for _, cm := range fm.ChunkMatches {
+			ranges := make(result.Ranges, 0, len(cm.Ranges))
+			for _, rr := range cm.Ranges {
+				ranges = append(ranges, result.Range{
+					Start: result.Location{
+						Offset: int(rr.Start.Offset),
+						Line:   int(rr.Start.Line),
+						Column: int(rr.Start.Column),
 					},
-					Ranges: ranges,
+					End: result.Location{
+						Offset: int(rr.End.Offset),
+						Line:   int(rr.End.Line),
+						Column: int(rr.End.Column),
+					},
 				})
 			}
 
-			matches = append(matches, &result.FileMatch{
-				File: result.File{
-					Path:     fm.Path,
-					Repo:     repo,
-					CommitID: commit,
-					InputRev: rev,
+			chunkMatches = append(chunkMatches, result.ChunkMatch{
+				Content: cm.Content,
+				ContentStart: result.Location{
+					Offset: int(cm.ContentStart.Offset),
+					Line:   int(cm.ContentStart.Line),
+					Column: 0,
 				},
-				ChunkMatches: chunkMatches,
-				LimitHit:     fm.LimitHit,
+				Ranges: ranges,
 			})
 		}
-		return matches
+
+		matches = append(matches, &result.FileMatch{
+			File: result.File{
+				Path:     fm.Path,
+				Repo:     repo,
+				CommitID: commit,
+				InputRev: rev,
+			},
+			ChunkMatches: chunkMatches,
+			LimitHit:     fm.LimitHit,
+		})
 	}
+	return matches
 }
 
 // repoShouldBeSearched determines whether a repository should be searched in, based on whether the repository

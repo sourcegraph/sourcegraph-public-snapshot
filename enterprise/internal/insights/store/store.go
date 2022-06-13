@@ -10,10 +10,10 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -50,21 +50,17 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 }
 
 // New returns a new Store backed by the given Postgres db.
-func New(db dbutil.DB, permStore InsightPermissionStore) *Store {
+func New(db edb.InsightsDB, permStore InsightPermissionStore) *Store {
 	return NewWithClock(db, permStore, timeutil.Now)
 }
 
 // NewWithClock returns a new Store backed by the given db and
 // clock for timestamps.
-func NewWithClock(db dbutil.DB, permStore InsightPermissionStore, clock func() time.Time) *Store {
-	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock, permStore: permStore}
+func NewWithClock(db edb.InsightsDB, permStore InsightPermissionStore, clock func() time.Time) *Store {
+	return &Store{Store: basestore.NewWithHandle(db.Handle()), now: clock, permStore: permStore}
 }
 
 var _ basestore.ShareableStore = &Store{}
-
-// Handle returns the underlying transactable database handle.
-// Needed to implement the ShareableStore interface.
-func (s *Store) Handle() *basestore.TransactableHandle { return s.Store.Handle() }
 
 // With creates a new Store with the given basestore.Shareable store as the
 // underlying basestore.Store.

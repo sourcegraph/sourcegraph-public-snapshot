@@ -237,6 +237,7 @@ type RepoInfo struct {
 	LastChanged     *time.Time // timestamp of the most recent ref in the git repository
 	LastError       string     // the most recent error seen while fetching or cloning the repo
 	ShardID         string     // the ID of the shard owning this repo
+	Size            int64      // size in bytes
 
 	// CloneTime is the time the clone occurred. Note: Repositories may be
 	// re-cloned automatically, so this time is likely to move forward

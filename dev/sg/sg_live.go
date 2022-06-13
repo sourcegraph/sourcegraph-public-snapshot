@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"net/url"
@@ -30,7 +29,7 @@ sg live -help
 	`,
 	Category:    CategoryCompany,
 	Description: constructLiveCmdLongHelp(),
-	Action:      execAdapter(liveExec),
+	Action:      liveExec,
 	BashComplete: completeOptions(func() (options []string) {
 		return append(environmentNames(), `https\://...`)
 	}),
@@ -50,7 +49,8 @@ func constructLiveCmdLongHelp() string {
 	return out.String()
 }
 
-func liveExec(ctx context.Context, args []string) error {
+func liveExec(ctx *cli.Context) error {
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: No environment specified"))
 		return flag.ErrHelp

@@ -94,11 +94,11 @@ describe('Organizations', () => {
             await driver.page.click('.test-create-org-button')
 
             await driver.replaceText({
-                selector: '.test-new-org-name-input',
+                selector: '[data-testid="test-new-org-name-input"]',
                 newText: testOrg.name,
             })
             await driver.replaceText({
-                selector: '.test-new-org-display-name-input',
+                selector: '[data-testid="test-new-org-display-name-input"]',
                 newText: testOrg.displayName,
             })
 

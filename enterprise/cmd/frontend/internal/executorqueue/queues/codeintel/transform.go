@@ -34,8 +34,7 @@ func transformRecord(index store.Index, accessToken string) (apiclient.Job, erro
 		})
 	}
 
-	frontendURL := conf.Get().ExternalURL
-
+	frontendURL := conf.ExecutorsFrontendURL()
 	authorizationHeader := makeAuthHeaderValue(accessToken)
 	redactedAuthorizationHeader := makeAuthHeaderValue("REDACTED")
 

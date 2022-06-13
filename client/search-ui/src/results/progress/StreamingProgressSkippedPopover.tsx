@@ -71,7 +71,6 @@ const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped:
                         >
                             <H4 className="d-flex align-items-center mb-0 w-100">
                                 <Icon
-                                    role="img"
                                     aria-label={skipped.severity === 'info' ? 'Information' : 'Alert'}
                                     className={classNames(styles.icon, 'flex-shrink-0')}
                                     as={skipped.severity === 'info' ? InformationOutlineIcon : AlertCircleIcon}
@@ -81,7 +80,6 @@ const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped:
 
                                 {skipped.message && (
                                     <Icon
-                                        role="img"
                                         aria-hidden={true}
                                         className={classNames('flex-shrink-0', styles.chevron)}
                                         as={isOpen ? ChevronDownIcon : ChevronLeftIcon}
@@ -178,7 +176,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                         disabled={selectedSuggestedSearches.size === 0}
                         data-testid="skipped-popover-form-submit-btn"
                     >
-                        <Icon role="img" aria-hidden={true} className="mr-1" as={SearchIcon} />
+                        <Icon aria-hidden={true} className="mr-1" as={SearchIcon} />
                         Search again
                     </Button>
                 </Form>
