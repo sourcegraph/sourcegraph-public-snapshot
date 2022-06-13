@@ -124,6 +124,15 @@ public class ConfigUtil {
         SourcegraphApplicationService.getInstance().isInstallEventLogged = value;
     }
 
+    public static boolean isUrlNotificationDismissed(@NotNull Project project) {
+        return getProjectLevelConfig(project).isUrlNotificationDismissed();
+    }
+
+    public static void setUrlNotificationDismissed(@NotNull Project project, boolean value) {
+        SourcegraphConfig settings = getProjectLevelConfig(project);
+        settings.isUrlNotificationDismissed = value;
+    }
+
     @NotNull
     private static SourcegraphApplicationService getApplicationLevelConfig() {
         return Objects.requireNonNull(SourcegraphApplicationService.getInstance());
