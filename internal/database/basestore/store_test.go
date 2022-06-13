@@ -106,7 +106,7 @@ func TestConcurrentTransactions(t *testing.T) {
 			})
 		}
 		err = g.Wait()
-		require.ErrorIs(t, err, ErrConcurrentTransactions)
+		require.ErrorIs(t, err, ErrConcurrentTransactionAccess)
 	})
 
 	t.Run("parallel insertions on a single transaction fails", func(t *testing.T) {
@@ -123,7 +123,7 @@ func TestConcurrentTransactions(t *testing.T) {
 			})
 		}
 		err = g.Wait()
-		require.ErrorIs(t, err, ErrConcurrentTransactions)
+		require.ErrorIs(t, err, ErrConcurrentTransactionAccess)
 	})
 }
 

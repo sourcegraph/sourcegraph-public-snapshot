@@ -156,13 +156,13 @@ func makeSavepointID() (string, error) {
 	return fmt.Sprintf("sp_%s", strings.ReplaceAll(id.String(), "-", "_")), nil
 }
 
-var ErrConcurrentTransactions = errors.New("transaction used concurrently")
+var ErrConcurrentTransactionAccess = errors.New("transaction used concurrently")
 
-// lockingTx wraps a *sql.Tx with a mutex, and reports when a caller tries
-// to use the transaction concurrently. Since using a transaction concurrently
-// is unsafe, we want to catch these issues. Currently, lockingTx will just
-// log an error and serialize accesses to the wrapped *sql.Tx, but in the future
-// concurrent calls may be upgraded to an error.
+// lockingTx wraps a *sql.Tx with a mutex, and reports when a caller tries to
+// use the transaction concurrently. Since using a transaction concurrently is
+// unsafe, we want to catch these issues. If lockingTx detects that a
+// transaction is being used concurrently, it will return
+// ErrConcurrentTransactionAccess and log an error.
 type lockingTx struct {
 	tx *sql.Tx
 	mu sync.Mutex
@@ -170,7 +170,7 @@ type lockingTx struct {
 
 func (t *lockingTx) lock() error {
 	if !t.mu.TryLock() {
-		err := errors.WithStack(ErrConcurrentTransactions)
+		err := errors.WithStack(ErrConcurrentTransactionAccess)
 		log.Scoped("internal", "database").Error("transaction used concurrently", log.Error(err))
 		return err
 	}
