@@ -179,22 +179,8 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 		return false, err
 	}
 
-	// Build DB cache entries for all the results and store them.
-	for _, result := range stepResults {
-		// TODO: This is stupid, because we unmarshal and then marshal again.
-		value, err := json.Marshal(&result.Value)
-		if err != nil {
-			return false, errors.Wrap(err, "failed to marshal cache entry")
-		}
-		entry := &btypes.BatchSpecExecutionCacheEntry{
-			Key:    result.Key,
-			Value:  string(value),
-			UserID: spec.UserID,
-		}
-
-		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
-			return false, errors.Wrap(err, "failed to save cache entry")
-		}
+	if err := storeCacheResults(ctx, tx, stepResults, spec.UserID); err != nil {
+		return false, err
 	}
 
 	return fn(ctx, s.Store.With(tx))
@@ -270,27 +256,17 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		return false, errors.Wrap(err, "failed to extract cache entries")
 	}
 
+	// This is a hard-error, every execution must emit at least one of them.
 	if len(stepResults) == 0 {
 		return false, errors.New("found no step results")
 	}
 
-	// Build DB cache entries for all the results and store them.
-	for _, result := range stepResults {
-		value, err := json.Marshal(&result.Value)
-		if err != nil {
-			return false, errors.Wrap(err, "failed to marshal cache entry")
-		}
-		entry := &btypes.BatchSpecExecutionCacheEntry{
-			Key:    result.Key,
-			Value:  string(value),
-			UserID: batchSpec.UserID,
-		}
-
-		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
-			return false, errors.Wrap(err, "failed to save cache entry")
-		}
+	if err := storeCacheResults(ctx, tx, stepResults, batchSpec.UserID); err != nil {
+		return false, err
 	}
 
+	// Find the result for the last step. This is the one we'll be building the execution
+	// result from.
 	var latestStepResult *batcheslib.CacheAfterStepResultMetadata = stepResults[0]
 	for _, r := range stepResults {
 		if r.Value.StepIndex > latestStepResult.Value.StepIndex {
@@ -299,20 +275,16 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 	}
 
 	// Convert step result to execution result:
-	var execResult execution.Result
-	// Set the Outputs to the cached outputs
-	execResult.Outputs = latestStepResult.Value.Outputs
-
 	changes, err := git.ChangesInDiff([]byte(latestStepResult.Value.Diff))
 	if err != nil {
 		return false, errors.Wrap(err, "parsing cached step diff")
 	}
-
-	execResult.Diff = latestStepResult.Value.Diff
-	execResult.ChangedFiles = &changes
-	// TODO: This is not in src-cli, is it missing?
-	execResult.Path = workspace.Path
-	// Done
+	execResult := execution.Result{
+		Outputs:      latestStepResult.Value.Outputs,
+		Diff:         latestStepResult.Value.Diff,
+		ChangedFiles: &changes,
+		Path:         workspace.Path,
+	}
 
 	rawSpecs, err := cache.ChangesetSpecsFromCache(
 		batchSpec.Spec,
@@ -401,6 +373,27 @@ SET
 	changeset_spec_ids = %s
 WHERE id = %s
 `
+
+// storeCacheResults builds DB cache entries for all the results and store them using the given tx.
+func storeCacheResults(ctx context.Context, tx *Store, results []*batcheslib.CacheAfterStepResultMetadata, userID int32) error {
+	for _, result := range results {
+		value, err := json.Marshal(&result.Value)
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal cache entry")
+		}
+		entry := &btypes.BatchSpecExecutionCacheEntry{
+			Key:    result.Key,
+			Value:  string(value),
+			UserID: userID,
+		}
+
+		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
+			return errors.Wrap(err, "failed to save cache entry")
+		}
+	}
+
+	return nil
+}
 
 func extractCacheEntries(events []*batcheslib.LogEvent) (cacheEntries []*batcheslib.CacheAfterStepResultMetadata, err error) {
 	for _, e := range events {

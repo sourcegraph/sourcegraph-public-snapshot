@@ -228,8 +228,6 @@ func (r *batchSpecWorkspaceCreator) process(
 			if _, ok := workspace.skippedSteps[int32(i)]; ok {
 				continue
 			}
-			// TODO: Is this required?
-			i := i
 			latestStepIdx = i
 			break
 		}
@@ -237,24 +235,22 @@ func (r *batchSpecWorkspaceCreator) process(
 			continue
 		}
 
-		var execResult execution.Result
-		// TODO: Empty diff check.
 		res, found := workspace.dbWorkspace.StepCacheResult(latestStepIdx + 1)
 		if !found {
-			// TODO: this is an error! It should have been set right above in l.222.
-			continue
+			// It's been set above, this should never happen. This is a bug.
+			return errors.New("step cache result not found in set")
 		}
-		// Set the Outputs to the cached outputs
-		execResult.Outputs = res.Value.Outputs
 
 		changes, err := git.ChangesInDiff([]byte(res.Value.Diff))
 		if err != nil {
 			return errors.Wrap(err, "parsing cached step diff")
 		}
-
-		execResult.Diff = res.Value.Diff
-		execResult.ChangedFiles = &changes
-		execResult.Path = workspace.dbWorkspace.Path
+		execResult := execution.Result{
+			Outputs:      res.Value.Outputs,
+			Diff:         res.Value.Diff,
+			ChangedFiles: &changes,
+			Path:         workspace.dbWorkspace.Path,
+		}
 
 		workspace.dbWorkspace.CachedResultFound = true
 
@@ -287,8 +283,32 @@ func (r *batchSpecWorkspaceCreator) process(
 
 	// If there are "importChangesets" statements in the spec we evaluate
 	// them now and create ChangesetSpecs for them.
+	im, err := changesetSpecsForImports(ctx, tx, evaluatableSpec.ImportChangesets, spec.ID, spec.UserID)
+	if err != nil {
+		return err
+	}
+	cs = append(cs, im...)
+
+	if err = tx.CreateChangesetSpec(ctx, cs...); err != nil {
+		return err
+	}
+
+	// Associate the changeset specs with the workspace now that they have IDs.
+	for workspace, changesetSpecs := range changesetsByWorkspace {
+		for _, spec := range changesetSpecs {
+			workspace.ChangesetSpecIDs = append(workspace.ChangesetSpecIDs, spec.ID)
+		}
+	}
+
+	return tx.CreateBatchSpecWorkspace(ctx, ws...)
+}
+
+func changesetSpecsForImports(ctx context.Context, tx *store.Store, importChangesets []batcheslib.ImportChangeset, batchSpecID int64, userID int32) ([]*btypes.ChangesetSpec, error) {
+	cs := []*btypes.ChangesetSpec{}
+
 	reposStore := tx.Repos()
-	specs, err := batcheslib.BuildImportChangesetSpecs(ctx, evaluatableSpec.ImportChangesets, func(ctx context.Context, repoNames []string) (map[string]string, error) {
+
+	specs, err := batcheslib.BuildImportChangesetSpecs(ctx, importChangesets, func(ctx context.Context, repoNames []string) (map[string]string, error) {
 		if len(repoNames) == 0 {
 			return map[string]string{}, nil
 		}
@@ -307,32 +327,23 @@ func (r *batchSpecWorkspaceCreator) process(
 		return repoNameIDs, nil
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, c := range specs {
 		repoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(c.BaseRepository))
 		if err != nil {
-			return err
+			return nil, err
 		}
-		changesetSpec := &btypes.ChangesetSpec{
-			UserID:      spec.UserID,
-			RepoID:      repoID,
-			Spec:        c,
-			BatchSpecID: spec.ID,
+
+		changesetSpec, err := btypes.NewChangesetSpecFromSpec(c)
+		if err != nil {
+			return nil, err
 		}
+		changesetSpec.UserID = userID
+		changesetSpec.RepoID = repoID
+		changesetSpec.BatchSpecID = batchSpecID
+
 		cs = append(cs, changesetSpec)
 	}
-
-	if err = tx.CreateChangesetSpec(ctx, cs...); err != nil {
-		return err
-	}
-
-	// Associate the changeset specs with the workspace now that they have IDs.
-	for workspace, changesetSpecs := range changesetsByWorkspace {
-		for _, spec := range changesetSpecs {
-			workspace.ChangesetSpecIDs = append(workspace.ChangesetSpecIDs, spec.ID)
-		}
-	}
-
-	return tx.CreateBatchSpecWorkspace(ctx, ws...)
+	return cs, nil
 }
