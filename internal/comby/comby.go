@@ -155,7 +155,7 @@ func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Resu
 	b := new(bytes.Buffer)
 	w := bufio.NewWriter(b)
 
-	cmd, stdin, stdout, stderr, err := SetupCmdWithPipes(args)
+	cmd, stdin, stdout, stderr, err := SetupCmdWithPipes(ctx, args)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Resu
 	return results, nil
 }
 
-func SetupCmdWithPipes(args Args) (cmd *exec.Cmd, stdin io.WriteCloser, stdout, stderr io.ReadCloser, err error) {
+func SetupCmdWithPipes(ctx context.Context, args Args) (cmd *exec.Cmd, stdin io.WriteCloser, stdout, stderr io.ReadCloser, err error) {
 	if !Exists() {
 		log15.Error("comby is not installed (it could not be found on the PATH)")
 		return nil, nil, nil, nil, errors.New("comby is not installed")
@@ -194,7 +194,7 @@ func SetupCmdWithPipes(args Args) (cmd *exec.Cmd, stdin io.WriteCloser, stdout, 
 	rawArgs := rawArgs(args)
 	log15.Info("preparing to run comby", "args", args.String())
 
-	cmd = exec.Command(combyPath, rawArgs...)
+	cmd = exec.CommandContext(ctx, combyPath, rawArgs...)
 	// Ensure forked child processes are killed
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
@@ -218,8 +218,6 @@ func SetupCmdWithPipes(args Args) (cmd *exec.Cmd, stdin io.WriteCloser, stdout, 
 }
 
 func StartAndWaitForCompletion(ctx context.Context, cmd *exec.Cmd, stdin io.WriteCloser, stdout, stderr io.ReadCloser, input Input, w ...io.Writer) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	log15.Info("starting comby")
 
 	if err := cmd.Start(); err != nil {
@@ -227,28 +225,7 @@ func StartAndWaitForCompletion(ctx context.Context, cmd *exec.Cmd, stdin io.Writ
 		return errors.Wrap(err, "failed to start comby command")
 	}
 
-	errorC := make(chan error, 1)
-	go func() {
-		if len(w) > 0 {
-			errorC <- waitForCompletion(cmd, stdin, stdout, stderr, input, w[0])
-		} else {
-			errorC <- waitForCompletion(cmd, stdin, stdout, stderr, input)
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-		log15.Error("comby context deadline reached")
-		kill(cmd.Process.Pid)
-	case err := <-errorC:
-		if err != nil {
-			err = errors.Wrap(err, "failed to wait for executing comby command")
-			kill(cmd.Process.Pid)
-			return err
-		}
-	}
-
-	return nil
+	return waitForCompletion(cmd, stdin, stdout, stderr, input, w...)
 }
 
 // Matches returns all matches in all files for which comby finds matches.
