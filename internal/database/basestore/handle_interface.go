@@ -47,10 +47,6 @@ type dbHandle struct {
 	txOptions sql.TxOptions
 }
 
-func (h *dbHandle) DBUtilDB() dbutil.DB {
-	return h.DB
-}
-
 func (h *dbHandle) InTransaction() bool {
 	return false
 }
@@ -70,10 +66,6 @@ func (h *dbHandle) Done(err error) error {
 type txHandle struct {
 	*sql.Tx
 	txOptions sql.TxOptions
-}
-
-func (h *txHandle) DBUtilDB() dbutil.DB {
-	return h.Tx
 }
 
 func (h *txHandle) InTransaction() bool {
@@ -99,10 +91,6 @@ func (h *txHandle) Done(err error) error {
 type savepointHandle struct {
 	*sql.Tx
 	savepointID string
-}
-
-func (h *savepointHandle) DBUtilDB() dbutil.DB {
-	return h.Tx
 }
 
 func (h *savepointHandle) InTransaction() bool {

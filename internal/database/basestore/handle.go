@@ -24,11 +24,6 @@ func NewHandleWithDB(db *sql.DB, txOptions sql.TxOptions) TransactableHandle {
 	return &dbHandle{DB: db, txOptions: txOptions}
 }
 
-// DB returns the underlying database handle.
-func (h *oldTransactableHandle) DBUtilDB() dbutil.DB {
-	return h.DB
-}
-
 // InTransaction returns true if the underlying database handle is in a transaction.
 func (h *oldTransactableHandle) InTransaction() bool {
 	db := tryUnwrap(h.DB)
