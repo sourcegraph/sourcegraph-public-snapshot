@@ -23,19 +23,33 @@ import java.util.Base64;
 import java.util.Objects;
 
 public class PreviewContent {
-    private final String resultType;
     private final Project project;
+    private final String resultType;
     private final String fileName;
     private final String repoUrl;
     private final String path;
     private final String content;
+    private final String symbolName;
+    private final String symbolContainerName;
+    private final String commitMessagePreview;
     private final int lineNumber;
     private final int[][] absoluteOffsetAndLengths;
     private final String relativeUrl;
 
     private VirtualFile virtualFile;
 
-    public PreviewContent(@NotNull Project project, @Nullable String resultType, @Nullable String fileName, @NotNull String repoUrl, @Nullable String path, @Nullable String content, int lineNumber, int[][] absoluteOffsetAndLengths, @Nullable String relativeUrl) {
+    public PreviewContent(@NotNull Project project,
+                          @Nullable String resultType,
+                          @Nullable String fileName,
+                          @NotNull String repoUrl,
+                          @Nullable String path,
+                          @Nullable String content,
+                          @Nullable String symbolName,
+                          @Nullable String symbolContainerName,
+                          @Nullable String commitMessagePreview,
+                          int lineNumber,
+                          int[][] absoluteOffsetAndLengths,
+                          @Nullable String relativeUrl) {
         this.project = project;
         // It seems like the constructor is not called when we use the JSON parser to create instances of this class, so
         // avoid adding any computation here.
@@ -43,6 +57,9 @@ public class PreviewContent {
         this.fileName = fileName;
         this.repoUrl = repoUrl;
         this.path = path;
+        this.symbolName = symbolName;
+        this.symbolContainerName = symbolContainerName;
+        this.commitMessagePreview = commitMessagePreview;
         this.content = content;
         this.lineNumber = lineNumber;
         this.absoluteOffsetAndLengths = absoluteOffsetAndLengths;
@@ -65,6 +82,9 @@ public class PreviewContent {
             json.get("repoUrl").getAsString(),
             isNotNull(json, "path") ? json.get("path").getAsString() : null,
             isNotNull(json, "content") ? json.get("content").getAsString() : null,
+            isNotNull(json, "symbolName") ? json.get("symbolName").getAsString() : null,
+            isNotNull(json, "symbolContainerName") ? json.get("symbolContainerName").getAsString() : null,
+            isNotNull(json, "commitMessagePreview") ? json.get("commitMessagePreview").getAsString() : null,
             isNotNull(json, "lineNumber") ? json.get("lineNumber").getAsInt() : -1,
             absoluteOffsetAndLengths,
             isNotNull(json, "relativeUrl") ? json.get("relativeUrl").getAsString() : null);
@@ -97,6 +117,21 @@ public class PreviewContent {
     @Nullable
     public String getContent() {
         return convertBase64ToString(content);
+    }
+
+    @Nullable
+    public String getSymbolName() {
+        return symbolName;
+    }
+
+    @Nullable
+    public String getSymbolContainerName() {
+        return symbolContainerName;
+    }
+
+    @Nullable
+    public String getCommitMessagePreview() {
+        return commitMessagePreview;
     }
 
     public int getLineNumber() {
@@ -139,6 +174,9 @@ public class PreviewContent {
             && repoUrl.equals(other.repoUrl)
             && Objects.equals(path, other.path)
             && Objects.equals(content, other.content)
+            && Objects.equals(symbolName, other.symbolName)
+            && Objects.equals(symbolContainerName, other.symbolContainerName)
+            && Objects.equals(commitMessagePreview, other.commitMessagePreview)
             && lineNumber == other.lineNumber
             && Objects.deepEquals(absoluteOffsetAndLengths, other.absoluteOffsetAndLengths)
             && Objects.equals(relativeUrl, other.relativeUrl);

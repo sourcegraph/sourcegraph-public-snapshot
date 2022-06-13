@@ -133,11 +133,11 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         } else if (Objects.equals(previewContent.getResultType(), "repo")) {
             return previewContent.getRepoUrl();
         } else if (Objects.equals(previewContent.getResultType(), "symbol")) {
-            return "TODO!"; // TODO get symbol!
+            return previewContent.getSymbolName() + " (" + previewContent.getSymbolContainerName() + ")";
         } else if (Objects.equals(previewContent.getResultType(), "diff")) {
-            return "TODO!"; // TODO get commit message!
+            return previewContent.getCommitMessagePreview() != null ? previewContent.getCommitMessagePreview() : "";
         } else if (Objects.equals(previewContent.getResultType(), "commit")) {
-            return previewContent.getContent() != null ? previewContent.getContent() : ""; // TODO: Just the first line!
+            return previewContent.getCommitMessagePreview() != null ? previewContent.getCommitMessagePreview() : "";
         } else {
             return "";
         }

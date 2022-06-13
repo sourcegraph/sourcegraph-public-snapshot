@@ -15,13 +15,16 @@ import { PluginConfig, Search, Theme } from './types'
 
 export interface PreviewContent {
     resultType: SearchType
-    fileName: string
+    fileName?: string | null
     repoUrl: string
-    path: string
-    content: string | null
-    lineNumber: number
-    absoluteOffsetAndLengths: number[][]
-    relativeUrl: string
+    path?: string | null
+    content?: string | null
+    symbolName?: string | null
+    symbolContainerName?: string | null
+    commitMessagePreview?: string | null
+    lineNumber?: number | null
+    absoluteOffsetAndLengths?: number[][] | null
+    relativeUrl?: string | null
 }
 
 export interface PreviewRequest {
@@ -163,12 +166,9 @@ export async function createPreviewContent(
         )
         return {
             resultType: isCommitResult ? 'commit' : 'diff',
-            fileName: '',
-            repoUrl: '',
-            path: '',
+            repoUrl: match.repository,
             content,
-            lineNumber: -1,
-            absoluteOffsetAndLengths: [],
+            commitMessagePreview: match.message.split('\n', 1)[0],
             relativeUrl: match.url,
         }
     }
@@ -184,12 +184,7 @@ export async function createPreviewContent(
     if (match.type === 'repo') {
         return {
             resultType: match.type,
-            fileName: '',
             repoUrl: getRepoMatchUrl(match).slice(1),
-            path: '',
-            content: null,
-            lineNumber: -1,
-            absoluteOffsetAndLengths: [],
             relativeUrl: getRepoMatchUrl(match),
         }
     }
@@ -204,13 +199,7 @@ export async function createPreviewContent(
 
     return {
         resultType: null,
-        fileName: '',
         repoUrl: '',
-        path: '',
-        content: null,
-        lineNumber: -1,
-        absoluteOffsetAndLengths: [],
-        relativeUrl: '',
     }
 }
 
@@ -234,7 +223,6 @@ async function createPreviewContentForContentMatch(
         content: prepareContent(content),
         lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
         absoluteOffsetAndLengths,
-        relativeUrl: '',
     }
 }
 
@@ -248,19 +236,16 @@ async function createPreviewContentForPathMatch(match: PathMatch): Promise<Previ
         repoUrl: match.repository,
         path: match.path,
         content: prepareContent(content),
-        lineNumber: -1,
-        absoluteOffsetAndLengths: [],
-        relativeUrl: '',
     }
 }
 
 async function createPreviewContentForSymbolMatch(
     match: SymbolMatch,
-    sybolMatchIndex: number
+    symbolMatchIndex: number
 ): Promise<PreviewContent> {
     const fileName = splitPath(match.path)[1]
     const content = await loadContent(match)
-    const symbolMatch = match.symbols[sybolMatchIndex]
+    const symbolMatch = match.symbols[symbolMatchIndex]
 
     console.log(symbolMatch)
 
@@ -270,6 +255,8 @@ async function createPreviewContentForSymbolMatch(
         repoUrl: match.repository,
         path: match.path,
         content: prepareContent(content),
+        symbolName: symbolMatch.name,
+        symbolContainerName: symbolMatch.containerName,
         lineNumber: getLineFromSourcegraphUrl(symbolMatch.url),
         absoluteOffsetAndLengths: getAbsoluteOffsetAndLengthsFromSourcegraphUrl(symbolMatch.url, content),
         relativeUrl: '',
