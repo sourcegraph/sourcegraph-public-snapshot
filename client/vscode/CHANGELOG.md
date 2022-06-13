@@ -2,15 +2,29 @@
 
 The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release versions and major.ODD_NUMBER.patch (eg. 2.1.1) for pre-release versions.
 
-## Next Release
+## Unreleased
 
 ### Changes
 
-- Import Sourcegraph Access token automatically after completing authentication in the browser for Sourcegraph Cloud users [issues/28311](https://github.com/sourcegraph/sourcegraph/issues/28311)
+-
 
 ### Fixes
 
-- Optimize build size [issues/36192](https://github.com/sourcegraph/sourcegraph/issues/36192)
+-
+
+### Plans
+
+- Import Sourcegraph Access token automatically after completing authentication in the browser for Sourcegraph Cloud users [issues/28311](https://github.com/sourcegraph/sourcegraph/issues/28311)
+
+## 2.2.4
+
+### Changes
+
+- Optimize package size [issues/36192](https://github.com/sourcegraph/sourcegraph/issues/36192)
+
+### Fixes
+
+- Check if default branch exists when opening files [issues/36743](https://github.com/sourcegraph/sourcegraph/issues/36743)
 
 ## 2.2.3
 
