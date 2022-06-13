@@ -136,6 +136,8 @@ This is done by selecting the relevant checkboxes when creating the token:
 
 > NOTE: `workflow` is technically only required if your batch changes modify files in the `.github` directory of a repository, but we recommend enabling it regardless to avoid confusing errors at a later time.
 
+When working with organizations that have SAML SSO (Single Sign On) enabled, configuring credentials requires an additional step that [involves white-listing the token for use in that organization](https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-saml-single-sign-on/authorizing-a-personal-access-token-for-use-with-saml-single-sign-on).
+
 ### GitLab
 
 Follow the steps to [create a personal access token](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#creating-a-personal-access-token) on GitLab. Batch Changes requires the following scopes:
