@@ -420,13 +420,16 @@ steps:
 
 ## [`steps.mount`](#steps-mount)
 
-> NOTE: This feature is only available for <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.xx.x and later.
+<aside class="experimental">
+<span class="badge badge-experimental">Experimental</span> <code>mount</code> is an experimental feature in Sourcegraph 3.41 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.xx. It's a <b>preview</b> of functionality we're currently exploring to make running custom scripts/binaries easier. If you have any feedback, please let us know!
+</aside>
 
 Mounts a local path to a path in a Docker container. Mounted paths are accessible to the step's `run` command.
 
 A `path` can point to a file or a directory. The `path` can be an absolute path or a relative path. Regardless if the 
-path is absolute or relative, the path must be within the same directory as the batch spec that is being ran (the batch 
-spec directory is considered the "working directory").
+path is absolute or relative, the path must be within the same directory as the batch spec that is being run (the batch 
+spec directory is considered the "working directory"). If the batch spec is provided using standard input, the current 
+directory is used as the working directory.
 
 ### Examples
 
