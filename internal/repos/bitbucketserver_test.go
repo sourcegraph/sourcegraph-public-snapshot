@@ -22,7 +22,7 @@ import (
 )
 
 func TestBitbucketServerSource_MakeRepo(t *testing.T) {
-	repos := GetReposFromTestdata(t)
+	repos := GetReposFromTestdata(t, "bitbucketserver-repos.json")
 
 	cases := map[string]*schema.BitbucketServerConnection{
 		"simple": {
@@ -209,7 +209,7 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 }
 
 func TestBitbucketServerSource_ListByReposOnly(t *testing.T) {
-	repos := GetReposFromTestdata(t)
+	repos := GetReposFromTestdata(t, "bitbucketserver-repos.json")
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/rest/api/1.0/projects/", func(w http.ResponseWriter, r *http.Request) {
@@ -258,7 +258,7 @@ func TestBitbucketServerSource_ListByReposOnly(t *testing.T) {
 }
 
 func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
-	repos := GetReposFromTestdata(t)
+	repos := GetReposFromTestdata(t, "bitbucketserver-repos.json")
 
 	type Results struct {
 		*bitbucketserver.PageToken
@@ -357,7 +357,7 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 }
 
 func TestBitbucketServerSource_ListByProjectKeyMock(t *testing.T) {
-	repos := GetReposFromTestdata(t)
+	repos := GetReposFromTestdata(t, "bitbucketserver-repos.json")
 
 	type Results struct {
 		*bitbucketserver.PageToken
@@ -475,8 +475,8 @@ func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 
 }
 
-func GetReposFromTestdata(t *testing.T) []*bitbucketserver.Repo {
-	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
+func GetReposFromTestdata(t *testing.T, filename string) []*bitbucketserver.Repo {
+	b, err := os.ReadFile(filepath.Join("testdata", filename))
 	if err != nil {
 		t.Fatal(err)
 	}
