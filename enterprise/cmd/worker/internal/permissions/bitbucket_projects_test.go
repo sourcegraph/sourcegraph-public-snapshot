@@ -2,6 +2,7 @@ package permissions
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestStore(t *testing.T) {
@@ -43,4 +45,30 @@ func mustParseTime(v string) time.Time {
 		panic(err)
 	}
 	return t
+}
+
+func TestGetBitbucketClient(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	ctx := context.Background()
+
+	var c schema.BitbucketServerConnection
+	c.Token = "secret"
+	c.Url = "http://some-url"
+	c.Username = "username"
+
+	cfg, err := json.Marshal(&c)
+	require.NoError(t, err)
+
+	svc := types.ExternalService{
+		Config: string(cfg),
+	}
+
+	var handler bitbucketProjectPermissionsHandler
+	client, err := handler.getBitbucketClient(ctx, &svc)
+	require.NoError(t, err)
+	require.NotNil(t, client)
 }
