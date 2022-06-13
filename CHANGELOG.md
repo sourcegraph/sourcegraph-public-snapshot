@@ -38,6 +38,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - A common source of searcher evictions on kubernetes when running large structural searches. [#34828](https://github.com/sourcegraph/sourcegraph/issues/34828)
 - An issue with permissions evaluation for saved searches
+- An authorization check while Redis is down will now result in an internal server error, instead of clearing a valid session from the user's cookies. [#37016](https://github.com/sourcegraph/sourcegraph/issues/37016)
 
 ### Removed
 
