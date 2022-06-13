@@ -12,4 +12,4 @@ git clone --depth 1 \
   "$test_dir/deploy-sourcegraph"
 
 echo "--- test.sh"
-"${root_dir}"/dev/ci/integration/cluster/test.sh
+"${root_dir}"/dev/ci/integration/codeinsights/test.sh
