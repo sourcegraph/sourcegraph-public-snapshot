@@ -25,6 +25,8 @@ type BitbucketProjectPermissionsStore interface {
 	Enqueue(ctx context.Context, projectKey string, externalServiceID int64, permissions []types.UserPermission, unrestricted bool) (int, error)
 	Transact(ctx context.Context) (BitbucketProjectPermissionsStore, error)
 	Done(err error) error
+
+	ListWorkerJobs(ctx context.Context, opt ListWorkerJobsOptions) (*[]BitbucketProjectPermissionsWorkerJob, error)
 }
 
 type bitbucketProjectPermissionsStore struct {
@@ -90,6 +92,49 @@ VALUES (%s, %s, %s, %s) RETURNING id
 	}
 
 	return jobID, nil
+}
+
+type ListWorkerJobsOptions struct {
+	ProjectKey string
+	Status     string
+}
+
+type BitbucketProjectPermissionsWorkerJob struct{}
+
+func (s *bitbucketProjectPermissionsStore) ListWorkerJobs(ctx context.Context, opt ListWorkerJobsOptions) (*[]BitbucketProjectPermissionsWorkerJob, error) {
+	q := listWorkerJobsQuery(opt)
+
+	if _, err := s.Query(ctx, q); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func listWorkerJobsQuery(opt ListWorkerJobsOptions) *sqlf.Query {
+	var where []*sqlf.Query
+
+	q := `
+SELECT id, state, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_hearbeat_at, project_key, external_services_id, permissions, unrestricted
+FROM explicit_permissions_bitbucket_project_jobs
+`
+
+	if opt.ProjectKey != "" {
+		where = append(where, sqlf.Sprintf("project_key = %s", opt.ProjectKey))
+	}
+
+	if opt.Status != "" {
+		where = append(where, sqlf.Sprintf("status = %s", opt.Status))
+	}
+
+	if len(where) == 0 {
+		return sqlf.Sprintf(q)
+	}
+
+	where = append(where, sqlf.Sprintf("WHERE %s"))
+	whereConds := sqlf.Join(where, "\n AND ")
+
+	return sqlf.Sprintf(q, whereConds)
 }
 
 // ScanFirstBitbucketProjectPermissionsJob scans a single job from the return value of `*Store.query`.

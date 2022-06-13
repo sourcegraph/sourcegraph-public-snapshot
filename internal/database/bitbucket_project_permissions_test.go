@@ -134,6 +134,17 @@ func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
 	}, record)
 }
 
+func TestListWorkerJobsQuery(t *testing.T) {
+	t.Run("no options set", func(t *testing.T) {
+		got := listWorkerJobsQuery(ListWorkerJobsOptions{})
+
+		want := `SELECT id, state, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_hearbeat_at, project_key, external_services_id, permissions, unrestricted
+FROM explicit_permissions_bitbucket_project_jobs"`
+
+		require.Equal(t, got, want)
+	})
+}
+
 func intPtr(v int) *int          { return &v }
 func stringPtr(v string) *string { return &v }
 
