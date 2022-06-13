@@ -130,7 +130,7 @@ func (r *webhookLogConnectionResolver) Nodes(ctx context.Context) ([]*webhookLog
 	}
 
 	nodes := make([]*webhookLogResolver, len(logs))
-	db := database.NewDB(r.store.Handle().DB())
+	db := database.NewDBWith(r.store)
 	for i, log := range logs {
 		nodes[i] = &webhookLogResolver{
 			db:  db,
@@ -224,7 +224,7 @@ func (r *webhookLogResolver) ExternalService(ctx context.Context) (*externalServ
 		return nil, nil
 	}
 
-	return externalServiceByID(ctx, r.db, marshalExternalServiceID(*r.log.ExternalServiceID))
+	return externalServiceByID(ctx, r.db, MarshalExternalServiceID(*r.log.ExternalServiceID))
 }
 
 func (r *webhookLogResolver) StatusCode() int32 {

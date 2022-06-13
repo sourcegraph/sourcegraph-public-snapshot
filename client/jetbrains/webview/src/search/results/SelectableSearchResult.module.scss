@@ -1,14 +1,6 @@
 .selectable-search-result {
     width: 100%;
     overflow-x: hidden;
-    cursor: pointer;
+    cursor: default;
     user-select: none;
-    background-color: var(--code-bg);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    &-active {
-        background-color: var(--code-selection-bg);
-    }
 }

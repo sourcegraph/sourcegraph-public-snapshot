@@ -1,12 +1,28 @@
 .decoration {
-    display: contents;
+    max-width: 240px;
+    padding: 0 0.75rem;
+    background: var(--body-bg);
+
+    :global(.top-spacer),
+    :global(.bottom-spacer) {
+        background: var(--body-bg) !important;
+        margin: 0 -0.75rem;
+    }
+}
+
+tr:global(.selected),
+tr:global(.highlighted) {
+    .decoration {
+        background: none;
+    }
 }
 
 .wrapper {
-    display: flex;
-    max-width: 220px;
-    padding-right: 0.75rem;
-    padding-left: 0.75rem;
+    height: 1rem;
+
+    > * {
+        max-width: 100%;
+    }
 }
 
 .item {

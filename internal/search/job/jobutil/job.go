@@ -43,11 +43,7 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 	jobTree := NewOrJob(children...)
 
 	if inputs.PatternType == query.SearchTypeLucky {
-		// generate opportunistic queries and run them after the usual jobTree
-		generatedChildren := NewFeelingLuckySearchJob(inputs, plan)
-		if len(generatedChildren) > 0 {
-			jobTree = NewSequentialJob(true, append([]job.Job{jobTree}, generatedChildren...)...)
-		}
+		jobTree = NewFeelingLuckySearchJob(jobTree, inputs, plan)
 	}
 
 	return NewAlertJob(inputs, jobTree), nil
@@ -139,6 +135,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				Diff:                 diff,
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
+				Concurrency:          4,
 			})
 		}
 

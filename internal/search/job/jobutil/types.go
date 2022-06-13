@@ -24,7 +24,8 @@ var allJobs = []job.Job{
 	&NoopJob{},
 
 	&repoPagerJob{},
-	&alternateQueriesAlertJob{},
+	&generatedSearchJob{},
+	&FeelingLuckySearchJob{},
 
 	&AndJob{},
 	&OrJob{},

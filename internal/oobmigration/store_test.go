@@ -11,14 +11,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func TestList(t *testing.T) {
 	t.Parallel()
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(t, db)
 
 	migrations, err := store.List(context.Background())
@@ -38,7 +38,7 @@ func TestList(t *testing.T) {
 }
 
 func TestListEnterprise(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(t, db)
 
 	ReturnEnterpriseMigrations = true
@@ -63,7 +63,7 @@ func TestListEnterprise(t *testing.T) {
 
 func TestUpdateDirection(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(t, db)
 
 	if err := store.UpdateDirection(context.Background(), 3, true); err != nil {
@@ -89,7 +89,7 @@ func TestUpdateDirection(t *testing.T) {
 func TestUpdateProgress(t *testing.T) {
 	t.Parallel()
 	now := testTime.Add(time.Hour * 7)
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(t, db)
 
 	if err := store.updateProgress(context.Background(), 3, 0.7, now); err != nil {
@@ -116,7 +116,7 @@ func TestUpdateProgress(t *testing.T) {
 func TestUpdateMetadata(t *testing.T) {
 	t.Parallel()
 	now := testTime.Add(time.Hour * 7)
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(t, db)
 
 	type sampleMeta = struct {
@@ -164,7 +164,7 @@ func TestUpdateMetadata(t *testing.T) {
 func TestAddError(t *testing.T) {
 	t.Parallel()
 	now := testTime.Add(time.Hour * 8)
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(t, db)
 
 	if err := store.addError(context.Background(), 2, "oops", now); err != nil {
@@ -196,7 +196,7 @@ func TestAddErrorBounded(t *testing.T) {
 	t.Parallel()
 
 	now := testTime.Add(time.Hour * 9)
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(t, db)
 
 	var expectedErrors []MigrationError
@@ -335,7 +335,7 @@ func newVersionPtr(major, minor int) *Version {
 	return &v
 }
 
-func testStore(t *testing.T, db dbutil.DB) *Store {
+func testStore(t *testing.T, db database.DB) *Store {
 	store := NewStoreWithDB(db)
 
 	if _, err := db.ExecContext(context.Background(), "DELETE FROM out_of_band_migrations CASCADE"); err != nil {

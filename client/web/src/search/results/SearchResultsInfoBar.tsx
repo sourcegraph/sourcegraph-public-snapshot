@@ -37,6 +37,7 @@ import {
     getCodeMonitoringCreateAction,
     getInsightsCreateAction,
     getSearchContextCreateAction,
+    getBatchChangeCreateAction,
     CreateAction,
 } from './createActions'
 import { CreateActionsMenu } from './CreateActionsMenu'
@@ -90,6 +91,9 @@ export interface SearchResultsInfoBarProps
     /** The search query and if any results were found */
     query?: string
     resultsFound: boolean
+
+    /** Whether running batch changes server-side is enabled */
+    batchChangesExecutionEnabled?: boolean
 
     // Expand all feature
     allExpanded: boolean
@@ -151,7 +155,7 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<
             data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
         >
             <span>
-                <Icon role="img" aria-hidden={true} as={FormatQuoteOpenIcon} />
+                <Icon aria-hidden={true} as={FormatQuoteOpenIcon} />
                 Searching literally <strong>(including quotes)</strong>
             </span>
         </small>
@@ -210,6 +214,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     const createActions = useMemo(
         () =>
             [
+                getBatchChangeCreateAction(
+                    props.query as string,
+                    props.patternType,
+                    props.authenticatedUser,
+                    props.batchChangesExecutionEnabled
+                ),
                 getSearchContextCreateAction(props.query, props.authenticatedUser),
                 getInsightsCreateAction(
                     props.query,
@@ -218,7 +228,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     props.enableCodeInsights
                 ),
             ].filter((button): button is CreateAction => button !== null),
-        [props.authenticatedUser, props.enableCodeInsights, props.patternType, props.query]
+        [
+            props.authenticatedUser,
+            props.enableCodeInsights,
+            props.patternType,
+            props.query,
+            props.batchChangesExecutionEnabled,
+        ]
     )
 
     // The create code monitor action is separated from the rest of the actions, because we use the
@@ -256,7 +272,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     className="a11y-ignore create-code-monitor-button"
                     button={
                         <>
-                            <Icon role="img" aria-hidden={true} className="mr-1" as={createCodeMonitorAction.icon} />
+                            <Icon aria-hidden={true} className="mr-1" as={createCodeMonitorAction.icon} />
                             {createCodeMonitorAction.label}
                         </>
                     }
@@ -289,7 +305,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     className="test-save-search-link"
                     button={
                         <>
-                            <Icon role="img" aria-hidden={true} className="mr-1" as={BookmarkOutlineIcon} />
+                            <Icon aria-hidden={true} className="mr-1" as={BookmarkOutlineIcon} />
                             Save search
                         </>
                     }
@@ -334,9 +350,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     size="sm"
                     aria-label={`${showFilters ? 'Hide' : 'Show'} filters`}
                 >
-                    <Icon role="img" aria-hidden={true} className="mr-1" as={MenuIcon} />
+                    <Icon aria-hidden={true} className="mr-1" as={MenuIcon} />
                     Filters
-                    <Icon role="img" aria-hidden={true} as={showFilters ? MenuUpIcon : MenuDownIcon} />
+                    <Icon aria-hidden={true} as={showFilters ? MenuUpIcon : MenuDownIcon} />
                 </Button>
 
                 {props.stats}
@@ -388,7 +404,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                 outline={true}
                                 size="sm"
                             >
-                                <Icon role="img" aria-hidden={true} className="mr-1" as={createActionButton.icon} />
+                                <Icon aria-hidden={true} className="mr-1" as={createActionButton.icon} />
                                 {createActionButton.label}
                             </ButtonLink>
                         </li>
@@ -424,7 +440,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                     size="sm"
                                 >
                                     <Icon
-                                        role="img"
                                         aria-hidden={true}
                                         className="mr-0"
                                         as={props.allExpanded ? ArrowCollapseUpIcon : ArrowExpandDownIcon}

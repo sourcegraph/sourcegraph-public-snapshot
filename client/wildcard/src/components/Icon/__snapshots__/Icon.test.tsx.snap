@@ -5,6 +5,7 @@ exports[`Icon renders a medium icon correctly 1`] = `
   <svg
     class="iconInline iconInlineMd"
     fill="none"
+    role="img"
     viewBox="0 0 52 52"
     xmlns="http://www.w3.org/2000/svg"
   >
@@ -29,6 +30,7 @@ exports[`Icon renders a simple inline icon correctly 1`] = `
   <svg
     class="iconInline"
     fill="none"
+    role="img"
     viewBox="0 0 52 52"
     xmlns="http://www.w3.org/2000/svg"
   >

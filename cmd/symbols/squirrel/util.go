@@ -270,7 +270,7 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 		return nil, errors.New("root is nil")
 	}
 	if s.errorOnParseFailure && root.HasError() {
-		return nil, errors.Newf("parse failure in %+v", repoCommitPath)
+		return nil, errors.Newf("parse error in %+v, try pasting it in https://tree-sitter.github.io/tree-sitter/playground to find the ERROR node", repoCommitPath)
 	}
 
 	return &Node{RepoCommitPath: repoCommitPath, Node: root, Contents: contents, LangSpec: langSpec}, nil

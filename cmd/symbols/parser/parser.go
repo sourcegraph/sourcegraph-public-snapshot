@@ -10,14 +10,15 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-ctags"
 
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/std"
+
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/std"
 )
 
 type Parser interface {
@@ -30,7 +31,7 @@ type SymbolOrError struct {
 }
 
 type parser struct {
-	parserPool         ParserPool
+	parserPool         *parserPool
 	repositoryFetcher  fetcher.RepositoryFetcher
 	requestBufferSize  int
 	numParserProcesses int
@@ -38,7 +39,7 @@ type parser struct {
 }
 
 func NewParser(
-	parserPool ParserPool,
+	parserPool *parserPool,
 	repositoryFetcher fetcher.RepositoryFetcher,
 	requestBufferSize int,
 	numParserProcesses int,
@@ -250,6 +251,8 @@ func shouldPersistEntry(e *ctags.Entry) bool {
 }
 
 func SpawnCtags(logger log.Logger, ctagsConfig types.CtagsConfig) (ctags.Parser, error) {
+	logger = logger.Scoped("ctags", "ctags processes")
+
 	options := ctags.Options{
 		Bin:                ctagsConfig.Command,
 		PatternLengthLimit: ctagsConfig.PatternLengthLimit,

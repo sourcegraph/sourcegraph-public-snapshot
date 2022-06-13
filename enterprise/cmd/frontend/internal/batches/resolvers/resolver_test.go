@@ -40,10 +40,10 @@ import (
 func TestNullIDResilience(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	sr := New(store.New(db, &observation.TestContext, nil))
 
-	s, err := newSchema(database.NewDB(db), sr)
+	s, err := newSchema(db, sr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +150,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -316,7 +316,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -432,7 +432,7 @@ func TestApplyBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -547,7 +547,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -647,7 +647,7 @@ func TestCreateBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -718,7 +718,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -910,7 +910,7 @@ func TestMoveBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1180,7 +1180,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1328,7 +1328,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1411,7 +1411,7 @@ func TestCreateChangesetComments(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1519,7 +1519,7 @@ func TestReenqueueChangesets(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1629,7 +1629,7 @@ func TestMergeChangesets(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1739,7 +1739,7 @@ func TestCloseChangesets(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1865,7 +1865,7 @@ func TestPublishChangesets(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1963,7 +1963,7 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2023,6 +2023,72 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 const queryCheckCredential = `
 query($batchChangesCredential: ID!) {
   checkBatchChangesCredential(batchChangesCredential: $batchChangesCredential) { alwaysNil }
+}
+`
+
+func TestListBatchSpecs(t *testing.T) {
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+
+	user := ct.CreateTestUser(t, db, true)
+	userID := user.ID
+
+	cstore := store.New(db, &observation.TestContext, nil)
+
+	batchSpecs := make([]*btypes.BatchSpec, 0, 10)
+
+	for i := 0; i < cap(batchSpecs); i++ {
+		batchSpec := &btypes.BatchSpec{
+			RawSpec:         ct.TestRawBatchSpec,
+			UserID:          userID,
+			NamespaceUserID: userID,
+		}
+
+		if i%2 == 0 {
+			// 5 batch specs will have `createdFromRaw` set to `true` while the remaining 5
+			// will be set to `false`.
+			batchSpec.CreatedFromRaw = true
+		}
+
+		if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
+			t.Fatal(err)
+		}
+
+		batchSpecs = append(batchSpecs, batchSpec)
+	}
+
+	r := &Resolver{store: cstore}
+	s, err := newSchema(db, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("include locally executed batch specs", func(t *testing.T) {
+		input := map[string]any{
+			"includeLocallyExecutedSpecs": true,
+		}
+		var response struct{ BatchSpecs apitest.BatchSpecConnection }
+		apitest.MustExec(ctx, t, s, input, &response, queryListBatchSpecs)
+
+		// All batch specs should be returned here.
+		assert.Len(t, response.BatchSpecs.Nodes, len(batchSpecs))
+	})
+
+	t.Run("exclude locally executed batch specs", func(t *testing.T) {
+		input := map[string]any{
+			"includeLocallyExecutedSpecs": false,
+		}
+		var response struct{ BatchSpecs apitest.BatchSpecConnection }
+		apitest.MustExec(ctx, t, s, input, &response, queryListBatchSpecs)
+
+		// Only 5 batch specs are returned here because we excluded non-SSBC batch specs.
+		assert.Len(t, response.BatchSpecs.Nodes, 5)
+	})
+}
+
+const queryListBatchSpecs = `
+query($includeLocallyExecutedSpecs: Boolean!) {
+	batchSpecs(includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) { nodes { id } }
 }
 `
 

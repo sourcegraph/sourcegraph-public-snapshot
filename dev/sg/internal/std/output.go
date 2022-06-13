@@ -39,17 +39,35 @@ func NewOutput(dst io.Writer, verbose bool) *Output {
 }
 
 // NewFixedOutput instantiates a new output instance with fixed configuration, useful for
-// testing or on platforms/scenarios with problematic terminal detection.
+// platforms/scenarios with problematic terminal detection.
 func NewFixedOutput(dst io.Writer, verbose bool) *Output {
 	return &Output{
-		Output: output.NewOutput(dst, output.OutputOpts{
-			ForceColor:          true,
-			ForceTTY:            true,
-			Verbose:             verbose,
-			ForceWidth:          80,
-			ForceHeight:         25,
-			ForceDarkBackground: true,
-		}),
+		Output: output.NewOutput(dst, newStaticOutputOptions(verbose)),
+	}
+}
+
+// NewSimpleOutput returns a fixed width and height output that does not forcibly enable
+// TTY and color, useful for testing and getting simpler output.
+func NewSimpleOutput(dst io.Writer, verbose bool) *Output {
+	opts := newStaticOutputOptions(verbose)
+	opts.ForceTTY = false
+	opts.ForceColor = false
+
+	return &Output{
+		Output: output.NewOutput(dst, opts),
+	}
+}
+
+// newStaticOutputOptions creates static output options that disables all terminal
+// infernce.
+func newStaticOutputOptions(verbose bool) output.OutputOpts {
+	return output.OutputOpts{
+		ForceColor:          true,
+		ForceTTY:            true,
+		Verbose:             verbose,
+		ForceWidth:          80,
+		ForceHeight:         25,
+		ForceDarkBackground: true,
 	}
 }
 
@@ -126,4 +144,11 @@ func (o *Output) WriteAlertf(fmtStr string, args ...any) {
 // In Buildkite it expands the current section to make it visible.
 func (o *Output) WriteNoticef(fmtStr string, args ...any) {
 	o.writeExpanded(output.Linef(output.EmojiFingerPointRight, output.StyleBold, fmtStr, args...))
+}
+
+// Promptf prints a prompt for user input, and should be followed by an fmt.Scan or similar.
+func (o *Output) Promptf(fmtStr string, args ...any) {
+	l := output.Linef(output.EmojiFingerPointRight, output.StyleBold, fmtStr, args...)
+	l.Prompt = true
+	o.WriteLine(l)
 }

@@ -77,7 +77,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                <Icon role="img" aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
+                <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
             </Button>
             {selectable ? (
                 <SelectBox node={node} selectable={selectable} />
@@ -127,7 +127,6 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                         )}
                     >
                         <Icon
-                            role="img"
                             data-tooltip="The commit message changed"
                             aria-label="The commit message changed"
                             as={CardTextOutlineIcon}
@@ -143,7 +142,6 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                         )}
                     >
                         <Icon
-                            role="img"
                             data-tooltip="The diff changed"
                             aria-label="The diff changed"
                             as={FileDocumentEditOutlineIcon}
@@ -159,7 +157,6 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                         )}
                     >
                         <Icon
-                            role="img"
                             data-tooltip="The commit author details changed"
                             aria-label="The commit author details changed"
                             as={AccountEditIcon}
@@ -186,7 +183,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 outline={true}
                 variant="secondary"
             >
-                <Icon role="img" aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />{' '}
+                <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (
@@ -301,7 +298,6 @@ const ExpandedSection: React.FunctionComponent<
                     {node.delta.diffChanged && (
                         <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                             <Icon
-                                role="img"
                                 aria-label="Changes in this tab"
                                 className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
                                 as={CheckboxBlankCircleIcon}
@@ -317,7 +313,6 @@ const ExpandedSection: React.FunctionComponent<
                     {(node.delta.titleChanged || node.delta.bodyChanged) && (
                         <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                             <Icon
-                                role="img"
                                 aria-label="Changes in this tab"
                                 className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
                                 as={CheckboxBlankCircleIcon}
@@ -335,7 +330,6 @@ const ExpandedSection: React.FunctionComponent<
                         node.delta.commitMessageChanged) && (
                         <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                             <Icon
-                                role="img"
                                 aria-label="Changes in this tab"
                                 className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
                                 as={CheckboxBlankCircleIcon}

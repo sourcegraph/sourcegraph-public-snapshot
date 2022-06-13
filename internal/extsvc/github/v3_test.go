@@ -15,12 +15,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func newTestClient(t *testing.T, cli httpcli.Doer) *V3Client {
@@ -32,39 +33,6 @@ func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli h
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
 	return NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli)
-}
-
-func TestNewRepoCache(t *testing.T) {
-	cmpOpts := cmp.AllowUnexported(rcache.Cache{})
-	t.Run("GitHub.com", func(t *testing.T) {
-		url, _ := url.Parse("https://www.github.com")
-		token := &auth.OAuthBearerToken{Token: "asdf"}
-
-		// github.com caches should:
-		// (1) use githubProxyURL for the prefix hash rather than the given url
-		// (2) have a TTL of 10 minutes
-		prefix := "gh_repo:" + token.Hash()
-		got := newRepoCache(url, token)
-		want := rcache.NewWithTTL(prefix, 600)
-		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
-			t.Fatal(diff)
-		}
-	})
-
-	t.Run("GitHub Enterprise", func(t *testing.T) {
-		url, _ := url.Parse("https://www.sourcegraph.com")
-		token := &auth.OAuthBearerToken{Token: "asdf"}
-
-		// GitHub Enterprise caches should:
-		// (1) use the given URL for the prefix hash
-		// (2) have a TTL of 30 seconds
-		prefix := "gh_repo:" + token.Hash()
-		got := newRepoCache(url, token)
-		want := rcache.NewWithTTL(prefix, 30)
-		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
-			t.Fatal(diff)
-		}
-	})
 }
 
 func TestListAffiliatedRepositories(t *testing.T) {
@@ -289,7 +257,7 @@ func TestGetAuthenticatedUserOrgs(t *testing.T) {
 	defer save()
 
 	ctx := context.Background()
-	orgs, err := cli.GetAuthenticatedUserOrgs(ctx)
+	orgs, _, _, err := cli.GetAuthenticatedUserOrgsForPage(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}

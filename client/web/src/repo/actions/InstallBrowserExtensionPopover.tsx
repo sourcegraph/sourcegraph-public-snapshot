@@ -60,7 +60,7 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<React.Props
                 >
                     <SourcegraphIcon className={classNames('p-1', styles.logo)} />
                     <PlusThickIcon className={styles.plusIcon} />
-                    <Icon role="img" className={styles.logo} aria-hidden={true} />
+                    <Icon className={styles.logo} aria-hidden={true} />
                 </div>
 
                 <div className="d-flex justify-content-end">

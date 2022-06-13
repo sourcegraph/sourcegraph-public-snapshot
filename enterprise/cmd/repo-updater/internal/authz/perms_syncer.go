@@ -13,6 +13,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
@@ -32,7 +34,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -680,7 +681,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	for _, acct := range accts {
-		logger.Info("maybe refresh account")
+		logger.Debug("maybe refresh account", log.Int32("accountID", acct.ID))
 		if err := s.maybeRefreshGitLabOAuthTokenFromAccount(ctx, acct); err != nil {
 			return errors.Wrap(err, "refreshing GitLab OAuth token for account")
 		}

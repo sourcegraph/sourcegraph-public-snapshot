@@ -628,6 +628,7 @@ func replaceBatchSpec(ctx context.Context, tx *store.Store, oldSpec, newSpec *bt
 	// Delete the previous batch spec, which should delete
 	// - batch_spec_resolution_jobs
 	// - batch_spec_workspaces
+	// - batch_spec_workspace_execution_jobs
 	// - changeset_specs
 	// associated with it
 	if err := tx.DeleteBatchSpec(ctx, oldSpec.ID); err != nil {
@@ -975,9 +976,9 @@ func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, nam
 
 func (s *Service) checkNamespaceAccessWithDB(ctx context.Context, db database.DB, namespaceUserID, namespaceOrgID int32) (err error) {
 	if namespaceOrgID != 0 {
-		return backend.CheckOrgAccessOrSiteAdmin(ctx, database.NewDB(db), namespaceOrgID)
+		return backend.CheckOrgAccessOrSiteAdmin(ctx, db, namespaceOrgID)
 	} else if namespaceUserID != 0 {
-		return backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(db), namespaceUserID)
+		return backend.CheckSiteAdminOrSameUser(ctx, db, namespaceUserID)
 	} else {
 		return ErrNoNamespace
 	}

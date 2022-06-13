@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type AuthzResolver interface {
@@ -69,10 +70,8 @@ type AuthorizedRepoArgs struct {
 type RepoPermsBitbucketProjectArgs struct {
 	ProjectKey      string
 	CodeHost        graphql.ID
-	UserPermissions []struct {
-		BindID     string
-		Permission string
-	}
+	UserPermissions []types.UserPermission
+	Unrestricted    *bool
 }
 
 type PermissionsInfoResolver interface {

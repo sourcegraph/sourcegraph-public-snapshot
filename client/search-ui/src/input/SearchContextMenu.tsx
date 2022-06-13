@@ -21,7 +21,7 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Badge, Button, useObservable, Link, Icon, Input } from '@sourcegraph/wildcard'
+import { Badge, Button, useObservable, Icon, Input, ButtonLink } from '@sourcegraph/wildcard'
 
 import { HighlightedSearchContextSpec } from './HighlightedSearchContextSpec'
 
@@ -311,7 +311,7 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
                     className={styles.titleClose}
                     aria-label="Close"
                 >
-                    <Icon role="img" aria-hidden={true} as={CloseIcon} />
+                    <Icon aria-hidden={true} as={CloseIcon} />
                 </Button>
             </div>
             <div className={classNames('d-flex', styles.header)}>
@@ -379,16 +379,15 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
                 </Button>
                 <span className="flex-grow-1" />
                 {showSearchContextManagement && (
-                    <Button
+                    <ButtonLink
                         to="/contexts"
                         className={styles.footerButton}
                         onClick={() => closeMenu()}
                         variant="link"
                         size="sm"
-                        as={Link}
                     >
                         Manage contexts
-                    </Button>
+                    </ButtonLink>
                 )}
             </div>
         </div>

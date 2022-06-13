@@ -40,9 +40,9 @@ interface Props {
     instanceURL: string
     isGlobbingEnabled: boolean
     accessToken: string | null
-    onPreviewChange: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => Promise<void>
+    onPreviewChange: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
     onPreviewClear: () => Promise<void>
-    onOpen: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => Promise<void>
+    onOpen: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
     initialSearch: Search | null
     initialAuthenticatedUser: AuthenticatedUser | null
 }

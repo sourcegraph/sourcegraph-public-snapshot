@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -101,14 +101,14 @@ type codeMonitorStore struct {
 var _ CodeMonitorStore = (*codeMonitorStore)(nil)
 
 // CodeMonitors returns a new Store backed by the given database.
-func CodeMonitors(db dbutil.DB) *codeMonitorStore {
+func CodeMonitors(db database.DB) *codeMonitorStore {
 	return CodeMonitorsWithClock(db, timeutil.Now)
 }
 
 // CodeMonitorsWithClock returns a new Store backed by the given database and
 // clock for timestamps.
-func CodeMonitorsWithClock(db dbutil.DB, clock func() time.Time) *codeMonitorStore {
-	return &codeMonitorStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock}
+func CodeMonitorsWithClock(db database.DB, clock func() time.Time) *codeMonitorStore {
+	return &codeMonitorStore{Store: basestore.NewWithHandle(db.Handle()), now: clock}
 }
 
 // Clock returns the clock of the underlying store.
@@ -228,7 +228,7 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*Monit
 	return m, nil
 }
 
-func NewTestStore(t *testing.T, db dbutil.DB) (context.Context, *TestStore) {
+func NewTestStore(t *testing.T, db database.DB) (context.Context, *TestStore) {
 	ctx := actor.WithInternalActor(context.Background())
 	now := time.Now().Truncate(time.Microsecond)
 	return ctx, &TestStore{CodeMonitorsWithClock(db, func() time.Time { return now })}
@@ -249,9 +249,9 @@ const (
 	testDescription = "test description"
 )
 
-func newTestStore(t *testing.T) (context.Context, dbutil.DB, *codeMonitorStore) {
+func newTestStore(t *testing.T) (context.Context, database.DB, *codeMonitorStore) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	now := time.Now().Truncate(time.Microsecond)
 	return ctx, db, CodeMonitorsWithClock(db, func() time.Time { return now })
 }

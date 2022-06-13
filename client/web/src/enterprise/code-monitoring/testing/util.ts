@@ -26,6 +26,7 @@ export const mockUser: AuthenticatedUser = {
     session: { __typename: 'Session', canSignOut: true },
     tosAccepted: true,
     searchable: true,
+    emails: [],
 }
 
 export const mockCodeMonitorFields: CodeMonitorFields = {
