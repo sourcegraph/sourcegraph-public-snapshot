@@ -421,16 +421,9 @@ func TestBitbucketServerSource_ListByProjectKeyMock(t *testing.T) {
 
 func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 	url := "https://bitbucket.sgdev.org"
-	TOKEN := os.Getenv("BITBUCKET_SERVER_TOKEN")
+	token := os.Getenv("BITBUCKET_SERVER_TOKEN")
 
-	var update bool
-	if TOKEN == "" {
-		update = false
-	} else {
-		update = true
-	}
-
-	cases, svc := GetConfig(t, url, TOKEN)
+	cases, svc := GetConfig(t, url, token)
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -438,7 +431,7 @@ func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := bitbucketserver.NewTestClient(t, name, update)
+			cli := bitbucketserver.NewTestClient(t, name, update(name))
 			s.client = cli
 
 			s.config.ProjectKeys = []string{
@@ -455,7 +448,6 @@ func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 
 			var got []*types.Repo
 
-		verify:
 			for {
 				select {
 				case res := <-results:
@@ -465,8 +457,8 @@ func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 				default:
 					if len(got) == 1 {
 						path := filepath.Join("testdata/authentic", "bitbucketserver-repos-"+name+".golden")
-						testutil.AssertGolden(t, path, update, got)
-						break verify
+						testutil.AssertGolden(t, path, update(name), got)
+						return
 					}
 				}
 			}
