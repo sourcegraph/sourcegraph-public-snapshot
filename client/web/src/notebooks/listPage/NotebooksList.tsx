@@ -3,7 +3,7 @@ import React, { useCallback, useEffect } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { H3 } from '@sourcegraph/wildcard'
+import { H2 } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { ListNotebooksResult, ListNotebooksVariables, NotebookFields, NotebooksOrderBy } from '../../graphql-operations'
@@ -64,7 +64,7 @@ export const NotebooksList: React.FunctionComponent<React.PropsWithChildren<Note
 
     return (
         <div>
-            <H3 className="mb-3">{title}</H3>
+            <H2 className="mb-3">{title}</H2>
             <FilteredConnection<NotebookFields, Omit<NotebookNodeProps, 'node'>, ListNotebooksResult['notebooks']>
                 history={history}
                 location={location}
