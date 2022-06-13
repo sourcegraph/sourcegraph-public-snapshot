@@ -4,9 +4,12 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"syscall"
 	"testing"
 
 	"github.com/hexops/autogold"
@@ -225,4 +228,26 @@ func tempZipFromFiles(t *testing.T, files map[string]string) string {
 	}
 
 	return path
+}
+
+func runWithoutPipes(ctx context.Context, args Args, b *bytes.Buffer) (err error) {
+	if !Exists() {
+		return errors.New("comby is not installed")
+	}
+
+	rawArgs := rawArgs(args)
+	cmd := exec.CommandContext(ctx, combyPath, rawArgs...)
+	// Ensure forked child processes are killed
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
+	if content, ok := args.Input.(FileContent); ok {
+		cmd.Stdin = bytes.NewReader(content)
+	}
+	cmd.Stdout = b
+
+	if err = StartAndWaitForCompletion(cmd); err != nil {
+		return err
+	}
+
+	return nil
 }

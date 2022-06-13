@@ -257,26 +257,3 @@ func Outputs(ctx context.Context, args Args) (string, error) {
 	}
 	return strings.Join(values, "\n"), nil
 }
-
-// runWithoutPipes is only used for tests.
-func runWithoutPipes(ctx context.Context, args Args, b *bytes.Buffer) (err error) {
-	if !Exists() {
-		return errors.New("comby is not installed")
-	}
-
-	rawArgs := rawArgs(args)
-	cmd := exec.CommandContext(ctx, combyPath, rawArgs...)
-	// Ensure forked child processes are killed
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-
-	if content, ok := args.Input.(FileContent); ok {
-		cmd.Stdin = bytes.NewReader(content)
-	}
-	cmd.Stdout = b
-
-	if err = StartAndWaitForCompletion(cmd); err != nil {
-		return errors.Wrap(err, "failed to start comby command")
-	}
-
-	return nil
-}
