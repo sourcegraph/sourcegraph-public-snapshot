@@ -19,6 +19,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -874,11 +875,10 @@ func (br *brokenReader) Read(p []byte) (int, error) {
 // It would be theoretically possible to use savepoints to implement something
 // resembling the semantics of a true nested transaction, but that's
 // unnecessary for these tests.
-type nestedTx struct{ *sql.Tx }
+type nestedTx struct{ basestore.TransactableHandle }
 
-func (ntx *nestedTx) Rollback() error                                        { return nil }
-func (ntx *nestedTx) Commit() error                                          { return nil }
-func (ntx *nestedTx) BeginTx(ctx context.Context, opts *sql.TxOptions) error { return nil }
+func (ntx *nestedTx) Done(error) error                                               { return nil }
+func (ntx *nestedTx) Transact(context.Context) (basestore.TransactableHandle, error) { return ntx, nil }
 
 // noNestingTx is another transaction wrapper that always returns an error when
 // a transaction is attempted.
@@ -891,13 +891,17 @@ func (nntx *noNestingTx) BeginTx(ctx context.Context, opts *sql.TxOptions) error
 // gitLabTestSetup instantiates the stores and a clock for use within tests.
 // Any changes made to the stores will be rolled back after the test is
 // complete.
-func gitLabTestSetup(t *testing.T, db *sql.DB) *store.Store {
+func gitLabTestSetup(t *testing.T, sqlDB *sql.DB) *store.Store {
 	c := &ct.TestClock{Time: timeutil.Now()}
-	tx := dbtest.NewTx(t, db)
+	tx := dbtest.NewTx(t, sqlDB)
 
 	// Note that tx is wrapped in nestedTx to effectively neuter further use of
 	// transactions within the test.
-	return store.NewWithClock(database.NewUntypedDB(&nestedTx{tx}), &observation.TestContext, nil, c.Now)
+	db := database.NewDBWith(basestore.NewWithHandle(&nestedTx{basestore.NewHandleWithTx(tx, sql.TxOptions{})}))
+
+	// Note that tx is wrapped in nestedTx to effectively neuter further use of
+	// transactions within the test.
+	return store.NewWithClock(db, &observation.TestContext, nil, c.Now)
 }
 
 // assertBodyIncludes checks for a specific substring within the given response

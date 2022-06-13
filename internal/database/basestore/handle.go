@@ -24,6 +24,11 @@ func NewHandleWithDB(db *sql.DB, txOptions sql.TxOptions) TransactableHandle {
 	return &dbHandle{DB: db, txOptions: txOptions}
 }
 
+// NewHandleWithTx returns a new transactable database handle using the given transaction.
+func NewHandleWithTx(tx *sql.Tx, txOptions sql.TxOptions) TransactableHandle {
+	return &txHandle{Tx: tx, txOptions: txOptions}
+}
+
 // InTransaction returns true if the underlying database handle is in a transaction.
 func (h *oldTransactableHandle) InTransaction() bool {
 	db := tryUnwrap(h.DB)
