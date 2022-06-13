@@ -547,3 +547,90 @@ func TestLockfileDependents(t *testing.T) {
 		t.Errorf("unexpected lockfile dependents (-want +got):\n%s", diff)
 	}
 }
+
+func TestUpsertLockfileDependencies2(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+	store := New(db, &observation.TestContext)
+
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo')`); err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	packageA := shared.TestPackageDependencyLiteral(api.RepoName("A"), "1", "2", "pkg-A", "4")
+	packageB := shared.TestPackageDependencyLiteral(api.RepoName("B"), "2", "3", "pkg-B", "5")
+	packageC := shared.TestPackageDependencyLiteral(api.RepoName("C"), "3", "4", "pkg-C", "6")
+	packageD := shared.TestPackageDependencyLiteral(api.RepoName("D"), "4", "5", "pkg-D", "7")
+	packageE := shared.TestPackageDependencyLiteral(api.RepoName("E"), "5", "6", "pkg-E", "8")
+	packageF := shared.TestPackageDependencyLiteral(api.RepoName("F"), "6", "7", "pkg-F", "9")
+
+	resolutionID := "resolution-1"
+	commit := "h0rs3"
+	deps := []shared.PackageDependency{
+		packageA, packageB, packageC, packageD, packageE, packageF,
+	}
+
+	nameIds, err := store.UpsertLockfileDependencies2(ctx, "foo", commit, deps, resolutionID)
+	if err != nil {
+		t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
+	}
+
+	if len(nameIds) != len(deps) {
+		t.Fatalf("name IDs is wrong length. want=%d, got=%d", len(deps), len(nameIds))
+	}
+}
+
+func TestInsertLockfileEdges(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+	store := New(db, &observation.TestContext)
+
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo')`); err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	packageA := shared.TestPackageDependencyLiteral(api.RepoName("A"), "1", "2", "pkg-A", "4")
+	packageB := shared.TestPackageDependencyLiteral(api.RepoName("B"), "2", "3", "pkg-B", "5")
+	packageC := shared.TestPackageDependencyLiteral(api.RepoName("C"), "3", "4", "pkg-C", "6")
+	packageD := shared.TestPackageDependencyLiteral(api.RepoName("D"), "4", "5", "pkg-D", "7")
+	packageE := shared.TestPackageDependencyLiteral(api.RepoName("E"), "5", "6", "pkg-E", "8")
+	packageF := shared.TestPackageDependencyLiteral(api.RepoName("F"), "6", "7", "pkg-F", "9")
+
+	resolutionID := "resolution-1"
+	commit := "h0rs3"
+	deps := []shared.PackageDependency{
+		packageA, packageB, packageC, packageD, packageE, packageF,
+	}
+
+	nameIds, err := store.UpsertLockfileDependencies2(ctx, "foo", commit, deps, resolutionID)
+	if err != nil {
+		t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
+	}
+
+	if len(nameIds) != len(deps) {
+		t.Fatalf("name IDs is wrong length. want=%d, got=%d", len(deps), len(nameIds))
+	}
+
+	//    -> b -> E
+	//   /
+	// a --> c
+	//   \
+	//    -> d -> F
+	edges := map[int][]int{
+		nameIds["pkg-A"]: {nameIds["pkg-B"], nameIds["pkg-C"], nameIds["pkg-D"]},
+		nameIds["pkg-B"]: {nameIds["pkg-E"]},
+		nameIds["pkg-D"]: {nameIds["pkg-F"]},
+	}
+
+	if err := store.InsertLockfileEdges(ctx, edges, resolutionID); err != nil {
+		t.Fatalf("inserting lockfile edges failed: %s", err)
+	}
+}

@@ -19,7 +19,7 @@ type GitService interface {
 }
 
 type LockfilesService interface {
-	ListDependencies(ctx context.Context, repo api.RepoName, rev string) ([]reposource.PackageDependency, error)
+	ListDependencies(ctx context.Context, repo api.RepoName, rev string) ([]reposource.PackageDependency, []*lockfiles.DependencyGraph, error)
 }
 
 type Syncer interface {

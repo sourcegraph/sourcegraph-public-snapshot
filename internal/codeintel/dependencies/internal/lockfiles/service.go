@@ -30,7 +30,7 @@ func newService(gitSvc GitService, observationContext *observation.Context) *Ser
 	}
 }
 
-func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev string) (deps []reposource.PackageDependency, graphs []*dependencyGraph, err error) {
+func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev string) (deps []reposource.PackageDependency, graphs []*DependencyGraph, err error) {
 	ctx, _, endObservation := s.operations.listDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(repo)),
 		log.String("rev", rev),
@@ -40,7 +40,7 @@ func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev s
 	err = s.StreamDependencies(ctx, repo, rev, func(d reposource.PackageDependency) error {
 		deps = append(deps, d)
 		return nil
-	}, func(graph *dependencyGraph) error {
+	}, func(graph *DependencyGraph) error {
 		graphs = append(graphs, graph)
 		return nil
 	})
@@ -48,7 +48,7 @@ func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev s
 	return deps, graphs, err
 }
 
-func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev string, cb func(reposource.PackageDependency) error, graphCb func(*dependencyGraph) error) (err error) {
+func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev string, cb func(reposource.PackageDependency) error, graphCb func(*DependencyGraph) error) (err error) {
 	ctx, _, endObservation := s.operations.streamDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(repo)),
 		log.String("rev", rev),
@@ -130,7 +130,7 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 	return nil
 }
 
-func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, *dependencyGraph, error) {
+func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, *DependencyGraph, error) {
 	r, err := f.Open()
 	if err != nil {
 		return nil, nil, err
@@ -145,7 +145,7 @@ func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, *dependencyG
 	return deps, graph, nil
 }
 
-func parse(file string, r io.Reader) ([]reposource.PackageDependency, *dependencyGraph, error) {
+func parse(file string, r io.Reader) ([]reposource.PackageDependency, *DependencyGraph, error) {
 	parser, ok := parsers[path.Base(file)]
 	if !ok {
 		return nil, nil, ErrUnsupported

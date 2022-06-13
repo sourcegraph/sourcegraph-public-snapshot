@@ -63,7 +63,7 @@ func parsePackageLockDependencies(in map[string]*packageLockDependency) ([]repos
 // yarn.lock
 //
 
-func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, graph *dependencyGraph, err error) {
+func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, graph *DependencyGraph, err error) {
 	var (
 		name string
 		skip bool

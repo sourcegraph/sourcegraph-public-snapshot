@@ -278,21 +278,29 @@ func (s *Service) resolveLockfileDependenciesFromArchive(ctx context.Context, re
 // given repo-commit pair and persists the result to the database. This aids in both caching
 // and building an inverted index to power dependents search.
 func (s *Service) listAndPersistLockfileDependencies(ctx context.Context, repoCommit repoCommitResolvedCommit) ([]shared.PackageDependency, error) {
-	repoDeps, err := s.lockfilesSvc.ListDependencies(ctx, repoCommit.Repo, string(repoCommit.CommitID))
+	repoDeps, _, err := s.lockfilesSvc.ListDependencies(ctx, repoCommit.Repo, string(repoCommit.CommitID))
 	if err != nil {
 		return nil, errors.Wrap(err, "lockfiles.ListDependencies")
 	}
 
 	serializableRepoDeps := shared.SerializePackageDependencies(repoDeps)
 
-	if err := s.dependenciesStore.UpsertLockfileDependencies(
+	_, err = s.dependenciesStore.UpsertLockfileDependencies2(
 		ctx,
 		string(repoCommit.Repo),
 		repoCommit.ResolvedCommit,
 		serializableRepoDeps,
-	); err != nil {
+	)
+	if err != nil {
 		return nil, errors.Wrap(err, "store.UpsertLockfileDependencies")
 	}
+
+	// for _, graph := range graphs {
+	// 	var roots []shared.PackageDependency
+	// 	for r := range graph.Roots() {
+	// 		roots = append(roots, r)
+	// 	}
+	// }
 
 	return serializableRepoDeps, nil
 }
