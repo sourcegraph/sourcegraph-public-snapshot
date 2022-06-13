@@ -3,6 +3,7 @@ package permissions
 import (
 	"context"
 	"database/sql"
+	"sort"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -11,12 +12,16 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -236,4 +241,101 @@ func newMetricsForBitbucketProjectPermissionsQueries(logger log.Logger) bitbucke
 		resetFailures: resetFailures,
 		errors:        errors,
 	}
+}
+
+// setPermissionsForUsers applies user permissions to a list of repos.
+// It updates the repo_permissions, user_permissions, repo_pending_permissions and user_pending_permissions table.
+// Each repo is processed atomically. In case of error, the task fails but doesn't rollback the committed changes
+// done on previous repos. This is fine because when the task is retried, previous repos won't incur any
+// additional writes.
+func setPermissionsForUsers(ctx context.Context, db edb.EnterpriseDB, perms []types.UserPermission, repoIDs []api.RepoID) error {
+	sort.Slice(perms, func(i, j int) bool {
+		return perms[i].BindID < perms[j].BindID
+	})
+	sort.Slice(repoIDs, func(i, j int) bool {
+		return repoIDs[i] < repoIDs[j]
+	})
+
+	bindIDs := make([]string, 0, len(perms))
+	for _, up := range perms {
+		bindIDs = append(bindIDs, up.BindID)
+	}
+
+	// bind the bindIDs to actual user IDs
+	mapping, err := db.Perms().MapUsers(ctx, bindIDs, globals.PermissionsUserMapping())
+	if err != nil {
+		return errors.Wrap(err, "failed to map bind IDs to user IDs")
+	}
+
+	if len(mapping) == 0 {
+		return errors.Errorf("no users found for bind IDs: %v", bindIDs)
+	}
+
+	userIDs := make(map[int32]struct{}, len(mapping))
+	for _, id := range mapping {
+		userIDs[id] = struct{}{}
+	}
+
+	// determine which users don't exist yet
+	pendingBindIDs := make([]string, 0, len(bindIDs))
+	for _, bindID := range bindIDs {
+		if _, ok := mapping[bindID]; !ok {
+			pendingBindIDs = append(pendingBindIDs, bindID)
+		}
+	}
+
+	// apply the permissions for each repo
+	for _, repoID := range repoIDs {
+		err = setRepoPermissions(ctx, db, repoID, perms, userIDs, pendingBindIDs)
+		if err != nil {
+			return errors.Wrapf(err, "failed to set permissions for repo %d", repoID)
+		}
+	}
+
+	return nil
+}
+
+func setRepoPermissions(ctx context.Context, db edb.EnterpriseDB, repoID api.RepoID, _ []types.UserPermission, userIDs map[int32]struct{}, pendingBindIDs []string) (err error) {
+	// Make sure the repo ID is valid.
+	if _, err := db.Repos().Get(ctx, repoID); err != nil {
+		return errors.Wrapf(err, "failed to query repo %d", repoID)
+	}
+
+	p := authz.RepoPermissions{
+		RepoID:  int32(repoID),
+		Perm:    authz.Read, // Note: We currently only support read for repository permissions.
+		UserIDs: userIDs,
+	}
+
+	txs, err := db.Perms().Transact(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to start transaction")
+	}
+	defer func() { err = txs.Done(err) }()
+
+	accounts := &extsvc.Accounts{
+		ServiceType: authz.SourcegraphServiceType,
+		ServiceID:   authz.SourcegraphServiceID,
+		AccountIDs:  pendingBindIDs,
+	}
+
+	// make sure the repo is not unrestricted
+	err = txs.SetRepoPermissionsUnrestricted(ctx, []int32{int32(repoID)}, false)
+	if err != nil {
+		return errors.Wrapf(err, "failed to set repo %d to restricted", repoID)
+	}
+
+	// set repo permissions (and user permissions)
+	err = txs.SetRepoPermissions(ctx, &p)
+	if err != nil {
+		return errors.Wrapf(err, "failed to set repo permissions for repo %d", repoID)
+	}
+
+	// set pending permissions
+	err = txs.SetRepoPendingPermissions(ctx, accounts, &p)
+	if err != nil {
+		return errors.Wrapf(err, "failed to set pending permissions for repo %d", repoID)
+	}
+
+	return nil
 }
