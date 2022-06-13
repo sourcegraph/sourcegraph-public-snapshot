@@ -23,7 +23,7 @@ func QueueOptions(db database.DB, accessToken func() string, observationContext 
 		return transformRecord(ctx, logger, batchesStore, record.(*btypes.BatchSpecWorkspaceExecutionJob), accessToken())
 	}
 
-	store := store.NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext)
+	store := store.NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithUntypedDB(db, sql.TxOptions{}), observationContext)
 	return handler.QueueOptions{
 		Name:                   "batches",
 		Store:                  store,

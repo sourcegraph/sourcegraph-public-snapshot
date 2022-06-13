@@ -24,7 +24,7 @@ type Store struct {
 
 func NewWithDB(db *sql.DB, migrationsTable string, operations *Operations) *Store {
 	return &Store{
-		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
+		Store:      basestore.NewWithHandle(basestore.NewHandleWithUntypedDB(db, sql.TxOptions{})),
 		schemaName: migrationsTable,
 		operations: operations,
 	}

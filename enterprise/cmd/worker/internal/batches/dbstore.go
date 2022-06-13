@@ -56,7 +56,7 @@ var initReconcilerWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstor
 		return nil, err
 	}
 
-	return store.NewReconcilerWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext), nil
+	return store.NewReconcilerWorkerStore(basestore.NewHandleWithUntypedDB(db, sql.TxOptions{}), observationContext), nil
 })
 
 // InitBulkOperationWorkerStore initializes and returns a dbworker.Store instance for the bulk operation processor worker.
@@ -76,7 +76,7 @@ var initBulkOperationWorkerStore = memo.NewMemoizedConstructor(func() (dbworkers
 		return nil, err
 	}
 
-	return store.NewBulkOperationWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext), nil
+	return store.NewBulkOperationWorkerStore(basestore.NewHandleWithUntypedDB(db, sql.TxOptions{}), observationContext), nil
 })
 
 // InitBatchSpecWorkspaceExecutionWorkerStore initializes and returns a store.BatchSpecWorkspaceExecutionWorkerStore instance for the batch spec workspace execution worker.
@@ -96,7 +96,7 @@ var initBatchSpecWorkspaceExecutionWorkerStore = memo.NewMemoizedConstructor(fun
 		return nil, err
 	}
 
-	return store.NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext), nil
+	return store.NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithUntypedDB(db, sql.TxOptions{}), observationContext), nil
 })
 
 // InitBatchSpecResolutionWorkerStore initializes and returns a dbworker.Store instance for the batch spec workspace resolution worker.
@@ -116,5 +116,5 @@ var initBatchSpecResolutionWorkerStore = memo.NewMemoizedConstructor(func() (dbw
 		return nil, err
 	}
 
-	return store.NewBatchSpecResolutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext), nil
+	return store.NewBatchSpecResolutionWorkerStore(basestore.NewHandleWithUntypedDB(db, sql.TxOptions{}), observationContext), nil
 })

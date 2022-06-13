@@ -141,7 +141,7 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 	createMockStore := func(logs []*types.WebhookLog, next int64, err error) *database.MockWebhookLogStore {
 		store := database.NewMockWebhookLogStore()
 		store.ListFunc.SetDefaultReturn(logs, next, err)
-		store.HandleFunc.SetDefaultReturn(basestore.NewHandleWithDB(nil, sql.TxOptions{}))
+		store.HandleFunc.SetDefaultReturn(basestore.NewHandleWithUntypedDB(nil, sql.TxOptions{}))
 
 		return store
 	}
