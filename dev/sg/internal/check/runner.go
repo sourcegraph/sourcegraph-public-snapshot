@@ -107,13 +107,12 @@ func (r *Runner[Args]) Interactive(
 		return err
 	}
 
-	// Keep interactive runner up until all issues are fixed.
+	// Keep interactive runner up until all issues are fixed or the user exits
 	results := &runAllCategoryChecksResult{
 		failed: []int{1}, // initialize, this gets reset immediately
 	}
 	for len(results.failed) != 0 {
-		r.out.Output.ClearScreen()
-
+		// Update results
 		results = r.runAllCategoryChecks(ctx, args)
 		if len(results.failed) == 0 {
 			break
@@ -135,9 +134,11 @@ func (r *Runner[Args]) Interactive(
 		err = r.presentFailedCategoryWithOptions(ctx, idx, &selectedCategory, args, results)
 		if err != nil {
 			if err == io.EOF {
-				return nil
+				return nil // we are done
 			}
-			return err
+
+			r.out.WriteWarningf("Encountered error while fixing: %s", err.Error())
+			// continue, do not exit
 		}
 	}
 

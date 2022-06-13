@@ -1,8 +1,10 @@
 package check_test
 
 import (
+	"bufio"
 	"context"
 	"errors"
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -14,6 +16,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 )
+
+// getOutput also writes data to os.Stdout on testing.Verbose()
+func getOutput(out io.Writer) *std.Output {
+	if testing.Verbose() {
+		return std.NewSimpleOutput(io.MultiWriter(out, os.Stdout), true)
+	}
+	return std.NewSimpleOutput(out, true)
+}
 
 func getUnsatisfiableChecks(t *testing.T) []check.Category[any] {
 	return []check.Category[any]{
@@ -106,7 +116,7 @@ func TestRunnerCheck(t *testing.T) {
 
 func TestRunnerFix(t *testing.T) {
 	t.Run("unsatisfiable constraints", func(t *testing.T) {
-		runner := check.NewRunner(nil, std.NewFixedOutput(os.Stdout, true), getUnsatisfiableChecks(t))
+		runner := check.NewRunner(nil, getOutput(io.Discard), getUnsatisfiableChecks(t))
 
 		err := runner.Fix(context.Background(), nil)
 		require.Error(t, err)
@@ -188,7 +198,7 @@ func TestRunnerInteractive(t *testing.T) {
 		var output strings.Builder
 		runner := check.NewRunner(
 			strings.NewReader(strings.Join(inputs, "\n")),
-			std.NewSimpleOutput(&output, true),
+			getOutput(&output),
 			getUnsatisfiableChecks(t))
 
 		runner.Interactive(context.Background(), nil)
@@ -215,7 +225,7 @@ func TestRunnerInteractive(t *testing.T) {
 		var output strings.Builder
 		runner := check.NewRunner(
 			strings.NewReader(strings.Join(inputs, "\n")),
-			std.NewSimpleOutput(&output, true),
+			getOutput(&output),
 			getUnsatisfiableChecks(t))
 
 		runner.Interactive(context.Background(), nil)
@@ -235,27 +245,41 @@ func TestRunnerInteractive(t *testing.T) {
 			"4", // fixable
 			"2", // manual fix
 			"1", // fix the first
-			// "",  // say I'm done
-			// "3",
+			"4", // try again
+			"",
 		}
 		var output strings.Builder
 		runner := check.NewRunner(
 			strings.NewReader(strings.Join(inputs, "\n")),
-			std.NewSimpleOutput(&output, true),
+			getOutput(&output),
 			getUnsatisfiableChecks(t))
 
-		// Fix did not work
+		// Fix did not work, we should return to main menu
 		err := runner.Interactive(context.Background(), nil)
-		require.NotNil(t, err)
-		assert.Contains(t, err.Error(), "i need to be fixed")
+		require.Nil(t, err)
 
-		got := output.String()
-		for _, c := range []string{
+		scanner := bufio.NewScanner(strings.NewReader(output.String()))
+		want := []string{
 			"Some checks failed. Which one do you want to fix?",
 			// description
 			"how to fix manually",
-		} {
-			assert.Contains(t, got, c)
+			// failure to fix
+			"Encountered error while fixing: i need to be fixed",
+			// should be prompted to try again
+			"Let's try again?",
+			// After entering choice again, we should see this again
+			"What do you want to do",
 		}
+		var found int
+		for _, c := range want {
+			// assert output shows up in order
+			for scanner.Scan() {
+				if strings.Contains(scanner.Text(), c) {
+					found++
+					break
+				}
+			}
+		}
+		assert.Equal(t, len(want), found)
 	})
 }
