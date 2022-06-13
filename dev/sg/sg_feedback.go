@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"os/exec"
 	_ "os/exec"
@@ -11,9 +11,7 @@ import (
 	"strings"
 
 	"github.com/urfave/cli/v2"
-	"golang.org/x/oauth2"
 
-	"github.com/google/go-github/v41/github"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	_ "github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -29,7 +27,7 @@ var noEditorErr error = errors.New("$EDITOR environment variable was empty")
 var emptyFeedbackErr error = errors.New("Feedback message has no content")
 var feedbackGithubToken string
 var feedbackTitle string
-var feedbackContent string
+var feedbackBody string
 var feedbackEditor string
 
 var feedbackCommand = &cli.Command{
@@ -48,13 +46,7 @@ var feedbackCommand = &cli.Command{
 			Name:        "message",
 			Usage:       "The feedback you want to provide. If empty then your $EDITOR will be launched to write your feedback in",
 			Required:    false,
-			Destination: &feedbackContent,
-		},
-		&cli.StringFlag{
-			Name:        "github.token",
-			Usage:       "GitHub token with the 'write:discussion' permission to use when making API requests, defaults to $GITHUB_TOKEN",
-			Destination: &feedbackGithubToken,
-			Value:       os.Getenv("GITHUB_TOKEN"),
+			Destination: &feedbackBody,
 		},
 		&cli.StringFlag{
 			Name:        "editor",
@@ -67,81 +59,42 @@ var feedbackCommand = &cli.Command{
 }
 
 func feedbackExec(ctx *cli.Context) error {
-	if feedbackGithubToken == "" {
-		std.Out.WriteWarningf("No Github Token value. Opening browser ...")
-		err := openBrowserForFeedback()
-		if err != nil {
-			std.Out.WriteFailuref("failed to open browser to %s: %v", newDiscussionURL)
-		}
-		return err
-	}
-	if ctx.NumFlags() == 0 || feedbackTitle == "" {
-		std.Out.WriteNoticef("Opening browser for feedback ...")
-		return openBrowserForFeedback()
-	}
-
-	if err := newFeedback(ctx.Context, feedbackTitle, feedbackContent); err != nil {
+	if err := newFeedback(ctx.Context, feedbackTitle, "developer-experience", feedbackBody); err != nil {
 		return err
 	}
 	return nil
 }
 
-func newFeedback(ctx context.Context, title, content string) error {
+func newFeedback(ctx context.Context, title, category, body string) error {
+	values := make(url.Values)
+	values["category"] = []string{category}
+	values["title"] = []string{title}
 	// No feedback ? lets launch an editor to get some feedback
-	if feedbackContent == "" {
-		std.Out.WriteNoticef("launching editor with command %q to gather feedback ...", feedbackEditor)
+	if body == "" {
 		content, err := gatherFeedback(ctx)
 		if err != nil {
 			return err
 		}
 
-		feedbackContent = content
+		values["body"] = []string{content}
+	} else {
+		values["body"] = []string{body}
 	}
 
-	ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: feedbackGithubToken},
-	)))
-	// we create the discussion using the github api
-	url, err := createFeedbackDisccusion(ctx, ghc, feedbackTitle, feedbackContent)
+	feedbackURL, err := url.Parse(newDiscussionURL)
 	if err != nil {
 		return err
 	}
 
-	std.Out.WriteSuccessf("Feedback created! See %s", url)
-	return nil
-}
+	if len(values) > 0 {
+		feedbackURL.RawQuery = values.Encode()
+	}
+	std.Out.Writef("Launching your browser to complete feedback", feedbackURL)
 
-func createFeedbackDisccusion(ctx context.Context, client *github.Client, title, content string) (string, error) {
-	user, _, err := client.Users.Get(ctx, "")
-	if err != nil {
-		return "", err
+	if err := open.URL(feedbackURL.String()); err != nil {
+		return errors.Wrapf(err, "failed to launch browser for url %q", feedbackURL.String())
 	}
 
-	fmt.Printf("User: %+v\n", user)
-
-	team, _, err := client.Teams.GetTeamBySlug(ctx, "sourcegraph", "dev-experience")
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to Github Team 'dev-experience'")
-	}
-
-	discussion := github.TeamDiscussion{
-		Author: user,
-		Title:  &title,
-		Body:   &content,
-	}
-
-	discResult, _, err := client.Teams.CreateDiscussionBySlug(ctx, team.GetOrganization().GetName(), team.GetSlug(), discussion)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to create Github discussion")
-	}
-
-	return discResult.GetHTMLURL(), err
-}
-
-func openBrowserForFeedback() error {
-	if err := open.URL(newDiscussionURL); err != nil {
-		return errors.Wrapf(err, "failed to launch browser for url %q", newDiscussionURL)
-	}
 	return nil
 }
 
@@ -163,6 +116,7 @@ func gatherFeedback(ctx context.Context) (string, error) {
 	cmd := feedbackEditor + " " + contentPath
 	err = launchEditor(ctx, cmd)
 	if err != nil {
+		std.Out.WriteSuggestionf("To use a different command to launch your editor specify --editor")
 		return "", errors.Wrapf(err, "failed to launch editor using command %q", cmd)
 	}
 
@@ -170,10 +124,12 @@ func gatherFeedback(ctx context.Context) (string, error) {
 	if len(content) == 0 {
 		return "", emptyFeedbackErr
 	}
+
 	return string(content), err
 }
 
 func launchEditor(ctx context.Context, editorCmd string) error {
+	std.Out.WriteNoticef("Launching your editor gather feedback ...", editorCmd)
 	cmdParts := strings.Split(editorCmd, " ")
 
 	cmd := exec.Command(cmdParts[0], cmdParts[1:]...)
