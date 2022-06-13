@@ -1151,9 +1151,6 @@ func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayO
 	var sortDirection types.SeriesSortDirection = types.Desc
 	var limit int32 = 20
 
-	sortMode = types.ResultCount
-	sortDirection = types.Desc
-
 	if seriesOptions.SortOptions != nil {
 		sortMode = seriesOptions.SortOptions.Mode
 		sortDirection = seriesOptions.SortOptions.Direction
@@ -1246,7 +1243,7 @@ func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayO
 
 func minInt(a, b int32) int32 {
 	if a < b {
-		return int32(a)
+		return a
 	}
-	return int32(b)
+	return b
 }
