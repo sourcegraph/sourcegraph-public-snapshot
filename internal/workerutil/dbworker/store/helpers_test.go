@@ -11,13 +11,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-func testStore(db dbutil.DB, options Options) *store {
-	return newStore(basestore.NewHandleWithUntypedDB(db, sql.TxOptions{}), options, &observation.TestContext)
+func testStore(db *sql.DB, options Options) *store {
+	return newStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), options, &observation.TestContext)
 }
 
 type TestRecord struct {
@@ -104,7 +103,7 @@ func testScanFirstRecordRetry(rows *sql.Rows, queryErr error) (v workerutil.Reco
 	return nil, false, nil
 }
 
-func setupStoreTest(t *testing.T) dbutil.DB {
+func setupStoreTest(t *testing.T) *sql.DB {
 	db := dbtest.NewDB(t)
 
 	if _, err := db.Exec(`
