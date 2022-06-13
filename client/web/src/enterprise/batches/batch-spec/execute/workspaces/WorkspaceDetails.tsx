@@ -162,9 +162,9 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                 </span>
             )}
             {workspace.startedAt && (
-                <span className={styles.workspaceDetail}>
-                    Total time:{' '}
-                    <strong>
+                <span className={classNames(styles.workspaceDetail, 'd-flex align-items-center')}>
+                    Total time:
+                    <strong className="pl-1">
                         <Duration start={workspace.startedAt} end={workspace.finishedAt ?? undefined} />
                     </strong>
                 </span>

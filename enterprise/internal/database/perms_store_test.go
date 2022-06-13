@@ -2858,7 +2858,6 @@ WHERE repo_id = 2`, clock().AddDate(-1, 0, 0))
 
 func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		db := database.NewDB(db)
 		s := perms(db, clock)
 		ctx := context.Background()
 		t.Cleanup(func() {

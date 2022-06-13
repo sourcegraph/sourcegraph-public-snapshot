@@ -19,10 +19,25 @@ describe('FormTriggerArea', () => {
     })
 
     const testCases = [
-        { query: '', patternTypeChecked: true, typeChecked: false, repoChecked: false, validChecked: false },
-        { query: 'test', patternTypeChecked: true, typeChecked: false, repoChecked: false, validChecked: true },
+        {
+            query: '',
+            isSourcegraphDotCom: true,
+            patternTypeChecked: true,
+            typeChecked: false,
+            repoChecked: false,
+            validChecked: false,
+        },
+        {
+            query: 'test',
+            isSourcegraphDotCom: true,
+            patternTypeChecked: true,
+            typeChecked: false,
+            repoChecked: false,
+            validChecked: true,
+        },
         {
             query: 'test patternType:literal',
+            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: false,
             repoChecked: false,
@@ -30,6 +45,7 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test patternType:regexp',
+            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: false,
             repoChecked: false,
@@ -37,6 +53,7 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test patternType:structural',
+            isSourcegraphDotCom: true,
             patternTypeChecked: false,
             typeChecked: false,
             repoChecked: false,
@@ -44,6 +61,7 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test type:repo',
+            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: false,
             repoChecked: false,
@@ -51,6 +69,7 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test type:diff',
+            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: true,
             repoChecked: false,
@@ -58,6 +77,7 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test type:commit',
+            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: true,
             repoChecked: false,
@@ -65,6 +85,7 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test repo:test',
+            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: false,
             repoChecked: true,
@@ -72,6 +93,7 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test repo:test type:diff',
+            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: true,
             repoChecked: true,
@@ -89,7 +111,7 @@ describe('FormTriggerArea', () => {
                     setTriggerCompleted={sinon.spy()}
                     startExpanded={false}
                     isLightTheme={true}
-                    isSourcegraphDotCom={false}
+                    isSourcegraphDotCom={testCase.isSourcegraphDotCom}
                 />
             )
             userEvent.click(screen.getByTestId('trigger-button'))
@@ -112,10 +134,15 @@ describe('FormTriggerArea', () => {
             }
 
             const repoCheckbox = screen.getByTestId('repo-checkbox')
-            if (testCase.repoChecked) {
-                expect(repoCheckbox).toBeChecked()
+            if (testCase.isSourcegraphDotCom) {
+                const repoCheckbox = screen.getByTestId('repo-checkbox')
+                if (testCase.repoChecked) {
+                    expect(repoCheckbox).toBeChecked()
+                } else {
+                    expect(repoCheckbox).not.toBeChecked()
+                }
             } else {
-                expect(repoCheckbox).not.toBeChecked()
+                expect(repoCheckbox).not.toBeInTheDocument()
             }
 
             const validCheckbox = screen.getByTestId('valid-checkbox')

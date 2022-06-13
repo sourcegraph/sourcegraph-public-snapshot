@@ -54,7 +54,7 @@ func (r *registryPublisherConnection) Nodes(ctx context.Context) ([]graphqlbacke
 
 	var l []graphqlbackend.RegistryPublisher
 	for _, publisher := range publishers {
-		p, err := getRegistryPublisher(ctx, database.NewDB(r.db), *publisher)
+		p, err := getRegistryPublisher(ctx, r.db, *publisher)
 		if err != nil {
 			return nil, err
 		}

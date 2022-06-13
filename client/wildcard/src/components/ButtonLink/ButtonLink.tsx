@@ -75,9 +75,9 @@ export const ButtonLink = React.forwardRef((props, reference) => {
     const buttonReference = useRef<HTMLAnchorElement>(null)
     const mergedbuttonReference = useMergeRefs([buttonReference, reference])
 
-    // We need to set up a keypress listener because <a onclick> doesn't get
+    // We need to set up a keydown listener because <a onclick> doesn't get
     // triggered by enter.
-    const handleKeyPress = (event: React.KeyboardEvent<HTMLElement>): void => {
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
         if (disabled || !isSelectKeyPress(event)) {
             return
         }
@@ -105,7 +105,8 @@ export const ButtonLink = React.forwardRef((props, reference) => {
         'aria-pressed': pressed,
         tabIndex: isDefined(tabIndex) ? tabIndex : disabled ? -1 : 0,
         onClick: onSelect,
-        onKeyPress: handleKeyPress,
+        // We need `onKeyDown` instead `onKeyPress` to make ButtonLink works inside reactstrap Dropdown
+        onKeyDown: handleKeyDown,
         id,
         ref: mergedbuttonReference,
         disabled,

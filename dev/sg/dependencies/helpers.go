@@ -364,3 +364,11 @@ func check1password() check.CheckFunc {
 		check.WrapErrMessage(check.InPath("op"), "The 1password CLI, 'op', is required"),
 		check.CommandOutputContains("op account get --account team-sourcegraph.1password.com", "ACTIVE"))
 }
+
+func forceASDFPluginAdd(ctx context.Context, plugin string, source string) error {
+	err := usershell.Run(ctx, "asdf plugin-add", plugin, source).Wait()
+	if err != nil && strings.Contains(err.Error(), "already added") {
+		return nil
+	}
+	return err
+}

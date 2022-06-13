@@ -31,7 +31,7 @@ type SymbolOrError struct {
 }
 
 type parser struct {
-	parserPool         ParserPool
+	parserPool         *parserPool
 	repositoryFetcher  fetcher.RepositoryFetcher
 	requestBufferSize  int
 	numParserProcesses int
@@ -39,7 +39,7 @@ type parser struct {
 }
 
 func NewParser(
-	parserPool ParserPool,
+	parserPool *parserPool,
 	repositoryFetcher fetcher.RepositoryFetcher,
 	requestBufferSize int,
 	numParserProcesses int,

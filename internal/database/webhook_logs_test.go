@@ -141,7 +141,7 @@ func TestWebhookLogStore(t *testing.T) {
 		assert.Nil(t, err)
 		defer func() { _ = tx.Done(errors.New("rollback")) }()
 
-		esStore := NewDB(tx).ExternalServices()
+		esStore := tx.ExternalServices()
 		es := &types.ExternalService{
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "GitLab",
@@ -257,7 +257,7 @@ func TestWebhookLogStore(t *testing.T) {
 		assert.Nil(t, err)
 		defer func() { _ = tx.Done(errors.New("rollback")) }()
 
-		esStore := NewDB(tx).ExternalServices()
+		esStore := tx.ExternalServices()
 		es := &types.ExternalService{
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "GitLab",

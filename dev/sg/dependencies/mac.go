@@ -121,6 +121,12 @@ var Mac = []category{
 					).Wait()
 				},
 			},
+			{
+				Name:        "gpg",
+				Description: "Required for yarn installation.",
+				Check:       checkAction(check.InPath("gpg")),
+				Fix:         cmdFix("brew install gpg"),
+			},
 		},
 	},
 	categoryCloneRepositories(),
@@ -131,36 +137,45 @@ var Mac = []category{
 			{
 				Name:  "go",
 				Check: checkGoVersion,
-				Fix: cmdFixes(
-					"asdf plugin-add golang https://github.com/kennyp/asdf-golang.git",
-					"asdf install golang",
-				),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if err := forceASDFPluginAdd(ctx, "golang", "https://github.com/kennyp/asdf-golang.git"); err != nil {
+						return err
+					}
+					return root.Run(usershell.Command(ctx, "asdf install golang")).StreamLines(cio.Verbose)
+				},
 			},
 			{
 				Name:  "yarn",
 				Check: checkYarnVersion,
-				Fix: cmdFixes(
-					"brew install gpg",
-					"asdf plugin-add yarn",
-					"asdf install yarn",
-				),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if err := forceASDFPluginAdd(ctx, "yarn", ""); err != nil {
+						return err
+					}
+					return root.Run(usershell.Command(ctx, "asdf install yarn")).StreamLines(cio.Verbose)
+				},
 			},
 			{
 				Name:  "node",
 				Check: checkNodeVersion,
-				Fix: cmdFixes(
-					"asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git",
-					`grep -s "legacy_version_file = yes" ~/.asdfrc >/dev/null || echo 'legacy_version_file = yes' >> ~/.asdfrc`,
-					"asdf install nodejs",
-				),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if err := forceASDFPluginAdd(ctx, "nodejs", "https://github.com/asdf-vm/asdf-nodejs.git"); err != nil {
+						return err
+					}
+					return cmdFixes(
+						`grep -s "legacy_version_file = yes" ~/.asdfrc >/dev/null || echo 'legacy_version_file = yes' >> ~/.asdfrc`,
+						"asdf install nodejs",
+					)(ctx, cio, args)
+				},
 			},
 			{
 				Name:  "rust",
 				Check: checkRustVersion,
-				Fix: cmdFixes(
-					"asdf plugin-add rust https://github.com/asdf-community/asdf-rust.git",
-					"asdf install rust",
-				),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if err := forceASDFPluginAdd(ctx, "rust", "https://github.com/asdf-community/asdf-rust.git"); err != nil {
+						return err
+					}
+					return root.Run(usershell.Command(ctx, "asdf install rust")).StreamLines(cio.Verbose)
+				},
 			},
 		},
 	},

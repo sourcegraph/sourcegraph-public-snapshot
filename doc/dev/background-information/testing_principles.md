@@ -157,6 +157,8 @@ No review required: deploys tested changes.
 
 Why are flaky tests undesirable? Because these tests stop being an informative signal that the engineering team can rely on, and if we keep them around then we eventually train ourselves to ignore them and become blind to their results. This can hide real problems under the cover of flakiness.
 
+When fixing a flaky test, make sure to re-run the test in a loop to assess whether the fix actually worked. ([Go example](languages/testing_go_code.md#verifying-fixes-to-flaky-tests))
+
 Other kinds of flakes include [flaky steps](ci/index.md#flaky-steps) and [flaky infrastructure](ci/index.md#laky-infrastructure)
 
 ## Ownership
