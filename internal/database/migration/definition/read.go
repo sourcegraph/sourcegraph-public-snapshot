@@ -20,11 +20,11 @@ import (
 func ReadDefinitions(fs fs.FS, schemaBasePath string) (*Definitions, error) {
 	migrationDefinitions, err := readDefinitions(fs, schemaBasePath)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "readDefinitions")
 	}
 
 	if err := reorderDefinitions(migrationDefinitions); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "reorderDefinitions")
 	}
 
 	return newDefinitions(migrationDefinitions), nil
@@ -52,31 +52,25 @@ func readDefinitions(fs fs.FS, schemaBasePath string) ([]Definition, error) {
 		return nil, err
 	}
 
-	versions := make([]int, 0, len(migrations))
+	definitions := make([]Definition, 0, len(migrations))
 	for _, file := range migrations {
-		if version, err := strconv.Atoi(file.Name()); err == nil {
-			versions = append(versions, version)
-		}
-	}
-	sort.Ints(versions)
-
-	definitions := make([]Definition, 0, len(versions))
-	for _, version := range versions {
-		definition, err := readDefinition(fs, schemaBasePath, version)
+		definition, err := readDefinition(fs, schemaBasePath, file.Name())
 		if err != nil {
-			return nil, errors.Wrapf(err, "malformed migration definition at '%s'", filepath.Join(schemaBasePath, strconv.Itoa(version)))
+			return nil, errors.Wrapf(err, "malformed migration definition at '%s'",
+				filepath.Join(schemaBasePath, file.Name()))
 		}
-
 		definitions = append(definitions, definition)
 	}
+
+	sort.Slice(definitions, func(i, j int) bool { return definitions[i].ID < definitions[j].ID })
 
 	return definitions, nil
 }
 
-func readDefinition(fs fs.FS, schemaBasePath string, version int) (Definition, error) {
-	upFilename := fmt.Sprintf("%d/up.sql", version)
-	downFilename := fmt.Sprintf("%d/down.sql", version)
-	metadataFilename := fmt.Sprintf("%d/metadata.yaml", version)
+func readDefinition(fs fs.FS, schemaBasePath string, name string) (Definition, error) {
+	upFilename := fmt.Sprintf("%s/up.sql", name)
+	downFilename := fmt.Sprintf("%s/down.sql", name)
+	metadataFilename := fmt.Sprintf("%s/metadata.yaml", name)
 
 	upQuery, err := readQueryFromFile(fs, upFilename)
 	if err != nil {
@@ -84,6 +78,11 @@ func readDefinition(fs fs.FS, schemaBasePath string, version int) (Definition, e
 	}
 
 	downQuery, err := readQueryFromFile(fs, downFilename)
+	if err != nil {
+		return Definition{}, err
+	}
+
+	version, err := ParseRawVersion(name)
 	if err != nil {
 		return Definition{}, err
 	}
@@ -426,4 +425,14 @@ func intsToStrings(ints []int) []string {
 	}
 
 	return strs
+}
+
+// ParseRawVersion returns the migration version for a given 'raw version', i.e. the
+// filename of a mgiration.
+//
+// For example, for migration '1648115472_do_the_thing', we discard everything after
+// the first '_' as a name, and return the verison 1648115472.
+func ParseRawVersion(rawVersion string) (int, error) {
+	nameParts := strings.SplitN(rawVersion, "_", 2)
+	return strconv.Atoi(nameParts[0])
 }
