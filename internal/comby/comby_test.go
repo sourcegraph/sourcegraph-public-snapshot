@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/hexops/autogold"
@@ -110,14 +111,25 @@ func main() {
 		b := new(bytes.Buffer)
 		w := bufio.NewWriter(b)
 
-		cmd, stdin, stdout, stderr, err := SetupCmdWithPipes(test.args)
+		cmd, _, stdout, err := SetupCmdWithPipes(ctx, test.args)
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = StartAndWaitForCompletion(ctx, cmd, stdin, stdout, stderr, test.args.Input, w)
+
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer stdout.Close()
+			_, _ = io.Copy(w, stdout)
+		}()
+
+		err = StartAndWaitForCompletion(cmd)
 		if err != nil {
 			t.Fatal(err)
 		}
+		wg.Wait()
+
 		got := b.String()
 		if got != test.want {
 			t.Errorf("got %v, want %v", got, test.want)
@@ -137,14 +149,32 @@ func Test_stdin(t *testing.T) {
 		defer cancel()
 		b := new(bytes.Buffer)
 		w := bufio.NewWriter(b)
-		cmd, stdin, stdout, stderr, err := SetupCmdWithPipes(args)
+		cmd, stdin, stdout, err := SetupCmdWithPipes(ctx, args)
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = StartAndWaitForCompletion(ctx, cmd, stdin, stdout, stderr, args.Input, w)
+
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer stdin.Close()
+			_, _ = stdin.Write(args.Input.(FileContent))
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer stdout.Close()
+			_, _ = io.Copy(w, stdout)
+		}()
+
+		err = StartAndWaitForCompletion(cmd)
 		if err != nil {
 			t.Fatal(err)
 		}
+		wg.Wait()
+
 		return b.String()
 	}
 
