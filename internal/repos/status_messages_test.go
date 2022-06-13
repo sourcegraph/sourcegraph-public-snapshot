@@ -276,7 +276,7 @@ func TestStatusMessages(t *testing.T) {
 			}
 			t.Cleanup(func() {
 				q := sqlf.Sprintf(`DELETE FROM gitserver_repos`)
-				_, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+				_, err = store.Handle().DBUtilDB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 				require.NoError(t, err)
 			})
 
@@ -291,12 +291,12 @@ func TestStatusMessages(t *testing.T) {
 						INSERT INTO external_service_repos(external_service_id, repo_id, user_id, clone_url)
 						VALUES (%s, %s, NULLIF(%s, 0), 'example.com')
 					`, svc.ID, repo.ID, svc.NamespaceUserID)
-					_, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+					_, err = store.Handle().DBUtilDB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 					require.NoError(t, err)
 
 					t.Cleanup(func() {
 						q := sqlf.Sprintf(`DELETE FROM external_service_repos WHERE external_service_id = %s`, svc.ID)
-						_, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+						_, err = store.Handle().DBUtilDB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 						require.NoError(t, err)
 					})
 				}

@@ -146,7 +146,7 @@ func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec 
 		data.Data = rawMessagePtr(encrypted)
 	}
 
-	err = s.Handle().DB().QueryRowContext(ctx, `
+	err = s.Handle().DBUtilDB().QueryRowContext(ctx, `
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.LookupUserAndSave
 UPDATE user_external_accounts
 SET
@@ -305,7 +305,7 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 }
 
 func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, id int32) error {
-	_, err := s.Handle().DB().ExecContext(ctx, `
+	_, err := s.Handle().DBUtilDB().ExecContext(ctx, `
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchExpired
 UPDATE user_external_accounts
 SET expired_at = now()
@@ -315,7 +315,7 @@ WHERE id = $1
 }
 
 func (s *userExternalAccountsStore) TouchLastValid(ctx context.Context, id int32) error {
-	_, err := s.Handle().DB().ExecContext(ctx, `
+	_, err := s.Handle().DBUtilDB().ExecContext(ctx, `
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchLastValid
 UPDATE user_external_accounts
 SET
@@ -327,7 +327,7 @@ WHERE id = $1
 }
 
 func (s *userExternalAccountsStore) Delete(ctx context.Context, id int32) error {
-	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	res, err := s.Handle().DBUtilDB().ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
 	}

@@ -42,21 +42,21 @@ func (d *codeIntelDB) Done(err error) error {
 
 func (d *codeIntelDB) Unwrap() dbutil.DB {
 	// Recursively unwrap in case we ever call `NewInsightsDB()` with an `InsightsDB`
-	if unwrapper, ok := d.Handle().DB().(dbutil.Unwrapper); ok {
+	if unwrapper, ok := d.Handle().DBUtilDB().(dbutil.Unwrapper); ok {
 		return unwrapper.Unwrap()
 	}
-	return d.Handle().DB()
+	return d.Handle().DBUtilDB()
 }
 
 func (d *codeIntelDB) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
-	return d.Handle().DB().QueryContext(ctx, q, args...)
+	return d.Handle().DBUtilDB().QueryContext(ctx, q, args...)
 }
 
 func (d *codeIntelDB) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
-	return d.Handle().DB().ExecContext(ctx, q, args...)
+	return d.Handle().DBUtilDB().ExecContext(ctx, q, args...)
 
 }
 
 func (d *codeIntelDB) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
-	return d.Handle().DB().QueryRowContext(ctx, q, args...)
+	return d.Handle().DBUtilDB().QueryRowContext(ctx, q, args...)
 }

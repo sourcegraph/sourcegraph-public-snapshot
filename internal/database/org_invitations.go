@@ -136,7 +136,7 @@ func (s *orgInvitationStore) Create(ctx context.Context, orgID, senderUserID, re
 		return results[len(results)-1], nil
 	}
 
-	if err := s.Handle().DB().QueryRowContext(
+	if err := s.Handle().DBUtilDB().QueryRowContext(
 		ctx,
 		fmt.Sprintf("INSERT INTO org_invitations(org_id, sender_user_id, %s, expires_at) VALUES($1, $2, $3, $4) RETURNING id, created_at", column),
 		orgID, senderUserID, value, expiryTime,
@@ -286,7 +286,7 @@ func (s *orgInvitationStore) Count(ctx context.Context, opt OrgInvitationsListOp
 // UpdateEmailSentTimestamp updates the email-sent timestam[ for the org invitation to the current
 // time.
 func (s *orgInvitationStore) UpdateEmailSentTimestamp(ctx context.Context, id int64) error {
-	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE org_invitations SET notified_at=now() WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL AND expires_at > now()", id)
+	res, err := s.Handle().DBUtilDB().ExecContext(ctx, "UPDATE org_invitations SET notified_at=now() WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL AND expires_at > now()", id)
 	if err != nil {
 		return err
 	}
@@ -304,7 +304,7 @@ func (s *orgInvitationStore) UpdateEmailSentTimestamp(ctx context.Context, id in
 // which the recipient was invited. If the recipient user ID given is incorrect, an
 // OrgInvitationNotFoundError error is returned.
 func (s *orgInvitationStore) Respond(ctx context.Context, id int64, recipientUserID int32, accept bool) (orgID int32, err error) {
-	if err := s.Handle().DB().QueryRowContext(ctx, "UPDATE org_invitations SET responded_at=now(), response_type=$2 WHERE id=$1 AND responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL AND expires_at > now() RETURNING org_id", id, accept).Scan(&orgID); err == sql.ErrNoRows {
+	if err := s.Handle().DBUtilDB().QueryRowContext(ctx, "UPDATE org_invitations SET responded_at=now(), response_type=$2 WHERE id=$1 AND responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL AND expires_at > now() RETURNING org_id", id, accept).Scan(&orgID); err == sql.ErrNoRows {
 		return 0, OrgInvitationNotFoundError{[]any{fmt.Sprintf("id %d recipient %d", id, recipientUserID)}}
 	} else if err != nil {
 		return 0, err
@@ -315,7 +315,7 @@ func (s *orgInvitationStore) Respond(ctx context.Context, id int64, recipientUse
 // Revoke marks an org invitation as revoked. The recipient is forbidden from responding to it after
 // it has been revoked.
 func (s *orgInvitationStore) Revoke(ctx context.Context, id int64) error {
-	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE org_invitations SET revoked_at=now() WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL AND expires_at > now()", id)
+	res, err := s.Handle().DBUtilDB().ExecContext(ctx, "UPDATE org_invitations SET revoked_at=now() WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL AND expires_at > now()", id)
 	if err != nil {
 		return err
 	}
@@ -331,7 +331,7 @@ func (s *orgInvitationStore) Revoke(ctx context.Context, id int64) error {
 
 // UpdateExpiryTime updates the expiry time of the invitation.
 func (s *orgInvitationStore) UpdateExpiryTime(ctx context.Context, id int64, expiresAt time.Time) error {
-	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE org_invitations SET expires_at=$2 WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL AND expires_at > now()", id, expiresAt)
+	res, err := s.Handle().DBUtilDB().ExecContext(ctx, "UPDATE org_invitations SET expires_at=$2 WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL AND expires_at > now()", id, expiresAt)
 	if err != nil {
 		return err
 	}

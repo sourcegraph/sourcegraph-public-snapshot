@@ -164,7 +164,7 @@ func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32,
 		return 0, "", errors.New("access tokens without scopes are not supported")
 	}
 
-	if err := s.Handle().DB().QueryRowContext(ctx,
+	if err := s.Handle().DBUtilDB().QueryRowContext(ctx,
 		// Include users table query (with "FOR UPDATE") to ensure that subject/creator users have
 		// not been deleted. If they were deleted, the query will return an error.
 		`
@@ -197,7 +197,7 @@ func (s *accessTokenStore) Lookup(ctx context.Context, tokenHexEncoded, required
 		return 0, errors.Wrap(err, "AccessTokens.Lookup")
 	}
 
-	if err := s.Handle().DB().QueryRowContext(ctx,
+	if err := s.Handle().DBUtilDB().QueryRowContext(ctx,
 		// Ensure that subject and creator users still exist.
 		`
 UPDATE access_tokens t SET last_used_at=now()

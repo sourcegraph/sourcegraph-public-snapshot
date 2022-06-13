@@ -13,8 +13,8 @@ import (
 // nested transactions through registration and finalization of savepoints. A
 // transactable database handler can be shared by multiple stores.
 type TransactableHandle interface {
-	// DB returns the underlying dbutil.DB, which is usually a *sql.DB or a *sql.Tx
-	DB() dbutil.DB
+	// DBUtilDB returns the underlying dbutil.DBUtilDB, which is usually a *sql.DBUtilDB or a *sql.Tx
+	DBUtilDB() dbutil.DB
 
 	// InTransaction returns whether the handle represents a handle to a transaction.
 	InTransaction() bool
@@ -48,7 +48,7 @@ type dbHandle struct {
 	txOptions sql.TxOptions
 }
 
-func (h *dbHandle) DB() dbutil.DB {
+func (h *dbHandle) DBUtilDB() dbutil.DB {
 	return h.db
 }
 
@@ -73,7 +73,7 @@ type txHandle struct {
 	txOptions sql.TxOptions
 }
 
-func (h *txHandle) DB() dbutil.DB {
+func (h *txHandle) DBUtilDB() dbutil.DB {
 	return h.tx
 }
 
@@ -102,7 +102,7 @@ type savepointHandle struct {
 	savepointID string
 }
 
-func (h *savepointHandle) DB() dbutil.DB {
+func (h *savepointHandle) DBUtilDB() dbutil.DB {
 	return h.tx
 }
 

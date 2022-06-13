@@ -25,7 +25,7 @@ func NewHandleWithDB(db *sql.DB, txOptions sql.TxOptions) TransactableHandle {
 }
 
 // DB returns the underlying database handle.
-func (h *oldTransactableHandle) DB() dbutil.DB {
+func (h *oldTransactableHandle) DBUtilDB() dbutil.DB {
 	return h.db
 }
 

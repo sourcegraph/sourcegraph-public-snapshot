@@ -42,7 +42,7 @@ func (s *SurveyResponseStore) Transact(ctx context.Context) (*SurveyResponseStor
 
 // Create creates a survey response.
 func (s *SurveyResponseStore) Create(ctx context.Context, userID *int32, email *string, score int, reason *string, better *string) (id int64, err error) {
-	err = s.Handle().DB().QueryRowContext(ctx,
+	err = s.Handle().DBUtilDB().QueryRowContext(ctx,
 		"INSERT INTO survey_responses(user_id, email, score, reason, better) VALUES($1, $2, $3, $4, $5) RETURNING id",
 		userID, email, score, reason, better,
 	).Scan(&id)
@@ -50,7 +50,7 @@ func (s *SurveyResponseStore) Create(ctx context.Context, userID *int32, email *
 }
 
 func (s *SurveyResponseStore) getBySQL(ctx context.Context, query string, args ...any) ([]*types.SurveyResponse, error) {
-	rows, err := s.Handle().DB().QueryContext(ctx, "SELECT id, user_id, email, score, reason, better, created_at FROM survey_responses "+query, args...)
+	rows, err := s.Handle().DBUtilDB().QueryContext(ctx, "SELECT id, user_id, email, score, reason, better, created_at FROM survey_responses "+query, args...)
 	if err != nil {
 		return nil, err
 	}

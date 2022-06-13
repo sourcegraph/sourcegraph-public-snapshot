@@ -83,13 +83,13 @@ func (s *Store) With(other ShareableStore) *Store {
 
 // Query performs QueryContext on the underlying connection.
 func (s *Store) Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error) {
-	rows, err := s.handle.DB().QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	rows, err := s.handle.DBUtilDB().QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	return rows, s.wrapError(query, err)
 }
 
 // QueryRow performs QueryRowContext on the underlying connection.
 func (s *Store) QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
-	return s.handle.DB().QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	return s.handle.DBUtilDB().QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 }
 
 // Exec performs a query without returning any rows.
@@ -101,7 +101,7 @@ func (s *Store) Exec(ctx context.Context, query *sqlf.Query) error {
 // ExecResult performs a query without returning any rows, but includes the
 // result of the execution.
 func (s *Store) ExecResult(ctx context.Context, query *sqlf.Query) (sql.Result, error) {
-	res, err := s.handle.DB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	res, err := s.handle.DBUtilDB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	return res, s.wrapError(query, err)
 }
 

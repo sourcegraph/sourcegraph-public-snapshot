@@ -258,7 +258,7 @@ func testPermsStore_LoadRepoPermissions(db database.DB) func(*testing.T) {
 }
 
 func checkRegularPermsTable(s *permsStore, sql string, expects map[int32][]uint32) error {
-	rows, err := s.Handle().DB().QueryContext(context.Background(), sql)
+	rows, err := s.Handle().DBUtilDB().QueryContext(context.Background(), sql)
 	if err != nil {
 		return err
 	}
@@ -1026,7 +1026,7 @@ func checkUserPendingPermsTable(
 	err error,
 ) {
 	q := `SELECT id, service_type, service_id, bind_id, object_ids_ints FROM user_pending_permissions`
-	rows, err := s.Handle().DB().QueryContext(ctx, q)
+	rows, err := s.Handle().DBUtilDB().QueryContext(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -1076,7 +1076,7 @@ func checkRepoPendingPermsTable(
 	idToSpecs map[int32]extsvc.AccountSpec,
 	expects map[int32][]extsvc.AccountSpec,
 ) error {
-	rows, err := s.Handle().DB().QueryContext(ctx, `SELECT repo_id, user_ids_ints FROM repo_pending_permissions`)
+	rows, err := s.Handle().DBUtilDB().QueryContext(ctx, `SELECT repo_id, user_ids_ints FROM repo_pending_permissions`)
 	if err != nil {
 		return err
 	}

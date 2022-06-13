@@ -45,8 +45,8 @@ func TestTransaction(t *testing.T) {
 
 	// Check what's visible pre-commit/rollback
 	assertCounts(t, db, map[int]int{1: 42})
-	assertCounts(t, tx1.handle.DB(), map[int]int{1: 42, 2: 43})
-	assertCounts(t, tx2.handle.DB(), map[int]int{1: 42, 3: 44})
+	assertCounts(t, tx1.handle.DBUtilDB(), map[int]int{1: 42, 2: 43})
+	assertCounts(t, tx2.handle.DBUtilDB(), map[int]int{1: 42, 3: 44})
 
 	// Finalize transactions
 	rollbackErr := errors.New("rollback")

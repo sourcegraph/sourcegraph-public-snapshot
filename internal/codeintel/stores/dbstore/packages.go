@@ -36,7 +36,7 @@ func (s *Store) UpdatePackages(ctx context.Context, dumpID int, packages []preci
 	// Bulk insert all the unique column values into the temporary table
 	if err := batch.InsertValues(
 		ctx,
-		tx.Handle().DB(),
+		tx.Handle().DBUtilDB(),
 		"t_lsif_packages",
 		batch.MaxNumPostgresParameters,
 		[]string{"scheme", "name", "version"},

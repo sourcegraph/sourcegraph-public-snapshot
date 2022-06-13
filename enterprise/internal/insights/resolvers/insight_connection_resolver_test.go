@@ -146,7 +146,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	// Create three repositories -
 	// 1) private repo that will be assigned to user 1
 	// 2 & 3) public repos
-	_, err = postgres.Handle().DB().ExecContext(ctx, `
+	_, err = postgres.Handle().DBUtilDB().ExecContext(ctx, `
 		INSERT INTO repo (id, name, description, fork, created_at, updated_at, external_id, external_service_type,
 					  external_service_id, archived, uri, deleted_at, metadata, private, stars)
 		VALUES
@@ -173,7 +173,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = postgres.Handle().DB().ExecContext(ctx, `
+	_, err = postgres.Handle().DBUtilDB().ExecContext(ctx, `
 		INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
 		VALUES
 		       ($1, 1, ''),

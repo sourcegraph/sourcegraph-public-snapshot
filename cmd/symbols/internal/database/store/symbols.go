@@ -109,7 +109,7 @@ func (s *store) WriteSymbols(ctx context.Context, symbolOrErrors <-chan parser.S
 	group.Go(func() error {
 		return batch.InsertValues(
 			ctx,
-			s.Handle().DB(),
+			s.Handle().DBUtilDB(),
 			"symbols",
 			batch.MaxNumSQLiteParameters,
 			[]string{

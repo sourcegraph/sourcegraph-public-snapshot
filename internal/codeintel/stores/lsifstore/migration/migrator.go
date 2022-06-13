@@ -364,7 +364,7 @@ func (m *Migrator) updateBatch(ctx context.Context, tx *lsifstore.Store, dumpID,
 
 	if err := batch.InsertValues(
 		ctx,
-		tx.Handle().DB(),
+		tx.Handle().DBUtilDB(),
 		temporaryTableName,
 		batch.MaxNumPostgresParameters,
 		m.temporaryTableFieldNames,
