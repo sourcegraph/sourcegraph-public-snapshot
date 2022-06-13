@@ -2,13 +2,11 @@ package comby
 
 import (
 	"archive/zip"
-	"bufio"
 	"bytes"
 	"context"
 	"io"
 	"os"
 	"path/filepath"
-	"sync"
 	"testing"
 
 	"github.com/hexops/autogold"
@@ -108,27 +106,11 @@ func main() {
 	}
 
 	for _, test := range cases {
-		b := new(bytes.Buffer)
-		w := bufio.NewWriter(b)
-
-		cmd, _, stdout, err := SetupCmdWithPipes(ctx, test.args)
+		var b bytes.Buffer
+		err := pipeTo(ctx, test.args, &b)
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		wg := sync.WaitGroup{}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			defer stdout.Close()
-			_, _ = io.Copy(w, stdout)
-		}()
-
-		err = StartAndWaitForCompletion(cmd)
-		if err != nil {
-			t.Fatal(err)
-		}
-		wg.Wait()
 
 		got := b.String()
 		if got != test.want {
@@ -147,33 +129,12 @@ func Test_stdin(t *testing.T) {
 	test := func(args Args) string {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		b := new(bytes.Buffer)
-		w := bufio.NewWriter(b)
-		cmd, stdin, stdout, err := SetupCmdWithPipes(ctx, args)
+
+		var b bytes.Buffer
+		err := pipeTo(ctx, args, &b)
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		wg := sync.WaitGroup{}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			defer stdin.Close()
-			_, _ = stdin.Write(args.Input.(FileContent))
-		}()
-
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			defer stdout.Close()
-			_, _ = io.Copy(w, stdout)
-		}()
-
-		err = StartAndWaitForCompletion(cmd)
-		if err != nil {
-			t.Fatal(err)
-		}
-		wg.Wait()
 
 		return b.String()
 	}
