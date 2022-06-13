@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -25,6 +26,7 @@ type BitbucketProjectPermissionsStore interface {
 	Enqueue(ctx context.Context, projectKey string, externalServiceID int64, permissions []types.UserPermission, unrestricted bool) (int, error)
 	Transact(ctx context.Context) (BitbucketProjectPermissionsStore, error)
 	Done(err error) error
+	ListJobs(ctx context.Context, opt ListJobsOptions) ([]*types.BitbucketProjectPermissionJob, error)
 }
 
 type bitbucketProjectPermissionsStore struct {
@@ -116,43 +118,122 @@ func ScanFirstBitbucketProjectPermissionsJob(rows *sql.Rows, queryErr error) (_ 
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	if rows.Next() {
-		var job types.BitbucketProjectPermissionJob
-		var executionLogs []dbworkerstore.ExecutionLogEntry
-		var permissions []userPermission
-
-		if err := rows.Scan(
-			&job.ID,
-			&job.State,
-			&job.FailureMessage,
-			&job.QueuedAt,
-			&job.StartedAt,
-			&job.FinishedAt,
-			&job.ProcessAfter,
-			&job.NumResets,
-			&job.NumFailures,
-			&dbutil.NullTime{Time: &job.LastHeartbeatAt},
-			pq.Array(&executionLogs),
-			&job.WorkerHostname,
-			&job.ProjectKey,
-			&job.ExternalServiceID,
-			pq.Array(&permissions),
-			&job.Unrestricted,
-		); err != nil {
+		job, err := scanOneJob(rows)
+		if err != nil {
 			return nil, false, err
 		}
 
-		for _, entry := range executionLogs {
-			job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
-		}
-
-		for _, perm := range permissions {
-			job.Permissions = append(job.Permissions, types.UserPermission(perm))
-		}
-
-		return &job, true, nil
+		return job, true, nil
 	}
 
 	return nil, false, nil
+}
+
+type ListJobsOptions struct {
+	ProjectKey string
+	Status     string
+	Count      int
+}
+
+// ListJobs returns a list of types.BitbucketProjectPermissionJob for a given set
+// of query options: ListJobsOptions
+func (s *bitbucketProjectPermissionsStore) ListJobs(
+	ctx context.Context,
+	opt ListJobsOptions,
+) (jobs []*types.BitbucketProjectPermissionJob, err error) {
+	query := listWorkerJobsQuery(opt)
+
+	rows, err := s.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		var job *types.BitbucketProjectPermissionJob
+		job, err = scanOneJob(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		jobs = append(jobs, job)
+	}
+
+	return
+}
+
+func scanOneJob(rows *sql.Rows) (*types.BitbucketProjectPermissionJob, error) {
+	var job types.BitbucketProjectPermissionJob
+	var executionLogs []dbworkerstore.ExecutionLogEntry
+	var permissions []userPermission
+
+	if err := rows.Scan(
+		&job.ID,
+		&job.State,
+		&job.FailureMessage,
+		&job.QueuedAt,
+		&job.StartedAt,
+		&job.FinishedAt,
+		&job.ProcessAfter,
+		&job.NumResets,
+		&job.NumFailures,
+		&dbutil.NullTime{Time: &job.LastHeartbeatAt},
+		pq.Array(&executionLogs),
+		&job.WorkerHostname,
+		&job.ProjectKey,
+		&job.ExternalServiceID,
+		pq.Array(&permissions),
+		&job.Unrestricted,
+	); err != nil {
+		return nil, err
+	}
+
+	for _, entry := range executionLogs {
+		job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
+	}
+
+	for _, perm := range permissions {
+		job.Permissions = append(job.Permissions, types.UserPermission(perm))
+	}
+	return &job, nil
+}
+
+const maxJobsCount = 500
+
+func listWorkerJobsQuery(opt ListJobsOptions) *sqlf.Query {
+	var where []*sqlf.Query
+
+	q := `
+-- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.listWorkerJobsQuery
+SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_services_id, permissions, unrestricted
+FROM explicit_permissions_bitbucket_project_jobs
+%%s
+ORDER BY queued_at DESC
+LIMIT %d
+`
+
+	if opt.ProjectKey != "" {
+		where = append(where, sqlf.Sprintf("project_key = %s", opt.ProjectKey))
+	}
+
+	if opt.Status != "" {
+		where = append(where, sqlf.Sprintf("status = %s", opt.Status))
+	}
+
+	whereClause := sqlf.Sprintf("")
+	if len(where) != 0 {
+		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(where, " AND"))
+	}
+
+	limitNum := 100
+
+	if opt.Count > 0 && opt.Count < maxJobsCount {
+		limitNum = opt.Count
+	} else if opt.Count >= maxJobsCount {
+		limitNum = maxJobsCount
+	}
+
+	return sqlf.Sprintf(fmt.Sprintf(q, limitNum), whereClause)
 }
 
 type userPermission types.UserPermission

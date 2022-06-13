@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -170,6 +171,45 @@ func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
 		Permissions:       []types.UserPermission{{Permission: "read", BindID: "omar@sourcegraph.com"}},
 		Unrestricted:      false,
 	}, record)
+}
+
+func TestListWorkerJobsQuery(t *testing.T) {
+	t.Run("no options set", func(t *testing.T) {
+		got := listWorkerJobsQuery(ListJobsOptions{})
+		gotString := got.Query(sqlf.PostgresBindVar)
+
+		want := `
+-- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.listWorkerJobsQuery
+SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_services_id, permissions, unrestricted
+FROM explicit_permissions_bitbucket_project_jobs
+
+ORDER BY queued_at DESC
+LIMIT 100
+`
+
+		require.Equal(t, want, gotString)
+	})
+	t.Run("all options set", func(t *testing.T) {
+		got := listWorkerJobsQuery(ListJobsOptions{
+			ProjectKey: "123",
+			Status:     "completed",
+			Count:      337,
+		})
+
+		gotString := got.Query(sqlf.PostgresBindVar)
+		want := `
+-- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.listWorkerJobsQuery
+SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_services_id, permissions, unrestricted
+FROM explicit_permissions_bitbucket_project_jobs
+WHERE project_key = $1  AND status = $2
+ORDER BY queued_at DESC
+LIMIT 337
+`
+
+		require.Equal(t, want, gotString)
+		require.Equal(t, got.Args()[0], "123")
+		require.Equal(t, got.Args()[1], "completed")
+	})
 }
 
 func intPtr(v int) *int          { return &v }

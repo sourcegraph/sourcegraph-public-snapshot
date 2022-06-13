@@ -2087,6 +2087,9 @@ type MockBitbucketProjectPermissionsStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *BitbucketProjectPermissionsStoreHandleFunc
+	// ListJobsFunc is an instance of a mock function object controlling the
+	// behavior of the method ListJobs.
+	ListJobsFunc *BitbucketProjectPermissionsStoreListJobsFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *BitbucketProjectPermissionsStoreTransactFunc
@@ -2112,6 +2115,11 @@ func NewMockBitbucketProjectPermissionsStore() *MockBitbucketProjectPermissionsS
 		},
 		HandleFunc: &BitbucketProjectPermissionsStoreHandleFunc{
 			defaultHook: func() (r0 *basestore.TransactableHandle) {
+				return
+			},
+		},
+		ListJobsFunc: &BitbucketProjectPermissionsStoreListJobsFunc{
+			defaultHook: func(context.Context, ListJobsOptions) (r0 []*types.BitbucketProjectPermissionJob, r1 error) {
 				return
 			},
 		},
@@ -2148,6 +2156,11 @@ func NewStrictMockBitbucketProjectPermissionsStore() *MockBitbucketProjectPermis
 				panic("unexpected invocation of MockBitbucketProjectPermissionsStore.Handle")
 			},
 		},
+		ListJobsFunc: &BitbucketProjectPermissionsStoreListJobsFunc{
+			defaultHook: func(context.Context, ListJobsOptions) ([]*types.BitbucketProjectPermissionJob, error) {
+				panic("unexpected invocation of MockBitbucketProjectPermissionsStore.ListJobs")
+			},
+		},
 		TransactFunc: &BitbucketProjectPermissionsStoreTransactFunc{
 			defaultHook: func(context.Context) (BitbucketProjectPermissionsStore, error) {
 				panic("unexpected invocation of MockBitbucketProjectPermissionsStore.Transact")
@@ -2174,6 +2187,9 @@ func NewMockBitbucketProjectPermissionsStoreFrom(i BitbucketProjectPermissionsSt
 		},
 		HandleFunc: &BitbucketProjectPermissionsStoreHandleFunc{
 			defaultHook: i.Handle,
+		},
+		ListJobsFunc: &BitbucketProjectPermissionsStoreListJobsFunc{
+			defaultHook: i.ListJobs,
 		},
 		TransactFunc: &BitbucketProjectPermissionsStoreTransactFunc{
 			defaultHook: i.Transact,
@@ -2512,6 +2528,118 @@ func (c BitbucketProjectPermissionsStoreHandleFuncCall) Args() []interface{} {
 // invocation.
 func (c BitbucketProjectPermissionsStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// BitbucketProjectPermissionsStoreListJobsFunc describes the behavior when
+// the ListJobs method of the parent MockBitbucketProjectPermissionsStore
+// instance is invoked.
+type BitbucketProjectPermissionsStoreListJobsFunc struct {
+	defaultHook func(context.Context, ListJobsOptions) ([]*types.BitbucketProjectPermissionJob, error)
+	hooks       []func(context.Context, ListJobsOptions) ([]*types.BitbucketProjectPermissionJob, error)
+	history     []BitbucketProjectPermissionsStoreListJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListJobs delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockBitbucketProjectPermissionsStore) ListJobs(v0 context.Context, v1 ListJobsOptions) ([]*types.BitbucketProjectPermissionJob, error) {
+	r0, r1 := m.ListJobsFunc.nextHook()(v0, v1)
+	m.ListJobsFunc.appendCall(BitbucketProjectPermissionsStoreListJobsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListJobs method of
+// the parent MockBitbucketProjectPermissionsStore instance is invoked and
+// the hook queue is empty.
+func (f *BitbucketProjectPermissionsStoreListJobsFunc) SetDefaultHook(hook func(context.Context, ListJobsOptions) ([]*types.BitbucketProjectPermissionJob, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListJobs method of the parent MockBitbucketProjectPermissionsStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *BitbucketProjectPermissionsStoreListJobsFunc) PushHook(hook func(context.Context, ListJobsOptions) ([]*types.BitbucketProjectPermissionJob, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BitbucketProjectPermissionsStoreListJobsFunc) SetDefaultReturn(r0 []*types.BitbucketProjectPermissionJob, r1 error) {
+	f.SetDefaultHook(func(context.Context, ListJobsOptions) ([]*types.BitbucketProjectPermissionJob, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BitbucketProjectPermissionsStoreListJobsFunc) PushReturn(r0 []*types.BitbucketProjectPermissionJob, r1 error) {
+	f.PushHook(func(context.Context, ListJobsOptions) ([]*types.BitbucketProjectPermissionJob, error) {
+		return r0, r1
+	})
+}
+
+func (f *BitbucketProjectPermissionsStoreListJobsFunc) nextHook() func(context.Context, ListJobsOptions) ([]*types.BitbucketProjectPermissionJob, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BitbucketProjectPermissionsStoreListJobsFunc) appendCall(r0 BitbucketProjectPermissionsStoreListJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BitbucketProjectPermissionsStoreListJobsFuncCall objects describing the
+// invocations of this function.
+func (f *BitbucketProjectPermissionsStoreListJobsFunc) History() []BitbucketProjectPermissionsStoreListJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]BitbucketProjectPermissionsStoreListJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BitbucketProjectPermissionsStoreListJobsFuncCall is an object that
+// describes an invocation of method ListJobs on an instance of
+// MockBitbucketProjectPermissionsStore.
+type BitbucketProjectPermissionsStoreListJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListJobsOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.BitbucketProjectPermissionJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BitbucketProjectPermissionsStoreListJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BitbucketProjectPermissionsStoreListJobsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // BitbucketProjectPermissionsStoreTransactFunc describes the behavior when
