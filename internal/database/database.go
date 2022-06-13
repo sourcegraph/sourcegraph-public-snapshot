@@ -207,11 +207,3 @@ func (d *db) Users() UserStore {
 func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {
 	return WebhookLogsWith(d.Store, key)
 }
-
-func (d *db) Unwrap() dbutil.DB {
-	// Recursively unwrap in case we ever call `database.NewDB()` with a `database.DB`
-	if unwrapper, ok := d.Handle().(dbutil.Unwrapper); ok {
-		return unwrapper.Unwrap()
-	}
-	return d.Handle()
-}
