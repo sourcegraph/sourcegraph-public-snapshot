@@ -100,25 +100,13 @@ func resolveStepsEnvironment(globalEnv []string, steps []batches.Step) ([]map[st
 	return envs, nil
 }
 
-type cacheKey struct {
-	*ExecutionKey
-	Environments [][]string
-}
-
 func marshalAndHash(key *ExecutionKey, envs []map[string]string) (string, error) {
-	// TODO: Is this required? Marshal should be stable.
-	stringStepEnvs := [][]string{}
-	for _, stepEnv := range envs {
-		stepEnvs := []string{}
-		for k, v := range stepEnv {
-			stepEnvs = append(stepEnvs, fmt.Sprintf("%s=%s", k, v))
-		}
-		sort.Strings(stepEnvs)
-		stringStepEnvs = append(stringStepEnvs, stepEnvs)
-	}
-	raw, err := json.Marshal(cacheKey{
+	raw, err := json.Marshal(struct {
+		*ExecutionKey
+		Environments []map[string]string
+	}{
 		ExecutionKey: key,
-		Environments: stringStepEnvs,
+		Environments: envs,
 	})
 	if err != nil {
 		return "", err
