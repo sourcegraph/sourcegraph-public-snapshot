@@ -49,9 +49,7 @@ Please head over to %s for relevant discussion about this branch lock.
 
 For more, refer to the <https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci|CI incident playbook> for help.
 
-If unable to resolve the issue, please start an incident with the '/incident' Slack command.
-
-cc: @dev-experience-support`, branchStr, discussionChannel)
+If unable to resolve the issue, please start an incident with the '/incident' Slack command.`, branchStr, discussionChannel)
 	return message
 }
 
