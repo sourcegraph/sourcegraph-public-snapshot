@@ -5592,6 +5592,19 @@
           "Comment": "The resolved 40-char revhash of the associated revspec, if it is resolvable on this instance."
         },
         {
+          "Name": "depends_on",
+          "Index": 10,
+          "TypeName": "integer[]",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "IDs of other `codeintel_lockfile_references` this package depends on in the context of this `codeintel_lockfile_references.resolution_id`."
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "integer",
@@ -5683,6 +5696,19 @@
           "Comment": "Encodes `reposource.PackageDependency.RepoName`. A name that is \"globally unique\" for a Sourcegraph instance. Used in `repo:...` queries."
         },
         {
+          "Name": "resolution_id",
+          "Index": 11,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "revspec",
           "Index": 3,
           "TypeName": "text",
@@ -5734,6 +5760,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX codeintel_lockfile_references_repository_id_commit_bytea ON codeintel_lockfile_references USING btree (repository_id, commit_bytea) WHERE repository_id IS NOT NULL AND commit_bytea IS NOT NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "codeintel_lockfiles_references_depends_on",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_lockfiles_references_depends_on ON codeintel_lockfile_references USING gin (depends_on gin__int_ops)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -5796,6 +5832,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "resolution_id",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Unique identifier for the resolution of a lockfile in the given repository and the given commit. Correponds to `codeintel_lockfile_references.resolution_id`."
         }
       ],
       "Indexes": [

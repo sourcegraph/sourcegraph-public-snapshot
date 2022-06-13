@@ -12,6 +12,7 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/lockfiles"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
@@ -99,16 +100,16 @@ func TestDependencies(t *testing.T) {
 	})
 
 	// Return archive dependencies for repos `foo` and `bar`
-	lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]reposource.PackageDependency, error) {
+	lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]reposource.PackageDependency, []*lockfiles.DependencyGraph, error) {
 		if repoName != "github.com/example/foo" && repoName != "github.com/example/bar" {
-			return nil, nil
+			return nil, nil, nil
 		}
 
 		return []reposource.PackageDependency{
 			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g1", ArtifactID: "a1"}, Version: fmt.Sprintf("1-%s-%s", repoName, rev)},
 			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g2", ArtifactID: "a2"}, Version: fmt.Sprintf("2-%s-%s", repoName, rev)},
 			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g3", ArtifactID: "a3"}, Version: fmt.Sprintf("3-%s-%s", repoName, rev)},
-		}, nil
+		}, nil, nil
 	})
 
 	repoRevs := map[api.RepoName]types.RevSpecSet{
@@ -346,16 +347,16 @@ func TestResolveDependencies(t *testing.T) {
 	})
 
 	// Return archive dependencies for repos `foo` and `bar`
-	lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]reposource.PackageDependency, error) {
+	lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]reposource.PackageDependency, []*lockfiles.DependencyGraph, error) {
 		if repoName != "github.com/example/foo" && repoName != "github.com/example/bar" {
-			return nil, nil
+			return nil, nil, nil
 		}
 
 		return []reposource.PackageDependency{
 			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g1", ArtifactID: "a1"}, Version: fmt.Sprintf("1-%s-%s", repoName, rev)},
 			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g2", ArtifactID: "a2"}, Version: fmt.Sprintf("2-%s-%s", repoName, rev)},
 			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g3", ArtifactID: "a3"}, Version: fmt.Sprintf("3-%s-%s", repoName, rev)},
-		}, nil
+		}, nil, nil
 	})
 
 	// UpsertDependencyRepos influences the value that syncer.Sync is called with (asserted below)

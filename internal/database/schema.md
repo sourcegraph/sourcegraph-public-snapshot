@@ -684,17 +684,22 @@ Indexes:
  repository_id   | integer                  |           |          | 
  commit_bytea    | bytea                    |           |          | 
  last_check_at   | timestamp with time zone |           |          | 
+ depends_on      | integer[]                |           | not null | 
+ resolution_id   | text                     |           | not null | 
 Indexes:
     "codeintel_lockfile_references_pkey" PRIMARY KEY, btree (id)
     "codeintel_lockfile_references_repository_name_revspec_package" UNIQUE, btree (repository_name, revspec, package_scheme, package_name, package_version)
     "codeintel_lockfile_references_last_check_at" btree (last_check_at)
     "codeintel_lockfile_references_repository_id_commit_bytea" btree (repository_id, commit_bytea) WHERE repository_id IS NOT NULL AND commit_bytea IS NOT NULL
+    "codeintel_lockfiles_references_depends_on" gin (depends_on gin__int_ops)
 
 ```
 
 Tracks a lockfile dependency that might be resolvable to a specific repository-commit pair.
 
 **commit_bytea**: The resolved 40-char revhash of the associated revspec, if it is resolvable on this instance.
+
+**depends_on**: IDs of other `codeintel_lockfile_references` this package depends on in the context of this `codeintel_lockfile_references.resolution_id`.
 
 **last_check_at**: Timestamp when background job last checked this row for repository resolution
 
@@ -718,6 +723,7 @@ Tracks a lockfile dependency that might be resolvable to a specific repository-c
  repository_id                    | integer   |           | not null | 
  commit_bytea                     | bytea     |           | not null | 
  codeintel_lockfile_reference_ids | integer[] |           | not null | 
+ resolution_id                    | text      |           |          | 
 Indexes:
     "codeintel_lockfiles_pkey" PRIMARY KEY, btree (id)
     "codeintel_lockfiles_repository_id_commit_bytea" UNIQUE, btree (repository_id, commit_bytea)
@@ -730,6 +736,8 @@ Associates a repository-commit pair with the set of repository-level dependencie
 **codeintel_lockfile_reference_ids**: A key to a resolved repository name-revspec pair. Not all repository names and revspecs are resolvable.
 
 **commit_bytea**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+**resolution_id**: Unique identifier for the resolution of a lockfile in the given repository and the given commit. Correponds to `codeintel_lockfile_references.resolution_id`.
 
 # Table "public.configuration_policies_audit_logs"
 ```

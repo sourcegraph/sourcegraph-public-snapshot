@@ -21,7 +21,7 @@ func TestListDependencies(t *testing.T) {
 		gitSvc := NewMockGitService()
 		gitSvc.LsFilesFunc.SetDefaultReturn([]string{}, nil)
 
-		got, err := TestService(gitSvc).ListDependencies(ctx, "foo", "")
+		got, _, err := TestService(gitSvc).ListDependencies(ctx, "foo", "")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -51,7 +51,7 @@ func TestListDependencies(t *testing.T) {
 			"yarn.lock":         string(yarnLock),
 		}))
 
-		deps, err := TestService(gitSvc).ListDependencies(ctx, "foo", "HEAD")
+		deps, _, err := TestService(gitSvc).ListDependencies(ctx, "foo", "HEAD")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -87,7 +87,7 @@ require github.com/pborman/uuid v1.2.1
 `,
 		}))
 
-		deps, err := TestService(gitSvc).ListDependencies(ctx, "foo", "HEAD")
+		deps, _, err := TestService(gitSvc).ListDependencies(ctx, "foo", "HEAD")
 		if err != nil {
 			t.Fatal(err)
 		}

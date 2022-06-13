@@ -1152,7 +1152,9 @@ CREATE TABLE codeintel_lockfile_references (
     package_version text NOT NULL,
     repository_id integer,
     commit_bytea bytea,
-    last_check_at timestamp with time zone
+    last_check_at timestamp with time zone,
+    depends_on integer[] NOT NULL,
+    resolution_id text NOT NULL
 );
 
 COMMENT ON TABLE codeintel_lockfile_references IS 'Tracks a lockfile dependency that might be resolvable to a specific repository-commit pair.';
@@ -1173,6 +1175,8 @@ COMMENT ON COLUMN codeintel_lockfile_references.commit_bytea IS 'The resolved 40
 
 COMMENT ON COLUMN codeintel_lockfile_references.last_check_at IS 'Timestamp when background job last checked this row for repository resolution';
 
+COMMENT ON COLUMN codeintel_lockfile_references.depends_on IS 'IDs of other `codeintel_lockfile_references` this package depends on in the context of this `codeintel_lockfile_references.resolution_id`.';
+
 CREATE SEQUENCE codeintel_lockfile_references_id_seq
     AS integer
     START WITH 1
@@ -1187,7 +1191,8 @@ CREATE TABLE codeintel_lockfiles (
     id integer NOT NULL,
     repository_id integer NOT NULL,
     commit_bytea bytea NOT NULL,
-    codeintel_lockfile_reference_ids integer[] NOT NULL
+    codeintel_lockfile_reference_ids integer[] NOT NULL,
+    resolution_id text
 );
 
 COMMENT ON TABLE codeintel_lockfiles IS 'Associates a repository-commit pair with the set of repository-level dependencies parsed from lockfiles.';
@@ -1195,6 +1200,8 @@ COMMENT ON TABLE codeintel_lockfiles IS 'Associates a repository-commit pair wit
 COMMENT ON COLUMN codeintel_lockfiles.commit_bytea IS 'A 40-char revhash. Note that this commit may not be resolvable in the future.';
 
 COMMENT ON COLUMN codeintel_lockfiles.codeintel_lockfile_reference_ids IS 'A key to a resolved repository name-revspec pair. Not all repository names and revspecs are resolvable.';
+
+COMMENT ON COLUMN codeintel_lockfiles.resolution_id IS 'Unique identifier for the resolution of a lockfile in the given repository and the given commit. Correponds to `codeintel_lockfile_references.resolution_id`.';
 
 CREATE SEQUENCE codeintel_lockfiles_id_seq
     AS integer
@@ -3525,6 +3532,8 @@ CREATE INDEX codeintel_lockfile_references_repository_id_commit_bytea ON codeint
 CREATE UNIQUE INDEX codeintel_lockfile_references_repository_name_revspec_package ON codeintel_lockfile_references USING btree (repository_name, revspec, package_scheme, package_name, package_version);
 
 CREATE INDEX codeintel_lockfiles_codeintel_lockfile_reference_ids ON codeintel_lockfiles USING gin (codeintel_lockfile_reference_ids gin__int_ops);
+
+CREATE INDEX codeintel_lockfiles_references_depends_on ON codeintel_lockfile_references USING gin (depends_on gin__int_ops);
 
 CREATE UNIQUE INDEX codeintel_lockfiles_repository_id_commit_bytea ON codeintel_lockfiles USING btree (repository_id, commit_bytea);
 
