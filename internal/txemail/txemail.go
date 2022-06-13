@@ -204,7 +204,11 @@ func Send(ctx context.Context, message Message) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "send MAIL")
 	}
-
+	for _, addr := range m.To {
+		if err = client.Rcpt(addr); err != nil {
+			return errors.Wrap(err, "send RCPT")
+		}
+	}
 	w, err := client.Data()
 	if err != nil {
 		return errors.Wrap(err, "send DATA")
