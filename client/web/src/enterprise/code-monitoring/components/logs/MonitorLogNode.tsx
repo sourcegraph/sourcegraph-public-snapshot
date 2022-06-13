@@ -65,7 +65,6 @@ export const MonitorLogNode: React.FunctionComponent<
                 )}
                 {hasError ? (
                     <Icon
-                        role="img"
                         as={AlertCircleIcon}
                         className={classNames(styles.errorIcon, 'mr-1 flex-shrink-0')}
                         aria-label="One or more runs of this code monitor have an error"
@@ -74,7 +73,6 @@ export const MonitorLogNode: React.FunctionComponent<
                     />
                 ) : (
                     <Icon
-                        role="img"
                         as={CheckBoldIcon}
                         className={classNames(styles.checkIcon, 'mr-1 flex-shrink-0')}
                         aria-label="Monitor running as normal"
@@ -91,7 +89,7 @@ export const MonitorLogNode: React.FunctionComponent<
                     rel="noopener noreferrer"
                     onClick={clickCatcher}
                 >
-                    Monitor details <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />
+                    Monitor details <Icon aria-hidden={true} as={OpenInNewIcon} />
                 </Link>
             </Button>
             <span className="text-nowrap mr-2">

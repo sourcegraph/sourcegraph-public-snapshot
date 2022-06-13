@@ -115,7 +115,7 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			name:   "NPM default",
 			config: `{"registry": "https://registry.npmjs.org"}`,
 			kind:   KindNpmPackages,
-			want:   3000.0 / 3600.0,
+			want:   6000.0 / 3600.0,
 		},
 		{
 			name:   "NPM non-default",

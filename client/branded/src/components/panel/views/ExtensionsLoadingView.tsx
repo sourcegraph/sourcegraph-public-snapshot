@@ -19,7 +19,7 @@ export const ExtensionsLoadingPanelView: React.FunctionComponent<
         <EmptyPanelView className={className}>
             <LoadingSpinner inline={false} />
             <span className="mx-2">Loading Sourcegraph extensions</span>
-            <Icon role="img" as={PuzzleIcon} aria-hidden={true} />
+            <Icon as={PuzzleIcon} aria-hidden={true} />
         </EmptyPanelView>
     )
 }

@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"sort"
 	"sync"
@@ -23,11 +22,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func cleanupPermsTables(t *testing.T, s *permsStore) {
@@ -65,7 +64,7 @@ func clock() time.Time {
 	return time.Unix(0, atomic.LoadInt64(&now))
 }
 
-func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_LoadUserPermissions(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Run("no matching", func(t *testing.T) {
 			s := perms(db, clock)
@@ -197,7 +196,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_LoadRepoPermissions(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Run("no matching", func(t *testing.T) {
 			s := perms(db, time.Now)
@@ -302,7 +301,7 @@ func checkRegularPermsTable(s *permsStore, sql string, expects map[int32][]uint3
 	return nil
 }
 
-func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_SetUserPermissions(db database.DB) func(*testing.T) {
 	const countToExceedParameterLimit = 17000 // ~ 65535 / 4 parameters per row
 
 	tests := []struct {
@@ -543,7 +542,7 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_SetRepoPermissionsUnrestricted(db *sql.DB) func(*testing.T) {
+func testPermsStore_SetRepoPermissionsUnrestricted(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		assertUnrestricted := func(ctx context.Context, t *testing.T, s *permsStore, id int32, want bool) {
 			t.Helper()
@@ -598,7 +597,7 @@ func testPermsStore_SetRepoPermissionsUnrestricted(db *sql.DB) func(*testing.T) 
 	}
 }
 
-func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_SetRepoPermissions(db database.DB) func(*testing.T) {
 	tests := []struct {
 		name            string
 		updates         []*authz.RepoPermissions
@@ -800,7 +799,7 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_TouchRepoPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_TouchRepoPermissions(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		now := timeutil.Now().Unix()
 		s := perms(db, func() time.Time {
@@ -848,7 +847,7 @@ func testPermsStore_TouchRepoPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_LoadUserPendingPermissions(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Run("no matching with different account ID", func(t *testing.T) {
 			s := perms(db, clock)
@@ -1138,7 +1137,7 @@ func checkRepoPendingPermsTable(
 	return nil
 }
 
-func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_SetRepoPendingPermissions(db database.DB) func(*testing.T) {
 	alice := extsvc.AccountSpec{
 		ServiceType: authz.SourcegraphServiceType,
 		ServiceID:   authz.SourcegraphServiceID,
@@ -1414,7 +1413,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_ListPendingUsers(db *sql.DB) func(*testing.T) {
+func testPermsStore_ListPendingUsers(db database.DB) func(*testing.T) {
 	type update struct {
 		accounts *extsvc.Accounts
 		perm     *authz.RepoPermissions
@@ -1524,7 +1523,7 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_GrantPendingPermissions(db database.DB) func(*testing.T) {
 	alice := extsvc.AccountSpec{
 		ServiceType: authz.SourcegraphServiceType,
 		ServiceID:   authz.SourcegraphServiceID,
@@ -2046,7 +2045,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 
 // This test is used to ensure we ignore invalid pending user IDs on updating repository pending permissions
 // because permissions have been granted for those users.
-func testPermsStore_SetPendingPermissionsAfterGrant(db *sql.DB) func(*testing.T) {
+func testPermsStore_SetPendingPermissionsAfterGrant(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, clock)
 		defer cleanupPermsTables(t, s)
@@ -2102,7 +2101,7 @@ func testPermsStore_SetPendingPermissionsAfterGrant(db *sql.DB) func(*testing.T)
 	}
 }
 
-func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_DeleteAllUserPermissions(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, clock)
 		t.Cleanup(func() {
@@ -2156,7 +2155,7 @@ func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(*testing.T) {
+func testPermsStore_DeleteAllUserPendingPermissions(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, clock)
 		t.Cleanup(func() {
@@ -2213,7 +2212,7 @@ func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(*testing.T)
 	}
 }
 
-func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(*testing.T) {
+func testPermsStore_DatabaseDeadlocks(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, time.Now)
 		t.Cleanup(func() {
@@ -2320,7 +2319,7 @@ func cleanupUsersTable(t *testing.T, s *permsStore) {
 	}
 }
 
-func testPermsStore_GetUserIDsByExternalAccounts(db *sql.DB) func(*testing.T) {
+func testPermsStore_GetUserIDsByExternalAccounts(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, time.Now)
 		t.Cleanup(func() {
@@ -2382,7 +2381,7 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 	}
 }
 
-func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
+func testPermsStore_UserIDsWithOutdatedPerms(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, time.Now)
 		ctx := context.Background()
@@ -2492,7 +2491,7 @@ func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_UserIDsWithNoPerms(db *sql.DB) func(*testing.T) {
+func testPermsStore_UserIDsWithNoPerms(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, time.Now)
 		t.Cleanup(func() {
@@ -2560,7 +2559,7 @@ func cleanupReposTable(t *testing.T, s *permsStore) {
 	}
 }
 
-func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
+func testPermsStore_RepoIDsWithNoPerms(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, time.Now)
 		t.Cleanup(func() {
@@ -2632,7 +2631,7 @@ func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_UserIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
+func testPermsStore_UserIDsWithOldestPerms(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, clock)
 		ctx := context.Background()
@@ -2736,7 +2735,7 @@ WHERE user_id = 2`, clock().AddDate(1, 0, 0))
 	}
 }
 
-func testPermsStore_ReposIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
+func testPermsStore_ReposIDsWithOldestPerms(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, clock)
 		ctx := context.Background()
@@ -2857,9 +2856,8 @@ WHERE repo_id = 2`, clock().AddDate(-1, 0, 0))
 	}
 }
 
-func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*testing.T) {
+func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		db := database.NewDB(db)
 		s := perms(db, clock)
 		ctx := context.Background()
 		t.Cleanup(func() {
@@ -2940,7 +2938,71 @@ func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*tes
 	}
 }
 
-func testPermsStore_Metrics(db *sql.DB) func(*testing.T) {
+func testPermsStore_MapUsers(db database.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		s := perms(db, clock)
+		ctx := context.Background()
+		t.Cleanup(func() {
+			if t.Failed() {
+				return
+			}
+
+			q := `TRUNCATE TABLE external_services, orgs, users CASCADE`
+			if err := s.execute(ctx, sqlf.Sprintf(q)); err != nil {
+				t.Fatal(err)
+			}
+		})
+
+		// Set up 3 users
+		users := db.Users()
+		igor, err := users.Create(ctx,
+			database.NewUser{
+				Email:           "igor@example.com",
+				Username:        "igor",
+				EmailIsVerified: true,
+			},
+		)
+		require.NoError(t, err)
+		shreah, err := users.Create(ctx,
+			database.NewUser{
+				Email:           "shreah@example.com",
+				Username:        "shreah",
+				EmailIsVerified: true,
+			},
+		)
+		require.NoError(t, err)
+		omar, err := users.Create(ctx,
+			database.NewUser{
+				Email:           "omar@example.com",
+				Username:        "omar",
+				EmailIsVerified: true,
+			},
+		)
+		require.NoError(t, err)
+
+		// emails: map with a mixed load of existing, space only and non existing users
+		has, err := s.MapUsers(ctx, []string{"igor@example.com", "", "omar@example.com", "  	", "sayako@example.com"}, &schema.PermissionsUserMapping{BindID: "email"})
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]int32{
+			"igor@example.com": igor.ID,
+			"omar@example.com": omar.ID,
+		}, has)
+
+		// usernames: map with a mixed load of existing, space only and non existing users
+		has, err = s.MapUsers(ctx, []string{"igor", "", "shreah", "  	", "carlos"}, &schema.PermissionsUserMapping{BindID: "username"})
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]int32{
+			"igor":   igor.ID,
+			"shreah": shreah.ID,
+		}, has)
+
+		// use a non-existing mapping
+		_, err = s.MapUsers(ctx, []string{"igor", "", "shreah", "  	", "carlos"}, &schema.PermissionsUserMapping{BindID: "shoeSize"})
+		assert.Error(t, err)
+	}
+}
+
+func testPermsStore_Metrics(db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := perms(db, clock)
 
@@ -3027,7 +3089,7 @@ func testPermsStore_Metrics(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func setupTestPerms(t *testing.T, db dbutil.DB, clock func() time.Time) *permsStore {
+func setupTestPerms(t *testing.T, db database.DB, clock func() time.Time) *permsStore {
 	t.Helper()
 	s := perms(db, clock)
 	t.Cleanup(func() {

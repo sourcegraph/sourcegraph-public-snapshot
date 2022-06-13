@@ -98,7 +98,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                 actions={
                     authenticatedUser && (
                         <Button to="/code-monitoring/new" variant="primary" as={Link}>
-                            <Icon role="img" as={PlusIcon} aria-hidden={true} /> Create code monitor
+                            <Icon as={PlusIcon} aria-hidden={true} /> Create code monitor
                         </Button>
                     )
                 }

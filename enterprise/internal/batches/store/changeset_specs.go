@@ -465,7 +465,7 @@ OR
   AND
   -- and it is not created by SSBC
   NOT (SELECT created_from_raw FROM batch_specs WHERE id = cspecs.batch_spec_id)
-);`
+)`
 
 type DeleteChangesetSpecsOpts struct {
 	BatchSpecID int64

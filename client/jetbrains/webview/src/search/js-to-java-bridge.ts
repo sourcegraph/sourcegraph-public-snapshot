@@ -100,9 +100,9 @@ export async function indicateFinishedLoading(): Promise<void> {
     }
 }
 
-export async function onPreviewChange(match: SearchMatch, lineMatchIndexOrSymbolIndex?: number): Promise<void> {
+export async function onPreviewChange(match: SearchMatch, lineOrSymbolMatchIndex?: number): Promise<void> {
     try {
-        await callJava({ action: 'preview', arguments: await createPreviewContent(match, lineMatchIndexOrSymbolIndex) })
+        await callJava({ action: 'preview', arguments: await createPreviewContent(match, lineOrSymbolMatchIndex) })
     } catch (error) {
         console.error(`Failed to preview match: ${(error as Error).message}`)
     }
@@ -116,9 +116,9 @@ export async function onPreviewClear(): Promise<void> {
     }
 }
 
-export async function onOpen(match: SearchMatch, lineMatchIndexOrSymbolIndex?: number): Promise<void> {
+export async function onOpen(match: SearchMatch, lineOrSymbolMatchIndex?: number): Promise<void> {
     try {
-        await callJava({ action: 'open', arguments: await createPreviewContent(match, lineMatchIndexOrSymbolIndex) })
+        await callJava({ action: 'open', arguments: await createPreviewContent(match, lineOrSymbolMatchIndex) })
     } catch (error) {
         console.error(`Failed to open match: ${(error as Error).message}`)
     }
@@ -149,7 +149,7 @@ async function callJava(request: Request): Promise<object> {
 
 export async function createPreviewContent(
     match: SearchMatch,
-    lineMatchIndexOrSymbolIndex: number | undefined
+    lineOrSymbolMatchIndex: number | undefined
 ): Promise<PreviewContent> {
     if (match.type === 'commit') {
         const content = prepareContent(
@@ -168,7 +168,7 @@ export async function createPreviewContent(
     }
 
     if (match.type === 'content') {
-        return createPreviewContentForContentMatch(match, lineMatchIndexOrSymbolIndex as number)
+        return createPreviewContentForContentMatch(match, lineOrSymbolMatchIndex as number)
     }
 
     if (match.type === 'path') {
@@ -187,7 +187,7 @@ export async function createPreviewContent(
     }
 
     if (match.type === 'symbol') {
-        return createPreviewContentForSymbolMatch(match)
+        return createPreviewContentForSymbolMatch(match, lineOrSymbolMatchIndex as number)
     }
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -240,16 +240,22 @@ async function createPreviewContentForPathMatch(match: PathMatch): Promise<Previ
     }
 }
 
-async function createPreviewContentForSymbolMatch(match: SymbolMatch): Promise<PreviewContent> {
+async function createPreviewContentForSymbolMatch(
+    match: SymbolMatch,
+    sybolMatchIndex: number
+): Promise<PreviewContent> {
     const fileName = splitPath(match.path)[1]
     const content = await loadContent(match)
+    const symbolMatch = match.symbols[sybolMatchIndex]
+
+    console.log(symbolMatch)
 
     return {
         fileName,
         path: match.path,
         content: prepareContent(content),
-        lineNumber: -1,
-        absoluteOffsetAndLengths: [],
+        lineNumber: getLineFromSourcegraphUrl(symbolMatch.url),
+        absoluteOffsetAndLengths: getAbsoluteOffsetAndLengthsFromSourcegraphUrl(symbolMatch.url, content),
         relativeUrl: '',
     }
 }
@@ -284,4 +290,51 @@ function getCharacterCountUntilLine(content: string | null, lineNumber: number):
 
 function getAbsoluteOffsetAndLengths(offsetAndLengths: number[][], characterCountUntilLine: number): number[][] {
     return offsetAndLengths.map(offsetAndLength => [offsetAndLength[0] + characterCountUntilLine, offsetAndLength[1]])
+}
+
+function getLineFromSourcegraphUrl(url: string): number {
+    const offsets = extractStartAndEndOffsetsFromSourcegraphUrl(url)
+    if (offsets === null) {
+        return -1
+    }
+    return offsets.start.line
+}
+
+function getAbsoluteOffsetAndLengthsFromSourcegraphUrl(url: string, content: string | null): number[][] {
+    const offsets = extractStartAndEndOffsetsFromSourcegraphUrl(url)
+    if (offsets === null) {
+        return []
+    }
+    const absoluteStart = getCharacterCountUntilLine(content, offsets.start.line) + offsets.start.col
+    const absoluteEnd = getCharacterCountUntilLine(content, offsets.end.line) + offsets.end.col
+    return [[absoluteStart, absoluteEnd - absoluteStart]]
+}
+
+// Parses a Sourcegraph URL and extracts the offsets from it. E.g.:
+//
+//     /github.com/apache/kafka/-/blob/streams/src/main/j…ls/graph/SourceGraphNode.java?L28:23-28:38
+//
+// Will be parsed into:
+//
+//    {
+//      start: {
+//        line: 28,
+//        column: 23
+//      },
+//      end: {
+//         line: 28,
+//         column: 38
+//       }
+//    }
+function extractStartAndEndOffsetsFromSourcegraphUrl(
+    url: string
+): null | { start: { line: number; col: number }; end: { line: number; col: number } } {
+    const match = url.match(/L(\d+):(\d+)-(\d+):(\d+)$/)
+    if (match === null) {
+        return null
+    }
+    return {
+        start: { line: parseInt(match[1], 10) - 1, col: parseInt(match[2], 10) - 1 },
+        end: { line: parseInt(match[3], 10) - 1, col: parseInt(match[4], 10) - 1 },
+    }
 }

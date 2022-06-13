@@ -383,34 +383,63 @@ export function quoteYAMLString(value: string): string {
 }
 
 /**
- * Replaces the "name" value of the provided `librarySpec` with the provided `name`. If
- * `librarySpec` or its "name" is not properly parsable, just returns the original
+ * Replaces the <key> value of the provided `librarySpec` with the provided `value`. If
+ * `librarySpec` or its <key> is not properly parsable, just returns the original
  * `librarySpec`.
  *
  * @param librarySpec the raw batch spec YAML example code from a library spec
- * @param name the name of the batch change to be inserted
+ * @param value the value of the field to be updated
+ * @param key the name of the field in the spec to be updated
+ * @param quotable indicates if the value can be quoted or not
  */
-export const insertNameIntoLibraryItem = (librarySpec: string, name: string): string => {
+export const insertFieldIntoLibraryItem = (
+    librarySpec: string,
+    value: string,
+    key: string,
+    quotable: boolean = true
+): string => {
     const ast = load(librarySpec)
 
     if (!isYAMLMap(ast) || ast.errors.length > 0) {
         return librarySpec
     }
 
-    // Find the `YAMLMapping` node with the key "name".
-    const nameMapping = find(ast.mappings, mapping => mapping.key.value === 'name')
+    // Find the `YAMLMapping` node with <key>..
+    const fieldMapping = find(ast.mappings, mapping => mapping.key.value === key)
 
-    if (!nameMapping || !isYAMLScalar(nameMapping.value)) {
+    if (!fieldMapping) {
         return librarySpec
     }
 
-    // Stitch the new "name" value into the spec.
+    const finalValue = quotable ? quoteYAMLString(value) : value
+
+    // Stitch the new <value> into the spec.
     return (
-        librarySpec.slice(0, nameMapping.value.startPosition) +
-        quoteYAMLString(name) +
-        librarySpec.slice(nameMapping.value.endPosition)
+        librarySpec.slice(0, fieldMapping.value.startPosition) +
+        finalValue +
+        librarySpec.slice(fieldMapping.value.endPosition)
     )
 }
+
+/**
+ * Replaces the name of the provided `librarySpec`. If `librarySpec` or its name
+ * is not properly parsable, just returns the original `librarySpec`.
+ *
+ * @param librarySpec the raw batch spec YAML example code from a library spec
+ * @param name the name of the batch change to be inserted
+ */
+export const insertNameIntoLibraryItem = (librarySpec: string, name: string): string =>
+    insertFieldIntoLibraryItem(librarySpec, name, 'name')
+
+/**
+ * Replaces the query of the provided `librarySpec`. If `librarySpec` or its query
+ * is not properly parsable, just returns the original `librarySpec`.
+ *
+ * @param librarySpec the raw batch spec YAML example code from a library spec
+ * @param query the updated query to be inserted
+ */
+export const insertQueryIntoLibraryItem = (librarySpec: string, query: string): string =>
+    insertFieldIntoLibraryItem(librarySpec, `- repositoriesMatchingQuery: ${query}\n\n`, 'on', false)
 
 /**
  * Parses and performs a comparison between the values for the "on", "importChangesets",

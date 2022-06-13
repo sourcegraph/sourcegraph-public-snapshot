@@ -27,7 +27,7 @@ func extensionRegistryViewerPublishers(ctx context.Context, db database.DB) ([]g
 	}
 
 	var publishers []graphqlbackend.RegistryPublisher
-	user, err := graphqlbackend.CurrentUser(ctx, database.NewDB(db))
+	user, err := graphqlbackend.CurrentUser(ctx, db)
 	if err != nil || user == nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func extensionRegistryViewerPublishers(ctx context.Context, db database.DB) ([]g
 		return nil, err
 	}
 	for _, org := range orgs {
-		publishers = append(publishers, &registryPublisher{org: graphqlbackend.NewOrg(database.NewDB(db), org)})
+		publishers = append(publishers, &registryPublisher{org: graphqlbackend.NewOrg(db, org)})
 	}
 	return publishers, nil
 }

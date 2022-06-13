@@ -385,7 +385,6 @@ export const ReferencesList: React.FunctionComponent<
                 <div className={classNames('d-flex justify-content-start mt-2', styles.filter)}>
                     <small>
                         <Icon
-                            role="img"
                             aria-hidden={true}
                             as={canShowSpinner ? LoadingSpinner : FilterOutlineIcon}
                             size="sm"
@@ -458,13 +457,7 @@ export const ReferencesList: React.FunctionComponent<
                                 data-placement="left"
                                 size="sm"
                             >
-                                <Icon
-                                    role="img"
-                                    aria-hidden={true}
-                                    size="sm"
-                                    as={ArrowCollapseRightIcon}
-                                    className="border-0"
-                                />
+                                <Icon aria-hidden={true} size="sm" as={ArrowCollapseRightIcon} className="border-0" />
                             </Button>
                             <Link
                                 to={activeLocation.url}
@@ -531,9 +524,9 @@ const CollapsibleLocationList: React.FunctionComponent<
                         className="d-flex p-0 justify-content-start w-100"
                     >
                         {isOpen ? (
-                            <Icon role="img" aria-label="Close" as={ChevronDownIcon} />
+                            <Icon aria-label="Close" as={ChevronDownIcon} />
                         ) : (
-                            <Icon role="img" aria-label="Expand" as={ChevronRightIcon} />
+                            <Icon aria-label="Expand" as={ChevronRightIcon} />
                         )}{' '}
                         <H4 className="mb-0">{capitalize(props.name)}</H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
@@ -751,9 +744,9 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                     className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
                 >
                     {open ? (
-                        <Icon role="img" aria-label="Close" as={ChevronDownIcon} />
+                        <Icon aria-label="Close" as={ChevronDownIcon} />
                     ) : (
-                        <Icon role="img" aria-label="Expand" as={ChevronRightIcon} />
+                        <Icon aria-label="Expand" as={ChevronRightIcon} />
                     )}
                     <small>
                         <Link
@@ -821,9 +814,9 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     )}
                 >
                     {open ? (
-                        <Icon role="img" aria-label="Close" as={ChevronDownIcon} />
+                        <Icon aria-label="Close" as={ChevronDownIcon} />
                     ) : (
-                        <Icon role="img" aria-label="Expand" as={ChevronRightIcon} />
+                        <Icon aria-label="Expand" as={ChevronRightIcon} />
                     )}
                     <small className={styles.locationGroupHeaderFilename}>
                         <span>
@@ -890,13 +883,12 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                         key={reference.url}
                                         className={classNames('border-0 rounded-0 mb-0', styles.location, className)}
                                     >
-                                        <Link
-                                            as={Button}
+                                        <Button
                                             onClick={event => {
                                                 event.preventDefault()
                                                 setActiveLocation(reference)
                                             }}
-                                            to={reference.url}
+                                            data-test-reference-url={reference.url}
                                             className={styles.locationLink}
                                         >
                                             <span className={styles.locationLinkLineNumber}>
@@ -904,7 +896,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                                 {': '}
                                             </span>
                                             {lineWithHighlightedToken}
-                                        </Link>
+                                        </Button>
                                     </li>
                                 )
                             })}

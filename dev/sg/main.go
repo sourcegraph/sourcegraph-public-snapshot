@@ -10,6 +10,8 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
@@ -17,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {
@@ -152,7 +153,8 @@ var sg = &cli.App{
 					message := fmt.Sprintf("%v:\n%s", p, getRelevantStack())
 					err = cli.NewExitError(message, 1)
 
-					analytics.LogEvent(cmd.Context, "sg_before", nil, start, "panic")
+					event := analytics.LogEvent(cmd.Context, "sg_before", nil, start, "panic")
+					event.Properties["error_details"] = err.Error()
 					analytics.Persist(cmd.Context, "sg", cmd.FlagNames())
 				}
 			}()
@@ -220,6 +222,7 @@ var sg = &cli.App{
 		doctorCommand,
 		secretCommand,
 		setupCommand,
+		setupCommandV2,
 
 		// Company
 		teammateCommand,

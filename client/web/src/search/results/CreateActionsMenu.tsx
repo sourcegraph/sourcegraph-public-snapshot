@@ -36,14 +36,14 @@ export const CreateActionsMenu: React.FunctionComponent<CreateActionsMenuProps> 
                         outline={true}
                         size="sm"
                     >
-                        <Icon role="img" aria-hidden={true} className="mr-1" as={PlusIcon} />
+                        <Icon aria-hidden={true} className="mr-1" as={PlusIcon} />
                         Create …
                     </MenuButton>
                 </li>
                 <MenuList position={Position.bottomStart} aria-label="Create Actions. Open menu">
                     {createActions.map(createAction => (
                         <MenuLink key={createAction.label} as={Link} to={createAction.url}>
-                            <Icon role="img" aria-hidden="true" className="mr-1" as={createAction.icon} />
+                            <Icon aria-hidden="true" className="mr-1" as={createAction.icon} />
                             {createAction.label}
                         </MenuLink>
                     ))}
@@ -58,7 +58,7 @@ export const CreateActionsMenu: React.FunctionComponent<CreateActionsMenuProps> 
                             }
                             to={createCodeMonitorAction.url}
                         >
-                            <Icon role="img" aria-hidden={true} className="mr-1" as={createCodeMonitorAction.icon} />
+                            <Icon aria-hidden={true} className="mr-1" as={createCodeMonitorAction.icon} />
                             Create Monitor
                         </MenuLink>
                     )}

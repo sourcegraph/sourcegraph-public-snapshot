@@ -10,6 +10,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -18,7 +19,7 @@ import (
 )
 
 func TestCommittedAtMigrator(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := dbstore.NewWithDB(db, &observation.TestContext)
 	gitserverClient := NewMockGitserverClient()
 	migrator := NewCommittedAtMigrator(store, gitserverClient, 250)
@@ -108,7 +109,7 @@ func TestCommittedAtMigrator(t *testing.T) {
 }
 
 func TestCommittedAtMigratorUnknownRepository(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := dbstore.NewWithDB(db, &observation.TestContext)
 	gitserverClient := NewMockGitserverClient()
 	migrator := NewCommittedAtMigrator(store, gitserverClient, 250)
@@ -208,7 +209,7 @@ func TestCommittedAtMigratorUnknownRepository(t *testing.T) {
 }
 
 func TestCommittedAtMigratorUnknownCommits(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := dbstore.NewWithDB(db, &observation.TestContext)
 	gitserverClient := NewMockGitserverClient()
 	migrator := NewCommittedAtMigrator(store, gitserverClient, 250)

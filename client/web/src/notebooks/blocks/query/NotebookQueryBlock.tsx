@@ -101,7 +101,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                 type: 'button',
                 label: isLoading ? 'Searching...' : 'Run search',
                 isDisabled: isLoading ?? false,
-                icon: <Icon role="img" aria-hidden={true} as={PlayCircleOutlineIcon} />,
+                icon: <Icon aria-hidden={true} as={PlayCircleOutlineIcon} />,
                 onClick: onRunBlock,
                 keyboardShortcutLabel: isSelected ? `${modifierKeyLabel} + ↵` : '',
             }
@@ -112,7 +112,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                 {
                     type: 'link',
                     label: 'Open in new tab',
-                    icon: <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />,
+                    icon: <Icon aria-hidden={true} as={OpenInNewIcon} />,
                     url: `/search?${buildSearchURLQuery(input.query, SearchPatternType.literal, false)}`,
                 },
             ],

@@ -265,6 +265,20 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 		}(q)
 	}
 
+	for _, q := range s.config.ProjectKeys {
+		wg.Add(1)
+		go func(q string) {
+			defer wg.Done()
+
+			repos, err := s.client.ProjectRepos(ctx, q)
+			if err != nil {
+				ch <- batch{err: errors.Wrapf(err, "bitbucketserver.projectKeys: query=%q", q)}
+			}
+
+			ch <- batch{repos: repos}
+		}(q)
+	}
+
 	go func() {
 		wg.Wait()
 		close(ch)

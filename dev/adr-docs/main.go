@@ -24,8 +24,7 @@ type templateData struct {
 	Adrs []adr
 }
 
-//go:generate sh -c "cd ../.. && echo '<!-- DO NOT EDIT: generated via: go generate ./dev/adr-docs -->\n' > doc/dev/adr/index.md"
-//go:generate sh -c "cd ../.. && go run ./dev/adr-docs/main.go >> doc/dev/adr/index.md"
+//go:generate go run .
 func main() {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
@@ -77,7 +76,12 @@ func main() {
 		Adrs: adrs,
 	}
 
-	err = tmpl.Execute(os.Stdout, &presenter)
+	f, err := os.Create(filepath.Join(repoRoot, "doc", "dev", "adr", "index.md"))
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	err = tmpl.Execute(f, &presenter)
 	if err != nil {
 		panic(err)
 	}

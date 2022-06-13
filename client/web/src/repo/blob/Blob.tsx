@@ -754,6 +754,37 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         ]
     )
 
+    // Add top and bottom spacers to improve code readability.
+    useEffect(() => {
+        const subscription = codeViewElements.subscribe(codeView => {
+            if (codeView) {
+                const table = codeView.firstElementChild as HTMLTableElement
+                const firstRow = table.rows[0]
+                const lastRow = table.rows[table.rows.length - 1]
+
+                if (!firstRow.querySelector('.top-spacer')) {
+                    for (const cell of firstRow.cells) {
+                        const spacer = document.createElement('div')
+                        spacer.classList.add('top-spacer')
+                        cell.prepend(spacer)
+                    }
+                }
+
+                if (!lastRow.querySelector('.bottom-spacer')) {
+                    for (const cell of lastRow.cells) {
+                        const spacer = document.createElement('div')
+                        spacer.classList.add('bottom-spacer')
+                        cell.append(spacer)
+                    }
+                }
+            }
+        })
+
+        return () => {
+            subscription.unsubscribe()
+        }
+    }, [codeViewElements])
+
     return (
         <>
             <div className={classNames(props.className, styles.blob)} ref={nextBlobElement}>

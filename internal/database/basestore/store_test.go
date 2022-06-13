@@ -45,8 +45,8 @@ func TestTransaction(t *testing.T) {
 
 	// Check what's visible pre-commit/rollback
 	assertCounts(t, db, map[int]int{1: 42})
-	assertCounts(t, tx1.handle.db, map[int]int{1: 42, 2: 43})
-	assertCounts(t, tx2.handle.db, map[int]int{1: 42, 3: 44})
+	assertCounts(t, tx1.handle.DB(), map[int]int{1: 42, 2: 43})
+	assertCounts(t, tx2.handle.DB(), map[int]int{1: 42, 3: 44})
 
 	// Finalize transactions
 	rollbackErr := errors.New("rollback")
@@ -156,8 +156,8 @@ func recurSavepoints(t *testing.T, store *Store, index, rollbackAt int) {
 	recurSavepoints(t, tx, index-1, rollbackAt)
 }
 
-func testStore(db dbutil.DB) *Store {
-	return NewWithDB(db, sql.TxOptions{})
+func testStore(db *sql.DB) *Store {
+	return NewWithHandle(NewHandleWithDB(db, sql.TxOptions{}))
 }
 
 func assertCounts(t *testing.T, db dbutil.DB, expectedCounts map[int]int) {

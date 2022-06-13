@@ -20,6 +20,8 @@ import (
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -41,7 +43,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var (
@@ -129,8 +130,9 @@ func run(logger log.Logger) error {
 		return errors.Wrap(err, "failed to setup TMPDIR")
 	}
 
-	observationContext := &observation.Context{
-		Logger:     logger,
+	storeObservationContext := &observation.Context{
+		// Explicitly don't scope Store logger under the parent logger
+		Logger:     log.Scoped("Store", "searcher archives store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -163,8 +165,8 @@ func run(logger log.Logger) error {
 			FilterTar:          search.NewFilter,
 			Path:               filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes:  cacheSizeBytes,
-			Log:                logger,
-			ObservationContext: observationContext,
+			Log:                storeObservationContext.Logger,
+			ObservationContext: storeObservationContext,
 			DB:                 db,
 		},
 		GitOutput: func(ctx context.Context, repo api.RepoName, args ...string) ([]byte, error) {
@@ -242,7 +244,7 @@ func main() {
 	trace.Init()
 	profiler.Init()
 
-	logger := log.Scoped("service", "the searcher service")
+	logger := log.Scoped("server", "the searcher service")
 
 	err := run(logger)
 	if err != nil {

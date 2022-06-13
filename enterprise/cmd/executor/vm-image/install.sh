@@ -205,6 +205,15 @@ EOF
   systemctl enable exporter_exporter
 }
 
+# Install src-cli to the host system. It's needed for src steps outside of firecracker.
+function install_src_cli() {
+  curl -f -L -o src-cli.tar.gz "https://github.com/sourcegraph/src-cli/releases/download/${SRC_CLI_VERSION}/src-cli_${SRC_CLI_VERSION}_linux_amd64.tar.gz"
+  tar -xvzf src-cli.tar.gz src
+  mv src /usr/local/bin/src
+  chmod +x /usr/local/bin/src
+  rm -rf src-cli.tar.gz
+}
+
 ## Build the ignite-ubuntu image for use in firecracker.
 ## Set SRC_CLI_VERSION to the minimum required version in internal/src-cli/consts.go
 function generate_ignite_base_image() {
@@ -237,6 +246,7 @@ else
 fi
 install_docker
 install_git
+install_src_cli
 install_ignite
 
 # Services

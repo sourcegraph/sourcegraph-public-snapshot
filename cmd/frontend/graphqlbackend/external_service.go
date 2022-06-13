@@ -49,7 +49,7 @@ func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) 
 	return &externalServiceResolver{db: db, externalService: es}, nil
 }
 
-func marshalExternalServiceID(id int64) graphql.ID {
+func MarshalExternalServiceID(id int64) graphql.ID {
 	return relay.MarshalID(externalServiceIDKind, id)
 }
 
@@ -63,7 +63,7 @@ func UnmarshalExternalServiceID(id graphql.ID) (externalServiceID int64, err err
 }
 
 func (r *externalServiceResolver) ID() graphql.ID {
-	return marshalExternalServiceID(r.externalService.ID)
+	return MarshalExternalServiceID(r.externalService.ID)
 }
 
 func (r *externalServiceResolver) Kind() string {
