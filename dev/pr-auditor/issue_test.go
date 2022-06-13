@@ -79,7 +79,7 @@ func TestGenerateExceptionIssue(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := generateExceptionIssue(&tt.payload, &tt.result)
+			got := generateExceptionIssue(&tt.payload, &tt.result, "")
 			t.Log(got.GetTitle(), "\n", got.GetBody())
 			assert.Equal(t, tt.wantAssignees, got.GetAssignees())
 			assert.Equal(t, tt.wantLabels, got.GetLabels())
