@@ -992,7 +992,7 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 	}
 
 	flags := featureflag.FromContext(ctx)
-	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", true)
+	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", false)
 
 	if !foundSeries {
 		repos := series.RepositoryScope.Repositories
