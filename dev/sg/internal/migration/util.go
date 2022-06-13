@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
@@ -99,7 +98,7 @@ func parseVersions(lines []string, migrationsDir string) []int {
 		}
 
 		// Should be left with only a version number
-		if version, err := strconv.Atoi(rawVersion); err == nil {
+		if version, err := definition.ParseRawVersion(rawVersion); err == nil {
 			versionMap[version] = struct{}{}
 		}
 	}
