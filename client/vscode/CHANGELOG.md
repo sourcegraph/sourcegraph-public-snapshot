@@ -11,6 +11,7 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 ### Fixes
 
 - Optimize build size [issues/36192](https://github.com/sourcegraph/sourcegraph/issues/36192)
+- Check if default branch exists when opening files [issues/36743](https://github.com/sourcegraph/sourcegraph/issues/36743)
 
 ## 2.2.3
 
