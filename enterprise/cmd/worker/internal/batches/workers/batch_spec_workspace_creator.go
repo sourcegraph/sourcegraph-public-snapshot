@@ -216,6 +216,8 @@ func (r *batchSpecWorkspaceCreator) process(
 		}
 
 		// Validate there is anything to run. If not, we skip execution.
+		// TODO: In the future, move this to a separate field, so we can
+		// tell the two cases apart.
 		if len(spec.Spec.Steps) == len(workspace.skippedSteps) {
 			workspace.dbWorkspace.CachedResultFound = true
 			continue
