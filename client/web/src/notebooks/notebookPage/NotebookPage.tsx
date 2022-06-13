@@ -45,7 +45,7 @@ import {
     createNotebookStar as _createNotebookStar,
     deleteNotebookStar as _deleteNotebookStar,
 } from '../backend'
-import { NOTEPAD_ENABLED_EVENT } from '../listPage/NotebooksListPage'
+import { NOTEPAD_ENABLED_EVENT } from '../listPage/NotebooksListPageHeader'
 import { copyNotebook as _copyNotebook, CopyNotebookProps } from '../notebook'
 import { blockToGQLInput, convertNotebookTitleToFileName, GQLBlockToGQLInput } from '../serialize'
 
