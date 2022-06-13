@@ -29,7 +29,7 @@ func TestStatusMessages(t *testing.T) {
 	}
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := NewStore(logtest.Scoped(t), database.NewDB(db))
+	store := NewStore(logtest.Scoped(t), db)
 
 	admin, err := db.Users().Create(ctx, database.NewUser{
 		Email:                 "a1@example.com",
@@ -309,7 +309,7 @@ func TestStatusMessages(t *testing.T) {
 				Now:    clock.Now,
 			}
 
-			mockDB := database.NewMockDBFrom(database.NewDB(db))
+			mockDB := database.NewMockDBFrom(db)
 			if tc.sourcerErr != nil {
 				sourcer := NewFakeSourcer(tc.sourcerErr, NewFakeSource(siteLevelService, nil))
 				syncer.Sourcer = sourcer

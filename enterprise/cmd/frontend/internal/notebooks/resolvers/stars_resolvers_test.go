@@ -76,8 +76,7 @@ func TestCreateAndDeleteNotebookStars(t *testing.T) {
 
 	createdNotebooks := createNotebooks(t, db, []*notebooks.Notebook{userNotebookFixture(user1.ID, true), userNotebookFixture(user1.ID, false)})
 
-	database := database.NewDB(db)
-	schema, err := graphqlbackend.NewSchema(database, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(database), nil)
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,8 +152,7 @@ func TestListNotebookStars(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	database := database.NewDB(db)
-	schema, err := graphqlbackend.NewSchema(database, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(database), nil)
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil)
 	if err != nil {
 		t.Fatal(err)
 	}

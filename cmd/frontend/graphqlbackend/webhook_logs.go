@@ -130,7 +130,7 @@ func (r *webhookLogConnectionResolver) Nodes(ctx context.Context) ([]*webhookLog
 	}
 
 	nodes := make([]*webhookLogResolver, len(logs))
-	db := database.NewDB(r.store.Handle().DB())
+	db := database.NewDBWith(r.store)
 	for i, log := range logs {
 		nodes[i] = &webhookLogResolver{
 			db:  db,
