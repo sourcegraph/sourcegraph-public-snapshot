@@ -6,12 +6,6 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Changes
 
-### Fixes
-
-## 2.2.4
-
-### Changes
-
 - Import Sourcegraph Access token automatically after completing authentication in the browser for Sourcegraph Cloud users [issues/28311](https://github.com/sourcegraph/sourcegraph/issues/28311)
 
 ### Fixes
