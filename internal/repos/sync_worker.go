@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -31,7 +30,7 @@ type SyncWorkerOptions struct {
 }
 
 // NewSyncWorker creates a new external service sync worker.
-func NewSyncWorker(ctx context.Context, db dbutil.DB, handler workerutil.Handler, opts SyncWorkerOptions) (*workerutil.Worker, *dbworker.Resetter) {
+func NewSyncWorker(ctx context.Context, dbHandle basestore.TransactableHandle, handler workerutil.Handler, opts SyncWorkerOptions) (*workerutil.Worker, *dbworker.Resetter) {
 	if opts.NumHandlers == 0 {
 		opts.NumHandlers = 3
 	}
@@ -41,12 +40,6 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler workerutil.Handler
 	if opts.CleanupOldJobsInterval == 0 {
 		opts.CleanupOldJobsInterval = time.Hour
 	}
-
-	dbHandle := basestore.NewHandleWithUntypedDB(db, sql.TxOptions{
-		// Change the isolation level for every transaction created by the worker
-		// so that multiple workers can modify the same rows without conflicts.
-		Isolation: sql.LevelReadCommitted,
-	})
 
 	syncJobColumns := []*sqlf.Query{
 		sqlf.Sprintf("id"),
@@ -89,7 +82,7 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler workerutil.Handler
 	})
 
 	if opts.CleanupOldJobs {
-		go runJobCleaner(ctx, db, opts.CleanupOldJobsInterval)
+		go runJobCleaner(ctx, dbHandle, opts.CleanupOldJobsInterval)
 	}
 
 	return worker, resetter
@@ -128,12 +121,12 @@ func newResetterMetrics(r prometheus.Registerer) dbworker.ResetterMetrics {
 	}
 }
 
-func runJobCleaner(ctx context.Context, db dbutil.DB, interval time.Duration) {
+func runJobCleaner(ctx context.Context, handle basestore.TransactableHandle, interval time.Duration) {
 	t := time.NewTicker(interval)
 	defer t.Stop()
 
 	for {
-		_, err := db.ExecContext(ctx, `
+		_, err := handle.DB().ExecContext(ctx, `
 -- source: internal/repos/sync_worker.go:runJobCleaner
 DELETE FROM external_service_sync_jobs
 WHERE
