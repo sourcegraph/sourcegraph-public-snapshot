@@ -23,7 +23,7 @@ interface Props {
     match: ContentMatch | SymbolMatch
 }
 
-function getResultElementsForContentMatch(
+function renderResultElementsForContentMatch(
     match: ContentMatch,
     selectResult: (resultId: string) => void,
     selectedResult: string | null
@@ -31,7 +31,7 @@ function getResultElementsForContentMatch(
     return match.lineMatches.map(line => (
         <SelectableSearchResult
             key={getResultId(match, line)}
-            lineMatchOrSymbolName={line}
+            lineOrSymbolMatch={line}
             match={match}
             selectedResult={selectedResult}
             selectResult={selectResult}
@@ -45,15 +45,15 @@ function getResultElementsForContentMatch(
     ))
 }
 
-function getResultElementsForSymbolMatch(
+function renderResultElementsForSymbolMatch(
     match: SymbolMatch,
     selectResult: (resultId: string) => void,
     selectedResult: string | null
 ): JSX.Element[] {
     return match.symbols.map(symbol => (
         <SelectableSearchResult
-            key={getResultId(match, symbol.name)}
-            lineMatchOrSymbolName={symbol.name}
+            key={getResultId(match, symbol)}
+            lineOrSymbolMatch={symbol}
             match={match}
             selectedResult={selectedResult}
             selectResult={selectResult}
@@ -71,8 +71,8 @@ function getResultElementsForSymbolMatch(
 export const FileSearchResult: React.FunctionComponent<Props> = ({ match, selectedResult, selectResult }: Props) => {
     const lines =
         match.type === 'content'
-            ? getResultElementsForContentMatch(match, selectResult, selectedResult)
-            : getResultElementsForSymbolMatch(match, selectResult, selectedResult)
+            ? renderResultElementsForContentMatch(match, selectResult, selectedResult)
+            : renderResultElementsForSymbolMatch(match, selectResult, selectedResult)
 
     const formattedRepositoryStarCount = formatRepositoryStarCount(match.repoStars)
 

@@ -155,7 +155,7 @@ func (w *Worker) DoBigThing(ctx context.Context, id int) {
 }
 ```
 
-### Traced sub-loggers
+#### Traced sub-loggers
 
 Traced loggers are loggers with trace context (trace and span IDs) attached to them. These loggers can be created in several ways:
 

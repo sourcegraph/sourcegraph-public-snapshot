@@ -36,7 +36,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                     }
                     isActive={isActive}
                 >
-                    <RepoName repoName={match.repository} />
+                    <RepoName repoName={match.repository} suffix={match.description} />
                 </SearchResultLayout>
             )}
         </SelectableSearchResult>
