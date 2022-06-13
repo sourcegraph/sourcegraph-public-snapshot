@@ -132,5 +132,16 @@ export const BarChartVitrina: Story = () => (
             getDatumColor={getColor}
             getDatumLink={getLink}
         />
+        <BarChart
+            stacked={true}
+            width={400}
+            height={400}
+            data={LANGUAGE_USAGE_GROUPED_BY_REPO_DATA}
+            getCategory={getGroup}
+            getDatumName={getName}
+            getDatumValue={getValue}
+            getDatumColor={getColor}
+            getDatumLink={getLink}
+        />
     </div>
 )
