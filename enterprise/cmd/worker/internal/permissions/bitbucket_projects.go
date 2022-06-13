@@ -246,7 +246,7 @@ func newMetricsForBitbucketProjectPermissionsQueries(logger log.Logger) bitbucke
 // setPermissionsForUsers applies user permissions to a list of repos.
 // It updates the repo_permissions, user_permissions, repo_pending_permissions and user_pending_permissions table.
 // Each repo is processed atomically. In case of error, the task fails but doesn't rollback the committed changes
-// done on previous repos. This is fine because when the task is retried, previous repos won't incurr any
+// done on previous repos. This is fine because when the task is retried, previous repos won't incur any
 // additional writes.
 func setPermissionsForUsers(ctx context.Context, db edb.EnterpriseDB, perms []types.UserPermission, repoIDs []api.RepoID) error {
 	sort.Slice(perms, func(i, j int) bool {
@@ -295,7 +295,7 @@ func setPermissionsForUsers(ctx context.Context, db edb.EnterpriseDB, perms []ty
 	return nil
 }
 
-func setRepoPermissions(ctx context.Context, db edb.EnterpriseDB, repoID api.RepoID, perms []types.UserPermission, userIDs map[int32]struct{}, pendingBindIDs []string) (err error) {
+func setRepoPermissions(ctx context.Context, db edb.EnterpriseDB, repoID api.RepoID, _ []types.UserPermission, userIDs map[int32]struct{}, pendingBindIDs []string) (err error) {
 	// Make sure the repo ID is valid.
 	if _, err := db.Repos().Get(ctx, repoID); err != nil {
 		return errors.Wrapf(err, "failed to query repo %d", repoID)
