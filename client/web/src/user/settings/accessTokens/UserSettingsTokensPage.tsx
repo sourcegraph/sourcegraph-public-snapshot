@@ -77,7 +77,6 @@ export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChil
 
     const siteAdminViewingOtherUser = authenticatedUser && authenticatedUser.id !== user.id
 
-    console.log('here', siteAdminViewingOtherUser)
     return (
         <div className="user-settings-tokens-page">
             <PageTitle title="Access tokens" />
