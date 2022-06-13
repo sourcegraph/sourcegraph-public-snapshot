@@ -152,8 +152,13 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret) (string,
 		}
 
 	case ExternalProvider1Pass:
+		sessionToken, err := s.get1passSession(ctx)
+		if err != nil {
+			return "", err
+		}
 		value.Value, err = run.Cmd(ctx, "op read",
 			run.Arg(fmt.Sprintf("op://%s/%s/%s", secret.Project, secret.Name, secret.Field)),
+			`--session`, sessionToken,
 			`--account="team-sourcegraph.1password.com"`).
 			Run().String()
 
@@ -211,4 +216,12 @@ func (s *Store) getSecretmanagerClient(ctx context.Context) (*secretmanager.Clie
 		}
 	})
 	return s.secretmanager, s.secretmanagerErr
+}
+
+func (s *Store) get1passSession(ctx context.Context) (string, error) {
+	var sessionToken map[string]string
+	if err := s.Get("1pass-session", &sessionToken); err != nil {
+		return "", err
+	}
+	return sessionToken["token"], nil
 }

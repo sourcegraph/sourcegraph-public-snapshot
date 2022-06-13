@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
@@ -372,7 +373,29 @@ func check1password() check.CheckFunc {
 		// We must 'list' before trying to 'get', otherwise 'get' will start trying to
 		// prompt for things and mess up our output
 		check.CommandOutputContains("op account list", "team-sourcegraph.1password.com"),
-		check.CommandOutputContains("op account get --account team-sourcegraph.1password.com", "ACTIVE"))
+		func(ctx context.Context) error {
+			store, err := secrets.FromContext(ctx)
+			if err != nil {
+				return errors.Wrap(err, "secrets store must be enabled")
+			}
+			var sessionToken map[string]string
+			if err := store.Get("1pass-session", &sessionToken); err != nil {
+				return err
+			}
+
+			out, err := usershell.Command(ctx, "op account get --account team-sourcegraph.1password.com",
+				"--session", sessionToken["token"]).
+				Run().
+				String()
+			if err != nil {
+				return err
+			}
+			if !strings.Contains(out, "ACTIVE") {
+				return errors.Newf("account is not active, run 'sg setup' again")
+			}
+			return nil
+		},
+	)
 }
 
 func forceASDFPluginAdd(ctx context.Context, plugin string, source string) error {

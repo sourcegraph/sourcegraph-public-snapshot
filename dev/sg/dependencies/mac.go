@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -301,53 +302,67 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 						}
 					}
 
-					accounts, err := usershell.Run(ctx, "op account list").String()
-					if err == nil {
-						if strings.Contains(accounts, "team-sourcegraph.1password.com") {
-							// Account already added, we just need to sign in again.
-							// However, we also can't seem to automate this login without
-							// going through the same setup as the initial flow because
-							// the 'op signin' command refuses to accept any input, so we
-							// just tell the user to log in separately and exit.
-							cio.WriteNoticef("Unfortunately I can't easily fix this for you :( You should run the following command:")
-							loginCmd := "eval $(op signin --account=team-sourcegraph.1password.com)"
-							cio.WriteMarkdown("```sh\n" + loginCmd + "\n```")
-							return errors.Newf("Cannot be fixed by automatically")
-						}
-					}
-
 					if cio.Input == nil {
 						return errors.New("interactive input required")
 					}
 
-					key, err := cio.PromptPasswordf(cio.Input, "Enter secret key:")
+					store, err := secrets.FromContext(ctx)
 					if err != nil {
-						return err
+						return errors.Wrap(err, "secrets store must be enabled")
 					}
 
-					cio.Promptf("Enter account email:")
-					var email string
-					if _, err := fmt.Fscan(cio.Input, &email); err != nil {
-						return err
-					}
+					var sessionToken string
+					accounts, err := usershell.Run(ctx, "op account list").String()
+					if err == nil {
+						if strings.Contains(accounts, "team-sourcegraph.1password.com") {
+							password, err := cio.PromptPasswordf(cio.Input, "Enter Sourcegraph account password:")
+							if err != nil {
+								return err
+							}
 
-					password, err := cio.PromptPasswordf(cio.Input, "Enter account password:")
+							sessionToken, err = usershell.Command(ctx, `echo "$OP_PASSWORD" | op signin --raw`).
+								Env(map[string]string{
+									"OP_ACCOUNT":  "team-sourcegraph.1password.com",
+									"OP_PASSWORD": password,
+								}).
+								Run().
+								String()
+						}
+					} else {
+						key, err := cio.PromptPasswordf(cio.Input, "Enter Sourcegraph secret key:")
+						if err != nil {
+							return err
+						}
+
+						cio.Promptf("Enter Sourcegraph account email:")
+						var email string
+						if _, err := fmt.Fscan(cio.Input, &email); err != nil {
+							return err
+						}
+
+						password, err := cio.PromptPasswordf(cio.Input, "Enter Sourcegraph account password:")
+						if err != nil {
+							return err
+						}
+
+						// 1password does some weird things, and it doesn't seem to want to
+						// accept piped input, so we just echo the input we want inside the
+						// eval command.
+						sessionToken, err = usershell.Command(ctx, fmt.Sprintf(`echo "$OP_PASSWORD" | %s`,
+							`op account add --raw --signin --address team-sourcegraph.1password.com --email "$OP_EMAIL"`)).
+							Env(map[string]string{
+								"OP_SECRET_KEY": key,
+								"OP_PASSWORD":   password,
+								"OP_EMAIL":      email,
+							}).
+							Run().
+							String()
+					}
 					if err != nil {
-						return err
+						return errors.Wrap(err, "failed to generate session token")
 					}
 
-					// 1password does some weird things, and it doesn't seem to want to
-					// accept piped input, so we just echo the input we want inside the
-					// eval command.
-					return usershell.Command(ctx, "eval", fmt.Sprintf(`$(echo "$OP_PASSWORD" | %s)`,
-						`op account add --signin --address team-sourcegraph.1password.com --email "$OP_EMAIL"`)).
-						Env(map[string]string{
-							"OP_SECRET_KEY": key,
-							"OP_PASSWORD":   password,
-							"OP_EMAIL":      email,
-						}).
-						Run().
-						StreamLines(cio.Verbose)
+					return store.PutAndSave("1pass-session", map[string]string{"token": sessionToken})
 				},
 			},
 		},
