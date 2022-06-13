@@ -1,3 +1,8 @@
+.tooltip {
+    pointer-events: none;
+    padding: 0.5rem;
+}
+
 .tooltip-list {
     list-style: none;
     margin: 0;
@@ -17,6 +22,10 @@
     border-radius: 0.25rem;
     font-weight: normal;
     font-size: 0.75rem;
+
+    &--active {
+        background-color: var(--secondary-2);
+    }
 }
 
 .legend-text {
