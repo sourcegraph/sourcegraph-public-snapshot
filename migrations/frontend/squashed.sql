@@ -3496,6 +3496,8 @@ CREATE INDEX changeset_jobs_state_idx ON changeset_jobs USING btree (state);
 
 CREATE INDEX changeset_specs_batch_spec_id ON changeset_specs USING btree (batch_spec_id);
 
+CREATE INDEX changeset_specs_created_at ON changeset_specs USING btree (created_at);
+
 CREATE INDEX changeset_specs_external_id ON changeset_specs USING btree (external_id);
 
 CREATE INDEX changeset_specs_head_ref ON changeset_specs USING btree (head_ref);
@@ -3507,6 +3509,8 @@ CREATE INDEX changeset_specs_title ON changeset_specs USING btree (title);
 CREATE INDEX changesets_batch_change_ids ON changesets USING gin (batch_change_ids);
 
 CREATE INDEX changesets_bitbucket_cloud_metadata_source_commit_idx ON changesets USING btree (((((metadata -> 'source'::text) -> 'commit'::text) ->> 'hash'::text)));
+
+CREATE INDEX changesets_changeset_specs ON changesets USING btree (current_spec_id, previous_spec_id);
 
 CREATE INDEX changesets_external_state_idx ON changesets USING btree (external_state);
 
