@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
+
+	"github.com/google/uuid"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -122,6 +125,12 @@ func (h *savepointHandle) Done(err error) error {
 	return errors.Append(err, execErr)
 }
 
+const (
+	savepointQuery         = "SAVEPOINT %s"
+	commitSavepointQuery   = "RELEASE %s"
+	rollbackSavepointQuery = "ROLLBACK TO %s"
+)
+
 func newTxSavepoint(ctx context.Context, tx *sql.Tx) (string, error) {
 	savepointID, err := makeSavepointID()
 	if err != nil {
@@ -134,4 +143,13 @@ func newTxSavepoint(ctx context.Context, tx *sql.Tx) (string, error) {
 	}
 
 	return savepointID, nil
+}
+
+func makeSavepointID() (string, error) {
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("sp_%s", strings.ReplaceAll(id.String(), "-", "_")), nil
 }
