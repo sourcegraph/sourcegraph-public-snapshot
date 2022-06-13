@@ -47,8 +47,8 @@ type InsightsDB interface {
 	Done(error) error
 }
 
-func NewInsightsDB(inner dbutil.DB) InsightsDB {
-	return &insightsDB{basestore.NewWithHandle(basestore.NewHandleWithUntypedDB(inner, sql.TxOptions{}))}
+func NewInsightsDB(inner *sql.DB) InsightsDB {
+	return &insightsDB{basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
 }
 
 func NewInsightsDBWith(other basestore.ShareableStore) InsightsDB {
