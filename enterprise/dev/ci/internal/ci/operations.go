@@ -651,6 +651,27 @@ func clusterQA(candidateTag string) operations.Operation {
 	}
 }
 
+func codeInsightsQA(candidateTag string) operations.Operation {
+	var dependencies []bk.StepOpt
+	for _, image := range images.DeploySourcegraphDockerImages {
+		dependencies = append(dependencies, bk.DependsOn(candidateImageStepKey(image)))
+	}
+	return func(p *bk.Pipeline) {
+		p.AddStep(":mag: Code Insights QA", append(dependencies,
+			bk.Env("CANDIDATE_VERSION", candidateTag),
+			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
+			bk.Env("NO_CLEANUP", "false"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
+			bk.Cmd("./dev/ci/integration/codeinsights/run.sh"),
+			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"),
+		)...)
+	}
+}
+
 // candidateImageStepKey is the key for the given app (see the `images` package). Useful for
 // adding dependencies on a step.
 func candidateImageStepKey(app string) string {
