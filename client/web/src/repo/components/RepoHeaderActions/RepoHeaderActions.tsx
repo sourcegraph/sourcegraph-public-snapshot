@@ -21,11 +21,10 @@ export const RepoHeaderActionButtonLink: React.FunctionComponent<
     </ButtonLink>
 )
 
-export const RepoHeaderActionDropdownToggle: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({
-    children,
-    ...rest
-}) => (
-    <Button as={MenuButton} className={classNames('btn-icon', styles.action)} {...rest}>
+export const RepoHeaderActionDropdownToggle: React.FunctionComponent<
+    React.PropsWithChildren<Pick<React.AriaAttributes, 'aria-label'>>
+> = ({ children, ...ariaAttributes }) => (
+    <Button as={MenuButton} className={classNames('btn-icon', styles.action)} {...ariaAttributes}>
         {children}
     </Button>
 )
