@@ -2,11 +2,10 @@ package lsifstore
 
 import (
 	"context"
-	"database/sql"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -17,9 +16,9 @@ type Store struct {
 	config     conftypes.SiteConfigQuerier
 }
 
-func NewStore(db dbutil.DB, siteConfig conftypes.SiteConfigQuerier, observationContext *observation.Context) *Store {
+func NewStore(db stores.CodeIntelDB, siteConfig conftypes.SiteConfigQuerier, observationContext *observation.Context) *Store {
 	return &Store{
-		Store:      basestore.NewWithHandle(basestore.NewHandleWithUntypedDB(db, sql.TxOptions{})),
+		Store:      basestore.NewWithHandle(db.Handle()),
 		serializer: NewSerializer(),
 		operations: newOperations(observationContext),
 		config:     siteConfig,
