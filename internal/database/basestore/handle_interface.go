@@ -15,8 +15,21 @@ import (
 type TransactableHandle interface {
 	// DB returns the underlying dbutil.DB, which is usually a *sql.DB or a *sql.Tx
 	DB() dbutil.DB
+
+	// InTransaction returns whether the handle represents a handle to a transaction.
 	InTransaction() bool
+
+	// Transact returns a new transactional database handle whose methods operate within the context of
+	// a new transaction or a new savepoint.
+	//
+	// Note that it is not safe to use transactions from multiple goroutines.
 	Transact(context.Context) (TransactableHandle, error)
+
+	// Done performs a commit or rollback of the underlying transaction/savepoint depending
+	// on the value of the error parameter. The resulting error value is a multierror containing
+	// the error parameter along with any error that occurs during commit or rollback of the
+	// transaction/savepoint. If the store does not wrap a transaction the original error value
+	// is returned unchanged.
 	Done(error) error
 }
 
