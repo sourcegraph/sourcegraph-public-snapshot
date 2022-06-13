@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { lowerCase, upperFirst } from 'lodash'
 import { useHistory } from 'react-router'
@@ -61,6 +61,12 @@ export const WorkspaceFilterRow: React.FunctionComponent<React.PropsWithChildren
         setSearch(searchElement.current?.value)
     }, [])
 
+    // We exclude pending as a filter option, because it's not a valid state on the execution page.
+    const statesWithoutPending = useMemo(
+        () => Object.values(BatchSpecWorkspaceState).filter(value => value !== BatchSpecWorkspaceState.PENDING),
+        []
+    )
+
     return (
         <div className="d-flex align-items-center mb-2">
             <Form className="d-flex flex-grow-1 mr-2" onSubmit={onSubmit}>
@@ -73,7 +79,7 @@ export const WorkspaceFilterRow: React.FunctionComponent<React.PropsWithChildren
                 />
             </Form>
             <WorkspaceFilter<BatchSpecWorkspaceState>
-                values={Object.values(BatchSpecWorkspaceState)}
+                values={statesWithoutPending}
                 label="State"
                 selected={state}
                 onChange={setState}

@@ -2,7 +2,6 @@ package migration
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 
@@ -417,7 +416,7 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 	return nil
 }
 
-func updateTimeSeriesReferences(handle dbutil.DB, ctx context.Context, oldId, newId string) (int, error) {
+func updateTimeSeriesReferences(handle edb.InsightsDB, ctx context.Context, oldId, newId string) (int, error) {
 	q := sqlf.Sprintf(`
 		WITH updated AS (
 			UPDATE series_points sp
@@ -427,7 +426,7 @@ func updateTimeSeriesReferences(handle dbutil.DB, ctx context.Context, oldId, ne
 		)
 		SELECT count(*) FROM updated;
 	`, newId, oldId)
-	tempStore := basestore.NewWithDB(handle, sql.TxOptions{})
+	tempStore := basestore.NewWithHandle(handle.Handle())
 	count, _, err := basestore.ScanFirstInt(tempStore.Query(ctx, q))
 	if err != nil {
 		return 0, errors.Wrap(err, "updateTimeSeriesReferences")

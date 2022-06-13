@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 
 import VisuallyHidden from '@reach/visually-hidden'
+import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -26,21 +27,23 @@ export const TimelineModal: React.FunctionComponent<React.PropsWithChildren<Time
     node,
     onCancel,
 }) => (
-    <Modal className={styles.modalBody} onDismiss={onCancel} aria-label="Execution timeline">
-        <div className="d-flex justify-content-between">
+    <Modal className={styles.modalBody} position="center" onDismiss={onCancel} aria-label="Execution timeline">
+        <div className={styles.modalHeader}>
             <H3 className="mb-0">Execution timeline</H3>
             <Button className="p-0 ml-2" onClick={onCancel} variant="icon">
                 <VisuallyHidden>Close</VisuallyHidden>
                 <Icon aria-hidden={true} as={CloseIcon} />
             </Button>
         </div>
-        <ExecutionTimeline node={node} />
-        {node.executor && (
-            <>
-                <H4 className="mt-2">Executor</H4>
-                <ExecutorNode node={node.executor} />
-            </>
-        )}
+        <div className={styles.modalContent}>
+            <ExecutionTimeline node={node} />
+            {node.executor && (
+                <>
+                    <H4 className="mt-2">Executor</H4>
+                    <ExecutorNode node={node.executor} />
+                </>
+            )}
+        </div>
     </Modal>
 )
 
@@ -81,7 +84,13 @@ const ExecutionTimeline: React.FunctionComponent<React.PropsWithChildren<Executi
         ],
         [expandStage, node, now]
     )
-    return <Timeline stages={stages.filter(isDefined)} now={now} className={className} />
+    return (
+        <Timeline
+            stages={stages.filter(isDefined)}
+            now={now}
+            className={classNames(className, styles.timelineMargin)}
+        />
+    )
 }
 
 const setupStage = (

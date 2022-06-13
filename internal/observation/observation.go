@@ -23,10 +23,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// enableTraceLog toggles whether TraceLogger.Log events should be logged at info level.
-// This is useful in dev environments, or in environments where OpenTracing/OpenTelemetry
-// logs/events are supported (i.e. not Datadog).
-var enableTraceLog = os.Getenv("SRC_TRACE_LOG") != "false"
+// enableTraceLog toggles whether TraceLogger.Log events should be logged at info level,
+// which is useful in environments like Datadog that don't support OpenTrace/OpenTelemetry
+// trace log events.
+var enableTraceLog = os.Getenv("SRC_TRACE_LOG") == "true"
 
 // Context carries context about where to send logs, trace spans, and register
 // metrics. It should be created once on service startup, and passed around to

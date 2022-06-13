@@ -1,67 +1,13 @@
-.line {
-    width: 100%;
-    overflow-x: hidden;
-    cursor: pointer;
-    user-select: none;
-    background-color: var(--dropdown-bg);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.code {
+    // Ensure we only render one line but keep the whitespace
+    white-space: pre;
 
-    &-active {
-        background-color: var(--color-bg-3);
-    }
-
-    &-code {
-        color: var(--body-color);
-        flex-shrink: 1;
-        // Ensure we only render one line but keep the whitespace
-        white-space: pre;
-
-        text-overflow: ellipsis;
-        overflow-x: hidden;
-
-        &-highlight {
-            background-color: var(--mark-bg);
-            color: var(--hl-gray-4);
-            border-radius: 2px;
-        }
-    }
-
-    &-line-number {
-        padding-left: 1rem;
-        font-size: 0.8rem;
-    }
-}
-
-.header {
-    padding: 0.5rem 0.5rem 0.5rem 0;
-    background-color: transparent;
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-
-    &-title {
-        flex: 1 1 auto;
-        overflow: hidden;
-        display: flex;
-    }
-
-    &-divider {
-        border-right: 1px solid var(--border-color-2);
-        height: 1rem;
-    }
-
-    &-link {
-        cursor: text;
-        pointer-events: none;
-    }
-
-    &:not(:only-of-type) {
-        border-bottom: none;
-    }
-
-    &-description {
-        line-height: (14/11);
+    &-highlight {
+        // These settings mimic the native find in files higlight options but we could not find them
+        // inside the theme config.
+        background-color: rgb(255, 222, 122);
+        border: 1px solid rgb(225, 197, 117);
+        color: rgb(50, 50, 50);
+        border-radius: 3px;
     }
 }

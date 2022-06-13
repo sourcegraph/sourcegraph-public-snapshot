@@ -118,7 +118,7 @@ func (r *Resolver) insertTestMonitorWithOpts(ctx context.Context, t *testing.T, 
 			Description: "test monitor",
 			Enabled:     true,
 		},
-		Trigger: &graphqlbackend.CreateTriggerArgs{Query: "repo:foo"},
+		Trigger: &graphqlbackend.CreateTriggerArgs{Query: "repo:foo type:commit"},
 		Actions: options.actions,
 	})
 	if err != nil {

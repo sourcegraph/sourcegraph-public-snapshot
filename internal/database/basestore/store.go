@@ -9,7 +9,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -53,11 +52,6 @@ type ShareableStore interface {
 }
 
 var _ ShareableStore = &Store{}
-
-// NewWithDB returns a new base store connected to the given connection.
-func NewWithDB(db dbutil.DB, txOptions sql.TxOptions) *Store {
-	return NewWithHandle(NewHandleWithDB(db, txOptions))
-}
 
 // NewWithHandle returns a new base store using the given database handle.
 func NewWithHandle(handle *TransactableHandle) *Store {

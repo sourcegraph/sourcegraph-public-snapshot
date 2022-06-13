@@ -628,6 +628,7 @@ func replaceBatchSpec(ctx context.Context, tx *store.Store, oldSpec, newSpec *bt
 	// Delete the previous batch spec, which should delete
 	// - batch_spec_resolution_jobs
 	// - batch_spec_workspaces
+	// - batch_spec_workspace_execution_jobs
 	// - changeset_specs
 	// associated with it
 	if err := tx.DeleteBatchSpec(ctx, oldSpec.ID); err != nil {
