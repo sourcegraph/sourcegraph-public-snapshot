@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -137,14 +138,10 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 		logs = append(logs, &types.WebhookLog{})
 	}
 
-	// We also need a fake TransactableHandle to be able to construct
-	// webhookLogResolvers.
-	db := &basestore.TransactableHandle{}
-
 	createMockStore := func(logs []*types.WebhookLog, next int64, err error) *database.MockWebhookLogStore {
 		store := database.NewMockWebhookLogStore()
 		store.ListFunc.SetDefaultReturn(logs, next, err)
-		store.HandleFunc.SetDefaultReturn(db)
+		store.HandleFunc.SetDefaultReturn(basestore.NewHandleWithDB(nil, sql.TxOptions{}))
 
 		return store
 	}

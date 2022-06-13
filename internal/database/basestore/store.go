@@ -40,7 +40,7 @@ import (
 //         return &SprocketStore{Store: txBase}, err
 //     }
 type Store struct {
-	handle *TransactableHandle
+	handle TransactableHandle
 }
 
 // ShareableStore is implemented by stores to explicitly allow distinct store instances
@@ -48,18 +48,18 @@ type Store struct {
 // multiple stores. See `Store.With` for additional details.
 type ShareableStore interface {
 	// Handle returns the underlying transactable database handle.
-	Handle() *TransactableHandle
+	Handle() TransactableHandle
 }
 
 var _ ShareableStore = &Store{}
 
 // NewWithHandle returns a new base store using the given database handle.
-func NewWithHandle(handle *TransactableHandle) *Store {
+func NewWithHandle(handle TransactableHandle) *Store {
 	return &Store{handle: handle}
 }
 
 // Handle returns the underlying transactable database handle.
-func (s *Store) Handle() *TransactableHandle {
+func (s *Store) Handle() TransactableHandle {
 	return s.handle
 }
 
@@ -83,13 +83,13 @@ func (s *Store) With(other ShareableStore) *Store {
 
 // Query performs QueryContext on the underlying connection.
 func (s *Store) Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error) {
-	rows, err := s.handle.db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	rows, err := s.handle.DB().QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	return rows, s.wrapError(query, err)
 }
 
 // QueryRow performs QueryRowContext on the underlying connection.
 func (s *Store) QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
-	return s.handle.db.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	return s.handle.DB().QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 }
 
 // Exec performs a query without returning any rows.
@@ -101,7 +101,7 @@ func (s *Store) Exec(ctx context.Context, query *sqlf.Query) error {
 // ExecResult performs a query without returning any rows, but includes the
 // result of the execution.
 func (s *Store) ExecResult(ctx context.Context, query *sqlf.Query) (sql.Result, error) {
-	res, err := s.handle.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	res, err := s.handle.DB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	return res, s.wrapError(query, err)
 }
 
