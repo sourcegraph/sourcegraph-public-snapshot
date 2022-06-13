@@ -10,4 +10,7 @@
   1. [Share with a wide trial team](trial/index.md#3-share-with-the-trial-team) (25–500 developers, one full organization or team, to start)
   1. [Deploy integrations](trial/index.md#4-deploy-integrations)
   1. [Measure success](trial/index.md#5-measure-success) (i.e., track usage, survey the team, etc.)
+- How is Sourcegraph different than the competition
+  1. [Sourcegraph vs. GitHub Code Search](https://drive.google.com/file/d/1HcKd-elBGGYccWoPsp7ZaVH17VytWW7l/view)
+  1. [Sourcegraph compared to OpenGrok & Hound](https://drive.google.com/file/d/13GJyLHWxeE3bZJSHppwqfSWlvEwIFE8c/view)
 - [Enterprise Getting Started Guide](./enterprise_getting_started_guide.md)
