@@ -258,8 +258,8 @@ func Outputs(ctx context.Context, args Args) (string, error) {
 	return strings.Join(values, "\n"), nil
 }
 
-// pipeTo is only used for tests.
-func pipeTo(ctx context.Context, args Args, b *bytes.Buffer) (err error) {
+// runWithoutPipes is only used for tests.
+func runWithoutPipes(ctx context.Context, args Args, b *bytes.Buffer) (err error) {
 	if !Exists() {
 		return errors.New("comby is not installed")
 	}

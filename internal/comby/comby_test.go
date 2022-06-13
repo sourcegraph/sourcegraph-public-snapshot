@@ -107,7 +107,7 @@ func main() {
 
 	for _, test := range cases {
 		var b bytes.Buffer
-		err := pipeTo(ctx, test.args, &b)
+		err := runWithoutPipes(ctx, test.args, &b)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -131,7 +131,7 @@ func Test_stdin(t *testing.T) {
 		defer cancel()
 
 		var b bytes.Buffer
-		err := pipeTo(ctx, args, &b)
+		err := runWithoutPipes(ctx, args, &b)
 		if err != nil {
 			t.Fatal(err)
 		}
