@@ -87,7 +87,7 @@ The changeset may also be in a state that we cannot currently publish from: for 
 ### Why do my changesets take a long time to sync?
 Have you [set up webhooks](requirements.md#batch-changes-effect-on-code-host-rate-limits)?
 
-### Archiving Changesets
+### Archived Changesets
 When running a batch change, you have the ability to update it to change it's scope of repositories affected. 
 However, when a batch spec has been applied, updating the batch spec to increase / decrease the number of changesets results in the workspace being recalculated - sometimes this leads to existing changesets not matching the updated spec, these changesets are referred to as `archived` and the state is reflected on the UI by navigating to the `Archived` tab.
 
