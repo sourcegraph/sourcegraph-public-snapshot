@@ -858,7 +858,7 @@ func (db *brokenDB) QueryRowContext(ctx context.Context, q string, args ...any) 
 }
 
 func (db *brokenDB) Transact(context.Context) (basestore.TransactableHandle, error) {
-	return db, nil
+	return nil, db.err
 }
 
 func (db *brokenDB) Done(err error) error {
