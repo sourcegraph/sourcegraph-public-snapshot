@@ -22,14 +22,7 @@ import (
 )
 
 func TestBitbucketServerSource_MakeRepo(t *testing.T) {
-	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	var repos []*bitbucketserver.Repo
-	if err := json.Unmarshal(b, &repos); err != nil {
-		t.Fatal(err)
-	}
+	repos := GetReposFromTestdata(t)
 
 	cases := map[string]*schema.BitbucketServerConnection{
 		"simple": {
@@ -219,7 +212,6 @@ func TestBitbucketServerSource_ListByReposOnly(t *testing.T) {
 	repos := GetReposFromTestdata(t)
 
 	mux := http.NewServeMux()
-
 	mux.HandleFunc("/rest/api/1.0/projects/", func(w http.ResponseWriter, r *http.Request) {
 		pathArr := strings.Split(r.URL.Path, "/")
 		projectKey := pathArr[5]
@@ -282,7 +274,6 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 	}
 
 	mux := http.NewServeMux()
-
 	mux.HandleFunc("/rest/api/1.0/repos", func(w http.ResponseWriter, r *http.Request) {
 		projectName := r.URL.Query().Get("projectName")
 
@@ -300,7 +291,7 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 					w.WriteHeader(http.StatusOK)
 					json.NewEncoder(w).Encode(Results{
 						PageToken: &pageToken,
-						Values:    []bitbucketserver.Repo{repo},
+						Values:    []*bitbucketserver.Repo{repo},
 					})
 				}
 			}
@@ -382,11 +373,10 @@ func TestBitbucketServerSource_ListByProjectKeyMock(t *testing.T) {
 	}
 
 	mux := http.NewServeMux()
-
 	mux.HandleFunc("/rest/api/1.0/projects/", func(w http.ResponseWriter, r *http.Request) {
 		pathArr := strings.Split(r.URL.Path, "/")
 		projectKey := pathArr[5]
-		values := make([]bitbucketserver.Repo, 0)
+		values := make([]*bitbucketserver.Repo, 0)
 
 		for _, repo := range repos {
 			if repo.Project.Key == projectKey {
@@ -432,6 +422,7 @@ func TestBitbucketServerSource_ListByProjectKeyMock(t *testing.T) {
 func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 	url := "https://bitbucket.sgdev.org"
 	TOKEN := os.Getenv("BITBUCKET_SERVER_TOKEN")
+
 	var update bool
 	if TOKEN == "" {
 		update = false
@@ -484,13 +475,13 @@ func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 
 }
 
-func GetReposFromTestdata(t *testing.T) []bitbucketserver.Repo {
+func GetReposFromTestdata(t *testing.T) []*bitbucketserver.Repo {
 	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var repos []bitbucketserver.Repo
+	var repos []*bitbucketserver.Repo
 	if err := json.Unmarshal(b, &repos); err != nil {
 		t.Fatal(err)
 	}
