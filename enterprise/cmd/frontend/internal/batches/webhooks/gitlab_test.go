@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
@@ -544,7 +543,8 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			// We can induce an error with a broken database connection.
 			s := gitLabTestSetup(t, db)
 			h := NewGitLabWebhook(s)
-			h.Store = store.NewWithClock(database.NewUntypedDB(&brokenDB{errors.New("foo")}), &observation.TestContext, nil, s.Clock())
+			db := database.NewDBWith(basestore.NewWithHandle(&brokenDB{errors.New("foo")}))
+			h.Store = store.NewWithClock(db, &observation.TestContext, nil, s.Clock())
 
 			es, err := h.getExternalServiceFromRawID(ctx, "12345")
 			if es != nil {
@@ -604,7 +604,8 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				}
 
 				// We can induce an error with a broken database connection.
-				h.Store = store.NewWithClock(database.NewUntypedDB(&brokenDB{errors.New("foo")}), &observation.TestContext, nil, s.Clock())
+				db := database.NewDBWith(basestore.NewWithHandle(&brokenDB{errors.New("foo")}))
+				h.Store = store.NewWithClock(db, &observation.TestContext, nil, s.Clock())
 
 				err := h.handleEvent(ctx, es, event)
 				if err == nil {
@@ -624,7 +625,8 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				}
 
 				// We can induce an error with a broken database connection.
-				h.Store = store.NewWithClock(database.NewUntypedDB(&brokenDB{errors.New("foo")}), &observation.TestContext, nil, s.Clock())
+				db := database.NewDBWith(basestore.NewWithHandle(&brokenDB{errors.New("foo")}))
+				h.Store = store.NewWithClock(db, &observation.TestContext, nil, s.Clock())
 
 				err := h.handleEvent(ctx, es, event)
 				if err == nil {
@@ -734,7 +736,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			// Again, we're going to set up a poisoned store database that will
 			// error if a transaction is started.
 			s := gitLabTestSetup(t, db)
-			store := store.NewWithClock(database.NewUntypedDB(&noNestingTx{s.Handle()}), &observation.TestContext, nil, s.Clock())
+			store := store.NewWithClock(database.NewDBWith(basestore.NewWithHandle(&noNestingTx{s.Handle()})), &observation.TestContext, nil, s.Clock())
 			h := NewGitLabWebhook(store)
 
 			t.Run("missing merge request", func(t *testing.T) {
@@ -855,6 +857,20 @@ func (db *brokenDB) QueryRowContext(ctx context.Context, q string, args ...any) 
 	return nil
 }
 
+func (db *brokenDB) Transact(context.Context) (basestore.TransactableHandle, error) {
+	return db, nil
+}
+
+func (db *brokenDB) Done(err error) error {
+	return err
+}
+
+func (db *brokenDB) InTransaction() bool {
+	return false
+}
+
+var _ basestore.TransactableHandle = (*brokenDB)(nil)
+
 // brokenReader implements an io.ReadCloser that always returns an error when
 // read.
 type brokenReader struct{ err error }
@@ -882,10 +898,10 @@ func (ntx *nestedTx) Transact(context.Context) (basestore.TransactableHandle, er
 
 // noNestingTx is another transaction wrapper that always returns an error when
 // a transaction is attempted.
-type noNestingTx struct{ dbutil.DB }
+type noNestingTx struct{ basestore.TransactableHandle }
 
-func (nntx *noNestingTx) BeginTx(ctx context.Context, opts *sql.TxOptions) error {
-	return errors.New("foo")
+func (ntx *noNestingTx) Transact(context.Context) (basestore.TransactableHandle, error) {
+	return nil, errors.New("foo")
 }
 
 // gitLabTestSetup instantiates the stores and a clock for use within tests.
