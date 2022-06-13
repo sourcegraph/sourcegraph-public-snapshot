@@ -48,6 +48,8 @@ export const recentlySearchedRepositoriesFragment = gql`
     }
 `
 
+type ComputeParseResult = [{ kind: string; value: string }]
+
 export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
     telemetryService,
@@ -154,27 +156,36 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     // a constant to hold git commits history
     // call streamComputeQuery from stream
 
-    const gitRepository = useObservable(useMemo(() =>
-    authenticatedUser ? streamComputeQuery(`content:output((.|\n)* -> $repo) author:${authenticatedUser.email} type:commit after:"1 year ago" count:all`): of([]), [authenticatedUser]))
-    console.log(gitRepository)
-    let gitRepositoryParsedString
-    if (gitRepository) {
-        gitRepositoryParsedString = gitRepository.map(value => JSON.parse(value))
-    }
-    const gitReposList = gitRepositoryParsedString?.flat()
-    /*
-    Algorithm:
-        1.Get the user's git history
-        2.Get the user's search history
-        3.If the user has git history,
-            then show the git history
-        4.If the user has no git history,
-            then check if the user has search history
-        5.If the user has search history,
-            then show the search history
-        6.If the user has no search history,
-            then show the empty display
-    */
+    const gitRepository = useObservable(
+        useMemo(
+            () =>
+                authenticatedUser
+                    ? streamComputeQuery(
+                          `content:output((.|\n)* -> $repo) author:${authenticatedUser.email} type:commit after:"1 year ago" count:all`
+                      )
+                    : of([]),
+            [authenticatedUser]
+        )
+    )
+
+    const gitSet = useMemo(() => {
+        let gitRepositoryParsedString: ComputeParseResult[] = []
+        if (gitRepository) {
+            gitRepositoryParsedString = gitRepository.map(value => JSON.parse(value) as ComputeParseResult)
+        }
+        const gitReposList = gitRepositoryParsedString?.flat()
+
+        const gitSet = new Set<string>()
+        if (gitReposList) {
+            for (const git of gitReposList) {
+                if (git.value) {
+                    gitSet.add(git.value)
+                }
+            }
+        }
+
+        return gitSet
+    }, [gitRepository])
 
     // A new display for git history
     const gitHistoryDisplay = (
@@ -182,17 +193,17 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
             <div className="d-flex mb-1">
                 <small>Git history</small>
             </div>
-            {gitRepositoryParsedString?.length && (
+            {gitSet.size > 0 && (
                 <ul className="list-group">
-                    {gitRepositoryParsedString.map(repo =>
-                        <li key={`${repo.value}-`} className="text-monospace text-break mb-2">
+                    {Array.from(gitSet).map(repo => (
+                        <li key={`${repo}`} className="text-monospace text-break mb-2">
                             <small>
-                                <Link to={`/search?q=repo:${repo.value}`} onClick={logRepoClicked}>
-                                    <SyntaxHighlightedSearchQuery query={`repo:${repo.value}`} />
+                                <Link to={`/search?q=repo:${repo}`} onClick={logRepoClicked}>
+                                    <SyntaxHighlightedSearchQuery query={`repo:${repo}`} />
                                 </Link>
                             </small>
                         </li>
-                    )}
+                    ))}
                 </ul>
             )}
             {searchEventLogs?.pageInfo.hasNextPage && (
@@ -200,45 +211,19 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
             )}
         </div>
     )
-    // 1. Get the user's git history
-    // create a SET object to hold the git commit history
-    const gitSet = new Set<string>()
-    if (gitReposList) {
-        for (const git of gitReposList) {
-            gitSet.add(git.repo)
-        }
-    }
-    console.log(gitSet)
 
-    // 2. Get the user's search history
-    const codeSearchHistory = useMemo(() => processRepositories(searchEventLogs), [searchEventLogs])
-    // 3. If the user has git history,
-    // then show the git history
-    /*
-    if (gitSet.size > 0) {
-        return gitHistoryDisplay
-    }
-        // 4. If the user has no git history,
-        // then check if the user has search history
-    if (codeSearchHistory && codeSearchHistory.length > 0) {
-        // 5. If the user has search history,
-        // then show the search history
-        return contentDisplay
-    } /* else {
-        // 6. If the user has no search history,
-        // then show the empty display
-        return emptyDisplay
-    }*/
+    // Wait for both the search event logs and the git history to be loaded
+    const isLoading = !gitRepository || !repoFilterValues
+    // If neither search event logs or git history have items, then display the empty display
+    const isEmpty = repoFilterValues?.length === 0 && gitSet.size === 0
 
     return (
         <PanelContainer
             className={classNames(className, 'repositories-panel')}
             title="Repositories"
-            // state={repoFilterValues ? (repoFilterValues.length > 0 ? 'populated' : 'empty') ? (gitSet.size > 0 ? 'gitPopulated' : 'empty') : 'loading' : 'loading'}
-            // condition ? exprIfTrue : exprIfFalse
-            state={repoFilterValues ? (repoFilterValues.length > 0 ? 'populated' : 'empty') ? (gitSet.size > 0 ? 'gitPopulated' : 'empty') : 'loading' : 'loading'}
+            state={isLoading ? 'loading' : isEmpty ? 'empty' : 'populated'}
             loadingContent={loadingDisplay}
-            populatedContent={contentDisplay}
+            populatedContent={gitSet.size > 0 ? gitHistoryDisplay : contentDisplay}
             emptyContent={emptyDisplay}
         />
     )
