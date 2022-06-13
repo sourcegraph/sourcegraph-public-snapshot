@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/google/uuid"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -48,7 +50,7 @@ func NewHandleWithDB(db *sql.DB, txOptions sql.TxOptions) TransactableHandle {
 
 // NewHandleWithTx returns a new transactable database handle using the given transaction.
 func NewHandleWithTx(tx *sql.Tx, txOptions sql.TxOptions) TransactableHandle {
-	return &txHandle{Tx: tx, txOptions: txOptions}
+	return &txHandle{lockingTx: &lockingTx{tx: tx}, txOptions: txOptions}
 }
 
 type dbHandle struct {
@@ -65,7 +67,7 @@ func (h *dbHandle) Transact(ctx context.Context) (TransactableHandle, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &txHandle{Tx: tx, txOptions: h.txOptions}, nil
+	return &txHandle{lockingTx: &lockingTx{tx: tx}, txOptions: h.txOptions}, nil
 }
 
 func (h *dbHandle) Done(err error) error {
@@ -73,7 +75,7 @@ func (h *dbHandle) Done(err error) error {
 }
 
 type txHandle struct {
-	*sql.Tx
+	*lockingTx
 	txOptions sql.TxOptions
 }
 
@@ -82,23 +84,23 @@ func (h *txHandle) InTransaction() bool {
 }
 
 func (h *txHandle) Transact(ctx context.Context) (TransactableHandle, error) {
-	savepointID, err := newTxSavepoint(ctx, h.Tx)
+	savepointID, err := newTxSavepoint(ctx, h.lockingTx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &savepointHandle{Tx: h.Tx, savepointID: savepointID}, nil
+	return &savepointHandle{lockingTx: h.lockingTx, savepointID: savepointID}, nil
 }
 
 func (h *txHandle) Done(err error) error {
 	if err == nil {
-		return h.Tx.Commit()
+		return h.Commit()
 	}
-	return errors.Append(err, h.Tx.Rollback())
+	return errors.Append(err, h.Rollback())
 }
 
 type savepointHandle struct {
-	*sql.Tx
+	*lockingTx
 	savepointID string
 }
 
@@ -107,21 +109,21 @@ func (h *savepointHandle) InTransaction() bool {
 }
 
 func (h *savepointHandle) Transact(ctx context.Context) (TransactableHandle, error) {
-	savepointID, err := newTxSavepoint(ctx, h.Tx)
+	savepointID, err := newTxSavepoint(ctx, h.lockingTx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &savepointHandle{Tx: h.Tx, savepointID: savepointID}, nil
+	return &savepointHandle{lockingTx: h.lockingTx, savepointID: savepointID}, nil
 }
 
 func (h *savepointHandle) Done(err error) error {
 	if err == nil {
-		_, execErr := h.Tx.Exec(fmt.Sprintf(commitSavepointQuery, h.savepointID))
+		_, execErr := h.ExecContext(context.Background(), fmt.Sprintf(commitSavepointQuery, h.savepointID))
 		return execErr
 	}
 
-	_, execErr := h.Tx.Exec(fmt.Sprintf(rollbackSavepointQuery, h.savepointID))
+	_, execErr := h.ExecContext(context.Background(), fmt.Sprintf(rollbackSavepointQuery, h.savepointID))
 	return errors.Append(err, execErr)
 }
 
@@ -131,7 +133,7 @@ const (
 	rollbackSavepointQuery = "ROLLBACK TO %s"
 )
 
-func newTxSavepoint(ctx context.Context, tx *sql.Tx) (string, error) {
+func newTxSavepoint(ctx context.Context, tx *lockingTx) (string, error) {
 	savepointID, err := makeSavepointID()
 	if err != nil {
 		return "", err
@@ -152,4 +154,79 @@ func makeSavepointID() (string, error) {
 	}
 
 	return fmt.Sprintf("sp_%s", strings.ReplaceAll(id.String(), "-", "_")), nil
+}
+
+var ErrConcurrentTransactions = errors.New("transaction used concurrently")
+
+// lockingTx wraps a *sql.Tx with a mutex, and reports when a caller tries
+// to use the transaction concurrently. Since using a transaction concurrently
+// is unsafe, we want to catch these issues. Currently, lockingTx will just
+// log an error and serialize accesses to the wrapped *sql.Tx, but in the future
+// concurrent calls may be upgraded to an error.
+type lockingTx struct {
+	tx *sql.Tx
+	mu sync.Mutex
+}
+
+func (t *lockingTx) lock() error {
+	if !t.mu.TryLock() {
+		err := errors.WithStack(ErrConcurrentTransactions)
+		log.Scoped("internal", "database").Error("transaction used concurrently", log.Error(err))
+		return err
+	}
+	return nil
+}
+
+func (t *lockingTx) unlock() {
+	t.mu.Unlock()
+}
+
+func (t *lockingTx) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	if err := t.lock(); err != nil {
+		return nil, err
+	}
+	defer t.unlock()
+
+	return t.tx.ExecContext(ctx, query, args...)
+}
+
+func (t *lockingTx) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	if err := t.lock(); err != nil {
+		return nil, err
+	}
+	defer t.unlock()
+
+	return t.tx.QueryContext(ctx, query, args...)
+}
+
+func (t *lockingTx) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+	if err := t.lock(); err != nil {
+		// XXX(camdencheek): There is no way to construct a row that has an
+		// error, so in order for this to return an error, we'll need to have
+		// it return an interface. Instead, we attempt to acquire the lock
+		// to make this at least be safer if we can't report the error other
+		// than through logs.
+		t.mu.Lock()
+	}
+	defer t.unlock()
+
+	return t.tx.QueryRowContext(ctx, query, args...)
+}
+
+func (t *lockingTx) Commit() error {
+	if err := t.lock(); err != nil {
+		return err
+	}
+	defer t.unlock()
+
+	return t.tx.Commit()
+}
+
+func (t *lockingTx) Rollback() error {
+	if err := t.lock(); err != nil {
+		return err
+	}
+	defer t.unlock()
+
+	return t.tx.Rollback()
 }

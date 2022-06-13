@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -15,7 +17,7 @@ import (
 )
 
 func TestTransaction(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := dbtest.NewRawDB(t)
 	setupStoreTest(t, db)
 	store := testStore(db)
 
@@ -61,8 +63,72 @@ func TestTransaction(t *testing.T) {
 	assertCounts(t, db, map[int]int{1: 42, 3: 44})
 }
 
+func TestConcurrentTransactions(t *testing.T) {
+	db := dbtest.NewRawDB(t)
+	setupStoreTest(t, db)
+	store := testStore(db)
+	ctx := context.Background()
+
+	t.Run("creating transactions concurrently does not fail", func(t *testing.T) {
+		var g errgroup.Group
+		for i := 0; i < 100; i++ {
+			i := i
+			g.Go(func() (err error) {
+				tx, err := store.Transact(ctx)
+				if err != nil {
+					return err
+				}
+				defer func() { err = tx.Done(err) }()
+
+				return tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (%s, 42)`, i))
+			})
+		}
+		require.NoError(t, g.Wait())
+	})
+
+	t.Run("creating concurrent savepoints on a single transaction fails", func(t *testing.T) {
+		tx, err := store.Transact(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var g errgroup.Group
+		for i := 0; i < 100; i++ {
+			i := i
+			g.Go(func() (err error) {
+				txNested, err := tx.Transact(ctx)
+				if err != nil {
+					return err
+				}
+				defer func() { err = txNested.Done(err) }()
+
+				return txNested.Exec(ctx, sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (%s, 42)`, i))
+			})
+		}
+		err = g.Wait()
+		require.ErrorIs(t, err, ErrConcurrentTransactions)
+	})
+
+	t.Run("parallel insertions on a single transaction fails", func(t *testing.T) {
+		tx, err := store.Transact(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var g errgroup.Group
+		for i := 0; i < 100; i++ {
+			i := i
+			g.Go(func() (err error) {
+				return tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (%s, 42)`, i))
+			})
+		}
+		err = g.Wait()
+		require.ErrorIs(t, err, ErrConcurrentTransactions)
+	})
+}
+
 func TestSavepoints(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := dbtest.NewRawDB(t)
 	setupStoreTest(t, db)
 
 	NumSavepointTests := 10
@@ -88,7 +154,7 @@ func TestSavepoints(t *testing.T) {
 }
 
 func TestSetLocal(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := dbtest.NewRawDB(t)
 	setupStoreTest(t, db)
 	store := testStore(db)
 
