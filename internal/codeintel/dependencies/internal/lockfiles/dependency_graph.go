@@ -8,20 +8,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 )
 
-type edge struct {
-	source, target reposource.PackageDependency
+type Edge struct {
+	Source, Target reposource.PackageDependency
 }
 
 func newDependencyGraph() *DependencyGraph {
 	return &DependencyGraph{
 		dependencies: make(map[reposource.PackageDependency][]reposource.PackageDependency),
-		edges:        map[edge]struct{}{},
+		edges:        map[Edge]struct{}{},
 	}
 }
 
 type DependencyGraph struct {
 	dependencies map[reposource.PackageDependency][]reposource.PackageDependency
-	edges        map[edge]struct{}
+	edges        map[Edge]struct{}
 }
 
 func (dg *DependencyGraph) addPackage(pkg reposource.PackageDependency) {
@@ -31,7 +31,7 @@ func (dg *DependencyGraph) addPackage(pkg reposource.PackageDependency) {
 }
 func (dg *DependencyGraph) addDependency(a, b reposource.PackageDependency) {
 	dg.dependencies[a] = append(dg.dependencies[a], b)
-	dg.edges[edge{a, b}] = struct{}{}
+	dg.edges[Edge{a, b}] = struct{}{}
 }
 
 func (dg *DependencyGraph) Roots() map[reposource.PackageDependency]struct{} {
@@ -41,10 +41,17 @@ func (dg *DependencyGraph) Roots() map[reposource.PackageDependency]struct{} {
 	}
 
 	for edge := range dg.edges {
-		delete(roots, edge.target)
+		delete(roots, edge.Target)
 	}
 
 	return roots
+}
+
+func (dg *DependencyGraph) AllEdges() (edges []Edge) {
+	for edge := range dg.edges {
+		edges = append(edges, edge)
+	}
+	return edges
 }
 
 func (dg *DependencyGraph) String() string {

@@ -24,13 +24,14 @@ type Store interface {
 	PreciseDependents(ctx context.Context, repoName, commit string) (deps map[api.RepoName]types.RevSpecSet, err error)
 	LockfileDependencies(ctx context.Context, repoName, commit string) (deps []shared.PackageDependency, found bool, err error)
 	UpsertLockfileDependencies(ctx context.Context, repoName, commit string, deps []shared.PackageDependency) (err error)
-	UpsertLockfileDependencies2(ctx context.Context, repoName, commit string, deps []shared.PackageDependency) (ids []int, err error)
+	UpsertLockfileDependencies2(ctx context.Context, repoName, commit string, deps []shared.PackageDependency, resolutionID string) (packageNamesIDs map[string]int, err error)
 	SelectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration) (_ map[string][]string, err error)
 	UpdateResolvedRevisions(ctx context.Context, repoRevsToResolvedRevs map[string]map[string]string) (err error)
 	LockfileDependents(ctx context.Context, repoName, commit string) (deps []api.RepoCommit, err error)
 	ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.Repo, err error)
 	UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error)
 	DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error)
+	InsertLockfileEdges(ctx context.Context, edges map[int][]int, resolutionID string) (err error)
 }
 
 // store manages the database tables for package dependencies.

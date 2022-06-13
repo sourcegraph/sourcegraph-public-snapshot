@@ -2,6 +2,7 @@ package dependencies
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -278,29 +279,53 @@ func (s *Service) resolveLockfileDependenciesFromArchive(ctx context.Context, re
 // given repo-commit pair and persists the result to the database. This aids in both caching
 // and building an inverted index to power dependents search.
 func (s *Service) listAndPersistLockfileDependencies(ctx context.Context, repoCommit repoCommitResolvedCommit) ([]shared.PackageDependency, error) {
-	repoDeps, _, err := s.lockfilesSvc.ListDependencies(ctx, repoCommit.Repo, string(repoCommit.CommitID))
+	repoDeps, graphs, err := s.lockfilesSvc.ListDependencies(ctx, repoCommit.Repo, string(repoCommit.CommitID))
 	if err != nil {
 		return nil, errors.Wrap(err, "lockfiles.ListDependencies")
 	}
 
 	serializableRepoDeps := shared.SerializePackageDependencies(repoDeps)
 
-	_, err = s.dependenciesStore.UpsertLockfileDependencies2(
+	resolutionID := fmt.Sprintf("%s-%s", repoCommit.Repo, repoCommit.CommitID)
+
+	nameIDs, err := s.dependenciesStore.UpsertLockfileDependencies2(
 		ctx,
 		string(repoCommit.Repo),
 		repoCommit.ResolvedCommit,
 		serializableRepoDeps,
+		resolutionID,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "store.UpsertLockfileDependencies")
 	}
 
-	// for _, graph := range graphs {
-	// 	var roots []shared.PackageDependency
-	// 	for r := range graph.Roots() {
-	// 		roots = append(roots, r)
-	// 	}
-	// }
+	edges := make(map[int][]int)
+
+	for _, graph := range graphs {
+		for _, edge := range graph.AllEdges() {
+			sourceName, targetName := edge.Source.PackageSyntax(), edge.Target.PackageSyntax()
+
+			sourceID, ok := nameIDs[sourceName]
+			if !ok {
+				return nil, errors.Newf("id for source %s not found", sourceName)
+			}
+
+			targetID, ok := nameIDs[targetName]
+			if !ok {
+				return nil, errors.Newf("id for target %s not found", sourceName)
+			}
+
+			if ids, ok := edges[sourceID]; !ok {
+				edges[sourceID] = []int{targetID}
+			} else {
+				edges[sourceID] = append(ids, targetID)
+			}
+		}
+	}
+
+	if err := s.dependenciesStore.InsertLockfileEdges(ctx, edges, resolutionID); err != nil {
+		return nil, err
+	}
 
 	return serializableRepoDeps, nil
 }
