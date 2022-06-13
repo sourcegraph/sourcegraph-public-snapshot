@@ -237,8 +237,8 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		res, found := workspace.dbWorkspace.StepCacheResult(latestStepIdx + 1)
 		if !found {
-			// It's been set above, this should never happen. This is a bug.
-			return errors.New("step cache result not found in set")
+			// There is no cache result available, proceed.
+			continue
 		}
 
 		changes, err := git.ChangesInDiff([]byte(res.Value.Diff))
