@@ -49,10 +49,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
     isLightTheme,
     testForceTab,
-    telemetryService,
 }) => {
-    useEffect(() => eventLogger.logPageView('CodeMonitoring'), [])
-
     const LOADING = 'loading' as const
 
     const userHasCodeMonitors = useObservable(
@@ -89,19 +86,20 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
         }
     }, [currentTab, testForceTab])
 
-    // Log selected tab
+    // Log page view and selected tab
+    useEffect(() => eventLogger.logPageView('CodeMonitoring'), [])
     useEffect(() => {
         if (userHasCodeMonitors !== LOADING) {
             switch (currentTab) {
                 case 'getting-started':
-                    telemetryService.log('CodeMoitoringGettingStartedPageViewed')
+                    eventLogger.log('CodeMoitoringGettingStartedPageViewed')
                     break
                 case 'logs':
-                    telemetryService.log('CodeMoitoringLogsPageViewed')
+                    eventLogger.log('CodeMoitoringLogsPageViewed')
                     break
             }
         }
-    }, [currentTab, telemetryService, userHasCodeMonitors])
+    }, [currentTab, userHasCodeMonitors])
 
     const showList = userHasCodeMonitors !== 'loading' && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
 
@@ -196,11 +194,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                     </div>
 
                     {currentTab === 'getting-started' && (
-                        <CodeMonitoringGettingStarted
-                            telemetryService={telemetryService}
-                            isLightTheme={isLightTheme}
-                            isSignedIn={!!authenticatedUser}
-                        />
+                        <CodeMonitoringGettingStarted isLightTheme={isLightTheme} isSignedIn={!!authenticatedUser} />
                     )}
 
                     {currentTab === 'logs' && <CodeMonitoringLogs />}

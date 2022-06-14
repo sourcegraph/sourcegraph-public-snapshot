@@ -3,15 +3,16 @@ import React, { useCallback } from 'react'
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Button, CardBody, Card, Icon, H2, H3, H4, Text } from '@sourcegraph/wildcard'
+
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
 
-interface CodeMonitoringGettingStartedProps extends ThemeProps, TelemetryProps {
+interface CodeMonitoringGettingStartedProps extends ThemeProps {
     isSignedIn: boolean
 }
 
@@ -64,12 +65,12 @@ const createCodeMonitorUrl = (example: ExampleCodeMonitor): string => {
 
 export const CodeMonitoringGettingStarted: React.FunctionComponent<
     React.PropsWithChildren<CodeMonitoringGettingStartedProps>
-> = ({ isLightTheme, isSignedIn, telemetryService }) => {
+> = ({ isLightTheme, isSignedIn }) => {
     const assetsRoot = window.context?.assetsRoot || ''
 
     const logExampleMonitorClicked = useCallback(() => {
-        telemetryService.log('CodeMonitoringExampleMonitorClicked')
-    }, [telemetryService])
+        eventLogger.log('CodeMonitoringExampleMonitorClicked')
+    }, [])
 
     return (
         <div>
