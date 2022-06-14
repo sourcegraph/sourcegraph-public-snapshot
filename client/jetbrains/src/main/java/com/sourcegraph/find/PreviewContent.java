@@ -149,8 +149,8 @@ public class PreviewContent {
 
     @Nullable
     public VirtualFile getVirtualFile() {
-        if (virtualFile == null && fileName != null && content != null) {
-            virtualFile = new LightVirtualFile(fileName, content);
+        if (virtualFile == null && content != null) {
+            virtualFile = new LightVirtualFile(fileName != null ? fileName : "", Objects.requireNonNull(getContent()));
         }
         return virtualFile;
     }
