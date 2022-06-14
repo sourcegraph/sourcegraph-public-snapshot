@@ -217,12 +217,12 @@ LIMIT %d
 	}
 
 	if opt.Status != "" {
-		where = append(where, sqlf.Sprintf("status = %s", opt.Status))
+		where = append(where, sqlf.Sprintf("state = %s", opt.Status))
 	}
 
 	whereClause := sqlf.Sprintf("")
 	if len(where) != 0 {
-		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(where, " AND"))
+		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(where, "AND"))
 	}
 
 	limitNum := 100

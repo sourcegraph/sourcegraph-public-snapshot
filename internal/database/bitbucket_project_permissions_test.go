@@ -201,7 +201,7 @@ LIMIT 100
 -- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.listWorkerJobsQuery
 SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_services_id, permissions, unrestricted
 FROM explicit_permissions_bitbucket_project_jobs
-WHERE project_key = $1  AND status = $2
+WHERE project_key = $1 AND state = $2
 ORDER BY queued_at DESC
 LIMIT 337
 `
