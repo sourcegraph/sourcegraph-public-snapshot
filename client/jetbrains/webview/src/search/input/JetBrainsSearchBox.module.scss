@@ -46,10 +46,9 @@
         align-items: center;
         flex: 1 1 auto;
         // stylelint-disable-next-line declaration-property-unit-allowed-list
-        margin: -2px; // To compensate for the border
+        margin: 2px;
         border: 1px solid transparent;
-        border-top-left-radius: var(--border-radius);
-        border-bottom-left-radius: var(--border-radius);
+        border-radius: var(--border-radius);
 
         &__icon {
             padding-left: 0.25rem;
