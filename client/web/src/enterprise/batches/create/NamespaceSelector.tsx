@@ -41,7 +41,7 @@ export const NamespaceSelector: React.FunctionComponent<React.PropsWithChildren<
     return (
         <Select
             label={<strong className="text-nowrap mb-2">Namespace</strong>}
-            selectClassName="form-control"
+            isCustomStyle={true}
             id={NAMESPACE_SELECTOR_ID}
             value={selectedNamespace}
             onChange={onSelectNamespace}

@@ -60,7 +60,7 @@ func NewDB(inner *sql.DB) DB {
 }
 
 func NewUntypedDB(inner dbutil.DB) DB {
-	return &db{basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
+	return &db{basestore.NewWithHandle(basestore.NewHandleWithUntypedDB(inner, sql.TxOptions{}))}
 }
 
 func NewDBWith(other basestore.ShareableStore) DB {
