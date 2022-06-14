@@ -21,7 +21,8 @@ type Runner[Args any] struct {
 	out        *std.Output
 	categories []Category[Args]
 
-	renderDescription func(*std.Output)
+	renderDescription   func(*std.Output)
+	generateAnnotations bool
 }
 
 // NewRunner creates a Runner for executing checks and applying fixes in a variety of ways.
@@ -37,6 +38,12 @@ func NewRunner[Args any](in io.Reader, out *std.Output, categories []Category[Ar
 // ASCII art thing.
 func (r *Runner[Args]) SetDescription(render func(out *std.Output)) {
 	r.renderDescription = render
+}
+
+// SetGenerateAnnotations toggles whether check execution should render annotations to the
+// './annotations' directory.
+func (r *Runner[Args]) SetGenerateAnnotations(generate bool) {
+	r.generateAnnotations = generate
 }
 
 // Check executes all checks exactly once and exits.
@@ -273,13 +280,18 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		} else {
 			results.failed = append(results.failed, i)
 			r.out.WriteFailuref(summaryStr)
-			for _, c := range category.Checks {
-				if c.cachedCheckErr != nil {
+			for _, check := range category.Checks {
+				if check.cachedCheckErr != nil {
 					r.out.WriteLine(output.Styledf(output.CombineStyles(output.StyleBold, output.StyleWarning),
-						"%s: %s", c.Name, c.cachedCheckErr))
+						"%s: %s", check.Name, check.cachedCheckErr))
 					// Render additional details
-					if c.cachedCheckOutput != "" {
-						r.out.Write(c.cachedCheckOutput)
+					if check.cachedCheckOutput != "" {
+						r.out.Write(check.cachedCheckOutput)
+						if r.generateAnnotations {
+							annotationContent := fmt.Sprintf("```\n%s\n```\n\n```term\n%s\n```",
+								check.cachedCheckErr, check.cachedCheckOutput)
+							generateAnnotation(category.Name, check.Name, annotationContent)
+						}
 					}
 				}
 			}
