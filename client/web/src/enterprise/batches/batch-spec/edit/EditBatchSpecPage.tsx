@@ -163,7 +163,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
      * For managed instances we want to hide the `run server side` button by default. To do this we make use of a
      * feature flag to ensure Managed Instances.
      */
-    const [isRunBatchSpecButtonDisabled] = useFeatureFlag('hide-run-batch-spec-for-mi', false)
+    const [isRunBatchSpecButtonHidden] = useFeatureFlag('hide-run-batch-spec-for-mi', false)
 
     const activeExecutorsActionButtons = (
         <>
@@ -208,7 +208,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 </Button>
             )}
 
-            {isRunBatchSpecButtonDisabled ? (
+            {!isRunBatchSpecButtonHidden && (
                 <Button
                     className={styles.downloadLink}
                     variant="link"
@@ -216,7 +216,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 >
                     or run server-side
                 </Button>
-            ) : null}
+            )}
         </>
     )
 
