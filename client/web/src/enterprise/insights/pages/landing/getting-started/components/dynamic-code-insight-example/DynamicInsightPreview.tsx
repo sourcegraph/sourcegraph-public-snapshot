@@ -101,6 +101,7 @@ export const DynamicInsightPreview: React.FunctionComponent<
                                     onMouseEnter={trackMouseEnter}
                                     onMouseLeave={trackMouseLeave}
                                     onDatumClick={trackDatumClicks}
+                                    seriesToggleState={seriesToggleState}
                                     // We cast to unknown here because ForwardReferenceComponent
                                     // doesn't support inferring as component with generic.
                                     {...(SERIES_MOCK_CHART as SeriesChartContent<unknown>)}

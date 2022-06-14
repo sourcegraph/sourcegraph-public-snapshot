@@ -100,6 +100,7 @@ export const LineChartLivePreview: React.FunctionComponent<
                                         type={SeriesBasedChartTypes.Line}
                                         width={parent.width}
                                         height={parent.height}
+                                        seriesToggleState={seriesToggleState}
                                         // We cast to unknown here because ForwardReferenceComponent
                                         // doesn't support inferring as component with generic.
                                         {...(SERIES_MOCK_CHART as SeriesChartContent<unknown>)}
