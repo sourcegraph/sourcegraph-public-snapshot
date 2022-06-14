@@ -195,7 +195,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		}
 	)
 	for i, category := range r.categories {
-		progress.StatusBarUpdatef(i, "Determining status...")
+		progress.StatusBarUpdatef(i, "Running checks...")
 
 		if err := category.CheckEnabled(ctx, args); err != nil {
 			// Safe because we do this NOT in a goroutine
@@ -282,16 +282,21 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 			r.out.WriteFailuref(summaryStr)
 			for _, check := range category.Checks {
 				if check.cachedCheckErr != nil {
-					r.out.WriteLine(output.Styledf(output.CombineStyles(output.StyleBold, output.StyleWarning),
-						"%s: %s", check.Name, check.cachedCheckErr))
+					// Slightly different formatting for each destination
+					terminalSummary := fmt.Sprintf("**%s**\n\n%s", check.Name, check.cachedCheckErr)
+					annotationSummary := fmt.Sprintf("```\n%s\n```", check.cachedCheckErr)
+
 					// Render additional details
 					if check.cachedCheckOutput != "" {
-						r.out.Write(check.cachedCheckOutput)
-						if r.generateAnnotations {
-							annotationContent := fmt.Sprintf("```\n%s\n```\n\n```term\n%s\n```",
-								check.cachedCheckErr, check.cachedCheckOutput)
-							generateAnnotation(category.Name, check.Name, annotationContent)
-						}
+						outputMarkdown := fmt.Sprintf("\n\n```term\n%s\n```", check.cachedCheckOutput)
+						terminalSummary += outputMarkdown
+						annotationSummary += outputMarkdown
+					}
+
+					r.out.WriteMarkdown(terminalSummary)
+
+					if r.generateAnnotations {
+						generateAnnotation(category.Name, check.Name, annotationSummary)
 					}
 				}
 			}
@@ -421,7 +426,7 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 		waitForReturn(r.in)
 
 		// Check statuses
-		r.out.WriteLine(output.Styled(output.StylePending, "Determining status..."))
+		r.out.WriteLine(output.Styled(output.StylePending, "Running check..."))
 		if err := check.Update(ctx, r.out, args); err != nil {
 			r.out.WriteWarningf("Check %q still not satisfied", check.Name)
 			return err
