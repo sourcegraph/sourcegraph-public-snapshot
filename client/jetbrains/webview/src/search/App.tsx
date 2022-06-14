@@ -151,14 +151,21 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                 return
             }
 
+            const nextSearch = {
+                query,
+                caseSensitive: caseSensitive ?? lastSearch.caseSensitive,
+                patternType: patternType ?? lastSearch.patternType,
+                selectedSearchContextSpec: options?.contextSpec ?? lastSearch.selectedSearchContextSpec,
+            }
+
             // If we don't unsubscribe, the previous search will be continued after the new search and search results will be mixed
             subscription.current?.unsubscribe()
             subscription.current = aggregateStreamingSearch(
-                of(`context:${contextSpec ?? lastSearch.selectedSearchContextSpec} ${query}`),
+                of(`context:${nextSearch.selectedSearchContextSpec} ${query}`),
                 {
                     version: LATEST_VERSION,
-                    caseSensitive: caseSensitive ?? lastSearch.caseSensitive,
-                    patternType: patternType ?? lastSearch.patternType,
+                    caseSensitive: nextSearch.caseSensitive,
+                    patternType: nextSearch.patternType,
                     trace: undefined,
                     sourcegraphURL: 'https://sourcegraph.com/.api',
                     decorationContextLines: 0,
@@ -169,12 +176,8 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                 setProgressState(searchResults.state)
             })
             setMatches([])
-            setLastSearch(current => ({
-                query,
-                caseSensitive: caseSensitive ?? current.caseSensitive,
-                patternType: patternType ?? current.patternType,
-                selectedSearchContextSpec: options?.contextSpec ?? current.selectedSearchContextSpec,
-            }))
+            setLastSearch(nextSearch)
+            saveLastSearch(nextSearch)
         },
         [lastSearch, userQueryState.query]
     )
@@ -195,9 +198,24 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         }
     }, [initialSearch, onSubmit, didInitialSubmit])
 
-    useEffect(() => {
-        saveLastSearch(lastSearch)
-    }, [lastSearch, userQueryState])
+    const statusBar = useMemo(
+        () => <StatusBar progress={progress} progressState={progressState} authState={authState} />,
+        [progress, progressState, authState]
+    )
+
+    // We reset the search result list whenever a new search is initiated using key={getStableKeyForLastSearch(lastSearch)}
+    const searchResultList = useMemo(
+        () => (
+            <SearchResultList
+                matches={matches}
+                key={getStableKeyForLastSearch(lastSearch)}
+                onPreviewChange={onPreviewChange}
+                onPreviewClear={onPreviewClear}
+                onOpen={onOpen}
+            />
+        ),
+        [lastSearch, matches, onOpen, onPreviewChange, onPreviewClear]
+    )
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
@@ -249,16 +267,9 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                     </form>
                 </div>
 
-                <StatusBar progress={progress} progressState={progressState} authState={authState} />
+                {statusBar}
 
-                {/* We reset the search result list whenever a new search is initiated using key={getStableKeyForLastSearch(lastSearch)} */}
-                <SearchResultList
-                    matches={matches}
-                    key={getStableKeyForLastSearch(lastSearch)}
-                    onPreviewChange={onPreviewChange}
-                    onPreviewClear={onPreviewClear}
-                    onOpen={onOpen}
-                />
+                {searchResultList}
             </div>
         </WildcardThemeContext.Provider>
     )
