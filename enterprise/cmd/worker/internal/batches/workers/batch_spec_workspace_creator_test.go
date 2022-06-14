@@ -201,7 +201,6 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 	executionResult := &execution.AfterStepResult{
 		Diff:      testDiff,
 		StepIndex: 0,
-		// todo: required? step 0 should not have this.
 		PreviousStepResult: execution.StepResult{
 			Files:  &git.Changes{Modified: []string{"README.md", "urls.txt"}},
 			Stdout: bytes.NewBufferString("asdf2"),
