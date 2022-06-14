@@ -64,7 +64,7 @@
         </action>
         <action
             id="sourcegraph.openSearch"
-            class="com.sourcegraph.find.OpenSearchAction"
+            class="com.sourcegraph.find.OpenFindAction"
             text="Open Sourcegraph Search View"
             description="Open Sourcegraph search view"
             icon="/icons/icon.png">
