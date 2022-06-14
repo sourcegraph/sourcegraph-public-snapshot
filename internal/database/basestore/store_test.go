@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
@@ -86,34 +87,13 @@ func TestConcurrentTransactions(t *testing.T) {
 		require.NoError(t, g.Wait())
 	})
 
-	t.Run("creating concurrent savepoints on a single transaction fails", func(t *testing.T) {
+	t.Run("parallel insertion on a single transaction does not fail but logs an error", func(t *testing.T) {
 		tx, err := store.Transact(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		var g errgroup.Group
-		for i := 0; i < 100; i++ {
-			i := i
-			g.Go(func() (err error) {
-				txNested, err := tx.Transact(ctx)
-				if err != nil {
-					return err
-				}
-				defer func() { err = txNested.Done(err) }()
-
-				return txNested.Exec(ctx, sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (%s, 42)`, i))
-			})
-		}
-		err = g.Wait()
-		require.ErrorIs(t, err, ErrConcurrentTransactionAccess)
-	})
-
-	t.Run("parallel insertions on a single transaction fails", func(t *testing.T) {
-		tx, err := store.Transact(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
+		capturingLogger, export := logtest.Captured(t)
+		tx.handle.(*txHandle).logger = capturingLogger
 
 		var g errgroup.Group
 		for i := 0; i < 100; i++ {
@@ -123,7 +103,11 @@ func TestConcurrentTransactions(t *testing.T) {
 			})
 		}
 		err = g.Wait()
-		require.ErrorIs(t, err, ErrConcurrentTransactionAccess)
+		require.NoError(t, err)
+
+		captured := export()
+		require.Greater(t, len(captured), 0)
+		require.Equal(t, "transaction used concurrently", captured[0].Message)
 	})
 }
 

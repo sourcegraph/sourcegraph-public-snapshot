@@ -45,17 +45,28 @@ var (
 
 // NewHandleWithDB returns a new transactable database handle using the given database connection.
 func NewHandleWithDB(db *sql.DB, txOptions sql.TxOptions) TransactableHandle {
-	return &dbHandle{DB: db, txOptions: txOptions}
+	return &dbHandle{
+		DB:        db,
+		logger:    log.Scoped("internal", "database"),
+		txOptions: txOptions,
+	}
 }
 
 // NewHandleWithTx returns a new transactable database handle using the given transaction.
 func NewHandleWithTx(tx *sql.Tx, txOptions sql.TxOptions) TransactableHandle {
-	return &txHandle{lockingTx: &lockingTx{tx: tx}, txOptions: txOptions}
+	return &txHandle{
+		lockingTx: &lockingTx{
+			tx:     tx,
+			logger: log.Scoped("internal", "database"),
+		},
+		txOptions: txOptions,
+	}
 }
 
 type dbHandle struct {
 	*sql.DB
 	txOptions sql.TxOptions
+	logger    log.Logger
 }
 
 func (h *dbHandle) InTransaction() bool {
@@ -161,20 +172,27 @@ var ErrConcurrentTransactionAccess = errors.New("transaction used concurrently")
 // lockingTx wraps a *sql.Tx with a mutex, and reports when a caller tries to
 // use the transaction concurrently. Since using a transaction concurrently is
 // unsafe, we want to catch these issues. If lockingTx detects that a
-// transaction is being used concurrently, it will return
-// ErrConcurrentTransactionAccess and log an error.
+// transaction is being used concurrently, it will log an error and attempt to
+// serialize the transaction accesses.
+// NOTE: this is not foolproof. Interleaving savepoints, accessing rows while
+// sending another query, etc. will still fail, so the logged error is a
+// notification that something needs fixed, not a notification that the locking
+// successfully prevented an issue. In the future, this will likely be upgraded
+// to a hard error.
 type lockingTx struct {
-	tx *sql.Tx
-	mu sync.Mutex
+	tx     *sql.Tx
+	mu     sync.Mutex
+	logger log.Logger
 }
 
-func (t *lockingTx) lock() error {
+func (t *lockingTx) lock() {
 	if !t.mu.TryLock() {
+		// For now, log an error, but try to serialize access anyways to try to
+		// keep things slightly safer.
 		err := errors.WithStack(ErrConcurrentTransactionAccess)
-		log.Scoped("internal", "database").Error("transaction used concurrently", log.Error(err))
-		return err
+		t.logger.Error("transaction used concurrently", log.Error(err))
+		t.mu.Lock()
 	}
-	return nil
 }
 
 func (t *lockingTx) unlock() {
@@ -182,50 +200,35 @@ func (t *lockingTx) unlock() {
 }
 
 func (t *lockingTx) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	if err := t.lock(); err != nil {
-		return nil, err
-	}
+	t.lock()
 	defer t.unlock()
 
 	return t.tx.ExecContext(ctx, query, args...)
 }
 
 func (t *lockingTx) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	if err := t.lock(); err != nil {
-		return nil, err
-	}
+	t.lock()
 	defer t.unlock()
 
 	return t.tx.QueryContext(ctx, query, args...)
 }
 
 func (t *lockingTx) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
-	if err := t.lock(); err != nil {
-		// XXX(camdencheek): There is no way to construct a row that has an
-		// error, so in order for this to return an error, we'll need to have
-		// it return an interface. Instead, we attempt to acquire the lock
-		// to make this at least be safer if we can't report the error other
-		// than through logs.
-		t.mu.Lock()
-	}
+	t.lock()
 	defer t.unlock()
 
 	return t.tx.QueryRowContext(ctx, query, args...)
 }
 
 func (t *lockingTx) Commit() error {
-	if err := t.lock(); err != nil {
-		return err
-	}
+	t.lock()
 	defer t.unlock()
 
 	return t.tx.Commit()
 }
 
 func (t *lockingTx) Rollback() error {
-	if err := t.lock(); err != nil {
-		return err
-	}
+	t.lock()
 	defer t.unlock()
 
 	return t.tx.Rollback()
