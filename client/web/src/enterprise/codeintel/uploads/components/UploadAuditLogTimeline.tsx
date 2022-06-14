@@ -3,7 +3,7 @@ import { FunctionComponent, ReactNode } from 'react'
 import DatabaseEditIcon from 'mdi-react/DatabaseEditIcon'
 import DatabasePlusIcon from 'mdi-react/DatabasePlusIcon'
 
-import { Container } from '@sourcegraph/wildcard'
+import { Container, Icon } from '@sourcegraph/wildcard'
 
 import { Timeline } from '../../../../components/Timeline'
 import { AuditLogOperation, LsifUploadsAuditLogsFields } from '../../../../graphql-operations'
@@ -18,7 +18,12 @@ export const UploadAuditLogTimeline: FunctionComponent<React.PropsWithChildren<U
     logs,
 }) => {
     const stages = logs?.map(log => ({
-        icon: log.operation === AuditLogOperation.CREATE ? <DatabasePlusIcon /> : <DatabaseEditIcon />,
+        icon:
+            log.operation === AuditLogOperation.CREATE ? (
+                <Icon as={DatabasePlusIcon} aria-label="Success" />
+            ) : (
+                <Icon as={DatabaseEditIcon} aria-label="Warn" />
+            ),
         text: stageText(log),
         className: log.operation === AuditLogOperation.CREATE ? 'bg-success' : 'bg-warning',
         expanded: true,

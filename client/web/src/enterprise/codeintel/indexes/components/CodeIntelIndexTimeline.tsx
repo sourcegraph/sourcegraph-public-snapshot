@@ -7,6 +7,7 @@ import TimerSandIcon from 'mdi-react/TimerSandIcon'
 
 import { isDefined } from '@sourcegraph/common'
 import { LSIFIndexState } from '@sourcegraph/shared/src/graphql-operations'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { ExecutionLogEntry } from '../../../../components/ExecutionLogEntry'
 import { Timeline, TimelineStage } from '../../../../components/Timeline'
@@ -27,8 +28,18 @@ export const CodeIntelIndexTimeline: FunctionComponent<React.PropsWithChildren<C
 }) => {
     const stages = useMemo(
         () => [
-            { icon: <TimerSandIcon />, text: 'Queued', date: index.queuedAt, className: 'bg-success' },
-            { icon: <CheckIcon />, text: 'Began processing', date: index.startedAt, className: 'bg-success' },
+            {
+                icon: <Icon as={TimerSandIcon} aria-label="Success" />,
+                text: 'Queued',
+                date: index.queuedAt,
+                className: 'bg-success',
+            },
+            {
+                icon: <Icon as={CheckIcon} aria-label="Success" />,
+                text: 'Began processing',
+                date: index.startedAt,
+                className: 'bg-success',
+            },
 
             indexSetupStage(index, now),
             indexPreIndexStage(index, now),
@@ -37,8 +48,18 @@ export const CodeIntelIndexTimeline: FunctionComponent<React.PropsWithChildren<C
             indexTeardownStage(index, now),
 
             index.state === LSIFIndexState.COMPLETED
-                ? { icon: <CheckIcon />, text: 'Finished', date: index.finishedAt, className: 'bg-success' }
-                : { icon: <AlertCircleIcon />, text: 'Failed', date: index.finishedAt, className: 'bg-danger' },
+                ? {
+                      icon: <Icon as={CheckIcon} aria-label="Success" />,
+                      text: 'Finished',
+                      date: index.finishedAt,
+                      className: 'bg-success',
+                  }
+                : {
+                      icon: <Icon as={AlertCircleIcon} aria-label="Failed" />,
+                      text: 'Failed',
+                      date: index.finishedAt,
+                      className: 'bg-danger',
+                  },
         ],
         [index, now]
     )
@@ -134,7 +155,13 @@ const genericStage = <E extends { startTime: string; exitCode: number | null }>(
     const success = Array.isArray(value) ? value.every(logEntry => logEntry.exitCode === 0) : value.exitCode === 0
 
     return {
-        icon: !finished ? <ProgressClockIcon /> : success ? <CheckIcon /> : <AlertCircleIcon />,
+        icon: !finished ? (
+            <Icon as={ProgressClockIcon} aria-label="Success" />
+        ) : success ? (
+            <Icon as={CheckIcon} aria-label="Success" />
+        ) : (
+            <Icon as={AlertCircleIcon} aria-label="Failed" />
+        ),
         date: Array.isArray(value) ? value[0].startTime : value.startTime,
         className: success || !finished ? 'bg-success' : 'bg-danger',
         expanded: !(success || !finished),
