@@ -421,7 +421,7 @@ steps:
 ## [`steps.mount`](#steps-mount)
 
 <aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> <code>mount</code> is an experimental feature in Sourcegraph 3.41 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.xx. It's a <b>preview</b> of functionality we're currently exploring to make running custom scripts/binaries easier. If you have any feedback, please let us know!
+<span class="badge badge-experimental">Experimental</span> <code>mount</code> is an experimental feature in Sourcegraph 3.41 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.41. It's a <b>preview</b> of functionality we're currently exploring to make running custom scripts/binaries easier. If you have any feedback, please let us know!
 </aside>
 
 Mounts a local path to a path in a Docker container. Mounted paths are accessible to the step's `run` command.
