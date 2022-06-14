@@ -2,8 +2,9 @@ package deploy
 
 import "os"
 
-// Deploy type constants. Any changes here should be reflected in the DeployType type declared in client/web/src/jscontext.ts:
-// https://sourcegraph.com/search?q=r:github.com/sourcegraph/sourcegraph%24+%22type+DeployType%22
+// Deploy type constants. Changes here should be reflected in several other places. Mirror
+// the changes from this PR to make sure these places are consistent:
+// https://github.com/sourcegraph/sourcegraph/pull/32407/files
 const (
 	Kubernetes           = "kubernetes"
 	SingleDocker         = "docker-container"
