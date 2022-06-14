@@ -107,6 +107,7 @@ function qa() {
   export PERFORCE_USER
   PERFORCE_PASSWORD=$(gcloud secrets versions access latest --secret=PERFORCE_PASSWORD --quiet --project=sourcegraph-ci)
   export PERFORCE_PASSWORD
+  export PERFORCE_PORT="1666"
 
   pushd "$root_dir/dev/gqltest"
   go test -long -base-url "$SOURCEGRAPH_BASE_URL" -email "$TEST_USER_EMAIL" -username "$TEST_USER_NAME" -password "$TEST_USER_PASSWORD"
