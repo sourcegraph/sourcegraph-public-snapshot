@@ -53,6 +53,12 @@ type insightViewResolver struct {
 	dataSeriesGenerator   insightSeriesResolverGenerator
 
 	baseInsightResolver
+
+	// Cache results because they are used by multiple fields
+	seriesOnce      sync.Once
+	seriesErr       error
+	totalSeries     int
+	seriesResolvers []graphqlbackend.InsightSeriesResolver
 }
 
 const insightKind = "insight_view"
@@ -173,51 +179,57 @@ func (i *insightViewResolver) registerDataSeriesGenerators() {
 }
 
 func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
-	var resolvers []graphqlbackend.InsightSeriesResolver
-	if i.view.IsFrozen {
-		// if the view is frozen, we do not show time series data. This is just a basic limitation to prevent
-		// easy mis-use of unlicensed features.
-		return nil, nil
-	}
-	// Ensure that the data series generators have been registered
-	i.registerDataSeriesGenerators()
-	if i.dataSeriesGenerator == nil {
-		return nil, errors.New("no dataseries resolver generator registered")
-	}
+	return i.computeDataSeries(ctx)
+}
 
-	var filters *types.InsightViewFilters
-	if i.overrideFilters != nil {
-		filters = i.overrideFilters
-	} else {
-		filters = &i.view.Filters
-	}
-
-	var seriesOptions types.SeriesDisplayOptions
-	if i.overrideSeriesOptions != nil {
-		seriesOptions = *i.overrideSeriesOptions
-	} else {
-		seriesOptions = i.view.SeriesOptions
-	}
-
-	for _, current := range i.view.Series {
-		seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters)
-		if err != nil {
-			return nil, errors.Wrapf(err, "generate for seriesID: %s", current.SeriesID)
+func (i *insightViewResolver) computeDataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
+	i.seriesOnce.Do(func() {
+		var resolvers []graphqlbackend.InsightSeriesResolver
+		if i.view.IsFrozen {
+			// if the view is frozen, we do not show time series data. This is just a basic limitation to prevent
+			// easy mis-use of unlicensed features.
+			return
 		}
-		resolvers = append(resolvers, seriesResolvers...)
-	}
+		// Ensure that the data series generators have been registered
+		i.registerDataSeriesGenerators()
+		if i.dataSeriesGenerator == nil {
+			i.seriesErr = errors.New("no dataseries resolver generator registered")
+			return
+		}
 
-	// Avoid sorting user-defined series unless they have set explicit sort options.
-	isCaptureGroup := i.dataSeriesGenerator.handles(types.InsightViewSeries{GeneratedFromCaptureGroups: true}) || i.dataSeriesGenerator.handles(types.InsightViewSeries{GeneratedFromCaptureGroups: true, JustInTime: true})
-	if seriesOptions.Limit != nil || seriesOptions.SortOptions != nil || isCaptureGroup {
+		var filters *types.InsightViewFilters
+		if i.overrideFilters != nil {
+			filters = i.overrideFilters
+		} else {
+			filters = &i.view.Filters
+		}
+
+		var seriesOptions types.SeriesDisplayOptions
+		if i.overrideSeriesOptions != nil {
+			seriesOptions = *i.overrideSeriesOptions
+		} else {
+			seriesOptions = i.view.SeriesOptions
+		}
+
+		for _, current := range i.view.Series {
+			seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters)
+			if err != nil {
+				i.seriesErr = errors.Wrapf(err, "generate for seriesID: %s", current.SeriesID)
+				return
+			}
+			resolvers = append(resolvers, seriesResolvers...)
+		}
+		i.totalSeries = len(resolvers)
+
 		sortedAndLimitedResovlers, err := sortSeriesResolvers(ctx, seriesOptions, resolvers)
 		if err != nil {
-			return nil, errors.Wrapf(err, "sortSeriesResolvers for insightViewID: %s", i.view.UniqueID)
+			i.seriesErr = errors.Wrapf(err, "sortSeriesResolvers for insightViewID: %s", i.view.UniqueID)
+			return
 		}
-		return sortedAndLimitedResovlers, nil
-	}
+		i.seriesResolvers = sortedAndLimitedResovlers
+	})
 
-	return resolvers, nil
+	return i.seriesResolvers, i.seriesErr
 }
 
 func (i *insightViewResolver) Dashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) graphqlbackend.InsightsDashboardConnectionResolver {
@@ -341,6 +353,11 @@ func (i *insightViewResolver) DashboardReferenceCount(ctx context.Context) (int3
 
 func (i *insightViewResolver) IsFrozen(ctx context.Context) (bool, error) {
 	return i.view.IsFrozen, nil
+}
+
+func (i *insightViewResolver) SeriesCount(ctx context.Context) (int32, error) {
+	_, err := i.computeDataSeries(ctx)
+	return int32(i.totalSeries), err
 }
 
 type searchInsightDataSeriesDefinitionResolver struct {
