@@ -31,54 +31,57 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         return previewContent;
     }
 
-    public void setContent(@NotNull PreviewContent previewContent) {
-        if (editorComponent != null && previewContent.equals(this.previewContent)) {
-            return;
-        }
-
-        this.previewContent = previewContent;
-        String fileContent = previewContent.getContent();
-
-        /* If no content, just show "No preview available" */
-        if (fileContent == null) {
-            clearContent();
-            return;
-        }
-
-        if (previewContent.getVirtualFile() == null) {
-            clearContent();
-            return;
-        }
-
+    public void setContent(@Nullable PreviewContent previewContent) {
         ApplicationManager.getApplication().invokeLater(() -> {
-            if (editorComponent != null) {
-                remove(editorComponent);
+            synchronized (this) { // Making sure that this is not run twice in parallel
+                if (previewContent == null) {
+                    clearContent();
+                    return;
+                }
+
+                if (editorComponent != null && previewContent.equals(this.previewContent)) {
+                    return;
+                }
+
+                String fileContent = previewContent.getContent();
+
+                /* If no content, just show "No preview available" */
+                if (fileContent == null || previewContent.getVirtualFile() == null) {
+                    clearContent();
+                    return;
+                }
+
+                this.previewContent = previewContent;
+
+                if (editorComponent != null) {
+                    remove(editorComponent);
+                }
+                EditorFactory editorFactory = EditorFactory.getInstance();
+                Document document = editorFactory.createDocument(fileContent);
+                document.setReadOnly(true);
+
+                editor = editorFactory.createEditor(document, project, previewContent.getVirtualFile(), true, EditorKind.MAIN_EDITOR);
+
+                EditorSettings settings = editor.getSettings();
+                settings.setLineMarkerAreaShown(true);
+                settings.setFoldingOutlineShown(false);
+                settings.setAdditionalColumnsCount(0);
+                settings.setAdditionalLinesCount(0);
+                settings.setAnimatedScrolling(false);
+                settings.setAutoCodeFoldingEnabled(false);
+
+                editorComponent = editor.getComponent();
+                add(editorComponent, BorderLayout.CENTER);
+
+                revalidate();
+                repaint();
+
+                addAndScrollToHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
             }
-            EditorFactory editorFactory = EditorFactory.getInstance();
-            Document document = editorFactory.createDocument(fileContent);
-            document.setReadOnly(true);
-
-            editor = editorFactory.createEditor(document, project, previewContent.getVirtualFile(), true, EditorKind.MAIN_EDITOR);
-
-            EditorSettings settings = editor.getSettings();
-            settings.setLineMarkerAreaShown(true);
-            settings.setFoldingOutlineShown(false);
-            settings.setAdditionalColumnsCount(0);
-            settings.setAdditionalLinesCount(0);
-            settings.setAnimatedScrolling(false);
-            settings.setAutoCodeFoldingEnabled(false);
-
-            editorComponent = editor.getComponent();
-            add(editorComponent, BorderLayout.CENTER);
-
-            revalidate();
-            repaint();
-
-            addAndScrollToHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
         });
     }
 
-    private void addAndScrollToHighlights(Editor editor, int[][] absoluteOffsetAndLengths) {
+    private void addAndScrollToHighlights(@NotNull Editor editor, @NotNull int[][] absoluteOffsetAndLengths) {
         int firstOffset = -1;
         HighlightManager highlightManager = HighlightManager.getInstance(project);
         for (int[] offsetAndLength : absoluteOffsetAndLengths) {
@@ -94,14 +97,10 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         }
     }
 
-    public void clearContent() {
+    private void clearContent() {
         if (editorComponent != null) {
-            ApplicationManager.getApplication().invokeLater(() -> {
-                remove(editorComponent);
-                editorComponent = null;
-                revalidate();
-                repaint();
-            });
+            previewContent = null;
+            editorComponent.setVisible(false);
         }
     }
 

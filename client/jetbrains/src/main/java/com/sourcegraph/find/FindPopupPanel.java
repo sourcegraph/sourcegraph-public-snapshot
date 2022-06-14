@@ -104,7 +104,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
     }
 
     public void clearPreviewContent() {
-        previewPanel.clearContent();
+        previewPanel.setContent(null);
     }
 
     public void setBrowserVisible(boolean visible) {
