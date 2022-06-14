@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { BrowserRouter } from 'react-router-dom'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 
+// eslint-disable-next-line no-restricted-imports
 import browserExtensionStyles from '@sourcegraph/browser/src/app.scss'
 // eslint-disable-next-line no-restricted-imports
 import bitbucketCodeHostStyles from '@sourcegraph/browser/src/shared/code-hosts/bitbucket/codeHost.module.scss'

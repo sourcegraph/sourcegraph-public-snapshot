@@ -6,7 +6,6 @@ import { CompatRouter } from 'react-router-dom-v5-compat'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { MockedStoryProvider, MockedStoryProviderProps, usePrependStyles, useTheme } from '@sourcegraph/storybook'
-
 // Add root Tooltip for Storybook
 import { DeprecatedTooltip, WildcardThemeContext } from '@sourcegraph/wildcard'
 
