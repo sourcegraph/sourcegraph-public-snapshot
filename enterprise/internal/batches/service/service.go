@@ -251,8 +251,8 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	}
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
-	actor := actor.FromContext(ctx)
-	spec.UserID = actor.UID
+	a := actor.FromContext(ctx)
+	spec.UserID = a.UID
 
 	if len(opts.ChangesetSpecRandIDs) == 0 {
 		return spec, s.store.CreateBatchSpec(ctx, spec)
@@ -341,8 +341,8 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
 	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
-	actor := actor.FromContext(ctx)
-	spec.UserID = actor.UID
+	a := actor.FromContext(ctx)
+	spec.UserID = a.UID
 
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
@@ -369,6 +369,11 @@ type createBatchSpecForExecutionOpts struct {
 // transaction, possibly creating ChangesetSpecs if the spec contains
 // importChangesets statements, and finally creating a BatchSpecResolutionJob.
 func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Store, opts createBatchSpecForExecutionOpts) error {
+	// Temporarily prevent mounts for server-side processing.
+	if hasMount(opts.spec) {
+		return errors.New("mounts are not allowed for server-side processing")
+	}
+
 	opts.spec.CreatedFromRaw = true
 	opts.spec.AllowIgnored = opts.allowIgnored
 	opts.spec.AllowUnsupported = opts.allowUnsupported
@@ -384,6 +389,15 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 		BatchSpecID: opts.spec.ID,
 		InitiatorID: opts.spec.UserID,
 	})
+}
+
+func hasMount(spec *btypes.BatchSpec) bool {
+	for _, step := range spec.Spec.Steps {
+		if len(step.Mount) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 type ErrBatchSpecResolutionErrored struct {
@@ -583,8 +597,8 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
 	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
-	actor := actor.FromContext(ctx)
-	spec.UserID = actor.UID
+	a := actor.FromContext(ctx)
+	spec.UserID = a.UID
 
 	// Start transaction.
 	tx, err := s.store.Transact(ctx)
@@ -597,7 +611,7 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 	old, err := s.store.GetNewestBatchSpec(ctx, store.GetNewestBatchSpecOpts{
 		NamespaceUserID: opts.NamespaceUserID,
 		NamespaceOrgID:  opts.NamespaceOrgID,
-		UserID:          actor.UID,
+		UserID:          a.UID,
 		Name:            spec.Spec.Name,
 	})
 	if err != nil && err != store.ErrNoResults {

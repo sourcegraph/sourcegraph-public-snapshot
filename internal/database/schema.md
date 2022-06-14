@@ -119,7 +119,7 @@ Foreign-key constraints:
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
  queued_at         | timestamp with time zone |           |          | now()
- initiator_id      | integer                  |           |          | 
+ initiator_id      | integer                  |           | not null | 
 Indexes:
     "batch_spec_resolution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_resolution_jobs_batch_spec_id_unique" UNIQUE CONSTRAINT, btree (batch_spec_id)
@@ -308,6 +308,7 @@ Foreign-key constraints:
 Indexes:
     "changeset_specs_pkey" PRIMARY KEY, btree (id)
     "changeset_specs_batch_spec_id" btree (batch_spec_id)
+    "changeset_specs_created_at" btree (created_at)
     "changeset_specs_external_id" btree (external_id)
     "changeset_specs_head_ref" btree (head_ref)
     "changeset_specs_rand_id" btree (rand_id)
@@ -370,6 +371,7 @@ Indexes:
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
     "changesets_batch_change_ids" gin (batch_change_ids)
     "changesets_bitbucket_cloud_metadata_source_commit_idx" btree ((((metadata -> 'source'::text) -> 'commit'::text) ->> 'hash'::text))
+    "changesets_changeset_specs" btree (current_spec_id, previous_spec_id)
     "changesets_external_state_idx" btree (external_state)
     "changesets_external_title_idx" btree (external_title)
     "changesets_publication_state_idx" btree (publication_state)
@@ -959,6 +961,8 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 Indexes:
     "explicit_permissions_bitbucket_projects_jobs_pkey" PRIMARY KEY, btree (id)
     "explicit_permissions_bitbucket_projects_jobs_project_key_extern" btree (project_key, external_service_id, state)
+    "explicit_permissions_bitbucket_projects_jobs_queued_at_idx" btree (queued_at)
+    "explicit_permissions_bitbucket_projects_jobs_state_idx" btree (state)
 Check constraints:
     "explicit_permissions_bitbucket_projects_jobs_check" CHECK (permissions IS NOT NULL AND unrestricted IS FALSE OR permissions IS NULL AND unrestricted IS TRUE)
 

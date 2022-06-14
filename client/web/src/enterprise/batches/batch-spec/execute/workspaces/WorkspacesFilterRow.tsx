@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { lowerCase, upperFirst } from 'lodash'
 import { useHistory } from 'react-router'
@@ -8,6 +8,11 @@ import { Input, Select } from '@sourcegraph/wildcard'
 
 import { BatchSpecWorkspaceState } from '../../../../../graphql-operations'
 import { isValidBatchSpecWorkspaceState } from '../util'
+
+/** We exclude pending as a filter option, because it's not a valid state on the execution page. */
+const STATES_WITHOUT_PENDING = Object.values(BatchSpecWorkspaceState).filter(
+    value => value !== BatchSpecWorkspaceState.PENDING
+)
 
 export interface WorkspaceFilters {
     state: BatchSpecWorkspaceState | null
@@ -61,12 +66,6 @@ export const WorkspaceFilterRow: React.FunctionComponent<React.PropsWithChildren
         setSearch(searchElement.current?.value)
     }, [])
 
-    // We exclude pending as a filter option, because it's not a valid state on the execution page.
-    const statesWithoutPending = useMemo(
-        () => Object.values(BatchSpecWorkspaceState).filter(value => value !== BatchSpecWorkspaceState.PENDING),
-        []
-    )
-
     return (
         <div className="d-flex align-items-center mb-2">
             <Form className="d-flex flex-grow-1 mr-2" onSubmit={onSubmit}>
@@ -79,7 +78,7 @@ export const WorkspaceFilterRow: React.FunctionComponent<React.PropsWithChildren
                 />
             </Form>
             <WorkspaceFilter<BatchSpecWorkspaceState>
-                values={statesWithoutPending}
+                values={STATES_WITHOUT_PENDING}
                 label="State"
                 selected={state}
                 onChange={setState}

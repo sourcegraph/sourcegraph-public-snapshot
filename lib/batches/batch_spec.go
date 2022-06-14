@@ -199,8 +199,21 @@ func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*Ba
 		}
 	}
 
+	for i, step := range spec.Steps {
+		for _, mount := range step.Mount {
+			if strings.Contains(mount.Path, invalidMountCharacters) {
+				errs = errors.Append(errs, NewValidationError(errors.Newf("step %d mount path contains invalid characters", i+1)))
+			}
+			if strings.Contains(mount.Mountpoint, invalidMountCharacters) {
+				errs = errors.Append(errs, NewValidationError(errors.Newf("step %d mount mountpoint contains invalid characters", i+1)))
+			}
+		}
+	}
+
 	return &spec, errs
 }
+
+const invalidMountCharacters = ","
 
 func (on *OnQueryOrRepository) String() string {
 	if on.RepositoriesMatchingQuery != "" {
