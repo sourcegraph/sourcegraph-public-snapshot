@@ -15,7 +15,7 @@ import {
     // SettingsOrgSubject,
     // SettingsUserSubject,
 } from '@sourcegraph/shared/src/settings/settings'
-import { Button, Container, Input, Icon, RadioButton, H3 } from '@sourcegraph/wildcard'
+import { Button, Container, Input, Icon, RadioButton } from '@sourcegraph/wildcard'
 
 import {
     BatchChangeFields,
