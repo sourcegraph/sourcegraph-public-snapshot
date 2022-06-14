@@ -87,8 +87,8 @@ The changeset may also be in a state that we cannot currently publish from: for 
 ### Why do my changesets take a long time to sync?
 Have you [set up webhooks](requirements.md#batch-changes-effect-on-code-host-rate-limits)?
 
-### Archived Changesets
-When running a batch change, you have the ability to update it to change it's scope of repositories affected. 
-However, when a batch spec has been applied, updating the batch spec to increase / decrease the number of changesets results in the workspace being recalculated - sometimes this leads to existing changesets not matching the updated spec, these changesets are referred to as `archived` and the state is reflected on the UI by navigating to the `Archived` tab.
+### Why has my changeset been archived?
 
-The only bulk operation available on an archived changeset is the `DETACH` operation which removes the connection between that changeset and the currently executed batch change.
+When re-running a batch spec on an existing batch change, the scope of repositories affected may change if you modify your `on` statement or if Sourcegraph simply finds a different set of results than it did last time. If the new batch spec no longer matches a repository that Sourcegraph has already created a changeset for, that changeset will be closed on the codehost and marked as *archived* in the batch change when you apply the new batch spec. You will be able to see these actions from the preview screen before you apply the batch spec. Archived changesets are still associated with the batch change, but they will appear under the "Archived" tab on the batch change page instead.
+
+See our [how-to guide](../../how-tos/updating_a_batch_change.md#removing-changesets) to learn more about archiving changesets, including how to unarchive a changeset and how to remove a changeset from the batch change entirely.
