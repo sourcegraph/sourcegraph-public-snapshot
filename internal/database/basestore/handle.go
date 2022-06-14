@@ -178,7 +178,7 @@ var ErrConcurrentTransactionAccess = errors.New("transaction used concurrently")
 // sending another query, etc. will still fail, so the logged error is a
 // notification that something needs fixed, not a notification that the locking
 // successfully prevented an issue. In the future, this will likely be upgraded
-// to a hard error.
+// to a hard error. Think of this like the race detector, not a race protector.
 type lockingTx struct {
 	tx     *sql.Tx
 	mu     sync.Mutex
