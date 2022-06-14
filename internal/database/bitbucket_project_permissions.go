@@ -212,13 +212,13 @@ ORDER BY queued_at DESC
 LIMIT %d
 `
 
-	// we don't want to accept to many projects, that's why input slice is trimmed
+	// we don't want to accept too many projects, that's why the input slice is trimmed
 	if len(opt.ProjectKeys) != 0 {
 		keys := opt.ProjectKeys
 		if len(opt.ProjectKeys) > maxJobsCount {
 			keys = keys[:maxJobsCount]
 		}
-		keyQueries := []*sqlf.Query{}
+		keyQueries := make([]*sqlf.Query, 0, len(keys))
 		for _, key := range keys {
 			keyQueries = append(keyQueries, sqlf.Sprintf("%s", key))
 		}
