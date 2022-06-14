@@ -9,8 +9,8 @@ import com.sourcegraph.find.FindPopupPanel;
 import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.find.Search;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
