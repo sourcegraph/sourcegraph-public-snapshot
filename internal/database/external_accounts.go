@@ -31,7 +31,7 @@ func (err userExternalAccountNotFoundError) NotFound() bool {
 	return true
 }
 
-// userExternalAccountsStore provides access to the `user_external_accounts` table.
+// UserExternalAccountsStore provides access to the `user_external_accounts` table.
 type UserExternalAccountsStore interface {
 	// AssociateUserAndSave is used for linking a new, additional external account with an existing
 	// Sourcegraph account.
