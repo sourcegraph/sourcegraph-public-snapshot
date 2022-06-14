@@ -12,7 +12,6 @@ import {
     LazyMonacoQueryInputProps,
 } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
 import { SearchContextDropdown } from '@sourcegraph/search-ui/src/input/SearchContextDropdown'
-import { Toggles, TogglesProps } from '@sourcegraph/search-ui/src/input/toggles'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -22,10 +21,12 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { Search } from '../jetbrains-icons/Search'
 
+import { JetBrainsToggles, JetBrainsTogglesProps } from './JetBrainsToggles'
+
 import styles from './JetBrainsSearchBox.module.scss'
 
 export interface JetBrainsSearchBoxProps
-    extends Omit<TogglesProps, 'navbarSearchQuery' | 'submitSearch'>,
+    extends Omit<JetBrainsTogglesProps, 'navbarSearchQuery' | 'submitSearch'>,
         ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
@@ -123,7 +124,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         onEditorCreated={onEditorCreated}
                         placeholder="Enter search query..."
                     />
-                    <Toggles
+                    <JetBrainsToggles
                         patternType={props.patternType}
                         setPatternType={props.setPatternType}
                         caseSensitive={props.caseSensitive}
