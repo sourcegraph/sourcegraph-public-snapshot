@@ -1,7 +1,8 @@
 import React, { useCallback } from 'react'
 
 import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
-import { Select } from '@sourcegraph/wildcard'
+import { Icon, Select } from '@sourcegraph/wildcard'
+import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 
 const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
     switch (namespace.__typename) {
@@ -40,7 +41,17 @@ export const NamespaceSelector: React.FunctionComponent<React.PropsWithChildren<
 
     return (
         <Select
-            label={<strong className="text-nowrap mb-2">Namespace</strong>}
+            label={
+                <>
+                    <strong className="text-nowrap mb-2">Namespace</strong>
+                    <Icon
+                        aria-label="Coming soon"
+                        data-tooltip="Coming soon"
+                        as={InfoCircleOutlineIcon}
+                        className="ml-1"
+                    />
+                </>
+            }
             isCustomStyle={true}
             id={NAMESPACE_SELECTOR_ID}
             value={selectedNamespace}

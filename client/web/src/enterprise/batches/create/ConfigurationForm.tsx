@@ -27,7 +27,7 @@ import {
 } from '../../../graphql-operations'
 
 import { CREATE_BATCH_SPEC_FROM_RAW, CREATE_EMPTY_BATCH_CHANGE } from './backend'
-// import { NamespaceSelector } from './NamespaceSelector'
+import { NamespaceSelector } from './NamespaceSelector'
 import { useNamespaces } from './useNamespaces'
 
 import styles from './ConfigurationForm.module.scss'
@@ -77,11 +77,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
     const loading = batchChangeLoading || batchSpecLoading
     const error = batchChangeError || batchSpecError
 
-    // TODO: As we haven't finished implementing support for orgs, we've temporary
-    // disabled the namespace selector. Replace this line with the commented-out one that
-    // follows it to restore the selector.
-    const { userNamespace: selectedNamespace } = useNamespaces(
-        // const { namespaces, defaultSelectedNamespace } = useNamespaces(
+    const { namespaces, defaultSelectedNamespace: _defaultSelectedNamespace, userNamespace } = useNamespaces(
         settingsCascade,
         batchChange?.namespace.id || initialNamespaceID
     )
@@ -93,6 +89,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
     // const [selectedNamespace, setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
     //     defaultSelectedNamespace
     // )
+    const selectedNamespace = userNamespace
 
     const [nameInput, setNameInput] = useState(batchChange?.name || '')
     const [isNameValid, setIsNameValid] = useState<boolean>()
@@ -142,14 +139,16 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
         <Form className={styles.form} onSubmit={handleCreate}>
             <Container className="mb-4">
                 {error && <ErrorAlert error={error} />}
-                {/* TODO: As we haven't finished implementing support for orgs, we've temporary
-                disabled the namespace selector. This code should be uncommented to restore it */}
-                {/* <NamespaceSelector
+                <NamespaceSelector
                     namespaces={namespaces}
                     selectedNamespace={selectedNamespace.id}
-                    onSelect={setSelectedNamespace}
-                    disabled={isReadOnly}
-                /> */}
+                    // TODO: As we haven't finished implementing support for orgs, we've temporary
+                    // disabled the namespace selector. This code should be uncommented to restore it
+                    // onSelect={setSelectedNamespace}
+                    // disabled={isReadOnly}
+                    onSelect={noop}
+                    disabled={true}
+                />
                 <Input
                     label="Batch change name"
                     value={nameInput}
@@ -170,9 +169,15 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                     </small>
                 )}
                 <hr className="my-3" />
-                <H3 className="text-muted">
-                    Visibility <Icon aria-label="Coming soon" data-tooltip="Coming soon" as={InfoCircleOutlineIcon} />
-                </H3>
+                <strong className="d-block mb-2">
+                    Visibility
+                    <Icon
+                        aria-label="Coming soon"
+                        data-tooltip="Coming soon"
+                        as={InfoCircleOutlineIcon}
+                        className="ml-1"
+                    />
+                </strong>
                 <div className="form-group mb-1">
                     <RadioButton
                         name="visibility"
