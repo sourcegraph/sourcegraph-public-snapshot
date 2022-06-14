@@ -115,7 +115,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 		}
 
 		if opts.task.CachedResultFound && i == startStep {
-			previousStepResult = opts.task.CachedResult.PreviousStepResult
+			previousStepResult = opts.task.CachedResult.StepResult
 
 			stepContext.PreviousStep = previousStepResult
 			stepContext.Steps.Changes = previousStepResult.Files
@@ -125,7 +125,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 			// apply them.
 			if opts.task.CachedResult.Diff != "" {
 				if err := ws.ApplyDiff(ctx, []byte(opts.task.CachedResult.Diff)); err != nil {
-					return execResult, nil, errors.Wrap(err, "getting changed files in step")
+					return execResult, nil, errors.Wrap(err, "applying diff of cache result")
 				}
 			}
 		}
@@ -168,7 +168,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 			return execResult, nil, errors.Wrap(err, "getting changed files in step")
 		}
 
-		result := execution.StepResult{Files: changes, Stdout: &stdoutBuffer, Stderr: &stderrBuffer}
+		result := execution.StepResult{Files: changes, Stdout: stdoutBuffer.String(), Stderr: stderrBuffer.String()}
 
 		// Set stepContext.Step to current step's results before rendering outputs
 		stepContext.Step = result
@@ -183,10 +183,10 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 			return execResult, nil, errors.Wrap(err, "getting diff produced by step")
 		}
 		stepResult := execution.AfterStepResult{
-			StepIndex:          i,
-			Diff:               string(stepDiff),
-			Outputs:            make(map[string]interface{}),
-			PreviousStepResult: stepContext.PreviousStep,
+			StepIndex:  i,
+			Diff:       string(stepDiff),
+			Outputs:    make(map[string]interface{}),
+			StepResult: result,
 		}
 		for k, v := range execResult.Outputs {
 			stepResult.Outputs[k] = v

@@ -545,10 +545,10 @@ index 02a19af..c9644dd 100644
 			},
 			CachedResultFound: true,
 			CachedResult: execution.AfterStepResult{
-				StepIndex:          0,
-				Diff:               cachedDiff,
-				Outputs:            map[string]interface{}{},
-				PreviousStepResult: execution.StepResult{},
+				StepIndex:  0,
+				Diff:       cachedDiff,
+				Outputs:    map[string]interface{}{},
+				StepResult: execution.StepResult{},
 			},
 			Repository: testRepo1,
 		}
@@ -666,13 +666,13 @@ echo "previous_step.modified_files=${{ previous_step.modified_files }}" >> READM
 				Outputs: map[string]interface{}{
 					"myOutput": "my-output.txt",
 				},
-				PreviousStepResult: execution.StepResult{
+				StepResult: execution.StepResult{
 					Files: &git.Changes{
 						Modified: []string{"README.md"},
 						Added:    []string{"README.txt"},
 					},
-					Stdout: nil,
-					Stderr: nil,
+					Stdout: "",
+					Stderr: "",
 				},
 			},
 		}
@@ -702,6 +702,79 @@ echo "previous_step.modified_files=${{ previous_step.modified_files }}" >> READM
 
 		lastStepResult := results[0].stepResults[1]
 		if have, want := lastStepResult.StepIndex, 4; have != want {
+			t.Fatalf("wrong stepIndex. have=%d, want=%d", have, want)
+		}
+
+		if diff := cmp.Diff(lastStepResult.Outputs, task.CachedResult.Outputs); diff != "" {
+			t.Fatalf("wrong step result outputs: %s", diff)
+		}
+	})
+
+	t.Run("step stdout cached", func(t *testing.T) {
+		archive := mock.RepoArchive{
+			RepoName: testRepo1.Name, Commit: testRepo1.Rev(),
+			Files: map[string]string{
+				"README.md": `# automation-testing
+This repository is used to test opening and closing pull request with Automation
+`,
+			},
+		}
+
+		wantFinalDiff := `diff --git README.md README.md
+index 3040106..5f2f924 100644
+--- README.md
++++ README.md
+@@ -1,2 +1,3 @@
+ # automation-testing
+ This repository is used to test opening and closing pull request with Automation
++hello world
+`
+
+		task := &Task{
+			Repository:            testRepo1,
+			BatchChangeAttributes: &template.BatchChangeAttributes{},
+			Steps: []batcheslib.Step{
+				{Run: "echo -n Hello world"},
+				{Run: `echo ${{ previous_step.stdout }} >> README.md`},
+			},
+			CachedResultFound: true,
+			CachedResult: execution.AfterStepResult{
+				StepIndex: 0,
+				Diff:      "",
+				Outputs:   map[string]interface{}{},
+				StepResult: execution.StepResult{
+					Files:  &git.Changes{},
+					Stdout: "hello world",
+					Stderr: "",
+				},
+			},
+		}
+
+		results, err := testExecuteTasks(t, []*Task{task}, archive)
+		if err != nil {
+			t.Fatalf("execution failed: %s", err)
+		}
+
+		if have, want := len(results), 1; have != want {
+			t.Fatalf("wrong number of execution results. want=%d, have=%d", want, have)
+		}
+
+		executionResult := results[0].result
+		if diff := cmp.Diff(executionResult.Diff, wantFinalDiff); diff != "" {
+			t.Fatalf("wrong diff: %s", diff)
+		}
+
+		if diff := cmp.Diff(executionResult.Outputs, task.CachedResult.Outputs); diff != "" {
+			t.Fatalf("wrong execution result outputs: %s", diff)
+		}
+
+		// Only one step should've been executed
+		if have, want := len(results[0].stepResults), 1; have != want {
+			t.Fatalf("wrong length of step results. have=%d, want=%d", have, want)
+		}
+
+		lastStepResult := results[0].stepResults[0]
+		if have, want := lastStepResult.StepIndex, 1; have != want {
 			t.Fatalf("wrong stepIndex. have=%d, want=%d", have, want)
 		}
 
