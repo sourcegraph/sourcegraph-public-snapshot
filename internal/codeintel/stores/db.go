@@ -40,14 +40,6 @@ func (d *codeIntelDB) Done(err error) error {
 	return d.Store.Done(err)
 }
 
-func (d *codeIntelDB) Unwrap() dbutil.DB {
-	// Recursively unwrap in case we ever call `NewInsightsDB()` with an `InsightsDB`
-	if unwrapper, ok := d.Handle().(dbutil.Unwrapper); ok {
-		return unwrapper.Unwrap()
-	}
-	return d.Handle()
-}
-
 func (d *codeIntelDB) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
 	return d.Handle().QueryContext(ctx, q, args...)
 }
