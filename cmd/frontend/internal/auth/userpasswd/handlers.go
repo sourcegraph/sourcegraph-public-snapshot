@@ -209,7 +209,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 	// Write the session cookie
 	a := &actor.Actor{UID: usr.ID}
 	if err := session.SetActor(w, r, a, 0, usr.CreatedAt); err != nil {
-		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
+		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError, "err", err)
 	}
 
 	// Track user data
@@ -324,7 +324,7 @@ func HandleSignIn(db database.DB, store LockoutStore) func(w http.ResponseWriter
 			UID: user.ID,
 		}
 		if err := session.SetActor(w, r, &actor, 0, user.CreatedAt); err != nil {
-			httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
+			httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError, "err", err)
 			return
 		}
 
