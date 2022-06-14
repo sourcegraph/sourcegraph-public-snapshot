@@ -45,6 +45,10 @@ var goGenerateLinter = &linter{
 	},
 	Fix: func(ctx context.Context, cio check.IO, args *repo.State) error {
 		report := golang.Generate(ctx, nil, false, golang.QuietOutput)
-		return report.Err
+		if report.Err != nil {
+			return report.Err
+		}
+		// We don't want to run Check again, which will just run go generate again
+		return check.ErrSkipPostFixCheck
 	},
 }

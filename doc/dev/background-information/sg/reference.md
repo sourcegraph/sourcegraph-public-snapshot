@@ -310,6 +310,7 @@ $ sg lint --help
 Flags:
 
 * `--annotations`: Write helpful output to annotations directory
+* `--fix, -f`: Try to fix any lint issues
 
 ### sg lint urls
 
@@ -868,8 +869,6 @@ Update local sg installation with the latest changes. To see what's new, run:
 
     sg version changelog -next
 
-
-foobar i was here
 
 ## sg logo
 

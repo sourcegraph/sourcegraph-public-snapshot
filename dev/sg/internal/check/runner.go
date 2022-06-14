@@ -508,17 +508,26 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 		// fix being run.
 		r.out.VerboseLine(output.Linef(output.EmojiAsterisk, output.StylePending,
 			"Fixing %q...", c.Name))
-		if err := c.Fix(ctx, IO{
+		err := c.Fix(ctx, IO{
 			Input:  r.in,
 			Output: r.out,
-		}, args); err != nil {
+		}, args)
+		if err != nil && err != ErrSkipPostFixCheck {
 			r.out.WriteLine(output.Linef(output.EmojiWarning, output.CombineStyles(output.StyleFailure, output.StyleBold),
 				"Failed to fix %q: %s", c.Name, err.Error()))
 			continue
 		}
 
-		// Check is the fix worked
-		if err := c.Update(ctx, r.out, args); err != nil {
+		// Check if the fix worked, or just don't check
+		if err == ErrSkipPostFixCheck {
+			r.out.WriteSkippedf("Skipping post-fix check")
+			err = nil
+			c.cachedCheckErr = nil
+		} else {
+			err = c.Update(ctx, r.out, args)
+		}
+
+		if err != nil {
 			r.out.WriteLine(output.Styledf(output.CombineStyles(output.StyleWarning, output.StyleBold),
 				"Check %q still failing: %s", c.Name, err.Error()))
 		} else {
