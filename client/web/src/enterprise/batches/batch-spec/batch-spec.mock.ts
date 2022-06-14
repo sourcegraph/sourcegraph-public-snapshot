@@ -135,6 +135,7 @@ export const COMPLETED_WITH_ERRORS_BATCH_SPEC = mockFullBatchSpec({
     startedAt: subHours(now, 1).toISOString(),
     finishedAt: subMinutes(now, 4).toISOString(),
     applyURL: '/some/preview/url',
+    failureMessage: 'Something went wrong.',
     workspaceResolution: {
         __typename: 'BatchSpecWorkspaceResolution',
         workspaces: {
@@ -146,27 +147,6 @@ export const COMPLETED_WITH_ERRORS_BATCH_SPEC = mockFullBatchSpec({
                 queued: 0,
                 processing: 0,
                 completed: 22,
-            },
-        },
-    },
-})
-
-export const FAILED_BATCH_SPEC = mockFullBatchSpec({
-    state: BatchSpecState.FAILED,
-    startedAt: subHours(now, 1).toISOString(),
-    finishedAt: now.toISOString(),
-    failureMessage: 'Something went wrong.',
-    workspaceResolution: {
-        __typename: 'BatchSpecWorkspaceResolution',
-        workspaces: {
-            __typename: 'BatchSpecWorkspaceConnection',
-            stats: {
-                __typename: 'BatchSpecWorkspacesStats',
-                errored: 10,
-                ignored: 0,
-                queued: 14,
-                processing: 7,
-                completed: 21,
             },
         },
     },
