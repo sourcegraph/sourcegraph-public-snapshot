@@ -8,6 +8,7 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import { MemoryRouter, useHistory, useLocation } from 'react-router'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
@@ -97,7 +98,9 @@ export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<
         key={`${props.externalLocation.pathname}${props.externalLocation.search}${props.externalLocation.hash}`}
         initialEntries={[props.externalLocation]}
     >
-        <ReferencesPanel {...props} />
+        <CompatRouter>
+            <ReferencesPanel {...props} />
+        </CompatRouter>
     </MemoryRouter>
 )
 

@@ -1,0 +1,24 @@
+{
+  "OR": [
+    {
+      "GeneratedSearchJob": {
+        "Child": {},
+        "ProposedQuery": {
+          "Description": "apply search type for pattern",
+          "Query": "context:global type:commit fix",
+          "PatternType": 1
+        }
+      }
+    },
+    {
+      "GeneratedSearchJob": {
+        "Child": {},
+        "ProposedQuery": {
+          "Description": "AND patterns together",
+          "Query": "context:global (fix AND commit)",
+          "PatternType": 1
+        }
+      }
+    }
+  ]
+}

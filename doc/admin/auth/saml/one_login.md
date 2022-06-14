@@ -4,7 +4,7 @@
 
 1. Go to https://mycompany.onelogin.com/apps/find (replace "mycompany" with your company's OneLogin
    ID).
-1. Select "SAML Test Connector (SP)" and click "Save".
+1. Type "saml" in the search field and select `SAML Custom Connector (Advanced)`, which uses the SAML 2.0 version. Click "Save".
 1. Under the "Configuration" tab, set the following properties (replacing `https://sourcegraph.example.com` with your Sourcegraph URL):
    * `Audience`:  https://sourcegraph.example.com/.auth/saml/metadata
    * `Recipient`: https://sourcegraph.example.com/.auth/saml/acs
