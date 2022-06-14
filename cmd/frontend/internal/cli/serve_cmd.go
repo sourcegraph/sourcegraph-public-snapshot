@@ -187,7 +187,6 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	d, _ := time.ParseDuration(traceThreshold)
 	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d)))
 	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 

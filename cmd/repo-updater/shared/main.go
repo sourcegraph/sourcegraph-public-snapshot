@@ -85,7 +85,6 @@ func Main(enterpriseInit EnterpriseInit) {
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
 	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 
