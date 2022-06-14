@@ -113,6 +113,7 @@ export const WorkspaceFilter = <T extends string>({
     return (
         <Select
             id="workspace-state"
+            isCustomStyle={true}
             className={className}
             value={selected}
             onChange={innerOnChange}
