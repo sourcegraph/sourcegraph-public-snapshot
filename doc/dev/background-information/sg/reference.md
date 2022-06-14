@@ -835,6 +835,16 @@ Flags:
 
 * `--raw`: view raw data
 
+## sg feedback
+
+opens up a Github disccussion page to provide feedback about sg.
+
+
+Flags:
+
+* `--message="<value>"`: The feedback you want to provide
+* `--title="<value>"`: Title of the feedback discussion to be created
+
 ## sg help
 
 Get help and docs about sg.
