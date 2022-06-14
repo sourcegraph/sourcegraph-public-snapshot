@@ -247,7 +247,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 	// Destroy progress and render a complete summary.
 	progress.Destroy()
-	results := runAllCategoryChecksResult{
+	results := &runAllCategoryChecksResult{
 		categories: make(map[string]bool),
 	}
 	for i, category := range r.categories {
@@ -312,7 +312,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		}
 	}
 
-	return &results
+	return results
 }
 
 func (r *Runner[Args]) presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, category *Category[Args], args Args, results *runAllCategoryChecksResult) error {
