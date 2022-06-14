@@ -177,7 +177,7 @@ We assume that the repository name is be necessary to process the record, meanin
 
 Next, we define the struct instance `ExampleJob` that mirrors the interesting fields of the `example_jobs_with_repository_name` view.
 
-We will additionally define an array of SQL column expressions that correspond to each field of the struct. For these expressions to be valid, we assume they will be embeddded in a query where the `example_jobs` corresponds to a row of the `example_jobs_with_repository_name` table. Note that these expressions can be arbitrarily complex (conditional, sub-select expressions, etc).
+We will additionally define an array of SQL column expressions that correspond to each field of the struct. For these expressions to be valid, we assume they will be embeddded in a query where the `example_jobs` record corresponds to a row of the `example_jobs_with_repository_name` table. Note that these expressions can be arbitrarily complex (conditional, sub-select expressions, etc).
 
 ```go
 import (
