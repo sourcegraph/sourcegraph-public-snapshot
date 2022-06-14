@@ -721,3 +721,90 @@ func TestInsertLockfileRoots(t *testing.T) {
 		t.Fatalf("wrong ids: %#v", ids)
 	}
 }
+
+func TestUpsertLockfileGraph(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+	store := New(db, &observation.TestContext)
+
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo')`); err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	packageA := shared.TestPackageDependencyLiteral(api.RepoName("A"), "1", "2", "pkg-A", "4")
+	packageB := shared.TestPackageDependencyLiteral(api.RepoName("B"), "2", "3", "pkg-B", "5")
+	packageC := shared.TestPackageDependencyLiteral(api.RepoName("C"), "3", "4", "pkg-C", "6")
+	packageD := shared.TestPackageDependencyLiteral(api.RepoName("D"), "4", "5", "pkg-D", "7")
+	packageE := shared.TestPackageDependencyLiteral(api.RepoName("E"), "5", "6", "pkg-E", "8")
+	packageF := shared.TestPackageDependencyLiteral(api.RepoName("F"), "6", "7", "pkg-F", "9")
+
+	deps := []shared.PackageDependency{packageA, packageB, packageC, packageD, packageE, packageF}
+	//    -> b -> E
+	//   /
+	// a --> c
+	//   \
+	//    -> d -> F
+	roots := []shared.PackageDependency{packageA}
+	edges := [][]shared.PackageDependency{
+		// A
+		{packageA, packageB},
+		{packageA, packageC},
+		{packageA, packageD},
+		// B
+		{packageB, packageE},
+		// D
+		{packageD, packageF},
+	}
+
+	graph := shared.TestDependencyGraphLiteral(roots, edges)
+	commit := "d34df00d"
+
+	if err := store.UpsertLockfileGraph(ctx, "foo", commit, deps, graph); err != nil {
+		t.Fatalf("error: %s", err)
+	}
+
+	// Now check whether the roots are returned
+	q := sqlf.Sprintf(`
+	SELECT codeintel_lockfile_reference_ids
+	FROM codeintel_lockfiles lf
+	JOIN repo r ON r.id = lf.repository_id
+	WHERE r.name = %s AND lf.commit_bytea = %s
+    `,
+		"foo",
+		dbutil.CommitBytea(commit),
+	)
+
+	rows, err := store.db.Query(ctx, q)
+	if err != nil {
+		t.Fatalf("database query error: %s", err)
+	}
+	t.Cleanup(func() { rows.Close() })
+
+	var ids pq.Int32Array
+	for rows.Next() {
+		if err := rows.Scan(&ids); err != nil {
+			t.Fatalf("err=%s", err)
+		}
+	}
+
+	if len(ids) != 1 {
+		t.Fatalf("wrong ids: %#v", ids)
+	}
+
+	// Check that all packages have been inserted
+	names, err := basestore.ScanStrings(store.db.Query(ctx, sqlf.Sprintf(`SELECT package_name FROM codeintel_lockfile_references ORDER BY package_name`)))
+	if err != nil {
+		t.Fatalf("database query error: %s", err)
+	}
+	wantNames := []string{}
+	for _, pkg := range deps {
+		wantNames = append(wantNames, pkg.PackageSyntax())
+	}
+	if diff := cmp.Diff(wantNames, names); diff != "" {
+		t.Errorf("unexpected lockfile packages (-want +got):\n%s", diff)
+	}
+}

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Store provides the interface for package dependencies storage.
@@ -445,6 +446,123 @@ WHERE name = %s
 ON CONFLICT (repository_id, commit_bytea) DO UPDATE
 SET codeintel_lockfile_reference_ids = %s
 `
+
+// UpsertLockfileGraph TODO
+func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit string, deps []shared.PackageDependency, graph shared.DependencyGraph) (err error) {
+	ctx, _, endObservation := s.operations.upsertLockfileDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repoName", repoName),
+		log.String("commit", commit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	// TODO: All of this in here is not as efficient as it could be
+
+	resolutionID := fmt.Sprintf("resolution-%s-%s", repoName, commit)
+
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.db.Done(err) }()
+
+	if err := tx.db.Exec(ctx, sqlf.Sprintf(temporaryLockfileReferencesTableQuery)); err != nil {
+		return err
+	}
+
+	//
+	// Step 1: insert all packages into codeintel_lockfile_references table, return their names/ids
+	//
+	if err := batch.InsertValues(
+		ctx,
+		tx.db.Handle().DB(),
+		"t_codeintel_lockfile_references",
+		batch.MaxNumPostgresParameters,
+		[]string{"repository_name", "revspec", "package_scheme", "package_name", "package_version", "depends_on", "resolution_id"},
+		populatePackageDependencyChannel(deps, resolutionID),
+	); err != nil {
+		return err
+	}
+
+	nameIDs := make(map[string]int, len(deps))
+
+	rows, err := tx.db.Query(ctx, sqlf.Sprintf(upsertLockfileReferences2Query))
+	if err != nil {
+		return err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		var (
+			id   int
+			name string
+		)
+
+		if err := rows.Scan(&id, &name); err != nil {
+			return err
+		}
+
+		nameIDs[name] = id
+	}
+
+	//
+	// Step 2: collect all the dependencies (i.e. pkg-A depends on B, C, D) and map them to database IDs
+	//
+	dependencies := make(map[int][]int)
+	for _, edge := range graph.AllEdges() {
+		sourceName, targetName := edge[0].PackageSyntax(), edge[1].PackageSyntax()
+
+		sourceID, ok := nameIDs[sourceName]
+		if !ok {
+			return errors.Newf("id for source %s not found", sourceName)
+		}
+
+		targetID, ok := nameIDs[targetName]
+		if !ok {
+			return errors.Newf("id for target %s not found", sourceName)
+		}
+
+		if ids, ok := dependencies[sourceID]; !ok {
+			dependencies[sourceID] = []int{targetID}
+		} else {
+			dependencies[sourceID] = append(ids, targetID)
+		}
+	}
+
+	// Insert edges into DB. TODO: We could/should batch this
+	for source, targets := range dependencies {
+		if err := tx.db.Exec(ctx, sqlf.Sprintf(
+			insertLockfilesEdgesQuery,
+			pq.Array(targets),
+			source,
+			resolutionID,
+		)); err != nil {
+			return err
+		}
+	}
+
+	//
+	// Step 3: insert codeintel_lockfile, pointing to the roots of the graph (i.e. direct dependencies)
+	//
+	var roots []int
+	for _, r := range graph.Roots() {
+		name := r.PackageSyntax()
+		id, ok := nameIDs[name]
+		if !ok {
+			return errors.Newf("id for root %s not found", name)
+		}
+		roots = append(roots, id)
+	}
+
+	idsArray := pq.Array(roots)
+	return tx.db.Exec(ctx, sqlf.Sprintf(
+		insertLockfilesQuery,
+		dbutil.CommitBytea(commit),
+		idsArray,
+		resolutionID,
+		repoName,
+		idsArray,
+	))
+}
 
 // SelectRepoRevisionsToResolve selects the references lockfile packages to
 // possibly resolve them to repositories on the Sourcegraph instance.
