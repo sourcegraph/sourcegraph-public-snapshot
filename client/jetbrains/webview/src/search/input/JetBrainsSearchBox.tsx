@@ -26,7 +26,7 @@ import { JetBrainsToggles, JetBrainsTogglesProps } from './JetBrainsToggles'
 import styles from './JetBrainsSearchBox.module.scss'
 
 export interface JetBrainsSearchBoxProps
-    extends Omit<JetBrainsTogglesProps, 'navbarSearchQuery' | 'submitSearch'>,
+    extends Omit<JetBrainsTogglesProps, 'navbarSearchQuery' | 'submitSearch' | 'clearSearch'>,
         ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
@@ -69,7 +69,7 @@ export interface JetBrainsSearchBoxProps
 }
 
 export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren<JetBrainsSearchBoxProps>> = props => {
-    const { queryState, onEditorCreated: onEditorCreatedCallback } = props
+    const { queryState, onEditorCreated: onEditorCreatedCallback, onChange } = props
 
     const [editor, setEditor] = useState<IEditor>()
     const focusEditor = useCallback(() => editor?.focus(), [editor])
@@ -81,6 +81,11 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
         },
         [onEditorCreatedCallback]
     )
+
+    const clearSearch = (): void => {
+        onChange({ ...queryState, query: '' })
+        focusEditor()
+    }
 
     return (
         <div
@@ -136,6 +141,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         showCopyQueryButton={props.showCopyQueryButton}
                         structuralSearchDisabled={props.structuralSearchDisabled}
                         selectedSearchContextSpec={props.selectedSearchContextSpec}
+                        clearSearch={clearSearch}
                     />
                 </div>
             </div>

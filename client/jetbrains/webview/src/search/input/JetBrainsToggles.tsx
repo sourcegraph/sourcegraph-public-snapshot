@@ -24,6 +24,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { Button } from '@sourcegraph/wildcard'
 
 import styles from './JetBrainsToggles.module.scss'
 
@@ -45,6 +46,7 @@ export interface JetBrainsTogglesProps
     interactive?: boolean
     /** Comes from JSContext only set in the web app. */
     structuralSearchDisabled?: boolean
+    clearSearch: () => void
 }
 
 export const getFullQuery = (
@@ -77,6 +79,7 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
         submitSearch,
         showCopyQueryButton = true,
         structuralSearchDisabled,
+        clearSearch,
     } = props
 
     const defaultPatternTypeValue = useMemo(
@@ -138,19 +141,22 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
     const fullQuery = getFullQuery(navbarSearchQuery, selectedSearchContextSpec || '', caseSensitive, patternType)
 
     const copyQueryButton = showCopyQueryButton && (
-        <>
-            <div className={styles.separator} />
-            <CopyQueryButton
-                fullQuery={fullQuery}
-                keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
-                isMacPlatform={isMacPlatform()}
-                className={classNames(styles.toggle, styles.copyQueryButton)}
-            />
-        </>
+        <CopyQueryButton
+            fullQuery={fullQuery}
+            keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
+            isMacPlatform={isMacPlatform()}
+            className={classNames(styles.toggle, styles.copyQueryButton)}
+        />
     )
 
     return (
         <div className={classNames(className, styles.toggleContainer)}>
+            {navbarSearchQuery !== '' && (
+                <Button className={classNames('btn-icon', props.className, styles.cancelButton)} onClick={clearSearch}>
+                    <span aria-hidden="true">&times;</span>
+                </Button>
+            )}
+            <div className={styles.separator} />
             {patternType === SearchPatternType.lucky ? (
                 <>
                     <QueryInputToggle

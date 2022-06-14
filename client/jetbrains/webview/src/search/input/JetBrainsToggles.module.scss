@@ -14,8 +14,11 @@
 }
 
 .copy-query-button {
-    color: var(--search-filter-keyword-color) !important;
     padding: 0.125rem;
+}
+
+.cancel-button {
+    font-size: 1rem;
 }
 
 .toggle-wrapper {
