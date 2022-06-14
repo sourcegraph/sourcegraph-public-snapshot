@@ -69,7 +69,7 @@ func TestIndexReposThenSearch(t *testing.T) {
 }
 
 func waitForReposToBeIndexed(c *gqltestutil.Client, repos ...string) error {
-	timeout := 240 * time.Second
+	timeout := 300 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -168,9 +168,9 @@ var hugeReposList = []string{
 	"datocms/remix-example",
 	"pmclSF/DeepCompress",
 	"Pearuss/redux-thunk",
-	"mattec92/KTH",
-	"sainttelant/yolov5",
-	"lalitkapoor/webpack-es6-react-boilerplate",
+	// "mattec92/KTH",
+	// "sainttelant/yolov5",
+	// "lalitkapoor/webpack-es6-react-boilerplate",
 	// "pixelgrade/customify",
 	// "appintheair/WatchAnimationHelper",
 	// "wentaocheng-cv/cpf_localization",
