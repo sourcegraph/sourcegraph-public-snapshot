@@ -446,8 +446,14 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 	if opt.UserID != 0 {
 		conds = append(conds, sqlf.Sprintf("user_id=%d", opt.UserID))
 	}
-	if opt.ServiceType != "" || opt.ServiceID != "" || opt.ClientID != "" {
-		conds = append(conds, sqlf.Sprintf("(service_type=%s AND service_id=%s AND client_id=%s)", opt.ServiceType, opt.ServiceID, opt.ClientID))
+	if opt.ServiceType != "" {
+		conds = append(conds, sqlf.Sprintf("service_type=%s", opt.ServiceType))
+	}
+	if opt.ServiceID != "" {
+		conds = append(conds, sqlf.Sprintf("service_id=%s", opt.ServiceID))
+	}
+	if opt.ClientID != "" {
+		conds = append(conds, sqlf.Sprintf("client_id=%s", opt.ClientID))
 	}
 	if opt.AccountID != 0 {
 		conds = append(conds, sqlf.Sprintf("account_id=%d", strconv.Itoa(int(opt.AccountID))))

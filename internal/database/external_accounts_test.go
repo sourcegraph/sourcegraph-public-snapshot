@@ -274,6 +274,27 @@ func TestExternalAccounts_List(t *testing.T) {
 			},
 		},
 		{
+			name:        "ListByServiceTypeOnly",
+			expectedIDs: []int32{userIDs[0], userIDs[1]},
+			args: ExternalAccountsListOptions{
+				ServiceType: "xa",
+			},
+		},
+		{
+			name:        "ListByServiceIDOnly",
+			expectedIDs: []int32{userIDs[0], userIDs[1]},
+			args: ExternalAccountsListOptions{
+				ServiceID: "xb",
+			},
+		},
+		{
+			name:        "ListByClientIDOnly",
+			expectedIDs: []int32{userIDs[2]},
+			args: ExternalAccountsListOptions{
+				ClientID: "yc",
+			},
+		},
+		{
 			name:        "ListByServiceNotFound",
 			expectedIDs: []int32{},
 			args: ExternalAccountsListOptions{
