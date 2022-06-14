@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/go-enry/go-enry/v2"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
@@ -198,6 +199,10 @@ var rules = []rule{
 		transform:   transform{unquotePatterns},
 	},
 	{
+		description: "apply language filter for pattern",
+		transform:   transform{langPatterns},
+	},
+	{
 		description: "AND patterns together",
 		transform:   transform{unorderedPatterns},
 	},
@@ -318,6 +323,53 @@ func mapConcat(q []query.Node) ([]query.Node, bool) {
 		mapped = append(mapped, node)
 	}
 	return mapped, changed
+}
+
+func langPatterns(b query.Basic) *query.Basic {
+	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeLiteralDefault)
+	if err != nil {
+		return nil
+	}
+
+	changed := false
+	var lang string // store the first pattern that matches a recognized language.
+	isNegated := false
+	newPattern := query.MapPattern(rawPatternTree, func(value string, negated bool, annotation query.Annotation) query.Node {
+		langAlias, ok := enry.GetLanguageByAlias(value)
+		if !ok || changed {
+			return query.Pattern{
+				Value:      value,
+				Negated:    negated,
+				Annotation: annotation,
+			}
+		}
+		changed = true
+		lang = langAlias
+		isNegated = negated
+		// remove this node
+		return nil
+	})
+
+	if !changed {
+		return nil
+	}
+
+	langParam := query.Parameter{
+		Field:      query.FieldLang,
+		Value:      lang,
+		Negated:    isNegated,
+		Annotation: query.Annotation{},
+	}
+
+	var pattern query.Node
+	if len(newPattern) > 0 {
+		pattern = newPattern[0]
+	}
+
+	return &query.Basic{
+		Parameters: append(b.Parameters, langParam),
+		Pattern:    pattern,
+	}
 }
 
 type generatedSearchJob struct {
