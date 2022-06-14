@@ -173,7 +173,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 	var (
 		categoriesWg sync.WaitGroup
-		skipped      = map[int]struct{}{}
+		skipped      = map[int]error{}
 
 		// used for progress bar
 		checksDone           atomic.Float64
@@ -186,7 +186,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		progress.StatusBarUpdatef(i, "Determining status...")
 
 		if err := category.CheckEnabled(ctx, args); err != nil {
-			skipped[i] = struct{}{}
+			skipped[i] = err
 			// Mark as done
 			progress.StatusBarCompletef(i, "Category skipped: %s", err.Error())
 			continue
@@ -242,8 +242,8 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		idx := i + 1
 
 		if _, ok := skipped[i]; ok {
-			r.out.WriteSkippedf("%d. %s %s[SKIPPED]%s", idx, category.Name,
-				output.StyleBold, output.StyleReset)
+			r.out.WriteSkippedf("%d. %s %s[SKIPPED. Reason: %s]%s", idx, category.Name,
+				output.StyleBold, skipped[i], output.StyleReset)
 			results.skipped = append(results.skipped, i)
 			continue
 		}
