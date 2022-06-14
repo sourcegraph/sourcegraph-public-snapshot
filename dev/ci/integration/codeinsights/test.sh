@@ -102,7 +102,8 @@ function test_setup() {
 
 function qa() {
   # Set ennvvars for tests
-  export GITHUB_TOKEN=${GH_TOKEN}
+  GITHUB_TOKEN=$(gcloud secrets versions access latest --secret=GHE_GITHUB_TOKEN --quiet --project=sourcegraph-ci)
+  export GITHUB_TOKEN
   PERFORCE_USER=$(gcloud secrets versions access latest --secret=PERFORCE_USER --quiet --project=sourcegraph-ci)
   export PERFORCE_USER
   PERFORCE_PASSWORD=$(gcloud secrets versions access latest --secret=PERFORCE_PASSWORD --quiet --project=sourcegraph-ci)
