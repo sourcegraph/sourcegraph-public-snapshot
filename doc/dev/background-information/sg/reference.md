@@ -869,6 +869,8 @@ Update local sg installation with the latest changes. To see what's new, run:
     sg version changelog -next
 
 
+foobar i was here
+
 ## sg logo
 
 Print the sg logo.
