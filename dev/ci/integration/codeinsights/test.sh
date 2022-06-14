@@ -59,7 +59,7 @@ function cluster_setup() {
 
   # Remove codeinsights-db deployment
   pushd generated-cluster
-  rm *codeinsights-db*.yaml
+  rm ./*codeinsights-db*.yaml
   popd
 
   kubectl apply -n "$NAMESPACE" --recursive --validate -f generated-cluster
