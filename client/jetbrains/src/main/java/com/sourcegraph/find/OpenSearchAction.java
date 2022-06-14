@@ -11,8 +11,8 @@ public class OpenSearchAction extends AnAction implements DumbAware {
     public void actionPerformed(@NotNull AnActionEvent event) {
         Project project = event.getProject();
         if (project != null) {
-            JCEFService service = project.getService(JCEFService.class);
-            service.getSourcegraphWindow().showPopup();
+            FindService service = project.getService(FindService.class);
+            service.showPopup();
         }
     }
 }

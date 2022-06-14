@@ -18,7 +18,7 @@
             nonDefaultProject="false"
         />
         <notificationGroup id="Sourcegraph" displayType="BALLOON"/>
-        <projectService id="sourcegraph.JCEFService" serviceImplementation="com.sourcegraph.find.JCEFService"/>
+        <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
     </extensions>
 
     <actions>

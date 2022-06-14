@@ -26,13 +26,13 @@ import java.awt.event.WindowEvent;
 import static java.awt.event.InputEvent.ALT_DOWN_MASK;
 import static java.awt.event.WindowEvent.WINDOW_GAINED_FOCUS;
 
-public class SourcegraphWindow implements Disposable {
+public class FindService implements Disposable {
     private final Project project;
     private final FindPopupPanel mainPanel;
     private JBPopup popup;
-    private static final Logger logger = Logger.getInstance(SourcegraphWindow.class);
+    private static final Logger logger = Logger.getInstance(FindService.class);
 
-    public SourcegraphWindow(@NotNull Project project) {
+    public FindService(@NotNull Project project) {
         this.project = project;
 
         // Create main panel
