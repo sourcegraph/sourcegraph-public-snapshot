@@ -101,7 +101,7 @@ function test_setup() {
 }
 
 function qa() {
-  pushd $root_dir/dev/gqtest
+  pushd "$root_dir/dev/gqltest"
   go test -long -dump -base-url "$SOURCEGRAPH_BASE_URL" -email "$TEST_USER_EMAIL" -username "$TEST_USER_NAME" -password "$TEST_USER_PASSWORD"
   popd
 }
