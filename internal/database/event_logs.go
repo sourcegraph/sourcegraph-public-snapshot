@@ -167,10 +167,10 @@ func SanitizeEventURL(raw string) string {
 
 	// Check if the URL belongs to the current site
 	normalized := u.String()
-	if !strings.HasPrefix(normalized, conf.ExternalURL()) {
-		return ""
+	if strings.HasPrefix(normalized, conf.ExternalURL()) || strings.HasSuffix(u.Host, "sourcegraph.com") {
+		return normalized
 	}
-	return normalized
+	return ""
 }
 
 // Event contains information needed for logging an event.
