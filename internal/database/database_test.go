@@ -218,39 +218,4 @@ func TestDBTransactions(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, api.RepoName("test1"), r.Name)
 	})
-
-	t.Run("basic transaction works with nested database.DB", func(t *testing.T) {
-		sqlDB := dbtest.NewDB(t)
-		db := NewDB(sqlDB)
-		// this ill-advised, but possible, so make sure we can handle it.
-		// In the future, this ideally not be possible by typing this more strictly.
-		db = NewUntypedDB(db)
-
-		// Lifetime of tx
-		{
-			tx, err := db.Repos().Transact(ctx)
-			require.NoError(t, err)
-
-			err = tx.Create(ctx, &types.Repo{ID: 1, Name: "test1"})
-			require.NoError(t, err)
-
-			// Get inside the transaction should work
-			r, err := tx.Get(ctx, 1)
-			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test1"), r.Name)
-
-			// Before committing the transaction, the repo should not be visible
-			// outside the transaction
-			_, err = db.Repos().Get(ctx, 1)
-			require.Error(t, err)
-
-			tx.Done(nil)
-		}
-
-		// After committing the transaction, the repo should be visible
-		// outisde the transaction
-		r, err := db.Repos().Get(ctx, 1)
-		require.NoError(t, err)
-		require.Equal(t, api.RepoName("test1"), r.Name)
-	})
 }
