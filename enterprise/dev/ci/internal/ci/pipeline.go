@@ -260,6 +260,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(operations.NewNamedSet("Integration tests",
 			backendIntegrationTests(c.candidateImageTag()),
 			codeIntelQA(c.candidateImageTag()),
+			codeInsightsQA(c.candidateImageTag()),
 		))
 		// End-to-end tests
 		ops.Merge(operations.NewNamedSet("End-to-end tests",
