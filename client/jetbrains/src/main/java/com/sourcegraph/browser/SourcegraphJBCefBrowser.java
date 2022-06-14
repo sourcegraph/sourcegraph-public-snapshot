@@ -1,7 +1,9 @@
 package com.sourcegraph.browser;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.jcef.JBCefBrowser;
+import com.sourcegraph.config.SettingsChangeListener;
 import com.sourcegraph.config.ThemeUtil;
 import org.cef.CefApp;
 import org.jetbrains.annotations.NotNull;
@@ -9,6 +11,9 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 
 public class SourcegraphJBCefBrowser extends JBCefBrowser {
+
+    private final SettingsChangeListener settingsChangeListener;
+
     public SourcegraphJBCefBrowser(@NotNull JSToJavaBridgeRequestHandler requestHandler) {
         super("http://sourcegraph/html/index.html");
         // Create and set up JCEF browser
@@ -21,9 +26,12 @@ public class SourcegraphJBCefBrowser extends JBCefBrowser {
         Disposer.register(this, jsToJavaBridge);
         JavaToJSBridge javaToJSBridge = new JavaToJSBridge(this);
 
+        Project project = requestHandler.getProject();
+        settingsChangeListener = new SettingsChangeListener(project, javaToJSBridge);
+
         UIManager.addPropertyChangeListener(propertyChangeEvent -> {
             if (propertyChangeEvent.getPropertyName().equals("lookAndFeel")) {
-                if (!javaToJSBridge.isQueryRunning()) {
+                if (javaToJSBridge.hasAvailableQuery()) {
                     javaToJSBridge.callJS("themeChanged", ThemeUtil.getCurrentThemeAsJson());
                 }
             }
@@ -32,5 +40,12 @@ public class SourcegraphJBCefBrowser extends JBCefBrowser {
 
     public void focus() {
         this.getCefBrowser().setFocus(true);
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+
+        settingsChangeListener.dispose();
     }
 }
