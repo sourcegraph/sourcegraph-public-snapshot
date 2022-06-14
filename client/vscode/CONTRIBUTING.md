@@ -167,3 +167,39 @@ The release process for the VS Code Extension for Sourcegraph is currently autom
    - The extension is published with the [auto-incremented](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#autoincrementing-the-extension-version) version number by running the `vsce publish $RELEASE_TYPE` command provided by the [vsce CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
 4. Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=vsce%2Frelease) to watch the build process
 5. Once the build is completed with no error, you should see the new version being verified for the Sourcegraph extension in your [Marketplace Publisher Dashboard](https://marketplace.visualstudio.com/manage/publishers)
+
+#### File Structure
+
+Below is a quick overview of the Sourcegraph extension file structure. It does not include all the files and folders.
+
+```
+client/vscode
+├── images
+├── scripts                       // Command line scripts, e.g., script to release and publish the extension
+├── src                           // Extension source code
+│   └── extension.ts              // Extension entry file
+│   └── backend                   // All graphQL queries
+│   └── code-intel                // Build the extension host that processes code-intel data
+│   └── common                    // Commonly assets that can be shared among different contexts
+│   └── commands                  // Build and register commands
+│       └── browserActionsNode    // Browser action commands when running as a regular extension where Node.js is available
+│       └── browserActionsWeb     // Browser action commands when running as a web extension
+│   └── file-system               // Build and register the custom file system
+│   └── settings                  // Extension settings and configurations
+│   └── webview                   // Components to build the search panel and sidebars
+│       └── comlink               // Handle communications between contexts
+│       └── platform              // Platform context for the webview
+│       └── search-panel          // UI for the homepage and search panel
+│       └── sidebars              // UI for all the sidebars
+│       └── theming               // Styling the webview using the predefined VS Code themes
+│       └── commands.ts           // Commands to build the webview views and panel
+├── tests                         // Extension test code
+├── .gitignore                    // Ignore build output and node_modules
+├── .vscodeignore                 // Ignore build output and node_modules
+├── CHANGELOG.md                  // An ordered list of changes and fixes
+├── CONTRIBUTING.md               // General guide for developers and contributors
+├── package.json                  // Extension manifest
+├── README.md                     // General information about the extension
+├── tsconfig.json                 // TypeScript configuration
+├── webpackconfig.js              // Webpack configuration
+```
