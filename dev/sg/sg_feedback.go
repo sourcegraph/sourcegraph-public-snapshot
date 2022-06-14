@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"net/url"
+	"text/template"
 
 	"github.com/urfave/cli/v2"
 
@@ -46,7 +48,31 @@ func feedbackExec(ctx *cli.Context) error {
 	return nil
 }
 
+func addSGInformation(content string) string {
+	tplt := template.Must(template.New("SG").Parse(`{{.Content}}
+
+### SG Information
+
+Commit: {{.Tick}}{{.Commit}}{{.Tick}}
+    `))
+
+	var buf bytes.Buffer
+	data := struct {
+		Content string
+		Tick    string
+		Commit  string
+	}{
+		content,
+		"`",
+		BuildCommit,
+	}
+	_ = tplt.Execute(&buf, data)
+
+	return buf.String()
+}
+
 func sendFeedback(ctx context.Context, title, category, body string) error {
+	body = addSGInformation(body)
 	values := make(url.Values)
 	values["category"] = []string{category}
 	values["title"] = []string{title}
