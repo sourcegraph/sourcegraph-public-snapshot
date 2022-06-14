@@ -46,6 +46,13 @@ func cmdFixes(cmds ...string) check.FixAction[CheckArgs] {
 	}
 }
 
+func enableOnlyInSourcegraphRepo() check.EnableFunc[CheckArgs] {
+	return func(ctx context.Context, args CheckArgs) error {
+		_, err := root.RepositoryRoot()
+		return err
+	}
+}
+
 func enableForTeammatesOnly() check.EnableFunc[CheckArgs] {
 	return func(ctx context.Context, args CheckArgs) error {
 		if !args.Teammate {

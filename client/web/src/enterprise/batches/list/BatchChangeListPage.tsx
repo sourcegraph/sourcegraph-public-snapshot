@@ -212,6 +212,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                         {connection && (
                             <SummaryContainer centered={true}>
                                 <ConnectionSummary
+                                    centered={true}
                                     noSummaryIfAllNodesVisible={true}
                                     first={BATCH_CHANGES_PER_PAGE_COUNT}
                                     connection={connection}
@@ -222,7 +223,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                                         <BatchChangeListEmptyElement canCreate={canCreate} location={location} />
                                     }
                                 />
-                                {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                                {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                             </SummaryContainer>
                         )}
                     </ConnectionContainer>

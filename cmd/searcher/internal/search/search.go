@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -83,6 +84,12 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.streamSearch(ctx, w, p)
 }
 
+// isNetOpError returns true if net.OpError is contained in err. This is
+// useful to ignore errors when the connection has gone away.
+func isNetOpError(err error) bool {
+	return errors.HasType(err, (*net.OpError)(nil))
+}
+
 func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p protocol.Request) {
 	if p.Limit == 0 {
 		// No limit for streaming search since upstream limits
@@ -100,7 +107,7 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 		return eventWriter.EventBytes("matches", data)
 	})
 	onMatches := func(match protocol.FileMatch) {
-		if err := matchesBuf.Append(match); err != nil {
+		if err := matchesBuf.Append(match); err != nil && !isNetOpError(err) {
 			s.Log.Warn("failed appending match to buffer", log.Error(err))
 		}
 	}
@@ -117,10 +124,10 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 	}
 
 	// Flush remaining matches before sending a different event
-	if err := matchesBuf.Flush(); err != nil {
+	if err := matchesBuf.Flush(); err != nil && !isNetOpError(err) {
 		s.Log.Warn("failed to flush matches", log.Error(err))
 	}
-	if err := eventWriter.Event("done", doneEvent); err != nil {
+	if err := eventWriter.Event("done", doneEvent); err != nil && !isNetOpError(err) {
 		s.Log.Warn("failed to send done event", log.Error(err))
 	}
 }

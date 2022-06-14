@@ -133,6 +133,7 @@ var Mac = []category{
 	{
 		Name:      "Programming languages & tooling",
 		DependsOn: []string{depsHomebrew, depsBaseUtilities},
+		Enabled:   enableOnlyInSourcegraphRepo(),
 		Checks: []*check.Check[CheckArgs]{
 			{
 				Name:  "go",

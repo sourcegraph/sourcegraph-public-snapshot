@@ -131,7 +131,7 @@ const steps: Step[] = [
                     anyoneCanAddSelf: true,
                     attendees: [config.teamEmail],
                     transparency: 'transparent',
-                    ...calendarTime(config.oneWorkingDayBeforeRelease),
+                    ...calendarTime(config.threeWorkingDaysBeforeRelease),
                 },
                 {
                     title: `Release Sourcegraph ${name}`,
@@ -169,7 +169,7 @@ const steps: Step[] = [
             const {
                 releaseDate,
                 captainGitHubUsername,
-                oneWorkingDayBeforeRelease,
+                threeWorkingDaysBeforeRelease,
                 oneWorkingDayAfterRelease,
                 captainSlackUsername,
                 slackAnnounceChannel,
@@ -183,7 +183,7 @@ const steps: Step[] = [
                 version: release,
                 assignees: [captainGitHubUsername],
                 releaseDate: date,
-                oneWorkingDayBeforeRelease: new Date(oneWorkingDayBeforeRelease),
+                threeWorkingDaysBeforeRelease: new Date(threeWorkingDaysBeforeRelease),
                 oneWorkingDayAfterRelease: new Date(oneWorkingDayAfterRelease),
                 dryRun: dryRun.trackingIssues || false,
             })

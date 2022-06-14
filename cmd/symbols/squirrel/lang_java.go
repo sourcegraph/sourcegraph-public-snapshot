@@ -466,14 +466,7 @@ func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty Type, f
 func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) (ret Type, err error) {
 	defer squirrel.onCall(node, String(node.Type()), lazyTypeStringer(&ret))()
 
-	switch node.Type() {
-	case "type_identifier":
-		fallthrough
-	case "this":
-		fallthrough
-	case "super":
-		fallthrough
-	case "identifier":
+	onIdent := func() (Type, error) {
 		found, err := squirrel.getDefJava(ctx, node)
 		if err != nil {
 			return nil, err
@@ -482,6 +475,32 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 			return nil, nil
 		}
 		return squirrel.defToType(ctx, *found)
+	}
+
+	switch node.Type() {
+	case "type_identifier":
+		if node.Content(node.Contents) == "var" {
+			localVariableDeclaration := node.Parent()
+			if localVariableDeclaration == nil {
+				return nil, nil
+			}
+			captures, err := allCaptures("(local_variable_declaration declarator: (variable_declarator value: (_) @value))", swapNode(node, localVariableDeclaration))
+			if err != nil {
+				return nil, err
+			}
+			for _, capture := range captures {
+				return squirrel.getTypeDefJava(ctx, capture)
+			}
+			return nil, nil
+		} else {
+			return onIdent()
+		}
+	case "this":
+		fallthrough
+	case "super":
+		fallthrough
+	case "identifier":
+		return onIdent()
 	case "field_access":
 		object := node.ChildByFieldName("object")
 		if object == nil {
@@ -541,6 +560,12 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 			}
 		}
 		return nil, nil
+	case "object_creation_expression":
+		ty := node.ChildByFieldName("type")
+		if ty == nil {
+			return nil, nil
+		}
+		return squirrel.getTypeDefJava(ctx, swapNode(node, ty))
 	case "void_type":
 		return PrimType{noad: node, varient: "void"}, nil
 	case "integral_type":

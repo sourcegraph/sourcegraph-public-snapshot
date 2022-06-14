@@ -136,7 +136,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 		EmailVerificationCode: "c3",
 		FailIfNotInitialUser:  true,
 	})
-	if want := (errCannotCreateUser{"site_already_initialized"}); err != want {
+	if want := (errCannotCreateUser{"site_already_initialized"}); !errors.Is(err, want) {
 		t.Fatalf("got error %v, want %v", err, want)
 	}
 
@@ -172,7 +172,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 		EmailVerificationCode: "c5",
 		FailIfNotInitialUser:  true,
 	})
-	if want := (errCannotCreateUser{"initial_site_admin_must_be_first_user"}); err != want {
+	if want := (errCannotCreateUser{"initial_site_admin_must_be_first_user"}); !errors.Is(err, want) {
 		t.Fatalf("got error %v, want %v", err, want)
 	}
 }

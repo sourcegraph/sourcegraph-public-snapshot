@@ -12,9 +12,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	stream "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // segmentToRangs converts line match ranges into absolute ranges.
@@ -168,7 +168,7 @@ func DecorateFileHunksHTML(ctx context.Context, db database.DB, fm *result.FileM
 }
 
 func fetchContent(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, path string) (content []byte, err error) {
-	content, err = git.ReadFile(ctx, db, repo, commit, path, authz.DefaultSubRepoPermsChecker)
+	content, err = gitserver.NewClient(db).ReadFile(ctx, repo, commit, path, authz.DefaultSubRepoPermsChecker)
 	if err != nil {
 		return nil, err
 	}
