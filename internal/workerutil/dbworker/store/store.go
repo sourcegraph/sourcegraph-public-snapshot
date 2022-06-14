@@ -267,15 +267,15 @@ type Options struct {
 type RecordScanFn func(rows *sql.Rows, err error) (workerutil.Record, bool, error)
 
 // New creates a new store with the given database handle and options.
-func New(handle *basestore.TransactableHandle, options Options) Store {
+func New(handle basestore.TransactableHandle, options Options) Store {
 	return NewWithMetrics(handle, options, &observation.TestContext)
 }
 
-func NewWithMetrics(handle *basestore.TransactableHandle, options Options, observationContext *observation.Context) Store {
+func NewWithMetrics(handle basestore.TransactableHandle, options Options, observationContext *observation.Context) Store {
 	return newStore(handle, options, observationContext)
 }
 
-func newStore(handle *basestore.TransactableHandle, options Options, observationContext *observation.Context) *store {
+func newStore(handle basestore.TransactableHandle, options Options, observationContext *observation.Context) *store {
 	if options.Name == "" {
 		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/dbworker/store:newStore")
 	}
@@ -519,6 +519,7 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 
 	record, exists, err := s.options.Scan(s.Query(ctx, s.formatQuery(
 		dequeueQuery,
+		s.options.OrderByExpression,
 		quote(s.options.ViewName),
 		now,
 		retryAfter,
@@ -527,6 +528,8 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 		s.options.MaxNumRetries,
 		makeConditionSuffix(conditions),
 		s.options.OrderByExpression,
+		quote(s.options.TableName),
+		quote(s.options.TableName),
 		quote(s.options.TableName),
 		sqlf.Join(s.makeDequeueUpdateStatements(updatedColumns), ", "),
 		sqlf.Join(s.makeDequeueSelectExpressions(updatedColumns), ", "),
@@ -545,8 +548,11 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 
 const dequeueQuery = `
 -- source: internal/workerutil/store.go:Dequeue
-WITH candidate AS (
-	SELECT {id} FROM %s
+WITH potential_candidates AS (
+	SELECT
+		{id} AS candidate_id,
+		ROW_NUMBER() OVER (ORDER BY %s) AS order
+	FROM %s
 	WHERE
 		(
 			(
@@ -561,7 +567,16 @@ WITH candidate AS (
 		)
 		%s
 	ORDER BY %s
-	FOR UPDATE SKIP LOCKED
+),
+candidate AS (
+	SELECT
+		{id} FROM %s
+	JOIN potential_candidates pc ON pc.candidate_id = {id}
+	WHERE
+		-- Recheck state.
+		{state} IN ('queued', 'errored')
+	ORDER BY pc.order
+	FOR UPDATE OF %s SKIP LOCKED
 	LIMIT 1
 ),
 updated_record AS (

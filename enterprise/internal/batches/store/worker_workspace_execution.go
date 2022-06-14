@@ -52,7 +52,7 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 
 	// This view ranks jobs from different users in a round-robin fashion
 	// so that no single user can clog the queue.
-	ViewName: "batch_spec_workspace_execution_queue batch_spec_workspace_execution_jobs",
+	ViewName: "batch_spec_workspace_execution_jobs_with_rank batch_spec_workspace_execution_jobs",
 }
 
 type BatchSpecWorkspaceExecutionWorkerStore interface {
@@ -63,7 +63,7 @@ type BatchSpecWorkspaceExecutionWorkerStore interface {
 
 // NewBatchSpecWorkspaceExecutionWorkerStore creates a dbworker store that
 // wraps the batch_spec_workspace_execution_jobs table.
-func NewBatchSpecWorkspaceExecutionWorkerStore(handle *basestore.TransactableHandle, observationContext *observation.Context) BatchSpecWorkspaceExecutionWorkerStore {
+func NewBatchSpecWorkspaceExecutionWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) BatchSpecWorkspaceExecutionWorkerStore {
 	return &batchSpecWorkspaceExecutionWorkerStore{
 		Store:              dbworkerstore.NewWithMetrics(handle, batchSpecWorkspaceExecutionWorkerStoreOptions, observationContext),
 		observationContext: observationContext,

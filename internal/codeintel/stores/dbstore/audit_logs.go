@@ -64,7 +64,7 @@ var scanUploadAuditLogs = basestore.NewSliceScanner(scanUploadAuditLog)
 // GetAuditLogsForUpload returns all the audit logs for the given upload ID in order of entry
 // from oldest to newest, according to the auto-incremented internal sequence field.
 func (s *Store) GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []UploadLog, err error) {
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Store.Handle().DB()))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.Store))
 	if err != nil {
 		return nil, err
 	}

@@ -153,7 +153,8 @@ var sg = &cli.App{
 					message := fmt.Sprintf("%v:\n%s", p, getRelevantStack())
 					err = cli.NewExitError(message, 1)
 
-					analytics.LogEvent(cmd.Context, "sg_before", nil, start, "panic")
+					event := analytics.LogEvent(cmd.Context, "sg_before", nil, start, "panic")
+					event.Properties["error_details"] = err.Error()
 					analytics.Persist(cmd.Context, "sg", cmd.FlagNames())
 				}
 			}()

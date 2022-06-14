@@ -127,7 +127,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 	i := -1
 	return batch.WithInserterWithReturn(
 		ctx,
-		s.Handle().DB(),
+		s.Handle(),
 		"changeset_specs",
 		batch.MaxNumPostgresParameters,
 		changesetSpecInsertColumns,
@@ -465,7 +465,7 @@ OR
   AND
   -- and it is not created by SSBC
   NOT (SELECT created_from_raw FROM batch_specs WHERE id = cspecs.batch_spec_id)
-);`
+)`
 
 type DeleteChangesetSpecsOpts struct {
 	BatchSpecID int64

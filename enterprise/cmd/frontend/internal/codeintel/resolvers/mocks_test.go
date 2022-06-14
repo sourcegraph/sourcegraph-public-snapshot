@@ -4605,7 +4605,7 @@ func NewMockEnqueuerDBStore() *MockEnqueuerDBStore {
 			},
 		},
 		HandleFunc: &EnqueuerDBStoreHandleFunc{
-			defaultHook: func() (r0 *basestore.TransactableHandle) {
+			defaultHook: func() (r0 basestore.TransactableHandle) {
 				return
 			},
 		},
@@ -4657,7 +4657,7 @@ func NewStrictMockEnqueuerDBStore() *MockEnqueuerDBStore {
 			},
 		},
 		HandleFunc: &EnqueuerDBStoreHandleFunc{
-			defaultHook: func() *basestore.TransactableHandle {
+			defaultHook: func() basestore.TransactableHandle {
 				panic("unexpected invocation of MockEnqueuerDBStore.Handle")
 			},
 		},
@@ -5166,15 +5166,15 @@ func (c EnqueuerDBStoreGetIndexesByIDsFuncCall) Results() []interface{} {
 // EnqueuerDBStoreHandleFunc describes the behavior when the Handle method
 // of the parent MockEnqueuerDBStore instance is invoked.
 type EnqueuerDBStoreHandleFunc struct {
-	defaultHook func() *basestore.TransactableHandle
-	hooks       []func() *basestore.TransactableHandle
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
 	history     []EnqueuerDBStoreHandleFuncCall
 	mutex       sync.Mutex
 }
 
 // Handle delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockEnqueuerDBStore) Handle() *basestore.TransactableHandle {
+func (m *MockEnqueuerDBStore) Handle() basestore.TransactableHandle {
 	r0 := m.HandleFunc.nextHook()()
 	m.HandleFunc.appendCall(EnqueuerDBStoreHandleFuncCall{r0})
 	return r0
@@ -5183,7 +5183,7 @@ func (m *MockEnqueuerDBStore) Handle() *basestore.TransactableHandle {
 // SetDefaultHook sets function that is called when the Handle method of the
 // parent MockEnqueuerDBStore instance is invoked and the hook queue is
 // empty.
-func (f *EnqueuerDBStoreHandleFunc) SetDefaultHook(hook func() *basestore.TransactableHandle) {
+func (f *EnqueuerDBStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
 	f.defaultHook = hook
 }
 
@@ -5191,7 +5191,7 @@ func (f *EnqueuerDBStoreHandleFunc) SetDefaultHook(hook func() *basestore.Transa
 // Handle method of the parent MockEnqueuerDBStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *EnqueuerDBStoreHandleFunc) PushHook(hook func() *basestore.TransactableHandle) {
+func (f *EnqueuerDBStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5199,20 +5199,20 @@ func (f *EnqueuerDBStoreHandleFunc) PushHook(hook func() *basestore.Transactable
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *EnqueuerDBStoreHandleFunc) SetDefaultReturn(r0 *basestore.TransactableHandle) {
-	f.SetDefaultHook(func() *basestore.TransactableHandle {
+func (f *EnqueuerDBStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *EnqueuerDBStoreHandleFunc) PushReturn(r0 *basestore.TransactableHandle) {
-	f.PushHook(func() *basestore.TransactableHandle {
+func (f *EnqueuerDBStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
 		return r0
 	})
 }
 
-func (f *EnqueuerDBStoreHandleFunc) nextHook() func() *basestore.TransactableHandle {
+func (f *EnqueuerDBStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5247,7 +5247,7 @@ func (f *EnqueuerDBStoreHandleFunc) History() []EnqueuerDBStoreHandleFuncCall {
 type EnqueuerDBStoreHandleFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *basestore.TransactableHandle
+	Result0 basestore.TransactableHandle
 }
 
 // Args returns an interface slice containing the arguments of this
