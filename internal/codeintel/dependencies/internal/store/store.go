@@ -33,6 +33,7 @@ type Store interface {
 	UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error)
 	DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error)
 	InsertLockfileEdges(ctx context.Context, edges map[int][]int, resolutionID string) (err error)
+	InsertLockfileRoots(ctx context.Context, repoName, commit string, roots []int, resolutionID string) (err error)
 }
 
 // store manages the database tables for package dependencies.
@@ -414,7 +415,35 @@ WHERE
 	id = %s
 AND
 	resolution_id = %s
-;
+`
+
+// InsertLockfileRoots TODO
+func (s *store) InsertLockfileWithRoots(ctx context.Context, repoName, commit string, roots []int, resolutionID string) (err error) {
+	idsArray := pq.Array(roots)
+	return s.db.Exec(ctx, sqlf.Sprintf(
+		insertLockfilesQuery,
+		dbutil.CommitBytea(commit),
+		idsArray,
+		resolutionID,
+		repoName,
+		idsArray,
+	))
+}
+
+const insertLockfileWithRootsQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:InsertLockfileRoots
+INSERT INTO codeintel_lockfiles (
+	repository_id,
+	commit_bytea,
+	codeintel_lockfile_reference_ids,
+	resolution_id
+)
+SELECT id, %s, %s, %s
+FROM repo
+WHERE name = %s
+-- Last write wins
+ON CONFLICT (repository_id, commit_bytea) DO UPDATE
+SET codeintel_lockfile_reference_ids = %s
 `
 
 // SelectRepoRevisionsToResolve selects the references lockfile packages to

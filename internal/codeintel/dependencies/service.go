@@ -328,6 +328,26 @@ func (s *Service) listAndPersistLockfileDependencies(ctx context.Context, repoCo
 		return nil, err
 	}
 
+	var roots []int
+	for r := range graph.Roots() {
+		name := r.PackageSyntax()
+		id, ok := nameIDs[name]
+		if !ok {
+			return nil, errors.Newf("id for root %s not found", name)
+		}
+		roots = append(roots, id)
+	}
+
+	if err := s.dependenciesStore.InsertLockfileRoots(
+		ctx,
+		string(repoCommit.Repo),
+		repoCommit.ResolvedCommit,
+		roots,
+		resolutionID,
+	); err != nil {
+		return nil, err
+	}
+
 	return serializableRepoDeps, nil
 }
 
