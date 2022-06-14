@@ -17,7 +17,7 @@ import (
 )
 
 func testStore(db dbutil.DB, options Options) *store {
-	return newStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), options, &observation.TestContext)
+	return newStore(basestore.NewHandleWithUntypedDB(db, sql.TxOptions{}), options, &observation.TestContext)
 }
 
 type TestRecord struct {

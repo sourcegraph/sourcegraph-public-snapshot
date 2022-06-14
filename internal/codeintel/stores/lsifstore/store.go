@@ -19,7 +19,7 @@ type Store struct {
 
 func NewStore(db dbutil.DB, siteConfig conftypes.SiteConfigQuerier, observationContext *observation.Context) *Store {
 	return &Store{
-		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
+		Store:      basestore.NewWithHandle(basestore.NewHandleWithUntypedDB(db, sql.TxOptions{})),
 		serializer: NewSerializer(),
 		operations: newOperations(observationContext),
 		config:     siteConfig,
