@@ -22,7 +22,7 @@ public class HttpSchemeHandler extends CefResourceHandlerAdapter {
     private int responseHeader = 400;
     private int offset = 0;
 
-    public synchronized boolean processRequest(@NotNull CefRequest request, @NotNull CefCallback callback) {
+    public boolean processRequest(@NotNull CefRequest request, @NotNull CefCallback callback) {
         String extension = getExtension(request.getURL());
         mimeType = getMimeType(extension);
         String url = request.getURL();
@@ -49,7 +49,7 @@ public class HttpSchemeHandler extends CefResourceHandlerAdapter {
         responseLength.set(data.length);
     }
 
-    public synchronized boolean readResponse(
+    public boolean readResponse(
         byte[] dataOut, int bytesToRead, IntRef bytesRead, CefCallback callback) {
         boolean hasData = false;
 
