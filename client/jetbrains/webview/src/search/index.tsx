@@ -94,6 +94,9 @@ export function applyTheme(theme: Theme): void {
 
     root.style.setProperty('--dropdown-link-active-bg', intelliJTheme['List.selectionBackground'])
     root.style.setProperty('--light-text', intelliJTheme['List.selectionForeground'])
+
+    root.style.setProperty('--jb-border-color', intelliJTheme['Component.borderColor'])
+    root.style.setProperty('--subtle-bg', intelliJTheme['ScrollPane.background'])
 }
 
 function applyLastSearch(lastSearch: Search | null): void {

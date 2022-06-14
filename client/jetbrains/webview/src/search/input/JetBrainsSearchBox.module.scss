@@ -9,6 +9,7 @@
     flex: 1 1 auto;
     min-width: 12rem;
     min-height: 2rem;
+    border-top: 1px solid var(--jb-border-color);
 
     @media (--xs-breakpoint-down) {
         display: inline;
@@ -16,7 +17,6 @@
     }
 
     &__shadow {
-        box-shadow: var(--search-input-shadow);
     }
 
     &__background-container {
@@ -33,8 +33,6 @@
         }
 
         &:first-child {
-            border-top-left-radius: 3px;
-            border-bottom-left-radius: 3px;
             border-left-color: var(--input-border-color);
         }
     }
@@ -85,8 +83,7 @@
         }
 
         > * > button {
-            // @TODO: Make configurable, this is copied form the Figma file.
-            border: 1px solid #c4c4c4 !important;
+            border: 1px solid var(--jb-border-color) !important;
         }
     }
 

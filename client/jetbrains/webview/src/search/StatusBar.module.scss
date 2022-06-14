@@ -6,9 +6,8 @@
     align-items: center;
     flex-shrink: 0;
 
-    // @TODO: Make configurable, this is copied form the Figma file.
-    border-bottom: 1px solid #d1d1d1;
-    border-top: 1px solid #d1d1d1;
+    border-bottom: 1px solid var(--jb-border-color);
+    border-top: 1px solid var(--jb-border-color);
 }
 
 .progress-count {
