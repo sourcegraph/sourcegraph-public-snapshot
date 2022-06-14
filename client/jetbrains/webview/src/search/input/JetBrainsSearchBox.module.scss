@@ -100,6 +100,8 @@
     }
 
     &__input {
+        // stylelint-disable-next-line declaration-property-unit-allowed-lis
+        margin-top: 1px;
         @media (--xs-breakpoint-down) {
             display: inline-block;
             width: 100%;
