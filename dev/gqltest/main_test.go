@@ -24,6 +24,8 @@ var (
 	username = flag.String("username", "gqltest-admin", "The username of the admin user")
 	password = flag.String("password", "supersecurepassword", "The password of the admin user")
 
+	dbDump = flag.Bool("dump", false, "Runs tests in an environment with a pre-populated database.")
+
 	githubToken           = flag.String("github-token", os.Getenv("GITHUB_TOKEN"), "The GitHub personal access token that will be used to authenticate a GitHub external service")
 	awsAccessKeyID        = flag.String("aws-access-key-id", os.Getenv("AWS_ACCESS_KEY_ID"), "The AWS access key ID")
 	awsSecretAccessKey    = flag.String("aws-secret-access-key", os.Getenv("AWS_SECRET_ACCESS_KEY"), "The AWS secret access key")
