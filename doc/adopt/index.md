@@ -11,6 +11,6 @@
   1. [Deploy integrations](trial/index.md#4-deploy-integrations)
   1. [Measure success](trial/index.md#5-measure-success) (i.e., track usage, survey the team, etc.)
 - How is Sourcegraph different than the competition
-  1. [Sourcegraph vs. GitHub Code Search](https://drive.google.com/file/d/1HcKd-elBGGYccWoPsp7ZaVH17VytWW7l/view)
-  1. [Sourcegraph compared to OpenGrok & Hound](https://drive.google.com/file/d/13GJyLHWxeE3bZJSHppwqfSWlvEwIFE8c/view)
+  1. [Sourcegraph vs. GitHub Code Search Comparison(PDF)](https://storage.googleapis.com/sourcegraph-assets/docs/PDFs/Sourcegraph%20vs%20GitHub%20Code%20Search.pdf)
+  1. [Sourcegraph compared to OpenGrok & Hound (Image)](https://storage.googleapis.com/sourcegraph-assets/docs/images/adopt/Code%20Search%20%26%20Intelligence%20Comparison%20-%20OpenGrok%20and%20Hound.png)
 - [Enterprise Getting Started Guide](./enterprise_getting_started_guide.md)
