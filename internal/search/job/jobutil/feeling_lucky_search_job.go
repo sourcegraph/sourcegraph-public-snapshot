@@ -2,6 +2,7 @@ package jobutil
 
 import (
 	"context"
+	"strings"
 	"sync"
 
 	"github.com/go-enry/go-enry/v2"
@@ -199,6 +200,10 @@ var rules = []rule{
 		transform:   transform{unquotePatterns},
 	},
 	{
+		description: "apply search type for pattern",
+		transform:   transform{typePatterns},
+	},
+	{
 		description: "apply language filter for pattern",
 		transform:   transform{langPatterns},
 	},
@@ -368,6 +373,65 @@ func langPatterns(b query.Basic) *query.Basic {
 
 	return &query.Basic{
 		Parameters: append(b.Parameters, langParam),
+		Pattern:    pattern,
+	}
+}
+
+func typePatterns(b query.Basic) *query.Basic {
+	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeLiteralDefault)
+	if err != nil {
+		return nil
+	}
+
+	changed := false
+	var typ string // store the first pattern that matches a recognized `type:`.
+	newPattern := query.MapPattern(rawPatternTree, func(value string, negated bool, annotation query.Annotation) query.Node {
+		if changed {
+			return query.Pattern{
+				Value:      value,
+				Negated:    negated,
+				Annotation: annotation,
+			}
+		}
+
+		switch strings.ToLower(value) {
+		case "symbol", "commit", "diff", "path":
+			typ = value
+			changed = true
+			// remove this node
+			return nil
+		}
+
+		return query.Pattern{
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
+
+	if !changed {
+		return nil
+	}
+
+	typParam := query.Parameter{
+		Field:      query.FieldType,
+		Value:      typ,
+		Negated:    false,
+		Annotation: query.Annotation{},
+	}
+
+	var pattern query.Node
+	if len(newPattern) > 0 {
+		// Process concat nodes
+		nodes, err := query.Sequence(query.For(query.SearchTypeLiteralDefault))(newPattern)
+		if err != nil {
+			return nil
+		}
+		pattern = nodes[0] // guaranteed root at first node
+	}
+
+	return &query.Basic{
+		Parameters: append(b.Parameters, typParam),
 		Pattern:    pattern,
 	}
 }
