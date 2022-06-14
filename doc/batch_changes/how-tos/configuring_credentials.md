@@ -120,6 +120,8 @@ To finish configuring the new credentials, you will need to create a new persona
 
 On GitHub.com, [you can create a code host token with the correct scopes at this link](https://github.com/settings/tokens/new?scopes=repo,read:org,user:email,read:discussion,workflow).
 
+When working with organizations that have SAML SSO (Single Sign On) enabled, configuring credentials requires an additional step that [involves white-listing the token for use in that organization](https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-saml-single-sign-on/authorizing-a-personal-access-token-for-use-with-saml-single-sign-on).
+
 #### GitHub Enterprise
 
 Follow the steps to [create a personal access token](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token) on GitHub Enterprise. Batch Changes requires the following scopes:
