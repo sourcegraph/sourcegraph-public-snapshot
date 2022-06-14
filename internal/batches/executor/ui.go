@@ -45,9 +45,6 @@ type StepsExecutionUI interface {
 
 	StepOutputWriter(context.Context, *Task, int) StepOutputWriter
 
-	CalculatingDiffStarted()
-	CalculatingDiffFinished()
-
 	StepFinished(idx int, diff string, changes *git.Changes, outputs map[string]interface{})
 	StepFailed(idx int, err error, exitCode int)
 }
@@ -68,8 +65,6 @@ func (noop NoopStepsExecUI) StepStarted(step int, runScript string, env map[stri
 func (noop NoopStepsExecUI) StepOutputWriter(ctx context.Context, task *Task, step int) StepOutputWriter {
 	return NoopStepOutputWriter{}
 }
-func (noop NoopStepsExecUI) CalculatingDiffStarted()  {}
-func (noop NoopStepsExecUI) CalculatingDiffFinished() {}
 func (noop NoopStepsExecUI) StepFinished(idx int, diff string, changes *git.Changes, outputs map[string]interface{}) {
 }
 func (noop NoopStepsExecUI) StepFailed(idx int, err error, exitCode int) {

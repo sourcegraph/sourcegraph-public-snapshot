@@ -471,12 +471,6 @@ func (ui stepsExecTUI) StepOutputWriter(ctx context.Context, task *executor.Task
 	return executor.NoopStepOutputWriter{}
 }
 
-func (ui stepsExecTUI) CalculatingDiffStarted() {
-	ui.updateStatusBar("Calculating diff")
-}
-func (ui stepsExecTUI) CalculatingDiffFinished() {
-	// noop right now
-}
 func (ui stepsExecTUI) StepFinished(idx int, diff string, changes *git.Changes, outputs map[string]interface{}) {
 	// noop right now
 }

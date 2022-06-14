@@ -80,6 +80,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 		// If we have cached results and don't need to execute any more steps,
 		// we can quit
 		if lastStep == len(opts.task.Steps)-1 {
+			// Build the execution result from the step result.
 			changes, err := git.ChangesInDiff([]byte(opts.task.CachedResult.Diff))
 			if err != nil {
 				return execResult, nil, errors.Wrap(err, "parsing cached step diff")
@@ -99,6 +100,8 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 			startStep + 1,
 		)
 	}
+
+	var lastDiff string
 
 	for i := startStep; i < len(opts.task.Steps); i++ {
 		step := opts.task.Steps[i]
@@ -201,17 +204,11 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 		}
 
 		opts.ui.StepFinished(i+1, stepResult.Diff, result.Files, stepResult.Outputs)
+
+		lastDiff = stepResult.Diff
 	}
 
-	opts.ui.CalculatingDiffStarted()
-	diffOut, err := ws.Diff(ctx)
-	if err != nil {
-		return execResult, nil, errors.Wrap(err, "git diff failed")
-	}
-
-	opts.ui.CalculatingDiffFinished()
-
-	execResult.Diff = string(diffOut)
+	execResult.Diff = lastDiff
 	execResult.ChangedFiles = previousStepResult.Files
 
 	return execResult, stepResults, err
