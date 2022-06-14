@@ -53,4 +53,12 @@ func TestNewFeelingLuckySearchJob(t *testing.T) {
 	t.Run("two basic jobs", func(t *testing.T) {
 		autogold.Equal(t, autogold.Raw(test(`context:global ((type:file parse func) or (type:commit parse func))`)))
 	})
+
+	t.Run("single pattern as lang", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`context:global python`)))
+	})
+
+	t.Run("one of many patterns as lang", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`context:global parse python`)))
+	})
 }
