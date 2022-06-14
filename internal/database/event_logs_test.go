@@ -13,15 +13,66 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestSanitizeEventURL(t *testing.T) {
+	cases := []struct {
+		input       string
+		externalURL string
+		output      string
+	}{{
+		input:       "https://about.sourcegraph.com/test",
+		externalURL: "https://sourcegraph.com",
+		output:      "https://about.sourcegraph.com/test",
+	}, {
+		input:       "https://test.sourcegraph.com/test",
+		externalURL: "https://sourcegraph.com",
+		output:      "https://test.sourcegraph.com/test",
+	}, {
+		input:       "https://test.sourcegraph.com/test",
+		externalURL: "https://customerinstance.com",
+		output:      "https://test.sourcegraph.com/test",
+	}, {
+		input:       "",
+		externalURL: "https://customerinstance.com",
+		output:      "",
+	}, {
+		input:       "https://github.com/my-private-info",
+		externalURL: "https://customerinstance.com",
+		output:      "",
+	}, {
+		input:       "https://github.com/my-private-info",
+		externalURL: "https://sourcegraph.com",
+		output:      "",
+	}, {
+		input:       "invalid url",
+		externalURL: "https://sourcegraph.com",
+		output:      "",
+	}}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					ExternalURL: tc.externalURL,
+				},
+			})
+			got := SanitizeEventURL(tc.input)
+			require.Equal(t, tc.output, got)
+		})
+	}
+}
 
 func TestEventLogs_ValidInfo(t *testing.T) {
 	if testing.Short() {
