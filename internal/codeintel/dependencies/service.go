@@ -2,7 +2,6 @@ package dependencies
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -285,67 +284,17 @@ func (s *Service) listAndPersistLockfileDependencies(ctx context.Context, repoCo
 	}
 
 	serializableRepoDeps := shared.SerializePackageDependencies(repoDeps)
+	serializableGraph := shared.SerializeDependencyGraph(graph)
 
-	resolutionID := fmt.Sprintf("%s-%s", repoCommit.Repo, repoCommit.CommitID)
-
-	nameIDs, err := s.dependenciesStore.UpsertLockfileDependencies2(
+	err = s.dependenciesStore.UpsertLockfileGraph(
 		ctx,
 		string(repoCommit.Repo),
 		repoCommit.ResolvedCommit,
 		serializableRepoDeps,
-		resolutionID,
+		serializableGraph,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "store.UpsertLockfileDependencies")
-	}
-
-	if graph == nil {
-		return serializableRepoDeps, nil
-	}
-
-	edges := make(map[int][]int)
-	for _, edge := range graph.AllEdges() {
-		sourceName, targetName := edge.Source.PackageSyntax(), edge.Target.PackageSyntax()
-
-		sourceID, ok := nameIDs[sourceName]
-		if !ok {
-			return nil, errors.Newf("id for source %s not found", sourceName)
-		}
-
-		targetID, ok := nameIDs[targetName]
-		if !ok {
-			return nil, errors.Newf("id for target %s not found", sourceName)
-		}
-
-		if ids, ok := edges[sourceID]; !ok {
-			edges[sourceID] = []int{targetID}
-		} else {
-			edges[sourceID] = append(ids, targetID)
-		}
-	}
-
-	if err := s.dependenciesStore.InsertLockfileEdges(ctx, edges, resolutionID); err != nil {
-		return nil, err
-	}
-
-	var roots []int
-	for r := range graph.Roots() {
-		name := r.PackageSyntax()
-		id, ok := nameIDs[name]
-		if !ok {
-			return nil, errors.Newf("id for root %s not found", name)
-		}
-		roots = append(roots, id)
-	}
-
-	if err := s.dependenciesStore.InsertLockfileRoots(
-		ctx,
-		string(repoCommit.Repo),
-		repoCommit.ResolvedCommit,
-		roots,
-		resolutionID,
-	); err != nil {
-		return nil, err
 	}
 
 	return serializableRepoDeps, nil
