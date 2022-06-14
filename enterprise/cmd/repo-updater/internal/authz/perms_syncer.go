@@ -398,7 +398,9 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 		logger.Debug("maybe refresh account token", log.Int32("accountID", acct.ID))
 		if err := s.maybeRefreshGitLabOAuthTokenFromAccount(ctx, acct); err != nil {
-			return nil, nil, errors.Wrapf(err, "refreshing GitLab OAuth token for account: %s", acct.AccountID)
+			// This should not be a fatal error, we should still try to sync from other accounts
+			acctLogger.Warn("failed to refresh GitLab token", log.Error(err))
+			continue
 		}
 
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)

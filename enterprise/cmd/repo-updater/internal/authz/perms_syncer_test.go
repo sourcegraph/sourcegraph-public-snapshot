@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
+
 	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
