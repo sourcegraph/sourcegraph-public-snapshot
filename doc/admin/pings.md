@@ -121,6 +121,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Weekly count of clicks on the "view more" template section button.
   - Weekly count of clicks on the in-product landing page documentation links.
 - Code monitoring usage data
+  - TODO
   - Total number of views of the code monitoring page
   - Total number of views of the create code monitor page
   - Total number of views of the create code monitor page with a pre-populated trigger query
