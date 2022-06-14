@@ -4,13 +4,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestUpdatePackages(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(db)
 
 	// for foreign key relation
@@ -31,7 +32,7 @@ func TestUpdatePackages(t *testing.T) {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}
 
-	count, _, err := basestore.ScanFirstInt(db.Query("SELECT COUNT(*) FROM lsif_packages"))
+	count, _, err := basestore.ScanFirstInt(db.QueryContext(context.Background(), "SELECT COUNT(*) FROM lsif_packages"))
 	if err != nil {
 		t.Fatalf("unexpected error checking package count: %s", err)
 	}
@@ -41,14 +42,14 @@ func TestUpdatePackages(t *testing.T) {
 }
 
 func TestUpdatePackagesEmpty(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(db)
 
 	if err := store.UpdatePackages(context.Background(), 0, nil); err != nil {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}
 
-	count, _, err := basestore.ScanFirstInt(db.Query("SELECT COUNT(*) FROM lsif_packages"))
+	count, _, err := basestore.ScanFirstInt(db.QueryContext(context.Background(), "SELECT COUNT(*) FROM lsif_packages"))
 	if err != nil {
 		t.Fatalf("unexpected error checking package count: %s", err)
 	}

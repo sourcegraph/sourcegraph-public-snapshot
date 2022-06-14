@@ -231,7 +231,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                         base: 'main',
                         head: `changelog-${release.version}`,
                         title: prMessage,
-                        commitMessage: prMessage,
+                        commitMessage: prMessage + '\n\n ## Test plan\n\nn/a',
                         edits: [
                             (directory: string) => {
                                 console.log(`Updating '${changelogFile} for ${release.format()}'`)
@@ -524,7 +524,7 @@ CI checks in this repository should pass, and a manual review should confirm if 
                         repo: 'deploy-sourcegraph-helm',
                         base: `release/${release.major}.${release.minor}`,
                         head: `publish-${release.version}`,
-                        commitMessage: defaultPRMessage,
+                        commitMessage: defaultPRMessage + '\n\nTest Plan: n/a',
                         title: defaultPRMessage,
                         edits: [
                             `for i in charts/*; do sg ops update-images -kind helm -pin-tag ${release.version} $i/.; done`,

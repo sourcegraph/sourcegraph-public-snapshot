@@ -81,7 +81,7 @@ export const UserAvatar: React.FunctionComponent<React.PropsWithChildren<Props>>
     }
 
     if (inline) {
-        return <Icon role="img" as="div" aria-hidden={true} {...props} />
+        return <Icon as="div" aria-hidden={true} {...props} />
     }
 
     return <div {...props} />

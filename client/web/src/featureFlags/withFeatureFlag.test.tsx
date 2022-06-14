@@ -5,51 +5,53 @@ import { MockedFeatureFlagsProvider } from './FeatureFlagsProvider'
 import { withFeatureFlag } from './withFeatureFlag'
 
 describe('withFeatureFlag', () => {
-    const TrueComponent = () => <div data-testid="true-component">rendered when flag is true</div>
-    const FalseComponent = () => <div data-testid="false-component">rendered when flag is false</div>
+    const trueComponentTestId = 'true-component'
+    const falseComponentTestId = 'false-component'
+    const TrueComponent = () => <div data-testid={trueComponentTestId}>rendered when flag is true</div>
+    const FalseComponent = () => <div data-testid={falseComponentTestId}>rendered when flag is false</div>
     const Wrapper = withFeatureFlag('test-flag' as FeatureFlagName, TrueComponent, FalseComponent)
 
-    it('renders correctly when flagValue=true', () => {
-        const { getByTestId } = render(
-            <MockedFeatureFlagsProvider overrides={new Map([['test-flag' as FeatureFlagName, true]])}>
+    it('renders correctly when flagValue=true', async () => {
+        const { findByTestId } = render(
+            <MockedFeatureFlagsProvider overrides={{ 'test-flag': true } as Partial<Record<FeatureFlagName, boolean>>}>
                 <Wrapper />
             </MockedFeatureFlagsProvider>
         )
 
-        expect(getByTestId('true-component')).toBeTruthy()
+        expect(await findByTestId(trueComponentTestId)).toBeTruthy()
     })
 
-    it('renders correctly when flagValue=false', () => {
-        const { getByTestId } = render(
-            <MockedFeatureFlagsProvider overrides={new Map([['test-flag' as FeatureFlagName, false]])}>
+    it('renders correctly when flagValue=false', async () => {
+        const { findByTestId } = render(
+            <MockedFeatureFlagsProvider overrides={{ 'test-flag': false } as Partial<Record<FeatureFlagName, boolean>>}>
                 <Wrapper />
             </MockedFeatureFlagsProvider>
         )
 
-        expect(getByTestId('false-component')).toBeTruthy()
+        expect(await findByTestId(falseComponentTestId)).toBeTruthy()
     })
 
     it('waits until flag value is resolved', () => {
         const { queryByTestId } = render(
             <MockedFeatureFlagsProvider
-                overrides={new Map([['test-flag' as FeatureFlagName, new Error('Failed to fetch')]])}
+                overrides={{ 'test-flag': new Error('Failed to fetch') } as Partial<Record<FeatureFlagName, boolean>>}
             >
                 <Wrapper />
             </MockedFeatureFlagsProvider>
         )
 
-        expect(queryByTestId('false-component')).toBeFalsy()
-        expect(queryByTestId('true-component')).toBeFalsy()
+        expect(queryByTestId(falseComponentTestId)).toBeFalsy()
+        expect(queryByTestId(trueComponentTestId)).toBeFalsy()
     })
 
     it('renders correctly when flagValue=false and FalseComponent omitted', () => {
         const LocalWrapper = withFeatureFlag('test-flag' as FeatureFlagName, TrueComponent)
-        const { container } = render(
-            <MockedFeatureFlagsProvider overrides={new Map([['test-flag' as FeatureFlagName, false]])}>
+        const { findByTestId } = render(
+            <MockedFeatureFlagsProvider overrides={{ 'test-flag': false } as Partial<Record<FeatureFlagName, boolean>>}>
                 <LocalWrapper />
             </MockedFeatureFlagsProvider>
         )
 
-        expect(container.innerHTML).toBeFalsy()
+        expect(() => findByTestId(trueComponentTestId)).rejects.toBeTruthy()
     })
 })

@@ -6,10 +6,10 @@ import { requestGraphQL } from '../backend/graphql'
 
 import { FeatureFlagName } from './featureFlags'
 import { removeFeatureFlagOverride, setFeatureFlagOverride } from './lib/feature-flag-local-overrides'
-import { FeatureFlagClient, IFeatureFlagClient } from './lib/FeatureFlagClient'
+import { FeatureFlagClient } from './lib/FeatureFlagClient'
 import { parseUrlOverrideFeatureFlags } from './lib/parseUrlOverrideFeatureFlags'
 
-export const FeatureFlagsContext = createContext<{ client?: IFeatureFlagClient }>({})
+export const FeatureFlagsContext = createContext<{ client?: FeatureFlagClient }>({})
 
 interface FeatureFlagsProviderProps {
     isLocalOverrideEnabled?: boolean
@@ -48,11 +48,12 @@ const FeatureFlagsLocalOverrideAgent = React.memo(() => {
     return null
 })
 
+const MINUTE = 60000
 export const FeatureFlagsProvider: React.FunctionComponent<FeatureFlagsProviderProps> = ({
     isLocalOverrideEnabled = true,
     children,
 }) => {
-    const client = useMemo(() => new FeatureFlagClient(requestGraphQL), [])
+    const client = useMemo(() => new FeatureFlagClient(requestGraphQL, MINUTE), [])
 
     return (
         <FeatureFlagsContext.Provider value={{ client }}>
@@ -63,7 +64,8 @@ export const FeatureFlagsProvider: React.FunctionComponent<FeatureFlagsProviderP
 }
 
 interface MockedFeatureFlagsProviderProps {
-    overrides: Map<FeatureFlagName, boolean | Error>
+    overrides: Partial<Record<FeatureFlagName, boolean | Error>>
+    refetchInterval?: number
 }
 
 /**
@@ -77,17 +79,37 @@ interface MockedFeatureFlagsProviderProps {
  */
 export const MockedFeatureFlagsProvider: React.FunctionComponent<MockedFeatureFlagsProviderProps> = ({
     overrides,
+    refetchInterval,
     children,
 }) => {
-    const client = useMemo(() => new MockFeatureFlagClient(overrides), [overrides])
+    const mockRequestGraphQL = useMemo(
+        () => (
+            query: string,
+            variables: any
+        ): Observable<{
+            data: { evaluateFeatureFlag: boolean | null }
+        }> => {
+            const value = overrides[variables.flagName as FeatureFlagName]
+            if (value instanceof Error) {
+                return throwError(value)
+            }
+
+            return of({
+                data: { evaluateFeatureFlag: value ?? null },
+            })
+        },
+        [overrides]
+    )
+
+    const client = useMemo(
+        () => new FeatureFlagClient(mockRequestGraphQL as typeof requestGraphQL, refetchInterval),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    )
+
+    useEffect(() => {
+        client.setRequestGraphQLFunction(mockRequestGraphQL as typeof requestGraphQL)
+    }, [client, mockRequestGraphQL])
+
     return <FeatureFlagsContext.Provider value={{ client }}>{children}</FeatureFlagsContext.Provider>
-}
-
-class MockFeatureFlagClient implements IFeatureFlagClient {
-    constructor(private overrides: Map<FeatureFlagName, boolean | Error>) {}
-
-    public get(flagName: FeatureFlagName): Observable<boolean> {
-        const value = this.overrides.get(flagName)
-        return value instanceof Error ? throwError(value) : of(value || false)
-    }
 }

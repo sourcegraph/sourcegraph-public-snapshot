@@ -1,6 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import { NEVER, of } from 'rxjs'
-import sinon from 'sinon'
+import { fake } from 'sinon'
 
 import { WebStory } from '../../components/WebStory'
 
@@ -22,9 +22,9 @@ add('ManageCodeMonitorPage', () => (
             <ManageCodeMonitorPage
                 {...props}
                 authenticatedUser={{ ...mockUser, id: 'foobar', username: 'alice', email: 'alice@alice.com' }}
-                updateCodeMonitor={sinon.fake()}
-                fetchCodeMonitor={sinon.fake((id: string) => of(mockCodeMonitor))}
-                deleteCodeMonitor={sinon.fake((id: string) => NEVER)}
+                updateCodeMonitor={fake()}
+                fetchCodeMonitor={fake(() => of(mockCodeMonitor))}
+                deleteCodeMonitor={fake(() => NEVER)}
                 isSourcegraphDotCom={false}
             />
         )}

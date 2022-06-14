@@ -26,7 +26,7 @@ func TestDeleteLSIFUpload(t *testing.T) {
 	users := database.NewStrictMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	db := database.NewStrictMockDB()
+	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFUpload:42")))

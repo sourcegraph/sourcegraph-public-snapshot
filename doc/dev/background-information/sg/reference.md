@@ -31,12 +31,12 @@ Available comamndsets in `sg.config.yaml`:
 * api-only
 * batches 🦡
 * codeintel
-* core-app
 * dotcom
 * enterprise
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
 * enterprise-e2e
+* iam
 * monitoring
 * monitoring-alerts
 * oss
@@ -692,7 +692,8 @@ Manipulate secrets stored in memory and in file.
 # List all secrets stored in your local configuration.
 $ sg secret list
 
-# Remove the secrets associated with buildkite (sg ci build)
+# Remove the secrets associated with buildkite (sg ci build) - supports autocompletion for
+# ease of use
 $ sg secret reset buildkite
 ```
 

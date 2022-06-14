@@ -45,7 +45,7 @@ export const ActionsMenu: React.FunctionComponent<React.PropsWithChildren<{}>> =
 
 const MemoizedActionsMenu: React.FunctionComponent<
     React.PropsWithChildren<Pick<BatchSpecContextState, 'batchChange' | 'batchSpec' | 'setActionsError'>>
-> = React.memo(({ batchChange, batchSpec, setActionsError }) => {
+> = React.memo(function MemoizedActionsMenu({ batchChange, batchSpec, setActionsError }) {
     const history = useHistory()
     const location = useLocation()
 
@@ -111,7 +111,7 @@ const MemoizedActionsMenu: React.FunctionComponent<
                             : undefined
                     }
                 >
-                    {failed && <Icon role="img" aria-hidden={true} className="mr-1" as={AlertCircleIcon} />}
+                    {failed && <Icon aria-hidden={true} className="mr-1" as={AlertCircleIcon} />}
                     Preview
                 </Button>
             )}
@@ -119,22 +119,21 @@ const MemoizedActionsMenu: React.FunctionComponent<
                 <div className="d-inline-block" ref={menuReference} aria-hidden={showPreviewButton}>
                     <MenuButton variant="secondary" className={showPreviewButton ? styles.menuButtonHidden : undefined}>
                         Actions
-                        <Icon role="img" aria-hidden={true} as={ChevronDownIcon} className={styles.chevronIcon} />
+                        <Icon aria-hidden={true} as={ChevronDownIcon} className={styles.chevronIcon} />
                     </MenuButton>
                 </div>
                 <MenuList position={Position.bottomEnd}>
                     <MenuItem onSelect={onSelectEdit}>
-                        <Icon role="img" aria-hidden={true} as={PencilIcon} /> Edit spec{isExecuting ? '...' : ''}
+                        <Icon aria-hidden={true} as={PencilIcon} /> Edit spec{isExecuting ? '...' : ''}
                     </MenuItem>
                     {isExecuting && (
                         <MenuItem onSelect={onSelectCancel}>
-                            <Icon role="img" aria-hidden={true} as={CloseIcon} className={styles.cancelIcon} /> Cancel
-                            execution...
+                            <Icon aria-hidden={true} as={CloseIcon} className={styles.cancelIcon} /> Cancel execution...
                         </MenuItem>
                     )}
-                    {state !== BatchSpecState.COMPLETED && batchSpec.viewerCanRetry && (
+                    {batchSpec.viewerCanRetry && (
                         <MenuItem onSelect={retryBatchSpecExecution} disabled={isRetryLoading}>
-                            <Icon role="img" aria-hidden={true} as={SyncIcon} /> Retry failed workspaces
+                            <Icon aria-hidden={true} as={SyncIcon} /> Retry failed workspaces
                         </MenuItem>
                     )}
                 </MenuList>

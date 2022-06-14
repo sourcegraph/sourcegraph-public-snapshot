@@ -22,6 +22,8 @@ import {
     FIXTURE_WARNING_MARKDOWN_ALERT,
 } from './WebHoverOverlay.fixtures'
 
+import styles from './WebHoverOverlay.story.module.scss'
+
 registerHighlightContributions()
 
 const { add } = storiesOf('web/WebHoverOverlay', module)
@@ -210,14 +212,16 @@ add('With long markdown text and dismissible alert with icon.', () => (
 ))
 
 add('Multiple MarkupContents with badges and alerts', () => (
-    <WebHoverOverlay
-        {...commonProps()}
-        hoverOrError={{
-            contents: [FIXTURE_CONTENT, FIXTURE_CONTENT, FIXTURE_CONTENT],
-            aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
-            alerts: [FIXTURE_SMALL_TEXT_MARKDOWN_ALERT, FIXTURE_WARNING_MARKDOWN_ALERT],
-        }}
-        actionsOrError={FIXTURE_ACTIONS}
-        onAlertDismissed={action('onAlertDismissed')}
-    />
+    <div className={styles.container}>
+        <WebHoverOverlay
+            {...commonProps()}
+            hoverOrError={{
+                contents: [FIXTURE_CONTENT, FIXTURE_CONTENT, FIXTURE_CONTENT],
+                aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
+                alerts: [FIXTURE_SMALL_TEXT_MARKDOWN_ALERT, FIXTURE_WARNING_MARKDOWN_ALERT],
+            }}
+            actionsOrError={FIXTURE_ACTIONS}
+            onAlertDismissed={action('onAlertDismissed')}
+        />
+    </div>
 ))

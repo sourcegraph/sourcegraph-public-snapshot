@@ -62,7 +62,7 @@ func runGenerateAndReport(ctx context.Context, t generate.Target, args []string)
 	report := t.Runner(ctx, args)
 	fmt.Printf(report.Output)
 	std.Out.WriteSuccessf("Target %q done (%ds)", t.Name, report.Duration/time.Second)
-	return nil
+	return report.Err
 }
 
 type generateTargets []generate.Target

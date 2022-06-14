@@ -51,17 +51,17 @@ type Parameter struct {
 	Annotation Annotation `json:"-"`
 }
 
-type operatorKind int
+type OperatorKind int
 
 const (
-	Or operatorKind = iota
+	Or OperatorKind = iota
 	And
 	Concat
 )
 
 // Operator is a nonterminal node of kind Kind with child nodes Operands.
 type Operator struct {
-	Kind       operatorKind
+	Kind       OperatorKind
 	Operands   []Node
 	Annotation Annotation
 }
@@ -834,7 +834,7 @@ func (p *parser) ParsePattern(label labels) Pattern {
 		value, advance = ScanAnyPattern(p.buf[p.pos:])
 	}
 	if isSet(p.heuristics, allowDanglingParens) {
-		label.set(HeuristicDanglingParens)
+		label.Set(HeuristicDanglingParens)
 	}
 	p.pos += advance
 	return newPattern(value, label, newRange(start, p.pos))
@@ -891,10 +891,10 @@ func partitionParameters(nodes []Node) []Node {
 		}
 	}
 	if len(patterns) > 1 {
-		orderedPatterns := newOperator(patterns, Concat)
-		return newOperator(append(unorderedParams, orderedPatterns...), And)
+		orderedPatterns := NewOperator(patterns, Concat)
+		return NewOperator(append(unorderedParams, orderedPatterns...), And)
 	}
-	return newOperator(append(unorderedParams, patterns...), And)
+	return NewOperator(append(unorderedParams, patterns...), And)
 }
 
 // parseLeaves scans for consecutive leaf nodes and applies
@@ -915,7 +915,7 @@ loop:
 			if isSet(p.heuristics, parensAsPatterns) {
 				if value, advance, ok := ScanBalancedPattern(p.buf[p.pos:]); ok {
 					if label.IsSet(Literal) {
-						label.set(HeuristicParensAsPatterns)
+						label.Set(HeuristicParensAsPatterns)
 					}
 					pattern := newPattern(value, label, newRange(p.pos, p.pos+advance))
 					p.pos += advance
@@ -997,7 +997,7 @@ loop:
 // reduce takes lists of left and right nodes and reduces them if possible. For example,
 // (and a (b and c))       => (and a b c)
 // (((a and b) or c) or d) => (or (and a b) c d)
-func reduce(left, right []Node, kind operatorKind) ([]Node, bool) {
+func reduce(left, right []Node, kind OperatorKind) ([]Node, bool) {
 	if param, ok := left[0].(Parameter); ok && param.Value == "" {
 		// Remove empty string parameter.
 		return right, true
@@ -1048,9 +1048,9 @@ func reduce(left, right []Node, kind operatorKind) ([]Node, bool) {
 	return append(left, right...), false
 }
 
-// newOperator constructs a new node of kind operatorKind with operands nodes,
+// NewOperator constructs a new node of kind operatorKind with operands nodes,
 // reducing nodes as needed.
-func newOperator(nodes []Node, kind operatorKind) []Node {
+func NewOperator(nodes []Node, kind OperatorKind) []Node {
 	if len(nodes) == 0 {
 		return nil
 	} else if len(nodes) == 1 {
@@ -1059,7 +1059,7 @@ func newOperator(nodes []Node, kind operatorKind) []Node {
 
 	reduced, changed := reduce([]Node{nodes[0]}, nodes[1:], kind)
 	if changed {
-		return newOperator(reduced, kind)
+		return NewOperator(reduced, kind)
 	}
 	return []Node{Operator{Kind: kind, Operands: reduced}}
 }
@@ -1086,7 +1086,7 @@ func (p *parser) parseAnd() ([]Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newOperator(append(left, right...), And), nil
+	return NewOperator(append(left, right...), And), nil
 }
 
 // parseOr parses or-expressions. Or operators have lower precedence than And
@@ -1106,7 +1106,7 @@ func (p *parser) parseOr() ([]Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newOperator(append(left, right...), Or), nil
+	return NewOperator(append(left, right...), Or), nil
 }
 
 func (p *parser) tryFallbackParser(in string) ([]Node, error) {
@@ -1120,9 +1120,9 @@ func (p *parser) tryFallbackParser(in string) ([]Node, error) {
 		return nil, err
 	}
 	if hoistedNodes, err := Hoist(nodes); err == nil {
-		return newOperator(hoistedNodes, And), nil
+		return NewOperator(hoistedNodes, And), nil
 	}
-	return newOperator(nodes, And), nil
+	return NewOperator(nodes, And), nil
 }
 
 // Parse parses a raw input string into a parse tree comprising Nodes.
@@ -1170,7 +1170,7 @@ func Parse(in string, searchType SearchType) ([]Node, error) {
 			return nil, err
 		}
 	}
-	return newOperator(nodes, And), nil
+	return NewOperator(nodes, And), nil
 }
 
 func ParseSearchType(in string, searchType SearchType) (Q, error) {

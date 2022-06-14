@@ -378,6 +378,8 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 				types = append(types, "literal")
 			case si.PatternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
+			case si.PatternType == query.SearchTypeLucky:
+				types = append(types, "lucky")
 			}
 		}
 	}
@@ -425,11 +427,10 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 		if a.IsAuthenticated() && !a.IsMockUser() { // Do not log in tests
 			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
-			featureFlags := featureflag.FromContext(ctx)
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				err := usagestats.LogBackendEvent(db, a.UID, deviceid.FromContext(ctx), eventName, json.RawMessage(value), json.RawMessage(value), featureFlags, nil)
+				err := usagestats.LogBackendEvent(db, a.UID, deviceid.FromContext(ctx), eventName, json.RawMessage(value), json.RawMessage(value), featureflag.GetEvaluatedFlagSet(ctx), nil)
 				if err != nil {
 					log15.Warn("Could not log search latency", "err", err)
 				}
@@ -497,7 +498,7 @@ func logBatch(ctx context.Context, db database.DB, searchInputs *run.SearchInput
 		_ = ev.Send()
 
 		if isSlow {
-			log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
+			log15.Warn("slow search request", "query", searchInputs.OriginalQuery, "type", requestName, "source", requestSource, "status", status, "alertType", alertType, "durationMs", srr.elapsed.Milliseconds(), "resultSize", n, "error", err)
 		}
 	}
 }

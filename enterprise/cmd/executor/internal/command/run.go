@@ -143,7 +143,7 @@ func prepCommand(ctx context.Context, command command) (cmd *exec.Cmd, stdout, s
 // forwardedHostEnvVars is a list of environment variable names that are inherited
 // when executing a command on the host. These are commonly required by programs
 // we shell out to, such a docker.
-var forwardedHostEnvVars = []string{"HOME", "PATH", "USER"}
+var forwardedHostEnvVars = []string{"HOME", "PATH", "USER", "DOCKER_HOST"}
 
 func readProcessPipes(logWriter io.WriteCloser, stdout, stderr io.Reader) *errgroup.Group {
 	eg := &errgroup.Group{}

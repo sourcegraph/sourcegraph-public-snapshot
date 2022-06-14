@@ -82,7 +82,7 @@ func NewHandler(
 
 	webhookhandlers.Init(db, &gh)
 	webhookMiddleware := webhooks.NewLogMiddleware(
-		database.WebhookLogs(db, keyring.Default().WebhookLogKey),
+		db.WebhookLogs(keyring.Default().WebhookLogKey),
 	)
 
 	handlers.GitHubWebhook.Register(&gh)

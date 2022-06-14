@@ -14,7 +14,8 @@ declare global {
 
 export interface Theme {
     isDarkTheme: boolean
-    buttonColor: string
+    intelliJTheme: { [key: string]: string }
+    syntaxTheme: { [key: string]: string }
 }
 
 export interface PluginConfig {

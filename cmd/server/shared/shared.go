@@ -17,12 +17,13 @@ import (
 	"github.com/joho/godotenv"
 	"golang.org/x/sync/errgroup"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // FrontendInternalHost is the value of SRC_FRONTEND_INTERNAL.
@@ -76,12 +77,12 @@ var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL")
 func Main() {
 	flag.Parse()
 	log.SetFlags(0)
-	syncLogs := sglog.Init(sglog.Resource{
+	liblog := sglog.Init(sglog.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	})
-	defer syncLogs()
+	defer liblog.Sync()
 
 	// Ensure CONFIG_DIR and DATA_DIR
 
@@ -258,7 +259,7 @@ func startProcesses(group *errgroup.Group, name string, procfile []string, optio
 func runMigrator() {
 	log.Println("Starting migrator")
 
-	for _, schemaName := range []string{"frontend", "codeintel", "codeinsights"} {
+	for _, schemaName := range []string{"frontend", "codeintel"} {
 		e := execer{}
 		e.Command("migrator", "up", "-db", schemaName)
 

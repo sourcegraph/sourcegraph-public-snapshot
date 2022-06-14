@@ -3,6 +3,7 @@ package com.sourcegraph.find;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Base64;
+import java.util.Objects;
 
 public class PreviewContent {
     private final String fileName;
@@ -67,6 +68,7 @@ public class PreviewContent {
             && path.equals(other.path)
             && content.equals(other.content)
             && lineNumber == other.lineNumber
+            && Objects.deepEquals(absoluteOffsetAndLengths, other.absoluteOffsetAndLengths)
             && relativeUrl.equals(other.relativeUrl);
     }
 }

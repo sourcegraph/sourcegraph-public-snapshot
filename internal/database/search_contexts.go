@@ -494,7 +494,7 @@ WHERE sc.search_context_id = %d
 `
 
 func (s *searchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64) ([]*types.SearchContextRepositoryRevisions, error) {
-	authzConds, err := AuthzQueryConds(ctx, NewDB(s.Handle().DB()))
+	authzConds, err := AuthzQueryConds(ctx, NewDBWith(s))
 	if err != nil {
 		return nil, err
 	}

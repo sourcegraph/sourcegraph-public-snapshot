@@ -15,8 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -369,7 +369,7 @@ func (c *Changeset) SetMetadata(meta any) error {
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(pr.Number, 10)
 		c.ExternalServiceType = extsvc.TypeGitHub
-		c.ExternalBranch = git.EnsureRefPrefix(pr.HeadRefName)
+		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.HeadRefName)
 		c.ExternalUpdatedAt = pr.UpdatedAt
 
 		if pr.BaseRepository.ID != pr.HeadRepository.ID {
@@ -381,7 +381,7 @@ func (c *Changeset) SetMetadata(meta any) error {
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
 		c.ExternalServiceType = extsvc.TypeBitbucketServer
-		c.ExternalBranch = git.EnsureRefPrefix(pr.FromRef.ID)
+		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.FromRef.ID)
 		c.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
 
 		if pr.FromRef.Repository.ID != pr.ToRef.Repository.ID {
@@ -393,14 +393,14 @@ func (c *Changeset) SetMetadata(meta any) error {
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(int64(pr.IID), 10)
 		c.ExternalServiceType = extsvc.TypeGitLab
-		c.ExternalBranch = git.EnsureRefPrefix(pr.SourceBranch)
+		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.SourceBranch)
 		c.ExternalUpdatedAt = pr.UpdatedAt.Time
 		c.ExternalForkNamespace = pr.SourceProjectNamespace
 	case *bbcs.AnnotatedPullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(pr.ID, 10)
 		c.ExternalServiceType = extsvc.TypeBitbucketCloud
-		c.ExternalBranch = git.EnsureRefPrefix(pr.Source.Branch.Name)
+		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.Source.Branch.Name)
 		c.ExternalUpdatedAt = pr.UpdatedOn
 
 		if pr.Source.Repo.UUID != pr.Destination.Repo.UUID {

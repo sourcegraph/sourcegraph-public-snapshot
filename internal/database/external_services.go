@@ -611,7 +611,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 	// Prior to saving the record, run a validation hook.
 	if BeforeCreateExternalService != nil {
-		if err := BeforeCreateExternalService(ctx, NewDB(e.Store.Handle().DB()).ExternalServices()); err != nil {
+		if err := BeforeCreateExternalService(ctx, NewDBWith(e.Store).ExternalServices()); err != nil {
 			return err
 		}
 	}

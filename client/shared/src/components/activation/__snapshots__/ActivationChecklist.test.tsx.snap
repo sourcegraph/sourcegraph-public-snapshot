@@ -298,7 +298,9 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
 exports[`ActivationChecklist render loading 1`] = `
 <DocumentFragment>
   <div
+    aria-label="Loading"
     class="iconInline loadingSpinner my-2"
+    role="img"
   />
 </DocumentFragment>
 `;

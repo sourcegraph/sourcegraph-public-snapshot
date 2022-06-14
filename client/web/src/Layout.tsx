@@ -210,7 +210,11 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
                 keyboardShortcuts={props.keyboardShortcuts}
             />
-            <GlobalAlerts authenticatedUser={props.authenticatedUser} settingsCascade={props.settingsCascade} />
+            <GlobalAlerts
+                authenticatedUser={props.authenticatedUser}
+                settingsCascade={props.settingsCascade}
+                isSourcegraphDotCom={props.isSourcegraphDotCom}
+            />
             {!isSiteInit && <SurveyToast />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar

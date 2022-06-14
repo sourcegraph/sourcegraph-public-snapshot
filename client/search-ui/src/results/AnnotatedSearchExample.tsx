@@ -104,14 +104,14 @@ export const AnnotatedSearchInput: React.FunctionComponent<
                     <tspan className={styles.metaRegexpRangeQuantifier}>*</tspan>
                     <tspan> function auth(){'{'} </tspan>
                 </text>
-                <Icon role="img" aria-hidden={true} x="590" y="115" as={FormatLetterCaseIcon} />
-                <Icon role="img" aria-hidden={true} x="620" y="115" as={RegexIcon} />
-                <Icon role="img" aria-hidden={true} x="650" y="115" as={CodeBracketsIcon} />
+                <Icon aria-hidden={true} x="590" y="115" as={FormatLetterCaseIcon} />
+                <Icon aria-hidden={true} x="620" y="115" as={RegexIcon} />
+                <Icon aria-hidden={true} x="650" y="115" as={CodeBracketsIcon} />
                 <path
                     d="M688 110H731C732.105 110 733 110.895 733 112V142C733 143.105 732.105 144 731 144H688V110Z"
                     fill="#1475CF"
                 />
-                <Icon role="img" aria-hidden={true} className={styles.searchIcon} x="698" y="115" as={SearchIcon} />
+                <Icon aria-hidden={true} className={styles.searchIcon} x="698" y="115" as={SearchIcon} />
 
                 {arrow(188, 30, 'above')}
                 <text transform={`translate(${filterTextStart}, 44)`}>
