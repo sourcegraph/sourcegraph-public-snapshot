@@ -60,6 +60,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
                 Document document = editorFactory.createDocument(fileContent);
                 document.setReadOnly(true);
 
+                EditorFactory.getInstance().releaseEditor(editor);
                 editor = editorFactory.createEditor(document, project, previewContent.getVirtualFile(), true, EditorKind.MAIN_EDITOR);
 
                 EditorSettings settings = editor.getSettings();
