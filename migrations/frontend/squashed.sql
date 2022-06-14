@@ -580,7 +580,7 @@ CREATE TABLE batch_spec_resolution_jobs (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
-    initiator_id integer
+    initiator_id integer NOT NULL
 );
 
 CREATE SEQUENCE batch_spec_resolution_jobs_id_seq
@@ -3496,6 +3496,8 @@ CREATE INDEX changeset_jobs_state_idx ON changeset_jobs USING btree (state);
 
 CREATE INDEX changeset_specs_batch_spec_id ON changeset_specs USING btree (batch_spec_id);
 
+CREATE INDEX changeset_specs_created_at ON changeset_specs USING btree (created_at);
+
 CREATE INDEX changeset_specs_external_id ON changeset_specs USING btree (external_id);
 
 CREATE INDEX changeset_specs_head_ref ON changeset_specs USING btree (head_ref);
@@ -3507,6 +3509,8 @@ CREATE INDEX changeset_specs_title ON changeset_specs USING btree (title);
 CREATE INDEX changesets_batch_change_ids ON changesets USING gin (batch_change_ids);
 
 CREATE INDEX changesets_bitbucket_cloud_metadata_source_commit_idx ON changesets USING btree (((((metadata -> 'source'::text) -> 'commit'::text) ->> 'hash'::text)));
+
+CREATE INDEX changesets_changeset_specs ON changesets USING btree (current_spec_id, previous_spec_id);
 
 CREATE INDEX changesets_external_state_idx ON changesets USING btree (external_state);
 
@@ -3563,6 +3567,10 @@ CREATE INDEX event_logs_timestamp_at_utc ON event_logs USING btree (date(timezon
 CREATE INDEX event_logs_user_id ON event_logs USING btree (user_id);
 
 CREATE INDEX explicit_permissions_bitbucket_projects_jobs_project_key_extern ON explicit_permissions_bitbucket_projects_jobs USING btree (project_key, external_service_id, state);
+
+CREATE INDEX explicit_permissions_bitbucket_projects_jobs_queued_at_idx ON explicit_permissions_bitbucket_projects_jobs USING btree (queued_at);
+
+CREATE INDEX explicit_permissions_bitbucket_projects_jobs_state_idx ON explicit_permissions_bitbucket_projects_jobs USING btree (state);
 
 CREATE INDEX external_service_repos_clone_url_idx ON external_service_repos USING btree (clone_url);
 

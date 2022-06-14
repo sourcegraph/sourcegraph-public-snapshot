@@ -116,7 +116,7 @@ type scLoader struct {
 }
 
 func (l *scLoader) GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error) {
-	db := database.NewDB(l.primary)
+	db := database.NewUntypedDB(l.primary)
 	return searchcontexts.ResolveSearchContextSpec(ctx, db, name)
 }
 

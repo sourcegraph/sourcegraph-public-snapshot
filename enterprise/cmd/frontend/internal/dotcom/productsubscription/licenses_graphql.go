@@ -52,7 +52,7 @@ func productLicenseByDBID(ctx context.Context, db database.DB, id string) (*prod
 	if err != nil {
 		return nil, err
 	}
-	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(db), sub.v.UserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, db, sub.v.UserID); err != nil {
 		return nil, err
 	}
 

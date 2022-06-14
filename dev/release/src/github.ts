@@ -353,7 +353,7 @@ export async function commentOnIssue(client: Octokit, issue: Issue, body: string
         owner: issue.owner,
         repo: issue.repo,
     })
-    return comment.data.url
+    return comment.data.html_url
 }
 
 async function closeIssue(client: Octokit, issue: Issue): Promise<void> {

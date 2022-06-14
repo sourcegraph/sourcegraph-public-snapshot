@@ -55,7 +55,11 @@ var _ DB = (*db)(nil)
 
 // NewDB creates a new DB from a dbutil.DB, providing a thin wrapper
 // that has constructor methods for the more specialized stores.
-func NewDB(inner dbutil.DB) DB {
+func NewDB(inner *sql.DB) DB {
+	return &db{basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
+}
+
+func NewUntypedDB(inner dbutil.DB) DB {
 	return &db{basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
 }
 

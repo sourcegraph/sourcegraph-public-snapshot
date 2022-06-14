@@ -267,15 +267,15 @@ type Options struct {
 type RecordScanFn func(rows *sql.Rows, err error) (workerutil.Record, bool, error)
 
 // New creates a new store with the given database handle and options.
-func New(handle *basestore.TransactableHandle, options Options) Store {
+func New(handle basestore.TransactableHandle, options Options) Store {
 	return NewWithMetrics(handle, options, &observation.TestContext)
 }
 
-func NewWithMetrics(handle *basestore.TransactableHandle, options Options, observationContext *observation.Context) Store {
+func NewWithMetrics(handle basestore.TransactableHandle, options Options, observationContext *observation.Context) Store {
 	return newStore(handle, options, observationContext)
 }
 
-func newStore(handle *basestore.TransactableHandle, options Options, observationContext *observation.Context) *store {
+func newStore(handle basestore.TransactableHandle, options Options, observationContext *observation.Context) *store {
 	if options.Name == "" {
 		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/dbworker/store:newStore")
 	}

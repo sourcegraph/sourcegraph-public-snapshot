@@ -1,14 +1,14 @@
 import React, { useCallback } from 'react'
 
-import { ContentMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
-import { getResultId } from './utils'
+import { getResultId, LineMatchItem, SymbolMatchItem } from './utils'
 
 import styles from './SelectableSearchResult.module.scss'
 
 interface Props {
     children: (isActive: boolean) => React.ReactNode
-    lineMatchOrSymbolName?: ContentMatch['lineMatches'][0] | string
+    lineOrSymbolMatch?: LineMatchItem | SymbolMatchItem
     match: SearchMatch
     selectedResult: null | string
     selectResult: (id: string) => void
@@ -16,12 +16,12 @@ interface Props {
 
 export const SelectableSearchResult: React.FunctionComponent<Props> = ({
     children,
-    lineMatchOrSymbolName,
+    lineOrSymbolMatch,
     match,
     selectedResult,
     selectResult,
 }: Props) => {
-    const resultId = getResultId(match, lineMatchOrSymbolName)
+    const resultId = getResultId(match, lineOrSymbolMatch)
     const onClick = useCallback((): void => selectResult(resultId), [selectResult, resultId])
     const isActive = resultId === selectedResult
 
