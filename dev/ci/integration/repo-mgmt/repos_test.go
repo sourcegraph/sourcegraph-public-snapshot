@@ -130,14 +130,12 @@ func queryReposToBeIndexed(c *gqltestutil.Client, repos ...string) ([]string, er
 	}
 	for _, node := range resp.Data.Repositories.Nodes {
 		if node.MirrorInfo.Cloned {
-			println("found", node.Name)
 			delete(repoSet, node.Name)
 		}
 	}
 	if len(repoSet) > 0 {
 		missing := make([]string, 0, len(repoSet))
 		for name := range repoSet {
-			println("missing", name)
 			missing = append(missing, name)
 		}
 		return missing, nil
@@ -173,17 +171,17 @@ var hugeReposList = []string{
 	"mattec92/KTH",
 	"sainttelant/yolov5",
 	"lalitkapoor/webpack-es6-react-boilerplate",
-	"pixelgrade/customify",
-	"appintheair/WatchAnimationHelper",
-	"wentaocheng-cv/cpf_localization",
-	"xiaoruiguo/vue3-antd-admin",
-	"zb121/100-gdb-tips",
-	"akramer/aoc2021",
-	"eyalperry88/eyalperry88.github.io",
-	"lexaguilar/NodeServer",
-	"Danceiny/parser_engine",
-	"tctien342/Asus-Vivobook-S510UA-Hackintosh",
-	"guilhermedeoliveira/ns3-training-challenges",
+	// "pixelgrade/customify",
+	// "appintheair/WatchAnimationHelper",
+	// "wentaocheng-cv/cpf_localization",
+	// "xiaoruiguo/vue3-antd-admin",
+	// "zb121/100-gdb-tips",
+	// "akramer/aoc2021",
+	// "eyalperry88/eyalperry88.github.io",
+	// "lexaguilar/NodeServer",
+	// "Danceiny/parser_engine",
+	// "tctien342/Asus-Vivobook-S510UA-Hackintosh",
+	// "guilhermedeoliveira/ns3-training-challenges",
 
 	// that's the one we're using to write queries against
 	"genjidb/genji",
