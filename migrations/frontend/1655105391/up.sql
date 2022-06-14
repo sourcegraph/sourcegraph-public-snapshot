@@ -12,6 +12,15 @@ ALTER TABLE codeintel_lockfile_references
 
 COMMENT ON COLUMN codeintel_lockfile_references.depends_on IS 'IDs of other `codeintel_lockfile_references` this package depends on in the context of this `codeintel_lockfile_references.resolution_id`.';
 
-CREATE INDEX IF NOT EXISTS codeintel_lockfiles_references_depends_on ON codeintel_lockfile_references USING GIN (
-    depends_on gin__int_ops
+CREATE INDEX IF NOT EXISTS codeintel_lockfiles_references_depends_on
+ON codeintel_lockfile_references USING GIN (depends_on gin__int_ops);
+
+DROP INDEX IF EXISTS codeintel_lockfile_references_repository_name_revspec_package;
+CREATE UNIQUE INDEX IF NOT EXISTS codeintel_lockfile_references_repository_name_revspec_package_resolution ON codeintel_lockfile_references USING btree (
+    repository_name,
+    revspec,
+    package_scheme,
+    package_name,
+    package_version,
+    resolution_id
 );

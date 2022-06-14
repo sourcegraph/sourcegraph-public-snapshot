@@ -298,7 +298,7 @@ WITH ins AS (
 	INSERT INTO codeintel_lockfile_references (repository_name, revspec, package_scheme, package_name, package_version, depends_on, resolution_id)
 	SELECT repository_name, revspec, package_scheme, package_name, package_version, depends_on, resolution_id FROM t_codeintel_lockfile_references
 	ON CONFLICT DO NOTHING
-	RETURNING id, package_name
+	RETURNING id
 ),
 duplicates AS (
 	SELECT id
