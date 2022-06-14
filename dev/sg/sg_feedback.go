@@ -23,8 +23,6 @@ const (
 	newDiscussionURL = "https://github.com/sourcegraph/sourcegraph/discussions/new"
 )
 
-var noEditorErr error = errors.New("$EDITOR environment variable was empty")
-var emptyFeedbackErr error = errors.New("Feedback message has no content")
 var feedbackGithubToken string
 var feedbackTitle string
 var feedbackBody string
@@ -59,13 +57,13 @@ var feedbackCommand = &cli.Command{
 }
 
 func feedbackExec(ctx *cli.Context) error {
-	if err := newFeedback(ctx.Context, feedbackTitle, "developer-experience", feedbackBody); err != nil {
+	if err := sendFeedback(ctx.Context, feedbackTitle, "developer-experience", feedbackBody); err != nil {
 		return err
 	}
 	return nil
 }
 
-func newFeedback(ctx context.Context, title, category, body string) error {
+func sendFeedback(ctx context.Context, title, category, body string) error {
 	values := make(url.Values)
 	values["category"] = []string{category}
 	values["title"] = []string{title}
@@ -73,13 +71,12 @@ func newFeedback(ctx context.Context, title, category, body string) error {
 	if body == "" {
 		content, err := gatherFeedback(ctx)
 		if err != nil {
-			return err
-		}
+			std.Out.WriteFailuref("A problem occured while gathering feedback but continuing: %s", err)
 
-		values["body"] = []string{content}
-	} else {
-		values["body"] = []string{body}
+		}
+		body = content
 	}
+	values["body"] = []string{body}
 
 	feedbackURL, err := url.Parse(newDiscussionURL)
 	if err != nil {
@@ -116,20 +113,16 @@ func gatherFeedback(ctx context.Context) (string, error) {
 	cmd := feedbackEditor + " " + contentPath
 	err = launchEditor(ctx, cmd)
 	if err != nil {
-		std.Out.WriteSuggestionf("To use a different command to launch your editor specify --editor")
+		std.Out.WriteSuggestionf("There was a problem in launching your editor. To use a different command to launch your editor specify --editor. Alternatively you can provide your feedback with the --message flag")
 		return "", errors.Wrapf(err, "failed to launch editor using command %q", cmd)
 	}
 
 	content, err := ioutil.ReadFile(contentPath)
-	if len(content) == 0 {
-		return "", emptyFeedbackErr
-	}
-
 	return string(content), err
 }
 
 func launchEditor(ctx context.Context, editorCmd string) error {
-	std.Out.WriteNoticef("Launching your editor gather feedback ...", editorCmd)
+	std.Out.WriteNoticef("Launching your editor to gather feedback ...", editorCmd)
 	cmdParts := strings.Split(editorCmd, " ")
 
 	cmd := exec.Command(cmdParts[0], cmdParts[1:]...)
