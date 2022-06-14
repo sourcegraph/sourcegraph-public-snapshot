@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/Masterminds/semver"
 	"github.com/inconshreveable/log15"
 
@@ -113,11 +115,12 @@ type SearchContextLoader interface {
 
 type scLoader struct {
 	primary dbutil.DB
+	log     log.Logger
 }
 
 func (l *scLoader) GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error) {
 	db := database.NewDB(l.primary)
-	return searchcontexts.ResolveSearchContextSpec(ctx, db, name)
+	return searchcontexts.ResolveSearchContextSpec(l.log, ctx, db, name)
 }
 
 func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawContexts []string) ([]string, []string, error) {

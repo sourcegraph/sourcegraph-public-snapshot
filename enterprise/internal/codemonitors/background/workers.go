@@ -8,7 +8,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	slog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const (
@@ -140,7 +139,7 @@ func createDBWorkerStoreForActionJobs(s edb.CodeMonitorStore) dbworkerstore.Stor
 
 type queryRunner struct {
 	db  edb.EnterpriseDB
-	log slog.Logger
+	log log.Logger
 }
 
 func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -24,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {
@@ -32,7 +33,7 @@ func main() {
 		Name:    env.MyName,
 		Version: version.Version(),
 	})
-	defer syncLogs()
+	defer syncLogs.Sync()
 
 	logger := log.Scoped("worker", "worker enterprise edition")
 

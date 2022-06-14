@@ -28,7 +28,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/go-rendezvous"
