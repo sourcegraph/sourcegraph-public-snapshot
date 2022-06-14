@@ -1,8 +1,9 @@
 import React, { useCallback } from 'react'
 
+import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
+
 import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
 import { Icon, Select } from '@sourcegraph/wildcard'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 
 const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
     switch (namespace.__typename) {
