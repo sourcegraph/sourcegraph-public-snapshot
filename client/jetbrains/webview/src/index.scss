@@ -1,10 +1,9 @@
 @import '../../../branded/src/global-styles/index.scss';
 
-
 .monaco-mouse-cursor-text {
-     /* Hack: remove focus ring around Monaco editor cursor */
-     &:focus-within,
-     &:focus-visible {
-         box-shadow: none !important;
-     }
+    /* Hack: remove focus ring around Monaco editor cursor */
+    &:focus-within,
+    &:focus-visible {
+        box-shadow: none !important;
+    }
 }
