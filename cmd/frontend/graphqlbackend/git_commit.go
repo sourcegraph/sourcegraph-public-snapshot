@@ -255,7 +255,7 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 	defer span.Finish()
 	span.SetTag("path", path)
 
-	stat, err := git.Stat(ctx, r.db, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), path)
+	stat, err := gitserver.NewClient(r.db).Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
