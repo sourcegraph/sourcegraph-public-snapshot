@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
@@ -15,7 +14,7 @@ func TestLock(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	handle := basestore.NewWithHandle(dbtest.New[schemas.Production](t))
+	handle := dbtest.New[schemas.Production](t)
 	locker := NewWith(handle, "test")
 
 	key := rand.Int31n(1000)

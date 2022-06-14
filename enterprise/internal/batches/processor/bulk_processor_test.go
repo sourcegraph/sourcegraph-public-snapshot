@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -24,8 +23,7 @@ func TestBulkProcessor(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	handle := dbtest.New[schemas.Production](t)
-	db := database.NewDBWith(basestore.NewWithHandle(handle))
+	db := database.NewDBWith(dbtest.New[schemas.Production](t))
 	bstore := store.New(db, &observation.TestContext, nil)
 
 	user := ct.CreateTestUser(t, db, true)

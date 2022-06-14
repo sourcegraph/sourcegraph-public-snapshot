@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -63,7 +64,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 
 	// Initialize stores
 	dbStore := store.NewWithDB(db, observationContext)
-	locker := locker.NewWith(db, "codeintel")
+	locker := locker.NewWith[schemas.Any](db, "codeintel")
 	lsifStore := lsifstore.NewStore(codeIntelDB, siteConfig, observationContext)
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {

@@ -22,33 +22,33 @@ func StringKey(s string) int32 {
 //
 // For example, an advisory lock can be taken around an expensive calculation related to
 // a particular repository to ensure that no other service is performing the same task.
-type Locker struct {
+type Locker[T schemas.Any] struct {
 	*basestore.Store[schemas.Any]
 	namespace int32
 }
 
 // NewWith creates a new Locker with the given namespace and ShareableStore
-func NewWith(other basestore.ShareableStore[~schemas.Empty], namespace string) *Locker {
-	return &Locker{
+func NewWith[T schemas.Any](other basestore.ShareableStore[T], namespace string) *Locker[T] {
+	return &Locker[T]{
 		Store:     basestore.NewWithHandle(other.Handle()),
 		namespace: StringKey(namespace),
 	}
 }
 
-func (l *Locker) With(other basestore.ShareableStore[schemas.Any]) *Locker {
+func (l *Locker[T]) With(other basestore.ShareableStore[schemas.Any]) *Locker {
 	return &Locker{
 		Store:     l.Store.With(other),
 		namespace: l.namespace,
 	}
 }
 
-func (l *Locker) Transact(ctx context.Context) (*Locker, error) {
+func (l *Locker[T]) Transact(ctx context.Context) (*Locker[T], error) {
 	txBase, err := l.Store.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Locker{
+	return &Locker[T]{
 		Store:     txBase,
 		namespace: l.namespace,
 	}, nil
@@ -64,7 +64,7 @@ var ErrTransaction = errors.New("locker: in a transaction")
 // Lock creates a transactional store and calls its Lock method. This method expects that
 // the locker is outside of a transaction. The transaction's lifetime is linked to the lock,
 // so the internal locker will commit or rollback for the lock to be released.
-func (l *Locker) Lock(ctx context.Context, key int32, blocking bool) (locked bool, _ UnlockFunc, err error) {
+func (l *Locker[T]) Lock(ctx context.Context, key int32, blocking bool) (locked bool, _ UnlockFunc, err error) {
 	if l.InTransaction() {
 		return false, nil, ErrTransaction
 	}

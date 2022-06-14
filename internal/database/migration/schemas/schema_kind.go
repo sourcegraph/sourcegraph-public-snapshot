@@ -28,7 +28,7 @@ type Production struct {
 	CodeIntel
 }
 
-type Any struct {
+type Any interface {
 	SchemaKind
 }
 

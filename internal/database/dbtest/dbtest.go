@@ -62,7 +62,7 @@ var onces struct {
 	done map[string]struct{}
 }
 
-func New[T schemas.SchemaKind](t testing.TB) basestore.TransactableHandle[T] {
+func New[T schemas.SchemaKind](t testing.TB) *basestore.Store[T] {
 	schemaSet := schemas.SchemasFromKind[T]()
 	namespace := namespaceFromSchemaSet(schemaSet)
 
@@ -75,7 +75,7 @@ func New[T schemas.SchemaKind](t testing.TB) basestore.TransactableHandle[T] {
 		onces.Unlock()
 	}
 
-	return basestore.NewHandleWithDB[T](newFromDSN(t, namespace), sql.TxOptions{})
+	return basestore.NewWithHandle(basestore.NewHandleWithDB[T](newFromDSN(t, namespace), sql.TxOptions{}))
 }
 
 func namespaceFromSchemaSet(schemaSet []*schemas.Schema) string {
