@@ -8,6 +8,7 @@ import { catchError, map, startWith } from 'rxjs/operators'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     PageHeader,
@@ -33,7 +34,7 @@ import { CodeMonitoringGettingStarted } from './CodeMonitoringGettingStarted'
 import { CodeMonitoringLogs } from './CodeMonitoringLogs'
 import { CodeMonitorList } from './CodeMonitorList'
 
-export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
+export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
@@ -48,8 +49,9 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
     isLightTheme,
     testForceTab,
+    telemetryService,
 }) => {
-    useEffect(() => eventLogger.logViewEvent('CodeMonitoringPage'), [])
+    useEffect(() => eventLogger.logPageView('CodeMonitoring'), [])
 
     const LOADING = 'loading' as const
 
@@ -86,6 +88,20 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
             setCurrentTab(testForceTab)
         }
     }, [currentTab, testForceTab])
+
+    // Log selected tab
+    useEffect(() => {
+        if (userHasCodeMonitors !== LOADING) {
+            switch (currentTab) {
+                case 'getting-started':
+                    telemetryService.log('CodeMoitoringGettingStartedPageViewed')
+                    break
+                case 'logs':
+                    telemetryService.log('CodeMoitoringLogsPageViewed')
+                    break
+            }
+        }
+    }, [currentTab, telemetryService, userHasCodeMonitors])
 
     const showList = userHasCodeMonitors !== 'loading' && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
 
