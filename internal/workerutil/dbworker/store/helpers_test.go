@@ -138,13 +138,13 @@ func setupStoreTest(t *testing.T) *sql.DB {
 func defaultTestStoreOptions(clock glock.Clock) Options {
 	return Options{
 		Name:              "test",
-		TableName:         "workerutil_test w",
+		TableName:         "workerutil_test",
 		Scan:              testScanFirstRecord,
-		OrderByExpression: sqlf.Sprintf("w.created_at"),
+		OrderByExpression: sqlf.Sprintf("workerutil_test.created_at"),
 		ColumnExpressions: []*sqlf.Query{
-			sqlf.Sprintf("w.id"),
-			sqlf.Sprintf("w.state"),
-			sqlf.Sprintf("w.execution_logs"),
+			sqlf.Sprintf("workerutil_test.id"),
+			sqlf.Sprintf("workerutil_test.state"),
+			sqlf.Sprintf("workerutil_test.execution_logs"),
 		},
 		AlternateColumnNames: map[string]string{
 			"queued_at": "created_at",
