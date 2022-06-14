@@ -49,8 +49,8 @@ export async function repoInfo(filePath: string): Promise<RepositoryInfo | undef
         const fileRelative = filePath.slice(repoRoot.length + 1).replace(/\\/g, '/')
         let { branch, remoteName } = await gitRemoteNameAndBranch(repoRoot, gitHelpers, log)
         const remoteURL = await gitRemoteUrlWithReplacements(repoRoot, remoteName, gitHelpers, log)
-        // check if branch exist remotely
-        branch = getDefaultBranch() || (await isOnSourcegraph(remoteURL, branch)) ? branch : ''
+        // check if the default branch or branch exist remotely
+        branch = (await isOnSourcegraph(remoteURL, getDefaultBranch() || branch)) ? getDefaultBranch() || branch : ''
         return { remoteURL, branch, fileRelative, remoteName }
     } catch {
         return undefined

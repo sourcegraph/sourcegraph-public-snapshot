@@ -53,6 +53,7 @@ const BlockMenuActionComponent: React.FunctionComponent<
             disabled={isDisabled}
             role="menuitem"
             data-testid={label}
+            aria-label={label}
             size="sm"
             variant={variant}
             {...elementSpecificProps}

@@ -50,6 +50,9 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<React.PropsWith
                 pluralNoun="tags"
                 queryConnection={queryTags}
                 nodeComponent={GitReferenceNode}
+                ariaLabelFunction={(tagDisplayName: string) =>
+                    `View this repository using ${tagDisplayName} as the selected revision`
+                }
                 defaultFirst={20}
                 autoFocus={true}
                 history={history}

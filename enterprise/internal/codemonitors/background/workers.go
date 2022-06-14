@@ -8,6 +8,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -19,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const (
@@ -180,7 +181,7 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record work
 	}
 
 	query := q.QueryString
-	if !featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+	if !featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
 		// Only add an after filter when repo-aware monitors is disabled
 		query = newQueryWithAfterFilter(q)
 	}

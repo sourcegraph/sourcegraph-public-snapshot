@@ -12,4 +12,4 @@ export const FilterInput: React.FunctionComponent<React.PropsWithChildren<Filter
     children,
     className,
     ...rest
-}) => <Input inputClassName={classNames(className, styles.filterInput)} {...rest} />
+}) => <Input className={classNames(className, styles.filterInput)} {...rest} />

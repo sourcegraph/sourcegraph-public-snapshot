@@ -175,16 +175,16 @@ func SanitizeEventURL(raw string) string {
 
 // Event contains information needed for logging an event.
 type Event struct {
-	Name            string
-	URL             string
-	UserID          uint32
-	AnonymousUserID string
-	Argument        json.RawMessage
-	PublicArgument  json.RawMessage
-	Source          string
-	Timestamp       time.Time
-	FeatureFlags    featureflag.FlagSet
-	CohortID        *string // date in YYYY-MM-DD format
+	Name             string
+	URL              string
+	UserID           uint32
+	AnonymousUserID  string
+	Argument         json.RawMessage
+	PublicArgument   json.RawMessage
+	Source           string
+	Timestamp        time.Time
+	EvaluatedFlagSet featureflag.EvaluatedFlagSet
+	CohortID         *string // date in YYYY-MM-DD format
 }
 
 func (l *eventLogStore) Insert(ctx context.Context, e *Event) error {
@@ -202,7 +202,7 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 
 	rowValues := make(chan []any, len(events))
 	for _, event := range events {
-		featureFlags, err := json.Marshal(event.FeatureFlags)
+		featureFlags, err := json.Marshal(event.EvaluatedFlagSet)
 		if err != nil {
 			return err
 		}

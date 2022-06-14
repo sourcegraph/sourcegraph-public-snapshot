@@ -93,6 +93,7 @@ type Step struct {
 	Env       env.Environment   `json:"env,omitempty" yaml:"env"`
 	Files     map[string]string `json:"files,omitempty" yaml:"files,omitempty"`
 	Outputs   Outputs           `json:"outputs,omitempty" yaml:"outputs,omitempty"`
+	Mount     []Mount           `json:"mount,omitempty" yaml:"mount,omitempty"`
 
 	If any `json:"if,omitempty" yaml:"if,omitempty"`
 }
@@ -126,6 +127,11 @@ type Group struct {
 	Directory  string `json:"directory,omitempty" yaml:"directory"`
 	Branch     string `json:"branch,omitempty" yaml:"branch"`
 	Repository string `json:"repository,omitempty" yaml:"repository"`
+}
+
+type Mount struct {
+	Mountpoint string `json:"mountpoint" yaml:"mountpoint"`
+	Path       string `json:"path" yaml:"path"`
 }
 
 type ParseBatchSpecOptions struct {
@@ -193,8 +199,21 @@ func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*Ba
 		}
 	}
 
+	for i, step := range spec.Steps {
+		for _, mount := range step.Mount {
+			if strings.Contains(mount.Path, invalidMountCharacters) {
+				errs = errors.Append(errs, NewValidationError(errors.Newf("step %d mount path contains invalid characters", i+1)))
+			}
+			if strings.Contains(mount.Mountpoint, invalidMountCharacters) {
+				errs = errors.Append(errs, NewValidationError(errors.Newf("step %d mount mountpoint contains invalid characters", i+1)))
+			}
+		}
+	}
+
 	return &spec, errs
 }
+
+const invalidMountCharacters = ","
 
 func (on *OnQueryOrRepository) String() string {
 	if on.RepositoriesMatchingQuery != "" {

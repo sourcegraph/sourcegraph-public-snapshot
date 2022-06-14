@@ -182,6 +182,7 @@ type CountBatchSpecsOpts struct {
 	BatchChangeID int64
 
 	ExcludeCreatedFromRawNotOwnedByUser int32
+	IncludeLocallyExecutedSpecs         bool
 }
 
 // CountBatchSpecs returns the number of code mods in the database.
@@ -220,6 +221,10 @@ ON
 
 	if opts.ExcludeCreatedFromRawNotOwnedByUser != 0 {
 		preds = append(preds, sqlf.Sprintf("(batch_specs.user_id = %s OR batch_specs.created_from_raw IS FALSE)", opts.ExcludeCreatedFromRawNotOwnedByUser))
+	}
+
+	if !opts.IncludeLocallyExecutedSpecs {
+		preds = append(preds, sqlf.Sprintf("batch_specs.created_from_raw IS TRUE"))
 	}
 
 	if len(preds) == 0 {
@@ -375,6 +380,7 @@ type ListBatchSpecsOpts struct {
 	NewestFirst   bool
 
 	ExcludeCreatedFromRawNotOwnedByUser int32
+	IncludeLocallyExecutedSpecs         bool
 }
 
 // ListBatchSpecs lists BatchSpecs with the given filters.
@@ -429,6 +435,10 @@ ON
 
 	if opts.ExcludeCreatedFromRawNotOwnedByUser != 0 {
 		preds = append(preds, sqlf.Sprintf("(batch_specs.user_id = %s OR batch_specs.created_from_raw IS FALSE)", opts.ExcludeCreatedFromRawNotOwnedByUser))
+	}
+
+	if !opts.IncludeLocallyExecutedSpecs {
+		preds = append(preds, sqlf.Sprintf("batch_specs.created_from_raw IS TRUE"))
 	}
 
 	if opts.NewestFirst {

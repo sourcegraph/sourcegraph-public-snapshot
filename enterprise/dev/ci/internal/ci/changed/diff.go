@@ -71,6 +71,11 @@ func ParseDiff(files []string) (diff Diff) {
 				diff |= Go
 			}
 		}
+		if p == "sg.config.yaml" {
+			// sg config affects generated output and potentially tests and checks that we
+			// run in the future, so we consider this to have affected Go.
+			diff |= Go
+		}
 
 		// Client
 		if !strings.HasSuffix(p, ".md") && (isRootClientFile(p) || strings.HasPrefix(p, "client/")) {

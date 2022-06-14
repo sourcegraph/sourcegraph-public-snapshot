@@ -67,6 +67,12 @@ type ResourceOptions struct {
 
 	// DiskSpace is the maximum amount of disk a container or VM can use.
 	DiskSpace string
+
+	// DockerHostMountPath, if supplied, replaces the workspace parent directory in the
+	// volume mounts of Docker containers. This option is used when running privilegled
+	// executors in k8s or docker-compose without requiring the host and node paths to
+	// be identical.
+	DockerHostMountPath string
 }
 
 // NewRunner creates a new runner with the given options.

@@ -43,10 +43,15 @@ func (s *SequentialJob) Name() string {
 }
 
 func (s *SequentialJob) Tags() []log.Field {
-	return []log.Field{}
+	return []log.Field{
+		log.Bool("ensureUnique", s.ensureUnique),
+	}
 }
 
 func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (alert *search.Alert, err error) {
+	_, ctx, parentStream, finish := job.StartSpan(ctx, parentStream, s)
+	defer func() { finish(alert, err) }()
+
 	var maxAlerter search.MaxAlerter
 	var errs errors.MultiError
 

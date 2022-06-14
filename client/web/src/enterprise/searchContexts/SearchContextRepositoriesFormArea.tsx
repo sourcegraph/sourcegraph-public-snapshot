@@ -165,7 +165,6 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<
                 {isValidConfig ? (
                     <span className="d-flex align-items-center">
                         <Icon
-                            role="img"
                             aria-hidden={true}
                             as="span"
                             data-testid="repositories-config-success"

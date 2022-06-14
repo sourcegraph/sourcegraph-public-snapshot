@@ -1,9 +1,15 @@
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
 import type { PreviewRequest, Request } from '../search/js-to-java-bridge'
-import type { Search } from '../search/types'
+import type { Search, Theme } from '../search/types'
+
+import { renderColorDebugger } from './renderColorDebugger'
+import { dark } from './theme-snapshots/dark'
+import { light } from './theme-snapshots/light'
 
 const instanceURL = 'https://sourcegraph.com'
+
+let isDarkTheme = false
 
 const codeDetailsNode = document.querySelector('#code-details') as HTMLPreElement
 const iframeNode = document.querySelector('#webview') as HTMLIFrameElement
@@ -52,18 +58,8 @@ function handleRequest(
         }
 
         case 'getTheme': {
-            onSuccessCallback(
-                JSON.stringify({
-                    isDarkTheme: true,
-                    backgroundColor: 'blue',
-                    buttonArc: '2px',
-                    buttonColor: 'red',
-                    color: 'green',
-                    font: 'Times New Roman',
-                    fontSize: '12px',
-                    labelBackground: 'gray',
-                })
-            )
+            const theme: Theme = isDarkTheme ? dark : light
+            onSuccessCallback(JSON.stringify(theme))
             break
         }
 
@@ -136,7 +132,7 @@ function handleRequest(
     }
 }
 
-/* Initialize app for standalone server */
+// Initialize app for standalone server
 iframeNode.addEventListener('load', () => {
     const iframeWindow = iframeNode.contentWindow
     if (iframeWindow !== null) {
@@ -147,6 +143,18 @@ iframeNode.addEventListener('load', () => {
             .catch(() => {})
     }
 })
+
+// Detect dark or light mode preference
+if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    isDarkTheme = true
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    document.body.parentElement!.className = 'dark'
+}
+
+// Render the theme color debuggerwhen the URL contains `?color-debug`
+if (location.href.includes('color-debug')) {
+    renderColorDebugger()
+}
 
 function escapeHTML(unsafe: string): string {
     return unsafe.replace(

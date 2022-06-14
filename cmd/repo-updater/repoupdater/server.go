@@ -10,6 +10,8 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
@@ -22,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // Server is a repoupdater server.
@@ -202,7 +203,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 
 	var sourcer repos.Sourcer
 	if sourcer = s.Sourcer; sourcer == nil {
-		db := database.NewDB(s.Handle().DB())
+		db := database.NewDBWith(s)
 		depsSvc := livedependencies.GetService(db, nil)
 		sourcer = repos.NewSourcer(db, httpcli.ExternalClientFactory, repos.WithDependenciesService(depsSvc))
 	}

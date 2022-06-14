@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"math/rand"
@@ -20,7 +19,7 @@ var funkyLogoCommand = &cli.Command{
 	Usage:       "Print the sg logo",
 	Description: "By default, prints the sg logo in different colors. When the 'classic' argument is passed it prints the classic logo.",
 	Category:    CategoryUtil,
-	Action:      execAdapter(logoExec),
+	Action:      logoExec,
 }
 
 var styleOrange = output.Fg256Color(202)
@@ -69,7 +68,8 @@ func printLogo(out io.Writer) {
 	fmt.Fprintf(out, "%s", output.StyleReset)
 }
 
-func logoExec(ctx context.Context, args []string) error {
+func logoExec(ctx *cli.Context) error {
+	args := ctx.Args().Slice()
 	if len(args) == 1 && args[0] == "classic" {
 		var logoOut bytes.Buffer
 		printLogo(&logoOut)

@@ -135,17 +135,13 @@ func Frontend() *monitoring.Dashboard {
 							Name:        "page_load_latency",
 							Description: "90th percentile page load latency over all routes over 10m",
 							Query:       `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route!="raw",route!="blob",route!~"graphql.*"}[10m])))`,
-
-							Critical: monitoring.Alert().GreaterOrEqual(2),
-							Panel:    monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds),
-							Owner:    monitoring.ObservableOwnerCloudSaaS,
+							Warning:     monitoring.Alert().GreaterOrEqual(2),
+							Panel:       monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerCloudSaaS,
 							NextSteps: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
-								- Explore the data returned by the query in the dashboard panel and filter by different labels to identify any patterns
+								- Investigate potential sources of latency by selecting Explore and modifying the 'sum by(le)' section to include additional labels: for example, 'sum by(le, job)' or 'sum by (le, instance)'.
 								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
-							`,
-							Interpretation: `
-								Investigate potential sources of latency by selecting Explore and modifying the 'sum by(le)' section to include additional labels: for example, 'sum by(le, job)' or 'sum by (le, instance)'.
 							`,
 						},
 						{

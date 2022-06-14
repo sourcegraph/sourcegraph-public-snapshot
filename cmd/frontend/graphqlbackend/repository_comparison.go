@@ -33,6 +33,7 @@ type RepositoryComparisonInput struct {
 type FileDiffsConnectionArgs struct {
 	First *int32
 	After *string
+	Paths *[]string
 }
 
 type RepositoryComparisonInterface interface {
@@ -226,12 +227,18 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 				base = string(cmp.base.OID())
 			}
 
+			var paths []string
+			if args.Paths != nil {
+				paths = *args.Paths
+			}
+
 			var iter *gitserver.DiffFileIterator
 			iter, err = gitserver.NewClient(cmp.db).Diff(ctx, gitserver.DiffOptions{
 				Repo:      cmp.repo.RepoName(),
 				Base:      base,
 				Head:      string(cmp.head.OID()),
 				RangeType: cmp.rangeType,
+				Paths:     paths,
 			})
 			if err != nil {
 				return
@@ -293,6 +300,7 @@ func NewFileDiffConnectionResolver(
 		head:    head,
 		first:   args.First,
 		after:   args.After,
+		paths:   args.Paths,
 		compute: compute,
 		newFile: newFileFunc,
 	}
@@ -304,12 +312,13 @@ type fileDiffConnectionResolver struct {
 	head    *GitCommitResolver
 	first   *int32
 	after   *string
+	paths   *[]string
 	compute ComputeDiffFunc
 	newFile NewFileFunc
 }
 
 func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]FileDiff, error) {
-	fileDiffs, afterIdx, _, err := r.compute(ctx, &FileDiffsConnectionArgs{First: r.first, After: r.after})
+	fileDiffs, afterIdx, _, err := r.compute(ctx, &FileDiffsConnectionArgs{First: r.first, After: r.after, Paths: r.paths})
 	if err != nil {
 		return nil, err
 	}

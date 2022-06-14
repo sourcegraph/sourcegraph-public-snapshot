@@ -152,7 +152,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                     size="sm"
                                     as={Link}
                                 >
-                                    <Icon role="img" as={SettingsIcon} aria-hidden={true} /> Settings
+                                    <Icon as={SettingsIcon} aria-hidden={true} /> Settings
                                 </Button>
                             ) &&
                             ' '}
@@ -207,7 +207,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 size="sm"
                                 aria-label="Delete User"
                             >
-                                <Icon role="img" as={DeleteIcon} aria-hidden={true} />
+                                <Icon as={DeleteIcon} aria-hidden={true} />
                             </Button>
                         )}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
@@ -220,7 +220,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 size="sm"
                                 aria-label="Nuke user (click for more information)"
                             >
-                                <Icon role="img" as={RadioactiveIcon} aria-hidden={true} />
+                                <Icon as={RadioactiveIcon} aria-hidden={true} />
                             </Button>
                         )}
                     </div>
@@ -420,7 +420,7 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                     <H2 className="mb-0">Users</H2>
                     <div>
                         <Button to="/site-admin/users/new" variant="primary" as={Link}>
-                            <Icon role="img" as={AddIcon} aria-hidden={true} /> Create user account
+                            <Icon as={AddIcon} aria-hidden={true} /> Create user account
                         </Button>
                     </div>
                 </div>

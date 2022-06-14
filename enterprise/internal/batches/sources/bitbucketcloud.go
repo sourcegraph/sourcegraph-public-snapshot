@@ -9,11 +9,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -286,11 +286,11 @@ func (s BitbucketCloudSource) setChangesetMetadata(ctx context.Context, repo *bi
 }
 
 func (s BitbucketCloudSource) changesetToPullRequestInput(cs *Changeset) bitbucketcloud.PullRequestInput {
-	destBranch := git.AbbreviateRef(cs.BaseRef)
+	destBranch := gitdomain.AbbreviateRef(cs.BaseRef)
 	opts := bitbucketcloud.PullRequestInput{
 		Title:             cs.Title,
 		Description:       cs.Body,
-		SourceBranch:      git.AbbreviateRef(cs.HeadRef),
+		SourceBranch:      gitdomain.AbbreviateRef(cs.HeadRef),
 		DestinationBranch: &destBranch,
 	}
 

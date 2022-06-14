@@ -203,7 +203,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
                 )}
                 {blobLinesOrError && isErrorLike(blobLinesOrError) && (
                     <div className={styles.codeExcerptAlert}>
-                        <Icon role="img" className="mr-2" as={AlertCircleIcon} aria-hidden={true} />
+                        <Icon className="mr-2" as={AlertCircleIcon} aria-hidden={true} />
                         {blobLinesOrError.message}
                     </div>
                 )}
