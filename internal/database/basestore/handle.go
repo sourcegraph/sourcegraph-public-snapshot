@@ -78,7 +78,7 @@ func (h *dbHandle) Transact(ctx context.Context) (TransactableHandle, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &txHandle{lockingTx: &lockingTx{tx: tx}, txOptions: h.txOptions}, nil
+	return &txHandle{lockingTx: &lockingTx{tx: tx, logger: h.logger}, txOptions: h.txOptions}, nil
 }
 
 func (h *dbHandle) Done(err error) error {
