@@ -33,8 +33,6 @@ type Store interface {
 	ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.Repo, err error)
 	UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error)
 	DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error)
-	InsertLockfileEdges(ctx context.Context, edges map[int][]int, resolutionID string) (err error)
-	InsertLockfileRoots(ctx context.Context, repoName, commit string, roots []int, resolutionID string) (err error)
 }
 
 // store manages the database tables for package dependencies.
@@ -386,67 +384,6 @@ func populatePackageDependencyChannel(deps []shared.PackageDependency, resolutio
 	return ch
 }
 
-// InsertLockfileEdges TODO
-func (s *store) InsertLockfileEdges(ctx context.Context, edges map[int][]int, resolutionID string) (err error) {
-	tx, err := s.Transact(ctx)
-	if err != nil {
-		return nil
-	}
-	defer func() { err = tx.db.Done(err) }()
-
-	for source, targets := range edges {
-		if err := tx.db.Exec(ctx, sqlf.Sprintf(
-			insertLockfilesEdgesQuery,
-			pq.Array(targets),
-			source,
-			resolutionID,
-		)); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-const insertLockfilesEdgesQuery = `
--- source: internal/codeintel/dependencies/internal/store/store.go:InsertLockfileEdges
-UPDATE codeintel_lockfile_references
-SET depends_on = %s
-WHERE
-	id = %s
-AND
-	resolution_id = %s
-`
-
-// InsertLockfileRoots TODO
-func (s *store) InsertLockfileWithRoots(ctx context.Context, repoName, commit string, roots []int, resolutionID string) (err error) {
-	idsArray := pq.Array(roots)
-	return s.db.Exec(ctx, sqlf.Sprintf(
-		insertLockfilesQuery,
-		dbutil.CommitBytea(commit),
-		idsArray,
-		resolutionID,
-		repoName,
-		idsArray,
-	))
-}
-
-const insertLockfileWithRootsQuery = `
--- source: internal/codeintel/dependencies/internal/store/store.go:InsertLockfileRoots
-INSERT INTO codeintel_lockfiles (
-	repository_id,
-	commit_bytea,
-	codeintel_lockfile_reference_ids,
-	resolution_id
-)
-SELECT id, %s, %s, %s
-FROM repo
-WHERE name = %s
--- Last write wins
-ON CONFLICT (repository_id, commit_bytea) DO UPDATE
-SET codeintel_lockfile_reference_ids = %s
-`
-
 // UpsertLockfileGraph TODO
 func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit string, deps []shared.PackageDependency, graph shared.DependencyGraph) (err error) {
 	ctx, _, endObservation := s.operations.upsertLockfileDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -577,6 +514,32 @@ func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit string
 		idsArray,
 	))
 }
+
+const insertLockfilesEdgesQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:InsertLockfileGraph
+UPDATE codeintel_lockfile_references
+SET depends_on = %s
+WHERE
+	id = %s
+AND
+	resolution_id = %s
+`
+
+const insertLockfileWithRootsQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:InsertLockfileGraph
+INSERT INTO codeintel_lockfiles (
+	repository_id,
+	commit_bytea,
+	codeintel_lockfile_reference_ids,
+	resolution_id
+)
+SELECT id, %s, %s, %s
+FROM repo
+WHERE name = %s
+-- Last write wins
+ON CONFLICT (repository_id, commit_bytea) DO UPDATE
+SET codeintel_lockfile_reference_ids = %s
+`
 
 // SelectRepoRevisionsToResolve selects the references lockfile packages to
 // possibly resolve them to repositories on the Sourcegraph instance.
