@@ -115,7 +115,7 @@ interface RevisionsPopoverReferencesProps {
 
     onSelect?: (node: GitRefFields) => void
 
-    tabLabel?: string
+    tabLabel: string
 }
 
 const BATCH_COUNT = 50

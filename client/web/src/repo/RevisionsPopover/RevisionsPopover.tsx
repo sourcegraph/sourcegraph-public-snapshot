@@ -51,14 +51,35 @@ interface RevisionsPopoverTab {
     noun: string
     pluralNoun: string
     type?: GitRefType
+    description: string
 }
 
 const LAST_TAB_STORAGE_KEY = 'RevisionsPopover.lastTab'
 
 const TABS: RevisionsPopoverTab[] = [
-    { id: 'branches', label: 'Branches', noun: 'branch', pluralNoun: 'branches', type: GitRefType.GIT_BRANCH },
-    { id: 'tags', label: 'Tags', noun: 'tag', pluralNoun: 'tags', type: GitRefType.GIT_TAG },
-    { id: 'commits', label: 'Commits', noun: 'commit', pluralNoun: 'commits' },
+    {
+        id: 'branches',
+        label: 'Branches',
+        noun: 'branch',
+        pluralNoun: 'branches',
+        type: GitRefType.GIT_BRANCH,
+        description: 'Find a revision from the listed branches',
+    },
+    {
+        id: 'tags',
+        label: 'Tags',
+        noun: 'tag',
+        pluralNoun: 'tags',
+        type: GitRefType.GIT_TAG,
+        description: 'Find a revision from the listed tags',
+    },
+    {
+        id: 'commits',
+        label: 'Commits',
+        noun: 'commit',
+        pluralNoun: 'commits',
+        description: 'Find a revision from the listed commits',
+    },
 ]
 
 /**
@@ -118,7 +139,7 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
                                 showSpeculativeResults={
                                     props.showSpeculativeResults && tab.type === GitRefType.GIT_BRANCH
                                 }
-                                tabLabel={tab.id}
+                                tabLabel={tab.description}
                             />
                         ) : (
                             <RevisionsPopoverCommits
@@ -130,7 +151,7 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
                                 repo={props.repo}
                                 currentCommitID={props.currentCommitID}
                                 onSelect={props.onSelect}
-                                tabLabel={tab.id}
+                                tabLabel={tab.description}
                             />
                         )}
                     </TabPanel>

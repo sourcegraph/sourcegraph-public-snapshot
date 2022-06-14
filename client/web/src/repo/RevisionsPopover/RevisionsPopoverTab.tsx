@@ -38,7 +38,7 @@ export const RevisionsPopoverTab: React.FunctionComponent<React.PropsWithChildre
             autoFocus={true}
             inputPlaceholder="Find..."
             compact={true}
-            inputAriaLabel={`Find ${inputAriaLabel}`}
+            inputAriaLabel={inputAriaLabel}
         />
         <SummaryContainer compact={true}>{query && summary}</SummaryContainer>
         {error && <ConnectionError errors={[error.message]} compact={true} />}

@@ -116,7 +116,7 @@ interface RevisionsPopoverCommitsProps {
 
     onSelect?: (node: GitCommitAncestorFields) => void
 
-    tabLabel?: string
+    tabLabel: string
 }
 
 const BATCH_COUNT = 15
