@@ -94,8 +94,8 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 <li>Sourcegraph version string (e.g. "vX.X.X")</li>
                 <li>Dependency versions (e.g. "6.0.9" for Redis, or "13.0" for Postgres)</li>
                 <li>
-                    Deployment type (single Docker image, Docker Compose, Kubernetes cluster, Helm, or pure Docker
-                    cluster)
+                    Deployment type (single Docker image, Docker Compose, managed Docker Compose, Kubernetes cluster,
+                    Helm, or pure Docker cluster)
                 </li>
                 <li>License key associated with your Sourcegraph subscription</li>
                 <li>Aggregate count of current monthly users</li>

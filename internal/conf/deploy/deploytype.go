@@ -5,12 +5,13 @@ import "os"
 // Deploy type constants. Any changes here should be reflected in the DeployType type declared in client/web/src/jscontext.ts:
 // https://sourcegraph.com/search?q=r:github.com/sourcegraph/sourcegraph%24+%22type+DeployType%22
 const (
-	Kubernetes    = "kubernetes"
-	SingleDocker  = "docker-container"
-	DockerCompose = "docker-compose"
-	PureDocker    = "pure-docker"
-	Dev           = "dev"
-	Helm          = "helm"
+	Kubernetes           = "kubernetes"
+	SingleDocker         = "docker-container"
+	DockerCompose        = "docker-compose"
+	ManagedDockerCompose = "managed-docker-compose"
+	PureDocker           = "pure-docker"
+	Dev                  = "dev"
+	Helm                 = "helm"
 )
 
 // Type tells the deployment type.
@@ -38,7 +39,12 @@ func IsDeployTypeKubernetes(deployType string) bool {
 // IsDeployTypeDockerCompose tells if the given deployment type is the Docker Compose
 // deployment (and non-dev, not pure-docker, non-cluster, and non-single Docker image).
 func IsDeployTypeDockerCompose(deployType string) bool {
-	return deployType == DockerCompose
+	switch deployType {
+	case DockerCompose, ManagedDockerCompose:
+		return true
+	}
+
+	return false
 }
 
 // IsDeployTypePureDocker tells if the given deployment type is the pure Docker
