@@ -31,18 +31,13 @@ func noOpAnyChar(re *syntax.Regexp) {
 	}
 }
 
-const regexpFlags = syntax.ClassNL | syntax.PerlX | syntax.UnicodeGroups
-
 func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 	// these are the flags used by zoekt, which differ to searcher.
-	re, err := syntax.Parse(pattern, regexpFlags)
+	re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
 	if err != nil {
 		return nil, err
 	}
 	noOpAnyChar(re)
-
-	re = optimizeRegexp(re)
-
 	// zoekt decides to use its literal optimization at the query parser
 	// level, so we check if our regex can just be a literal.
 	if re.Op == syntax.OpLiteral {
