@@ -1,12 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { useHistory } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Icon, LoadingSpinner, H4 } from '@sourcegraph/wildcard'
+import { Button, Icon, LoadingSpinner, H4, Alert } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../components/HeroPage'
 import {
@@ -95,12 +96,21 @@ interface EditBatchSpecPageContentProps extends SettingsCascadeProps<Settings>, 
 const EditBatchSpecPageContent: React.FunctionComponent<
     React.PropsWithChildren<EditBatchSpecPageContentProps>
 > = props => {
-    const { batchChange, editor, errors } = useBatchSpecContext()
-    return <MemoizedEditBatchSpecPageContent {...props} batchChange={batchChange} editor={editor} errors={errors} />
+    const { batchChange, batchSpec, editor, errors } = useBatchSpecContext()
+
+    return (
+        <MemoizedEditBatchSpecPageContent
+            {...props}
+            batchChange={batchChange}
+            batchSpec={batchSpec}
+            editor={editor}
+            errors={errors}
+        />
+    )
 }
 
 type MemoizedEditBatchSpecPageContentProps = EditBatchSpecPageContentProps &
-    Pick<BatchSpecContextState, 'batchChange' | 'editor' | 'errors'>
+    Pick<BatchSpecContextState, 'batchChange' | 'batchSpec' | 'editor' | 'errors'>
 
 const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
     React.PropsWithChildren<MemoizedEditBatchSpecPageContentProps>
@@ -108,9 +118,12 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
     settingsCascade,
     isLightTheme,
     batchChange,
+    batchSpec,
     editor,
     errors,
 }) {
+    const history = useHistory()
+
     const { insightTitle } = useInsightTemplates(settingsCascade)
 
     const [activeTabKey, setActiveTabKey] = useState<TabKey>('spec')
@@ -203,6 +216,19 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
             : noActiveExecutorsActionButtons
         : undefined
 
+    const executionAlert = batchSpec.isExecuting ? (
+        <Alert variant="warning" className="d-flex align-items-center pr-3">
+            <div className="flex-grow-1 pr-3">
+                <H4>There is another active execution for this batch change.</H4>
+                You're about to edit a batch spec that is currently being executed. You might want to view or cancel
+                that execution first.
+            </div>
+            <Button variant="primary" onClick={() => history.replace(`${batchChange.url}/executions/${batchSpec.id}`)}>
+                Go to execution
+            </Button>
+        </Alert>
+    ) : null
+
     return (
         <div className={layoutStyles.pageContainer}>
             {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" className="mb-3" />}
@@ -226,6 +252,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                     <LibraryPane name={batchChange.name} onReplaceItem={editor.handleCodeChange} />
                     <div className={styles.editorContainer}>
                         <H4 className={styles.header}>Batch spec</H4>
+                        {executionAlert}
                         <MonacoBatchSpecEditor
                             batchChangeName={batchChange.name}
                             className={styles.editor}
