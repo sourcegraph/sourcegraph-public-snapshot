@@ -68,12 +68,13 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
                         <ConnectionSummary
                             noSummaryIfAllNodesVisible={true}
                             first={15}
+                            centered={true}
                             connection={connection}
                             noun="code host"
                             pluralNoun="code hosts"
                             hasNextPage={hasNextPage}
                         />
-                        {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                        {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                     </SummaryContainer>
                 )}
             </ConnectionContainer>
