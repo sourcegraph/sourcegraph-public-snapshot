@@ -2,10 +2,12 @@ package lsifstore
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -14,19 +16,19 @@ import (
 const testBundleID = 1
 
 func populateTestStore(t testing.TB) *Store {
-	db := dbtest.NewDB(t)
+	db := stores.NewCodeIntelDB(dbtest.NewDB(t))
 
 	contents, err := os.ReadFile("./testdata/lsif-go@ad3507cb.sql")
 	if err != nil {
 		t.Fatalf("unexpected error reading testdata: %s", err)
 	}
 
-	tx, err := db.Begin()
+	tx, err := db.Transact(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error starting transaction: %s", err)
 	}
 	defer func() {
-		if err := tx.Commit(); err != nil {
+		if err := tx.Done(nil); err != nil {
 			t.Fatalf("unexpected error finishing transaction: %s", err)
 		}
 	}()
@@ -49,7 +51,7 @@ func populateTestStore(t testing.TB) *Store {
 			// these are already inserted during regular DB up migrations.
 			continue
 		}
-		if _, err := tx.Exec(statement); err != nil {
+		if _, err := tx.ExecContext(context.Background(), statement); err != nil {
 			t.Fatalf("unexpected error loading database data: %s", err)
 		}
 	}
