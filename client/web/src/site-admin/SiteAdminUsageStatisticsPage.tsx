@@ -15,11 +15,13 @@ import { FilteredConnection, FilteredConnectionFilter } from '../components/Filt
 import { PageTitle } from '../components/PageTitle'
 import { RadioButtons } from '../components/RadioButtons'
 import { Timestamp } from '../components/time/Timestamp'
+import { withFeatureFlag } from '../featureFlags/withFeatureFlag'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from './backend'
 
 import styles from './SiteAdminUsageStatisticsPage.module.scss'
+import { AdvancedStatisticsPage } from './advanced-statistics'
 
 interface ChartData {
     label: string
@@ -195,11 +197,11 @@ export const USER_ACTIVITY_FILTERS: FilteredConnectionFilter[] = [
     },
 ]
 
-interface SiteAdminUsageStatisticsPageProps extends RouteComponentProps<{}> {
+interface SiteAdminUsageStatisticsPageContentProps extends RouteComponentProps<{}> {
     isLightTheme: boolean
 }
 
-interface SiteAdminUsageStatisticsPageState {
+interface SiteAdminUsageStatisticsPageContentState {
     users?: GQL.IUserConnection
     stats?: GQL.ISiteUsageStatistics
     error?: Error
@@ -209,11 +211,11 @@ interface SiteAdminUsageStatisticsPageState {
 /**
  * A page displaying usage statistics for the site.
  */
-export class SiteAdminUsageStatisticsPage extends React.Component<
-    SiteAdminUsageStatisticsPageProps,
-    SiteAdminUsageStatisticsPageState
+export class SiteAdminUsageStatisticsPageContent extends React.Component<
+    SiteAdminUsageStatisticsPageContentProps,
+    SiteAdminUsageStatisticsPageContentState
 > {
-    public state: SiteAdminUsageStatisticsPageState = {
+    public state: SiteAdminUsageStatisticsPageContentState = {
         chartID: this.loadLatestChartFromStorage(),
     }
 
@@ -311,3 +313,9 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
         this.setState({ chartID: event.target.value as keyof ChartOptions })
     }
 }
+
+export const SiteAdminUsageStatisticsPage = withFeatureFlag(
+    'advanced-usage-stats',
+    AdvancedStatisticsPage,
+    SiteAdminUsageStatisticsPageContent
+)
