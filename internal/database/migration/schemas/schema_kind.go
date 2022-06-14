@@ -4,41 +4,45 @@ type SchemaKind interface {
 	schemaKind()
 }
 
-type Frontend interface {
+type Frontend struct {
 	SchemaKind
-	frontend()
 }
 
-type CodeIntel interface {
+func (Frontend) frontend() {}
+
+type CodeIntel struct {
 	SchemaKind
-	codeIntel()
 }
 
-type CodeInsights interface {
+func (CodeIntel) codeIntel() {}
+
+type CodeInsights struct {
 	SchemaKind
-	codeInsights()
 }
 
-type Production interface {
+func (CodeInsights) codeInsights() {}
+
+type Production struct {
 	SchemaKind
 	Frontend
 	CodeIntel
 }
 
-type Any interface {
+type Any struct {
 	SchemaKind
 }
 
-func SchemasFromKind(kind SchemaKind) (res []*Schema) {
-	if _, ok := kind.(Frontend); ok {
+func SchemasFromKind[T SchemaKind]() (res []*Schema) {
+	var kind T
+	if _, ok := any(kind).(interface{ frontend() }); ok {
 		res = append(res, FrontendDefinition)
 	}
 
-	if _, ok := kind.(CodeIntel); ok {
+	if _, ok := any(kind).(interface{ codeIntel() }); ok {
 		res = append(res, CodeIntelDefinition)
 	}
 
-	if _, ok := kind.(CodeInsights); ok {
+	if _, ok := any(kind).(interface{ codeInsights() }); ok {
 		res = append(res, CodeInsightsDefinition)
 	}
 

@@ -63,8 +63,7 @@ var onces struct {
 }
 
 func New[T schemas.SchemaKind](t testing.TB) basestore.TransactableHandle[T] {
-	var kind T
-	schemaSet := schemas.SchemasFromKind(kind)
+	schemaSet := schemas.SchemasFromKind[T]()
 	namespace := namespaceFromSchemaSet(schemaSet)
 
 	onces.Lock()
