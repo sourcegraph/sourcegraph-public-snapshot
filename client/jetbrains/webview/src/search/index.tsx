@@ -92,7 +92,7 @@ export function applyTheme(theme: Theme): void {
     root.style.setProperty('--button-color', intelliJTheme['Button.default.startBackground'])
     root.style.setProperty('--primary', intelliJTheme['Button.default.startBackground'])
 
-    root.style.setProperty('--color-bg-3', intelliJTheme['List.selectionBackground'])
+    root.style.setProperty('--dropdown-link-active-bg', intelliJTheme['List.selectionBackground'])
     root.style.setProperty('--light-text', intelliJTheme['List.selectionForeground'])
 }
 
