@@ -41,8 +41,6 @@ export interface RevisionsPopoverProps {
      * The selected revision node. Should be used to trigger side effects from clicking a node, e.g. calling `eventLogger`.
      */
     onSelect?: (node: GitRefFields | GitCommitAncestorFields) => void
-
-    // tabLabel?: string
 }
 
 type RevisionsPopoverTabID = 'branches' | 'tags' | 'commits'
@@ -120,7 +118,7 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
                                 showSpeculativeResults={
                                     props.showSpeculativeResults && tab.type === GitRefType.GIT_BRANCH
                                 }
-                                tabLabel={tab.label}
+                                tabLabel={tab.id}
                             />
                         ) : (
                             <RevisionsPopoverCommits
@@ -132,7 +130,7 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
                                 repo={props.repo}
                                 currentCommitID={props.currentCommitID}
                                 onSelect={props.onSelect}
-                                tabLabel={tab.label}
+                                tabLabel={tab.id}
                             />
                         )}
                     </TabPanel>
