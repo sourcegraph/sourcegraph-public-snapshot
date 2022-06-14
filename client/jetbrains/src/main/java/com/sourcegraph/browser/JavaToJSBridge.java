@@ -10,15 +10,19 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class JavaToJSBridge {
+    private final int QUERY_COUNT = 2;
     private final JBCefBrowserBase browser;
     private final Logger logger = Logger.getInstance(JavaToJSBridge.class);
-    private final JBCefJSQuery query;
+    private final JBCefJSQuery[] queries = new JBCefJSQuery[QUERY_COUNT];
+    private final boolean[] isQueryRunning = new boolean[QUERY_COUNT];
     private Function<String, JBCefJSQuery.Response> handler = null;
-    private boolean isQueryRunning = false;
 
     public JavaToJSBridge(JBCefBrowserBase browser) {
         this.browser = browser;
-        this.query = JBCefJSQuery.create(browser);
+        this.queries[0] = JBCefJSQuery.create(browser);
+        this.isQueryRunning[0] = false;
+        this.queries[1] = JBCefJSQuery.create(browser);
+        this.isQueryRunning[1] = false;
     }
 
     public void callJS(String action, JsonObject arguments) {
@@ -32,8 +36,10 @@ public class JavaToJSBridge {
         // we can only run one query at a time.
         // If this becomes a bottleneck, we can create a pool of JBCefJSQuery objects to bridge this,
         // or find a different solution.
-        if (!isQueryRunning) {
-            isQueryRunning = true;
+        if (hasAvailableQuery()) {
+            int queryIndex = isQueryRunning[0] ? 1 : 0;
+            isQueryRunning[queryIndex] = true;
+            JBCefJSQuery query = queries[queryIndex];
             String js = "window.callJS('" + action + "', '" + (arguments != null ? arguments.toString() : "null") + "', (result) => {" +
                 "    " + query.inject("result") +
                 "});";
@@ -44,7 +50,7 @@ public class JavaToJSBridge {
                 }
                 query.removeHandler(handler);
                 handler = null;
-                isQueryRunning = false;
+                isQueryRunning[queryIndex] = false;
                 return null;
             };
             query.addHandler(handler);
@@ -54,7 +60,7 @@ public class JavaToJSBridge {
         }
     }
 
-    public boolean isQueryRunning() {
-        return isQueryRunning;
+    public boolean hasAvailableQuery() {
+        return !(isQueryRunning[0] && isQueryRunning[1]);
     }
 }
