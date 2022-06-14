@@ -130,9 +130,9 @@ func ScanFirstBitbucketProjectPermissionsJob(rows *sql.Rows, queryErr error) (_ 
 }
 
 type ListJobsOptions struct {
-	ProjectKey string
-	Status     string
-	Count      int
+	ProjectKeys []string
+	State       string
+	Count       int
 }
 
 // ListJobs returns a list of types.BitbucketProjectPermissionJob for a given set
@@ -205,19 +205,29 @@ func listWorkerJobsQuery(opt ListJobsOptions) *sqlf.Query {
 
 	q := `
 -- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.listWorkerJobsQuery
-SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_services_id, permissions, unrestricted
-FROM explicit_permissions_bitbucket_project_jobs
+SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_service_id, permissions, unrestricted
+FROM explicit_permissions_bitbucket_projects_jobs
 %%s
 ORDER BY queued_at DESC
 LIMIT %d
 `
 
-	if opt.ProjectKey != "" {
-		where = append(where, sqlf.Sprintf("project_key = %s", opt.ProjectKey))
+	// we don't want to accept too many projects, that's why the input slice is trimmed
+	if len(opt.ProjectKeys) != 0 {
+		keys := opt.ProjectKeys
+		if len(opt.ProjectKeys) > maxJobsCount {
+			keys = keys[:maxJobsCount]
+		}
+		keyQueries := make([]*sqlf.Query, 0, len(keys))
+		for _, key := range keys {
+			keyQueries = append(keyQueries, sqlf.Sprintf("%s", key))
+		}
+
+		where = append(where, sqlf.Sprintf("project_key IN (%s)", sqlf.Join(keyQueries, ",")))
 	}
 
-	if opt.Status != "" {
-		where = append(where, sqlf.Sprintf("state = %s", opt.Status))
+	if opt.State != "" {
+		where = append(where, sqlf.Sprintf("state = %s", opt.State))
 	}
 
 	whereClause := sqlf.Sprintf("")

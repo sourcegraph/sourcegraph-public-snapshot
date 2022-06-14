@@ -173,15 +173,15 @@ func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
 	}, record)
 }
 
-func TestListWorkerJobsQuery(t *testing.T) {
+func TestListJobsQuery(t *testing.T) {
 	t.Run("no options set", func(t *testing.T) {
 		got := listWorkerJobsQuery(ListJobsOptions{})
 		gotString := got.Query(sqlf.PostgresBindVar)
 
 		want := `
 -- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.listWorkerJobsQuery
-SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_services_id, permissions, unrestricted
-FROM explicit_permissions_bitbucket_project_jobs
+SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_service_id, permissions, unrestricted
+FROM explicit_permissions_bitbucket_projects_jobs
 
 ORDER BY queued_at DESC
 LIMIT 100
@@ -191,24 +191,113 @@ LIMIT 100
 	})
 	t.Run("all options set", func(t *testing.T) {
 		got := listWorkerJobsQuery(ListJobsOptions{
-			ProjectKey: "123",
-			Status:     "completed",
-			Count:      337,
+			ProjectKeys: []string{"p1", "p2", "p3", "p4"},
+			State:       "completed",
+			Count:       337,
 		})
 
 		gotString := got.Query(sqlf.PostgresBindVar)
 		want := `
 -- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.listWorkerJobsQuery
-SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_services_id, permissions, unrestricted
-FROM explicit_permissions_bitbucket_project_jobs
-WHERE project_key = $1 AND state = $2
+SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_service_id, permissions, unrestricted
+FROM explicit_permissions_bitbucket_projects_jobs
+WHERE project_key IN ($1 , $2 , $3 , $4) AND state = $5
 ORDER BY queued_at DESC
 LIMIT 337
 `
 
 		require.Equal(t, want, gotString)
-		require.Equal(t, got.Args()[0], "123")
-		require.Equal(t, got.Args()[1], "completed")
+		require.Equal(t, got.Args()[0], "p1")
+		require.Equal(t, got.Args()[1], "p2")
+		require.Equal(t, got.Args()[2], "p3")
+		require.Equal(t, got.Args()[3], "p4")
+		require.Equal(t, got.Args()[4], "completed")
+	})
+}
+
+func TestListJobs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	db := NewDB(dbtest.NewDB(t))
+
+	ctx := context.Background()
+	_, err := db.ExecContext(ctx, `--sql
+		INSERT INTO explicit_permissions_bitbucket_projects_jobs
+		(
+			id,
+			state,
+			queued_at,
+			project_key,
+			external_service_id,
+			unrestricted
+		) VALUES
+		(1, 'queued',    '2020-01-01', 'p1', 1, 'true'),
+		(2, 'failed',    '2020-01-10', 'p2', 1, 'true'),
+		(3, 'failed',    '2020-01-06', 'p4', 1, 'true'),
+		(4, 'failed',    '2020-01-04', 'p5', 1, 'true'),
+		(5, 'completed', '2020-01-03', 'p6', 1, 'true'),
+		(6, 'completed', '2020-01-02', 'p7', 1, 'true'),
+		(7, 'queued',    '2020-01-15', 'p2', 1, 'true'),
+		(8, 'completed', '2020-01-11', 'p2', 1, 'true');
+	`)
+	require.NoError(t, err)
+
+	t.Run("with projects keys, state and count", func(t *testing.T) {
+		jobs, err := db.BitbucketProjectPermissions().ListJobs(ctx, ListJobsOptions{
+			ProjectKeys: []string{"p1", "p3", "p4", "p5", "p6", "p7", "p8", "p9"},
+			State:       "failed",
+			Count:       2,
+		})
+		require.NoError(t, err)
+
+		// checking that only 2 jobs are returned and ordered by queued_at DESC
+		require.Equal(t, 2, len(jobs))
+		require.Equal(t, 3, jobs[0].ID)
+		require.Equal(t, 4, jobs[1].ID)
+	})
+
+	t.Run("with projects keys", func(t *testing.T) {
+		jobs, err := db.BitbucketProjectPermissions().ListJobs(ctx, ListJobsOptions{
+			ProjectKeys: []string{"p1", "p2"},
+		})
+		require.NoError(t, err)
+
+		// checking that all 4 jobs of given projects are returned and ordered by queued_at DESC
+		require.Equal(t, 4, len(jobs))
+		require.Equal(t, 7, jobs[0].ID)
+		require.Equal(t, 8, jobs[1].ID)
+		require.Equal(t, 2, jobs[2].ID)
+		require.Equal(t, 1, jobs[3].ID)
+	})
+
+	t.Run("with state", func(t *testing.T) {
+		jobs, err := db.BitbucketProjectPermissions().ListJobs(ctx, ListJobsOptions{
+			State: "completed",
+		})
+		require.NoError(t, err)
+
+		// checking that all 3 completed jobs are returned and ordered by queued_at DESC
+		require.Equal(t, 3, len(jobs))
+		require.Equal(t, 8, jobs[0].ID)
+		require.Equal(t, 5, jobs[1].ID)
+		require.Equal(t, 6, jobs[2].ID)
+	})
+
+	t.Run("with count", func(t *testing.T) {
+		jobs, err := db.BitbucketProjectPermissions().ListJobs(ctx, ListJobsOptions{
+			Count: 5,
+		})
+		require.NoError(t, err)
+
+		// checking that all 5 jobs are returned and ordered by queued_at DESC
+		require.Equal(t, 5, len(jobs))
+		require.Equal(t, 7, jobs[0].ID)
+		require.Equal(t, 8, jobs[1].ID)
+		require.Equal(t, 2, jobs[2].ID)
+		require.Equal(t, 3, jobs[3].ID)
+		require.Equal(t, 4, jobs[4].ID)
 	})
 }
 
