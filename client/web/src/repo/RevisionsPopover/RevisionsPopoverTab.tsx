@@ -15,7 +15,7 @@ interface RevisionsPopoverTabProps extends UseConnectionResult<unknown> {
     onInputChange: (value: string) => void
     query: string
     summary?: JSX.Element
-    inputAriaLabel?: string
+    inputAriaLabel: string
 }
 
 export const RevisionsPopoverTab: React.FunctionComponent<React.PropsWithChildren<RevisionsPopoverTabProps>> = ({
