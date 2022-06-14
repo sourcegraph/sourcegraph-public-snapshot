@@ -6,7 +6,7 @@ import (
 	"context"
 	"sync"
 
-	log "github.com/sourcegraph/sourcegraph/lib/log"
+	log "github.com/sourcegraph/log"
 )
 
 // MockHandler is a mock implementation of the Handler interface (from the

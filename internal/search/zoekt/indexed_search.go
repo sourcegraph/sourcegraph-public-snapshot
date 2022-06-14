@@ -12,7 +12,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
 
-	slog "github.com/sourcegraph/sourcegraph/lib/log"
+	slog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"

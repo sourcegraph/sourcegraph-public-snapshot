@@ -13,6 +13,8 @@ import (
 	"github.com/google/zoekt"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -260,6 +262,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	id := 42
 	repoName := "reponame-foobar"
 	fileName := "foobar.go"
+	var log log.Logger
 
 	repoWithIDs := &types.Repo{
 		ID:   api.RepoID(id),
@@ -327,6 +330,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	query := `foobar index:only count:350`
 	literalPatternType := "literal"
 	searchInputs, err := run.NewSearchInputs(
+		log,
 		ctx,
 		db,
 		"V2",
@@ -519,6 +523,7 @@ func TestEvaluateAnd(t *testing.T) {
 		zoektMatches int
 		filesSkipped int
 		wantAlert    bool
+		log          log.Logger
 	}{
 		{
 			name:         "zoekt returns enough matches, exhausted",
@@ -564,6 +569,7 @@ func TestEvaluateAnd(t *testing.T) {
 
 			literalPatternType := "literal"
 			searchInputs, err := run.NewSearchInputs(
+				tt.log,
 				context.Background(),
 				db,
 				"V2",
@@ -613,6 +619,7 @@ func TestSubRepoFiltering(t *testing.T) {
 		searchQuery string
 		wantCount   int
 		checker     func() authz.SubRepoPermissionChecker
+		log         log.Logger
 	}{
 		{
 			name:        "simple search without filtering",
@@ -668,6 +675,7 @@ func TestSubRepoFiltering(t *testing.T) {
 
 			literalPatternType := "literal"
 			searchInputs, err := run.NewSearchInputs(
+				tt.log,
 				context.Background(),
 				db,
 				"V2",

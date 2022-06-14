@@ -20,6 +20,7 @@ type SearchArgs struct {
 	Version     string
 	PatternType *string
 	Query       string
+	log         log.Logger
 }
 
 type SearchImplementer interface {
@@ -36,6 +37,7 @@ func NewBatchSearchImplementer(ctx context.Context, db database.DB, args *Search
 	}
 
 	inputs, err := run.NewSearchInputs(
+		args.log,
 		ctx,
 		db,
 		args.Version,

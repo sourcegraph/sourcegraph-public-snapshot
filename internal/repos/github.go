@@ -16,6 +16,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/tidwall/gjson"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -29,7 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
+
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

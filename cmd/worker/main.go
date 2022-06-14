@@ -3,11 +3,12 @@ package main
 import (
 	"os"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {
@@ -15,7 +16,7 @@ func main() {
 		Name:    env.MyName,
 		Version: version.Version(),
 	})
-	defer syncLogs()
+	defer syncLogs.Sync()
 
 	logger := log.Scoped("worker", "worker oss edition")
 

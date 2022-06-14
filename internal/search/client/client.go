@@ -63,7 +63,7 @@ func (s *searchClient) Plan(
 	settings *schema.Settings,
 	sourcegraphDotComMode bool,
 ) (*run.SearchInputs, error) {
-	return run.NewSearchInputs(ctx, s.db, version, patternType, searchQuery, protocol, settings, sourcegraphDotComMode)
+	return run.NewSearchInputs(s.log, ctx, s.db, version, patternType, searchQuery, protocol, settings, sourcegraphDotComMode)
 }
 
 func (s *searchClient) Execute(
