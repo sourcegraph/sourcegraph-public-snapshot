@@ -6,6 +6,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"go.uber.org/atomic"
 
@@ -173,8 +174,11 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 	}}, statuses, nil)
 
 	var (
-		categoriesWg sync.WaitGroup
-		skipped      = map[int]error{}
+		start = time.Now()
+
+		categoriesWg        sync.WaitGroup
+		categoriesSkipped   = map[int]error{}
+		categoriesDurations sync.Map
 
 		// used for progress bar
 		checksDone           atomic.Float64
@@ -187,7 +191,8 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		progress.StatusBarUpdatef(i, "Determining status...")
 
 		if err := category.CheckEnabled(ctx, args); err != nil {
-			skipped[i] = err
+			// Safe because we do this NOT in a goroutine
+			categoriesSkipped[i] = err
 			// Mark as done
 			progress.StatusBarCompletef(i, "Category skipped: %s", err.Error())
 			continue
@@ -196,7 +201,11 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		// Run categories concurrently
 		categoriesWg.Add(1)
 		go func(i int, category Category[Args]) {
-			defer categoriesWg.Done()
+			defer func() {
+				// record duration
+				categoriesDurations.Store(category.Name, time.Since(start))
+				categoriesWg.Done()
+			}()
 
 			// Run all checks for this category concurrently
 			var checksWg sync.WaitGroup
@@ -233,7 +242,6 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 	categoriesWg.Wait()
 
 	// Destroy progress and render a complete summary.
-	// TODO we can probably refine and improe the summary a bit more.
 	progress.Destroy()
 	results := runAllCategoryChecksResult{
 		categories: make(map[string]bool),
@@ -242,9 +250,17 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		results.all = append(results.all, i)
 		idx := i + 1
 
-		if _, ok := skipped[i]; ok {
-			r.out.WriteSkippedf("%d. %s %s[SKIPPED. Reason: %s]%s", idx, category.Name,
-				output.StyleBold, skipped[i], output.StyleReset)
+		summaryStr := fmt.Sprintf("%d. %s", idx, category.Name)
+		v, ok := categoriesDurations.Load(category.Name)
+		if ok {
+			if dur, ok := v.(time.Duration); ok {
+				summaryStr = fmt.Sprintf("%s (%ds)", summaryStr, dur/time.Second)
+			}
+		}
+
+		if _, ok := categoriesSkipped[i]; ok {
+			r.out.WriteSkippedf("%s %s[SKIPPED. Reason: %s]%s", summaryStr,
+				output.StyleBold, categoriesSkipped[i], output.StyleReset)
 			results.skipped = append(results.skipped, i)
 			continue
 		}
@@ -253,10 +269,10 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		satisfied := category.IsSatisfied()
 		results.categories[category.Name] = satisfied
 		if satisfied {
-			r.out.WriteSuccessf("%d. %s", idx, category.Name)
+			r.out.WriteSuccessf(summaryStr)
 		} else {
 			results.failed = append(results.failed, i)
-			r.out.WriteFailuref("%d. %s", idx, category.Name)
+			r.out.WriteFailuref(summaryStr)
 			for _, c := range category.Checks {
 				if c.cachedCheckErr != nil {
 					r.out.WriteLine(output.Styledf(output.CombineStyles(output.StyleBold, output.StyleWarning),
