@@ -50,7 +50,7 @@ func TestTransaction(t *testing.T) {
 
 	// Finalize transactions
 	rollbackErr := errors.New("rollback")
-	if err := tx1.Done(rollbackErr); err != rollbackErr {
+	if err := tx1.Done(rollbackErr); !errors.Is(err, rollbackErr) {
 		t.Fatalf("unexpected error rolling back transaction. want=%q have=%q", rollbackErr, err)
 	}
 	if err := tx2.Done(nil); err != nil {
@@ -144,7 +144,7 @@ func recurSavepoints(t *testing.T, store *Store, index, rollbackAt int) {
 			doneErr = errors.New("rollback")
 		}
 
-		if err := tx.Done(doneErr); err != doneErr {
+		if err := tx.Done(doneErr); !errors.Is(err, doneErr) {
 			t.Fatalf("unexpected error closing transaction. want=%q have=%q", doneErr, err)
 		}
 	}()

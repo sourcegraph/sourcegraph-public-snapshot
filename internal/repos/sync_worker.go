@@ -42,7 +42,7 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler workerutil.Handler
 		opts.CleanupOldJobsInterval = time.Hour
 	}
 
-	dbHandle := basestore.NewHandleWithDB(db, sql.TxOptions{
+	dbHandle := basestore.NewHandleWithUntypedDB(db, sql.TxOptions{
 		// Change the isolation level for every transaction created by the worker
 		// so that multiple workers can modify the same rows without conflicts.
 		Isolation: sql.LevelReadCommitted,

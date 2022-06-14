@@ -733,7 +733,7 @@ func TestService(t *testing.T) {
 			opts := MoveBatchChangeOpts{BatchChangeID: batchChange.ID, NewNamespaceOrgID: orgID}
 
 			_, err := svc.MoveBatchChange(userCtx, opts)
-			if have, want := err, backend.ErrNotAnOrgMember; have != want {
+			if have, want := err, backend.ErrNotAnOrgMember; !errors.Is(have, want) {
 				t.Fatalf("expected %s error but got %s", want, have)
 			}
 		})
@@ -2231,7 +2231,7 @@ changesetTemplate:
 			if err == nil {
 				t.Fatal("no error")
 			}
-			if err != ErrRetryNonFinal {
+			if !errors.Is(err, ErrRetryNonFinal) {
 				t.Fatalf("wrong error: %s", err)
 			}
 		})

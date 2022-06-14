@@ -14,9 +14,14 @@ type oldTransactableHandle struct {
 	txOptions  sql.TxOptions
 }
 
-// NewHandleWithDB returns a new transactable database handle using the given database connection.
-func NewHandleWithDB(db dbutil.DB, txOptions sql.TxOptions) TransactableHandle {
+// NewHandleWithUntypedDB returns a new transactable database handle using the given database connection.
+func NewHandleWithUntypedDB(db dbutil.DB, txOptions sql.TxOptions) TransactableHandle {
 	return &oldTransactableHandle{db: db, txOptions: txOptions}
+}
+
+// NewHandleWithDB returns a new transactable database handle using the given database connection.
+func NewHandleWithDB(db *sql.DB, txOptions sql.TxOptions) TransactableHandle {
+	return &dbHandle{db: db, txOptions: txOptions}
 }
 
 // DB returns the underlying database handle.
