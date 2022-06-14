@@ -3,10 +3,12 @@ package squirrel
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	sitter "github.com/smacker/go-tree-sitter"
 
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,8 +30,17 @@ func (squirrel *SquirrelService) getDefStarlark(ctx context.Context, node Node) 
 			return nil, nil
 		}
 
-		path := getStringContents(swapNode(node, match.Captures[0].Node))
-		symbol := getStringContents(swapNode(node, match.Captures[1].Node))
+		if len(match.Captures) < 3 {
+			panic(match.Captures)
+		}
+		path := getStringContents(swapNode(node, match.Captures[1].Node))
+		symbol := getStringContents(swapNode(node, match.Captures[2].Node))
+		fmt.Println("path", path)
+		fmt.Println(node.Node)
+		if nodeId(match.Captures[2].Node) != nodeId(node.Node) {
+			println("NOT SYMBOL")
+			return nil, nil
+		}
 
 		pathComponents := strings.Split(path, ":")
 
@@ -40,21 +51,54 @@ func (squirrel *SquirrelService) getDefStarlark(ctx context.Context, node Node) 
 		directory := pathComponents[0]
 		filename := pathComponents[1]
 
-		if directory == "" {
-			// dir of the file itself
-			// TODO
-			panic("blame olaf")
-		}
-
 		if !strings.HasPrefix(directory, "//") {
-			fmt.Println("skipping", directory)
-			continue
+			panic(directory)
 		}
 
-		qualifier := strings.TrimPrefix(path, "//")
+		destinationRepoCommitPath := types.RepoCommitPath{
+			Path:   filepath.Join(strings.TrimPrefix(directory, "//"), filename),
+			Repo:   node.RepoCommitPath.Repo,
+			Commit: node.RepoCommitPath.Commit,
+		}
+		fmt.Printf("%+v\n", destinationRepoCommitPath)
 
+		destinationRoot, err := squirrel.parse(ctx, destinationRepoCommitPath)
+		if err != nil {
+			return nil, err
+		}
+		exports, err := starlarkExports(symbol, *destinationRoot)
+		if err != nil {
+			return nil, err
+		}
+		return &Node{
+			RepoCommitPath: destinationRepoCommitPath,
+			Node:           exports,
+			//Node:           nil,
+			Contents: node.Contents,
+			LangSpec: node.LangSpec,
+		}, nil
 	}
+}
 
+func starlarkExports(name string, node Node) (*sitter.Node, error) {
+	sitterQuery, err := sitter.NewQuery([]byte(starlarkExportQuery), node.LangSpec.language)
+	if err != nil {
+		return nil, errors.Newf("failed to parse query: %s\n%s", err, loadQuery)
+	}
+	defer sitterQuery.Close()
+	cursor := sitter.NewQueryCursor()
+	defer cursor.Close()
+	cursor.Exec(sitterQuery, getRoot(node.Node))
+
+	captures, err := allCaptures(starlarkExportQuery, node)
+	if err != nil {
+		return nil, err
+	}
+	for _, capture := range captures {
+		if capture.Node.Content(capture.Contents) == name {
+			return capture.Node, nil
+		}
+	}
 	return nil, nil
 }
 
@@ -65,6 +109,10 @@ func getStringContents(node Node) string {
 	return str
 }
 
+var starlarkExportQuery = `
+(module (function_definition name: (identifier) @name))
+(module (expression_statement (assignment left: (identifier) @name)))
+`
 var loadQuery = `
 (
 	(module
