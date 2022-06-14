@@ -91,12 +91,13 @@ export function applyTheme(theme: Theme): void {
     // Button color (test)
     root.style.setProperty('--button-color', intelliJTheme['Button.default.startBackground'])
     root.style.setProperty('--primary', intelliJTheme['Button.default.startBackground'])
+    root.style.setProperty('--subtle-bg', intelliJTheme['ScrollPane.background'])
 
     root.style.setProperty('--dropdown-link-active-bg', intelliJTheme['List.selectionBackground'])
     root.style.setProperty('--light-text', intelliJTheme['List.selectionForeground'])
 
     root.style.setProperty('--jb-border-color', intelliJTheme['Component.borderColor'])
-    root.style.setProperty('--subtle-bg', intelliJTheme['ScrollPane.background'])
+    root.style.setProperty('--jb-icon-color', intelliJTheme['Component.iconColor'] || '#7f8b91')
 }
 
 function applyLastSearch(lastSearch: Search | null): void {

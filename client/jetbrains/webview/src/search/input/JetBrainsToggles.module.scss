@@ -3,6 +3,7 @@
 .toggle-container {
     display: flex;
     align-items: center;
+    color: var(--jb-icon-color);
 }
 
 .separator {
@@ -19,6 +20,7 @@
 
 .cancel-button {
     font-size: 1rem;
+    color: var(--jb-icon-color);
 }
 
 .toggle-wrapper {
