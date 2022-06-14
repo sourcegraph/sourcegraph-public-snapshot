@@ -21,7 +21,6 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 		Logger:     observationContext.Logger,
 		Tracer:     observationContext.Tracer,
 		Registerer: observationContext.Registerer,
-		Sentry:     services.hub,
 		HoneyDataset: &honey.Dataset{
 			Name:       "codeintel-graphql",
 			SampleRate: 4,
