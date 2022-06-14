@@ -117,7 +117,7 @@ With your updated batch spec, re-run the preview command, `src batch preview -f 
 
 <img src="https://sourcegraphstatic.com/docs/images/batch_changes/quickstart/browser_preview_update.png" class="screenshot">
 
-As before, you get a preview before any changes are applied, but this time, you are *updating your existing changesets*. Now, all of the changesets listed will be *detached* ("Batch Changes speak" for *removed from the batch change*), except for the one you're about to publish.
+As before, you get a preview before any changes are applied, but this time, you are *updating your existing changesets*. Now, all of the changesets listed will be *archived*, except for the one you're about to publish. Archiving will close the changesets on the codehost but leave them attached to your batch change for historical referencing.
 
 Once you are ready, click **Apply** again to apply the update to your batch change.
 
