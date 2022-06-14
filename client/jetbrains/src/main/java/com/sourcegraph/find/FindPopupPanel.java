@@ -3,7 +3,6 @@ package com.sourcegraph.find;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.KeyboardShortcut;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Splitter;
@@ -98,8 +97,6 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
     }
 
     public void setPreviewContent(@NotNull PreviewContent previewContent) {
-        Logger logger = Logger.getInstance(FindPopupPanel.class);
-        logger.info("setPreviewContent called.");
         previewPanel.setContent(previewContent);
     }
 
