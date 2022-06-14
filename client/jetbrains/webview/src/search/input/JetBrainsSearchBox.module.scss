@@ -8,11 +8,9 @@
     align-items: center;
     flex: 1 1 auto;
     min-width: 12rem;
+    min-height: 2rem;
 
     @media (--xs-breakpoint-down) {
-        background-color: var(--color-bg-1);
-        border: 1px solid var(--input-border-color);
-        border-radius: var(--border-radius);
         display: inline;
         padding: 0.5rem;
     }
@@ -25,10 +23,7 @@
         display: flex;
         flex-grow: 1;
         align-items: center;
-        border: 1px solid var(--input-border-color);
-        border-right-color: transparent;
-        border-left-color: transparent;
-        background-color: var(--color-bg-1);
+        background-color: var(--code-bg);
         height: 100%;
 
         @media (--xs-breakpoint-down) {
@@ -46,26 +41,19 @@
 
     &__focus-container {
         // stylelint-disable-next-line declaration-property-unit-allowed-list
-        height: calc(100% + 2px); // add 2 pixels for border
+        height: 1.5rem;
         display: flex;
         align-items: center;
         flex: 1 1 auto;
         // stylelint-disable-next-line declaration-property-unit-allowed-list
-        margin: -1px; // To compensate for the border
+        margin: -2px; // To compensate for the border
         border: 1px solid transparent;
-        // Match padding from the regular query input.
-        padding-left: 0.75rem;
         border-top-left-radius: var(--border-radius);
         border-bottom-left-radius: var(--border-radius);
 
-        &:not(:first-child) {
-            padding-left: 0.5rem; // smaller padding if the search context selector is visible
-            margin-left: 0.0625rem;
-
-            @media (--xs-breakpoint-down) {
-                padding-left: 0;
-                margin-left: 0;
-            }
+        &__icon {
+            padding-left: 0.25rem;
+            padding-right: 0.75rem;
         }
 
         &:focus-within {
@@ -89,10 +77,17 @@
 
     &__version-context-dropdown,
     &__context-dropdown {
+        margin-left: 0.25rem;
+
         @media (--xs-breakpoint-down) {
             display: inline-block;
             vertical-align: middle;
             margin-bottom: 0.5rem;
+        }
+
+        > * > button {
+            // @TODO: Make configurable, this is copied form the Figma file.
+            border: 1px solid #c4c4c4 !important;
         }
     }
 

@@ -11,7 +11,6 @@ import {
     LazyMonacoQueryInput,
     LazyMonacoQueryInputProps,
 } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
-import { SearchButton } from '@sourcegraph/search-ui/src/input/SearchButton'
 import { SearchContextDropdown } from '@sourcegraph/search-ui/src/input/SearchContextDropdown'
 import { Toggles, TogglesProps } from '@sourcegraph/search-ui/src/input/toggles'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
@@ -20,6 +19,8 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
+import { Search } from '../jetbrains-icons/Search'
 
 import styles from './JetBrainsSearchBox.module.scss'
 
@@ -112,6 +113,9 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                     Added role attribute to the following element to satisfy the rule.
                 */}
                 <div className={classNames(styles.searchBoxFocusContainer, 'flex-shrink-past-contents')} role="search">
+                    <div className={styles.searchBoxFocusContainerIcon}>
+                        <Search />
+                    </div>
                     <LazyMonacoQueryInput
                         {...props}
                         onHandleFuzzyFinder={props.onHandleFuzzyFinder}
@@ -134,12 +138,6 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                     />
                 </div>
             </div>
-            <SearchButton
-                hideHelpButton={props.hideHelpButton}
-                className={styles.searchBoxButton}
-                telemetryService={props.telemetryService}
-                isSourcegraphDotCom={props.isSourcegraphDotCom}
-            />
         </div>
     )
 }
