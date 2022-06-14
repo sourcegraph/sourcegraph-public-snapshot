@@ -5734,12 +5734,12 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "codeintel_lockfile_references_repository_name_revspec_package",
+          "Name": "codeintel_lockfile_references_repository_name_revspec_package_r",
           "IsPrimaryKey": false,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_lockfile_references_repository_name_revspec_package ON codeintel_lockfile_references USING btree (repository_name, revspec, package_scheme, package_name, package_version)",
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_lockfile_references_repository_name_revspec_package_r ON codeintel_lockfile_references USING btree (repository_name, revspec, package_scheme, package_name, package_version, resolution_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },

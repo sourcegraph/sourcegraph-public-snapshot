@@ -3529,7 +3529,7 @@ CREATE INDEX codeintel_lockfile_references_last_check_at ON codeintel_lockfile_r
 
 CREATE INDEX codeintel_lockfile_references_repository_id_commit_bytea ON codeintel_lockfile_references USING btree (repository_id, commit_bytea) WHERE ((repository_id IS NOT NULL) AND (commit_bytea IS NOT NULL));
 
-CREATE UNIQUE INDEX codeintel_lockfile_references_repository_name_revspec_package ON codeintel_lockfile_references USING btree (repository_name, revspec, package_scheme, package_name, package_version);
+CREATE UNIQUE INDEX codeintel_lockfile_references_repository_name_revspec_package_r ON codeintel_lockfile_references USING btree (repository_name, revspec, package_scheme, package_name, package_version, resolution_id);
 
 CREATE INDEX codeintel_lockfiles_codeintel_lockfile_reference_ids ON codeintel_lockfiles USING gin (codeintel_lockfile_reference_ids gin__int_ops);
 

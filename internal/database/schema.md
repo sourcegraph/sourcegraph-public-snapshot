@@ -688,7 +688,7 @@ Indexes:
  resolution_id   | text                     |           | not null | 
 Indexes:
     "codeintel_lockfile_references_pkey" PRIMARY KEY, btree (id)
-    "codeintel_lockfile_references_repository_name_revspec_package" UNIQUE, btree (repository_name, revspec, package_scheme, package_name, package_version)
+    "codeintel_lockfile_references_repository_name_revspec_package_r" UNIQUE, btree (repository_name, revspec, package_scheme, package_name, package_version, resolution_id)
     "codeintel_lockfile_references_last_check_at" btree (last_check_at)
     "codeintel_lockfile_references_repository_id_commit_bytea" btree (repository_id, commit_bytea) WHERE repository_id IS NOT NULL AND commit_bytea IS NOT NULL
     "codeintel_lockfiles_references_depends_on" gin (depends_on gin__int_ops)
