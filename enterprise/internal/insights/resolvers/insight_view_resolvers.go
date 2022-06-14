@@ -207,17 +207,11 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 		resolvers = append(resolvers, seriesResolvers...)
 	}
 
-	// Avoid sorting user-defined series unless they have set explicit sort options.
-	isCaptureGroup := i.dataSeriesGenerator.handles(types.InsightViewSeries{GeneratedFromCaptureGroups: true}) || i.dataSeriesGenerator.handles(types.InsightViewSeries{GeneratedFromCaptureGroups: true, JustInTime: true})
-	if seriesOptions.Limit != nil || seriesOptions.SortOptions != nil || isCaptureGroup {
-		sortedAndLimitedResovlers, err := sortSeriesResolvers(ctx, seriesOptions, resolvers)
-		if err != nil {
-			return nil, errors.Wrapf(err, "sortSeriesResolvers for insightViewID: %s", i.view.UniqueID)
-		}
-		return sortedAndLimitedResovlers, nil
+	sortedAndLimitedResovlers, err := sortSeriesResolvers(ctx, seriesOptions, resolvers)
+	if err != nil {
+		return nil, errors.Wrapf(err, "sortSeriesResolvers for insightViewID: %s", i.view.UniqueID)
 	}
-
-	return resolvers, nil
+	return sortedAndLimitedResovlers, nil
 }
 
 func (i *insightViewResolver) Dashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) graphqlbackend.InsightsDashboardConnectionResolver {
