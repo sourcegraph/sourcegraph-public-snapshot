@@ -2,7 +2,6 @@ package com.sourcegraph.find;
 
 import com.intellij.codeInsight.highlighting.HighlightManager;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.colors.EditorColors;
 import com.intellij.openapi.project.Project;
@@ -32,55 +31,50 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
     }
 
     public void setContent(@Nullable PreviewContent previewContent) {
-        ApplicationManager.getApplication().invokeLater(() -> {
-            if (previewContent == null) {
-                clearContent();
-                return;
-            }
+        if (previewContent == null) {
+            clearContent();
+            return;
+        }
 
-            if (editorComponent != null && previewContent.equals(this.previewContent)) {
-                return;
-            }
+        if (editorComponent != null && previewContent.equals(this.previewContent)) {
+            return;
+        }
 
-            String fileContent = previewContent.getContent();
+        String fileContent = previewContent.getContent();
 
-            /* If no content, just show "No preview available" */
-            if (fileContent == null || previewContent.getVirtualFile() == null) {
-                clearContent();
-                return;
-            }
+        /* If no content, just show "No preview available" */
+        if (fileContent == null || previewContent.getVirtualFile() == null) {
+            clearContent();
+            return;
+        }
 
-            this.previewContent = previewContent;
+        this.previewContent = previewContent;
 
-            if (editorComponent != null) {
-                remove(editorComponent);
-                validate();
-            }
-            if (editor != null) {
-                EditorFactory.getInstance().releaseEditor(editor);
-            }
-            EditorFactory editorFactory = EditorFactory.getInstance();
-            Document document = editorFactory.createDocument(fileContent);
-            document.setReadOnly(true);
+        if (editorComponent != null) {
+            remove(editorComponent);
+        }
+        if (editor != null) {
+            EditorFactory.getInstance().releaseEditor(editor);
+        }
+        EditorFactory editorFactory = EditorFactory.getInstance();
+        Document document = editorFactory.createDocument(fileContent);
+        document.setReadOnly(true);
 
-            editor = editorFactory.createEditor(document, project, previewContent.getVirtualFile(), true, EditorKind.MAIN_EDITOR);
+        editor = editorFactory.createEditor(document, project, previewContent.getVirtualFile(), true, EditorKind.MAIN_EDITOR);
 
-            EditorSettings settings = editor.getSettings();
-            settings.setLineMarkerAreaShown(true);
-            settings.setFoldingOutlineShown(false);
-            settings.setAdditionalColumnsCount(0);
-            settings.setAdditionalLinesCount(0);
-            settings.setAnimatedScrolling(false);
-            settings.setAutoCodeFoldingEnabled(false);
+        EditorSettings settings = editor.getSettings();
+        settings.setLineMarkerAreaShown(true);
+        settings.setFoldingOutlineShown(false);
+        settings.setAdditionalColumnsCount(0);
+        settings.setAdditionalLinesCount(0);
+        settings.setAnimatedScrolling(false);
+        settings.setAutoCodeFoldingEnabled(false);
 
-            editorComponent = editor.getComponent();
-            add(editorComponent, BorderLayout.CENTER);
+        editorComponent = editor.getComponent();
+        add(editorComponent, BorderLayout.CENTER);
+        validate();
 
-            validate();
-            repaint();
-
-            addAndScrollToHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
-        });
+        addAndScrollToHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
     }
 
     private void addAndScrollToHighlights(@NotNull Editor editor, @NotNull int[][] absoluteOffsetAndLengths) {

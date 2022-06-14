@@ -1,6 +1,7 @@
 package com.sourcegraph.browser;
 
 import com.google.gson.JsonObject;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.jcef.JBCefJSQuery;
 import com.sourcegraph.config.ConfigUtil;
@@ -67,12 +68,16 @@ public class JSToJavaBridgeRequestHandler {
                 case "preview":
                     arguments = request.getAsJsonObject("arguments");
                     previewContent = PreviewContent.fromJson(project, arguments);
-                    findPopupPanel.setPreviewContent(previewContent);
-                    findPopupPanel.setSelectionMetadataLabel(previewContent);
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        findPopupPanel.setPreviewContent(previewContent);
+                        findPopupPanel.setSelectionMetadataLabel(previewContent);
+                    });
                     return createSuccessResponse(null);
                 case "clearPreview":
-                    findPopupPanel.clearPreviewContent();
-                    findPopupPanel.clearSelectionMetadataLabel();
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        findPopupPanel.clearPreviewContent();
+                        findPopupPanel.clearSelectionMetadataLabel();
+                    });
                     return createSuccessResponse(null);
                 case "open":
                     arguments = request.getAsJsonObject("arguments");
