@@ -88,13 +88,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
     }
 
     return (
-        <div
-            className={classNames(
-                styles.searchBox,
-                props.containerClassName,
-                props.hideHelpButton ? styles.searchBoxShadow : null
-            )}
-        >
+        <div className={classNames(styles.searchBox, props.containerClassName)}>
             <div
                 className={classNames(
                     styles.searchBoxBackgroundContainer,
