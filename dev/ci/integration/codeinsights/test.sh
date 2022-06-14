@@ -56,6 +56,12 @@ function cluster_setup() {
 
   echo "--- create cluster"
   ./overlay-generate-cluster.sh low-resource generated-cluster
+
+  # Remove codeinsights-db deployment
+  pushd generated-cluster
+  rm *codeinsights-db*.yaml
+  popd
+
   kubectl apply -n "$NAMESPACE" --recursive --validate -f generated-cluster
   popd
   echo "--- wait for ready"
@@ -94,7 +100,9 @@ function test_setup() {
 }
 
 function qa() {
-  echo "run some tests here"
+  pushd dev/gqtest
+  go test -long -dump -base-url "$SOURCEGRAPH_BASE_URL" -email "$TEST_USER_EMAIL" -username "$TEST_USER_NAME" -password "$TEST_USER_PASSWORD"
+  popd
 }
 
 # main
