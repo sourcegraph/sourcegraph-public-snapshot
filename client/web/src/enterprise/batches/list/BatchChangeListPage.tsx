@@ -154,7 +154,12 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
             <PageHeader
                 path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 className="test-batches-list-page mb-3"
-                actions={canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
+                // TODO: As we haven't finished implementing support for orgs, we've
+                // temporary disabled setting a different namespace. Replace this line
+                // with the commented-out one that follows it to restore the preselected
+                // namespace behavior for orgs.
+                actions={canCreate ? <NewBatchChangeButton to="/batch-changes/create" /> : null}
+                // actions={canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
                 headingElement={headingElement}
                 description="Run custom code over hundreds of repositories and manage the resulting changesets."
             />
