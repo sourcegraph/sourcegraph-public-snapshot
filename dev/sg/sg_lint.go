@@ -91,7 +91,7 @@ sg lint --help
 		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
 
 		runner := check.NewRunner(nil, std.Out, lintTargets)
-		runner.SetGenerateAnnotations(cmd.Bool("annotations"))
+		runner.GenerateAnnotations = cmd.Bool("annotations")
 
 		if cmd.Bool("fix") {
 			return runner.Fix(cmd.Context, repoState)

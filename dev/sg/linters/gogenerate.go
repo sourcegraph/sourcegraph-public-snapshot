@@ -48,7 +48,6 @@ var goGenerateLinter = &linter{
 		if report.Err != nil {
 			return report.Err
 		}
-		// We don't want to run Check again, which will just run go generate again
-		return check.ErrSkipPostFixCheck
+		return nil
 	},
 }

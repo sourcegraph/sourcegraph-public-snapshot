@@ -21,8 +21,14 @@ type Runner[Args any] struct {
 	out        *std.Output
 	categories []Category[Args]
 
-	renderDescription   func(*std.Output)
-	generateAnnotations bool
+	// RenderDescription sets a description to render before core check loops, such as a
+	// massive ASCII art thing.
+	RenderDescription func(*std.Output)
+	// GenerateAnnotations toggles whether check execution should render annotations to
+	// the './annotations' directory.
+	GenerateAnnotations bool
+	// RunPostFixChecks toggles whether to run checks again after a fix is applied.
+	RunPostFixChecks bool
 }
 
 // NewRunner creates a Runner for executing checks and applying fixes in a variety of ways.
@@ -32,18 +38,6 @@ func NewRunner[Args any](in io.Reader, out *std.Output, categories []Category[Ar
 		out:        out,
 		categories: categories,
 	}
-}
-
-// SetDescription sets a description to render before core check loops, such as a massive
-// ASCII art thing.
-func (r *Runner[Args]) SetDescription(render func(out *std.Output)) {
-	r.renderDescription = render
-}
-
-// SetGenerateAnnotations toggles whether check execution should render annotations to the
-// './annotations' directory.
-func (r *Runner[Args]) SetGenerateAnnotations(generate bool) {
-	r.generateAnnotations = generate
 }
 
 // Check executes all checks exactly once and exits.
@@ -168,8 +162,8 @@ type runAllCategoryChecksResult struct {
 
 // runAllCategoryChecks is the main entrypoint for running the checks in this runner.
 func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *runAllCategoryChecksResult {
-	if r.renderDescription != nil {
-		r.renderDescription(r.out)
+	if r.RenderDescription != nil {
+		r.RenderDescription(r.out)
 	}
 
 	statuses := []*output.StatusBar{}
@@ -300,7 +294,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 					r.out.WriteMarkdown(terminalSummary)
 
-					if r.generateAnnotations {
+					if r.GenerateAnnotations {
 						generateAnnotation(category.Name, check.Name, annotationSummary)
 					}
 				}
@@ -512,17 +506,17 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 			Input:  r.in,
 			Output: r.out,
 		}, args)
-		if err != nil && err != ErrSkipPostFixCheck {
+		if err != nil {
 			r.out.WriteLine(output.Linef(output.EmojiWarning, output.CombineStyles(output.StyleFailure, output.StyleBold),
 				"Failed to fix %q: %s", c.Name, err.Error()))
 			continue
 		}
 
 		// Check if the fix worked, or just don't check
-		if err == ErrSkipPostFixCheck {
-			r.out.WriteSkippedf("Skipping post-fix check")
+		if !r.RunPostFixChecks {
 			err = nil
 			c.cachedCheckErr = nil
+			c.cachedCheckOutput = ""
 		} else {
 			err = c.Update(ctx, r.out, args)
 		}
