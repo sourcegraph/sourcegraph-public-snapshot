@@ -7,10 +7,12 @@ type Input interface {
 type ZipPath string
 type DirPath string
 type FileContent []byte
+type Tar []byte
 
 func (ZipPath) input()     {}
 func (DirPath) input()     {}
 func (FileContent) input() {}
+func (Tar) input()         {}
 
 type resultKind int
 
