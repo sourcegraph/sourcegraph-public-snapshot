@@ -19,11 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const (
-	newDiscussionURL = "https://github.com/sourcegraph/sourcegraph/discussions/new"
-)
+const newDiscussionURL = "https://github.com/sourcegraph/sourcegraph/discussions/new"
 
-var feedbackGithubToken string
 var feedbackTitle string
 var feedbackBody string
 var feedbackEditor string
@@ -72,7 +69,6 @@ func sendFeedback(ctx context.Context, title, category, body string) error {
 		content, err := gatherFeedback(ctx)
 		if err != nil {
 			std.Out.WriteFailuref("A problem occured while gathering feedback but continuing: %s", err)
-
 		}
 		body = content
 	}
@@ -95,6 +91,19 @@ func sendFeedback(ctx context.Context, title, category, body string) error {
 	return nil
 }
 
+func editorCmd(cmd string) string {
+	switch cmd {
+	case "emacs":
+		return cmd + " -nw"
+	case "code":
+		return cmd + " -w"
+	case "idea":
+		return cmd + " -w"
+	default:
+		return cmd
+	}
+}
+
 func gatherFeedback(ctx context.Context) (string, error) {
 	base, err := root.RepositoryRoot()
 	if err != nil {
@@ -110,7 +119,7 @@ func gatherFeedback(ctx context.Context) (string, error) {
 		os.Remove(contentPath)
 	}()
 
-	cmd := feedbackEditor + " " + contentPath
+	cmd := editorCmd(feedbackEditor) + " " + contentPath
 	err = launchEditor(ctx, cmd)
 	if err != nil {
 		std.Out.WriteSuggestionf("There was a problem in launching your editor. To use a different command to launch your editor specify --editor. Alternatively you can provide your feedback with the --message flag")
