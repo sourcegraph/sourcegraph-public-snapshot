@@ -51,6 +51,7 @@ function cluster_setup() {
     grep -lr './base/' -e "index.docker.io/sourcegraph/$line" --include \*.yaml | xargs sed -i -E "s#index.docker.io/sourcegraph/$line:.*#us.gcr.io/sourcegraph-dev/$line:$CANDIDATE_VERSION#g"
   done < <(printf '%s\n' "$DOCKER_CLUSTER_IMAGES_TXT")
 
+  echo "---add db connection string"
   CONN_STRING=$(gcloud secrets versions access latest --secret=CODEINSIGHTS_CONN_STRING --quiet --project=sourcegraph-ci)
   sed -i 's#postgres://postgres:password@codeinsights-db:5432/postgres#'"${CONN_STRING}"'#g' base/frontend/sourcegraph-frontend.Deployment.yaml
 
