@@ -961,6 +961,8 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 Indexes:
     "explicit_permissions_bitbucket_projects_jobs_pkey" PRIMARY KEY, btree (id)
     "explicit_permissions_bitbucket_projects_jobs_project_key_extern" btree (project_key, external_service_id, state)
+    "explicit_permissions_bitbucket_projects_jobs_queued_at_idx" btree (queued_at)
+    "explicit_permissions_bitbucket_projects_jobs_state_idx" btree (state)
 Check constraints:
     "explicit_permissions_bitbucket_projects_jobs_check" CHECK (permissions IS NOT NULL AND unrestricted IS FALSE OR permissions IS NULL AND unrestricted IS TRUE)
 
