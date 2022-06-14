@@ -65,6 +65,11 @@ func IsDev(deployType string) bool {
 	return deployType == Dev
 }
 
+// IsManagedInstance tells if the given deployment type is one managed by Sourcegraph.
+func IsManagedInstance(deployType string) bool {
+	return deployType == ManagedDockerCompose
+}
+
 // IsValidDeployType returns true iff the given deployType is a Kubernetes deployment, a Docker Compose
 // deployment, a pure Docker deployment, a Docker deployment, or a local development environment.
 func IsValidDeployType(deployType string) bool {
