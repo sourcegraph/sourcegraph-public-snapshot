@@ -13,13 +13,22 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
-- Batch Specs now support mounting a path from the local machine into a Docker container. [sourcegraph/sourcegraph#31790](https://github.com/sourcegraph/sourcegraph/issues/31790)
-
 ### Changed
 
 ### Fixed
 
 ### Removed
+
+## 3.40.10
+
+### Added
+
+- Batch Specs now support mounting a path from the local machine into a Docker container. [sourcegraph/sourcegraph#31790](https://github.com/sourcegraph/sourcegraph/issues/31790)
+
+### Fixed
+
+- When a step results in no change, it would fail with exit code 128 when used in caching. [#778](https://github.com/sourcegraph/src-cli/pull/778)
+- A bug where `previous_step.stdout` would not be available for partially cached workspaces. [#781](https://github.com/sourcegraph/src-cli/pull/781)
 
 ## 3.40.9
 
