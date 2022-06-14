@@ -205,17 +205,19 @@ public class FindService implements Disposable {
         AnAction materialAction = ActionManager.getInstance().getAction("MTToggleOverlaysAction");
         if (materialAction != null) {
             try {
-                materialAction.actionPerformed(
-                    new AnActionEvent(
-                        null,
-                        DataManager.getInstance().getDataContextFromFocusAsync().blockingGet(10),
-                        ActionPlaces.UNKNOWN,
-                        new Presentation(),
-                        ActionManager.getInstance(),
-                        0)
-                );
-            } catch (Exception e) {
-                return;
+                DataContext dataContext = DataManager.getInstance().getDataContextFromFocusAsync().blockingGet(10);
+                if (dataContext != null) {
+                    materialAction.actionPerformed(
+                        new AnActionEvent(
+                            null,
+                            dataContext,
+                            ActionPlaces.UNKNOWN,
+                            new Presentation(),
+                            ActionManager.getInstance(),
+                            0)
+                    );
+                }
+            } catch (Exception ignored) {
             }
         }
     }
