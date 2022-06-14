@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Button, CardBody, Card, Icon, H2, H3, H4, Text } from '@sourcegraph/wildcard'
 
@@ -10,7 +11,7 @@ import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
 
-interface CodeMonitoringGettingStartedProps extends ThemeProps {
+interface CodeMonitoringGettingStartedProps extends ThemeProps, TelemetryProps {
     isSignedIn: boolean
 }
 
@@ -63,8 +64,12 @@ const createCodeMonitorUrl = (example: ExampleCodeMonitor): string => {
 
 export const CodeMonitoringGettingStarted: React.FunctionComponent<
     React.PropsWithChildren<CodeMonitoringGettingStartedProps>
-> = ({ isLightTheme, isSignedIn }) => {
+> = ({ isLightTheme, isSignedIn, telemetryService }) => {
     const assetsRoot = window.context?.assetsRoot || ''
+
+    const logExampleMonitorClicked = useCallback(() => {
+        telemetryService.log('CodeMonitoringExampleMonitorClicked')
+    }, [telemetryService])
 
     return (
         <div>
@@ -110,7 +115,9 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                                 <CardBody className="d-flex flex-column">
                                     <H3>{monitor.title}</H3>
                                     <Text className="text-muted flex-grow-1">{monitor.description}</Text>
-                                    <Link to={createCodeMonitorUrl(monitor)}>Create copy of monitor</Link>
+                                    <Link to={createCodeMonitorUrl(monitor)} onClick={logExampleMonitorClicked}>
+                                        Create copy of monitor
+                                    </Link>
                                 </CardBody>
                             </Card>
                         </div>
