@@ -18,6 +18,7 @@ import {
     MenuItem,
     Input,
     Modal,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -112,7 +113,7 @@ export const NotebooksListPageHeader: React.FunctionComponent<
                         Create notebook
                     </Button>
                     <MenuButton variant="primary" className={styles.dropdownButton}>
-                        <ChevronDownIcon />
+                        <Icon as={ChevronDownIcon} aria-hidden={true} />
                         <VisuallyHidden>Actions</VisuallyHidden>
                     </MenuButton>
                 </ButtonGroup>
