@@ -201,10 +201,10 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 	executionResult := &execution.AfterStepResult{
 		Diff:      testDiff,
 		StepIndex: 0,
-		PreviousStepResult: execution.StepResult{
+		StepResult: execution.StepResult{
 			Files:  &git.Changes{Modified: []string{"README.md", "urls.txt"}},
-			Stdout: bytes.NewBufferString("asdf2"),
-			Stderr: bytes.NewBufferString("asdf"),
+			Stdout: "asdf2",
+			Stderr: "asdf",
 		},
 		Outputs: map[string]any{},
 	}
