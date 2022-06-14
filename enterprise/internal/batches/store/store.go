@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -62,7 +63,7 @@ func RandomID() (string, error) {
 // Store exposes methods to read and write batches domain models
 // from persistent storage.
 type Store struct {
-	*basestore.Store
+	*basestore.Store[schemas.Production]
 	key                encryption.Key
 	now                func() time.Time
 	operations         *operations

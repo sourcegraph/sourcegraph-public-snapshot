@@ -6,11 +6,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type Store struct {
-	*basestore.Store
+	*basestore.Store[schemas.CodeIntel]
 	serializer *Serializer
 	operations *operations
 	config     conftypes.SiteConfigQuerier

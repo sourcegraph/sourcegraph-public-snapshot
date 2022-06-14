@@ -13,11 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type InsightStore struct {
-	*basestore.Store
+	*basestore.Store[schemas.CodeInsights]
 	Now func() time.Time
 }
 

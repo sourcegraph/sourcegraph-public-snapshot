@@ -13,13 +13,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GitserverRepoStore interface {
-	basestore.ShareableStore
-	With(other basestore.ShareableStore) GitserverRepoStore
+	basestore.ShareableStore[schemas.Production]
+	With(other basestore.ShareableStore[schemas.Production]) GitserverRepoStore
 	Upsert(ctx context.Context, repos ...*types.GitserverRepo) error
 	IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions, repoFn func(repo types.RepoGitserverStatus) error) error
 	GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error)
@@ -40,16 +41,16 @@ var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
 
 // gitserverRepoStore is responsible for data stored in the gitserver_repos table.
 type gitserverRepoStore struct {
-	*basestore.Store
+	*basestore.Store[schemas.Production]
 }
 
 // GitserverReposWith instantiates and returns a new gitserverRepoStore using
 // the other store handle.
-func GitserverReposWith(other basestore.ShareableStore) GitserverRepoStore {
+func GitserverReposWith(other basestore.ShareableStore[schemas.Production]) GitserverRepoStore {
 	return &gitserverRepoStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (s *gitserverRepoStore) With(other basestore.ShareableStore) GitserverRepoStore {
+func (s *gitserverRepoStore) With(other basestore.ShareableStore[schemas.Production]) GitserverRepoStore {
 	return &gitserverRepoStore{Store: s.Store.With(other)}
 }
 

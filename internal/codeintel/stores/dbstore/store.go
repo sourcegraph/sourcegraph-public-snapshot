@@ -7,12 +7,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type Store struct {
-	*basestore.Store
+	*basestore.Store[schemas.Production]
 	operations *operations
 }
 
@@ -30,7 +31,7 @@ func NewWithDB(db database.DB, observationContext *observation.Context) *Store {
 	}
 }
 
-func (s *Store) With(other basestore.ShareableStore) *Store {
+func (s *Store) With(other basestore.ShareableStore[schemas.Production]) *Store {
 	return &Store{
 		Store:      s.Store.With(other),
 		operations: s.operations,

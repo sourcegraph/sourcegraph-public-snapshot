@@ -11,20 +11,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Store struct {
-	*basestore.Store
+	*basestore.Store[schemas.Any]
 	schemaName string
 	operations *Operations
 }
 
 func NewWithDB(db *sql.DB, migrationsTable string, operations *Operations) *Store {
 	return &Store{
-		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
+		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB[schemas.Any](db, sql.TxOptions{})),
 		schemaName: migrationsTable,
 		operations: operations,
 	}

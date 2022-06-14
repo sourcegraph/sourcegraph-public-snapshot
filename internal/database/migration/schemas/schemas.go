@@ -12,14 +12,14 @@ import (
 )
 
 var (
-	Frontend     = mustResolveSchema("frontend")
-	CodeIntel    = mustResolveSchema("codeintel")
-	CodeInsights = mustResolveSchema("codeinsights")
+	FrontendDefinition     = mustResolveSchema("frontend")
+	CodeIntelDefinition    = mustResolveSchema("codeintel")
+	CodeInsightsDefinition = mustResolveSchema("codeinsights")
 
 	Schemas = []*Schema{
-		Frontend,
-		CodeIntel,
-		CodeInsights,
+		FrontendDefinition,
+		CodeIntelDefinition,
+		CodeInsightsDefinition,
 	}
 )
 

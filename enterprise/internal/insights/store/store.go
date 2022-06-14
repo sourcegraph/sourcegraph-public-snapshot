@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -32,7 +33,7 @@ var _ Interface = &Store{}
 // Store exposes methods to read and write code insights domain models from
 // persistent storage.
 type Store struct {
-	*basestore.Store
+	*basestore.Store[schemas.CodeInsights]
 	now       func() time.Time
 	permStore InsightPermissionStore
 }
@@ -60,7 +61,7 @@ func NewWithClock(db edb.InsightsDB, permStore InsightPermissionStore, clock fun
 	return &Store{Store: basestore.NewWithHandle(db.Handle()), now: clock, permStore: permStore}
 }
 
-var _ basestore.ShareableStore = &Store{}
+var _ basestore.ShareableStore[schemas.CodeInsights] = &Store{}
 
 // With creates a new Store with the given basestore.Shareable store as the
 // underlying basestore.Store.

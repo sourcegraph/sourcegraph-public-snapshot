@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -62,9 +63,9 @@ func (e *RepoNotFoundErr) NotFound() bool {
 }
 
 type RepoStore interface {
-	basestore.ShareableStore
+	basestore.ShareableStore[schemas.Production]
 	Transact(context.Context) (RepoStore, error)
-	With(basestore.ShareableStore) RepoStore
+	With(basestore.ShareableStore[schemas.Production]) RepoStore
 	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 	Done(error) error
 
@@ -88,12 +89,12 @@ var _ RepoStore = (*repoStore)(nil)
 
 // repoStore handles access to the repo table
 type repoStore struct {
-	*basestore.Store
+	*basestore.Store[schemas.Production]
 }
 
 // ReposWith instantiates and returns a new RepoStore using the other
 // store handle.
-func ReposWith(other basestore.ShareableStore) RepoStore {
+func ReposWith(other basestore.ShareableStore[schemas.Production]) RepoStore {
 	return &repoStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 

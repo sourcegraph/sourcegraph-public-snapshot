@@ -9,6 +9,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -39,27 +40,27 @@ import (
 //         txBase, err := s.Store.Transact(ctx)
 //         return &SprocketStore{Store: txBase}, err
 //     }
-type Store struct {
-	handle TransactableHandle
+type Store[T schemas.SchemaKind] struct {
+	handle TransactableHandle[T]
 }
 
 // ShareableStore is implemented by stores to explicitly allow distinct store instances
 // to reference the store's underlying handle. This is used to share transactions between
 // multiple stores. See `Store.With` for additional details.
-type ShareableStore interface {
+type ShareableStore[T schemas.SchemaKind] interface {
 	// Handle returns the underlying transactable database handle.
-	Handle() TransactableHandle
+	Handle() TransactableHandle[T]
 }
 
-var _ ShareableStore = &Store{}
+var _ ShareableStore[schemas.Any] = &Store[schemas.Any]{}
 
 // NewWithHandle returns a new base store using the given database handle.
-func NewWithHandle(handle TransactableHandle) *Store {
-	return &Store{handle: handle}
+func NewWithHandle[T schemas.SchemaKind](handle TransactableHandle[T]) *Store[T] {
+	return &Store[T]{handle: handle}
 }
 
 // Handle returns the underlying transactable database handle.
-func (s *Store) Handle() TransactableHandle {
+func (s *Store[T]) Handle() TransactableHandle[T] {
 	return s.handle
 }
 
@@ -77,30 +78,30 @@ func (s *Store) Handle() TransactableHandle {
 // Note that once a handle is shared between two stores, committing or rolling back
 // a transaction will affect the handle of both stores. Most notably, two stores that
 // share the same handle are unable to begin independent transactions.
-func (s *Store) With(other ShareableStore) *Store {
-	return &Store{handle: other.Handle()}
+func (s *Store[T]) With(other ShareableStore[T]) *Store[T] {
+	return &Store[T]{handle: other.Handle()}
 }
 
 // Query performs QueryContext on the underlying connection.
-func (s *Store) Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error) {
+func (s *Store[T]) Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error) {
 	rows, err := s.handle.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	return rows, s.wrapError(query, err)
 }
 
 // QueryRow performs QueryRowContext on the underlying connection.
-func (s *Store) QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
+func (s *Store[T]) QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
 	return s.handle.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 }
 
 // Exec performs a query without returning any rows.
-func (s *Store) Exec(ctx context.Context, query *sqlf.Query) error {
+func (s *Store[T]) Exec(ctx context.Context, query *sqlf.Query) error {
 	_, err := s.ExecResult(ctx, query)
 	return err
 }
 
 // ExecResult performs a query without returning any rows, but includes the
 // result of the execution.
-func (s *Store) ExecResult(ctx context.Context, query *sqlf.Query) (sql.Result, error) {
+func (s *Store[T]) ExecResult(ctx context.Context, query *sqlf.Query) (sql.Result, error) {
 	res, err := s.handle.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	return res, s.wrapError(query, err)
 }
@@ -108,7 +109,7 @@ func (s *Store) ExecResult(ctx context.Context, query *sqlf.Query) (sql.Result, 
 // SetLocal performs the `SET LOCAL` query and returns a function to clear (aka to empty string) the setting.
 // Calling this method only makes sense within a transaction, as the setting is unset after the transaction
 // is either rolled back or committed. This does not perform argument parameterization.
-func (s *Store) SetLocal(ctx context.Context, key, value string) (func(context.Context) error, error) {
+func (s *Store[T]) SetLocal(ctx context.Context, key, value string) (func(context.Context) error, error) {
 	if !s.InTransaction() {
 		return func(ctx context.Context) error { return nil }, ErrNotInTransaction
 	}
@@ -119,20 +120,20 @@ func (s *Store) SetLocal(ctx context.Context, key, value string) (func(context.C
 }
 
 // InTransaction returns true if the underlying database handle is in a transaction.
-func (s *Store) InTransaction() bool {
+func (s *Store[T]) InTransaction() bool {
 	return s.handle.InTransaction()
 }
 
 // Transact returns a new store whose methods operate within the context of a new transaction
 // or a new savepoint. This method will return an error if the underlying connection cannot be
 // interface upgraded to a TxBeginner.
-func (s *Store) Transact(ctx context.Context) (*Store, error) {
+func (s *Store[T]) Transact(ctx context.Context) (*Store[T], error) {
 	handle, err := s.handle.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Store{handle: handle}, nil
+	return &Store[T]{handle: handle}, nil
 }
 
 // Done performs a commit or rollback of the underlying transaction/savepoint depending
@@ -140,14 +141,14 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 // the error parameter along with any error that occurs during commit or rollback of the
 // transaction/savepoint. If the store does not wrap a transaction the original error value
 // is returned unchanged.
-func (s *Store) Done(err error) error {
+func (s *Store[T]) Done(err error) error {
 	return s.handle.Done(err)
 }
 
 // if the code is run from within a test, wrapError wraps the given error
 // with query information such as the SQL query and its arguments.
 // If not, it returns the error as is.
-func (s *Store) wrapError(query *sqlf.Query, err error) error {
+func (s *Store[T]) wrapError(query *sqlf.Query, err error) error {
 	if err == nil {
 		return nil
 	}

@@ -8,6 +8,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	ff "github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -17,8 +18,8 @@ var (
 )
 
 type FeatureFlagStore interface {
-	basestore.ShareableStore
-	With(basestore.ShareableStore) FeatureFlagStore
+	basestore.ShareableStore[schemas.Production]
+	With(basestore.ShareableStore[schemas.Production]) FeatureFlagStore
 	Transact(context.Context) (FeatureFlagStore, error)
 	CreateFeatureFlag(context.Context, *ff.FeatureFlag) (*ff.FeatureFlag, error)
 	UpdateFeatureFlag(context.Context, *ff.FeatureFlag) (*ff.FeatureFlag, error)
@@ -41,14 +42,14 @@ type FeatureFlagStore interface {
 }
 
 type featureFlagStore struct {
-	*basestore.Store
+	*basestore.Store[schemas.Production]
 }
 
-func FeatureFlagsWith(other basestore.ShareableStore) FeatureFlagStore {
+func FeatureFlagsWith(other basestore.ShareableStore[schemas.Production]) FeatureFlagStore {
 	return &featureFlagStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (f *featureFlagStore) With(other basestore.ShareableStore) FeatureFlagStore {
+func (f *featureFlagStore) With(other basestore.ShareableStore[schemas.Production]) FeatureFlagStore {
 	return &featureFlagStore{Store: f.Store.With(other)}
 }
 

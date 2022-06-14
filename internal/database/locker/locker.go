@@ -8,6 +8,7 @@ import (
 	"github.com/segmentio/fasthash/fnv1"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,19 +23,19 @@ func StringKey(s string) int32 {
 // For example, an advisory lock can be taken around an expensive calculation related to
 // a particular repository to ensure that no other service is performing the same task.
 type Locker struct {
-	*basestore.Store
+	*basestore.Store[schemas.Any]
 	namespace int32
 }
 
 // NewWith creates a new Locker with the given namespace and ShareableStore
-func NewWith(other basestore.ShareableStore, namespace string) *Locker {
+func NewWith(other basestore.ShareableStore[~schemas.Empty], namespace string) *Locker {
 	return &Locker{
 		Store:     basestore.NewWithHandle(other.Handle()),
 		namespace: StringKey(namespace),
 	}
 }
 
-func (l *Locker) With(other basestore.ShareableStore) *Locker {
+func (l *Locker) With(other basestore.ShareableStore[schemas.Any]) *Locker {
 	return &Locker{
 		Store:     l.Store.With(other),
 		namespace: l.namespace,

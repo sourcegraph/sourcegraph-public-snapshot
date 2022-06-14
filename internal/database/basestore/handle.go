@@ -9,13 +9,14 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // TransactableHandle is a wrapper around a database connection that provides
 // nested transactions through registration and finalization of savepoints. A
 // transactable database handler can be shared by multiple stores.
-type TransactableHandle interface {
+type TransactableHandle[T schemas.SchemaKind] interface {
 	dbutil.DB
 
 	// InTransaction returns whether the handle represents a handle to a transaction.
@@ -25,7 +26,7 @@ type TransactableHandle interface {
 	// a new transaction or a new savepoint.
 	//
 	// Note that it is not safe to use transactions from multiple goroutines.
-	Transact(context.Context) (TransactableHandle, error)
+	Transact(context.Context) (TransactableHandle[T], error)
 
 	// Done performs a commit or rollback of the underlying transaction/savepoint depending
 	// on the value of the error parameter. The resulting error value is a multierror containing
@@ -36,86 +37,86 @@ type TransactableHandle interface {
 }
 
 var (
-	_ TransactableHandle = (*dbHandle)(nil)
-	_ TransactableHandle = (*txHandle)(nil)
-	_ TransactableHandle = (*savepointHandle)(nil)
+	_ TransactableHandle[schemas.Any] = (*dbHandle[schemas.Any])(nil)
+	_ TransactableHandle[schemas.Any] = (*txHandle[schemas.Any])(nil)
+	_ TransactableHandle[schemas.Any] = (*savepointHandle[schemas.Any])(nil)
 )
 
 // NewHandleWithDB returns a new transactable database handle using the given database connection.
-func NewHandleWithDB(db *sql.DB, txOptions sql.TxOptions) TransactableHandle {
-	return &dbHandle{DB: db, txOptions: txOptions}
+func NewHandleWithDB[T schemas.SchemaKind](db *sql.DB, txOptions sql.TxOptions) TransactableHandle[T] {
+	return &dbHandle[T]{DB: db, txOptions: txOptions}
 }
 
 // NewHandleWithTx returns a new transactable database handle using the given transaction.
-func NewHandleWithTx(tx *sql.Tx, txOptions sql.TxOptions) TransactableHandle {
-	return &txHandle{Tx: tx, txOptions: txOptions}
+func NewHandleWithTx[T schemas.SchemaKind](tx *sql.Tx, txOptions sql.TxOptions) TransactableHandle[T] {
+	return &txHandle[T]{Tx: tx, txOptions: txOptions}
 }
 
-type dbHandle struct {
+type dbHandle[T schemas.SchemaKind] struct {
 	*sql.DB
 	txOptions sql.TxOptions
 }
 
-func (h *dbHandle) InTransaction() bool {
+func (h *dbHandle[T]) InTransaction() bool {
 	return false
 }
 
-func (h *dbHandle) Transact(ctx context.Context) (TransactableHandle, error) {
+func (h *dbHandle[T]) Transact(ctx context.Context) (TransactableHandle[T], error) {
 	tx, err := h.DB.BeginTx(ctx, &h.txOptions)
 	if err != nil {
 		return nil, err
 	}
-	return &txHandle{Tx: tx, txOptions: h.txOptions}, nil
+	return &txHandle[T]{Tx: tx, txOptions: h.txOptions}, nil
 }
 
-func (h *dbHandle) Done(err error) error {
+func (h *dbHandle[T]) Done(err error) error {
 	return errors.Append(err, ErrNotInTransaction)
 }
 
-type txHandle struct {
+type txHandle[T schemas.SchemaKind] struct {
 	*sql.Tx
 	txOptions sql.TxOptions
 }
 
-func (h *txHandle) InTransaction() bool {
+func (h *txHandle[T]) InTransaction() bool {
 	return true
 }
 
-func (h *txHandle) Transact(ctx context.Context) (TransactableHandle, error) {
+func (h *txHandle[T]) Transact(ctx context.Context) (TransactableHandle[T], error) {
 	savepointID, err := newTxSavepoint(ctx, h.Tx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &savepointHandle{Tx: h.Tx, savepointID: savepointID}, nil
+	return &savepointHandle[T]{Tx: h.Tx, savepointID: savepointID}, nil
 }
 
-func (h *txHandle) Done(err error) error {
+func (h *txHandle[T]) Done(err error) error {
 	if err == nil {
 		return h.Tx.Commit()
 	}
 	return errors.Append(err, h.Tx.Rollback())
 }
 
-type savepointHandle struct {
+type savepointHandle[T schemas.SchemaKind] struct {
 	*sql.Tx
 	savepointID string
 }
 
-func (h *savepointHandle) InTransaction() bool {
+func (h *savepointHandle[T]) InTransaction() bool {
 	return true
 }
 
-func (h *savepointHandle) Transact(ctx context.Context) (TransactableHandle, error) {
+func (h *savepointHandle[T]) Transact(ctx context.Context) (TransactableHandle[T], error) {
 	savepointID, err := newTxSavepoint(ctx, h.Tx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &savepointHandle{Tx: h.Tx, savepointID: savepointID}, nil
+	return &savepointHandle[T]{Tx: h.Tx, savepointID: savepointID}, nil
 }
 
-func (h *savepointHandle) Done(err error) error {
+func (h *savepointHandle[T]) Done(err error) error {
 	if err == nil {
 		_, execErr := h.Tx.Exec(fmt.Sprintf(commitSavepointQuery, h.savepointID))
 		return execErr

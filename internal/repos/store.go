@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -37,8 +38,8 @@ type Store interface {
 	// SetTracer updates tracer for the store in place.
 	SetTracer(t trace.Tracer)
 
-	basestore.ShareableStore
-	With(other basestore.ShareableStore) Store
+	basestore.ShareableStore[schemas.Production]
+	With(other basestore.ShareableStore[schemas.Production]) Store
 	// Transact begins a new transaction and make a new Store over it.
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
@@ -97,7 +98,7 @@ type Store interface {
 
 // A Store exposes methods to read and write repos and external services.
 type store struct {
-	*basestore.Store
+	*basestore.Store[schemas.Production]
 
 	// Logger used by the store. Does not have a default - it must be provided.
 	Logger log.Logger
@@ -135,7 +136,7 @@ func (s *store) ExternalServiceStore() database.ExternalServiceStore {
 func (s *store) SetMetrics(m StoreMetrics) { s.Metrics = m }
 func (s *store) SetTracer(t trace.Tracer)  { s.Tracer = t }
 
-func (s *store) With(other basestore.ShareableStore) Store {
+func (s *store) With(other basestore.ShareableStore[schemas.Production]) Store {
 	return &store{
 		Store:   s.Store.With(other),
 		Logger:  s.Logger,

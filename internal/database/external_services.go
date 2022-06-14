@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -128,9 +129,9 @@ type ExternalServiceStore interface {
 	WithEncryptionKey(key encryption.Key) ExternalServiceStore
 
 	Transact(ctx context.Context) (ExternalServiceStore, error)
-	With(other basestore.ShareableStore) ExternalServiceStore
+	With(other basestore.ShareableStore[schemas.Production]) ExternalServiceStore
 	Done(err error) error
-	basestore.ShareableStore
+	basestore.ShareableStore[schemas.Production]
 }
 
 // An externalServiceStore stores external services and their configuration.
@@ -138,7 +139,7 @@ type ExternalServiceStore interface {
 // The enterprise code registers additional validators at run-time and sets the
 // global instance in stores.go
 type externalServiceStore struct {
-	*basestore.Store
+	*basestore.Store[schemas.Production]
 
 	key encryption.Key
 }
@@ -151,11 +152,11 @@ func (e *externalServiceStore) copy() *externalServiceStore {
 }
 
 // ExternalServicesWith instantiates and returns a new ExternalServicesStore with prepared statements.
-func ExternalServicesWith(other basestore.ShareableStore) ExternalServiceStore {
+func ExternalServicesWith(other basestore.ShareableStore[schemas.Production]) ExternalServiceStore {
 	return &externalServiceStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (e *externalServiceStore) With(other basestore.ShareableStore) ExternalServiceStore {
+func (e *externalServiceStore) With(other basestore.ShareableStore[schemas.Production]) ExternalServiceStore {
 	s := e.copy()
 	s.Store = e.Store.With(other)
 	return s

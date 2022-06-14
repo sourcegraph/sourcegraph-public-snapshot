@@ -16,13 +16,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 // CodeMonitorStore is an interface for interacting with the code monitor tables in the database
 type CodeMonitorStore interface {
-	basestore.ShareableStore
+	basestore.ShareableStore[schemas.Production]
 	Transact(context.Context) (CodeMonitorStore, error)
 	Done(error) error
 	Now() time.Time
@@ -94,7 +95,7 @@ type CodeMonitorStore interface {
 // codeMonitorStore exposes methods to read and write codemonitors domain models
 // from persistent storage.
 type codeMonitorStore struct {
-	*basestore.Store
+	*basestore.Store[schemas.Production]
 	now func() time.Time
 }
 

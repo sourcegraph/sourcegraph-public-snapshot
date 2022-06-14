@@ -13,7 +13,7 @@ import (
 )
 
 func connectFrontendDB(dsn, appName string, validate, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
-	schema := schemas.Frontend
+	schema := schemas.FrontendDefinition
 	if !validate {
 		schema = nil
 	}
@@ -22,7 +22,7 @@ func connectFrontendDB(dsn, appName string, validate, migrate bool, observationC
 }
 
 func connectCodeIntelDB(dsn, appName string, validate, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
-	schema := schemas.CodeIntel
+	schema := schemas.CodeIntelDefinition
 	if !validate {
 		schema = nil
 	}
@@ -31,7 +31,7 @@ func connectCodeIntelDB(dsn, appName string, validate, migrate bool, observation
 }
 
 func connectCodeInsightsDB(dsn, appName string, validate, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
-	schema := schemas.CodeInsights
+	schema := schemas.CodeInsightsDefinition
 	if !validate {
 		schema = nil
 	}

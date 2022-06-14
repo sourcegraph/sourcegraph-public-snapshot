@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 )
 
@@ -15,7 +16,7 @@ import (
 // and remove dbutil.DB altogether.
 type DB interface {
 	dbutil.DB
-	basestore.ShareableStore
+	basestore.ShareableStore[schemas.Production]
 
 	AccessTokens() AccessTokenStore
 	Authz() AuthzStore
@@ -56,15 +57,15 @@ var _ DB = (*db)(nil)
 // NewDB creates a new DB from a dbutil.DB, providing a thin wrapper
 // that has constructor methods for the more specialized stores.
 func NewDB(inner *sql.DB) DB {
-	return &db{basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
+	return &db{basestore.NewWithHandle(basestore.NewHandleWithDB[schemas.Production](inner, sql.TxOptions{}))}
 }
 
-func NewDBWith(other basestore.ShareableStore) DB {
+func NewDBWith(other basestore.ShareableStore[schemas.Production]) DB {
 	return &db{basestore.NewWithHandle(other.Handle())}
 }
 
 type db struct {
-	*basestore.Store
+	*basestore.Store[schemas.Production]
 }
 
 func (d *db) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {

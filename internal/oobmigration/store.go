@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
 // Migration stores metadata and tracks progress of an out-of-band migration routine.
@@ -114,7 +115,7 @@ func scanMigrations(rows *sql.Rows, queryErr error) (_ []Migration, err error) {
 
 // Store is the interface over the out-of-band migrations tables.
 type Store struct {
-	*basestore.Store
+	*basestore.Store[schemas.Production]
 }
 
 // NewStoreWithDB creates a new Store with the given database connection.
@@ -122,14 +123,14 @@ func NewStoreWithDB(db database.DB) *Store {
 	return &Store{Store: basestore.NewWithHandle(db.Handle())}
 }
 
-var _ basestore.ShareableStore = &Store{}
+var _ basestore.ShareableStore[schemas.Production] = &Store{}
 
 // With creates a new store with the underlying database handle from the given store.
 // This method should be used when two distinct store instances need to perform an
 // operation within the same shared transaction.
 //
 // This method wraps the basestore.With method.
-func (s *Store) With(other basestore.ShareableStore) *Store {
+func (s *Store) With(other basestore.ShareableStore[schemas.Production]) *Store {
 	return &Store{Store: s.Store.With(other)}
 }
 

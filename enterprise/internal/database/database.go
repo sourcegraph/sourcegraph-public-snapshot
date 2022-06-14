@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
 type EnterpriseDB interface {
@@ -41,22 +42,22 @@ func (edb *enterpriseDB) Perms() PermsStore {
 
 type InsightsDB interface {
 	dbutil.DB
-	basestore.ShareableStore
+	basestore.ShareableStore[schemas.CodeInsights]
 
 	Transact(context.Context) (InsightsDB, error)
 	Done(error) error
 }
 
 func NewInsightsDB(inner *sql.DB) InsightsDB {
-	return &insightsDB{basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
+	return &insightsDB{basestore.NewWithHandle(basestore.NewHandleWithDB[schemas.CodeInsights](inner, sql.TxOptions{}))}
 }
 
-func NewInsightsDBWith(other basestore.ShareableStore) InsightsDB {
+func NewInsightsDBWith(other basestore.ShareableStore[schemas.CodeInsights]) InsightsDB {
 	return &insightsDB{basestore.NewWithHandle(other.Handle())}
 }
 
 type insightsDB struct {
-	*basestore.Store
+	*basestore.Store[schemas.CodeInsights]
 }
 
 func (d *insightsDB) Transact(ctx context.Context) (InsightsDB, error) {

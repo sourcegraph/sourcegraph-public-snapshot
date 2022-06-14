@@ -15,6 +15,7 @@ import (
 
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/test"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
@@ -56,13 +57,46 @@ var rng = rand.New(rand.NewSource(func() int64 {
 }()))
 var rngLock sync.Mutex
 
+var onces struct {
+	sync.Mutex
+	done map[string]struct{}
+}
+
+func New[T schemas.SchemaKind](t testing.TB) basestore.TransactableHandle[T] {
+	var kind T
+	schemaSet := schemas.SchemasFromKind(kind)
+	namespace := namespaceFromSchemaSet(schemaSet)
+
+	onces.Lock()
+	if _, ok := onces.done[namespace]; !ok {
+		onces.done[namespace] = struct{}{}
+		onces.Unlock()
+		initTemplateDB(t, namespace, schemaSet)
+	} else {
+		onces.Unlock()
+	}
+
+	return basestore.NewHandleWithDB[T](newFromDSN(t, namespace), sql.TxOptions{})
+}
+
+func namespaceFromSchemaSet(schemaSet []*schemas.Schema) string {
+	var ss []string
+	for _, set := range schemaSet {
+		ss = append(ss, set.Name)
+	}
+	if len(ss) == 0 {
+		ss = append(ss, "raw")
+	}
+	return strings.Join(ss, "_")
+}
+
 var dbTemplateOnce sync.Once
 
 // NewDB returns a connection to a clean, new temporary testing database with
 // the same schema as Sourcegraph's production Postgres database.
 func NewDB(t testing.TB) *sql.DB {
 	dbTemplateOnce.Do(func() {
-		initTemplateDB(t, "migrated", []*schemas.Schema{schemas.Frontend, schemas.CodeIntel})
+		initTemplateDB(t, "migrated", []*schemas.Schema{schemas.FrontendDefinition, schemas.CodeIntelDefinition})
 	})
 
 	return newFromDSN(t, "migrated")
@@ -74,7 +108,7 @@ var insightsTemplateOnce sync.Once
 // the same schema as Sourcegraph's CodeInsights production Postgres database.
 func NewInsightsDB(t testing.TB) *sql.DB {
 	insightsTemplateOnce.Do(func() {
-		initTemplateDB(t, "insights", []*schemas.Schema{schemas.CodeInsights})
+		initTemplateDB(t, "insights", []*schemas.Schema{schemas.CodeInsightsDefinition})
 	})
 	return newFromDSN(t, "insights")
 }
