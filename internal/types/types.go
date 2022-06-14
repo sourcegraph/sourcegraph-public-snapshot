@@ -764,6 +764,13 @@ type SiteUsageStatistics struct {
 	MAUs []*SiteActivityPeriod
 }
 
+type EventStatisticsNode struct {
+	Date            time.Time
+	TotalCount      int32
+	UniqueCount     int32
+	RegisteredCount int32
+}
+
 // NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.

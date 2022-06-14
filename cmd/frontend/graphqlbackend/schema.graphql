@@ -5537,6 +5537,9 @@ type Site implements SettingsSubject {
         """
         months: Int
     ): SiteUsageStatistics!
+
+    eventStatistics(from: String!, to: String!, events: [EventStatisticsEvent!]): EventStatistics!
+
     """
     Monitoring overview for this site.
     Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
@@ -5844,6 +5847,34 @@ type SiteUsageStatistics {
     Recent monthly active users.
     """
     maus: [SiteUsagePeriod!]!
+}
+
+enum EventStatisticsEvent {
+    CHANGESETS_CREATED
+    CHANGESETS_MERGED
+    NOTEBOOKS_CREATED
+    NOTEBOOKS_VIEWED
+    INSIGHTS_CREATED
+    # ...
+}
+
+type EventStatisticsNode {
+    date: String!
+    totalCount: Int!
+    uniqueCount: Int!
+    registeredCount: Int!
+}
+
+type EventStatisticsUserItem {
+    user: User
+    eventsCount: Int!
+}
+
+type EventStatistics {
+    # TODO: add pagination support
+    # users: [EventStatisticsUserItem!]!
+    # TODO: add summary
+    nodes: [EventStatisticsNode!]!
 }
 
 """
