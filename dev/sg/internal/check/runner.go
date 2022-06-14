@@ -288,7 +288,9 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 					// Render additional details
 					if check.cachedCheckOutput != "" {
-						outputMarkdown := fmt.Sprintf("\n\n```term\n%s\n```", check.cachedCheckOutput)
+						outputMarkdown := fmt.Sprintf("\n\n```term\n%s\n```",
+							strings.TrimSpace(check.cachedCheckOutput))
+
 						terminalSummary += outputMarkdown
 						annotationSummary += outputMarkdown
 					}
