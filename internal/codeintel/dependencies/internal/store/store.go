@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -117,10 +118,13 @@ func (s *store) LockfileDependencies(ctx context.Context, repoName, commit strin
 	}
 	defer func() { err = tx.db.Done(err) }()
 
+	resolutionID := fmt.Sprintf("resolution-%s-%s", repoName, commit)
+
 	deps, err = scanPackageDependencies(tx.db.Query(ctx, sqlf.Sprintf(
 		lockfileDependenciesQuery,
 		repoName,
 		dbutil.CommitBytea(commit),
+		resolutionID,
 	)))
 	if err != nil {
 		return nil, false, err
@@ -154,7 +158,9 @@ FROM codeintel_lockfile_references
 WHERE id IN (
 	SELECT DISTINCT unnest(codeintel_lockfile_reference_ids) AS id
 	FROM codeintel_lockfiles
-	WHERE repository_id = (SELECT id FROM repo WHERE name = %s) AND commit_bytea = %s
+	WHERE repository_id = (SELECT id FROM repo WHERE name = %s)
+	AND commit_bytea = %s
+	AND resolution_id = %s
 )
 ORDER BY repository_name, revspec
 `
@@ -188,13 +194,13 @@ func (s *store) UpsertLockfileDependencies(ctx context.Context, repoName, commit
 	}
 
 	// TODO: Fix this
-	resolutionID := repoName + commit
+	resolutionID := fmt.Sprintf("resolution-%s-%s", repoName, commit)
 	if err := batch.InsertValues(
 		ctx,
 		tx.db.Handle(),
 		"t_codeintel_lockfile_references",
 		batch.MaxNumPostgresParameters,
-		[]string{"repository_name", "revspec", "package_scheme", "package_name", "package_version"},
+		[]string{"repository_name", "revspec", "package_scheme", "package_name", "package_version", "depends_on", "resolution_id"},
 		populatePackageDependencyChannel(deps, resolutionID),
 	); err != nil {
 		return err
@@ -213,6 +219,7 @@ func (s *store) UpsertLockfileDependencies(ctx context.Context, repoName, commit
 		insertLockfilesQuery,
 		dbutil.CommitBytea(commit),
 		idsArray,
+		resolutionID,
 		repoName,
 		idsArray,
 	))
@@ -250,7 +257,7 @@ func (s *store) UpsertLockfileDependencies2(ctx context.Context, repoName, commi
 
 	nameIDs := make(map[string]int, len(deps))
 
-	rows, err := tx.db.Query(ctx, sqlf.Sprintf(upsertLockfileReferencesQuery))
+	rows, err := tx.db.Query(ctx, sqlf.Sprintf(upsertLockfileReferences2Query))
 	if err != nil {
 		return nil, err
 	}
@@ -294,6 +301,32 @@ WITH ins AS (
 	RETURNING id, package_name
 ),
 duplicates AS (
+	SELECT id
+	FROM t_codeintel_lockfile_references t
+	JOIN codeintel_lockfile_references r
+	ON
+		r.repository_name = t.repository_name AND
+		r.revspec = t.revspec AND
+		r.package_scheme = t.package_scheme AND
+		r.package_name = t.package_name AND
+		r.package_version = t.package_version AND
+		r.depends_on = t.depends_on AND
+		r.resolution_id = t.resolution_id
+)
+SELECT id FROM ins UNION
+SELECT id FROM duplicates
+ORDER BY id
+`
+
+const upsertLockfileReferences2Query = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:UpsertLockfileDependencies
+WITH ins AS (
+	INSERT INTO codeintel_lockfile_references (repository_name, revspec, package_scheme, package_name, package_version, depends_on, resolution_id)
+	SELECT repository_name, revspec, package_scheme, package_name, package_version, depends_on, resolution_id FROM t_codeintel_lockfile_references
+	ON CONFLICT DO NOTHING
+	RETURNING id, package_name
+),
+duplicates AS (
 	SELECT r.id, r.package_name
 	FROM t_codeintel_lockfile_references t
 	JOIN codeintel_lockfile_references r
@@ -316,9 +349,10 @@ const insertLockfilesQuery = `
 INSERT INTO codeintel_lockfiles (
 	repository_id,
 	commit_bytea,
-	codeintel_lockfile_reference_ids
+	codeintel_lockfile_reference_ids,
+	resolution_id
 )
-SELECT id, %s, %s
+SELECT id, %s, %s, %s
 FROM repo
 WHERE name = %s
 -- Last write wins

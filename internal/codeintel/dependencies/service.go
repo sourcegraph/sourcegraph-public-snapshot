@@ -279,7 +279,7 @@ func (s *Service) resolveLockfileDependenciesFromArchive(ctx context.Context, re
 // given repo-commit pair and persists the result to the database. This aids in both caching
 // and building an inverted index to power dependents search.
 func (s *Service) listAndPersistLockfileDependencies(ctx context.Context, repoCommit repoCommitResolvedCommit) ([]shared.PackageDependency, error) {
-	repoDeps, graphs, err := s.lockfilesSvc.ListDependencies(ctx, repoCommit.Repo, string(repoCommit.CommitID))
+	repoDeps, graph, err := s.lockfilesSvc.ListDependencies(ctx, repoCommit.Repo, string(repoCommit.CommitID))
 	if err != nil {
 		return nil, errors.Wrap(err, "lockfiles.ListDependencies")
 	}
@@ -299,27 +299,28 @@ func (s *Service) listAndPersistLockfileDependencies(ctx context.Context, repoCo
 		return nil, errors.Wrap(err, "store.UpsertLockfileDependencies")
 	}
 
+	if graph == nil {
+		return serializableRepoDeps, nil
+	}
+
 	edges := make(map[int][]int)
+	for _, edge := range graph.AllEdges() {
+		sourceName, targetName := edge.Source.PackageSyntax(), edge.Target.PackageSyntax()
 
-	for _, graph := range graphs {
-		for _, edge := range graph.AllEdges() {
-			sourceName, targetName := edge.Source.PackageSyntax(), edge.Target.PackageSyntax()
+		sourceID, ok := nameIDs[sourceName]
+		if !ok {
+			return nil, errors.Newf("id for source %s not found", sourceName)
+		}
 
-			sourceID, ok := nameIDs[sourceName]
-			if !ok {
-				return nil, errors.Newf("id for source %s not found", sourceName)
-			}
+		targetID, ok := nameIDs[targetName]
+		if !ok {
+			return nil, errors.Newf("id for target %s not found", sourceName)
+		}
 
-			targetID, ok := nameIDs[targetName]
-			if !ok {
-				return nil, errors.Newf("id for target %s not found", sourceName)
-			}
-
-			if ids, ok := edges[sourceID]; !ok {
-				edges[sourceID] = []int{targetID}
-			} else {
-				edges[sourceID] = append(ids, targetID)
-			}
+		if ids, ok := edges[sourceID]; !ok {
+			edges[sourceID] = []int{targetID}
+		} else {
+			edges[sourceID] = append(ids, targetID)
 		}
 	}
 

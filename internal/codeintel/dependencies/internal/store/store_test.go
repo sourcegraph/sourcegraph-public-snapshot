@@ -216,6 +216,9 @@ func TestLockfileDependencies(t *testing.T) {
 		}
 		sort.Slice(deps, func(i, j int) bool { return deps[i].RepoName() < deps[j].RepoName() })
 
+		if a, b := len(expectedDeps), len(deps); a != b {
+			t.Fatalf("unexpected len of dependencies for commit %s: want=%d, have=%d", commit, a, b)
+		}
 		if diff := cmp.Diff(expectedDeps, deps); diff != "" {
 			t.Fatalf("unexpected dependencies for commit %s (-have, +want): %s", commit, diff)
 		}

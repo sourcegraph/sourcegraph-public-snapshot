@@ -100,7 +100,7 @@ func TestDependencies(t *testing.T) {
 	})
 
 	// Return archive dependencies for repos `foo` and `bar`
-	lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]reposource.PackageDependency, []*lockfiles.DependencyGraph, error) {
+	lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]reposource.PackageDependency, *lockfiles.DependencyGraph, error) {
 		if repoName != "github.com/example/foo" && repoName != "github.com/example/bar" {
 			return nil, nil, nil
 		}
@@ -167,11 +167,11 @@ func TestDependencies(t *testing.T) {
 	}
 
 	// Assert `store.UpsertLockfileDependencies` was called
-	mockassert.CalledN(t, mockStore.UpsertLockfileDependenciesFunc, 4)
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef1", mockassert.Skip))
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef2", mockassert.Skip))
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef3", mockassert.Skip))
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef4", mockassert.Skip))
+	mockassert.CalledN(t, mockStore.UpsertLockfileDependencies2Func, 4)
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependencies2Func, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef1", mockassert.Skip))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependencies2Func, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef2", mockassert.Skip))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependencies2Func, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef3", mockassert.Skip))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependencies2Func, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef4", mockassert.Skip))
 
 	// Assert `syncer.Sync` was called correctly
 	syncHistory := syncer.SyncFunc.History()
@@ -347,7 +347,7 @@ func TestResolveDependencies(t *testing.T) {
 	})
 
 	// Return archive dependencies for repos `foo` and `bar`
-	lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]reposource.PackageDependency, []*lockfiles.DependencyGraph, error) {
+	lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]reposource.PackageDependency, *lockfiles.DependencyGraph, error) {
 		if repoName != "github.com/example/foo" && repoName != "github.com/example/bar" {
 			return nil, nil, nil
 		}
@@ -396,14 +396,14 @@ func TestResolveDependencies(t *testing.T) {
 	}
 
 	// Assert `store.UpsertLockfileDependencies` was called
-	mockassert.CalledN(t, mockStore.UpsertLockfileDependenciesFunc, 6)
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef1", mockassert.Skip))
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef2", mockassert.Skip))
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef3", mockassert.Skip))
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef4", mockassert.Skip))
+	mockassert.CalledN(t, mockStore.UpsertLockfileDependencies2Func, 6)
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependencies2Func, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef1", mockassert.Skip))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependencies2Func, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef2", mockassert.Skip))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependencies2Func, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef3", mockassert.Skip))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependencies2Func, mockassert.Values(mockassert.Skip, "github.com/example/bar", "deadbeef4", mockassert.Skip))
 	// We make sure that "0 dependencies" is also recorded as a result
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/baz", "deadbeef5", []shared.PackageDependency{}))
-	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/baz", "deadbeef6", []shared.PackageDependency{}))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependencies2Func, mockassert.Values(mockassert.Skip, "github.com/example/baz", "deadbeef5", []shared.PackageDependency{}))
+	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependencies2Func, mockassert.Values(mockassert.Skip, "github.com/example/baz", "deadbeef6", []shared.PackageDependency{}))
 
 	// Assert `syncer.Sync` was called correctly
 	syncHistory := syncer.SyncFunc.History()
