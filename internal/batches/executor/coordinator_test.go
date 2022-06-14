@@ -261,6 +261,41 @@ func TestCoordinator_Execute(t *testing.T) {
 				}),
 			},
 		},
+		{
+			name: "skip cache for step mount",
+
+			tasks: []*Task{srcCLITask, sourcegraphTask},
+
+			batchSpec: &batcheslib.BatchSpec{
+				Name:              "my-batch-change",
+				Description:       "the description",
+				ChangesetTemplate: testChangesetTemplate,
+				Steps: []batcheslib.Step{
+					{
+						Run:   "echo foo",
+						Mount: []batcheslib.Mount{{Path: "/foo/bar/sample.sh", Mountpoint: "/tmp/sample.sh"}},
+					},
+				},
+			},
+
+			executor: &dummyExecutor{
+				results: []taskResult{
+					{task: srcCLITask, result: execution.Result{Diff: `dummydiff1`}},
+					{task: sourcegraphTask, result: execution.Result{Diff: `dummydiff2`}},
+				},
+			},
+			opts: NewCoordinatorOpts{Features: featuresAllEnabled()},
+
+			wantCacheEntries: 0,
+			wantSpecs: []*batcheslib.ChangesetSpec{
+				buildSpecFor(testRepo1, func(spec *batcheslib.ChangesetSpec) {
+					spec.Commits[0].Diff = `dummydiff1`
+				}),
+				buildSpecFor(testRepo2, func(spec *batcheslib.ChangesetSpec) {
+					spec.Commits[0].Diff = `dummydiff2`
+				}),
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -277,9 +312,9 @@ func TestCoordinator_Execute(t *testing.T) {
 
 			logManager := mock.LogNoOpManager{}
 
-			cache := newInMemoryExecutionCache()
+			c := newInMemoryExecutionCache()
 			coord := Coordinator{
-				cache:      cache,
+				cache:      c,
 				exec:       tc.executor,
 				logManager: logManager,
 				opts:       tc.opts,
@@ -323,15 +358,15 @@ func TestCoordinator_Execute(t *testing.T) {
 
 			verifyCache := func(t *testing.T) {
 				// Verify that there is a cache entry for each repo.
-				if have, want := cache.size(), tc.wantCacheEntries; have != want {
-					t.Errorf("unexpected number of cache entries: have=%d want=%d cache=%+v", have, want, cache)
+				if have, want := c.size(), tc.wantCacheEntries; have != want {
+					t.Errorf("unexpected number of cache entries: have=%d want=%d cache=%+v", have, want, c)
 				}
 			}
 
 			// Sanity check, since we're going to be looking at the side effects
 			// on the cache.
-			if cache.size() != 0 {
-				t.Fatalf("unexpectedly hot cache: %+v", cache)
+			if c.size() != 0 {
+				t.Fatalf("unexpectedly hot cache: %+v", c)
 			}
 
 			// Run with a cold cache.

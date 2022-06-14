@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 	"sync"
 	"text/template"
@@ -371,7 +372,7 @@ func (e *duplicateBranchesErr) Error() string {
 	return out.String()
 }
 
-func (svc *Service) ParseBatchSpec(data []byte) (*batcheslib.BatchSpec, error) {
+func (svc *Service) ParseBatchSpec(dir string, data []byte, isRemote bool) (*batcheslib.BatchSpec, error) {
 	spec, err := batcheslib.ParseBatchSpec(data, batcheslib.ParseBatchSpecOptions{
 		AllowArrayEnvironments: svc.features.AllowArrayEnvironments,
 		AllowTransformChanges:  svc.features.AllowTransformChanges,
@@ -380,7 +381,43 @@ func (svc *Service) ParseBatchSpec(data []byte) (*batcheslib.BatchSpec, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing batch spec")
 	}
+	if err = validateMount(dir, spec, isRemote); err != nil {
+		return nil, errors.Wrap(err, "handling mount")
+	}
 	return spec, nil
+}
+
+func validateMount(batchSpecDir string, spec *batcheslib.BatchSpec, isRemote bool) error {
+	for i, step := range spec.Steps {
+		for j, mount := range step.Mount {
+			if isRemote {
+				return errors.New("mounts are not support for server-side processing")
+			}
+			p := mount.Path
+			if !filepath.IsAbs(p) {
+				// Try to build the absolute path since Docker will only mount absolute paths
+				p = filepath.Join(batchSpecDir, p)
+			}
+			pathInfo, err := os.Stat(p)
+			if os.IsNotExist(err) {
+				return errors.Newf("step %d mount path %s does not exist", i+1, p)
+			} else if err != nil {
+				return errors.Wrapf(err, "step %d mount path validation", i+1)
+			}
+			if !strings.HasPrefix(p, batchSpecDir) {
+				return errors.Newf("step %d mount path is not in the same directory or subdirectory as the batch spec", i+1)
+			}
+			// Mounting a directory on Docker must end with the separator. So, append the file separator to make
+			// users' lives easier.
+			if pathInfo.IsDir() && !strings.HasSuffix(p, string(filepath.Separator)) {
+				p += string(filepath.Separator)
+			}
+			// Update the mount path to the absolute path so building the absolute path (above) does not need to be
+			// redone when adding the mount argument to the Docker container.
+			step.Mount[j].Path = p
+		}
+	}
+	return nil
 }
 
 const exampleSpecTmpl = `name: NAME-OF-YOUR-BATCH-CHANGE

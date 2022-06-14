@@ -16,6 +16,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -46,6 +48,12 @@ func TestExecutor_Integration(t *testing.T) {
 	const rootPath = ""
 	type filesByPath map[string][]string
 	type filesByRepository map[string]filesByPath
+
+	// create a temp directory with a simple shell file
+	tempDir := t.TempDir()
+	mountScript := fmt.Sprintf("%s/sample.sh", tempDir)
+	err := os.WriteFile(mountScript, []byte(`echo -e "foobar\n" >> README.md`), 0777)
+	require.NoError(t, err)
 
 	tests := []struct {
 		name string
@@ -309,6 +317,30 @@ func TestExecutor_Integration(t *testing.T) {
 			wantFinished:        1,
 			wantFinishedWithErr: 1,
 			wantCacheCount:      2,
+		},
+		{
+			name: "mount path",
+			archives: []mock.RepoArchive{
+				{RepoName: testRepo1.Name, Commit: testRepo1.Rev(), Files: map[string]string{
+					"README.md": "# Welcome to the README\n",
+				}},
+			},
+			steps: []batcheslib.Step{
+				{
+					Run:   mountScript,
+					Mount: []batcheslib.Mount{{Path: mountScript, Mountpoint: mountScript}},
+				},
+			},
+			tasks: []*Task{
+				{Repository: testRepo1},
+			},
+			wantFilesChanged: filesByRepository{
+				testRepo1.ID: filesByPath{
+					rootPath: []string{"README.md"},
+				},
+			},
+			wantFinished:   1,
+			wantCacheCount: 1,
 		},
 	}
 

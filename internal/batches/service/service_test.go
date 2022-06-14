@@ -6,14 +6,18 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 
@@ -697,4 +701,344 @@ func TestEnsureDockerImages(t *testing.T) {
 		}
 
 	})
+}
+
+func TestService_ParseBatchSpec(t *testing.T) {
+	svc := &Service{}
+
+	tempDir := t.TempDir()
+	tempOutsideDir := t.TempDir()
+	// create temp files/dirs that can be used by the tests
+	_, err := os.Create(filepath.Join(tempDir, "sample.sh"))
+	require.NoError(t, err)
+	_, err = os.Create(filepath.Join(tempDir, "another.sh"))
+	require.NoError(t, err)
+
+	tests := []struct {
+		name         string
+		batchSpecDir string
+		rawSpec      string
+		isRemote     bool
+		expectedSpec *batcheslib.BatchSpec
+		expectedErr  error
+	}{
+		{
+			name: "simple spec",
+			rawSpec: `
+name: test-spec
+description: A test spec
+`,
+			expectedSpec: &batcheslib.BatchSpec{Name: "test-spec", Description: "A test spec"},
+		},
+		{
+			name: "unknown field",
+			rawSpec: `
+name: test-spec
+description: A test spec
+some-new-field: Foo bar
+`,
+			expectedErr: errors.New("parsing batch spec: Additional property some-new-field is not allowed"),
+		},
+		{
+			name:         "mount absolute file",
+			batchSpecDir: tempDir,
+			rawSpec: fmt.Sprintf(`
+name: test-spec
+description: A test spec
+steps:
+  - run: /tmp/sample.sh
+    container: alpine:3
+    mount:
+      - path: %s
+        mountpoint: /tmp/sample.sh
+changesetTemplate:
+  title: Test Mount
+  body: Test a mounted path
+  branch: test
+  commit:
+    message: Test
+`, filepath.Join(tempDir, "sample.sh")),
+			expectedSpec: &batcheslib.BatchSpec{
+				Name:        "test-spec",
+				Description: "A test spec",
+				Steps: []batcheslib.Step{
+					{
+						Run:       "/tmp/sample.sh",
+						Container: "alpine:3",
+						Mount: []batcheslib.Mount{
+							{
+								Path:       filepath.Join(tempDir, "sample.sh"),
+								Mountpoint: "/tmp/sample.sh",
+							},
+						},
+					},
+				},
+				ChangesetTemplate: &batcheslib.ChangesetTemplate{
+					Title:  "Test Mount",
+					Body:   "Test a mounted path",
+					Branch: "test",
+					Commit: batcheslib.ExpandedGitCommitDescription{
+						Message: "Test",
+					},
+				},
+			},
+		},
+		{
+			name:         "mount relative file",
+			batchSpecDir: tempDir,
+			rawSpec: `
+name: test-spec
+description: A test spec
+steps:
+  - run: /tmp/sample.sh
+    container: alpine:3
+    mount:
+      - path: ./sample.sh
+        mountpoint: /tmp/sample.sh
+changesetTemplate:
+  title: Test Mount
+  body: Test a mounted path
+  branch: test
+  commit:
+    message: Test
+`,
+			expectedSpec: &batcheslib.BatchSpec{
+				Name:        "test-spec",
+				Description: "A test spec",
+				Steps: []batcheslib.Step{
+					{
+						Run:       "/tmp/sample.sh",
+						Container: "alpine:3",
+						Mount: []batcheslib.Mount{
+							{
+								Path:       filepath.Join(tempDir, "sample.sh"),
+								Mountpoint: "/tmp/sample.sh",
+							},
+						},
+					},
+				},
+				ChangesetTemplate: &batcheslib.ChangesetTemplate{
+					Title:  "Test Mount",
+					Body:   "Test a mounted path",
+					Branch: "test",
+					Commit: batcheslib.ExpandedGitCommitDescription{
+						Message: "Test",
+					},
+				},
+			},
+		},
+		{
+			name:         "mount absolute directory",
+			batchSpecDir: tempDir,
+			rawSpec: fmt.Sprintf(`
+name: test-spec
+description: A test spec
+steps:
+  - run: /tmp/some-file.sh
+    container: alpine:3
+    mount:
+      - path: %s
+        mountpoint: /tmp
+changesetTemplate:
+  title: Test Mount
+  body: Test a mounted path
+  branch: test
+  commit:
+    message: Test
+`, tempDir),
+			expectedSpec: &batcheslib.BatchSpec{
+				Name:        "test-spec",
+				Description: "A test spec",
+				Steps: []batcheslib.Step{
+					{
+						Run:       "/tmp/some-file.sh",
+						Container: "alpine:3",
+						Mount: []batcheslib.Mount{
+							{
+								Path:       tempDir + string(filepath.Separator),
+								Mountpoint: "/tmp",
+							},
+						},
+					},
+				},
+				ChangesetTemplate: &batcheslib.ChangesetTemplate{
+					Title:  "Test Mount",
+					Body:   "Test a mounted path",
+					Branch: "test",
+					Commit: batcheslib.ExpandedGitCommitDescription{
+						Message: "Test",
+					},
+				},
+			},
+		},
+		{
+			name:         "mount relative directory",
+			batchSpecDir: tempDir,
+			rawSpec: `
+name: test-spec
+description: A test spec
+steps:
+  - run: /tmp/some-file.sh
+    container: alpine:3
+    mount:
+      - path: ./
+        mountpoint: /tmp
+changesetTemplate:
+  title: Test Mount
+  body: Test a mounted path
+  branch: test
+  commit:
+    message: Test
+`,
+			expectedSpec: &batcheslib.BatchSpec{
+				Name:        "test-spec",
+				Description: "A test spec",
+				Steps: []batcheslib.Step{
+					{
+						Run:       "/tmp/some-file.sh",
+						Container: "alpine:3",
+						Mount: []batcheslib.Mount{
+							{
+								Path:       tempDir + string(filepath.Separator),
+								Mountpoint: "/tmp",
+							},
+						},
+					},
+				},
+				ChangesetTemplate: &batcheslib.ChangesetTemplate{
+					Title:  "Test Mount",
+					Body:   "Test a mounted path",
+					Branch: "test",
+					Commit: batcheslib.ExpandedGitCommitDescription{
+						Message: "Test",
+					},
+				},
+			},
+		},
+		{
+			name:         "mount multiple files",
+			batchSpecDir: tempDir,
+			rawSpec: `
+name: test-spec
+description: A test spec
+steps:
+  - run: /tmp/sample.sh && /tmp/another.sh
+    container: alpine:3
+    mount:
+      - path: ./sample.sh
+        mountpoint: /tmp/sample.sh
+      - path: ./another.sh
+        mountpoint: /tmp/another.sh
+changesetTemplate:
+  title: Test Mount
+  body: Test a mounted path
+  branch: test
+  commit:
+    message: Test
+`,
+			expectedSpec: &batcheslib.BatchSpec{
+				Name:        "test-spec",
+				Description: "A test spec",
+				Steps: []batcheslib.Step{
+					{
+						Run:       "/tmp/sample.sh && /tmp/another.sh",
+						Container: "alpine:3",
+						Mount: []batcheslib.Mount{
+							{
+								Path:       filepath.Join(tempDir, "sample.sh"),
+								Mountpoint: "/tmp/sample.sh",
+							},
+							{
+								Path:       filepath.Join(tempDir, "another.sh"),
+								Mountpoint: "/tmp/another.sh",
+							},
+						},
+					},
+				},
+				ChangesetTemplate: &batcheslib.ChangesetTemplate{
+					Title:  "Test Mount",
+					Body:   "Test a mounted path",
+					Branch: "test",
+					Commit: batcheslib.ExpandedGitCommitDescription{
+						Message: "Test",
+					},
+				},
+			},
+		},
+		{
+			name:         "mount path does not exist",
+			batchSpecDir: tempDir,
+			rawSpec: fmt.Sprintf(`
+name: test-spec
+description: A test spec
+steps:
+  - run: /tmp/sample.sh
+    container: alpine:3
+    mount:
+      - path: %s
+        mountpoint: /tmp
+changesetTemplate:
+  title: Test Mount
+  body: Test a mounted path
+  branch: test
+  commit:
+    message: Test
+`, filepath.Join(tempDir, "does", "not", "exist", "sample.sh")),
+			expectedErr: errors.Newf("handling mount: step 1 mount path %s does not exist", filepath.Join(tempDir, "does", "not", "exist", "sample.sh")),
+		},
+		{
+			name:         "mount path not subdirectory of spec",
+			batchSpecDir: tempDir,
+			rawSpec: fmt.Sprintf(`
+name: test-spec
+description: A test spec
+steps:
+  - run: /tmp/sample.sh
+    container: alpine:3
+    mount:
+      - path: %s
+        mountpoint: /tmp
+changesetTemplate:
+  title: Test Mount
+  body: Test a mounted path
+  branch: test
+  commit:
+    message: Test
+`, tempOutsideDir),
+			expectedErr: errors.New("handling mount: step 1 mount path is not in the same directory or subdirectory as the batch spec"),
+		},
+		{
+			name:         "mount remote processing",
+			batchSpecDir: tempDir,
+			rawSpec: `
+name: test-spec
+description: A test spec
+steps:
+  - run: /tmp/foo/bar/sample.sh
+    container: alpine:3
+    mount:
+      - path: /valid/sample.sh
+        mountpoint: /tmp/foo/bar/sample.sh
+changesetTemplate:
+  title: Test Mount
+  body: Test a mounted path
+  branch: test
+  commit:
+    message: Test
+`,
+			isRemote:    true,
+			expectedErr: errors.New("handling mount: mounts are not support for server-side processing"),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			spec, err := svc.ParseBatchSpec(test.batchSpecDir, []byte(test.rawSpec), test.isRemote)
+			if test.expectedErr != nil {
+				assert.Equal(t, test.expectedErr.Error(), err.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, test.expectedSpec, spec)
+			}
+		})
+	}
 }

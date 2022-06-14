@@ -13,6 +13,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- Batch Specs now support mounting a path from the local machine into a Docker container. [sourcegraph/sourcegraph#31790](https://github.com/sourcegraph/sourcegraph/issues/31790)
+
 ### Changed
 
 ### Fixed

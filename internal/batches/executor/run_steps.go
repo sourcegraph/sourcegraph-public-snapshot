@@ -38,6 +38,8 @@ type executionOpts struct {
 
 	ui StepsExecutionUI
 
+	allowPathMounts bool
+
 	writeStepCacheResult func(ctx context.Context, stepResult execution.AfterStepResult, task *Task) error
 }
 
@@ -51,11 +53,11 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 	defer opts.task.Archive.Close()
 
 	opts.ui.WorkspaceInitializationStarted()
-	workspace, err := opts.wc.Create(ctx, opts.task.Repository, opts.task.Steps, opts.task.Archive)
+	ws, err := opts.wc.Create(ctx, opts.task.Repository, opts.task.Steps, opts.task.Archive)
 	if err != nil {
 		return execution.Result{}, nil, errors.Wrap(err, "creating workspace")
 	}
-	defer workspace.Close(ctx)
+	defer ws.Close(ctx)
 	opts.ui.WorkspaceInitializationFinished()
 
 	var (
@@ -119,7 +121,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 			stepContext.Steps.Changes = previousStepResult.Files
 			stepContext.Outputs = opts.task.CachedResult.Outputs
 
-			if err := workspace.ApplyDiff(ctx, []byte(opts.task.CachedResult.Diff)); err != nil {
+			if err := ws.ApplyDiff(ctx, []byte(opts.task.CachedResult.Diff)); err != nil {
 				return execResult, nil, errors.Wrap(err, "getting changed files in step")
 			}
 		}
@@ -142,7 +144,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 		if err != nil {
 			return execResult, nil, err
 		}
-		stdoutBuffer, stderrBuffer, err := executeSingleStep(ctx, opts, workspace, i, step, digest, &stepContext)
+		stdoutBuffer, stderrBuffer, err := executeSingleStep(ctx, opts, ws, i, step, digest, &stepContext)
 		defer func() {
 			if err != nil {
 				exitCode := -1
@@ -157,7 +159,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 			return execResult, nil, err
 		}
 
-		changes, err := workspace.Changes(ctx)
+		changes, err := ws.Changes(ctx)
 		if err != nil {
 			return execResult, nil, errors.Wrap(err, "getting changed files in step")
 		}
@@ -172,7 +174,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 		}
 
 		// Get the current diff and store that away as the per-step result.
-		stepDiff, err := workspace.Diff(ctx)
+		stepDiff, err := ws.Diff(ctx)
 		if err != nil {
 			return execResult, nil, errors.Wrap(err, "getting diff produced by step")
 		}
@@ -198,7 +200,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 	}
 
 	opts.ui.CalculatingDiffStarted()
-	diffOut, err := workspace.Diff(ctx)
+	diffOut, err := ws.Diff(ctx)
 	if err != nil {
 		return execResult, nil, errors.Wrap(err, "git diff failed")
 	}
@@ -301,6 +303,14 @@ func executeSingleStep(
 
 	for target, source := range filesToMount {
 		args = append(args, "--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", source.Name(), target))
+	}
+
+	// Temporarily add a guard to prevent a path to mount path for server-side processing
+	if opts.allowPathMounts {
+		// Mount any paths on the local system to the docker container. The paths have already been validated during parsing
+		for _, mount := range step.Mount {
+			args = append(args, "--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", mount.Path, mount.Mountpoint))
+		}
 	}
 
 	for k, v := range env {

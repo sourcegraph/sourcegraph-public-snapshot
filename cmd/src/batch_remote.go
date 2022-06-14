@@ -63,7 +63,7 @@ Examples:
 		// may as well validate it at the same time so we don't even have to go to
 		// the backend if it's invalid.
 		ui.ParsingBatchSpec()
-		spec, raw, err := parseBatchSpec(file, svc)
+		spec, raw, err := parseBatchSpec(file, svc, true)
 		if err != nil {
 			ui.ParsingBatchSpecFailure(err)
 			return err

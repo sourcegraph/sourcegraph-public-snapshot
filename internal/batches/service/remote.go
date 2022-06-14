@@ -16,7 +16,7 @@ func (svc *Service) areServerSideBatchChangesSupported() error {
 }
 
 const upsertBatchSpecInputQuery = `
-mutation CreateBatchSpecFromRaw(
+mutation UpsertBatchSpecInput(
     $batchSpec: String!,
     $namespace: ID!,
     $allowIgnored: Boolean!,

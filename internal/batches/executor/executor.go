@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/neelance/parallel"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/src-cli/internal/batches/log"
@@ -62,6 +63,7 @@ type newExecutorOpts struct {
 	Parallelism          int
 	Timeout              time.Duration
 	TempDir              string
+	AllowPathMounts      bool
 	WriteStepCacheResult func(ctx context.Context, stepResult execution.AfterStepResult, task *Task) error
 }
 
@@ -147,7 +149,7 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 	ui.TaskStarted(task)
 
 	// Let's set up our logging.
-	log, err := x.opts.Logger.AddTask(util.SlugForPathInRepo(task.Repository.Name, task.Repository.Rev(), task.Path))
+	l, err := x.opts.Logger.AddTask(util.SlugForPathInRepo(task.Repository.Name, task.Repository.Rev(), task.Path))
 	if err != nil {
 		return errors.Wrap(err, "creating log file")
 	}
@@ -155,12 +157,12 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 		if err != nil {
 			err = TaskExecutionErr{
 				Err:        err,
-				Logfile:    log.Path(),
+				Logfile:    l.Path(),
 				Repository: task.Repository.Name,
 			}
-			log.MarkErrored()
+			l.MarkErrored()
 		}
-		log.Close()
+		l.Close()
 	}()
 
 	// Now checkout the archive.
@@ -172,11 +174,12 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 
 	// Actually execute the steps.
 	opts := &executionOpts{
-		task:        task,
-		logger:      log,
-		wc:          x.opts.Creator,
-		ensureImage: x.opts.EnsureImage,
-		tempDir:     x.opts.TempDir,
+		task:            task,
+		logger:          l,
+		wc:              x.opts.Creator,
+		ensureImage:     x.opts.EnsureImage,
+		tempDir:         x.opts.TempDir,
+		allowPathMounts: x.opts.AllowPathMounts,
 
 		ui:                   ui.StepsExecutionUI(task),
 		writeStepCacheResult: x.opts.WriteStepCacheResult,
