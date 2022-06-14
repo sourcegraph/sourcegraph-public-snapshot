@@ -303,7 +303,7 @@ There is a tight coupling between the respective database service accounts for t
 
 By default, the migrations that Sourcegraph runs expect `SUPERUSER` permissions. Sourcegraph migrations contain SQL that enable extensions and modify roles.
 
-> NOTE: On AWS RDS, you will need to move your database account to the `rds_superuser` role group to perform the operations below because RDS doesn't grant SUPERUSER privileges to user database accounts.
+> NOTE: On AWS RDS, you will need to perform the operations below using the `rds_superuser` role because RDS does not grant SUPERUSER privileges to user database accounts.
 
 This may not be acceptable in all environments. At minimum we expect that the `PGUSER` and `CODEINTEL_PGUSER` have the `ALL` permissions on `PGDATABASE` and `CODEINTEL_PGDATABASE` respectively.
 
