@@ -10,7 +10,6 @@ import {
     QueryState,
     SearchPatternType,
 } from '@sourcegraph/search'
-import { SearchBox } from '@sourcegraph/search-ui'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
@@ -28,6 +27,7 @@ import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
 
+import { JetBrainsSearchBox } from './input/JetBrainsSearchBox'
 import { saveLastSearch } from './js-to-java-bridge'
 import { SearchResultList } from './results/SearchResultList'
 import { StatusBar } from './StatusBar'
@@ -212,7 +212,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                             onSubmit()
                         }}
                     >
-                        <SearchBox
+                        <JetBrainsSearchBox
                             caseSensitive={lastSearch.caseSensitive}
                             setCaseSensitivity={caseSensitive => onSubmit({ caseSensitive })}
                             patternType={lastSearch.patternType}
