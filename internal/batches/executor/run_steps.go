@@ -121,8 +121,12 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 			stepContext.Steps.Changes = previousStepResult.Files
 			stepContext.Outputs = opts.task.CachedResult.Outputs
 
-			if err := ws.ApplyDiff(ctx, []byte(opts.task.CachedResult.Diff)); err != nil {
-				return execResult, nil, errors.Wrap(err, "getting changed files in step")
+			// If the previous steps made any modifications in the workspace yet,
+			// apply them.
+			if opts.task.CachedResult.Diff != "" {
+				if err := ws.ApplyDiff(ctx, []byte(opts.task.CachedResult.Diff)); err != nil {
+					return execResult, nil, errors.Wrap(err, "getting changed files in step")
+				}
 			}
 		}
 

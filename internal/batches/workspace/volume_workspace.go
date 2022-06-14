@@ -279,6 +279,8 @@ exec git diff --cached --no-prefix --binary
 func (w *dockerVolumeWorkspace) ApplyDiff(ctx context.Context, diff []byte) error {
 	script := fmt.Sprintf(`#!/bin/sh
 
+set -e
+
 cat <<'EOF' | exec git apply -p0 -
 %s
 EOF
@@ -322,11 +324,15 @@ func (w *dockerVolumeWorkspace) runScript(ctx context.Context, target, script st
 	if _, err := f.WriteString(script); err != nil {
 		return nil, errors.Wrap(err, "writing run script")
 	}
-	f.Close()
+	if err := f.Close(); err != nil {
+		return nil, errors.Wrap(err, "closing run script")
+	}
 
 	// Sidestep any umask issues on the temporary file by always making it
 	// executable by everyone.
-	os.Chmod(name, 0755)
+	if err := os.Chmod(name, 0755); err != nil {
+		return nil, errors.Wrap(err, "chmodding run script")
+	}
 
 	common, err := w.DockerRunOpts(ctx, target)
 	if err != nil {

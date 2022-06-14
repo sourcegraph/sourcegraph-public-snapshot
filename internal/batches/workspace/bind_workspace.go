@@ -172,8 +172,8 @@ func (w *dockerBindWorkspace) ApplyDiff(ctx context.Context, diff []byte) error 
 	}
 
 	// Apply diff
-	if _, err = runGitCmd(ctx, w.dir, "apply", "-p0", tmp.Name()); err != nil {
-		return errors.Wrap(err, "applying cached diff")
+	if out, err := runGitCmd(ctx, w.dir, "apply", "-p0", tmp.Name()); err != nil {
+		return errors.Wrapf(err, "applying cached diff: %s", string(out))
 	}
 
 	// Add all files to index

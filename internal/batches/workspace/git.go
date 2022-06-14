@@ -27,7 +27,7 @@ func runGitCmd(ctx context.Context, dir string, args ...string) ([]byte, error) 
 	cmd.Dir = dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, errors.Wrapf(err, "'git %s' failed: %s", strings.Join(args, " "), out)
+		return out, errors.Wrapf(err, "'git %s' failed: %s", strings.Join(args, " "), out)
 	}
 	return out, nil
 }
