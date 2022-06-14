@@ -33,54 +33,53 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
 
     public void setContent(@Nullable PreviewContent previewContent) {
         ApplicationManager.getApplication().invokeLater(() -> {
-            synchronized (this) { // Making sure that this is not run twice in parallel
-                if (previewContent == null) {
-                    clearContent();
-                    return;
-                }
-
-                if (editorComponent != null && previewContent.equals(this.previewContent)) {
-                    return;
-                }
-
-                String fileContent = previewContent.getContent();
-
-                /* If no content, just show "No preview available" */
-                if (fileContent == null || previewContent.getVirtualFile() == null) {
-                    clearContent();
-                    return;
-                }
-
-                this.previewContent = previewContent;
-
-                if (editorComponent != null) {
-                    remove(editorComponent);
-                }
-                if (editor != null) {
-                    EditorFactory.getInstance().releaseEditor(editor);
-                }
-                EditorFactory editorFactory = EditorFactory.getInstance();
-                Document document = editorFactory.createDocument(fileContent);
-                document.setReadOnly(true);
-
-                editor = editorFactory.createEditor(document, project, previewContent.getVirtualFile(), true, EditorKind.MAIN_EDITOR);
-
-                EditorSettings settings = editor.getSettings();
-                settings.setLineMarkerAreaShown(true);
-                settings.setFoldingOutlineShown(false);
-                settings.setAdditionalColumnsCount(0);
-                settings.setAdditionalLinesCount(0);
-                settings.setAnimatedScrolling(false);
-                settings.setAutoCodeFoldingEnabled(false);
-
-                editorComponent = editor.getComponent();
-                add(editorComponent, BorderLayout.CENTER);
-
-                revalidate();
-                repaint();
-
-                addAndScrollToHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
+            if (previewContent == null) {
+                clearContent();
+                return;
             }
+
+            if (editorComponent != null && previewContent.equals(this.previewContent)) {
+                return;
+            }
+
+            String fileContent = previewContent.getContent();
+
+            /* If no content, just show "No preview available" */
+            if (fileContent == null || previewContent.getVirtualFile() == null) {
+                clearContent();
+                return;
+            }
+
+            this.previewContent = previewContent;
+
+            if (editorComponent != null) {
+                remove(editorComponent);
+                validate();
+            }
+            if (editor != null) {
+                EditorFactory.getInstance().releaseEditor(editor);
+            }
+            EditorFactory editorFactory = EditorFactory.getInstance();
+            Document document = editorFactory.createDocument(fileContent);
+            document.setReadOnly(true);
+
+            editor = editorFactory.createEditor(document, project, previewContent.getVirtualFile(), true, EditorKind.MAIN_EDITOR);
+
+            EditorSettings settings = editor.getSettings();
+            settings.setLineMarkerAreaShown(true);
+            settings.setFoldingOutlineShown(false);
+            settings.setAdditionalColumnsCount(0);
+            settings.setAdditionalLinesCount(0);
+            settings.setAnimatedScrolling(false);
+            settings.setAutoCodeFoldingEnabled(false);
+
+            editorComponent = editor.getComponent();
+            add(editorComponent, BorderLayout.CENTER);
+
+            validate();
+            repaint();
+
+            addAndScrollToHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
         });
     }
 
