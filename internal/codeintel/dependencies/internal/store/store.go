@@ -531,14 +531,11 @@ func (s *store) LockfileDependents(ctx context.Context, repoName, commit string)
 const lockfileDependentsQuery = `
 -- source: internal/codeintel/dependencies/internal/store/store.go:LockfileDependents
 SELECT r.name, encode(lf.commit_bytea, 'hex') AS commit
-FROM codeintel_lockfiles lf
+FROM codeintel_lockfile_references lr
+JOIN codeintel_lockfiles lf ON LF.codeintel_lockfile_reference_ids @> ARRAY [ lr.id ] AND lf.resolution_id = lr.resolution_id
 JOIN repo r ON r.id = lf.repository_id
-WHERE lf.codeintel_lockfile_reference_ids @> (
-	SELECT array_agg(lr.id)
-	FROM codeintel_lockfile_references lr
-	JOIN repo r ON r.id = lr.repository_id
-	WHERE r.name = %s AND commit_bytea = %s
-)
+JOIN repo rr ON rr.id = lr.repository_id
+WHERE rr.name = %s AND lr.commit_bytea = %s
 ORDER BY r.name, lf.commit_bytea
 `
 
