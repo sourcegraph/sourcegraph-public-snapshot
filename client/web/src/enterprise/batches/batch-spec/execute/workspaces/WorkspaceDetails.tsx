@@ -375,7 +375,10 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
 
     return (
         <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded} openByDefault={true}>
-            <CollapseHeader as={Button} className="w-100 p-0 m-0 d-flex align-items-center justify-space-between">
+            <CollapseHeader
+                as={Button}
+                className="w-100 p-0 m-0 border-0 d-flex align-items-center justify-content-between"
+            >
                 <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} className="mr-1" />
                 <div className={styles.collapseHeader}>
                     <H4 className="mb-0 d-inline-block mr-2">
@@ -401,7 +404,7 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                             <strong>Published:</strong> <PublishedValue published={node.description.published} />
                         </Text>
                         <Collapse isOpen={areChangesExpanded} onOpenChange={setAreChangesExpanded} openByDefault={true}>
-                            <CollapseHeader as={Button} className="w-100 p-0 m-0 d-flex align-items-center">
+                            <CollapseHeader as={Button} className="w-100 p-0 m-0 border-0 d-flex align-items-center">
                                 <Icon
                                     aria-hidden={true}
                                     as={areChangesExpanded ? ChevronDownIcon : ChevronRightIcon}
@@ -491,7 +494,10 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
 
     return (
         <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded}>
-            <CollapseHeader as={Button} className="w-100 p-0 m-0 d-flex align-items-center justify-space-between">
+            <CollapseHeader
+                as={Button}
+                className="w-100 p-0 m-0 border-0 d-flex align-items-center justify-content-between"
+            >
                 <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} className="mr-1" />
                 <div className={classNames(styles.collapseHeader, step.skipped && 'text-muted')}>
                     <StepStateIcon step={step} />
