@@ -182,7 +182,7 @@ func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *
 		return nil, err
 	}
 	if len(streamResults.Errors) > 0 {
-		return nil, StreamingError{Type: types.SearchCompute, Messages: streamResults.Errors}
+		return nil, classifiedError(streamResults.Errors, types.SearchCompute)
 	}
 	if len(streamResults.Alerts) > 0 {
 		return nil, errors.Errorf("compute streaming search: alerts: %v", streamResults.Alerts)
@@ -306,7 +306,7 @@ func (r *workHandler) generateSearchRecordingsStream(ctx context.Context, job *J
 		log15.Error("insights query issue", "reasons", tr.SkippedReasons, "query", job.SearchQuery)
 	}
 	if len(tr.Errors) > 0 {
-		return nil, StreamingError{Messages: tr.Errors}
+		return nil, classifiedError(tr.Errors, types.Search)
 	}
 	if len(tr.Alerts) > 0 {
 		return nil, errors.Errorf("streaming search: alerts: %v", tr.Alerts)
