@@ -96,7 +96,10 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
     private void clearContent() {
         if (editorComponent != null) {
             previewContent = null;
-            editorComponent.setVisible(false);
+            remove(editorComponent);
+            validate();
+            repaint();
+            editorComponent = null;
         }
     }
 
