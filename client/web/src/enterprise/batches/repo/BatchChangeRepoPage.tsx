@@ -65,9 +65,11 @@ export const BatchChangeRepoPage: React.FunctionComponent<React.PropsWithChildre
                 }
             />
             {hasChangesets && stats?.batchChangesDiffStat && stats?.changesetsStats ? (
-                <div className="d-flex align-items-center mt-4 mb-3">
-                    <H2 className="mb-0 pb-1">{repoDisplayName}</H2>
-                    <DiffStat className="d-flex flex-1 ml-2" expandedCounts={true} {...stats.batchChangesDiffStat} />
+                <div className="mt-4 mb-3 d-flex align-items-center">
+                    <H2 className="pb-1 mb-0">{repoDisplayName}</H2>
+                    <div className="flex-1 ml-2 d-flex">
+                        <DiffStat expandedCounts={true} {...stats.batchChangesDiffStat} />
+                    </div>
                     <StatsBar stats={stats.changesetsStats} />
                 </div>
             ) : null}
@@ -92,7 +94,7 @@ interface StatsBarProps {
 const StatsBar: React.FunctionComponent<React.PropsWithChildren<StatsBarProps>> = ({
     stats: { total, draft, open, unpublished, closed, merged },
 }) => (
-    <div className="d-flex flex-wrap align-items-center">
+    <div className="flex-wrap d-flex align-items-center">
         <BatchChangeStatsTotalAction count={total} />
         <ChangesetStatusOpen className={ACTION_CLASSNAMES} label={`${(draft + open).toString()} Open`} />
         <ChangesetStatusUnpublished className={ACTION_CLASSNAMES} label={`${unpublished} Unpublished`} />
