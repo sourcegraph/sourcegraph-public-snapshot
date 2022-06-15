@@ -38,10 +38,11 @@ func TestIndexReposThenSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() {
-		err := client.DeleteExternalService(esID, false)
-		if err != nil {
-			t.Fatal(err)
-		}
+		// err := client.DeleteExternalService(esID, false)
+		// if err != nil {
+		// 	t.Fatal(err)
+		// }
+		println(esID)
 	}()
 
 	err = waitForReposToBeIndexed(client, hugeReposList...)
@@ -69,7 +70,7 @@ func TestIndexReposThenSearch(t *testing.T) {
 }
 
 func waitForReposToBeIndexed(c *gqltestutil.Client, repos ...string) error {
-	timeout := 300 * time.Second
+	timeout := 3000 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
