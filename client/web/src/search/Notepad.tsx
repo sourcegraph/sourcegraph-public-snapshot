@@ -564,7 +564,10 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
             <div className="d-flex">
                 <span className="flex-shrink-0 text-muted mr-1">{icon}</span>
                 <span className="flex-1">
-                    <Link to={typeof location === 'string' ? location : createLinkUrl(location)} className="p-0">
+                    <Link
+                        to={typeof location === 'string' ? location : createLinkUrl(location)}
+                        className="text-monospace search-query-link"
+                    >
                         {title}
                     </Link>
                 </span>
@@ -633,7 +636,7 @@ function getUIComponentsForEntry(
     switch (entry.type) {
         case 'search':
             return {
-                icon: <Icon aria-hidden={true} as={SearchIcon} />,
+                icon: <Icon aria-label="Search" as={SearchIcon} />,
                 title: <SyntaxHighlightedSearchQuery query={entry.query} />,
                 location: {
                     pathname: '/search',
@@ -647,7 +650,7 @@ function getUIComponentsForEntry(
             }
         case 'file':
             return {
-                icon: <Icon aria-hidden={true} as={entry.lineRange ? CodeBracketsIcon : FileDocumentOutlineIcon} />,
+                icon: <Icon aria-label="File" as={entry.lineRange ? CodeBracketsIcon : FileDocumentOutlineIcon} />,
                 title: (
                     <span title={entry.path}>
                         {fileName(entry.path)}
