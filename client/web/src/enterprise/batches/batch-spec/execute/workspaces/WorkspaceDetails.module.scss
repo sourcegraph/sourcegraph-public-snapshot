@@ -30,15 +30,7 @@
     background-color: var(--body-bg);
 }
 
-.collapsible {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.step-header {
+.collapse-header {
     display: flex;
     align-items: center;
     flex: 1;
@@ -57,18 +49,19 @@
     margin: 0 0.5rem;
 }
 
-.step-command {
+.step-command,
+.changeset-spec-branch {
     min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 0.75rem;
-    line-height: 0.75rem;
+    line-height: 0.7rem;
 }
 
 .step-time {
     font-size: 0.75rem;
-    line-height: 0.75rem;
+    line-height: 0.7rem;
 }
 
 .step-diff-stat {
