@@ -32,14 +32,14 @@ const getProps = (
     if (step.exitCode === 0) {
         return ['text-success', CheckBoldIcon, 'This step finished running successfully.']
     }
-    return ['text-danger', AlertCircleIcon, `This step failed with exit code ${String(step.exitCode)}`]
+    return ['text-danger', AlertCircleIcon, `This step failed with exit code ${String(step.exitCode)}.`]
 }
 
 export const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIconProps>> = ({ step }) => {
     const [classNameVariant, IconElement, label] = getProps(step)
 
     return (
-        <div className="flex-shrink-0">
+        <div className="d-flex flex-shrink-0">
             <Tooltip content={label} placement="bottom">
                 <Icon className={classNameVariant} aria-label={label} as={IconElement} />
             </Tooltip>
