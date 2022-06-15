@@ -10,6 +10,7 @@ interface UseSeriesToggleReturn {
     isSeriesHovered: (id: string) => boolean
     setHoveredId: Dispatch<SetStateAction<string | undefined>>
     toggle: (id: string, availableSeriesIds: string[]) => void
+    setSelectedSeriesIds: Dispatch<SetStateAction<string[]>>
 }
 
 // Used when clicking legend items in a line chart. This hook manages the currently
@@ -51,5 +52,6 @@ export const useSeriesToggle = (): UseSeriesToggleReturn => {
         isSeriesHovered: (seriesId: string) => seriesId === hoveredId,
         setHoveredId,
         toggle,
+        setSelectedSeriesIds,
     }
 }
