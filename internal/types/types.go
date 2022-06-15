@@ -1433,6 +1433,14 @@ type CodeMonitoringUsageStatistics struct {
 	CreateCodeMonitorPageViewsWithoutTriggerQuery *int32
 	ManageCodeMonitorPageViews                    *int32
 	CodeMonitorEmailLinkClicks                    *int32
+	ExampleMonitorClicked                         *int32
+	GettingStartedPageViewed                      *int32
+	ManageFormSubmitted                           *int32
+	ManageDeleteSubmitted                         *int32
+	LogsPageViewed                                *int32
+	SlackActionSaved                              *int32
+	WebhookActionSaved                            *int32
+	EmailActionSaved                              *int32
 	EmailActionsTriggered                         *int32
 	EmailActionsErrored                           *int32
 	EmailActionsTriggeredUniqueUsers              *int32
