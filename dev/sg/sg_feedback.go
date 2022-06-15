@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"net/url"
 	"os"
 	"strings"
@@ -68,57 +67,26 @@ func feedbackExec(ctx *cli.Context) error {
 func gatherFeedback(ctx *cli.Context) (string, string, error) {
 	std.Out.WriteNoticef("Gathering feedback for sg %s", ctx.Command.FullName())
 
+	reader := bufio.NewReader(os.Stdin)
 	fmt.Println("What is the title of your feedback ?")
-	title, err := readUntilDelim(os.Stdin, '\n')
-
-	fmt.Println("Write your feedback below and press <CTRL+D> when you're done.")
-	body, err := readUntilEOF(os.Stdin)
+	title, err := reader.ReadString('\n')
 	if err != nil {
 		return "", "", err
 	}
 
-	return title, body, nil
-}
-
-func readUntilEOF(r io.Reader) (string, error) {
-	reader := bufio.NewReader(r)
-
-	readFunc := func() (string, error) { return reader.ReadString('\n') }
-
-	var eofFunc stopReadFunc = func(data string, err error) bool {
-		if err != nil {
-			return true
-		}
-		return false
-	}
-
-	return readUntil(readFunc, eofFunc)
-}
-
-func readUntilDelim(r io.Reader, delim byte) (string, error) {
-	reader := bufio.NewReader(r)
-
-	readFunc := func() (string, error) { return reader.ReadString(delim) }
-	var firstReadStop stopReadFunc = func(data string, err error) bool {
-		return true
-	}
-
-	return readUntil(readFunc, firstReadStop)
-
-}
-
-func readUntil(readFunc func() (string, error), stopRead stopReadFunc) (string, error) {
-	var data string
+	fmt.Println("Write your feedback below and press <CTRL+D> when you're done.")
+	var sb strings.Builder
 	for {
-		line, err := readFunc()
-		data = data + line
-
-		if stopRead(data, err) {
+		line, err := reader.ReadString('\n')
+		sb.WriteString(line)
+		sb.WriteByte('\n')
+		if err != nil {
 			break
 		}
 	}
+	body := sb.String()
 
-	return data, nil
+	return title, body, nil
 }
 
 func addSGInformation(ctx *cli.Context, body string) string {
