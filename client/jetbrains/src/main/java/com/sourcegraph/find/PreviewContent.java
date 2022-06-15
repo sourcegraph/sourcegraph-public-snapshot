@@ -147,10 +147,10 @@ public class PreviewContent {
         return relativeUrl;
     }
 
-    @Nullable
+    @NotNull
     public VirtualFile getVirtualFile() {
-        if (virtualFile == null && content != null) {
-            virtualFile = new LightVirtualFile(fileName != null ? fileName : "", Objects.requireNonNull(getContent()));
+        if (virtualFile == null) {
+            virtualFile = new LightVirtualFile(fileName != null ? fileName : "", content != null ? Objects.requireNonNull(getContent()) : "");
         }
         return virtualFile;
     }
@@ -197,7 +197,7 @@ public class PreviewContent {
     private void openInEditor() {
         assert fileName != null;
         // Open file in editor
-        virtualFile = new LightVirtualFile(fileName, Objects.requireNonNull(content));
+        virtualFile = getVirtualFile();
         OpenFileDescriptor openFileDescriptor = new OpenFileDescriptor(project, virtualFile, 0);
         FileEditorManager.getInstance(project).openTextEditor(openFileDescriptor, true);
 

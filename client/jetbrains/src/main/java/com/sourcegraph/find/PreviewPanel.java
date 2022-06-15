@@ -43,7 +43,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         String fileContent = previewContent.getContent();
 
         /* If no content, just show "No preview available" */
-        if (fileContent == null || previewContent.getVirtualFile() == null) {
+        if (fileContent == null) {
             clearContent();
             return;
         }
