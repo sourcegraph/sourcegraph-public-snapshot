@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/iancoleman/strcase"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
@@ -29,15 +31,17 @@ type MigrationFiles struct {
 }
 
 // makeMigrationFilenames makes a pair of (absolute) paths to migration files with the given migration index.
-func makeMigrationFilenames(database db.Database, migrationIndex int) (MigrationFiles, error) {
+func makeMigrationFilenames(database db.Database, migrationIndex int, name string) (MigrationFiles, error) {
 	baseDir, err := migrationDirectoryForDatabase(database)
 	if err != nil {
 		return MigrationFiles{}, err
 	}
 
-	upPath := filepath.Join(baseDir, fmt.Sprintf("%d/up.sql", migrationIndex))
-	downPath := filepath.Join(baseDir, fmt.Sprintf("%d/down.sql", migrationIndex))
-	metadataPath := filepath.Join(baseDir, fmt.Sprintf("%d/metadata.yaml", migrationIndex))
+	sanitizedName := strcase.ToSnake(name)
+
+	upPath := filepath.Join(baseDir, fmt.Sprintf("%d_%s/up.sql", migrationIndex, sanitizedName))
+	downPath := filepath.Join(baseDir, fmt.Sprintf("%d_%s/down.sql", migrationIndex, sanitizedName))
+	metadataPath := filepath.Join(baseDir, fmt.Sprintf("%d_%s/metadata.yaml", migrationIndex, sanitizedName))
 	return MigrationFiles{upPath, downPath, metadataPath}, nil
 }
 
