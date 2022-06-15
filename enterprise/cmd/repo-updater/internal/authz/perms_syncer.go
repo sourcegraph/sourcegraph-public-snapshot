@@ -262,12 +262,16 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 	logger := s.logger.Scoped("maybeRefreshGitLabOAuthTokenFromAccount", "").With(log.Int32("externalAccountID", acct.ID))
 
 	var oauthConfig *oauth2.Config
+	expiryWindow := 10 * time.Minute
 	for _, authProvider := range conf.SiteConfig().AuthProviders {
 		if authProvider.Gitlab == nil ||
 			strings.TrimSuffix(acct.ServiceID, "/") != strings.TrimSuffix(authProvider.Gitlab.Url, "/") {
 			continue
 		}
 		oauthConfig = oauth2ConfigFromGitLabProvider(authProvider.Gitlab)
+		if authProvider.Gitlab.TokenRefreshWindowMinutes > 0 {
+			expiryWindow = time.Duration(authProvider.Gitlab.TokenRefreshWindowMinutes) * time.Minute
+		}
 		break
 	}
 	if oauthConfig == nil {
@@ -281,6 +285,10 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 	} else if tok == nil {
 		return errors.New("no token found in the external account data")
 	}
+
+	// The default window for the oauth2 library is only 10 seconds, we extend this
+	// to give ourselves a better chance of not having a token expire.
+	tok.Expiry = tok.Expiry.Add(expiryWindow)
 
 	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
 	if err != nil {
@@ -307,13 +315,38 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 //
 // It returns a list of internal database repository IDs and is a noop when
 // `envvar.SourcegraphDotComMode()` is true.
-func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, user *types.User, accts []*extsvc.Account, noPerms bool, fetchOpts authz.FetchPermsOptions) (repoIDs []uint32, subRepoPerms map[api.ExternalRepoSpec]*authz.SubRepoPermissions, err error) {
+func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, user *types.User, noPerms bool, fetchOpts authz.FetchPermsOptions) (repoIDs []uint32, subRepoPerms map[api.ExternalRepoSpec]*authz.SubRepoPermissions, err error) {
 	// NOTE: OAuth scope on sourcegraph.com does not grant access to read private
 	//  repositories, therefore it is no point wasting effort and code host API rate
 	//  limit quota on trying.
 	if envvar.SourcegraphDotComMode() {
 		return []uint32{}, nil, nil
 	}
+
+	// Update tokens stored in external accounts
+	accts, err := s.db.UserExternalAccounts().List(ctx,
+		database.ExternalAccountsListOptions{
+			UserID:         user.ID,
+			ExcludeExpired: true,
+		},
+	)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "list external accounts")
+	}
+
+	// We also want to include any expired accounts for GitLab as they can be
+	// refreshed
+	expireGitLabAccounts, err := s.db.UserExternalAccounts().List(ctx,
+		database.ExternalAccountsListOptions{
+			UserID:      user.ID,
+			ServiceType: extsvc.TypeGitLab,
+			OnlyExpired: true,
+		},
+	)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "list expired gitlab external accounts")
+	}
+	accts = append(accts, expireGitLabAccounts...)
 
 	serviceToAccounts := make(map[string]*extsvc.Account)
 	for _, acct := range accts {
@@ -337,7 +370,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 	byServiceID := s.providersByServiceID()
 	accounts := s.db.UserExternalAccounts()
-	logger := s.logger.Scoped("fetchUserPermsViaExternalServices", "sync permissions using external accounts (loging connections)").With(log.Int32("userID", user.ID))
+	logger := s.logger.Scoped("fetchUserPermsViaExternalServices", "sync permissions using external accounts (logging connections)").With(log.Int32("userID", user.ID))
 
 	// Check if the user has an external account for every authz provider respectively,
 	// and try to fetch the account when not.
@@ -383,6 +416,14 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 		if err := s.waitForRateLimit(ctx, provider.URN(), 1, "user"); err != nil {
 			return nil, nil, errors.Wrap(err, "wait for rate limiter")
+		}
+
+		// Refresh the token after waiting for the rate limit to give us the best chance of it being valid
+		logger.Debug("maybe refresh account token", log.Int32("accountID", acct.ID))
+		if err := s.maybeRefreshGitLabOAuthTokenFromAccount(ctx, acct); err != nil {
+			// This should not be a fatal error, we should still try to sync from other accounts
+			acctLogger.Warn("failed to refresh GitLab token", log.Error(err))
+			continue
 		}
 
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
@@ -512,7 +553,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 // fetchUserPermsViaExternalServices uses user code connections to list all
 // accessible private repositories on code hosts for the given user.
 func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, userID int32, fetchOpts authz.FetchPermsOptions) (repoIDs []uint32, err error) {
-	logger := s.logger.Scoped("fetchUserPermsViaExternalAccounts", "sync permissions using code host connections").With(log.Int32("userID", userID))
+	logger := s.logger.Scoped("fetchUserPermsViaExternalServices", "sync permissions using code host connections").With(log.Int32("userID", userID))
 
 	has, err := s.permsStore.UserIsMemberOfOrgHasCodeHostConnection(ctx, userID)
 	if err != nil {
@@ -669,24 +710,6 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "get user")
 	}
 
-	// Update tokens stored in external accounts
-	accts, err := s.db.UserExternalAccounts().List(ctx,
-		database.ExternalAccountsListOptions{
-			UserID:         user.ID,
-			ExcludeExpired: true,
-		},
-	)
-	if err != nil {
-		return errors.Wrap(err, "list external accounts")
-	}
-
-	for _, acct := range accts {
-		logger.Debug("maybe refresh account", log.Int32("accountID", acct.ID))
-		if err := s.maybeRefreshGitLabOAuthTokenFromAccount(ctx, acct); err != nil {
-			return errors.Wrap(err, "refreshing GitLab OAuth token for account")
-		}
-	}
-
 	// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
 	//  table, the user has proven that they have read access to the repository.
 	repoIDs, err := s.reposStore.ListExternalServicePrivateRepoIDsByUserID(ctx, user.ID)
@@ -694,7 +717,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "list external service repo IDs by user ID")
 	}
 
-	externalAccountsRepoIDs, subRepoPerms, err := s.fetchUserPermsViaExternalAccounts(ctx, user, accts, noPerms, fetchOpts)
+	externalAccountsRepoIDs, subRepoPerms, err := s.fetchUserPermsViaExternalAccounts(ctx, user, noPerms, fetchOpts)
 	if err != nil {
 		return errors.Wrap(err, "fetch user permissions via external accounts")
 	}
