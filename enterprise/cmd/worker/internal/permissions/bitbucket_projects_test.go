@@ -159,6 +159,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// set permissions for 3 users (2 existing, 1 pending) and 2 repos
 	err = h.setPermissionsForUsers(
 		ctx,
+		log.Scoped("test", "test"),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
@@ -168,6 +169,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 			1,
 			2,
 		},
+		"foo",
 	)
 	require.NoError(t, err)
 	check()
@@ -175,6 +177,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// run the same set of permissions again, shouldn't change anything
 	err = h.setPermissionsForUsers(
 		ctx,
+		log.Scoped("test", "test"),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
@@ -184,6 +187,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 			1,
 			2,
 		},
+		"foo",
 	)
 	require.NoError(t, err)
 	check()
@@ -191,6 +195,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// test with wrong bindids
 	err = h.setPermissionsForUsers(
 		ctx,
+		log.Scoped("test", "test"),
 		[]types.UserPermission{
 			{BindID: "pushpa", Permission: "read"},
 			{BindID: "igor", Permission: "read"},
@@ -200,6 +205,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 			1,
 			2,
 		},
+		"foo",
 	)
 	// should fail if the bind ids are wrong
 	require.Error(t, err)
@@ -211,6 +217,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// run the same set of permissions again
 	err = h.setPermissionsForUsers(
 		ctx,
+		log.Scoped("test", "test"),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
@@ -220,6 +227,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 			1,
 			2,
 		},
+		"foo",
 	)
 	require.NoError(t, err)
 	check()

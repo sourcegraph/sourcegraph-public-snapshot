@@ -80,6 +80,7 @@ type bitbucketProjectPermissionsHandler struct {
 
 // Handle implements the workerutil.Handler interface.
 func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
+	logger = logger.Scoped("bitbucketProjectPermissionsHandler", "handles jobs to apply explicit permissions to all repositories of a Bitbucket Project")
 	defer func() {
 		if err != nil {
 			logger.Error("bitbucketProjectPermissionsHandler.Handle", log.Error(err))
@@ -105,7 +106,7 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 	}
 
 	if job.Unrestricted {
-		return h.setReposUnrestricted(ctx, repos, job.ProjectKey)
+		return h.setReposUnrestricted(ctx, logger, repos, job.ProjectKey)
 	}
 
 	repoIDs := make([]api.RepoID, len(repos))
@@ -113,7 +114,7 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 		repoIDs[i] = api.RepoID(repo.ID)
 	}
 
-	err = h.setPermissionsForUsers(ctx, job.Permissions, repoIDs)
+	err = h.setPermissionsForUsers(ctx, logger, job.Permissions, repoIDs, job.ProjectKey)
 	if err != nil {
 		return errors.Wrapf(err, "failed to set permissions for Bitbucket Project %q", job.ProjectKey)
 	}
@@ -146,7 +147,7 @@ func (h *bitbucketProjectPermissionsHandler) getBitbucketClient(ctx context.Cont
 	return bitbucketserver.NewClient(svc.URN(), &c, cli)
 }
 
-func (h *bitbucketProjectPermissionsHandler) setReposUnrestricted(ctx context.Context, repos []*bitbucketserver.Repo, projectKey string) error {
+func (h *bitbucketProjectPermissionsHandler) setReposUnrestricted(ctx context.Context, logger log.Logger, repos []*bitbucketserver.Repo, projectKey string) error {
 	sort.Slice(repos, func(i, j int) bool {
 		return repos[i].ID < repos[j].ID
 	})
@@ -154,6 +155,8 @@ func (h *bitbucketProjectPermissionsHandler) setReposUnrestricted(ctx context.Co
 	for i, repo := range repos {
 		repoIDs[i] = int32(repo.ID)
 	}
+
+	logger.Info("Setting bitbucket repositories to unrestricted", log.String("project_key", projectKey))
 
 	err := h.db.Perms().SetRepoPermissionsUnrestricted(ctx, repoIDs, true)
 	if err != nil {
@@ -168,7 +171,7 @@ func (h *bitbucketProjectPermissionsHandler) setReposUnrestricted(ctx context.Co
 // Each repo is processed atomically. In case of error, the task fails but doesn't rollback the committed changes
 // done on previous repos. This is fine because when the task is retried, previous repos won't incur any
 // additional writes.
-func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.Context, perms []types.UserPermission, repoIDs []api.RepoID) error {
+func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.Context, logger log.Logger, perms []types.UserPermission, repoIDs []api.RepoID, projectKey string) error {
 	sort.Slice(perms, func(i, j int) bool {
 		return perms[i].BindID < perms[j].BindID
 	})
@@ -203,6 +206,8 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 			pendingBindIDs = append(pendingBindIDs, bindID)
 		}
 	}
+
+	logger.Info("Applying permissions to Bitbucket project repositories", log.String("project_key", projectKey))
 
 	// apply the permissions for each repo
 	for _, repoID := range repoIDs {
