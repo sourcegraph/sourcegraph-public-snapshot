@@ -32,7 +32,7 @@ func stringifyStreamingError(messages []string, streamingType types.GenerationMe
 
 func classifiedError(messages []string, streamingType types.GenerationMethod) error {
 	for _, m := range messages {
-		if strings.Contains(m, "invalid query") || strings.Contains(m, "dial tcp") {
+		if strings.Contains(m, "invalid query") {
 			return TerminalStreamingError{Type: streamingType, Messages: messages}
 		}
 	}
