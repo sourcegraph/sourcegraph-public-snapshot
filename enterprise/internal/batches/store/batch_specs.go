@@ -563,6 +563,33 @@ AND NOT EXISTS (
 )
 `
 
+// GetBatchSpecDiffStat calculates the total diff stat for the batch spec based
+// on the changeset spec columns.
+func (s *Store) GetBatchSpecDiffStat(ctx context.Context, id int64) (added, changed, deleted int64, err error) {
+	ctx, _, endObservation := s.operations.getBatchSpecDiffStat.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(getTotalDiffStatQueryFmtstr, id)
+	row := s.QueryRow(ctx, q)
+	err = row.Scan(&added, &deleted, &changed)
+	return added, deleted, changed, err
+}
+
+const getTotalDiffStatQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_specs.go:GetTotalDiffStat
+SELECT
+	SUM(diff_stat_added) AS added,
+	SUM(diff_stat_changed) AS changed,
+	SUM(diff_stat_deleted) AS deleted
+FROM
+	changeset_specs
+INNER JOIN
+	repo ON repo.id = changeset_specs.repo_id
+WHERE
+	repo.deleted_at IS NULL
+	AND batch_spec_id = %s
+`
+
 func scanBatchSpec(c *btypes.BatchSpec, s dbutil.Scanner) error {
 	var spec json.RawMessage
 
