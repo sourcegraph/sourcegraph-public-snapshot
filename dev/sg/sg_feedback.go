@@ -22,7 +22,7 @@ var feedbackEditor string
 
 var feedbackCommand = &cli.Command{
 	Name:     "feedback",
-	Usage:    "opens up a Github disccussion page to provide feedback about sg",
+	Usage:    "opens up a Github discussion page to provide feedback about sg",
 	Category: CategoryCompany,
 	Action:   feedbackExec,
 }
