@@ -2,7 +2,6 @@ package codeintel
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
 
 	"github.com/opentracing/opentracing-go"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
@@ -118,7 +118,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	}, nil
 }
 
-func mustInitializeCodeIntelDB(logger log.Logger) *sql.DB {
+func mustInitializeCodeIntelDB(logger log.Logger) stores.CodeIntelDB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
@@ -126,7 +126,7 @@ func mustInitializeCodeIntelDB(logger log.Logger) *sql.DB {
 	if err != nil {
 		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
 	}
-	return db
+	return stores.NewCodeIntelDB(db)
 }
 
 func mustInitializeSentryHub(logger log.Logger, c conftypes.WatchableSiteConfig) *sentry.Hub {

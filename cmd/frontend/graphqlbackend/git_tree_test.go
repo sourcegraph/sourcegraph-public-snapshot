@@ -99,7 +99,7 @@ func testGitTree(t *testing.T, db *database.MockDB, tests []*Test) {
 		return exampleCommitSHA1, nil
 	}
 	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdomain.Commit{ID: exampleCommitSHA1})
-	git.Mocks.Stat = func(commit api.CommitID, path string) (fs.FileInfo, error) {
+	gitserver.Mocks.Stat = func(commit api.CommitID, path string) (fs.FileInfo, error) {
 		assert.Equal(t, api.CommitID(exampleCommitSHA1), commit)
 		assert.Equal(t, "foo bar", path)
 		return &util.FileInfo{Name_: path, Mode_: os.ModeDir}, nil

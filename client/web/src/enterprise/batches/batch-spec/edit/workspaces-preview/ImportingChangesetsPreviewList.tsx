@@ -60,6 +60,7 @@ export const ImportingChangesetsPreviewList: React.FunctionComponent<
         {connection && (
             <SummaryContainer centered={true}>
                 <ConnectionSummary
+                    centered={true}
                     noSummaryIfAllNodesVisible={true}
                     first={CHANGESETS_PER_PAGE_COUNT}
                     connection={connection}
@@ -68,7 +69,7 @@ export const ImportingChangesetsPreviewList: React.FunctionComponent<
                     hasNextPage={hasNextPage}
                     emptyElement={null}
                 />
-                {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
             </SummaryContainer>
         )}
     </ConnectionContainer>

@@ -11,9 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestPreviewRepositoryComparisonResolver(t *testing.T) {
@@ -210,14 +210,14 @@ index 9bd8209..d2acfa9 100644
 		}
 		fileDiff := fileDiffs[0]
 
-		git.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
+		gitserver.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
 			if name != "INSTALL.md" {
 				t.Fatalf("ReadFile received call for wrong file: %s", name)
 			}
 
 			return []byte(testOldFile), nil
 		}
-		defer func() { git.Mocks.ReadFile = nil }()
+		defer func() { gitserver.Mocks.ReadFile = nil }()
 
 		newFile := fileDiff.NewFile()
 		if newFile == nil {

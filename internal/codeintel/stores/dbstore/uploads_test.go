@@ -695,11 +695,10 @@ func TestAddUploadPart(t *testing.T) {
 }
 
 func TestDeleteUploadByID(t *testing.T) {
-	sqlDB := database.NewDB(dbtest.NewDB(t))
-	db := database.NewDB(sqlDB)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(db)
 
-	insertUploads(t, sqlDB,
+	insertUploads(t, db,
 		Upload{ID: 1, RepositoryID: 50},
 	)
 
@@ -733,11 +732,10 @@ func TestDeleteUploadByID(t *testing.T) {
 }
 
 func TestDeleteUploadByIDNotCompleted(t *testing.T) {
-	sqlDB := database.NewDB(dbtest.NewDB(t))
-	db := database.NewDB(sqlDB)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(db)
 
-	insertUploads(t, sqlDB,
+	insertUploads(t, db,
 		Upload{ID: 1, RepositoryID: 50, State: "uploading"},
 	)
 
@@ -782,8 +780,7 @@ func TestDeleteUploadByIDMissingRow(t *testing.T) {
 }
 
 func TestDeleteUploadsWithoutRepository(t *testing.T) {
-	sqlDB := database.NewDB(dbtest.NewDB(t))
-	db := database.NewDB(sqlDB)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(db)
 
 	var uploads []Upload
@@ -792,7 +789,7 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 			uploads = append(uploads, Upload{ID: len(uploads) + 1, RepositoryID: 50 + i})
 		}
 	}
-	insertUploads(t, sqlDB, uploads...)
+	insertUploads(t, db, uploads...)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-DeletedRepositoryGracePeriod + time.Minute)

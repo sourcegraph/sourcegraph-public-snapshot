@@ -22,6 +22,7 @@ exports[`PageHeader renders correctly 1`] = `
                 class="mdi-icon icon"
                 fill="currentColor"
                 height="24"
+                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >

@@ -76,10 +76,9 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
             editorComponent = editor.getComponent();
             add(editorComponent, BorderLayout.CENTER);
 
-            addHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
-
-            invalidate(); // TODO: Is this needed? What does it do? Maybe use revalidate()? If needed then document
             validate();
+
+            addAndScrollToHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
         });
     }
 
@@ -122,10 +121,19 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         }
     }
 
-    private void addHighlights(Editor editor, @NotNull int[][] absoluteOffsetAndLengths) {
+    private void addAndScrollToHighlights(Editor editor, int[][] absoluteOffsetAndLengths) {
+        int firstOffset = -1;
         HighlightManager highlightManager = HighlightManager.getInstance(project);
         for (int[] offsetAndLength : absoluteOffsetAndLengths) {
-            highlightManager.addOccurrenceHighlight(editor, offsetAndLength[0], offsetAndLength[0] + offsetAndLength[1], EditorColors.SEARCH_RESULT_ATTRIBUTES, 0, null);
+            if (firstOffset == -1) {
+                firstOffset = offsetAndLength[0] + offsetAndLength[1];
+            }
+
+            highlightManager.addOccurrenceHighlight(editor, offsetAndLength[0], offsetAndLength[0] + offsetAndLength[1], EditorColors.TEXT_SEARCH_RESULT_ATTRIBUTES, 0, null);
+        }
+
+        if (firstOffset != -1) {
+            editor.getScrollingModel().scrollTo(editor.offsetToLogicalPosition(firstOffset), ScrollType.CENTER);
         }
     }
 

@@ -19,6 +19,10 @@ import (
 func TestHandle(t *testing.T) {
 	testDir := "/tmp/codeintel"
 	makeTempDir = func() (string, error) { return testDir, nil }
+	t.Cleanup(func() {
+		makeTempDir = makeTemporaryDirectory
+	})
+
 	if err := os.MkdirAll(filepath.Join(testDir, command.ScriptsPath), os.ModePerm); err != nil {
 		t.Fatalf("unexpected error creating workspace: %s", err)
 	}
