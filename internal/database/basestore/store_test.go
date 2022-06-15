@@ -72,8 +72,7 @@ func TestConcurrentTransactions(t *testing.T) {
 
 	t.Run("creating transactions concurrently does not fail", func(t *testing.T) {
 		var g errgroup.Group
-		for i := 0; i < 100; i++ {
-			i := i
+		for i := 0; i < 2; i++ {
 			g.Go(func() (err error) {
 				tx, err := store.Transact(ctx)
 				if err != nil {
@@ -81,7 +80,7 @@ func TestConcurrentTransactions(t *testing.T) {
 				}
 				defer func() { err = tx.Done(err) }()
 
-				return tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (%s, 42)`, i))
+				return tx.Exec(ctx, sqlf.Sprintf(`select pg_sleep(0.1)`))
 			})
 		}
 		require.NoError(t, g.Wait())
@@ -96,10 +95,9 @@ func TestConcurrentTransactions(t *testing.T) {
 		tx.handle.(*txHandle).logger = capturingLogger
 
 		var g errgroup.Group
-		for i := 0; i < 100; i++ {
-			i := i
+		for i := 0; i < 2; i++ {
 			g.Go(func() (err error) {
-				return tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (%s, 42)`, i))
+				return tx.Exec(ctx, sqlf.Sprintf(`select pg_sleep(0.1)`))
 			})
 		}
 		err = g.Wait()
