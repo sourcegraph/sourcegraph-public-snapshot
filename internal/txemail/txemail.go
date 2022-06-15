@@ -213,11 +213,14 @@ func Send(ctx context.Context, message Message) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "send DATA")
 	}
-	defer func() { _ = w.Close() }()
 
 	_, err = w.Write(raw)
 	if err != nil {
 		return errors.Wrap(err, "write")
+	}
+	err = w.Close()
+	if err != nil {
+		return errors.Wrap(err, "close")
 	}
 
 	err = client.Quit()
