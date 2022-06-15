@@ -70,7 +70,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 		Operation: operations.SetupFirecrackerStart,
 	}
 
-	if err := callWithInstrumentedLock(operations, func() error { return runner.RunCommand(ctx, startCommand, logger) }); err != nil {
+	if err := callWithInstrumentedLock(operations, logger, func() error { return runner.RunCommand(ctx, startCommand, logger) }); err != nil {
 		return errors.Wrap(err, "failed to start firecracker vm")
 	}
 
@@ -99,12 +99,22 @@ var igniteRunLock sync.Mutex
 
 // callWithInstrumentedLock calls f while holding the igniteRunLock. The duration of the wait
 // and active portions of this method are emitted as prometheus metrics.
-func callWithInstrumentedLock(operations *Operations, f func() error) error {
+func callWithInstrumentedLock(operations *Operations, logger *Logger, f func() error) error {
+	entry := logger.Log("setup.firecracker.runlock", nil)
+
 	lockRequestedAt := time.Now()
+
 	igniteRunLock.Lock()
+
 	lockAcquiredAt := time.Now()
+
+	entry.Finalize(0)
+	entry.Close()
+
 	err := f()
+
 	lockReleasedAt := time.Now()
+
 	igniteRunLock.Unlock()
 
 	operations.RunLockWaitTotal.Add(float64(lockAcquiredAt.Sub(lockRequestedAt) / time.Millisecond))
