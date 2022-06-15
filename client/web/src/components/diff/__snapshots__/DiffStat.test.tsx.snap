@@ -2,61 +2,53 @@
 
 exports[`DiffStat expandedCounts 1`] = `
 <DocumentFragment>
-  <div
-    class="flex-1"
+  <span
+    class="tooltip"
+    data-state="closed"
+    data-test-content="1 addition, 2 changes, 3 deletions"
+    role="presentation"
   >
-    <span
-      class="tooltip"
-      data-state="closed"
-      data-test-content="1 addition, 2 changes, 3 deletions"
-      role="presentation"
+    <div
+      aria-label="1 addition, 2 changes, 3 deletions"
+      class="diffStat"
     >
-      <div
-        aria-label="1 addition, 2 changes, 3 deletions"
-        class="diffStat"
+      <strong
+        class="a11y-ignore text-success mr-1"
       >
-        <strong
-          class="a11y-ignore text-success mr-1"
-        >
-          +1
-        </strong>
-        <strong
-          class="a11y-ignore text-warning mr-1"
-        >
-          •2
-        </strong>
-        <strong
-          class="a11y-ignore text-danger"
-        >
-          −3
-        </strong>
-      </div>
-    </span>
-  </div>
+        +1
+      </strong>
+      <strong
+        class="a11y-ignore text-warning mr-1"
+      >
+        •2
+      </strong>
+      <strong
+        class="a11y-ignore text-danger"
+      >
+        −3
+      </strong>
+    </div>
+  </span>
 </DocumentFragment>
 `;
 
 exports[`DiffStat standard 1`] = `
 <DocumentFragment>
-  <div
-    class="flex-1"
+  <span
+    class="tooltip"
+    data-state="closed"
+    data-test-content="1 addition, 2 changes, 3 deletions"
+    role="presentation"
   >
-    <span
-      class="tooltip"
-      data-state="closed"
-      data-test-content="1 addition, 2 changes, 3 deletions"
-      role="presentation"
+    <div
+      aria-label="1 addition, 2 changes, 3 deletions"
+      class="diffStat"
     >
-      <div
-        aria-label="1 addition, 2 changes, 3 deletions"
-        class="diffStat"
-      >
-        <small>
-          8
-        </small>
-      </div>
-    </span>
-  </div>
+      <small>
+        8
+      </small>
+    </div>
+  </span>
 </DocumentFragment>
 `;
 
@@ -89,37 +81,33 @@ exports[`DiffStatStack 1`] = `
   <div
     class="d-flex flex-column align-items-center"
   >
-    <div
-      class="flex-1"
+    <span
+      class="tooltip"
+      data-state="closed"
+      data-test-content="1 addition, 2 changes, 3 deletions"
+      role="presentation"
     >
-      <span
-        class="tooltip"
-        data-state="closed"
-        data-test-content="1 addition, 2 changes, 3 deletions"
-        role="presentation"
+      <div
+        aria-label="1 addition, 2 changes, 3 deletions"
+        class="diffStat pb-1"
       >
-        <div
-          aria-label="1 addition, 2 changes, 3 deletions"
-          class="diffStat pb-1"
+        <strong
+          class="a11y-ignore text-success mr-1"
         >
-          <strong
-            class="a11y-ignore text-success mr-1"
-          >
-            +1
-          </strong>
-          <strong
-            class="a11y-ignore text-warning mr-1"
-          >
-            •2
-          </strong>
-          <strong
-            class="a11y-ignore text-danger"
-          >
-            −3
-          </strong>
-        </div>
-      </span>
-    </div>
+          +1
+        </strong>
+        <strong
+          class="a11y-ignore text-warning mr-1"
+        >
+          •2
+        </strong>
+        <strong
+          class="a11y-ignore text-danger"
+        >
+          −3
+        </strong>
+      </div>
+    </span>
     <div
       class="squares"
     >

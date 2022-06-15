@@ -48,30 +48,26 @@ export const DiffStat: React.FunctionComponent<React.PropsWithChildren<DiffStatP
         labels.push(`${numberWithCommas(deleted)} ${pluralize('deletion', deleted)}`)
     }
     return (
-        <div className="flex-1">
-            <Tooltip content={labels.join(', ')}>
-                <div className={classNames(styles.diffStat, className)} aria-label={labels.join(', ')}>
-                    {expandedCounts ? (
-                        <>
-                            {/*
+        <Tooltip content={labels.join(', ')}>
+            <div className={classNames(styles.diffStat, className)} aria-label={labels.join(', ')}>
+                {expandedCounts ? (
+                    <>
+                        {/*
                                 a11y-ignore
                                 Rule: "color-contrast" (Elements must have sufficient color contrast)
                                 GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
                             */}
-                            <strong className="a11y-ignore text-success mr-1">+{numberWithCommas(added)}</strong>
-                            {changed > 0 && (
-                                <strong className="a11y-ignore text-warning mr-1">
-                                    &bull;{numberWithCommas(changed)}
-                                </strong>
-                            )}
-                            <strong className="a11y-ignore text-danger">&minus;{numberWithCommas(deleted)}</strong>
-                        </>
-                    ) : (
-                        <small>{numberWithCommas(total + changed)}</small>
-                    )}
-                </div>
-            </Tooltip>
-        </div>
+                        <strong className="a11y-ignore text-success mr-1">+{numberWithCommas(added)}</strong>
+                        {changed > 0 && (
+                            <strong className="a11y-ignore text-warning mr-1">&bull;{numberWithCommas(changed)}</strong>
+                        )}
+                        <strong className="a11y-ignore text-danger">&minus;{numberWithCommas(deleted)}</strong>
+                    </>
+                ) : (
+                    <small>{numberWithCommas(total + changed)}</small>
+                )}
+            </div>
+        </Tooltip>
     )
 })
 
