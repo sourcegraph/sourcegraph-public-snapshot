@@ -35,6 +35,7 @@ func feedbackExec(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	body = addSGInformation(ctx, body)
 
 	if err := sendFeedback(ctx.Context, title, "developer-experience", body); err != nil {
 		return err
@@ -63,7 +64,7 @@ func readUntilEOF(r io.Reader) (string, error) {
 	readFunc := func() (string, error) { return reader.ReadString('\n') }
 
 	var eofFunc stopReadFunc = func(data string, err error) bool {
-		if err != io.EOF {
+		if err != nil {
 			return true
 		}
 		return false
@@ -98,12 +99,16 @@ func readUntil(readFunc func() (string, error), stopRead stopReadFunc) (string, 
 	return data, nil
 }
 
-func addSGInformation(content string) string {
-	tplt := template.Must(template.New("SG").Parse(`{{.Content}}
+func addSGInformation(ctx *cli.Context, body string) string {
+	tplt := template.Must(template.New("SG").Funcs(template.FuncMap{
+		"inline_code": func(s string) string { return fmt.Sprintf("`%s`", s) },
+	}).Parse(`{{.Content}}
 
-### {{.Tick}}sg{{.Tick}} Information
 
-Commit: {{.Tick}}{{.Commit}}{{.Tick}}
+### {{ inline_code "sg" }} Information
+
+Commit: {{ inline_code .Commit}}
+Command: {{ inline_code .Command}}
     `))
 
 	var buf bytes.Buffer
@@ -111,10 +116,12 @@ Commit: {{.Tick}}{{.Commit}}{{.Tick}}
 		Content string
 		Tick    string
 		Commit  string
+		Command string
 	}{
-		content,
+		body,
 		"`",
 		BuildCommit,
+		ctx.Command.Name,
 	}
 	_ = tplt.Execute(&buf, data)
 
@@ -122,7 +129,6 @@ Commit: {{.Tick}}{{.Commit}}{{.Tick}}
 }
 
 func sendFeedback(ctx context.Context, title, category, body string) error {
-	body = addSGInformation(body)
 	values := make(url.Values)
 	values["category"] = []string{category}
 	values["title"] = []string{title}
