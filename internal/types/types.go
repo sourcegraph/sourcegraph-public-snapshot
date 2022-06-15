@@ -1452,8 +1452,8 @@ type CodeMonitoringUsageStatistics struct {
 	ReposMonitored                                *int32
 	TriggerRuns                                   *int32
 	TriggerRunsErrored                            *int32
-	P50TriggerRunTime                             *int32
-	P90TriggerRunTime                             *int32
+	P50TriggerRunTimeSeconds                      *float32
+	P90TriggerRunTimeSeconds                      *float32
 }
 
 type NotebooksUsageStatistics struct {
