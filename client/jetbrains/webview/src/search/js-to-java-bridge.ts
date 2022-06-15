@@ -15,16 +15,16 @@ import { PluginConfig, Search, Theme } from './types'
 
 export interface PreviewContent {
     resultType: SearchType
-    fileName?: string | null
+    fileName?: string
     repoUrl: string
-    path?: string | null
-    content?: string | null
-    symbolName?: string | null
-    symbolContainerName?: string | null
-    commitMessagePreview?: string | null
-    lineNumber?: number | null
-    absoluteOffsetAndLengths?: number[][] | null
-    relativeUrl?: string | null
+    path?: string
+    content: string | null
+    symbolName?: string
+    symbolContainerName?: string
+    commitMessagePreview?: string
+    lineNumber?: number
+    absoluteOffsetAndLengths?: number[][]
+    relativeUrl?: string
 }
 
 export interface PreviewRequest {
@@ -185,6 +185,7 @@ export async function createPreviewContent(
         return {
             resultType: match.type,
             repoUrl: getRepoMatchUrl(match).slice(1),
+            content: null,
             relativeUrl: getRepoMatchUrl(match),
         }
     }
@@ -200,6 +201,7 @@ export async function createPreviewContent(
     return {
         resultType: null,
         repoUrl: '',
+        content: null,
     }
 }
 
