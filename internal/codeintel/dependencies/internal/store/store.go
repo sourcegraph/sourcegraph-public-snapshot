@@ -97,6 +97,33 @@ JOIN repo rr ON rr.id = ru.repository_id
 WHERE pr.name = %s AND pu.commit = %s
 `
 
+const recursiveLockfileDependenciesQuery = `
+WITH RECURSIVE dependencies(id, depends_on, level, max_level) AS (
+  SELECT
+    id, depends_on, 0 AS level, 3 AS max_level
+  FROM
+    codeintel_lockfile_references
+  WHERE
+    ARRAY [id] @> (SELECT codeintel_lockfile_reference_ids FROM codeintel_lockfiles WHERE repository_id = 5)
+
+  UNION ALL
+
+  SELECT
+    lr.id, lr.depends_on, (dependencies.level+1) AS level, dependencies.max_level
+  FROM
+    codeintel_lockfile_references lr
+  JOIN dependencies ON lr.id = ANY (dependencies.depends_on)
+  WHERE
+    level < dependencies.max_level
+)
+SELECT
+  dependencies.level, lr.*
+FROM
+  dependencies, codeintel_lockfile_references lr
+WHERE
+  dependencies.id = lr.id;
+`
+
 // LockfileDependencies returns package dependencies from a previous lockfiles result for
 // the given repository and commit. It is assumed that the given commit is the canonical
 // 40-character hash.
