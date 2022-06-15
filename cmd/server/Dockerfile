@@ -53,10 +53,12 @@ RUN apk add --no-cache --verbose \
 # You can't just bump the major version since that requires pgupgrade
 # between Sourcegraph releases.
 RUN apk add --no-cache --verbose \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/community  \
+    postgresql12>=12.11 \
+    postgresql12-contrib>=12.11
+
+RUN apk add --no-cache --verbose \
     --repository=http://dl-cdn.alpinelinux.org/alpine/v3.14/main  \
-    postgresql=~12.11 \
-    postgresql-contrib=~12.11 \
-    && apk add --no-cache --verbose \
     'bash>=5.0.17' \
     'redis>=5.0' \
     python2 \
