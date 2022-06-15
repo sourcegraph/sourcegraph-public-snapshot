@@ -119,7 +119,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			if err != nil {
 				return apiclient.Job{}, errors.Wrap(err, "serializing cache entry")
 			}
-			// Add file to BirtualMachineFiles.
+			// Add file to VirtualMachineFiles.
 			cacheFilePath := filepath.Join(srcCacheDir, fmt.Sprintf("%s.json", cacheEntry.Key))
 			files[cacheFilePath] = string(serializedCacheEntry)
 		}

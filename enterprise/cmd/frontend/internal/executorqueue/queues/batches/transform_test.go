@@ -122,10 +122,10 @@ func TestTransformRecord(t *testing.T) {
 			},
 			CliSteps: []apiclient.CliStep{
 				{
-					Commands: []string{"batch", "exec", "-f", "../input.json", "-cache", "../cache", "-sourcegraph-version", version.Version()},
-					Dir:      "repository",
+					Commands: []string{"batch", "exec", "-f", "input.json", "-repo", "repository", "-cache", "cache", "-tmp", ".src-tmp", "-sourcegraphVersion", version.Version()},
+					Dir:      ".",
 					Env: []string{
-						"SRC_ENDPOINT=http://127.0.0.1:10001/.api/wurst",
+						"SRC_ENDPOINT=http://127.0.0.1:10001",
 					},
 				},
 			},
@@ -160,10 +160,10 @@ func TestTransformRecord(t *testing.T) {
 			},
 			CliSteps: []apiclient.CliStep{
 				{
-					Commands: []string{"batch", "exec", "-f", "../input.json", "-cache", "../cache", "-sourcegraph-version", version.Version()},
-					Dir:      "repository",
+					Commands: []string{"batch", "exec", "-f", "input.json", "-repo", "repository", "-cache", "cache", "-tmp", ".src-tmp", "-sourcegraphVersion", version.Version()},
+					Dir:      ".",
 					Env: []string{
-						"SRC_ENDPOINT=http://127.0.0.1:10001/.api/wurst",
+						"SRC_ENDPOINT=http://127.0.0.1:10001",
 					},
 				},
 			},
