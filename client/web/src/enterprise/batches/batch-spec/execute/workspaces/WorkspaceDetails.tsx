@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import VisuallyHidden from '@reach/visually-hidden'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { cloneDeep } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'

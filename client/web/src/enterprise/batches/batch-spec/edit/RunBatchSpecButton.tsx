@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import VisuallyHidden from '@reach/visually-hidden'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import { animated } from 'react-spring'
