@@ -72,6 +72,7 @@ export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildre
     const processedResults = useMemo(() => (searchEventLogs === null ? null : processRecentSearches(searchEventLogs)), [
         searchEventLogs,
     ])
+
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
         if (processedResults && itemsToLoad === RECENT_SEARCHES_TO_LOAD) {
