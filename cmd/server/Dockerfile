@@ -40,21 +40,22 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 RUN apk add --no-cache --verbose \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.14/main \
     # [NOTE: git-version-min-requirement]
     # We require git 2.34.1 because we use git-repack with flag --write-midx.
     'git>=2.34.1' \
-    git-p4 \
+    git-p4
+
+# NOTE that the Postgres version we run is different
+# from our *Minimum Supported Version* which alone dictates
+# the features we can depend on. See this link for more information:
+# https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
+# You can't just bump the major version since that requires pgupgrade
+# between Sourcegraph releases.
+RUN apk add --no-cache --verbose \
     --repository=http://dl-cdn.alpinelinux.org/alpine/v3.14/main  \
-    # NOTE that the Postgres version we run is different
-    # from our *Minimum Supported Version* which alone dictates
-    # the features we can depend on. See this link for more information:
-    # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
-    # You can't just bump the major version since that requires pgupgrade
-    # between Sourcegraph releases.
-    && apk add --no-cache --verbose \
     postgresql=~12.11 \
     postgresql-contrib=~12.11 \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.14/main  \
     && apk add --no-cache --verbose \
     'bash>=5.0.17' \
     'redis>=5.0' \
