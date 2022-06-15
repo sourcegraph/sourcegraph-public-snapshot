@@ -152,7 +152,6 @@ func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Ru
 
 		// This is for LSIF, it relies on the origin being set to the upstream repo
 		// for indexing.
-		// TODO: This adds a non-valid git remote URL.
 		gitCommands = append(gitCommands, command.CommandSpec{
 			Key: "setup.git.set-remote",
 			Env: gitStdEnv,
