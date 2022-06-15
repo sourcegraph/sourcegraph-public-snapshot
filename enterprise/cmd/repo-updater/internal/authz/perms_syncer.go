@@ -269,8 +269,8 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 			continue
 		}
 		oauthConfig = oauth2ConfigFromGitLabProvider(authProvider.Gitlab)
-		if authProvider.Gitlab.TokenExpiryWindowMinutes > 0 {
-			expiryWindow = time.Duration(authProvider.Gitlab.TokenExpiryWindowMinutes) * time.Minute
+		if authProvider.Gitlab.TokenRefreshWindowMinutes > 0 {
+			expiryWindow = time.Duration(authProvider.Gitlab.TokenRefreshWindowMinutes) * time.Minute
 		}
 		break
 	}
