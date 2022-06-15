@@ -111,7 +111,7 @@ function qa() {
   export PERFORCE_PORT="1666"
 
   pushd "$root_dir/dev/gqltest"
-  go test -long -dump -base-url "$SOURCEGRAPH_BASE_URL" -email "$TEST_USER_EMAIL" -username "$TEST_USER_NAME" -password "$TEST_USER_PASSWORD" -run=TestInsightViews
+  go test -long -dump -base-url "$SOURCEGRAPH_BASE_URL" -email "$TEST_USER_EMAIL" -username "$TEST_USER_NAME" -password "$TEST_USER_PASSWORD" -run=TestInsightViews -v
   popd
 }
 
