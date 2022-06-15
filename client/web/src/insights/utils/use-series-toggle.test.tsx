@@ -27,7 +27,7 @@ const UseSeriesToggleExample: React.FunctionComponent = () => {
             ))}
 
             <div>Selected series: {selectedSeriesIds.join(',')}</div>
-            {hasSelections() && <div>Something is selected.</div>}
+            {hasSelections(availableSeriesIds) && <div>Something is selected.</div>}
         </div>
     )
 }
