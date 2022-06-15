@@ -621,6 +621,56 @@ mutation($namespace: ID!, $name: String!){
 }
 ` + fragmentBatchChange
 
+func TestUpsertEmptyBatchChange(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+
+	cstore := store.New(db, &observation.TestContext, nil)
+
+	r := &Resolver{store: cstore}
+	s, err := newSchema(db, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	userID := ct.CreateTestUser(t, db, true).ID
+	namespaceID := relay.MarshalID("User", userID)
+
+	input := map[string]any{
+		"namespace": namespaceID,
+		"name":      "my-batch-change",
+	}
+
+	var response struct{ UpsertEmptyBatchChange apitest.BatchChange }
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	// First time should work because no batch change exists, so new one is created
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationUpsertEmptyBatchChange)
+
+	if response.UpsertEmptyBatchChange.ID == "" {
+		t.Fatalf("expected batch change to be created, but was not")
+	}
+
+	// Second time should return existing batch change
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationUpsertEmptyBatchChange)
+
+	if response.UpsertEmptyBatchChange.ID == "" {
+		t.Fatalf("expected existing batch change, but was not")
+	}
+}
+
+const mutationUpsertEmptyBatchChange = `
+mutation($namespace: ID!, $name: String!){
+	upsertEmptyBatchChange(namespace: $namespace, name: $name) {
+		...batchChange
+	}
+}
+` + fragmentBatchChange
+
 func TestCreateBatchChange(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
