@@ -4,6 +4,10 @@ Thank you for your interest in contributing to Sourcegraph!
 The goal of this document is to provide a high-level overview of how you can contribute to the Sourcegraph VS Code Extension.
 Please refer to our [main CONTRIBUTING](https://github.com/sourcegraph/sourcegraph/blob/main/CONTRIBUTING.md) docs for general information regarding contributing to any Sourcegraph repository.
 
+## License
+
+Apache
+
 ## Feedback
 
 Your feedback is important to us and is greatly appreciated. Please do not hesitate to submit your ideas or suggestions about how we can improve the extension to our [VS Code Extension Feedback Discussion Thread](https://github.com/sourcegraph/sourcegraph/discussions/34821) on GitHub.
@@ -148,10 +152,6 @@ If you need guidance or have any questions regarding Sourcegraph or the extensio
 - [Report a bug](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board)
 - [Troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension)
 
-## License
-
-Apache
-
 ## Release Process
 
 The release process for the VS Code Extension for Sourcegraph is currently automated.
@@ -183,13 +183,14 @@ client/vscode
 │   └── common                    // Commonly assets that can be shared among different contexts
 │   └── commands                  // Build and register commands
 │       └── browserActionsNode    // Browser action commands when running as a regular extension where Node.js is available
-│       └── browserActionsWeb     // Browser action commands when running as a web extension
+│       └── browserActionsWeb     // Browser action commands when running as a web extension where Node.js is not available
 │   └── file-system               // Build and register the custom file system
 │   └── settings                  // Extension settings and configurations
 │   └── webview                   // Components to build the search panel and sidebars
 │       └── comlink               // Handle communications between contexts
 │       └── platform              // Platform context for the webview
 │       └── search-panel          // UI for the homepage and search panel
+│           └── alias             // Alias files for Web extension. See README file in this directory for details
 │       └── sidebars              // UI for all the sidebars
 │       └── theming               // Styling the webview using the predefined VS Code themes
 │       └── commands.ts           // Commands to build the webview views and panel
