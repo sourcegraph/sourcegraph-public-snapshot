@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -62,60 +61,6 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := db.SecurityEventLogs().Insert(ctx, tc.event)
-			got := fmt.Sprintf("%v", err)
-			assert.Equal(t, tc.err, got)
-		})
-	}
-}
-
-func TestSecurityEventLogs_LogEvent_Enabling(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	t.Parallel()
-	db := NewDB(dbtest.NewDB(t))
-	ctx := context.Background()
-	var testCases = []struct {
-		name            string
-		event           *SecurityEvent
-		err             string
-		dotComMode      string
-		auditLogEnabled string
-	}{
-		{
-			name:            "EmptyName",
-			event:           &SecurityEvent{UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
-			err:             `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_name_not_empty" (SQLSTATE 23514)`,
-			dotComMode:      "true",
-			auditLogEnabled: "true",
-		},
-		{
-			name:            "EmptyName",
-			event:           &SecurityEvent{UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
-			err:             `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_name_not_empty" (SQLSTATE 23514)`,
-			dotComMode:      "true",
-			auditLogEnabled: "false",
-		},
-		{
-			name:            "EmptyName",
-			event:           &SecurityEvent{UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
-			err:             `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_name_not_empty" (SQLSTATE 23514)`,
-			dotComMode:      "false",
-			auditLogEnabled: "true",
-		},
-		{
-			name:            "EmptyName",
-			event:           &SecurityEvent{UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
-			err:             "<nil>",
-			dotComMode:      "false",
-			auditLogEnabled: "false",
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			os.Setenv("SOURCEGRAPHDOTCOM_MODE", tc.dotComMode)
-			os.Setenv("AUDIT_LOG_ENABLED", tc.auditLogEnabled)
 			err := db.SecurityEventLogs().Insert(ctx, tc.event)
 			got := fmt.Sprintf("%v", err)
 			assert.Equal(t, tc.err, got)
