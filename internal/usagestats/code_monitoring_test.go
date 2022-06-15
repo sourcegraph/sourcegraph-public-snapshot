@@ -25,14 +25,64 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 
 	_, err := db.ExecContext(ctx, `
 		INSERT INTO event_logs
-			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
+			(name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
 		VALUES
-			(1, 'ViewCodeMonitoringPage', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(2, 'ViewCreateCodeMonitorPage', '{"hasTriggerQuery": false}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(3, 'ViewCreateCodeMonitorPage', '{"hasTriggerQuery": false}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(4, 'ViewCreateCodeMonitorPage', '{"hasTriggerQuery": true}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(5, 'ViewManageCodeMonitorPage', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(6, 'CodeMonitorEmailLinkClicked', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day')
+			('ViewCodeMonitoringPage', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringPageView', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('ViewCreateCodeMonitorPage', '{"hasTriggerQuery": false}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('ViewCreateCodeMonitorPage', '{"hasTriggerQuery": false}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('ViewCreateCodeMonitorPage', '{"hasTriggerQuery": true}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CreateCodeMonitorPageView', '{"hasTriggerQuery": false}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CreateCodeMonitorPageView', '{"hasTriggerQuery": false}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CreateCodeMonitorPageView', '{"hasTriggerQuery": true}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('ViewManageCodeMonitorPage', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('ManageCodeMonitorPageView', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitorEmailLinkClicked', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			-- x1
+			('CodeMonitoringExampleMonitorClicked', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			-- x2
+			('CodeMonitoringGettingStartedPageViewed', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringGettingStartedPageViewed', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			-- x3
+			('ManageCodeMonitorFormSubmitted', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('ManageCodeMonitorFormSubmitted', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('ManageCodeMonitorFormSubmitted', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			-- x4
+			('ManageCodeMonitorDeleteSubmitted', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('ManageCodeMonitorDeleteSubmitted', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('ManageCodeMonitorDeleteSubmitted', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('ManageCodeMonitorDeleteSubmitted', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			-- x5
+			('CodeMonitoringLogsPageViewed', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringLogsPageViewed', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringLogsPageViewed', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringLogsPageViewed', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringLogsPageViewed', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			-- x6
+			('CodeMonitoringSlackActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringSlackActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringSlackActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringSlackActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringSlackActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringSlackActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			-- x7
+			('CodeMonitoringWebhookActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringWebhookActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringWebhookActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringWebhookActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringWebhookActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringWebhookActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringWebhookActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			-- x8
+			('CodeMonitoringEmailActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringEmailActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringEmailActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringEmailActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringEmailActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringEmailActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringEmailActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringEmailActionSaved', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day')
+
 	`, now)
 	require.NoError(t, err)
 
@@ -178,12 +228,20 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 	require.NoError(t, err)
 
 	want := &types.CodeMonitoringUsageStatistics{
-		CodeMonitoringPageViews:                       ptr(int32(1)),
-		CreateCodeMonitorPageViews:                    ptr(int32(3)),
-		CreateCodeMonitorPageViewsWithTriggerQuery:    ptr(int32(1)),
-		CreateCodeMonitorPageViewsWithoutTriggerQuery: ptr(int32(2)),
-		ManageCodeMonitorPageViews:                    ptr(int32(1)),
+		CodeMonitoringPageViews:                       ptr(int32(2)),
+		CreateCodeMonitorPageViews:                    ptr(int32(6)),
+		CreateCodeMonitorPageViewsWithTriggerQuery:    ptr(int32(2)),
+		CreateCodeMonitorPageViewsWithoutTriggerQuery: ptr(int32(4)),
+		ManageCodeMonitorPageViews:                    ptr(int32(2)),
 		CodeMonitorEmailLinkClicks:                    ptr(int32(1)),
+		ExampleMonitorClicked:                         ptr(int32(1)),
+		GettingStartedPageViewed:                      ptr(int32(2)),
+		ManageFormSubmitted:                           ptr(int32(3)),
+		ManageDeleteSubmitted:                         ptr(int32(4)),
+		LogsPageViewed:                                ptr(int32(5)),
+		SlackActionSaved:                              ptr(int32(6)),
+		WebhookActionSaved:                            ptr(int32(7)),
+		EmailActionSaved:                              ptr(int32(8)),
 		EmailActionsTriggered:                         ptr(int32(40)),
 		EmailActionsTriggeredUniqueUsers:              ptr(int32(4)),
 		EmailActionsErrored:                           ptr(int32(20)),

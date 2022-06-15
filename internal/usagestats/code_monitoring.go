@@ -12,7 +12,7 @@ import (
 var getCodeMonitoringUsageStatisticsQuery string
 
 func GetCodeMonitoringUsageStatistics(ctx context.Context, db database.DB) (*types.CodeMonitoringUsageStatistics, error) {
-	stats := &types.CodeMonitoringUsageStatistics{}
+	var stats types.CodeMonitoringUsageStatistics
 	if err := db.QueryRowContext(ctx, getCodeMonitoringUsageStatisticsQuery).Scan(
 		&stats.CodeMonitoringPageViews,
 		&stats.CreateCodeMonitorPageViews,
@@ -20,6 +20,14 @@ func GetCodeMonitoringUsageStatistics(ctx context.Context, db database.DB) (*typ
 		&stats.CreateCodeMonitorPageViewsWithoutTriggerQuery,
 		&stats.ManageCodeMonitorPageViews,
 		&stats.CodeMonitorEmailLinkClicks,
+		&stats.ExampleMonitorClicked,
+		&stats.GettingStartedPageViewed,
+		&stats.ManageFormSubmitted,
+		&stats.ManageDeleteSubmitted,
+		&stats.LogsPageViewed,
+		&stats.SlackActionSaved,
+		&stats.WebhookActionSaved,
+		&stats.EmailActionSaved,
 		&stats.EmailActionsEnabled,
 		&stats.EmailActionsEnabledUniqueUsers,
 		&stats.SlackActionsEnabled,
@@ -43,5 +51,5 @@ func GetCodeMonitoringUsageStatistics(ctx context.Context, db database.DB) (*typ
 		return nil, err
 	}
 
-	return stats, nil
+	return &stats, nil
 }
