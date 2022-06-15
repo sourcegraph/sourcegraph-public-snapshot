@@ -1081,6 +1081,9 @@ func (r *Resolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.D
 	}
 
 	insights, err := r.insightStore.GetMapped(ctx, store.InsightQueryArgs{WithoutAuthorization: true, UniqueID: viewId})
+	if err != nil {
+		return nil, errors.Wrap(err, "GetMapped")
+	}
 	if len(insights) != 1 {
 		return nil, errors.New("Insight not found.")
 	}
