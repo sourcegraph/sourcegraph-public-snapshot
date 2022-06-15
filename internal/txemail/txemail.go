@@ -127,6 +127,9 @@ func Send(ctx context.Context, message Message) (err error) {
 	}
 	defer func() { _ = client.Close() }()
 
+	// NOTE: Some services (e.g. Google SMTP relay) require to echo desired hostname,
+	// our current email dependency "github.com/jordan-wright/email" has no option
+	// for it and always echoes "localhost" which makes it unusable.
 	heloHostname := conf.EmailSmtp.Domain
 	if heloHostname == "" {
 		heloHostname = "localhost"
