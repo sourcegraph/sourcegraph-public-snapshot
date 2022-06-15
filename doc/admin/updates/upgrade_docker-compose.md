@@ -16,8 +16,7 @@ To start, familiarise yourself with the details of the upgrade that you will be 
 - The version number of your current instance.
 - The version number of the latest Sourcegraph release.
 - The sequence of minor releases required to upgrade from your version to the latest version (your upgrade sequence).
-- Any out-of-band migrations in your upgrade sequence. 
-- Details of the changes for each minor version in your upgrade sequence in the [product change log](../../changelog.md) and also in the [docker-compose changes list](docker_compose.md). 
+- Details of the changes for each minor version in your upgrade sequence in the [product changelog](../../changelog.md) and also in the [docker-compose changelog](docker_compose.md). 
 
 ## 2. Upgrade to the next minor version
 
@@ -42,6 +41,11 @@ For each conflict, you need to reconcile any customizations you made with the up
 > If you do this, make sure your configuration is correct before proceeding because it may have made changes to your docker-compose YAML file.
 
 ### Clone the updated release branch to your server
+
+SSH into your instance and navigate to the appropriate folder:  
+- AWS: `/home/ec2-user/deploy-sourcegraph-docker/docker-compose`  
+- Digital Ocean: `/root/deploy-sourcerph-docker/docker-compose`  
+- Google Cloud: `/root/deploy-sourcegraph-docker/docker-compose`  
 
 Download all the latest docker images to your local docker daemon:
 
