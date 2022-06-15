@@ -2,6 +2,7 @@ package dependencies
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -52,7 +53,7 @@ func newService(
 
 // Dependencies resolves the (transitive) dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
-func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependencyRevs map[api.RepoName]types.RevSpecSet, err error) {
+func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependencyRevs map[api.RepoName]types.RevSpecSet, notFound map[api.RepoName]types.RevSpecSet, err error) {
 	ctx, _, endObservation := s.operations.dependencies.With(ctx, &err, observation.Args{LogFields: constructLogFields(repoRevs)})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
@@ -64,13 +65,13 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 	// TODO - Process unresolved commits.
 	repoCommits, _, err := s.resolveRepoCommits(ctx, repoRevs)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	// Parse lockfile contents for the given repository and revision pairs
-	deps, err := s.lockfileDependencies(ctx, repoCommits)
+	// Load lockfile dependencies for the given repository and revision pairs
+	deps, notFoundRepoCommits, err := s.resolveLockfileDependenciesFromStore(ctx, repoCommits)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Populate return value map from the given information.
@@ -85,20 +86,37 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		dependencyRevs[repo][rev] = struct{}{}
 	}
 
-	// Lazily sync all the repos that were newly added
-	if err := s.upsertAndSyncDependencies(ctx, deps); err != nil {
-		return nil, err
+	notFound = make(map[api.RepoName]types.RevSpecSet, len(notFoundRepoCommits))
+	for _, repoCommit := range notFoundRepoCommits {
+		repo := repoCommit.Repo
+		// TODO: This is wrong. what we want is to find out which revspec we
+		// couldn't find results for. So if the user is querying for
+		// dependencies of foo@v1 we want to tell user that we couldn't find
+		// anything for foo@v1 and not foo@d34db33f, if that is the commit that
+		// v1 resolved to.
+		rev := api.RevSpec(repoCommit.CommitID)
+
+		if _, ok := notFound[repo]; !ok {
+			notFound[repo] = types.RevSpecSet{}
+		}
+		notFound[repo][rev] = struct{}{}
 	}
 
+	// TODO: Disable lazily adding dependencies
+	// // Lazily sync all the repos that were newly added
+	// if err := s.upsertAndSyncDependencies(ctx, deps); err != nil {
+	// 	return nil, err
+	// }
+
 	if !enablePreciseQueries {
-		return dependencyRevs, nil
+		return dependencyRevs, notFound, nil
 	}
 
 	for _, repoCommit := range repoCommits {
 		// TODO - batch these requests in the store layer
 		preciseDeps, err := s.dependenciesStore.PreciseDependencies(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit)
 		if err != nil {
-			return nil, errors.Wrap(err, "store.PreciseDependencies")
+			return nil, nil, errors.Wrap(err, "store.PreciseDependencies")
 		}
 
 		for repoName, commits := range preciseDeps {
@@ -108,10 +126,18 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 			for commit := range commits {
 				dependencyRevs[repoName][commit] = struct{}{}
 			}
+
+			// TODO: See todo above, we need to clean this up properly
+
+			if notFoundRevs, ok := notFound[repoName]; ok {
+				for commit := range commits {
+					delete(notFoundRevs, commit)
+				}
+			}
 		}
 	}
 
-	return dependencyRevs, nil
+	return dependencyRevs, notFound, nil
 }
 
 type repoCommitResolvedCommit struct {
@@ -165,65 +191,64 @@ func (s *Service) resolveRepoCommits(ctx context.Context, repoRevs map[api.RepoN
 }
 
 // lockfileDependencies returns a flattened list of package dependencies for every repo-commit pair.
-func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, _ error) {
-	// Do not destroy the caller's slice. The filtering/fallback mechanism used here is strictly an
-	// implementation detail and its semantics should not leak out of this function. We make a copy
-	// of the incoming slice here so we can manipulate a shallow copy.
-	repoCommitsCopy := make([]repoCommitResolvedCommit, len(repoCommits))
-	copy(repoCommitsCopy, repoCommits)
-	repoCommits = repoCommitsCopy
+// func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, _ error) {
+// 	// Do not destroy the caller's slice. The filtering/fallback mechanism used here is strictly an
+// 	// implementation detail and its semantics should not leak out of this function. We make a copy
+// 	// of the incoming slice here so we can manipulate a shallow copy.
+// 	repoCommitsCopy := make([]repoCommitResolvedCommit, len(repoCommits))
+// 	copy(repoCommitsCopy, repoCommits)
+// 	repoCommits = repoCommitsCopy
 
-	// resolverFunc describes internal functions that perform bulk queries to gather the dependencies of
-	// some portion of the input. It is expected that if there are any unqueried repo-commit pairs remain
-	// that they are moved to the front of the given slice, and the number of unqueried elements returned.
-	type resolverFunc func(ctx context.Context, repoCommits []repoCommitResolvedCommit) ([]shared.PackageDependency, int, error)
+// 	// resolverFunc describes internal functions that perform bulk queries to gather the dependencies of
+// 	// some portion of the input. It is expected that if there are any unqueried repo-commit pairs remain
+// 	// that they are moved to the front of the given slice, and the number of unqueried elements returned.
+// 	type resolverFunc func(ctx context.Context, repoCommits []repoCommitResolvedCommit) ([]shared.PackageDependency, int, error)
 
-	resolvers := []resolverFunc{
-		s.resolveLockfileDependenciesFromStore,
-		s.resolveLockfileDependenciesFromArchive,
-	}
+// 	resolvers := []resolverFunc{
+// 		s.resolveLockfileDependenciesFromStore,
+// 		// TODO: Disable finding dependencies lazily from archive
+// 		// s.resolveLockfileDependenciesFromArchive,
+// 	}
 
-	for _, resolver := range resolvers {
-		resolvedDeps, n, err := resolver(ctx, repoCommits)
-		if err != nil {
-			return nil, err
-		}
+// 	for _, resolver := range resolvers {
+// 		resolvedDeps, n, err := resolver(ctx, repoCommits)
+// 		if err != nil {
+// 			return nil, err
+// 		}
 
-		deps = append(deps, resolvedDeps...)
-		repoCommits = repoCommits[:n]
-	}
+// 		deps = append(deps, resolvedDeps...)
+// 		repoCommits = repoCommits[:n]
+// 	}
 
-	return deps, nil
-}
+// 	return deps, nil
+// }
 
 // resolveLockfileDependenciesFromStore returns a flattened list of package dependencies for each
 // of the given repo-commit pairs from the database. The given `repoCommits` slice is altered in-place.
 // The returned `numUnqueried` value is the number of elements at the prefix of the slice that had no data.
 // It is expected that the remaining elements be passed to the fallback dependencies resolver, if one is
 // registered.
-func (s *Service) resolveLockfileDependenciesFromStore(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, numUnqueried int, err error) {
+func (s *Service) resolveLockfileDependenciesFromStore(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, notFound []repoCommitResolvedCommit, err error) {
 	ctx, _, endObservation := s.operations.resolveLockfileDependenciesFromStore.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("numUnqueried", numUnqueried),
+			log.Int("notFound", len(notFound)),
 		}})
 	}()
-
-	// Filter in-place
-	unqueried := repoCommits[:0]
 
 	for _, repoCommit := range repoCommits {
 		// TODO - batch these requests in the store layer
 		if repoDeps, ok, err := s.dependenciesStore.LockfileDependencies(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit); err != nil {
-			return nil, 0, errors.Wrap(err, "store.LockfileDependencies")
+			return nil, notFound, errors.Wrap(err, "store.LockfileDependencies")
 		} else if !ok {
-			unqueried = append(unqueried, repoCommit)
+			fmt.Printf("no dependencies found for %s at %s\n", repoCommit.Repo, repoCommit.ResolvedCommit)
+			notFound = append(notFound, repoCommit)
 		} else {
 			deps = append(deps, repoDeps...)
 		}
 	}
 
-	return deps, len(unqueried), nil
+	return deps, notFound, nil
 }
 
 // resolveLockfileDependenciesFromArchive is a resolverFunc. It returns a flattened list of package dependencies

@@ -95,6 +95,9 @@ func SerializeDependencyGraph(graph *lockfiles.DependencyGraph) DependencyGraph 
 		edges [][]PackageDependency
 		roots []PackageDependency
 	)
+	if graph == nil {
+		return DependencyGraphLiteral{roots: roots, edges: edges}
+	}
 
 	for _, edge := range graph.AllEdges() {
 		edges = append(edges, []PackageDependency{

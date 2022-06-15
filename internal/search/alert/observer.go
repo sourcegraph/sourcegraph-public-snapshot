@@ -281,6 +281,20 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		return a, nil
 	}
 
+	var unindexedLockfile *searchrepos.MissingLockfileIndexing
+	if errors.As(err, &unindexedLockfile) {
+		var description strings.Builder
+		fmt.Fprintf(&description, "Hey buddy! So sorry, but we haven't indexed a lockfile in **%s** at these revisions yet:\n", unindexedLockfile.RepoName())
+		for _, r := range unindexedLockfile.RevNames() {
+			fmt.Fprintf(&description, "- `%s`", r)
+		}
+		return &search.Alert{
+			PrometheusType: "unindexed_dependency_search",
+			Title:          "Lockfile not indexed",
+			Description:    description.String(),
+		}, nil
+	}
+
 	if errors.As(err, &lErr) {
 		return &search.Alert{
 			PrometheusType:  "lucky_search_notice",
