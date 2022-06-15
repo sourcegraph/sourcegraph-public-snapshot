@@ -24,6 +24,11 @@ export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactE
 
     const availableSeriesids = useMemo(() => series.map(({ id }) => `${id}`), [series])
 
+    const selectedSeries = useMemo(() => series.filter(({ id }) => isSeriesSelected(`${id}`)), [
+        series,
+        isSeriesSelected,
+    ])
+
     const getOpacity = (id: string, hasActivePoint: boolean, isActive: boolean): number => {
         if (!hasSelections(availableSeriesids) && hoveredId && !isSeriesHovered(id)) {
             return DIMMED_COLOR
@@ -71,6 +76,7 @@ export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactE
     return (
         <LineChart
             series={series}
+            tooltipSeries={selectedSeries}
             isSeriesSelected={isSeriesSelected}
             isSeriesHovered={isSeriesHovered}
             getLineGroupStyle={getHoverStyle}

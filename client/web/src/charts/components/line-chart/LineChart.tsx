@@ -7,7 +7,7 @@ import { voronoi } from '@visx/voronoi'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
-import { SeriesLikeChart } from '../../types'
+import { Series, SeriesLikeChart } from '../../types'
 
 import { AxisBottom, AxisLeft, Tooltip, TooltipContent, PointGlyph } from './components'
 import { StackedArea } from './components/stacked-area/StackedArea'
@@ -29,6 +29,7 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
     width: number
     height: number
     zeroYAxisMin?: boolean
+    tooltipSeries?: Series<Datum>[]
     isSeriesSelected: (id: string) => boolean
     isSeriesHovered: (id: string) => boolean
     getLineGroupStyle?: (id: string, hasActivePoint: boolean, isActive: boolean) => CSSProperties
@@ -48,6 +49,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         series,
         stacked = false,
         zeroYAxisMin = false,
+        tooltipSeries,
         className,
         onDatumClick = noop,
         isSeriesSelected,
@@ -75,10 +77,6 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         [yAxisElement, xAxisReference, outerWidth, outerHeight]
     )
 
-    const selectedSeries = useMemo(() => series.filter(({ id }) => isSeriesSelected(`${id}`)), [
-        series,
-        isSeriesSelected,
-    ])
     const dataSeries = useMemo(() => getSeriesData({ series, stacked }), [series, stacked])
 
     const { minX, maxX, minY, maxY } = useMemo(() => getMinMaxBoundaries({ dataSeries, zeroYAxisMin }), [
@@ -217,7 +215,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
 
             {activePoint && (
                 <Tooltip>
-                    <TooltipContent series={selectedSeries} activePoint={activePoint} stacked={stacked} />
+                    <TooltipContent series={tooltipSeries || series} activePoint={activePoint} stacked={stacked} />
                 </Tooltip>
             )}
         </svg>
