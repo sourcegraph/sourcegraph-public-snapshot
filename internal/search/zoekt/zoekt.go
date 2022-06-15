@@ -41,8 +41,6 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}
 	noOpAnyChar(re)
 
-	re = optimizeRegexp(re)
-
 	// zoekt decides to use its literal optimization at the query parser
 	// level, so we check if our regex can just be a literal.
 	if re.Op == syntax.OpLiteral {

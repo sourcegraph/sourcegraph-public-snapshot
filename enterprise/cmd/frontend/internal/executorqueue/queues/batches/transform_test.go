@@ -77,6 +77,7 @@ func TestTransformRecord(t *testing.T) {
 	workspaceExecutionJob := &btypes.BatchSpecWorkspaceExecutionJob{
 		ID:                   42,
 		BatchSpecWorkspaceID: workspace.ID,
+		UserID:               123,
 	}
 
 	store := NewMockBatchesStore()
@@ -123,7 +124,7 @@ func TestTransformRecord(t *testing.T) {
 			ID: int(workspaceExecutionJob.ID),
 			VirtualMachineFiles: map[string]string{
 				"input.json":        string(marshaledInput),
-				"testcachekey.json": `{"stepIndex":0,"diff":"123","outputs":null,"previousStepResult":{"Files":null,"Stdout":null,"Stderr":null}}`,
+				"testcachekey.json": `{"stepIndex":0,"diff":"123","outputs":null,"stepResult":{"Files":null,"Stdout":"","Stderr":""}}`,
 			},
 			CliSteps: []apiclient.CliStep{
 				{

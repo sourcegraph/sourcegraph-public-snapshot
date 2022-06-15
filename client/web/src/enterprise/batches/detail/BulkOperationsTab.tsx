@@ -50,6 +50,7 @@ export const BulkOperationsTab: React.FunctionComponent<React.PropsWithChildren<
                     <SummaryContainer centered={true}>
                         <ConnectionSummary
                             noSummaryIfAllNodesVisible={true}
+                            centered={true}
                             first={BATCH_COUNT}
                             connection={connection}
                             noun="bulk operation"
@@ -57,7 +58,7 @@ export const BulkOperationsTab: React.FunctionComponent<React.PropsWithChildren<
                             hasNextPage={hasNextPage}
                             emptyElement={<EmptyBulkOperationsListElement />}
                         />
-                        {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                        {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                     </SummaryContainer>
                 )}
             </ConnectionContainer>
