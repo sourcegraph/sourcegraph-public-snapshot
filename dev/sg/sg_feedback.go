@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"strings"
@@ -75,18 +76,12 @@ func gatherFeedback(ctx *cli.Context) (string, string, error) {
 	}
 
 	fmt.Println("Write your feedback below and press <CTRL+D> when you're done.")
-	var sb strings.Builder
-	for {
-		line, err := reader.ReadString('\n')
-		sb.WriteString(line)
-		sb.WriteByte('\n')
-		if err != nil {
-			break
-		}
+	body, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return "", "", err
 	}
-	body := sb.String()
 
-	return title, body, nil
+	return title, string(body), nil
 }
 
 func addSGInformation(ctx *cli.Context, body string) string {
