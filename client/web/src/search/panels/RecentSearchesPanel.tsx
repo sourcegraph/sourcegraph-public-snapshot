@@ -22,6 +22,7 @@ import { ShowMoreButton } from './ShowMoreButton'
 
 import styles from './RecentSearchesPanel.module.scss'
 
+
 interface RecentSearch {
     count: number
     searchText: string
