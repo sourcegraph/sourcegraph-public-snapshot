@@ -1,12 +1,6 @@
 # Updating a Docker Compose Sourcegraph instance
 
-This document describes the exact changes needed to update a [Docker Compose Sourcegraph instance](../deploy/docker-compose.md).
-Each section comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
-**Always refer to this page before upgrading Sourcegraph**, as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
-
-1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-2. Find the relevant entry for your update in the update notes on this page.
-3. After checking the relevant update notes, refer to the [Sourcegraph with Docker Compose upgrade guide](../deploy/docker-compose/index.md#upgrade) to upgrade your instance.
+This page lists the changes that are relevant for [upgrading Sourcegraph on Docker Compose](upgrade_docker-compose.md). You can also view the [product change log](../../changelog.md). 
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
