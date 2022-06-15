@@ -134,7 +134,7 @@ func (key StepsCacheKey) Slug() string {
 	return SlugForRepo(key.Repository.Name, key.Repository.BaseRev)
 }
 
-// ExecutionKeyWithGlobalEnv implements the Keyer interface by embedding
+// StepsCacheKeyWithGlobalEnv implements the Keyer interface by embedding
 // StepsCacheKey but adding a global environment in which the steps could be
 // resolved.
 type StepsCacheKeyWithGlobalEnv struct {
