@@ -31,9 +31,7 @@ public class SourcegraphJBCefBrowser extends JBCefBrowser {
 
         UIManager.addPropertyChangeListener(propertyChangeEvent -> {
             if (propertyChangeEvent.getPropertyName().equals("lookAndFeel")) {
-                if (javaToJSBridge.hasAvailableQuery()) {
-                    javaToJSBridge.callJS("themeChanged", ThemeUtil.getCurrentThemeAsJson());
-                }
+                javaToJSBridge.callJS("themeChanged", ThemeUtil.getCurrentThemeAsJson());
             }
         });
     }

@@ -22,9 +22,7 @@ public class SettingsChangeListener implements Disposable {
 
             @Override
             public void afterAction() {
-                if (javaToJSBridge.hasAvailableQuery()) {
-                    javaToJSBridge.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project));
-                }
+                javaToJSBridge.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project));
             }
         });
     }
