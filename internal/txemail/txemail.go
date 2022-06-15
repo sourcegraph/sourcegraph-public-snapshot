@@ -76,33 +76,6 @@ func render(message Message) (*email.Email, error) {
 	return &m, nil
 }
 
-type loginAuth struct {
-	username, password string
-}
-
-// SMTP AUTH LOGIN Auth Handler
-func LoginAuth(username, password string) smtp.Auth {
-	return &loginAuth{username, password}
-}
-
-func (*loginAuth) Start(_ *smtp.ServerInfo) (string, []byte, error) {
-	return "LOGIN", []byte{}, nil
-}
-
-func (a *loginAuth) Next(fromServer []byte, more bool) ([]byte, error) {
-	if more {
-		switch string(fromServer) {
-		case "Username:":
-			return []byte(a.username), nil
-		case "Password:":
-			return []byte(a.password), nil
-		default:
-			return nil, fmt.Errorf("unknown fromServer: %s", string(fromServer))
-		}
-	}
-	return nil, nil
-}
-
 // Send sends a transactional email.
 //
 // Callers that do not live in the frontend should call internalapi.Client.SendEmail
@@ -148,7 +121,6 @@ func Send(ctx context.Context, message Message) (err error) {
 		m.Headers["X-MC-ViewContentLink"] = []string{"false"}
 	}
 
-	fmt.Println(1111, net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)))
 	client, err := smtp.Dial(net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)))
 	if err != nil {
 		return errors.Wrap(err, "new SMTP client")
@@ -159,7 +131,6 @@ func Send(ctx context.Context, message Message) (err error) {
 	if heloHostname == "" {
 		heloHostname = "localhost"
 	}
-	fmt.Println("heloHostname", heloHostname)
 	err = client.Hello(heloHostname)
 	if err != nil {
 		return errors.Wrap(err, "send HELO")
@@ -185,9 +156,6 @@ func Send(ctx context.Context, message Message) (err error) {
 		smtpAuth = smtp.PlainAuth("", conf.EmailSmtp.Username, conf.EmailSmtp.Password, conf.EmailSmtp.Host)
 	case "CRAM-MD5":
 		smtpAuth = smtp.CRAMMD5Auth(conf.EmailSmtp.Username, conf.EmailSmtp.Password)
-	case "LOGIN":
-		smtpAuth = LoginAuth(conf.EmailSmtp.Username, conf.EmailSmtp.Password)
-		fmt.Println(2222)
 	default:
 		return errors.Errorf("invalid SMTP authentication type %q", conf.EmailSmtp.Authentication)
 	}
@@ -227,8 +195,6 @@ func Send(ctx context.Context, message Message) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "send QUIT")
 	}
-
-	fmt.Println("worked")
 	return nil
 }
 
