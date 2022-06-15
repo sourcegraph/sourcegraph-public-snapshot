@@ -105,17 +105,7 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 	}
 
 	if job.Unrestricted {
-		repoIDs := make([]int32, len(repos))
-		for i, repo := range repos {
-			repoIDs[i] = int32(repo.ID)
-		}
-
-		err = h.db.Perms().SetRepoPermissionsUnrestricted(ctx, repoIDs, job.Unrestricted)
-		if err != nil {
-			return errors.Wrapf(err, "failed to set permissions to unrestricted for Bitbucket Project %q", job.ProjectKey)
-		}
-
-		return nil
+		return h.setReposUnrestricted(ctx, repos, job.ProjectKey)
 	}
 
 	repoIDs := make([]api.RepoID, len(repos))
@@ -154,6 +144,23 @@ func (h *bitbucketProjectPermissionsHandler) getBitbucketClient(ctx context.Cont
 	}
 
 	return bitbucketserver.NewClient(svc.URN(), &c, cli)
+}
+
+func (h *bitbucketProjectPermissionsHandler) setReposUnrestricted(ctx context.Context, repos []*bitbucketserver.Repo, projectKey string) error {
+	sort.Slice(repos, func(i, j int) bool {
+		return repos[i].ID < repos[j].ID
+	})
+	repoIDs := make([]int32, len(repos))
+	for i, repo := range repos {
+		repoIDs[i] = int32(repo.ID)
+	}
+
+	err := h.db.Perms().SetRepoPermissionsUnrestricted(ctx, repoIDs, true)
+	if err != nil {
+		return errors.Wrapf(err, "failed to set permissions to unrestricted for Bitbucket Project %q", projectKey)
+	}
+
+	return nil
 }
 
 // setPermissionsForUsers applies user permissions to a list of repos.
