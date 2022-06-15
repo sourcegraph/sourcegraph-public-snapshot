@@ -400,6 +400,7 @@ Referenced by:
  email             | bigint                   |           |          | 
  state             | text                     |           |          | 'queued'::text
  failure_message   | text                     |           |          | 
+
  started_at        | timestamp with time zone |           |          | 
  finished_at       | timestamp with time zone |           |          | 
  process_after     | timestamp with time zone |           |          | 
