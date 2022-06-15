@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 
 import VisuallyHidden from '@reach/visually-hidden'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -66,6 +66,14 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<
 
     const deselectWorkspace = useCallback(() => history.push(batchSpec.executionURL), [batchSpec.executionURL, history])
 
+    const videoRef = useRef<HTMLVideoElement | null>(null)
+    // Pause the execution animation loop when the batch spec stops executing.
+    useEffect(() => {
+        if (!batchSpec.isExecuting) {
+            videoRef.current?.pause()
+        }
+    }, [batchSpec.isExecuting])
+
     return (
         <div className={styles.container}>
             {errors.execute && <ErrorAlert error={errors.execute} className={styles.errors} />}
@@ -90,7 +98,33 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<
                                     queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                                 />
                             ) : (
-                                <H3 className="text-center my-3">Select a workspace to view details.</H3>
+                                <>
+                                    <div className={styles.videoContainer}>
+                                        <video
+                                            className="w-100 percy-hide"
+                                            autoPlay={true}
+                                            muted={true}
+                                            loop={true}
+                                            playsInline={true}
+                                            controls={false}
+                                            ref={videoRef}
+                                        >
+                                            <source
+                                                type="video/webm"
+                                                src={`https://storage.googleapis.com/sourcegraph-assets/batch-changes/execution-animation${
+                                                    isLightTheme ? '' : '-dark'
+                                                }.webm`}
+                                            />
+                                            <source
+                                                type="video/mp4"
+                                                src={`https://storage.googleapis.com/sourcegraph-assets/batch-changes/execution-animation${
+                                                    isLightTheme ? '' : '-dark'
+                                                }.mp4`}
+                                            />
+                                        </video>
+                                    </div>
+                                    <H3 className="text-center my-3">Select a workspace to view details.</H3>
+                                </>
                             )}
                         </CardBody>
                     </div>
