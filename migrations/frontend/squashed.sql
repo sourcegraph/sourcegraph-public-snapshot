@@ -580,7 +580,7 @@ CREATE TABLE batch_spec_resolution_jobs (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
-    initiator_id integer
+    initiator_id integer NOT NULL
 );
 
 CREATE SEQUENCE batch_spec_resolution_jobs_id_seq
@@ -609,7 +609,8 @@ CREATE TABLE batch_spec_workspace_execution_jobs (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
     access_token_id bigint,
-    queued_at timestamp with time zone DEFAULT now()
+    queued_at timestamp with time zone DEFAULT now(),
+    user_id integer
 );
 
 CREATE SEQUENCE batch_spec_workspace_execution_jobs_id_seq
@@ -620,6 +621,49 @@ CREATE SEQUENCE batch_spec_workspace_execution_jobs_id_seq
     CACHE 1;
 
 ALTER SEQUENCE batch_spec_workspace_execution_jobs_id_seq OWNED BY batch_spec_workspace_execution_jobs.id;
+
+CREATE VIEW batch_spec_workspace_execution_queue AS
+ WITH user_queues AS (
+         SELECT exec.user_id,
+            max(exec.started_at) AS latest_dequeue
+           FROM batch_spec_workspace_execution_jobs exec
+          GROUP BY exec.user_id
+        ), queue_candidates AS (
+         SELECT exec.id,
+            rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS place_in_user_queue
+           FROM (batch_spec_workspace_execution_jobs exec
+             JOIN user_queues queue ON ((queue.user_id = exec.user_id)))
+          WHERE (exec.state = 'queued'::text)
+          ORDER BY (rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id)), queue.latest_dequeue NULLS FIRST
+        )
+ SELECT queue_candidates.id,
+    row_number() OVER () AS place_in_global_queue,
+    queue_candidates.place_in_user_queue
+   FROM queue_candidates;
+
+CREATE VIEW batch_spec_workspace_execution_jobs_with_rank AS
+ SELECT j.id,
+    j.batch_spec_workspace_id,
+    j.state,
+    j.failure_message,
+    j.started_at,
+    j.finished_at,
+    j.process_after,
+    j.num_resets,
+    j.num_failures,
+    j.execution_logs,
+    j.worker_hostname,
+    j.last_heartbeat_at,
+    j.created_at,
+    j.updated_at,
+    j.cancel,
+    j.access_token_id,
+    j.queued_at,
+    j.user_id,
+    q.place_in_global_queue,
+    q.place_in_user_queue
+   FROM (batch_spec_workspace_execution_jobs j
+     LEFT JOIN batch_spec_workspace_execution_queue q ON ((j.id = q.id)));
 
 CREATE TABLE batch_spec_workspaces (
     id bigint NOT NULL,
@@ -3424,13 +3468,25 @@ CREATE UNIQUE INDEX batch_changes_unique_org_id ON batch_changes USING btree (na
 
 CREATE UNIQUE INDEX batch_changes_unique_user_id ON batch_changes USING btree (name, namespace_user_id) WHERE (namespace_user_id IS NOT NULL);
 
+CREATE INDEX batch_spec_workspace_execution_jobs_batch_spec_workspace_id ON batch_spec_workspace_execution_jobs USING btree (batch_spec_workspace_id);
+
 CREATE INDEX batch_spec_workspace_execution_jobs_cancel ON batch_spec_workspace_execution_jobs USING btree (cancel);
+
+CREATE INDEX batch_spec_workspace_execution_jobs_state ON batch_spec_workspace_execution_jobs USING btree (state);
+
+CREATE INDEX batch_spec_workspace_execution_jobs_user_id ON batch_spec_workspace_execution_jobs USING btree (user_id);
+
+CREATE INDEX batch_spec_workspaces_batch_spec_id ON batch_spec_workspaces USING btree (batch_spec_id);
 
 CREATE INDEX batch_specs_rand_id ON batch_specs USING btree (rand_id);
 
 CREATE INDEX changeset_jobs_bulk_group_idx ON changeset_jobs USING btree (bulk_group);
 
 CREATE INDEX changeset_jobs_state_idx ON changeset_jobs USING btree (state);
+
+CREATE INDEX changeset_specs_batch_spec_id ON changeset_specs USING btree (batch_spec_id);
+
+CREATE INDEX changeset_specs_created_at ON changeset_specs USING btree (created_at);
 
 CREATE INDEX changeset_specs_external_id ON changeset_specs USING btree (external_id);
 
@@ -3443,6 +3499,8 @@ CREATE INDEX changeset_specs_title ON changeset_specs USING btree (title);
 CREATE INDEX changesets_batch_change_ids ON changesets USING gin (batch_change_ids);
 
 CREATE INDEX changesets_bitbucket_cloud_metadata_source_commit_idx ON changesets USING btree (((((metadata -> 'source'::text) -> 'commit'::text) ->> 'hash'::text)));
+
+CREATE INDEX changesets_changeset_specs ON changesets USING btree (current_spec_id, previous_spec_id);
 
 CREATE INDEX changesets_external_state_idx ON changesets USING btree (external_state);
 
@@ -3497,6 +3555,12 @@ CREATE INDEX event_logs_timestamp ON event_logs USING btree ("timestamp");
 CREATE INDEX event_logs_timestamp_at_utc ON event_logs USING btree (date(timezone('UTC'::text, "timestamp")));
 
 CREATE INDEX event_logs_user_id ON event_logs USING btree (user_id);
+
+CREATE INDEX explicit_permissions_bitbucket_projects_jobs_project_key_extern ON explicit_permissions_bitbucket_projects_jobs USING btree (project_key, external_service_id, state);
+
+CREATE INDEX explicit_permissions_bitbucket_projects_jobs_queued_at_idx ON explicit_permissions_bitbucket_projects_jobs USING btree (queued_at);
+
+CREATE INDEX explicit_permissions_bitbucket_projects_jobs_state_idx ON explicit_permissions_bitbucket_projects_jobs USING btree (state);
 
 CREATE INDEX external_service_repos_clone_url_idx ON external_service_repos USING btree (clone_url);
 

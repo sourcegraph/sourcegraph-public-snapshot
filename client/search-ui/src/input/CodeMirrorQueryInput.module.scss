@@ -114,10 +114,10 @@
 }
 
 .focusedFilter {
-    background-color: var(--color-bg-2);
+    background-color: var(--gray-02);
 
     :global(.theme-dark) & {
-        background-color: var(--color-bg-3);
+        background-color: var(--gray-08);
     }
 }
 

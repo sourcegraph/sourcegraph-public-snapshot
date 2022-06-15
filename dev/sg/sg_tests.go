@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"sort"
@@ -50,15 +49,16 @@ sg test backend-integration -run TestSearch
 		}
 		return
 	}),
-	Action: execAdapter(testExec),
+	Action: testExec,
 }
 
-func testExec(ctx context.Context, args []string) error {
+func testExec(ctx *cli.Context) error {
 	config, err := sgconf.Get(configFile, configOverwriteFile)
 	if err != nil {
 		return err
 	}
 
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "No test suite specified"))
 		return flag.ErrHelp
@@ -70,7 +70,7 @@ func testExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	return run.Test(ctx, cmd, args[1:], config.Env)
+	return run.Test(ctx.Context, cmd, args[1:], config.Env)
 }
 
 func constructTestCmdLongHelp() string {

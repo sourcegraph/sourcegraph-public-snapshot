@@ -1,8 +1,4 @@
-import { useContext, useMemo } from 'react'
-
-import { throwError } from 'rxjs'
-
-import { useObservableWithStatus } from '@sourcegraph/wildcard'
+import { useContext, useEffect, useState } from 'react'
 
 import { FeatureFlagName } from './featureFlags'
 import { FeatureFlagsContext } from './FeatureFlagsProvider'
@@ -14,24 +10,46 @@ type FetchStatus = 'initial' | 'loaded' | 'error'
  *
  * @returns [flagValue, fetchStatus, error]
  */
-export function useFeatureFlag(flagName: FeatureFlagName): [boolean, FetchStatus, any] {
+export function useFeatureFlag(flagName: FeatureFlagName, defaultValue = false): [boolean, FetchStatus, any?] {
     const { client } = useContext(FeatureFlagsContext)
-    const [value = false, observableStatus, error] = useObservableWithStatus(
-        useMemo(() => client?.get(flagName) ?? throwError(new Error('No FeatureFlagClient set in context')), [
-            client,
-            flagName,
-        ])
+    const [{ value, status, error }, setResult] = useState<{ value: boolean | null; status: FetchStatus; error?: any }>(
+        {
+            status: 'initial',
+            value: defaultValue,
+        }
     )
 
-    const status: FetchStatus = useMemo(() => {
-        if (['completed', 'next'].includes(observableStatus)) {
-            return 'loaded'
+    useEffect(() => {
+        let isMounted = true
+        if (!client) {
+            const errorMessage =
+                '[useFeatureFlag]: No FeatureFlagClient is configured. All feature flags will default to "false" value.'
+            console.warn(errorMessage)
+            setResult(({ value }) => ({ value, status: 'error', error: new Error(errorMessage) }))
+            return
         }
-        if (observableStatus === 'error') {
-            return 'error'
-        }
-        return 'initial'
-    }, [observableStatus])
 
-    return [value, status, error]
+        const subscription = client.get(flagName).subscribe(
+            value => {
+                if (!isMounted) {
+                    return
+                }
+                setResult({ value, status: 'loaded' })
+            },
+            error => {
+                if (!isMounted) {
+                    return
+                }
+                setResult(({ value }) => ({ value, status: 'error', error }))
+            }
+        )
+
+        return () => {
+            isMounted = false
+            setResult(({ value }) => ({ value, status: 'initial' }))
+            subscription.unsubscribe()
+        }
+    }, [client, flagName])
+
+    return [typeof value === 'boolean' ? value : defaultValue, status, error]
 }

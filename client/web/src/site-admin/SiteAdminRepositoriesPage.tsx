@@ -45,7 +45,7 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                         className="ml-2 text-muted"
                         data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
                     >
-                        <Icon role="img" as={CloudOutlineIcon} aria-hidden={true} /> Not yet cloned
+                        <Icon as={CloudOutlineIcon} aria-hidden={true} /> Not yet cloned
                     </small>
                 )}
             </div>
@@ -53,7 +53,7 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
             <div className="repository-node__actions">
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
                     <Button to={node.url} variant="secondary" size="sm" as={Link}>
-                        <Icon role="img" as={CloudDownloadIcon} aria-hidden={true} /> Clone now
+                        <Icon as={CloudDownloadIcon} aria-hidden={true} /> Clone now
                     </Button>
                 )}{' '}
                 {
@@ -64,7 +64,7 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                         size="sm"
                         as={Link}
                     >
-                        <Icon role="img" as={SettingsIcon} aria-hidden={true} /> Settings
+                        <Icon as={SettingsIcon} aria-hidden={true} /> Settings
                     </Button>
                 }{' '}
             </div>

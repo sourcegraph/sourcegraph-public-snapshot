@@ -18,7 +18,7 @@ export const EmptyPanelView: React.FunctionComponent<React.PropsWithChildren<Emp
         <div className={classNames(styles.emptyPanel, className)}>
             {children || (
                 <>
-                    <Icon role="img" className="mr-2" as={CancelIcon} aria-hidden={true} /> Nothing to show here
+                    <Icon className="mr-2" as={CancelIcon} aria-hidden={true} /> Nothing to show here
                 </>
             )}
         </div>

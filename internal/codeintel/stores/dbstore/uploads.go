@@ -25,27 +25,27 @@ import (
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
 // records.
 type Upload struct {
-	ID                int        `json:"id"`
-	Commit            string     `json:"commit"`
-	Root              string     `json:"root"`
-	VisibleAtTip      bool       `json:"visibleAtTip"`
-	UploadedAt        time.Time  `json:"uploadedAt"`
-	State             string     `json:"state"`
-	FailureMessage    *string    `json:"failureMessage"`
-	StartedAt         *time.Time `json:"startedAt"`
-	FinishedAt        *time.Time `json:"finishedAt"`
-	ProcessAfter      *time.Time `json:"processAfter"`
-	NumResets         int        `json:"numResets"`
-	NumFailures       int        `json:"numFailures"`
-	RepositoryID      int        `json:"repositoryId"`
-	RepositoryName    string     `json:"repositoryName"`
-	Indexer           string     `json:"indexer"`
-	IndexerVersion    string     `json:"indexer_version"`
-	NumParts          int        `json:"numParts"`
-	UploadedParts     []int      `json:"uploadedParts"`
-	UploadSize        *int64     `json:"uploadSize"`
-	Rank              *int       `json:"placeInQueue"`
-	AssociatedIndexID *int       `json:"associatedIndex"`
+	ID                int
+	Commit            string
+	Root              string
+	VisibleAtTip      bool
+	UploadedAt        time.Time
+	State             string
+	FailureMessage    *string
+	StartedAt         *time.Time
+	FinishedAt        *time.Time
+	ProcessAfter      *time.Time
+	NumResets         int
+	NumFailures       int
+	RepositoryID      int
+	RepositoryName    string
+	Indexer           string
+	IndexerVersion    string
+	NumParts          int
+	UploadedParts     []int
+	UploadSize        *int64
+	Rank              *int
+	AssociatedIndexID *int
 }
 
 func (u Upload) RecordID() int {
@@ -166,7 +166,7 @@ func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, er
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Store.Handle().DB()))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.Store))
 	if err != nil {
 		return Upload{}, false, err
 	}
@@ -227,7 +227,7 @@ func (s *Store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []Upload, er
 		return nil, nil
 	}
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Store.Handle().DB()))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.Store))
 	if err != nil {
 		return nil, err
 	}
@@ -430,7 +430,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		conds = append(conds, sqlf.Sprintf("repo.deleted_at IS NULL"))
 	}
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(tx.Store.Handle().DB()))
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(tx.Store))
 	if err != nil {
 		return nil, 0, err
 	}

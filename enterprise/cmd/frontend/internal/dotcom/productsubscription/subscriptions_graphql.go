@@ -56,10 +56,10 @@ func productSubscriptionByDBID(ctx context.Context, db database.DB, id string) (
 		return nil, err
 	}
 	// 🚨 SECURITY: Only site admins and the subscription account's user may view a product subscription.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(db), v.UserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, db, v.UserID); err != nil {
 		return nil, err
 	}
-	return &productSubscription{v: v, db: database.NewDB(db)}, nil
+	return &productSubscription{v: v, db: db}, nil
 }
 
 func (r *productSubscription) ID() graphql.ID {
@@ -140,7 +140,7 @@ func (r *productSubscription) ActiveLicense(ctx context.Context) (graphqlbackend
 func (r *productSubscription) ProductLicenses(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ProductLicenseConnection, error) {
 	// 🚨 SECURITY: Only site admins may list historical product licenses (to reduce confusion
 	// around old license reuse). Other viewers should use ProductSubscription.activeLicense.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -166,7 +166,7 @@ func (r *productSubscription) URL(ctx context.Context) (string, error) {
 func (r *productSubscription) URLForSiteAdmin(ctx context.Context) *string {
 	// 🚨 SECURITY: Only site admins may see this URL. Currently it does not contain any sensitive
 	// info, but there is no need to show it to non-site admins.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil
 	}
 	u := fmt.Sprintf("/site-admin/dotcom/product/subscriptions/%s", r.v.ID)
@@ -175,7 +175,7 @@ func (r *productSubscription) URLForSiteAdmin(ctx context.Context) *string {
 
 func (r *productSubscription) URLForSiteAdminBilling(ctx context.Context) (*string, error) {
 	// 🚨 SECURITY: Only site admins may see this URL, which might contain the subscription's billing ID.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	if id := r.v.BillingSubscriptionID; id != nil {
@@ -544,7 +544,7 @@ func (r *productSubscriptionConnection) Nodes(ctx context.Context) ([]graphqlbac
 
 	var l []graphqlbackend.ProductSubscription
 	for _, result := range results {
-		l = append(l, &productSubscription{db: database.NewDB(r.db), v: result})
+		l = append(l, &productSubscription{db: r.db, v: result})
 	}
 	return l, nil
 }

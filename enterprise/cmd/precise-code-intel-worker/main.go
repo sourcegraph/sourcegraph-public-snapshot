@@ -10,9 +10,12 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
@@ -39,7 +42,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const addr = ":3188"
@@ -52,12 +54,13 @@ func main() {
 	env.HandleHelpFlag()
 	conf.Init()
 	logging.Init()
-	syncLogs := log.Init(log.Resource{
+	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	})
-	defer syncLogs()
+	defer liblog.Sync()
+	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
@@ -172,7 +175,7 @@ func mustInitializeDB() *sql.DB {
 	return sqlDB
 }
 
-func mustInitializeCodeIntelDB() *sql.DB {
+func mustInitializeCodeIntelDB() stores.CodeIntelDB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
@@ -182,7 +185,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
 	}
 
-	return db
+	return stores.NewCodeIntelDB(db)
 }
 
 func makeObservationContext(observationContext *observation.Context, withHoney bool) *observation.Context {

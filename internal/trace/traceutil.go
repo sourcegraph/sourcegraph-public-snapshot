@@ -16,11 +16,12 @@ import (
 	nettrace "golang.org/x/net/trace"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace"
 
+	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/otfields"
+
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
 // ID returns a trace ID, if any, found in the given context. If you need both trace and

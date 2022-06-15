@@ -426,9 +426,11 @@ func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error)
 		return &message, nil
 	}
 
+	f := false
 	failedJobs, err := r.store.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
 		OnlyWithFailureMessage: true,
 		BatchSpecID:            r.batchSpec.ID,
+		Cancel:                 &f,
 	})
 	if err != nil {
 		return nil, err
@@ -508,7 +510,19 @@ func (r *batchSpecResolver) ViewerCanRetry(ctx context.Context) (bool, error) {
 		return false, err
 	}
 
+	// If the spec finished successfully, there's nothing to retry.
+	if state == btypes.BatchSpecStateCompleted {
+		return false, nil
+	}
+
 	return state.Finished(), nil
+}
+
+func (r *batchSpecResolver) Source() string {
+	if r.batchSpec.CreatedFromRaw {
+		return btypes.BatchSpecSourceRemote.ToGraphQL()
+	}
+	return btypes.BatchSpecSourceLocal.ToGraphQL()
 }
 
 func (r *batchSpecResolver) computeNamespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {

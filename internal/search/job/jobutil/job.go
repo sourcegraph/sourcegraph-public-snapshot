@@ -43,11 +43,7 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 	jobTree := NewOrJob(children...)
 
 	if inputs.PatternType == query.SearchTypeLucky {
-		// generate opportunistic queries and run them after the usual jobTree
-		generatedChildren := NewFeelingLuckySearchJob(inputs, plan)
-		if len(generatedChildren) > 0 {
-			jobTree = NewSequentialJob(true, append([]job.Job{jobTree}, generatedChildren...)...)
-		}
+		jobTree = NewFeelingLuckySearchJob(jobTree, inputs, plan)
 	}
 
 	return NewAlertJob(inputs, jobTree), nil
@@ -139,6 +135,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				Diff:                 diff,
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
+				Concurrency:          4,
 			})
 		}
 
@@ -791,16 +788,16 @@ func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSou
 	return repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos
 }
 
-func toFeatures(flags featureflag.FlagSet) search.Features {
-	if flags == nil {
-		flags = featureflag.FlagSet{}
+func toFeatures(flagSet *featureflag.FlagSet) search.Features {
+	if flagSet == nil {
+		flagSet = &featureflag.FlagSet{}
 		metricFeatureFlagUnavailable.Inc()
 		log15.Warn("search feature flags are not available")
 	}
 
 	return search.Features{
-		ContentBasedLangFilters: flags.GetBoolOr("search-content-based-lang-detection", false),
-		HybridSearch:            flags.GetBoolOr("search-hybrid", false),
+		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
+		HybridSearch:            flagSet.GetBoolOr("search-hybrid", false),
 	}
 }
 

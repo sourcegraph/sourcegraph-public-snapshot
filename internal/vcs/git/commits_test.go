@@ -320,6 +320,16 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 		}
 	})
 
+	// Added for awareness if this error message changes. Insights skip over empty repos and check against error message
+	t.Run("empty repo", func(t *testing.T) {
+		repo := MakeGitRepository(t)
+		_, err := FirstEverCommit(ctx, db, repo, nil)
+		wantErr := `git command [rev-list --reverse --date-order --max-parents=0 HEAD] failed (output: ""): exit status 129`
+		if err.Error() != wantErr {
+			t.Errorf("expected :%s, got :%s", wantErr, err)
+		}
+	})
+
 	t.Run("with sub-repo permissions", func(t *testing.T) {
 		checkerWithoutAccessFirstCommit := getTestSubRepoPermsChecker("file0")
 		checkerWithAccessFirstCommit := getTestSubRepoPermsChecker("file1")

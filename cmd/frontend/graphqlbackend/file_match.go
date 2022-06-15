@@ -64,6 +64,14 @@ func (fm *FileMatchResolver) LineMatches() []lineMatchResolver {
 	return r
 }
 
+func (fm *FileMatchResolver) ChunkMatches() []chunkMatchResolver {
+	r := make([]chunkMatchResolver, 0, len(fm.FileMatch.ChunkMatches))
+	for _, cm := range fm.FileMatch.ChunkMatches {
+		r = append(r, chunkMatchResolver{cm})
+	}
+	return r
+}
+
 func (fm *FileMatchResolver) LimitHit() bool {
 	return fm.FileMatch.LimitHit
 }
@@ -96,4 +104,48 @@ func (lm lineMatchResolver) OffsetAndLengths() [][]int32 {
 
 func (lm lineMatchResolver) LimitHit() bool {
 	return false
+}
+
+type chunkMatchResolver struct {
+	result.ChunkMatch
+}
+
+func (c chunkMatchResolver) Content() string {
+	return c.ChunkMatch.Content
+}
+
+func (c chunkMatchResolver) ContentStart() searchPositionResolver {
+	return searchPositionResolver{c.ChunkMatch.ContentStart}
+}
+
+func (c chunkMatchResolver) Ranges() []searchRangeResolver {
+	res := make([]searchRangeResolver, 0, len(c.ChunkMatch.Ranges))
+	for _, r := range c.ChunkMatch.Ranges {
+		res = append(res, searchRangeResolver{r})
+	}
+	return res
+}
+
+type searchPositionResolver struct {
+	result.Location
+}
+
+func (l searchPositionResolver) Line() int32 {
+	return int32(l.Location.Line)
+}
+
+func (l searchPositionResolver) Character() int32 {
+	return int32(l.Location.Column)
+}
+
+type searchRangeResolver struct {
+	result.Range
+}
+
+func (r searchRangeResolver) Start() searchPositionResolver {
+	return searchPositionResolver{r.Range.Start}
+}
+
+func (r searchRangeResolver) End() searchPositionResolver {
+	return searchPositionResolver{r.Range.End}
 }

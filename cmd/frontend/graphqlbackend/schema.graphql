@@ -1422,9 +1422,15 @@ type Query {
     featureFlags: [FeatureFlag!]!
 
     """
-    Retrieve the values of all feature flags for the current user
+    Evaluates a feature flag for the current user
+    Returns null if feature flag does not exist
     """
-    viewerFeatureFlags: [EvaluatedFeatureFlag!]!
+    evaluateFeatureFlag(flagName: String!): Boolean
+
+    """
+    Retrieve all evaluated feature flags for the current user
+    """
+    evaluatedFeatureFlags: [EvaluatedFeatureFlag!]!
 
     """
     Retrieve the value of a feature flag for the organization
@@ -2973,6 +2979,10 @@ type PreviewRepositoryComparison {
         Return file diffs after the given cursor.
         """
         after: String
+        """
+        A list of paths or directories used to filter the diffs
+        """
+        paths: [String!]
     ): FileDiffConnection!
 }
 
@@ -3017,6 +3027,10 @@ type RepositoryComparison {
         Return file diffs after the given cursor.
         """
         after: String
+        """
+        A list of paths or directories used to filter the diffs
+        """
+        paths: [String!]
     ): FileDiffConnection!
 }
 
@@ -3870,6 +3884,16 @@ type GitCommit implements Node {
         """
         includePatterns: [String!]
     ): SymbolConnection!
+
+    """
+    Returns the comparison with another revision.
+    """
+    diff(
+        """
+        The base commit to compare to. Defaults to the commit's first parent.
+        """
+        base: String
+    ): RepositoryComparison!
 }
 
 """
@@ -4471,6 +4495,11 @@ type FileMatch {
     """
     lineMatches: [LineMatch!]!
     """
+    EXPERIMENTAL: This field is experimental and may be unstable.
+    The chunk matches.
+    """
+    chunkMatches: [ChunkMatch!]!
+    """
     Whether or not the limit was hit.
     """
     limitHit: Boolean!
@@ -4497,6 +4526,24 @@ type LineMatch {
     Whether or not the limit was hit.
     """
     limitHit: Boolean! @deprecated(reason: "will always be false")
+}
+
+"""
+A set of matched ranges contained in a chunk of contiguous lines.
+"""
+type ChunkMatch {
+    """
+    The contiguous set of full lines which contain the matches in ranges.
+    """
+    content: String!
+    """
+    The location of the beginning of content.
+    """
+    contentStart: Position!
+    """
+    The set of ranges within the content that matched the search query.
+    """
+    ranges: [Range!]!
 }
 
 """

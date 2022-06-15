@@ -1,14 +1,16 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { useHistory } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Icon, LoadingSpinner, H4 } from '@sourcegraph/wildcard'
+import { Button, Icon, LoadingSpinner, H4, Alert } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../components/HeroPage'
+import { useFeatureFlag } from '../../../../featureFlags/useFeatureFlag'
 import {
     CheckExecutorsAccessTokenResult,
     CheckExecutorsAccessTokenVariables,
@@ -61,7 +63,7 @@ export const EditBatchSpecPage: React.FunctionComponent<React.PropsWithChildren<
     if (loading && !data) {
         return (
             <div className="w-100 text-center">
-                <Icon role="img" aria-label="Loading" className="m-2" as={LoadingSpinner} />
+                <Icon aria-label="Loading" className="m-2" as={LoadingSpinner} />
             </div>
         )
     }
@@ -95,16 +97,34 @@ interface EditBatchSpecPageContentProps extends SettingsCascadeProps<Settings>, 
 const EditBatchSpecPageContent: React.FunctionComponent<
     React.PropsWithChildren<EditBatchSpecPageContentProps>
 > = props => {
-    const { batchChange, editor, errors } = useBatchSpecContext()
-    return <MemoizedEditBatchSpecPageContent {...props} batchChange={batchChange} editor={editor} errors={errors} />
+    const { batchChange, batchSpec, editor, errors } = useBatchSpecContext()
+
+    return (
+        <MemoizedEditBatchSpecPageContent
+            {...props}
+            batchChange={batchChange}
+            batchSpec={batchSpec}
+            editor={editor}
+            errors={errors}
+        />
+    )
 }
 
 type MemoizedEditBatchSpecPageContentProps = EditBatchSpecPageContentProps &
-    Pick<BatchSpecContextState, 'batchChange' | 'editor' | 'errors'>
+    Pick<BatchSpecContextState, 'batchChange' | 'batchSpec' | 'editor' | 'errors'>
 
 const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
     React.PropsWithChildren<MemoizedEditBatchSpecPageContentProps>
-> = React.memo(({ settingsCascade, isLightTheme, batchChange, editor, errors }) => {
+> = React.memo(function MemoizedEditBatchSpecPageContent({
+    settingsCascade,
+    isLightTheme,
+    batchChange,
+    batchSpec,
+    editor,
+    errors,
+}) {
+    const history = useHistory()
+
     const { insightTitle } = useInsightTemplates(settingsCascade)
 
     const [activeTabKey, setActiveTabKey] = useState<TabKey>('spec')
@@ -139,6 +159,11 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
         'batches.downloadSpecModalDismissed',
         false
     )
+    /**
+     * For managed instances we want to hide the `run server side` button by default. To do this we make use of a
+     * feature flag to ensure Managed Instances.
+     */
+    const [isRunBatchSpecButtonHidden] = useFeatureFlag('hide-run-batch-spec-for-mi', false)
 
     const activeExecutorsActionButtons = (
         <>
@@ -183,9 +208,15 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 </Button>
             )}
 
-            <Button className={styles.downloadLink} variant="link" onClick={() => setIsRunServerSideModalOpen(true)}>
-                or run server-side
-            </Button>
+            {!isRunBatchSpecButtonHidden && (
+                <Button
+                    className={styles.downloadLink}
+                    variant="link"
+                    onClick={() => setIsRunServerSideModalOpen(true)}
+                >
+                    or run server-side
+                </Button>
+            )}
         </>
     )
 
@@ -196,6 +227,19 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
             ? activeExecutorsActionButtons
             : noActiveExecutorsActionButtons
         : undefined
+
+    const executionAlert = batchSpec.isExecuting ? (
+        <Alert variant="warning" className="d-flex align-items-center pr-3">
+            <div className="flex-grow-1 pr-3">
+                <H4>There is another active execution for this batch change.</H4>
+                You're about to edit a batch spec that is currently being executed. You might want to view or cancel
+                that execution first.
+            </div>
+            <Button variant="primary" onClick={() => history.replace(`${batchChange.url}/executions/${batchSpec.id}`)}>
+                Go to execution
+            </Button>
+        </Alert>
+    ) : null
 
     return (
         <div className={layoutStyles.pageContainer}>
@@ -220,6 +264,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                     <LibraryPane name={batchChange.name} onReplaceItem={editor.handleCodeChange} />
                     <div className={styles.editorContainer}>
                         <H4 className={styles.header}>Batch spec</H4>
+                        {executionAlert}
                         <MonacoBatchSpecEditor
                             batchChangeName={batchChange.name}
                             className={styles.editor}

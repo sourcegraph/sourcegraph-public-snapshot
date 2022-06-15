@@ -16,7 +16,7 @@ import (
 
 type CheckFunc func(context.Context) error
 
-func InPath(cmd string) func(context.Context) error {
+func InPath(cmd string) CheckFunc {
 	return func(ctx context.Context) error {
 		hashCmd := fmt.Sprintf("hash %s 2>/dev/null", cmd)
 		_, err := usershell.CombinedExec(ctx, hashCmd)
@@ -27,7 +27,7 @@ func InPath(cmd string) func(context.Context) error {
 	}
 }
 
-func CommandExitCode(cmd string, exitCode int) func(context.Context) error {
+func CommandExitCode(cmd string, exitCode int) CheckFunc {
 	return func(ctx context.Context) error {
 		cmd := usershell.Cmd(ctx, cmd)
 		err := cmd.Run()
@@ -42,24 +42,7 @@ func CommandExitCode(cmd string, exitCode int) func(context.Context) error {
 	}
 }
 
-func Version(cmdName, haveVersion, versionConstraint string) error {
-	c, err := semver.NewConstraint(versionConstraint)
-	if err != nil {
-		return err
-	}
-
-	version, err := semver.NewVersion(haveVersion)
-	if err != nil {
-		return errors.Newf("cannot decode version in %q: %w", haveVersion, err)
-	}
-
-	if !c.Check(version) {
-		return errors.Newf("version %q from %q does not match constraint %q", haveVersion, cmdName, versionConstraint)
-	}
-	return nil
-}
-
-func CommandOutputContains(cmd, contains string) func(context.Context) error {
+func CommandOutputContains(cmd, contains string) CheckFunc {
 	return func(ctx context.Context) error {
 		out, _ := usershell.CombinedExec(ctx, cmd)
 		if !strings.Contains(string(out), contains) {
@@ -103,4 +86,21 @@ func HasUbuntuLibrary(name string) func(context.Context) error {
 		_, err := usershell.CombinedExec(ctx, fmt.Sprintf("dpkg -s %s", name))
 		return errors.Newf("dpkg: %w", err)
 	}
+}
+
+func Version(cmdName, haveVersion, versionConstraint string) error {
+	c, err := semver.NewConstraint(versionConstraint)
+	if err != nil {
+		return err
+	}
+
+	version, err := semver.NewVersion(haveVersion)
+	if err != nil {
+		return errors.Newf("cannot decode version in %q: %w", haveVersion, err)
+	}
+
+	if !c.Check(version) {
+		return errors.Newf("version %q from %q does not match constraint %q", haveVersion, cmdName, versionConstraint)
+	}
+	return nil
 }

@@ -294,6 +294,7 @@ Policies.args = {
         },
         tosAccepted: true,
         searchable: true,
+        emails: [],
     },
 }
 

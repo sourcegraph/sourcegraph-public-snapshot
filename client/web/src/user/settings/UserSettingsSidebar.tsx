@@ -103,7 +103,7 @@ export const UserSettingsSidebar: React.FunctionComponent<
                         ) : (
                             <div className={styles.newOrgBtnWrapper}>
                                 <Button to="/organizations/new" variant="secondary" outline={true} size="sm" as={Link}>
-                                    <Icon role="img" as={AddIcon} aria-hidden={true} /> New organization
+                                    <Icon as={AddIcon} aria-hidden={true} /> New organization
                                 </Button>
                             </div>
                         ))}

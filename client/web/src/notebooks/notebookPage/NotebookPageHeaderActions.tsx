@@ -254,13 +254,12 @@ const NotebookStarsButton: React.FunctionComponent<React.PropsWithChildren<Noteb
         >
             {viewerHasStarred ? (
                 <Icon
-                    role="img"
                     aria-hidden={true}
                     className={classNames(styles.notebookStarIcon, styles.notebookStarIconActive)}
                     as={StarIcon}
                 />
             ) : (
-                <Icon role="img" aria-hidden={true} className={styles.notebookStarIcon} as={StarOutlineIcon} />
+                <Icon aria-hidden={true} className={styles.notebookStarIcon} as={StarOutlineIcon} />
             )}
             <span className="ml-1">{starsCount}</span>
         </Button>

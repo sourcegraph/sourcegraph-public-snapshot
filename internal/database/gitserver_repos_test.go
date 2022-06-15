@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
@@ -463,7 +462,7 @@ func TestGitserverReposGetByNames(t *testing.T) {
 	}
 
 	repoIdx := 0
-	gitserverRepoStore := &gitserverRepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	gitserverRepoStore := &gitserverRepoStore{Store: basestore.NewWithHandle(db.Handle())}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Creating tc.reposNumber repos
@@ -920,7 +919,7 @@ func TestGitserverRepoListReposWithoutSize(t *testing.T) {
 	if err := db.GitserverRepos().Upsert(ctx, gitserverRepo); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.Handle().DB().ExecContext(ctx, fmt.Sprintf(
+	if _, err := db.Handle().ExecContext(ctx, fmt.Sprintf(
 		`update gitserver_repos set repo_size_bytes = null where repo_id = %d;`,
 		gitserverRepo.RepoID)); err != nil {
 		t.Fatalf("unexpected error while updating gitserver repo: %s", err)

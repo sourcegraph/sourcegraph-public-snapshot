@@ -70,11 +70,23 @@ func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend
 		generatedSeries = append(generatedSeries, series...)
 	}
 
+	foundData := false
 	for i := range generatedSeries {
+		foundData = foundData || len(generatedSeries[i].Points) > 0
 		resolvers = append(resolvers, &searchInsightLivePreviewSeriesResolver{series: &generatedSeries[i]})
+	}
+	if !foundData {
+		return nil, errors.Newf("Data for %s not found", pluralize("this repository", "these repositories", len(repos)))
 	}
 
 	return resolvers, nil
+}
+
+func pluralize(singular, plural string, n int) string {
+	if n == 1 {
+		return singular
+	}
+	return plural
 }
 
 type searchInsightLivePreviewSeriesResolver struct {

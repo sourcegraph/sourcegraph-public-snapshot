@@ -1144,6 +1144,34 @@ func TestDecorateChangesetBody(t *testing.T) {
 	if want := body + "\n\n[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)"; rcs.Body != want {
 		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
 	}
+
+	body = "body body ${{ batch_change_link }} body body"
+	rcs = &sources.Changeset{Body: body, Changeset: cs}
+	if err := decorateChangesetBody(context.Background(), fs, ns, rcs); err != nil {
+		t.Errorf("unexpected non-nil error: %v", err)
+	}
+	if want := "body body [_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change) body body"; rcs.Body != want {
+		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
+	}
+
+	body = "${{ batch_change_link }}\n\nbody body"
+	rcs = &sources.Changeset{Body: body, Changeset: cs}
+	if err := decorateChangesetBody(context.Background(), fs, ns, rcs); err != nil {
+		t.Errorf("unexpected non-nil error: %v", err)
+	}
+	if want := "[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)\n\nbody body"; rcs.Body != want {
+		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
+	}
+
+	// Spacing shouldn't matter.
+	body = "${{     batch_change_link}}\n\nbody body"
+	rcs = &sources.Changeset{Body: body, Changeset: cs}
+	if err := decorateChangesetBody(context.Background(), fs, ns, rcs); err != nil {
+		t.Errorf("unexpected non-nil error: %v", err)
+	}
+	if want := "[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)\n\nbody body"; rcs.Body != want {
+		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
+	}
 }
 
 func TestBatchChangeURL(t *testing.T) {

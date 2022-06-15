@@ -10,6 +10,8 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
@@ -17,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {
@@ -80,8 +81,8 @@ var sg = &cli.App{
 		},
 		&cli.StringFlag{
 			Name:        "config",
-			Aliases:     []string{"c"},
 			Usage:       "load sg configuration from `file`",
+			Aliases:     []string{"c"},
 			EnvVars:     []string{"SG_CONFIG"},
 			TakesFile:   true,
 			Value:       sgconf.DefaultFile,
@@ -89,8 +90,8 @@ var sg = &cli.App{
 		},
 		&cli.StringFlag{
 			Name:        "overwrite",
-			Aliases:     []string{"o"},
 			Usage:       "load sg configuration from `file` that is gitignored and can be used to, for example, add credentials",
+			Aliases:     []string{"o"},
 			EnvVars:     []string{"SG_OVERWRITE"},
 			TakesFile:   true,
 			Value:       sgconf.DefaultOverwriteFile,
@@ -111,7 +112,7 @@ var sg = &cli.App{
 		&cli.BoolFlag{
 			Name:    "disable-output-detection",
 			Usage:   "use fixed output configuration instead of detecting terminal capabilities",
-			EnvVars: []string{"SG_DISBALE_OUTPUT_DETECTION"},
+			EnvVars: []string{"SG_DISABLE_OUTPUT_DETECTION"},
 		},
 	},
 	Before: func(cmd *cli.Context) (err error) {
@@ -152,7 +153,8 @@ var sg = &cli.App{
 					message := fmt.Sprintf("%v:\n%s", p, getRelevantStack())
 					err = cli.NewExitError(message, 1)
 
-					analytics.LogEvent(cmd.Context, "sg_before", nil, start, "panic")
+					event := analytics.LogEvent(cmd.Context, "sg_before", nil, start, "panic")
+					event.Properties["error_details"] = err.Error()
 					analytics.Persist(cmd.Context, "sg", cmd.FlagNames())
 				}
 			}()
@@ -161,8 +163,8 @@ var sg = &cli.App{
 		// Configure logger, for commands that use components that use loggers
 		os.Setenv("SRC_DEVELOPMENT", "true")
 		os.Setenv("SRC_LOG_FORMAT", "console")
-		syncLogs := log.Init(log.Resource{Name: "sg"})
-		interrupt.Register(func() { syncLogs() })
+		liblog := log.Init(log.Resource{Name: "sg"})
+		interrupt.Register(func() { _ = liblog.Sync() })
 
 		// Add autosuggestion hooks to commands with subcommands but no action
 		addSuggestionHooks(cmd.App.Commands)
@@ -220,6 +222,7 @@ var sg = &cli.App{
 		doctorCommand,
 		secretCommand,
 		setupCommand,
+		setupCommandV2,
 
 		// Company
 		teammateCommand,

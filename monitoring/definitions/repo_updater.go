@@ -392,29 +392,44 @@ func RepoUpdater() *monitoring.Dashboard {
 							Description: "remaining calls to GitHub graphql API before hitting the rate limit",
 							Query:       `max by (name) (src_github_rate_limit_remaining_v2{resource="graphql"})`,
 							// 5% of initial limit of 5000
-							Critical:  monitoring.Alert().LessOrEqual(250),
-							Panel:     monitoring.Panel().LegendFormat("{{name}}"),
-							Owner:     monitoring.ObservableOwnerRepoManagement,
-							NextSteps: `Try restarting the pod to get a different public IP.`,
+							Warning: monitoring.Alert().LessOrEqual(250),
+							// Critical if most of a 60-minute reset window is spent below
+							// the threshold.
+							Critical: monitoring.Alert().LessOrEqual(250).For(50 * time.Minute),
+							Panel:    monitoring.Panel().LegendFormat("{{name}}"),
+							Owner:    monitoring.ObservableOwnerRepoManagement,
+							NextSteps: `
+								- Consider creating a new token for the indicated resource (the 'name' label for series below the threshold in the dashboard) under a dedicated machine user to reduce rate limit pressure.
+							`,
 						},
 						{
 							Name:        "github_rest_rate_limit_remaining",
 							Description: "remaining calls to GitHub rest API before hitting the rate limit",
 							Query:       `max by (name) (src_github_rate_limit_remaining_v2{resource="rest"})`,
 							// 5% of initial limit of 5000
-							Critical:  monitoring.Alert().LessOrEqual(250),
-							Panel:     monitoring.Panel().LegendFormat("{{name}}"),
-							Owner:     monitoring.ObservableOwnerRepoManagement,
-							NextSteps: `Try restarting the pod to get a different public IP.`,
+							Warning: monitoring.Alert().LessOrEqual(250),
+							// Critical if most of a 60-minute reset window is spent below
+							// the threshold.
+							Critical: monitoring.Alert().LessOrEqual(250).For(50 * time.Minute),
+							Panel:    monitoring.Panel().LegendFormat("{{name}}"),
+							Owner:    monitoring.ObservableOwnerRepoManagement,
+							NextSteps: `
+								- Consider creating a new token for the indicated resource (the 'name' label for series below the threshold in the dashboard) under a dedicated machine user to reduce rate limit pressure.
+							`,
 						},
 						{
 							Name:        "github_search_rate_limit_remaining",
 							Description: "remaining calls to GitHub search API before hitting the rate limit",
 							Query:       `max by (name) (src_github_rate_limit_remaining_v2{resource="search"})`,
-							Critical:    monitoring.Alert().LessOrEqual(5),
-							Panel:       monitoring.Panel().LegendFormat("{{name}}"),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
-							NextSteps:   `Try restarting the pod to get a different public IP.`,
+							Warning:     monitoring.Alert().LessOrEqual(5),
+							// Critical if most of a 60-minute reset window is spent below
+							// the threshold.
+							Critical: monitoring.Alert().LessOrEqual(5).For(50 * time.Minute),
+							Panel:    monitoring.Panel().LegendFormat("{{name}}"),
+							Owner:    monitoring.ObservableOwnerRepoManagement,
+							NextSteps: `
+								- Consider creating a new token for the indicated resource (the 'name' label for series below the threshold in the dashboard) under a dedicated machine user to reduce rate limit pressure.
+							`,
 						},
 					},
 					{

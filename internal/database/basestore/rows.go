@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // CloseRows closes the given rows object. The resulting error is a multierror
@@ -27,7 +28,7 @@ import (
 //
 //     things, err := ScanThings(store.Query(ctx, query))
 func CloseRows(rows *sql.Rows, err error) error {
-	return combineErrors(err, rows.Close(), rows.Err())
+	return errors.Append(err, rows.Close(), rows.Err())
 }
 
 // NewSliceScanner returns a basestore scanner function that returns all

@@ -245,7 +245,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                 size="sm"
                                 as={Link}
                             >
-                                <Icon role="img" as={SourceRepositoryIcon} aria-hidden={true} />{' '}
+                                <Icon as={SourceRepositoryIcon} aria-hidden={true} />{' '}
                                 {displayRepoName(repoOrError.name)}
                             </Button>
                             <PopoverTrigger
@@ -256,7 +256,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                                 variant="secondary"
                                 size="sm"
                             >
-                                <Icon role="img" as={ChevronDownIcon} aria-hidden={true} />
+                                <Icon as={ChevronDownIcon} aria-hidden={true} />
                             </PopoverTrigger>
                         </ButtonGroup>
                         <PopoverContent position={Position.bottomStart} className="pt-0 pb-0">

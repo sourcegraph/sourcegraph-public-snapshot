@@ -224,6 +224,16 @@ func (r *batchSpecWorkspaceResolver) CachedResultFound() bool {
 	return r.workspace.CachedResultFound
 }
 
+func (r *batchSpecWorkspaceResolver) StepCacheResultCount() (count int32) {
+	for idx := range r.batchSpec.Steps {
+		if _, ok := r.workspace.StepCacheResult(idx + 1); ok {
+			count++
+		}
+	}
+
+	return count
+}
+
 func (r *batchSpecWorkspaceResolver) Stages() graphqlbackend.BatchSpecWorkspaceStagesResolver {
 	if r.execution == nil {
 		return nil
@@ -277,6 +287,9 @@ func (r *batchSpecWorkspaceResolver) FailureMessage() *string {
 	if r.execution == nil {
 		return nil
 	}
+	if r.execution.Cancel {
+		return nil
+	}
 	return r.execution.FailureMessage
 }
 
@@ -289,6 +302,12 @@ func (r *batchSpecWorkspaceResolver) State() string {
 	}
 	if r.execution == nil {
 		return "PENDING"
+	}
+	if r.execution.Cancel {
+		if r.execution.State == btypes.BatchSpecWorkspaceExecutionJobStateFailed {
+			return "CANCELED"
+		}
+		return "CANCELING"
 	}
 	return r.execution.State.ToGraphQL()
 }
@@ -383,15 +402,28 @@ func (r *batchSpecWorkspaceResolver) DiffStat(ctx context.Context) (*graphqlback
 	return &totalDiff, nil
 }
 
-func (r *batchSpecWorkspaceResolver) PlaceInQueue() *int32 {
+func (r *batchSpecWorkspaceResolver) isQueued() bool {
 	if r.execution == nil {
-		return nil
+		return false
 	}
-	if r.execution.State != btypes.BatchSpecWorkspaceExecutionJobStateQueued {
+	return r.execution.State == btypes.BatchSpecWorkspaceExecutionJobStateQueued
+}
+
+func (r *batchSpecWorkspaceResolver) PlaceInQueue() *int32 {
+	if !r.isQueued() {
 		return nil
 	}
 
-	i32 := int32(r.execution.PlaceInQueue)
+	i32 := int32(r.execution.PlaceInUserQueue)
+	return &i32
+}
+
+func (r *batchSpecWorkspaceResolver) PlaceInGlobalQueue() *int32 {
+	if !r.isQueued() {
+		return nil
+	}
+
+	i32 := int32(r.execution.PlaceInGlobalQueue)
 	return &i32
 }
 

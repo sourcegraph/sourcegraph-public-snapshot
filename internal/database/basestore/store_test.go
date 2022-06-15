@@ -45,12 +45,12 @@ func TestTransaction(t *testing.T) {
 
 	// Check what's visible pre-commit/rollback
 	assertCounts(t, db, map[int]int{1: 42})
-	assertCounts(t, tx1.handle.db, map[int]int{1: 42, 2: 43})
-	assertCounts(t, tx2.handle.db, map[int]int{1: 42, 3: 44})
+	assertCounts(t, tx1.handle, map[int]int{1: 42, 2: 43})
+	assertCounts(t, tx2.handle, map[int]int{1: 42, 3: 44})
 
 	// Finalize transactions
 	rollbackErr := errors.New("rollback")
-	if err := tx1.Done(rollbackErr); err != rollbackErr {
+	if err := tx1.Done(rollbackErr); !errors.Is(err, rollbackErr) {
 		t.Fatalf("unexpected error rolling back transaction. want=%q have=%q", rollbackErr, err)
 	}
 	if err := tx2.Done(nil); err != nil {
@@ -144,7 +144,7 @@ func recurSavepoints(t *testing.T, store *Store, index, rollbackAt int) {
 			doneErr = errors.New("rollback")
 		}
 
-		if err := tx.Done(doneErr); err != doneErr {
+		if err := tx.Done(doneErr); !errors.Is(err, doneErr) {
 			t.Fatalf("unexpected error closing transaction. want=%q have=%q", doneErr, err)
 		}
 	}()
@@ -156,8 +156,8 @@ func recurSavepoints(t *testing.T, store *Store, index, rollbackAt int) {
 	recurSavepoints(t, tx, index-1, rollbackAt)
 }
 
-func testStore(db dbutil.DB) *Store {
-	return NewWithDB(db, sql.TxOptions{})
+func testStore(db *sql.DB) *Store {
+	return NewWithHandle(NewHandleWithDB(db, sql.TxOptions{}))
 }
 
 func assertCounts(t *testing.T, db dbutil.DB, expectedCounts map[int]int) {

@@ -2,14 +2,16 @@ package codeintel
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
@@ -26,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type Services struct {
@@ -62,7 +63,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 
 	// Initialize stores
 	dbStore := store.NewWithDB(db, observationContext)
-	locker := locker.NewWithDB(db, "codeintel")
+	locker := locker.NewWith(db, "codeintel")
 	lsifStore := lsifstore.NewStore(codeIntelDB, siteConfig, observationContext)
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
@@ -117,7 +118,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	}, nil
 }
 
-func mustInitializeCodeIntelDB(logger log.Logger) *sql.DB {
+func mustInitializeCodeIntelDB(logger log.Logger) stores.CodeIntelDB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
@@ -125,7 +126,7 @@ func mustInitializeCodeIntelDB(logger log.Logger) *sql.DB {
 	if err != nil {
 		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
 	}
-	return db
+	return stores.NewCodeIntelDB(db)
 }
 
 func mustInitializeSentryHub(logger log.Logger, c conftypes.WatchableSiteConfig) *sentry.Hub {
