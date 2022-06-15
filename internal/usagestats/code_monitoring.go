@@ -10,12 +10,12 @@ import (
 func GetCodeMonitoringUsageStatistics(ctx context.Context, db database.DB) (*types.CodeMonitoringUsageStatistics, error) {
 	const getCodeMonitoringUsageStatisticsQuery = `
 SELECT
-    codeMonitoringPageViews,
-    createCodeMonitorPageViews,
-    createCodeMonitorPageViewsWithTriggerQuery,
-    createCodeMonitorPageViewsWithoutTriggerQuery,
-    manageCodeMonitorPageViews,
-    codeMonitorEmailLinkClicks
+    from_events.codeMonitoringPageViews,
+    from_events.createCodeMonitorPageViews,
+    from_events.createCodeMonitorPageViewsWithTriggerQuery,
+    from_events.createCodeMonitorPageViewsWithoutTriggerQuery,
+    from_events.manageCodeMonitorPageViews,
+    from_events.codeMonitorEmailLinkClicks
 FROM (
     SELECT
         NULLIF(COUNT(*) FILTER (WHERE name = 'ViewCodeMonitoringPage'), 0) :: INT AS codeMonitoringPageViews,
@@ -32,7 +32,7 @@ FROM (
             'ViewManageCodeMonitorPage',
             'CodeMonitorEmailLinkClicked'
         )
-) sub`
+) from_events`
 
 	codeMonitoringUsageStats := &types.CodeMonitoringUsageStatistics{}
 	if err := db.QueryRowContext(ctx, getCodeMonitoringUsageStatisticsQuery).Scan(

@@ -1432,7 +1432,7 @@ type CodeMonitoringUsageStatistics struct {
 	CreateCodeMonitorPageViewsWithTriggerQuery    *int32
 	CreateCodeMonitorPageViewsWithoutTriggerQuery *int32
 	ManageCodeMonitorPageViews                    *int32
-	EmailLinkClicks                               *int32
+	CodeMonitorEmailLinkClicks                    *int32
 	EmailActionsTriggered                         *int32
 	EmailActionsErrored                           *int32
 	EmailActionsTriggeredUniqueUsers              *int32
