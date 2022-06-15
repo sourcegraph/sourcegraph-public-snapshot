@@ -20,7 +20,6 @@ import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
 
 import styles from './RecentSearchesPanel.module.scss'
-import { LocationDescriptor } from 'history'
 
 interface RecentSearch {
     count: number

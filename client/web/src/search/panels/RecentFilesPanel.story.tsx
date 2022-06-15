@@ -48,6 +48,8 @@ add('RecentFilesPanel', () => (
 
                 <H2>Empty</H2>
                 <RecentFilesPanel {...props} recentFilesFragment={{ recentFilesLogs: emptyRecentFiles }} />
+                <H2>Populated with git</H2>
+                <RecentFilesPanel {...props} recentFilesFragment={null} />
             </div>
         )}
     </WebStory>

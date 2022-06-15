@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import React, { useCallback, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
@@ -15,7 +16,6 @@ import { EmptyPanelContainer } from './EmptyPanelContainer'
 import { HomePanelsFetchMore, RECENT_FILES_TO_LOAD } from './HomePanels'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
-import { ShowMoreButton } from './ShowMoreButton'
 
 interface Props extends TelemetryProps {
     className?: string
@@ -114,6 +114,7 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
             {processedResults?.length && (
                 <ul className="list-group-flush list-group mb-2">
                     {processedResults.map((recentFile, index) => (
+                        // eslint-disable-next-line react/no-array-index-key
                         <li key={index} className="text-monospace mb-2 d-block">
                             <small>
                                 <Link to={recentFile.url} onClick={logFileClicked} data-testid="recent-files-item">
@@ -123,11 +124,6 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
                         </li>
                     ))}
                 </ul>
-            )}
-            {recentFiles?.pageInfo.hasNextPage && (
-                <div>
-                    <ShowMoreButton onClick={loadMoreItems} dataTestid="recent-files-panel-show-more" />
-                </div>
             )}
         </div>
     )
@@ -160,6 +156,7 @@ function processRecentFiles(eventLogResult?: EventLogResult): RecentFile[] | nul
 
     for (const node of eventLogResult.nodes) {
         if (node.argument && node.url) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const parsedArguments = JSON.parse(node.argument)
             let repoName = parsedArguments?.repoName as string
             let filePath = parsedArguments?.filePath as string

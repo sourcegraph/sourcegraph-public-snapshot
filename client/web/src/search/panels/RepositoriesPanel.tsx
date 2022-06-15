@@ -20,7 +20,6 @@ import { EmptyPanelContainer } from './EmptyPanelContainer'
 import { HomePanelsFetchMore, RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD } from './HomePanels'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
-import { ShowMoreButton } from './ShowMoreButton'
 
 interface Props extends TelemetryProps {
     className?: string
@@ -54,7 +53,6 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     className,
     telemetryService,
     recentlySearchedRepositories,
-    fetchMore,
     authenticatedUser,
 }) => {
     const [searchEventLogs, setSearchEventLogs] = useState<
@@ -64,7 +62,7 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
         recentlySearchedRepositories?.recentlySearchedRepositoriesLogs,
     ])
 
-    const [itemsToLoad, setItemsToLoad] = useState(RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD)
+    const [itemsToLoad] = useState(RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD)
 
     const logRepoClicked = useCallback(() => telemetryService.log('RepositoriesPanelRepoFilterClicked'), [
         telemetryService,
@@ -110,25 +108,6 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
         }
     }, [repoFilterValues, telemetryService, itemsToLoad])
 
-    async function loadMoreItems(): Promise<void> {
-        telemetryService.log('RepositoriesPanelShowMoreClicked')
-        const newItemsToLoad = itemsToLoad + RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD
-        setItemsToLoad(newItemsToLoad)
-
-        const { data } = await fetchMore({
-            firstRecentlySearchedRepositories: newItemsToLoad,
-        })
-
-        if (data === undefined) {
-            return
-        }
-        const node = data.node
-        if (node === null || node.__typename !== 'User') {
-            return
-        }
-        setSearchEventLogs(node.recentlySearchedRepositoriesLogs)
-    }
-
     const contentDisplay = (
         <div className="mt-2">
             <div className="d-flex mb-1">
@@ -137,6 +116,7 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
             {repoFilterValues?.length && (
                 <ul className="list-group">
                     {repoFilterValues.map((repoFilterValue, index) => (
+                        // eslint-disable-next-line react/no-array-index-key
                         <li key={`${repoFilterValue}-${index}`} className="text-monospace text-break mb-2">
                             <small>
                                 <Link to={`/search?q=repo:${repoFilterValue}`} onClick={logRepoClicked}>
@@ -146,9 +126,6 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
                         </li>
                     ))}
                 </ul>
-            )}
-            {searchEventLogs?.pageInfo.hasNextPage && (
-                <ShowMoreButton className="test-repositories-panel-show-more" onClick={loadMoreItems} />
             )}
         </div>
     )
@@ -205,9 +182,6 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
                         </li>
                     ))}
                 </ul>
-            )}
-            {searchEventLogs?.pageInfo.hasNextPage && (
-                <ShowMoreButton className="test-repositories-panel-show-more" onClick={loadMoreItems} />
             )}
         </div>
     )

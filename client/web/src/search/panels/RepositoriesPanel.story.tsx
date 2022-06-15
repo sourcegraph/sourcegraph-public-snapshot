@@ -51,6 +51,8 @@ add('RepositoriesPanel', () => (
                     {...props}
                     recentlySearchedRepositories={{ recentlySearchedRepositoriesLogs: emptyRecentSearches }}
                 />
+                <H2>Populated with git</H2>
+                <RepositoriesPanel {...props} recentlySearchedRepositories={null} />
             </div>
         )}
     </WebStory>
