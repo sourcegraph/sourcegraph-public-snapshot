@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .container {
     display: flex;
     flex: 1;
@@ -10,9 +12,22 @@
     margin-top: 1.5rem;
 }
 
-.empty-overview-container {
-    max-width: 700px;
-    margin: auto;
+// Constrain the width of the video player at different viewpoint sizes to prevent layout
+// shift as the video loads.
+.video-container {
+    margin: 2rem auto 0 auto;
+    width: 700px;
+    height: 408.33px;
+
+    @media (--lg-breakpoint-down) {
+        width: 500px;
+        height: 291.66px;
+    }
+
+    @media (--md-breakpoint-down) {
+        width: 300px;
+        height: 175px;
+    }
 }
 
 .errors {
