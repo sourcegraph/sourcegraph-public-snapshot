@@ -19,6 +19,8 @@ Indexes:
 Foreign-key constraints:
     "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
+Referenced by:
+    TABLE "batch_spec_workspace_execution_jobs" CONSTRAINT "batch_spec_workspace_execution_jobs_access_token_id_fkey" FOREIGN KEY (access_token_id) REFERENCES access_tokens(id) ON DELETE SET NULL DEFERRABLE
 
 ```
 
@@ -146,6 +148,7 @@ Foreign-key constraints:
  created_at              | timestamp with time zone |           | not null | now()
  updated_at              | timestamp with time zone |           | not null | now()
  cancel                  | boolean                  |           | not null | false
+ access_token_id         | bigint                   |           |          | 
  queued_at               | timestamp with time zone |           |          | now()
  user_id                 | integer                  |           |          | 
 Indexes:
@@ -156,6 +159,7 @@ Indexes:
     "batch_spec_workspace_execution_jobs_user_id" btree (user_id)
 Foreign-key constraints:
     "batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey" FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE
+    "batch_spec_workspace_execution_jobs_access_token_id_fkey" FOREIGN KEY (access_token_id) REFERENCES access_tokens(id) ON DELETE SET NULL DEFERRABLE
 
 ```
 
@@ -2756,6 +2760,7 @@ Foreign-key constraints:
     j.created_at,
     j.updated_at,
     j.cancel,
+    j.access_token_id,
     j.queued_at,
     j.user_id,
     q.place_in_global_queue,
