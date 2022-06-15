@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { gql } from '@apollo/client'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -19,6 +20,7 @@ import { HomePanelsFetchMore, RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD } from './H
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
+import { useFocusOnLoadedMore } from './useFocusOnLoadedMore'
 
 interface Props extends TelemetryProps {
     className?: string
@@ -60,6 +62,7 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     ])
 
     const [itemsToLoad, setItemsToLoad] = useState(RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD)
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
 
     const logRepoClicked = useCallback(() => telemetryService.log('RepositoriesPanelRepoFilterClicked'), [
         telemetryService,
@@ -86,6 +89,7 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     )
 
     const [repoFilterValues, setRepoFilterValues] = useState<string[] | null>(null)
+    const getItemRef = useFocusOnLoadedMore(repoFilterValues?.length ?? 0)
 
     useEffect(() => {
         if (searchEventLogs) {
@@ -110,10 +114,12 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
         const newItemsToLoad = itemsToLoad + RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD
         setItemsToLoad(newItemsToLoad)
 
+        setIsLoadingMore(true)
         const { data } = await fetchMore({
             firstRecentlySearchedRepositories: newItemsToLoad,
         })
 
+        setIsLoadingMore(false)
         if (data === undefined) {
             return
         }
@@ -125,27 +131,38 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     }
 
     const contentDisplay = (
-        <div className="mt-2">
-            <div className="d-flex mb-1">
-                <small>Search</small>
-            </div>
-            {repoFilterValues?.length && (
-                <ul className="list-group">
-                    {repoFilterValues.map((repoFilterValue, index) => (
-                        <li key={`${repoFilterValue}-${index}`} className="text-monospace text-break mb-2">
-                            <small>
-                                <Link to={`/search?q=repo:${repoFilterValue}`} onClick={logRepoClicked}>
-                                    <SyntaxHighlightedSearchQuery query={`repo:${repoFilterValue}`} />
-                                </Link>
-                            </small>
-                        </li>
+        <>
+            <table>
+                <thead>
+                    <tr>
+                        <th className="pt-2 pb-1">
+                            <small>Search</small>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {repoFilterValues?.map((repoFilterValue, index) => (
+                        <tr key={`${repoFilterValue}-${index}`} className="text-monospace text-break mb-2">
+                            <td className="pb-2">
+                                <small>
+                                    <Link
+                                        to={`/search?q=repo:${repoFilterValue}`}
+                                        ref={getItemRef(index)}
+                                        onClick={logRepoClicked}
+                                    >
+                                        <SyntaxHighlightedSearchQuery query={`repo:${repoFilterValue}`} />
+                                    </Link>
+                                </small>
+                            </td>
+                        </tr>
                     ))}
-                </ul>
-            )}
+                </tbody>
+            </table>
+            {isLoadingMore && <VisuallyHidden aria-live="polite">Loading more repositories</VisuallyHidden>}
             {searchEventLogs?.pageInfo.hasNextPage && (
                 <ShowMoreButton className="test-repositories-panel-show-more" onClick={loadMoreItems} />
             )}
-        </div>
+        </>
     )
 
     return (
