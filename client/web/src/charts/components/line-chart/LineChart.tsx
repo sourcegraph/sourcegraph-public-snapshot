@@ -31,6 +31,7 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
     zeroYAxisMin?: boolean
     isSeriesSelected: (id: string) => boolean
     isSeriesHovered: (id: string) => boolean
+    getLineGroupStyle?: (id: string, hasActivePoint: boolean, isActive: boolean) => CSSProperties
 }
 
 const sortByDataKey = (dataKey: string | number | symbol, activeDataKey: string): number =>
@@ -51,6 +52,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         onDatumClick = noop,
         isSeriesSelected,
         isSeriesHovered,
+        getLineGroupStyle,
         ...attributes
     } = props
 
@@ -149,38 +151,6 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         },
     })
 
-    const getOpacity = (id: string): number => {
-        // Highlight series with active point
-        if (activePoint) {
-            if (activePoint.seriesId === id) {
-                return 1
-            }
-
-            return 0.5
-        }
-
-        if (isSeriesSelected(id)) {
-            return 1
-        }
-
-        if (isSeriesHovered(id)) {
-            return 0.5
-        }
-
-        return 1
-    }
-
-    const getHoverStyle = (id: string): CSSProperties => {
-        const opacity = getOpacity(id)
-
-        return {
-            opacity,
-            transitionProperty: 'opacity',
-            transitionDuration: '200ms',
-            transitionTimingFunction: 'ease-out',
-        }
-    }
-
     const sortedSeries = useMemo(
         () =>
             [...activeSeries]
@@ -215,7 +185,10 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 {stacked && <StackedArea dataSeries={activeSeries} xScale={xScale} yScale={yScale} />}
 
                 {sortedSeries.map(line => (
-                    <Group key={line.id} style={getHoverStyle(`${line.id}`)}>
+                    <Group
+                        key={line.id}
+                        style={getLineGroupStyle?.(`${line.id}`, !!activePoint, activePoint?.seriesId === line.id)}
+                    >
                         <LinePath
                             data={line.data as SeriesDatum<D>[]}
                             defined={isDatumWithValidNumber}
