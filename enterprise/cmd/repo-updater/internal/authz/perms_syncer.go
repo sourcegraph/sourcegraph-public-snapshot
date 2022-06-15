@@ -282,6 +282,10 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 		return errors.New("no token found in the external account data")
 	}
 
+	// The default grace period for the oauth2 library is only 10 seconds, we extend
+	// this to give ourselves a better chance of not having a token expire.
+	tok.Expiry = tok.Expiry.Add(-10 * time.Minute)
+
 	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
 	if err != nil {
 		return errors.Wrap(err, "refresh token")
@@ -325,6 +329,20 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "list external accounts")
 	}
+
+	// We also want to include any expired accounts for GitLab as they can be
+	// refreshed
+	expireGitLabAccounts, err := s.db.UserExternalAccounts().List(ctx,
+		database.ExternalAccountsListOptions{
+			UserID:      user.ID,
+			ServiceType: extsvc.TypeGitLab,
+			OnlyExpired: true,
+		},
+	)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "list expired gitlab external accounts")
+	}
+	accts = append(accts, expireGitLabAccounts...)
 
 	serviceToAccounts := make(map[string]*extsvc.Account)
 	for _, acct := range accts {
@@ -396,6 +414,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			return nil, nil, errors.Wrap(err, "wait for rate limiter")
 		}
 
+		// Refresh the token after waiting for the rate limit to give us the best chance of it being valid
 		logger.Debug("maybe refresh account token", log.Int32("accountID", acct.ID))
 		if err := s.maybeRefreshGitLabOAuthTokenFromAccount(ctx, acct); err != nil {
 			// This should not be a fatal error, we should still try to sync from other accounts

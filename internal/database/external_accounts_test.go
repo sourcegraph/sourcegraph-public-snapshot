@@ -469,6 +469,25 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 		}
 	})
 
+	t.Run("Include expired", func(t *testing.T) {
+		err := db.UserExternalAccounts().TouchExpired(ctx, acct.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{
+			UserID:      userID,
+			OnlyExpired: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(accts) == 0 {
+			t.Fatalf("Want external accounts but got 0")
+		}
+	})
+
 	t.Run("LookupUserAndSave should set expired_at to NULL", func(t *testing.T) {
 		err := db.UserExternalAccounts().TouchExpired(ctx, acct.ID)
 		if err != nil {

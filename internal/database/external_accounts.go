@@ -346,7 +346,11 @@ type ExternalAccountsListOptions struct {
 	UserID                           int32
 	ServiceType, ServiceID, ClientID string
 	AccountID                        int64
-	ExcludeExpired                   bool
+
+	// Only one of these should be set
+	ExcludeExpired bool
+	OnlyExpired    bool
+
 	*LimitOffset
 }
 
@@ -460,6 +464,9 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 	}
 	if opt.ExcludeExpired {
 		conds = append(conds, sqlf.Sprintf("expired_at IS NULL"))
+	}
+	if opt.OnlyExpired {
+		conds = append(conds, sqlf.Sprintf("expired_at IS NOT NULL"))
 	}
 
 	return conds
