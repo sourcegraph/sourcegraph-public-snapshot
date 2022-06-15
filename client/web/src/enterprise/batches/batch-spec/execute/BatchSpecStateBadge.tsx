@@ -14,7 +14,7 @@ const getProps = (state: BatchSpecState): [variant: BadgeVariantType, tooltip: s
         case BatchSpecState.PENDING:
             return ['secondary', 'Execution has not been started.']
         case BatchSpecState.QUEUED:
-            return ['secondary', 'Waiting for next available executor.']
+            return ['secondary', 'Waiting for the next available executor.']
         case BatchSpecState.PROCESSING:
             return ['secondary', 'The batch spec is actively being executed.']
         case BatchSpecState.CANCELED:
