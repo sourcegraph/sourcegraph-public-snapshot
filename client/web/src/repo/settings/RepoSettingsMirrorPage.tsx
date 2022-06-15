@@ -314,6 +314,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                 <Container className="repo-settings-mirror-page">
                     {this.state.loading && <LoadingSpinner />}
                     {this.state.error && <ErrorAlert error={this.state.error} />}
+
                     <div className="form-group">
                         <Input
                             value={this.props.repo.mirrorInfo.remoteURL || '(unknown)'}
@@ -336,6 +337,12 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                             </small>
                         )}
                     </div>
+                    {this.state.repo.mirrorInfo.lastError && (
+                        <Alert variant="warning">
+                            <TerminalLine>Error updating repo:</TerminalLine>
+                            <TerminalLine>{this.state.repo.mirrorInfo.lastError}</TerminalLine>
+                        </Alert>
+                    )}
                     <UpdateMirrorRepositoryActionContainer
                         repo={this.state.repo}
                         onDidUpdateRepository={this.onDidUpdateRepository}
@@ -380,12 +387,6 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                                     <FeedbackText headerText="Questions?" />
                                 </li>
                             </ul>
-                        </Alert>
-                    )}
-                    {this.state.repo.mirrorInfo.lastError && (
-                        <Alert variant="warning">
-                            <TerminalLine>Error updating repo:</TerminalLine>
-                            <TerminalLine>{this.state.repo.mirrorInfo.lastError}</TerminalLine>
                         </Alert>
                     )}
                 </Container>

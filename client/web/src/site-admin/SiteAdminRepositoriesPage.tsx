@@ -21,6 +21,7 @@ import { RepositoriesResult, SiteAdminRepositoryFields } from '../graphql-operat
 import { refreshSiteFlags } from '../site/backend'
 
 import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
+import { TerminalLine } from '../auth/Terminal'
 
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
@@ -70,9 +71,10 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
             </div>
         </div>
         {node.mirrorInfo.lastError && (
-            <Collapsible title="Error details" titleAtStart={true} defaultExpanded={true}>
-                {node.mirrorInfo.lastError}
-            </Collapsible>
+            <Alert variant="warning">
+                <TerminalLine>Error updating repo:</TerminalLine>
+                <TerminalLine>{node.mirrorInfo.lastError}</TerminalLine>
+            </Alert>
         )}
     </li>
 )
