@@ -694,10 +694,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 			query      string
 			zeroResult bool
 			wantAlert  *gqltestutil.SearchAlert
+			skip       int
 		}{
 			{
 				name:  "Structural, index only, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ make(:[1]) index:only patterntype:structural count:3`,
+				skip:  skipStream & skipGraphQL,
 			},
 			{
 				name:  "Structural, index only, backcompat, nonzero result",
@@ -714,6 +716,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
+				doSkip(t, test.skip)
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
 					t.Fatal(err)
@@ -742,6 +745,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			query      string
 			zeroResult bool
 			wantAlert  *gqltestutil.SearchAlert
+			skip       int
 		}{
 			{
 				name:  `And operator, basic`,
@@ -822,6 +826,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:  `Literals, not keyword and implicit and inside group`,
 				query: `repo:^github\.com/sgtest/go-diff$ (a/foo not .svg) patterntype:literal`,
+				skip:  skipStream & skipGraphQL,
 			},
 			{
 				name:  `Literals, not and and keyword inside group`,
@@ -921,6 +926,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
+				doSkip(t, test.skip)
+
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
 					t.Fatal(err)
