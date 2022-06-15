@@ -580,7 +580,7 @@ CREATE TABLE batch_spec_resolution_jobs (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
-    initiator_id integer
+    initiator_id integer NOT NULL
 );
 
 CREATE SEQUENCE batch_spec_resolution_jobs_id_seq
@@ -609,7 +609,8 @@ CREATE TABLE batch_spec_workspace_execution_jobs (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
     access_token_id bigint,
-    queued_at timestamp with time zone DEFAULT now()
+    queued_at timestamp with time zone DEFAULT now(),
+    user_id integer
 );
 
 CREATE SEQUENCE batch_spec_workspace_execution_jobs_id_seq
@@ -620,6 +621,59 @@ CREATE SEQUENCE batch_spec_workspace_execution_jobs_id_seq
     CACHE 1;
 
 ALTER SEQUENCE batch_spec_workspace_execution_jobs_id_seq OWNED BY batch_spec_workspace_execution_jobs.id;
+
+CREATE VIEW batch_spec_workspace_execution_queue AS
+ WITH user_queues AS (
+         SELECT exec.user_id,
+            max(exec.started_at) AS latest_dequeue
+           FROM batch_spec_workspace_execution_jobs exec
+          GROUP BY exec.user_id
+        ), materialized_queue_candidates AS MATERIALIZED (
+         SELECT exec.id,
+            exec.batch_spec_workspace_id,
+            exec.state,
+            exec.failure_message,
+            exec.started_at,
+            exec.finished_at,
+            exec.process_after,
+            exec.num_resets,
+            exec.num_failures,
+            exec.execution_logs,
+            exec.worker_hostname,
+            exec.last_heartbeat_at,
+            exec.created_at,
+            exec.updated_at,
+            exec.cancel,
+            exec.access_token_id,
+            exec.queued_at,
+            exec.user_id,
+            rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS place_in_user_queue
+           FROM (batch_spec_workspace_execution_jobs exec
+             JOIN user_queues queue ON ((queue.user_id = exec.user_id)))
+          WHERE (exec.state = 'queued'::text)
+          ORDER BY (rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id)), queue.latest_dequeue NULLS FIRST
+        )
+ SELECT row_number() OVER () AS place_in_global_queue,
+    materialized_queue_candidates.id,
+    materialized_queue_candidates.batch_spec_workspace_id,
+    materialized_queue_candidates.state,
+    materialized_queue_candidates.failure_message,
+    materialized_queue_candidates.started_at,
+    materialized_queue_candidates.finished_at,
+    materialized_queue_candidates.process_after,
+    materialized_queue_candidates.num_resets,
+    materialized_queue_candidates.num_failures,
+    materialized_queue_candidates.execution_logs,
+    materialized_queue_candidates.worker_hostname,
+    materialized_queue_candidates.last_heartbeat_at,
+    materialized_queue_candidates.created_at,
+    materialized_queue_candidates.updated_at,
+    materialized_queue_candidates.cancel,
+    materialized_queue_candidates.access_token_id,
+    materialized_queue_candidates.queued_at,
+    materialized_queue_candidates.user_id,
+    materialized_queue_candidates.place_in_user_queue
+   FROM materialized_queue_candidates;
 
 CREATE TABLE batch_spec_workspaces (
     id bigint NOT NULL,
@@ -1351,6 +1405,36 @@ CREATE SEQUENCE executor_heartbeats_id_seq
     CACHE 1;
 
 ALTER SEQUENCE executor_heartbeats_id_seq OWNED BY executor_heartbeats.id;
+
+CREATE TABLE explicit_permissions_bitbucket_projects_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now(),
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    project_key text NOT NULL,
+    external_service_id integer NOT NULL,
+    permissions json[],
+    unrestricted boolean DEFAULT false NOT NULL,
+    CONSTRAINT explicit_permissions_bitbucket_projects_jobs_check CHECK ((((permissions IS NOT NULL) AND (unrestricted IS FALSE)) OR ((permissions IS NULL) AND (unrestricted IS TRUE))))
+);
+
+CREATE SEQUENCE explicit_permissions_bitbucket_projects_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE explicit_permissions_bitbucket_projects_jobs_id_seq OWNED BY explicit_permissions_bitbucket_projects_jobs.id;
 
 CREATE TABLE external_service_repos (
     external_service_id bigint NOT NULL,
@@ -2989,6 +3073,8 @@ ALTER TABLE ONLY event_logs ALTER COLUMN id SET DEFAULT nextval('event_logs_id_s
 
 ALTER TABLE ONLY executor_heartbeats ALTER COLUMN id SET DEFAULT nextval('executor_heartbeats_id_seq'::regclass);
 
+ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SET DEFAULT nextval('explicit_permissions_bitbucket_projects_jobs_id_seq'::regclass);
+
 ALTER TABLE ONLY external_services ALTER COLUMN id SET DEFAULT nextval('external_services_id_seq'::regclass);
 
 ALTER TABLE ONLY gitserver_relocator_jobs ALTER COLUMN id SET DEFAULT nextval('gitserver_relocator_jobs_id_seq'::regclass);
@@ -3170,6 +3256,9 @@ ALTER TABLE ONLY executor_heartbeats
 
 ALTER TABLE ONLY executor_heartbeats
     ADD CONSTRAINT executor_heartbeats_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs
+    ADD CONSTRAINT explicit_permissions_bitbucket_projects_jobs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY external_service_repos
     ADD CONSTRAINT external_service_repos_repo_id_external_service_id_unique UNIQUE (repo_id, external_service_id);
@@ -3389,13 +3478,25 @@ CREATE UNIQUE INDEX batch_changes_unique_org_id ON batch_changes USING btree (na
 
 CREATE UNIQUE INDEX batch_changes_unique_user_id ON batch_changes USING btree (name, namespace_user_id) WHERE (namespace_user_id IS NOT NULL);
 
+CREATE INDEX batch_spec_workspace_execution_jobs_batch_spec_workspace_id ON batch_spec_workspace_execution_jobs USING btree (batch_spec_workspace_id);
+
 CREATE INDEX batch_spec_workspace_execution_jobs_cancel ON batch_spec_workspace_execution_jobs USING btree (cancel);
+
+CREATE INDEX batch_spec_workspace_execution_jobs_state ON batch_spec_workspace_execution_jobs USING btree (state);
+
+CREATE INDEX batch_spec_workspace_execution_jobs_user_id ON batch_spec_workspace_execution_jobs USING btree (user_id);
+
+CREATE INDEX batch_spec_workspaces_batch_spec_id ON batch_spec_workspaces USING btree (batch_spec_id);
 
 CREATE INDEX batch_specs_rand_id ON batch_specs USING btree (rand_id);
 
 CREATE INDEX changeset_jobs_bulk_group_idx ON changeset_jobs USING btree (bulk_group);
 
 CREATE INDEX changeset_jobs_state_idx ON changeset_jobs USING btree (state);
+
+CREATE INDEX changeset_specs_batch_spec_id ON changeset_specs USING btree (batch_spec_id);
+
+CREATE INDEX changeset_specs_created_at ON changeset_specs USING btree (created_at);
 
 CREATE INDEX changeset_specs_external_id ON changeset_specs USING btree (external_id);
 
@@ -3408,6 +3509,8 @@ CREATE INDEX changeset_specs_title ON changeset_specs USING btree (title);
 CREATE INDEX changesets_batch_change_ids ON changesets USING gin (batch_change_ids);
 
 CREATE INDEX changesets_bitbucket_cloud_metadata_source_commit_idx ON changesets USING btree (((((metadata -> 'source'::text) -> 'commit'::text) ->> 'hash'::text)));
+
+CREATE INDEX changesets_changeset_specs ON changesets USING btree (current_spec_id, previous_spec_id);
 
 CREATE INDEX changesets_external_state_idx ON changesets USING btree (external_state);
 
@@ -3463,6 +3566,8 @@ CREATE INDEX event_logs_timestamp_at_utc ON event_logs USING btree (date(timezon
 
 CREATE INDEX event_logs_user_id ON event_logs USING btree (user_id);
 
+CREATE INDEX explicit_permissions_bitbucket_projects_jobs_project_key_extern ON explicit_permissions_bitbucket_projects_jobs USING btree (project_key, external_service_id, state);
+
 CREATE INDEX external_service_repos_clone_url_idx ON external_service_repos USING btree (clone_url);
 
 CREATE INDEX external_service_repos_idx ON external_service_repos USING btree (external_service_id, repo_id);
@@ -3478,6 +3583,10 @@ CREATE INDEX external_services_has_webhooks_idx ON external_services USING btree
 CREATE INDEX external_services_namespace_org_id_idx ON external_services USING btree (namespace_org_id);
 
 CREATE INDEX external_services_namespace_user_id_idx ON external_services USING btree (namespace_user_id);
+
+CREATE UNIQUE INDEX external_services_unique_kind_org_id ON external_services USING btree (kind, namespace_org_id) WHERE ((deleted_at IS NULL) AND (namespace_user_id IS NULL) AND (namespace_org_id IS NOT NULL));
+
+CREATE UNIQUE INDEX external_services_unique_kind_user_id ON external_services USING btree (kind, namespace_user_id) WHERE ((deleted_at IS NULL) AND (namespace_org_id IS NULL) AND (namespace_user_id IS NOT NULL));
 
 CREATE INDEX feature_flag_overrides_org_id ON feature_flag_overrides USING btree (namespace_org_id) WHERE (namespace_org_id IS NOT NULL);
 

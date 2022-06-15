@@ -6,13 +6,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	enterprisedbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestDependencySyncSchedulerJVM(t *testing.T) {

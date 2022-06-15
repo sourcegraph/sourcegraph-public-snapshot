@@ -77,5 +77,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         if (browser != null) {
             browser.dispose();
         }
+
+        previewPanel.dispose();
     }
 }

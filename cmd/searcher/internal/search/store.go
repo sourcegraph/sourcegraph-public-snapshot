@@ -20,6 +20,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -30,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // maxFileSize is the limit on file size in bytes. Only files smaller
@@ -127,6 +128,10 @@ func (s *Store) Start() {
 // PrepareZip returns the path to a local zip archive of repo at commit.
 // It will first consult the local cache, otherwise will fetch from the network.
 func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.CommitID) (path string, err error) {
+	return s.PrepareZipPaths(ctx, repo, commit, nil)
+}
+
+func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (path string, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Store.prepareZip")
 	ext.Component.Set(span, "store")
 	var cacheHit bool
@@ -157,8 +162,13 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 	largeFilePatterns := conf.Get().SearchLargeFiles
 
 	// key is a sha256 hash since we want to use it for the disk name
-	h := sha256.Sum256([]byte(fmt.Sprintf("%q %q %q", repo, commit, largeFilePatterns)))
-	key := hex.EncodeToString(h[:])
+	h := sha256.New()
+	_, _ = fmt.Fprintf(h, "%q %q %q", repo, commit, largeFilePatterns)
+	for _, p := range paths {
+		_, _ = h.Write([]byte{0})
+		_, _ = h.Write([]byte(p))
+	}
+	key := hex.EncodeToString(h.Sum(nil))
 	span.LogKV("key", key)
 
 	// Our fetch can take a long time, and the frontend aggressively cancels
@@ -177,7 +187,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 		bgctx := opentracing.ContextWithSpan(context.Background(), opentracing.SpanFromContext(ctx))
 		f, err := s.cache.Open(bgctx, []string{key}, func(ctx context.Context) (io.ReadCloser, error) {
 			cacheHit = false
-			return s.fetch(ctx, repo, commit, largeFilePatterns)
+			return s.fetch(ctx, repo, commit, largeFilePatterns, paths)
 		})
 		var path string
 		if f != nil {
@@ -208,7 +218,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 // fetch fetches an archive from the network and stores it on disk. It does
 // not populate the in-memory cache. You should probably be calling
 // prepareZip.
-func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitID, largeFilePatterns []string) (rc io.ReadCloser, err error) {
+func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitID, largeFilePatterns []string, paths []string) (rc io.ReadCloser, err error) {
 	metricFetchQueueSize.Inc()
 	ctx, releaseFetchLimiter, err := s.fetchLimiter.Acquire(ctx) // Acquire concurrent fetches semaphore
 	if err != nil {
@@ -249,9 +259,17 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 		}
 	}()
 
-	r, err := s.FetchTar(ctx, repo, commit)
-	if err != nil {
-		return nil, err
+	var r io.ReadCloser
+	if len(paths) == 0 {
+		r, err = s.FetchTar(ctx, repo, commit)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		r, err = s.FetchTarPaths(ctx, repo, commit, paths)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	filter := func(hdr *tar.Header) bool { return false } // default: don't filter

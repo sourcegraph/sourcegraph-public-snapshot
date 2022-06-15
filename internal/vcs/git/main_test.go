@@ -19,14 +19,15 @@ import (
 
 	"golang.org/x/sync/semaphore"
 
+	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 var root string
@@ -68,7 +69,7 @@ func init() {
 
 	srv := &http.Server{
 		Handler: (&server.Server{
-			Logger:   sglog.Scoped("gitserver", "gitserver server log"),
+			Logger:   sglog.Scoped("server", "the gitserver service"),
 			ReposDir: filepath.Join(root, "repos"),
 			GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 				return filepath.Join(root, "remotes", string(name)), nil

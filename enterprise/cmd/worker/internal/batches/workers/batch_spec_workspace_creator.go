@@ -7,6 +7,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -18,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // batchSpecWorkspaceCreator takes in BatchSpecs, resolves them into
@@ -147,7 +148,7 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		stepCacheKeys := make([]string, 0, len(spec.Spec.Steps))
 		// Generate cache keys for all the step results as well.
-		for i := 0; i < len(spec.Spec.Steps)-1; i++ {
+		for i := 0; i < len(spec.Spec.Steps); i++ {
 			if _, ok := skippedSteps[int32(i)]; ok {
 				continue
 			}

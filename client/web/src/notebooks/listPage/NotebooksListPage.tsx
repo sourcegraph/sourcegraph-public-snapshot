@@ -252,7 +252,6 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
         <div className="w-100">
             <Page>
                 <PageHeader
-                    path={[{ icon: BookOutlineIcon, text: 'Notebooks' }]}
                     actions={
                         authenticatedUser && (
                             <>
@@ -265,14 +264,18 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                                     setImportState={setImportState}
                                 />
                                 <Button to={PageRoutes.NotebookCreate} variant="primary" as={Link} className="ml-2">
-                                    <Icon role="img" aria-hidden={true} className="mr-1" as={PlusIcon} />
+                                    <Icon aria-hidden={true} className="mr-1" as={PlusIcon} />
                                     Create notebook
                                 </Button>
                             </>
                         )
                     }
                     className="mb-3"
-                />
+                >
+                    <PageHeader.Heading as="h2" styleAs="h1">
+                        <PageHeader.Breadcrumb icon={BookOutlineIcon}>Notebooks</PageHeader.Breadcrumb>
+                    </PageHeader.Heading>
+                </PageHeader>
                 {isErrorLike(importState) && (
                     <Alert variant="danger">
                         Error while importing the notebook: <strong>{importState.message}</strong>

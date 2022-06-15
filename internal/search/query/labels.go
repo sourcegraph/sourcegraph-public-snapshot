@@ -37,11 +37,11 @@ func (l *labels) IsSet(label labels) bool {
 	return *l&label != 0
 }
 
-func (l *labels) set(label labels) {
+func (l *labels) Set(label labels) {
 	*l |= label
 }
 
-func (l *labels) unset(label labels) {
+func (l *labels) Unset(label labels) {
 	*l &^= label
 }
 

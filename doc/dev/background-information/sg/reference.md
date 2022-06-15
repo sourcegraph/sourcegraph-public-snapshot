@@ -1,4 +1,4 @@
- 
+<!-- DO NOT EDIT: generated via: go generate ./dev/sg -->
 
 # sg reference
 
@@ -31,12 +31,12 @@ Available comamndsets in `sg.config.yaml`:
 * api-only
 * batches 🦡
 * codeintel
-* core-app
 * dotcom
 * enterprise
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
 * enterprise-e2e
+* iam
 * monitoring
 * monitoring-alerts
 * oss
@@ -662,6 +662,22 @@ Flags:
 * `--skip-teardown`: Skip tearing down the database created to run all registered migrations
 * `-f="<value>"`: The output filepath
 
+### sg migration visualize
+
+Output a DOT visualization of the migration graph.
+
+Available schemas:
+
+* frontend
+* codeintel
+* codeinsights
+
+
+Flags:
+
+* `--db="<value>"`: The target database `schema` to modify (default: frontend)
+* `-f="<value>"`: The output filepath
+
 ## sg doctor
 
 Run checks to test whether system is in correct state to run Sourcegraph.
@@ -676,7 +692,8 @@ Manipulate secrets stored in memory and in file.
 # List all secrets stored in your local configuration.
 $ sg secret list
 
-# Remove the secrets associated with buildkite (sg ci build)
+# Remove the secrets associated with buildkite (sg ci build) - supports autocompletion for
+# ease of use
 $ sg secret reset buildkite
 ```
 
@@ -799,7 +816,7 @@ Manage analytics collected by sg.
 
 Make sg better by submitting all analytics stored locally!.
 
-Uses OKAYHQ_TOKEN, or fetches a token from gcloud.
+Uses OKAYHQ_TOKEN, or fetches a token from gcloud or 1password.
 
 Arguments: `[github username]`
 

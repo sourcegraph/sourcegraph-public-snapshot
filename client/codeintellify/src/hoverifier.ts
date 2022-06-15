@@ -468,7 +468,7 @@ export function createHoverifier<C extends object, D, A>({
     const allCodeMouseOvers = allPositionsFromEvents.pipe(filter(isEventType('mouseover')), suppressWhileOverlayShown())
     const allCodeClicks = allPositionsFromEvents.pipe(filter(isEventType('click')))
 
-    const allPositionJumps = new Subject<PositionJump & EventOptions<C>>()
+    const positionJumps = new Subject<PositionJump & EventOptions<C>>()
 
     /**
      * Whenever a Subscription returned by `hoverify()` is unsubscribed,
@@ -535,7 +535,10 @@ export function createHoverifier<C extends object, D, A>({
      * disabled, this does not emit at all because the tooltip doesn't get
      * pinned at the jump target.
      */
-    const jumpTargets = allPositionJumps.pipe(
+    const jumpTargets = positionJumps.pipe(
+        withLatestFrom(container.updates),
+        filter(([, { pinned }]) => pinned),
+        map(([position]) => position),
         // Only use line and character for comparison
         map(({ position: { line, character, part }, ...rest }) => ({
             position: { line, character, part },
@@ -1054,7 +1057,7 @@ export function createHoverifier<C extends object, D, A>({
 
     // LOCATION CHANGES
     subscription.add(
-        allPositionJumps.subscribe(
+        positionJumps.subscribe(
             ({ position, scrollElement, codeView, dom: { getCodeElementFromLineNumber }, overrideTokenize }) => {
                 container.update({
                     // Remember active position in state for blame and range expansion
@@ -1089,7 +1092,11 @@ export function createHoverifier<C extends object, D, A>({
             map(internalToExternalState),
             distinctUntilChanged((a, b) => isEqual(a, b))
         ),
-        hoverify({ positionEvents, positionJumps = EMPTY, ...eventOptions }: HoverifyOptions<C>): Subscription {
+        hoverify({
+            positionEvents,
+            positionJumps: positionJumpsArgument = EMPTY,
+            ...eventOptions
+        }: HoverifyOptions<C>): Subscription {
             const codeViewId = Symbol('CodeView')
             const subscription = new Subscription()
             // Broadcast all events from this code view
@@ -1099,9 +1106,9 @@ export function createHoverifier<C extends object, D, A>({
                     .subscribe(allPositionsFromEvents)
             )
             subscription.add(
-                from(positionJumps)
+                from(positionJumpsArgument)
                     .pipe(map(jump => ({ ...jump, ...eventOptions, codeViewId })))
-                    .subscribe(allPositionJumps)
+                    .subscribe(positionJumps)
             )
             subscription.add(() => {
                 // Make sure hover is hidden and associated subscriptions unsubscribed

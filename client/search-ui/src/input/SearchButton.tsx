@@ -35,7 +35,7 @@ export const SearchButton: React.FunctionComponent<React.PropsWithChildren<Props
             aria-label="Search"
             variant="primary"
         >
-            <Icon role="img" aria-hidden="true" as={SearchIcon} />
+            <Icon aria-hidden="true" as={SearchIcon} />
         </Button>
         {!hideHelpButton && (
             <SearchHelpDropdownButton isSourcegraphDotCom={isSourcegraphDotCom} telemetryService={telemetryService} />

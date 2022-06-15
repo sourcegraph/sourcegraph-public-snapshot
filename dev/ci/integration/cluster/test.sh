@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euxo pipefail
+set -euo pipefail
 
 # setup DIR for easier pathing test dir
 test_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)""
@@ -85,7 +85,7 @@ function test_setup() {
   set +x +u
   # shellcheck disable=SC1091
   source /root/.sg_envrc
-  set -x -u
+  set -u
 
   echo "--- TEST: Checking Sourcegraph instance is accessible"
 

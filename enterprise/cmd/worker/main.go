@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -24,23 +26,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {
-	syncLogs := log.Init(log.Resource{
+	liblog := log.Init(log.Resource{
 		Name:    env.MyName,
 		Version: version.Version(),
 	})
-	defer syncLogs()
+	defer liblog.Sync()
 
 	logger := log.Scoped("worker", "worker enterprise edition")
 
 	go setAuthzProviders()
 
 	additionalJobs := map[string]job.Job{
-		"codeintel-janitor":          codeintel.NewJanitorJob(),
-		"codeintel-auto-indexing":    codeintel.NewIndexingJob(),
 		"codehost-version-syncing":   versions.NewSyncingJob(),
 		"insights-job":               workerinsights.NewInsightsJob(),
 		"insights-query-runner-job":  workerinsights.NewInsightsQueryRunnerJob(),
@@ -57,6 +56,10 @@ func main() {
 		"codeintel-upload-expirer":         freshcodeintel.NewUploadExpirerJob(),
 		"codeintel-commitgraph-updater":    freshcodeintel.NewCommitGraphUpdaterJob(),
 		"codeintel-autoindexing-scheduler": freshcodeintel.NewAutoindexingSchedulerJob(),
+
+		// temporary
+		"codeintel-janitor":       codeintel.NewJanitorJob(),
+		"codeintel-auto-indexing": codeintel.NewIndexingJob(),
 	}
 
 	if err := shared.Start(logger, additionalJobs, registerEnterpriseMigrations); err != nil {

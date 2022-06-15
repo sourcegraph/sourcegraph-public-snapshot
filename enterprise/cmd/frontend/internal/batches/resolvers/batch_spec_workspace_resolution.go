@@ -87,6 +87,21 @@ func workspacesListArgsToDBOpts(args *graphqlbackend.ListWorkspacesArgs) (opts s
 			opts.OnlyCachedOrCompleted = true
 		} else if *args.State == "PENDING" {
 			opts.OnlyWithoutExecutionAndNotCached = true
+		} else if *args.State == "CANCELING" {
+			t := true
+			opts.Cancel = &t
+			opts.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
+		} else if *args.State == "CANCELED" {
+			t := true
+			opts.Cancel = &t
+			opts.State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
+		} else if *args.State == "FAILED" {
+			f := false
+			opts.Cancel = &f
+			opts.State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
+		} else if *args.State == "SKIPPED" {
+			t := true
+			opts.Skipped = &t
 		} else {
 			// Convert the GQL type into the DB type: we just need to lowercase it. Magic 🪄.
 			opts.State = btypes.BatchSpecWorkspaceExecutionJobState(strings.ToLower(*args.State))

@@ -270,7 +270,7 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 // InvalidateSessionCurrentUser invalidates all sessions for the current user.
 func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request, db database.DB) error {
 	a := actor.FromContext(r.Context())
-	err := database.Users(db).InvalidateSessionsByID(r.Context(), a.UID)
+	err := db.Users().InvalidateSessionsByID(r.Context(), a.UID)
 	if err != nil {
 		return err
 	}
@@ -285,7 +285,7 @@ func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request, db dat
 // If an error occurs, it returns the error
 func InvalidateSessionsByID(ctx context.Context, db database.DB, id int32) error {
 	// Get the user from the request context
-	return database.Users(db).InvalidateSessionsByID(ctx, id)
+	return db.Users().InvalidateSessionsByID(ctx, id)
 }
 
 // CookieMiddleware is an http.Handler middleware that authenticates
@@ -342,6 +342,14 @@ func authenticateByCookie(db database.DB, r *http.Request, w http.ResponseWriter
 
 	var info *sessionInfo
 	if err := GetData(r, "actor", &info); err != nil {
+		if strings.Contains(err.Error(), "connect: connection refused") {
+			// If fetching session info failed because of a Redis error, return empty Context
+			// without deleting the session cookie and throw an internal server error.
+			// This prevents background requests made by off-screen tabs from signing
+			// the user out during a server update.
+			w.WriteHeader(http.StatusInternalServerError)
+			return r.Context()
+		}
 		if !strings.Contains(err.Error(), "illegal base64 data at input byte 36") {
 			// Skip log if the error message indicates the cookie value was a JWT (which almost
 			// certainly means that the cookie was a pre-2.8 SAML cookie, so this error will only

@@ -3,7 +3,6 @@ package repoupdater
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -16,6 +15,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/opentracing/opentracing-go"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -34,7 +35,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestServer_handleRepoLookup(t *testing.T) {
@@ -162,7 +162,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 	}
 
 	initStore := func(db database.DB) repos.Store {
-		store := repos.NewStore(db, sql.TxOptions{})
+		store := repos.NewStore(logtest.Scoped(t), db)
 		if err := store.ExternalServiceStore().Upsert(ctx, &svc); err != nil {
 			t.Fatal(err)
 		}
@@ -237,7 +237,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 
 func TestServer_RepoLookup(t *testing.T) {
 	db := dbtest.NewDB(t)
-	store := repos.NewStore(database.NewDB(db), sql.TxOptions{})
+	store := repos.NewStore(logtest.Scoped(t), database.NewDB(db))
 	ctx := context.Background()
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()

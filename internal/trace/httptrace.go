@@ -16,13 +16,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type key int
@@ -135,10 +136,9 @@ var (
 //
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.
-func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
-	logger := log.Scoped("http", "http tracing middleware")
-
-	return sentry.Recoverer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
+	logger = logger.Scoped("http", "http tracing middleware")
+	return sentry.Recoverer(logger, http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		// extract propagated span
@@ -230,8 +230,8 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 			minDuration = customDuration
 		}
 
-		if m.Duration >= minDuration || m.Code >= minCode {
-			fields := make([]log.Field, 0, 20)
+		if m.Code >= minCode || m.Duration >= minDuration {
+			fields := make([]log.Field, 0, 10)
 			fields = append(fields,
 				log.String("route_name", routeName),
 				log.String("method", r.Method),
@@ -258,7 +258,23 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 			if m.Code >= minCode {
 				parts = append(parts, "unexpected status code")
 			}
-			logger.Warn(strings.Join(parts, ", "), fields...)
+
+			msg := strings.Join(parts, ", ")
+			switch {
+			case m.Code == http.StatusNotFound:
+				logger.Info(msg, fields...)
+			case m.Code == http.StatusUnauthorized:
+				logger.Warn(msg, fields...)
+			case m.Code >= http.StatusInternalServerError && requestErrorCause != nil:
+				// Always wrapping error without a true cause creates loads of events on which we
+				// do not have the stack trace and that are barely usable. Once we find a better
+				// way to handle such cases, we should bring back the deleted lines from
+				// https://github.com/sourcegraph/sourcegraph/pull/29312.
+				fields = append(fields, log.Error(requestErrorCause))
+				logger.Error(msg, fields...)
+			default:
+				logger.Error(msg, fields...)
+			}
 		}
 
 		// Notify sentry if the status code indicates our system had an error (e.g. 5xx).
@@ -270,20 +286,6 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 				// https://github.com/sourcegraph/sourcegraph/pull/29312.
 				return
 			}
-
-			sentry.CaptureError(requestErrorCause, map[string]string{
-				"code":            strconv.Itoa(m.Code),
-				"method":          r.Method,
-				"url":             r.URL.String(),
-				"route_name":      routeName,
-				"user_agent":      r.UserAgent(),
-				"user":            strconv.FormatInt(int64(userID), 10),
-				"x_forwarded_for": r.Header.Get("X-Forwarded-For"),
-				"written":         strconv.FormatInt(m.Written, 10),
-				"duration":        m.Duration.String(),
-				"graphql_error":   strconv.FormatBool(gqlErr),
-				"trace":           traceURL,
-			})
 		}
 	}))
 }

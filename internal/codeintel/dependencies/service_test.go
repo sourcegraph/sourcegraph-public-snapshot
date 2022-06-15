@@ -358,6 +358,22 @@ func TestResolveDependencies(t *testing.T) {
 		}, nil
 	})
 
+	// UpsertDependencyRepos influences the value that syncer.Sync is called with (asserted below)
+	mockStore.UpsertDependencyReposFunc.SetDefaultHook(func(ctx context.Context, dependencyRepos []Repo) ([]Repo, error) {
+		filtered := dependencyRepos[:0]
+		for _, dependencyRepo := range dependencyRepos {
+			// repo is even + commit is odd, or
+			// repo is odd + commit is even
+			if endsWithEvenDigit(dependencyRepo.Name) != endsWithEvenDigit(dependencyRepo.Version) {
+				continue
+			}
+
+			filtered = append(filtered, dependencyRepo)
+		}
+
+		return filtered, nil
+	})
+
 	repoRevs := map[api.RepoName]types.RevSpecSet{
 		api.RepoName("github.com/example/foo"): {
 			api.RevSpec("deadbeef1"): struct{}{},
@@ -387,6 +403,36 @@ func TestResolveDependencies(t *testing.T) {
 	// We make sure that "0 dependencies" is also recorded as a result
 	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/baz", "deadbeef5", []shared.PackageDependency{}))
 	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileDependenciesFunc, mockassert.Values(mockassert.Skip, "github.com/example/baz", "deadbeef6", []shared.PackageDependency{}))
+
+	// Assert `syncer.Sync` was called correctly
+	syncHistory := syncer.SyncFunc.History()
+	syncedRepoNames := make([]string, 0, len(syncHistory))
+	for _, call := range syncHistory {
+		syncedRepoNames = append(syncedRepoNames, string(call.Arg1))
+	}
+	sort.Strings(syncedRepoNames)
+
+	// It should have synced the dependencies not filtered out by
+	// UpsertDependencyRepos above.
+	expectedNames := []string{
+		"maven/g1/a1",
+		"maven/g2/a2",
+		"maven/g3/a3",
+	}
+	if diff := cmp.Diff(expectedNames, syncedRepoNames); diff != "" {
+		t.Errorf("unexpected names (-want +got):\n%s", diff)
+	}
+}
+
+func endsWithEvenDigit(name string) bool {
+	if name == "" {
+		return false
+	}
+	v, err := strconv.Atoi(string(name[len(name)-1]))
+	if err != nil {
+		return false
+	}
+	return v%2 == 0
 }
 
 func testService(store store.Store, gitService localGitService, lockfilesService LockfilesService, syncer Syncer) *Service {

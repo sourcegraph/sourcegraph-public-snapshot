@@ -11,13 +11,13 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -42,7 +42,7 @@ type CommitIndexer struct {
 	clock             func() time.Time
 }
 
-func NewCommitIndexer(background context.Context, base database.DB, insights dbutil.DB, clock func() time.Time, observationContext *observation.Context) *CommitIndexer {
+func NewCommitIndexer(background context.Context, base database.DB, insights edb.InsightsDB, clock func() time.Time, observationContext *observation.Context) *CommitIndexer {
 	//TODO(insights): add a setting for historical index length
 	startTime := time.Now().AddDate(-1, 0, 0)
 
@@ -81,7 +81,7 @@ func NewCommitIndexer(background context.Context, base database.DB, insights dbu
 	return &indexer
 }
 
-func NewCommitIndexerWorker(ctx context.Context, base database.DB, insights dbutil.DB, clock func() time.Time, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func NewCommitIndexerWorker(ctx context.Context, base database.DB, insights edb.InsightsDB, clock func() time.Time, observationContext *observation.Context) goroutine.BackgroundRoutine {
 	indexer := NewCommitIndexer(ctx, base, insights, clock, observationContext)
 
 	return indexer.Handler(ctx, observationContext)

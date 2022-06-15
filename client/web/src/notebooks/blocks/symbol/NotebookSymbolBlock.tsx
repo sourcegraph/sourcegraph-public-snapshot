@@ -13,8 +13,8 @@ import { startWith } from 'rxjs/operators'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
+import { CodeExcerpt } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -115,7 +115,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                 {
                     type: 'link',
                     label: 'Open in new tab',
-                    icon: <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />,
+                    icon: <Icon aria-hidden={true} as={OpenInNewIcon} />,
                     url: symbolURL,
                     isDisabled: symbolURL.length === 0,
                 },
@@ -129,7 +129,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                 {
                     type: 'button',
                     label: showInputs ? 'Save' : 'Edit',
-                    icon: <Icon role="img" aria-hidden={true} as={showInputs ? CheckIcon : PencilIcon} />,
+                    icon: <Icon aria-hidden={true} as={showInputs ? CheckIcon : PencilIcon} />,
                     onClick: () => setShowInputs(!showInputs),
                     keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
                 },
@@ -260,7 +260,6 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<React.PropsWithChildren
                 </Code>
                 {symbolFoundAtLatestRevision === false && (
                     <Icon
-                        role="img"
                         aria-label={`Symbol not found at the latest revision, showing symbol at revision ${effectiveRevision}.`}
                         as={InformationOutlineIcon}
                         className="ml-1"

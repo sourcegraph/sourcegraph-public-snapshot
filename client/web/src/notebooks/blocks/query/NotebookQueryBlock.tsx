@@ -10,9 +10,8 @@ import { Observable, of } from 'rxjs'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
-import { StreamingSearchResultsList, useQueryDiagnostics } from '@sourcegraph/search-ui'
+import { StreamingSearchResultsList, useQueryDiagnostics, FetchFileParameters } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
@@ -102,7 +101,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                 type: 'button',
                 label: isLoading ? 'Searching...' : 'Run search',
                 isDisabled: isLoading ?? false,
-                icon: <Icon role="img" aria-hidden={true} as={PlayCircleOutlineIcon} />,
+                icon: <Icon aria-hidden={true} as={PlayCircleOutlineIcon} />,
                 onClick: onRunBlock,
                 keyboardShortcutLabel: isSelected ? `${modifierKeyLabel} + ↵` : '',
             }
@@ -113,7 +112,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                 {
                     type: 'link',
                     label: 'Open in new tab',
-                    icon: <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />,
+                    icon: <Icon aria-hidden={true} as={OpenInNewIcon} />,
                     url: `/search?${buildSearchURLQuery(input.query, SearchPatternType.literal, false)}`,
                 },
             ],

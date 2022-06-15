@@ -19,6 +19,7 @@ type DB interface {
 
 	AccessTokens() AccessTokenStore
 	Authz() AuthzStore
+	BitbucketProjectPermissions() BitbucketProjectPermissionsStore
 	Conf() ConfStore
 	EventLogs() EventLogStore
 	SecurityEventLogs() SecurityEventLogsStore
@@ -54,8 +55,12 @@ var _ DB = (*db)(nil)
 
 // NewDB creates a new DB from a dbutil.DB, providing a thin wrapper
 // that has constructor methods for the more specialized stores.
-func NewDB(inner dbutil.DB) DB {
-	return &db{basestore.NewWithDB(inner, sql.TxOptions{})}
+func NewDB(inner *sql.DB) DB {
+	return &db{basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
+}
+
+func NewUntypedDB(inner dbutil.DB) DB {
+	return &db{basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
 }
 
 func NewDBWith(other basestore.ShareableStore) DB {
@@ -93,6 +98,10 @@ func (d *db) Done(err error) error {
 
 func (d *db) AccessTokens() AccessTokenStore {
 	return AccessTokensWith(d.Store)
+}
+
+func (d *db) BitbucketProjectPermissions() BitbucketProjectPermissionsStore {
+	return BitbucketProjectPermissionsStoreWith(d.Store)
 }
 
 func (d *db) Authz() AuthzStore {

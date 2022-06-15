@@ -30,7 +30,9 @@ type Mapper struct {
 	MapZoektRepoSubsetTextSearchJob func(*zoekt.RepoSubsetTextSearchJob) *zoekt.RepoSubsetTextSearchJob
 
 	// Repo pager Job (pre-step for some Search Jobs)
-	MapRepoPagerJob func(*repoPagerJob) *repoPagerJob
+	MapRepoPagerJob          func(*repoPagerJob) *repoPagerJob
+	MapFeelingLuckySearchJob func(*FeelingLuckySearchJob) *FeelingLuckySearchJob
+	MapGeneratedSearchJob    func(*generatedSearchJob) *generatedSearchJob
 
 	// Expression Jobs
 	MapAndJob func(children []job.Job) []job.Job
@@ -118,6 +120,18 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		}
 		return j
 
+	case *FeelingLuckySearchJob:
+		if m.MapFeelingLuckySearchJob != nil {
+			j = m.MapFeelingLuckySearchJob(j)
+		}
+		return j
+
+	case *generatedSearchJob:
+		if m.MapGeneratedSearchJob != nil {
+			j = m.MapGeneratedSearchJob(j)
+		}
+		return j
+
 	case *repoPagerJob:
 		child := m.Map(j.child)
 		j.child = child
@@ -164,7 +178,7 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		if m.MapSequentialJob != nil {
 			children = m.MapSequentialJob(children)
 		}
-		return NewSequentialJob(children...)
+		return NewSequentialJob(false, children...)
 
 	case *TimeoutJob:
 		child := m.Map(j.child)

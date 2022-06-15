@@ -361,7 +361,7 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 
 	if count > len(externalServices) {
 		endCursorID := externalServices[len(externalServices)-1].ID
-		return graphqlutil.NextPageCursor(string(marshalExternalServiceID(endCursorID))), nil
+		return graphqlutil.NextPageCursor(string(MarshalExternalServiceID(endCursorID))), nil
 	}
 	return graphqlutil.HasNextPage(false), nil
 }

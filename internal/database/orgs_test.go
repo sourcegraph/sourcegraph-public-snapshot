@@ -157,7 +157,7 @@ func TestOrgs_GetByID(t *testing.T) {
 	}
 
 	createUser := func(ctx context.Context, db DB, name string) *types.User {
-		user, err := Users(db).Create(ctx, NewUser{
+		user, err := db.Users().Create(ctx, NewUser{
 			Username: name,
 		})
 		if err != nil {
@@ -209,7 +209,7 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 	}
 
 	createUser := func(ctx context.Context, db DB, name string) *types.User {
-		user, err := Users(db).Create(ctx, NewUser{
+		user, err := db.Users().Create(ctx, NewUser{
 			Username: name,
 		})
 		if err != nil {

@@ -9,6 +9,11 @@ import { Input, Select } from '@sourcegraph/wildcard'
 import { BatchSpecWorkspaceState } from '../../../../../graphql-operations'
 import { isValidBatchSpecWorkspaceState } from '../util'
 
+/** We exclude pending as a filter option, because it's not a valid state on the execution page. */
+const STATES_WITHOUT_PENDING = Object.values(BatchSpecWorkspaceState).filter(
+    value => value !== BatchSpecWorkspaceState.PENDING
+)
+
 export interface WorkspaceFilters {
     state: BatchSpecWorkspaceState | null
     search: string | null
@@ -73,7 +78,7 @@ export const WorkspaceFilterRow: React.FunctionComponent<React.PropsWithChildren
                 />
             </Form>
             <WorkspaceFilter<BatchSpecWorkspaceState>
-                values={Object.values(BatchSpecWorkspaceState)}
+                values={STATES_WITHOUT_PENDING}
                 label="State"
                 selected={state}
                 onChange={setState}

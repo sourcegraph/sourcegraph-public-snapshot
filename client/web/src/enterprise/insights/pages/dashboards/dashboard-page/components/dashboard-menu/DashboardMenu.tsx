@@ -41,6 +41,7 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
                 variant="icon"
                 outline={true}
                 className={classNames(className, styles.triggerButton)}
+                aria-label="dashboard context menu"
             >
                 <VisuallyHidden>Dashboard options</VisuallyHidden>
                 <DotsVerticalIcon size={16} />
@@ -50,12 +51,13 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
                 {menuPermissions.configure.display && (
                     <MenuItem
                         as={Button}
+                        outline={true}
                         disabled={menuPermissions.configure.disabled}
                         data-tooltip={menuPermissions.configure.tooltip}
                         data-placement="right"
                         className={styles.menuItem}
+                        aria-label="configure dashboard"
                         onSelect={() => onSelect(DashboardMenuAction.Configure)}
-                        outline={true}
                     >
                         Configure dashboard
                     </MenuItem>

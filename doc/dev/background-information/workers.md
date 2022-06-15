@@ -345,7 +345,7 @@ func (h *handler) Handle(ctx context.Context, tx store.Store, rawRecord workerut
 }
 ```
 
-#### Step 4: Configure the worker and resetter
+#### Step 5: Configure the worker and resetter
 
 Now that we have all of our constituent parts ready, we can finally construct our root objects that orchestrate the consumer behavior. Here, we make constructor functions for a worker instance as well as a resetter instance.
 
@@ -379,7 +379,7 @@ func makeResetter(workerStore store.Store) {
 }
 ```
 
-#### Step 5: Register the worker and resetter
+#### Step 6: Register the worker and resetter
 
 The results of `makeWorker` and `makeResetter` can then be passed to `goroutine.MonitorBackgroundRoutines`.
 

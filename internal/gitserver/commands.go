@@ -1,6 +1,7 @@
 package gitserver
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/hex"
@@ -25,7 +26,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/go-diff/diff"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -47,6 +47,8 @@ type DiffOptions struct {
 	// RangeType to be used for computing the diff: one of ".." or "..." (or unset: "").
 	// For a nice visual explanation of ".." vs "...", see https://stackoverflow.com/a/46345364/2682729
 	RangeType string
+
+	Paths []string
 }
 
 // Diff returns an iterator that can be used to access the diff between two
@@ -68,7 +70,7 @@ func (c *ClientImplementor) Diff(ctx context.Context, opts DiffOptions) (*DiffFi
 		return nil, errors.Errorf("invalid diff range argument: %q", rangeSpec)
 	}
 
-	rdr, err := c.execReader(ctx, opts.Repo, []string{
+	rdr, err := c.execReader(ctx, opts.Repo, append([]string{
 		"diff",
 		"--find-renames",
 		// TODO(eseliger): Enable once we have support for copy detection in go-diff
@@ -80,7 +82,7 @@ func (c *ClientImplementor) Diff(ctx context.Context, opts DiffOptions) (*DiffFi
 		"--no-prefix",
 		rangeSpec,
 		"--",
-	})
+	}, opts.Paths...))
 	if err != nil {
 		return nil, errors.Wrap(err, "executing git diff")
 	}
@@ -1235,4 +1237,74 @@ func (c *ClientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a,
 		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
 	}
 	return api.CommitID(bytes.TrimSpace(out)), nil
+}
+
+// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
+func (c *ClientImplementor) RevList(repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	command := c.GitCommand(api.RepoName(repo), RevListArgs(commit)...)
+	command.DisableTimeout()
+	stdout, err := command.StdoutReader(ctx)
+	if err != nil {
+		return err
+	}
+	defer stdout.Close()
+
+	return c.RevListEach(stdout, onCommit)
+}
+
+func RevListArgs(givenCommit string) []string {
+	return []string{"rev-list", "--first-parent", givenCommit}
+}
+
+func (c *ClientImplementor) RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	reader := bufio.NewReader(stdout)
+
+	for {
+		commit, err := reader.ReadString('\n')
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+		commit = commit[:len(commit)-1] // Drop the trailing newline
+		shouldContinue, err := onCommit(commit)
+		if !shouldContinue {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
+// revspecs).
+func (c *ClientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: BehindAhead")
+	defer span.Finish()
+
+	if err := checkSpecArgSafety(left); err != nil {
+		return nil, err
+	}
+	if err := checkSpecArgSafety(right); err != nil {
+		return nil, err
+	}
+
+	cmd := c.GitCommand(repo, "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
+	out, err := cmd.Output(ctx)
+	if err != nil {
+		return nil, err
+	}
+	behindAhead := strings.Split(strings.TrimSuffix(string(out), "\n"), "\t")
+	b, err := strconv.ParseUint(behindAhead[0], 10, 0)
+	if err != nil {
+		return nil, err
+	}
+	a, err := strconv.ParseUint(behindAhead[1], 10, 0)
+	if err != nil {
+		return nil, err
+	}
+	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }

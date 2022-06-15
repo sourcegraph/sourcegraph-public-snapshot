@@ -427,7 +427,7 @@ func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo)
 func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) streamhttp.EventMatch {
 	if len(fm.Symbols) > 0 {
 		return fromSymbolMatch(fm, repoCache)
-	} else if fm.HunkMatches.MatchCount() > 0 {
+	} else if fm.ChunkMatches.MatchCount() > 0 {
 		return fromContentMatch(fm, repoCache)
 	}
 	return fromPathMatch(fm, repoCache)
@@ -455,7 +455,7 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 }
 
 func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventContentMatch {
-	lineMatches := fm.HunkMatches.AsLineMatches()
+	lineMatches := fm.ChunkMatches.AsLineMatches()
 	eventLineMatches := make([]streamhttp.EventLineMatch, 0, len(lineMatches))
 	for _, lm := range lineMatches {
 		eventLineMatches = append(eventLineMatches, streamhttp.EventLineMatch{

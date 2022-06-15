@@ -8,7 +8,7 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { Icon, Link, useIsTruncated } from '@sourcegraph/wildcard'
+import { Icon, Link, Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { LastSyncedIcon } from './LastSyncedIcon'
 import { ResultContainer } from './ResultContainer'
@@ -35,14 +35,15 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
 
     const renderTitle = (): JSX.Element => (
         <div className={styles.title}>
-            <span
-                onMouseEnter={checkTruncation}
-                className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
-                ref={titleReference}
-                data-tooltip={(truncated && displayRepoName(getRepoMatchLabel(result))) || null}
-            >
-                <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
-            </span>
+            <Tooltip content={(truncated && displayRepoName(getRepoMatchLabel(result))) || null}>
+                <span
+                    onMouseEnter={checkTruncation}
+                    className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
+                    ref={titleReference}
+                >
+                    <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
+                </span>
+            </Tooltip>
         </div>
     )
 
@@ -59,7 +60,6 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                             <div className={styles.divider} />
                             <div>
                                 <Icon
-                                    role="img"
                                     aria-label="Forked repository"
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
                                     as={SourceForkIcon}
@@ -75,7 +75,6 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                             <div className={styles.divider} />
                             <div>
                                 <Icon
-                                    role="img"
                                     aria-label="Archived repository"
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
                                     as={ArchiveIcon}
@@ -91,7 +90,6 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                             <div className={styles.divider} />
                             <div>
                                 <Icon
-                                    role="img"
                                     aria-label="Private repository"
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
                                     as={LockIcon}

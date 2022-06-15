@@ -1,6 +1,8 @@
 import React, { ReactNode } from 'react'
 
 import * as TooltipPrimitive from '@radix-ui/react-tooltip'
+import classNames from 'classnames'
+import { isEmpty } from 'lodash'
 
 import styles from './Tooltip.module.scss'
 
@@ -13,6 +15,10 @@ interface TooltipProps {
     defaultOpen?: boolean
     /** The preferred side of the trigger to render against when open. Will be reversed if a collision is detected. Defaults to `right`. */
     placement?: TooltipPrimitive.TooltipContentProps['side']
+    /** Class name to apply to the wrapping span */
+    className?: string
+    /** An optional test ID that will be applied to the Tooltip wrapper */
+    ['data-testid']?: string
 }
 
 /** Arrow width in pixels */
@@ -37,24 +43,34 @@ function onPointerDownOutside(event: Event): void {
  * - Not include interactive content (you probably want a `<Popover>` instead).
  *
  * Related accessibility documentation: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/tooltip_role
+ *
+ * To test for the correct content in test suites where the tooltip won't be opened, please use the `data-test-content` p
  */
 export const Tooltip: React.FunctionComponent<TooltipProps> = ({
     children,
     content,
+    className,
     defaultOpen = false,
     placement = 'right',
+    'data-testid': dataTestId,
 }) => (
     // NOTE: We plan to consolidate this logic with our Popover component in the future, but chose Radix first to support short-term accessibility needs.
     // GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/36080
     <TooltipPrimitive.Root delayDuration={0} defaultOpen={defaultOpen}>
         <TooltipPrimitive.Trigger asChild={true}>
             {/** The onClick and role attributes here are part of the onPointerDownOutside fix described above. */}
-            <span role="presentation" className={styles.tooltip} onClick={event => event.preventDefault()}>
+            <span
+                role="presentation"
+                className={classNames(styles.tooltip, className)}
+                onClick={event => event.preventDefault()}
+                data-testid={dataTestId}
+                data-test-content={content}
+            >
                 {children}
 
                 {
                     // The rest of the Tooltip components still need to be rendered for the content to correctly be shown conditionally.
-                    content === null ? null : (
+                    isEmpty(content) ? null : (
                         /*
                          * Rendering the Content within the Trigger is a workaround to support being able to hover over the Tooltip content itself.
                          * Refrence: https://github.com/radix-ui/primitives/issues/620#issuecomment-1079147761

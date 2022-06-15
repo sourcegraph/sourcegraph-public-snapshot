@@ -45,7 +45,7 @@ func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
 	//
 	// TODO in the future we might want to improve usages of Report so that we can print
 	// both Err and Output without worrying about duplication.
-	if r.Err != nil && strings.TrimSpace(diffOutput) == "" {
+	if r.Err != nil && strings.TrimSpace(diffOutput) != "" {
 		var sb strings.Builder
 		reportOut := std.NewOutput(&sb, true)
 		reportOut.WriteWarningf("Uncommitted changes found after running go generate:")

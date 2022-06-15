@@ -2,11 +2,11 @@
 name: buildchecker-history
 on:
   schedule:
-  - cron: '* * * * SUN'
+  - cron: '0 0 * * SUN'
   workflow_dispatch:
 
 jobs:
-  run:
+  report:
     runs-on: ubuntu-latest
 
     # secrets for this workflow are configured in the 'autobuildsherrif' environment.
@@ -24,3 +24,19 @@ jobs:
           BUILDKITE_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_BUILDKITE_TOKEN }}
           HONEYCOMB_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_HONEYCOMB_TOKEN }}
           CI_OKAYHQ_TOKEN: ${{ secrets.CI_OKAYHQ_TOKEN }}
+  report-to-slack:
+    runs-on: ubuntu-latest
+    environment: autobuildsherrif
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with: { go-version: '1.18' }
+
+      - run: ./dev/buildchecker/run-slack-history.sh
+        env:
+          BUILDKITE_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_BUILDKITE_TOKEN }}
+          SLACK_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_SLACK_TOKEN }}
+          SLACK_REPORT_WEBHOOK: ${{ secrets.AUTOBUILDSHERRIF_SLACK_REPORT_WEBHOOK}}
+
+
+

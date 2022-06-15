@@ -1,3 +1,4 @@
+import { fetchEventSource } from '@microsoft/fetch-event-source'
 /* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operators'
@@ -543,4 +544,23 @@ export function isSearchMatchOfType<T extends SearchMatch['type']>(
     type: T
 ): (match: SearchMatch) => match is SearchMatchOfType<T> {
     return (match): match is SearchMatchOfType<T> => match.type === type
+}
+
+// Call the compute endpoint with the given query
+const computeStreamUrl = '/.api/compute/stream'
+export function streamComputeQuery(query: string): Observable<string> {
+    return new Observable<string>(observer => {
+        fetchEventSource(`${computeStreamUrl}?q=${encodeURIComponent(query)}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'Sourcegraph',
+            },
+            onmessage(event) {
+                observer.next(event.data)
+            },
+        }).then(
+            () => observer.complete(),
+            error => observer.error(error)
+        )
+    })
 }
