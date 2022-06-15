@@ -635,6 +635,90 @@ func TestCloneRepo(t *testing.T) {
 	}
 }
 
+func TestCloneRepoRecordsFailures(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	remote := t.TempDir()
+	repoName := api.RepoName("example.com/foo/bar")
+	db := database.NewDB(dbtest.NewDB(t))
+
+	dbRepo := &types.Repo{
+		Name:        repoName,
+		Description: "Test",
+	}
+	// Insert the repo into our database
+	if err := db.Repos().Create(ctx, dbRepo); err != nil {
+		t.Fatal(err)
+	}
+	assertRepoState := func(status types.CloneStatus, size int64, wantErr error) {
+		t.Helper()
+		fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, status, fromDB.CloneStatus)
+		assert.Equal(t, size, fromDB.RepoSizeBytes)
+		var errString string
+		if wantErr != nil {
+			errString = wantErr.Error()
+		}
+		assert.Equal(t, errString, fromDB.LastError)
+	}
+
+	// Insert initial gitserver_repos state
+	gr := types.GitserverRepo{
+		RepoID:      dbRepo.ID,
+		ShardID:     "test",
+		CloneStatus: types.CloneStatusNotCloned,
+	}
+	err := db.GitserverRepos().Upsert(ctx, &gr)
+	assertRepoState(types.CloneStatusNotCloned, 0, err)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	reposDir := t.TempDir()
+	s := makeTestServer(ctx, t, reposDir, remote, db)
+
+	for _, tc := range []struct {
+		name         string
+		getVCSSyncer func(ctx context.Context, name api.RepoName) (VCSSyncer, error)
+		wantErr      error
+	}{
+		{
+			name: "Not cloneable",
+			getVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+				m := NewMockVCSSyncer()
+				m.IsCloneableFunc.SetDefaultHook(func(ctx context.Context, url *vcs.URL) error {
+					return errors.New("not_cloneable")
+				})
+				return m, nil
+			},
+			wantErr: errors.New("error cloning repo: repo example.com/foo/bar not cloneable: not_cloneable"),
+		},
+		{
+			name: "Failing clone",
+			getVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+				m := NewMockVCSSyncer()
+				m.CloneCommandFunc.SetDefaultHook(func(ctx context.Context, url *vcs.URL, s string) (*exec.Cmd, error) {
+					return exec.Command("git", "clone", "/dev/null"), nil
+				})
+				return m, nil
+			},
+			wantErr: errors.New("failed to clone example.com/foo/bar: clone failed. Output: fatal: repository '/dev/null' does not exist: exit status 128"),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s.GetVCSSyncer = tc.getVCSSyncer
+			_, _ = s.cloneRepo(ctx, repoName, &cloneOptions{
+				Block: true,
+			})
+			assertRepoState(types.CloneStatusNotCloned, 0, tc.wantErr)
+		})
+	}
+}
+
 func TestHandleRepoDelete(t *testing.T) {
 	testHandleRepoDelete(t, false)
 }

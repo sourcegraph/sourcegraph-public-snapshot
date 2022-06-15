@@ -84,9 +84,8 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 
-		r.content, r.contentErr = git.ReadFile(
+		r.content, r.contentErr = gitserver.NewClient(r.db).ReadFile(
 			ctx,
-			r.db,
 			r.commit.repoResolver.RepoName(),
 			api.CommitID(r.commit.OID()),
 			r.Path(),

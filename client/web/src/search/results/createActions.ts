@@ -86,7 +86,6 @@ export function getBatchChangeCreateAction(
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null,
     isServerSideBatchChangeEnabled: boolean | undefined
 ): CreateAction | null {
-    console.log(isServerSideBatchChangeEnabled, query, authenticatedUser, '<====')
     if (!isServerSideBatchChangeEnabled || !query || !authenticatedUser) {
         return null
     }

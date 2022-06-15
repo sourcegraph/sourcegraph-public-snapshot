@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestGetFirstServiceVersion(t *testing.T) {
@@ -74,8 +75,8 @@ func TestUpdateServiceVersion(t *testing.T) {
 		have := UpdateServiceVersion(ctx, db, "service", tc.version)
 		want := tc.err
 
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatal(diff)
+		if !errors.Is(have, want) {
+			t.Fatal(cmp.Diff(have, want))
 		}
 
 		t.Logf("version = %q", tc.version)
