@@ -16,7 +16,7 @@ To start, familiarise yourself with the details of the upgrade that you will be 
 - The version number of your current instance.
 - The version number of the latest Sourcegraph release.
 - The sequence of minor releases required to upgrade from your version to the latest version (your upgrade sequence).
-- Any out of band migrations in your upgrade sequence. 
+- Any out-of-band migrations in your upgrade sequence. 
 - Details of the changes for each minor version in your upgrade sequence in the [product change log](../../changelog.md) and also in the [docker-compose changes list](docker_compose.md). 
 
 ## 2. Upgrade to the next minor version
