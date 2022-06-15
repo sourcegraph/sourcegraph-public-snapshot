@@ -102,7 +102,10 @@ export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkP
                                         data-hunk-num=" "
                                     >
                                         {persistLines && (
-                                            <Link className={styles.numLine} to={createLinkUrl({ hash: oldAnchor })}>
+                                            <Link
+                                                className={styles.numLine}
+                                                to={createLinkUrl({ ...location, hash: oldAnchor })}
+                                            >
                                                 {oldLine - 1}
                                             </Link>
                                         )}
@@ -120,7 +123,10 @@ export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkP
                                         data-hunk-num=" "
                                     >
                                         {persistLines && (
-                                            <Link className={styles.numLine} to={createLinkUrl({ hash: newAnchor })}>
+                                            <Link
+                                                className={styles.numLine}
+                                                to={createLinkUrl({ ...location, hash: newAnchor })}
+                                            >
                                                 {newLine - 1}
                                             </Link>
                                         )}

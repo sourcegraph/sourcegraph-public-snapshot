@@ -1,6 +1,7 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
+import { useLocation } from 'react-router'
 import { DecorationAttachmentRenderOptions, ThemableDecorationStyle } from 'sourcegraph'
 
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
@@ -77,6 +78,7 @@ export const Line: React.FunctionComponent<React.PropsWithChildren<Line>> = ({
     isLightTheme,
 }) => {
     const hunkStyles = lineType(kind)
+    const location = useLocation()
 
     return (
         <>
@@ -89,7 +91,10 @@ export const Line: React.FunctionComponent<React.PropsWithChildren<Line>> = ({
                     data-hunk-num=" "
                 >
                     {persistLines && (
-                        <RouterLink className={diffHunkStyles.numLine} to={createLinkUrl({ hash: anchor })}>
+                        <RouterLink
+                            className={diffHunkStyles.numLine}
+                            to={createLinkUrl({ ...location, hash: anchor })}
+                        >
                             {lineNumber}
                         </RouterLink>
                     )}
