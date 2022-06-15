@@ -3,12 +3,9 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { cloneDeep } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckBoldIcon from 'mdi-react/CheckBoldIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
-import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import EyeOffOutlineIcon from 'mdi-react/EyeOffOutlineIcon'
 import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
@@ -16,7 +13,6 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import TimelineClockOutlineIcon from 'mdi-react/TimelineClockOutlineIcon'
-import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import indicator from 'ordinal/indicator'
 import { useHistory } from 'react-router'
 
@@ -72,6 +68,7 @@ import {
 } from '../backend'
 import { TimelineModal } from '../TimelineModal'
 
+import { StepStateIcon } from './StepStateIcon'
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
 
 import styles from './WorkspaceDetails.module.scss'
@@ -592,77 +589,14 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                     {!cachedResultFound && step.cachedResultFound && (
                                         <> because a cached result was found for this step</>
                                     )}
-                                .
-                            </strong>
-                        </Text>
-                    )}
-                </CardBody>
-            </Card>
-        </Collapsible>
-    )
-}
-
-interface StepStateIconProps {
-    step: BatchSpecWorkspaceStepFields
-}
-const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIconProps>> = ({ step }) => {
-    if (step.cachedResultFound) {
-        return (
-            <Icon
-                className="text-success flex-shrink-0"
-                aria-label="A cached result for this step has been found"
-                data-tooltip="A cached result for this step has been found"
-                as={ContentSaveIcon}
-            />
-        )
-    }
-    if (step.skipped) {
-        return (
-            <Icon
-                className="text-muted flex-shrink-0"
-                aria-label="The step has been skipped"
-                data-tooltip="The step has been skipped"
-                as={LinkVariantRemoveIcon}
-            />
-        )
-    }
-    if (!step.startedAt) {
-        return (
-            <Icon
-                className="text-muted flex-shrink-0"
-                aria-label="This step is waiting to be processed"
-                data-tooltip="This step is waiting to be processed"
-                as={TimerSandIcon}
-            />
-        )
-    }
-    if (!step.finishedAt) {
-        return (
-            <Icon
-                className="text-muted flex-shrink-0"
-                aria-label="This step is currently running"
-                data-tooltip="This step is currently running"
-                as={LoadingSpinner}
-            />
-        )
-    }
-    if (step.exitCode === 0) {
-        return (
-            <Icon
-                className="text-success flex-shrink-0"
-                aria-label="This step ran successfully"
-                data-tooltip="This step ran successfully"
-                as={CheckBoldIcon}
-            />
-        )
-    }
-    return (
-        <Icon
-            className="text-danger flex-shrink-0"
-            aria-label={`This step failed with exit code ${String(step.exitCode)}`}
-            data-tooltip={`This step failed with exit code ${String(step.exitCode)}`}
-            as={AlertCircleIcon}
-        />
+                                    .
+                                </strong>
+                            </Text>
+                        )}
+                    </CardBody>
+                </Card>
+            </CollapsePanel>
+        </Collapse>
     )
 }
 
