@@ -6,7 +6,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
@@ -101,12 +104,19 @@ func resolveStepsEnvironment(globalEnv []string, steps []batches.Step) ([]map[st
 }
 
 func marshalAndHash(key *ExecutionKey, envs []map[string]string) (string, error) {
+	metadata, err := getMountsMetadata(key.Steps)
+	if err != nil {
+		return "", err
+	}
+
 	raw, err := json.Marshal(struct {
 		*ExecutionKey
-		Environments []map[string]string
+		Environments   []map[string]string
+		MountsMetadata []mountMetadata
 	}{
-		ExecutionKey: key,
-		Environments: envs,
+		ExecutionKey:   key,
+		Environments:   envs,
+		MountsMetadata: metadata,
 	})
 	if err != nil {
 		return "", err
@@ -114,6 +124,66 @@ func marshalAndHash(key *ExecutionKey, envs []map[string]string) (string, error)
 
 	hash := sha256.Sum256(raw)
 	return base64.RawURLEncoding.EncodeToString(hash[:16]), nil
+}
+
+// mountMetadata is the metadata of a file that is mounted by a Step.
+type mountMetadata struct {
+	Path     string
+	Size     int64
+	Modified time.Time
+}
+
+func getMountsMetadata(steps []batches.Step) ([]mountMetadata, error) {
+	var mountsMetadata []mountMetadata
+	for _, step := range steps {
+		// Build up the metadata for each mount for each step
+		for _, mount := range step.Mount {
+			metadata, err := getMountMetadata(mount.Path)
+			if err != nil {
+				return nil, err
+			}
+			// A mount could be a directory containing multiple files
+			mountsMetadata = append(mountsMetadata, metadata...)
+		}
+	}
+	return mountsMetadata, nil
+}
+
+func getMountMetadata(path string) ([]mountMetadata, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+	var metadata []mountMetadata
+	if info.IsDir() {
+		dirMetadata, err := handleDir(path)
+		if err != nil {
+			return nil, err
+		}
+		metadata = append(metadata, dirMetadata...)
+	} else {
+		metadata = append(metadata, mountMetadata{Path: path, Size: info.Size(), Modified: info.ModTime()})
+	}
+	return metadata, nil
+}
+
+func handleDir(path string) ([]mountMetadata, error) {
+	dir, err := os.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+	var metadata []mountMetadata
+	for _, dirEntry := range dir {
+		newPath := filepath.Join(path, dirEntry.Name())
+		// Go back to the very start. Need to get the FileInfo again for the new path and figure out if it is a
+		// directory or a file.
+		fileMetadata, err := getMountMetadata(newPath)
+		if err != nil {
+			return nil, err
+		}
+		metadata = append(metadata, fileMetadata...)
+	}
+	return metadata, nil
 }
 
 // StepsCacheKey implements the Keyer interface for a batch spec execution in a
