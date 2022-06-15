@@ -1190,7 +1190,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
 			return &streaming.TabulationResult{
 				StreamDecoderEvents: streaming.StreamDecoderEvents{
-					Errors: []string{"retryable event", "dial tcp"},
+					Errors: []string{"retryable event", "invalid query"},
 				},
 			}, nil
 		}
