@@ -16,7 +16,7 @@ import (
 )
 
 type commandRunner interface {
-	RunCommand(ctx context.Context, command command, logger *Logger) error
+	RunCommand(ctx context.Context, command command, logger Logger) error
 }
 
 const firecrackerContainerDir = "/work"
@@ -53,7 +53,7 @@ func formatFirecrackerCommand(spec CommandSpec, name string, options Options) co
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
 // it will be mounted into the new virtual machine instance and executed.
-func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger, name, repoDir string, options Options, operations *Operations) error {
+func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, repoDir string, options Options, operations *Operations) error {
 	// Start the VM and wait for the SSH server to become available
 	startCommand := command{
 		Key: "setup.firecracker.start",
@@ -99,7 +99,7 @@ var igniteRunLock sync.Mutex
 
 // callWithInstrumentedLock calls f while holding the igniteRunLock. The duration of the wait
 // and active portions of this method are emitted as prometheus metrics.
-func callWithInstrumentedLock(operations *Operations, logger *Logger, f func() error) error {
+func callWithInstrumentedLock(operations *Operations, logger Logger, f func() error) error {
 	handle := logger.Log("setup.firecracker.runlock", nil)
 
 	lockRequestedAt := time.Now()
@@ -124,7 +124,7 @@ func callWithInstrumentedLock(operations *Operations, logger *Logger, f func() e
 
 // teardownFirecracker issues a stop and a remove request for the Firecracker VM with
 // the given name.
-func teardownFirecracker(ctx context.Context, runner commandRunner, logger *Logger, name string, operations *Operations) error {
+func teardownFirecracker(ctx context.Context, runner commandRunner, logger Logger, name string, operations *Operations) error {
 	removeCommand := command{
 		Key:       "teardown.firecracker.remove",
 		Command:   flatten("ignite", "rm", "-f", name),
