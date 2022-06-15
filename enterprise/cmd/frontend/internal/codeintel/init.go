@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -21,7 +22,6 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 		Logger:     observationContext.Logger,
 		Tracer:     observationContext.Tracer,
 		Registerer: observationContext.Registerer,
-		Sentry:     services.hub,
 		HoneyDataset: &honey.Dataset{
 			Name:       "codeintel-graphql",
 			SampleRate: 4,
@@ -64,7 +64,12 @@ func newResolver(db database.DB, config *Config, observationContext *observation
 		db,
 	)
 
-	return codeintelgqlresolvers.NewResolver(db, services.gitserverClient, innerResolver, &observation.Context{Sentry: observationContext.Sentry}), nil
+	return codeintelgqlresolvers.NewResolver(db, services.gitserverClient, innerResolver, &observation.Context{
+		Logger:       nil,
+		Tracer:       &trace.Tracer{},
+		Registerer:   nil,
+		HoneyDataset: &honey.Dataset{},
+	}), nil
 }
 
 func newUploadHandler(services *Services) func(internal bool) http.Handler {
