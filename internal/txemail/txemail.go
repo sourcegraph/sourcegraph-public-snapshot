@@ -132,7 +132,7 @@ func Send(ctx context.Context, message Message) (err error) {
 	// for it and always echoes "localhost" which makes it unusable.
 	heloHostname := conf.EmailSmtp.Domain
 	if heloHostname == "" {
-		heloHostname = "localhost"
+		heloHostname = "localhost" // CI:LOCALHOST_OK
 	}
 	err = client.Hello(heloHostname)
 	if err != nil {
