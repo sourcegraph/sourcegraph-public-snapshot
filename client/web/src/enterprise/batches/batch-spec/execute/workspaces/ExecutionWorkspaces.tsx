@@ -90,7 +90,32 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<
                                     queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                                 />
                             ) : (
-                                <H3 className="text-center my-3">Select a workspace to view details.</H3>
+                                <div className={styles.emptyOverviewContainer}>
+                                    <video
+                                        className="w-100 h-auto percy-hide"
+                                        width={1200}
+                                        height={700}
+                                        autoPlay={true}
+                                        muted={true}
+                                        loop={true}
+                                        playsInline={true}
+                                        controls={false}
+                                    >
+                                        <source
+                                            type="video/webm"
+                                            src={`https://storage.googleapis.com/sourcegraph-assets/batch-changes/execution-animation${
+                                                isLightTheme ? '' : '-dark'
+                                            }.webm`}
+                                        />
+                                        <source
+                                            type="video/mp4"
+                                            src={`https://storage.googleapis.com/sourcegraph-assets/batch-changes/execution-animation${
+                                                isLightTheme ? '' : '-dark'
+                                            }.mp4`}
+                                        />
+                                    </video>
+                                    <H3 className="text-center my-3">Select a workspace to view details.</H3>
+                                </div>
                             )}
                         </CardBody>
                     </div>
