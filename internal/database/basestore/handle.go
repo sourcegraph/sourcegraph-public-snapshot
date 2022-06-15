@@ -174,6 +174,7 @@ var ErrConcurrentTransactionAccess = errors.New("transaction used concurrently")
 // unsafe, we want to catch these issues. If lockingTx detects that a
 // transaction is being used concurrently, it will log an error and attempt to
 // serialize the transaction accesses.
+//
 // NOTE: this is not foolproof. Interleaving savepoints, accessing rows while
 // sending another query, etc. will still fail, so the logged error is a
 // notification that something needs fixed, not a notification that the locking
