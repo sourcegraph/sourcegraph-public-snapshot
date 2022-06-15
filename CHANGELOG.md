@@ -30,7 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Unable to send emails through [Google SMTP relay](https://docs.sourcegraph.com/admin/config/email#configuring-sourcegraph-to-send-email-via-google-workspace-gmail) with mysterious error "EOF". [#35943](https://github.com/sourcegraph/sourcegraph/issues/35943)
 
 ### Removed
 
