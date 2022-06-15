@@ -430,13 +430,13 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		if err != nil {
 			// The "401 Unauthorized" is returned by code hosts when the token is revoked
 			unauthorized := errcode.IsUnauthorized(err)
-
 			forbidden := errcode.IsForbidden(err)
-
 			// Detect GitHub account suspension error
 			accountSuspended := errcode.IsAccountSuspended(err)
 
 			if unauthorized || accountSuspended || forbidden {
+				// These are fatal errors that mean we should continue as if the account no
+				// longer has any access.
 				err = accounts.TouchExpired(ctx, acct.ID)
 				if err != nil {
 					return nil, nil, errors.Wrapf(err, "set expired for external account %d", acct.ID)
@@ -460,6 +460,37 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			// Skip this external account if unimplemented
 			if errors.Is(err, &authz.ErrUnimplemented{}) {
 				acctLogger.Debug("unimplemented", log.Error(err))
+				continue
+			}
+
+			if errcode.IsTemporary(err) {
+				// If we have a temporary issue, we should instead return any permissions we
+				// already know about to ensure that we don't temporarily remove access for the
+				// user because of intermittent errors.
+				acctLogger.Warn("temporary error, returning previously synced permissions", log.Error(err))
+
+				extPerms = new(authz.ExternalUserPermissions)
+
+				// Load last synced sub-repo perms for this user and provider
+				currentSubRepoPerms, err := s.db.SubRepoPerms().GetByUserAndService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
+				if err != nil {
+					return nil, nil, errors.Wrap(err, "fetching existing sub-repo permissions")
+				}
+				extPerms.SubRepoPermissions = make(map[extsvc.RepoID]*authz.SubRepoPermissions, len(currentSubRepoPerms))
+				for k := range currentSubRepoPerms {
+					v := currentSubRepoPerms[k]
+					extPerms.SubRepoPermissions[extsvc.RepoID(k.ID)] = &v
+				}
+
+				// Load last synced repos for this user and provider
+				currentRepos, err := s.permsStore.FetchReposByUserAndExternalService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
+				if err != nil {
+					return nil, nil, errors.Wrap(err, "fetching existing repo permissions")
+				}
+				for _, id := range currentRepos {
+					repoIDs = append(repoIDs, uint32(id))
+				}
+
 				continue
 			}
 
@@ -492,6 +523,8 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		// Record any sub-repository permissions
 		for repoID := range extPerms.SubRepoPermissions {
 			spec := api.ExternalRepoSpec{
+				// This is safe since repoID is an extsvc.RepoID which represents the external id
+				// of the repo.
 				ID:          string(repoID),
 				ServiceType: provider.ServiceType(),
 				ServiceID:   provider.ServiceID(),
@@ -508,6 +541,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				},
 			)
 		}
+
 		for _, excludePrefix := range extPerms.ExcludeContains {
 			excludeContainsSpecs = append(excludeContainsSpecs,
 				api.ExternalRepoSpec{
@@ -542,7 +576,11 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	}
 
 	// repoIDs represents repos the user is allowed to read
-	repoIDs = make([]uint32, 0, len(repoNames))
+	if len(repoIDs) == 0 {
+		// We may already have some repos if we hit a temporary error above in which case
+		// we don't want to clear it out
+		repoIDs = make([]uint32, 0, len(repoNames))
+	}
 	for _, r := range repoNames {
 		repoIDs = append(repoIDs, uint32(r.ID))
 	}
