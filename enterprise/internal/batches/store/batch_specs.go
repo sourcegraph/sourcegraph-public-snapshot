@@ -9,6 +9,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -564,12 +565,18 @@ AND NOT EXISTS (
 `
 
 // GetBatchSpecDiffStat calculates the total diff stat for the batch spec based
-// on the changeset spec columns.
+// on the changeset spec columns. It respects the actor in the context for repo
+// permissions.
 func (s *Store) GetBatchSpecDiffStat(ctx context.Context, id int64) (added, changed, deleted int64, err error) {
 	ctx, _, endObservation := s.operations.getBatchSpecDiffStat.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	q := sqlf.Sprintf(getTotalDiffStatQueryFmtstr, id)
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s))
+	if err != nil {
+		return 0, 0, 0, errors.Wrap(err, "GetBatchSpecDiffStat generating authz query conds")
+	}
+
+	q := sqlf.Sprintf(getTotalDiffStatQueryFmtstr, id, authzConds)
 	row := s.QueryRow(ctx, q)
 	err = row.Scan(&added, &deleted, &changed)
 	return added, deleted, changed, err
@@ -578,9 +585,9 @@ func (s *Store) GetBatchSpecDiffStat(ctx context.Context, id int64) (added, chan
 const getTotalDiffStatQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:GetTotalDiffStat
 SELECT
-	SUM(diff_stat_added) AS added,
-	SUM(diff_stat_changed) AS changed,
-	SUM(diff_stat_deleted) AS deleted
+	COALESCE(SUM(diff_stat_added), 0) AS added,
+	COALESCE(SUM(diff_stat_changed), 0) AS changed,
+	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
 FROM
 	changeset_specs
 INNER JOIN
@@ -588,6 +595,7 @@ INNER JOIN
 WHERE
 	repo.deleted_at IS NULL
 	AND batch_spec_id = %s
+	AND (%s)
 `
 
 func scanBatchSpec(c *btypes.BatchSpec, s dbutil.Scanner) error {
