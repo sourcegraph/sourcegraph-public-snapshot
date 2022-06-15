@@ -98,21 +98,24 @@ export const MonitorLogNode: React.FunctionComponent<
                 </span>
             </div>
 
-            {expanded &&
-                (monitor.trigger.events.nodes.length === 0 ? (
-                    <div>This code monitor has not been run yet.</div>
-                ) : (
-                    <ConnectionList as="ol" className={styles.expandedRow}>
-                        {monitor.trigger.events.nodes.map(triggerEvent => (
-                            <TriggerEvent
-                                key={triggerEvent.id}
-                                triggerEvent={triggerEvent}
-                                startOpen={startOpen}
-                                now={now}
-                            />
-                        ))}
-                    </ConnectionList>
-                ))}
+            {expanded && (
+                <div className={styles.expandedRow}>
+                    {monitor.trigger.events.nodes.length === 0 ? (
+                        <div>This code monitor has not been run yet.</div>
+                    ) : (
+                        <ConnectionList as="ol">
+                            {monitor.trigger.events.nodes.map(triggerEvent => (
+                                <TriggerEvent
+                                    key={triggerEvent.id}
+                                    triggerEvent={triggerEvent}
+                                    startOpen={startOpen}
+                                    now={now}
+                                />
+                            ))}
+                        </ConnectionList>
+                    )}
+                </div>
+            )}
         </li>
     )
 }
