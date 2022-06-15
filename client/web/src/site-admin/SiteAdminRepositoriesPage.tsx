@@ -1,7 +1,6 @@
 import React, { useEffect, useCallback } from 'react'
 
 import classNames from 'classnames'
-
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
@@ -12,9 +11,7 @@ import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, Button, Link, Alert, Icon, H2, Text } from '@sourcegraph/wildcard'
 
-import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
 import { TerminalLine } from '../auth/Terminal'
-
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -23,6 +20,8 @@ import {
 import { PageTitle } from '../components/PageTitle'
 import { RepositoriesResult, SiteAdminRepositoryFields } from '../graphql-operations'
 import { refreshSiteFlags } from '../site/backend'
+
+import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
 
 import styles from './SiteAdminRepositoriesPage.module.scss'
 
