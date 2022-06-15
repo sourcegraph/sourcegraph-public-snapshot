@@ -39,7 +39,7 @@ For each conflict, you need to reconcile any customizations you made with the up
 >
 > `git merge -X theirs v3.40.2`
 >
-> If you do this, make sure to validate your configuration is correct before proceeding because it may have made changes to your docker-compose YAML file for example.
+> If you do this, make sure your configuration is correct before proceeding because it may have made changes to your docker-compose YAML file.
 
 ### Clone the updated release branch to your server
 
