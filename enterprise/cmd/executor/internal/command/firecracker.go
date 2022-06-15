@@ -100,7 +100,7 @@ var igniteRunLock sync.Mutex
 // callWithInstrumentedLock calls f while holding the igniteRunLock. The duration of the wait
 // and active portions of this method are emitted as prometheus metrics.
 func callWithInstrumentedLock(operations *Operations, logger *Logger, f func() error) error {
-	entry := logger.Log("setup.firecracker.runlock", nil)
+	handle := logger.Log("setup.firecracker.runlock", nil)
 
 	lockRequestedAt := time.Now()
 
@@ -108,8 +108,8 @@ func callWithInstrumentedLock(operations *Operations, logger *Logger, f func() e
 
 	lockAcquiredAt := time.Now()
 
-	entry.Finalize(0)
-	entry.Close()
+	handle.Finalize(0)
+	handle.Close()
 
 	err := f()
 
