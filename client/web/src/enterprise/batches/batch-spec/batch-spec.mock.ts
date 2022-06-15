@@ -135,7 +135,8 @@ export const COMPLETED_WITH_ERRORS_BATCH_SPEC = mockFullBatchSpec({
     startedAt: subHours(now, 1).toISOString(),
     finishedAt: subMinutes(now, 4).toISOString(),
     applyURL: '/some/preview/url',
-    failureMessage: 'Something went wrong.',
+    failureMessage:
+        "Oh no something went wrong. This is a longer error message to demonstrate how this might take up a decent portion of screen real estate but hopefully it's still helpful information so it's worth the cost. Here's a long error message with some bullets:\n  * This is a bullet\n  * This is another bullet\n  * This is a third bullet and it's also the most important one so it's longer than all the others wow look at that.",
     workspaceResolution: {
         __typename: 'BatchSpecWorkspaceResolution',
         workspaces: {
