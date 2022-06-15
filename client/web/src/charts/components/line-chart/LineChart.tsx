@@ -7,7 +7,6 @@ import { voronoi } from '@visx/voronoi'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
-import { UseSeriesToggleReturn } from '../../../insights/utils/use-series-toggle'
 import { SeriesLikeChart } from '../../types'
 
 import { AxisBottom, AxisLeft, Tooltip, TooltipContent, PointGlyph } from './components'
@@ -26,11 +25,12 @@ import {
 
 import styles from './LineChart.module.scss'
 
-export interface LineChartContentProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<SVGSVGElement> {
+export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<SVGSVGElement> {
     width: number
     height: number
     zeroYAxisMin?: boolean
-    seriesToggleState: UseSeriesToggleReturn
+    isSeriesSelected: (id: string) => boolean
+    isSeriesHovered: (id: string) => boolean
 }
 
 const sortByDataKey = (dataKey: string | number | symbol, activeDataKey: string): number =>
@@ -40,35 +40,23 @@ const sortByDataKey = (dataKey: string | number | symbol, activeDataKey: string)
  * Visual component that renders svg line chart with pre-defined sizes, tooltip,
  * voronoi area distribution.
  */
-export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | null {
+export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
     const {
         width: outerWidth,
         height: outerHeight,
         series,
         stacked = false,
         zeroYAxisMin = false,
-        onDatumClick = noop,
         className,
-        seriesToggleState,
+        onDatumClick = noop,
+        isSeriesSelected,
+        isSeriesHovered,
         ...attributes
     } = props
-
-    const { hoveredId, isSeriesSelected, setHoveredId, hasSelections } = seriesToggleState
 
     const [activePoint, setActivePoint] = useState<Point<D> & { element?: Element }>()
     const [yAxisElement, setYAxisElement] = useState<SVGGElement | null>(null)
     const [xAxisReference, setXAxisElement] = useState<SVGGElement | null>(null)
-
-    const handlePointHover = (point: (Point<D> & { element?: Element }) | undefined): void => {
-        setActivePoint(point)
-
-        // TODO DON'T MERGE THIS COMMENT
-        // Remove this if check if Alicja wants the lines to hover
-        // whether selected or not
-        if (point?.seriesId && isSeriesSelected(point?.seriesId)) {
-            setHoveredId(point?.seriesId)
-        }
-    }
 
     const { width, height, margin } = useMemo(
         () =>
@@ -118,7 +106,20 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         [minY, maxY, margin.top, height]
     )
 
-    const points = useMemo(() => generatePointsField({ dataSeries, yScale, xScale }), [dataSeries, yScale, xScale])
+    const activeSeries = useMemo(
+        () => dataSeries.filter(series => isSeriesSelected(`${series.id}`) || isSeriesHovered(`${series.id}`)),
+        [dataSeries, isSeriesSelected, isSeriesHovered]
+    )
+
+    const points = useMemo(
+        () =>
+            generatePointsField({
+                dataSeries: activeSeries,
+                yScale,
+                xScale,
+            }),
+        [activeSeries, yScale, xScale]
+    )
 
     const voronoiLayout = useMemo(
         () =>
@@ -136,10 +137,10 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             const closestPoint = voronoiLayout.find(point.x, point.y)
 
             if (closestPoint && closestPoint.data.id !== activePoint?.id) {
-                handlePointHover(closestPoint.data)
+                setActivePoint(closestPoint.data)
             }
         },
-        onPointerLeave: () => handlePointHover(undefined),
+        onPointerLeave: () => setActivePoint(undefined),
         onClick: event => {
             if (activePoint?.linkUrl) {
                 onDatumClick(event)
@@ -149,38 +150,24 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
     })
 
     const getOpacity = (id: string): number => {
-        // Nothing is selected and nothing is hovered then return 1
-        if (!hasSelections() && !hoveredId) {
-            return 1
-        }
+        // Highlight series with active point
+        if (activePoint) {
+            if (activePoint.seriesId === id) {
+                return 1
+            }
 
-        // Nothing is selected and this series is hovered return 1
-        if (!hasSelections() && hoveredId === id) {
-            return 1
-        }
-
-        // Nothing is selected and some other series is hovered return 0.5
-        if (!hasSelections() && hoveredId && hoveredId !== id) {
             return 0.5
         }
 
-        // This series is selected and hovered return 1
-        if (isSeriesSelected(id) && hoveredId === id) {
+        if (isSeriesSelected(id)) {
             return 1
         }
 
-        // This series is selected and some other series is hovered return 0.5
-        if (isSeriesSelected(id) && hoveredId !== id) {
+        if (isSeriesHovered(id)) {
             return 0.5
         }
 
-        // This series is not selected but is hovered then return 0.5
-        if (!isSeriesSelected(id) && hoveredId === id) {
-            return 0.5
-        }
-
-        // This series is not selected or hovered return 0
-        return 0
+        return 1
     }
 
     const getHoverStyle = (id: string): CSSProperties => {
@@ -196,13 +183,13 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
 
     const sortedSeries = useMemo(
         () =>
-            [...dataSeries]
+            [...activeSeries]
                 // resorts array based on hover state
                 // this is to make sure the hovered series is always rendered on top
                 // since SVGs do not support z-index, we have to render the hovered
                 // series last
                 .sort(series => sortByDataKey(series.id, activePoint?.seriesId || '')),
-        [dataSeries, activePoint]
+        [activeSeries, activePoint]
     )
 
     return (
@@ -225,7 +212,7 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             <AxisBottom ref={setXAxisElement} scale={xScale} top={margin.top + height} width={width} />
 
             <Group top={margin.top}>
-                {stacked && <StackedArea dataSeries={dataSeries} xScale={xScale} yScale={yScale} />}
+                {stacked && <StackedArea dataSeries={activeSeries} xScale={xScale} yScale={yScale} />}
 
                 {sortedSeries.map(line => (
                     <Group key={line.id} style={getHoverStyle(`${line.id}`)}>
@@ -247,8 +234,8 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                                 color={point.color}
                                 linkURL={point.linkUrl}
                                 onClick={onDatumClick}
-                                onFocus={event => handlePointHover({ ...point, element: event.target })}
-                                onBlur={() => handlePointHover(undefined)}
+                                onFocus={event => setActivePoint({ ...point, element: event.target })}
+                                onBlur={() => setActivePoint(undefined)}
                             />
                         ))}
                     </Group>

@@ -92,7 +92,8 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     className={styles.chart}
                                     onDatumClick={onDatumClick}
                                     zeroYAxisMin={zeroYAxisMin}
-                                    seriesToggleState={seriesToggleState}
+                                    isSeriesSelected={isSeriesSelected}
+                                    isSeriesHovered={isSeriesHovered}
                                     {...content}
                                 />
                             </>

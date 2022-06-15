@@ -23,20 +23,32 @@ export const useSeriesToggle = (): UseSeriesToggleReturn => {
     const [selectedSeriesIds, setSelectedSeriesIds] = useState<string[]>([])
     const [hoveredId, setHoveredId] = useState<string | undefined>()
 
-    const selectSeries = (seriesId: string): void => setSelectedSeriesIds([...selectedSeriesIds, seriesId])
-    const deselectSeries = (seriesId: string): void =>
-        setSelectedSeriesIds(selectedSeriesIds.filter(id => id !== seriesId))
-    const toggle = (seriesId: string, availableSeriesIds: string[]): void => {
+    const selectSeries = (seriesId: string, availableSeriesIds: string[]): void => {
+        const nextSelectedSeriesIds = [...selectedSeriesIds, seriesId]
+
         // Reset the selected series if the user is about to select all of them
-        if (selectedSeriesIds.length === availableSeriesIds.length - 1) {
+        if (nextSelectedSeriesIds.length === availableSeriesIds.length) {
             return setSelectedSeriesIds([])
         }
-        return selectedSeriesIds.includes(seriesId) ? deselectSeries(seriesId) : selectSeries(seriesId)
+
+        setSelectedSeriesIds(nextSelectedSeriesIds)
     }
+
+    const deselectSeries = (seriesId: string): void =>
+        setSelectedSeriesIds(selectedSeriesIds.filter(id => id !== seriesId))
+
+    const toggle = (seriesId: string, availableSeriesIds: string[]): void => {
+        if (selectedSeriesIds.includes(seriesId)) {
+            return deselectSeries(seriesId)
+        }
+
+        selectSeries(seriesId, availableSeriesIds)
+    }
+
     const isSelected = (seriesId: string): boolean => {
         // Return true for all series if no series are selected
         // This is because we only want to hide series if something is
-        // specifically selected. Otherwise they should all be "highlighted"
+        // specifically selected. Otherwise, they should all be "highlighted"
         if (selectedSeriesIds.length === 0) {
             return true
         }
