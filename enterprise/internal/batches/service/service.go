@@ -241,14 +241,13 @@ func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBa
 		return nil, err
 	}
 
-	getBatchChangeOpts := store.GetBatchChangeOpts{
+	// check if batch change already exists
+	batchChange, err = s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{
 		Name:            opts.Name,
 		NamespaceUserID: opts.NamespaceUserID,
 		NamespaceOrgID:  opts.NamespaceOrgID,
-	}
+	})
 
-	// check if batch change already exists
-	batchChange, err = s.store.GetBatchChange(ctx, getBatchChangeOpts)
 	if err != nil {
 		if err == store.ErrNoResults {
 			// this means batch change doesn't exist so we create it
