@@ -4,7 +4,6 @@ import VisuallyHidden from '@reach/visually-hidden'
 import * as H from 'history'
 import { Observable } from 'rxjs'
 
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
@@ -19,7 +18,7 @@ import { convertActionsForCreate } from './action-converters'
 import { createCodeMonitor as _createCodeMonitor } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-interface CreateCodeMonitorPageProps extends ThemeProps, TelemetryService {
+interface CreateCodeMonitorPageProps extends ThemeProps {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser
