@@ -44,7 +44,20 @@ RUN apk add --no-cache --verbose \
     # [NOTE: git-version-min-requirement]
     # We require git 2.34.1 because we use git-repack with flag --write-midx.
     'git>=2.34.1' \
-    git-p4
+    git-p4 \
+    'bash>=5.0.17' \
+    'redis>=5.0' \
+    python2 \
+    python3 \
+    'nginx>=1.18.0' \
+    openssh-client \
+    pcre \
+    sqlite-libs \
+    libev \
+    su-exec \
+    'nodejs-current>=14.5.0' \
+    # We require libstdc++ for p4-fusion
+    libstdc++
 
 # NOTE that the Postgres version we run is different
 # from our *Minimum Supported Version* which alone dictates
@@ -52,20 +65,13 @@ RUN apk add --no-cache --verbose \
 # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
 # You can't just bump the major version since that requires pgupgrade
 # between Sourcegraph releases.
+#
+# We require a separate 'apk add' from a different repository because of the lack of
+# availability on alpine main repositories.
 RUN apk add --no-cache --verbose \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/community  \
-    postgresql12>=12.11 \
-    postgresql12-contrib>=12.11
-
-RUN apk add --no-cache --verbose \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.14/main  \
-    'bash>=5.0.17' \
-    'redis>=5.0' \
-    python2 \
-    python3 \
-    'nginx>=1.18.0' openssh-client pcre sqlite-libs libev su-exec 'nodejs-current>=14.5.0' \
-    # We require libstdc++ for p4-fusion
-    libstdc++
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/community \
+    'postgresql12>=12.11' \
+    'postgresql12-contrib>=12.11'
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
