@@ -175,7 +175,7 @@ Below is a quick overview of the Sourcegraph extension file structure. It does n
 ```
 client/vscode
 ├── images
-├── scripts                       // Command line scripts, e.g., script to release and publish the extension
+├── scripts                       // Command line scripts, for example, script to release and publish the extension
 ├── src                           // Extension source code
 │   └── extension.ts              // Extension entry file
 │   └── backend                   // All graphQL queries

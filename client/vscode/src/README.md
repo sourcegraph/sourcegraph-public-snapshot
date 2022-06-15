@@ -8,8 +8,8 @@ As detailed in our CONTRIBUTING.md file, this extension runs code in the followi
 
 1. Core App
 
-- The main app where all the commands, webviews, file system, and all otheer components are put together and registered as a single extension
-  - Runs code with Node.js on Desktop clients (e.g., VS Code on Desktop) as a regular extension, or Web Worker on Web clients (e.g., github.dev on browser) as a web extension
+- The main app where all the commands, webviews, file system, and all other components are put together and registered as a single extension
+  - Runs code with Node.js on Desktop clients (for example, VS Code on Desktop) as a regular extension, or Web Worker on Web clients (for example, github.dev on browser) as a web extension
   - Web extension is run in the web extension host in a Browser WebWorker environment, and do not have access to Node.js globals and libraries at runtime
 
 2. Sidebars
