@@ -263,7 +263,7 @@ func TestHandleRestricted(t *testing.T) {
 	}
 	// create an external service
 	err := db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
-		Kind:        extsvc.KindBitbucketCloud,
+		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket #1",
 		Config:      `{"url": "https://bitbucket.com", "username": "username", "appPassword": "qwerty"}`,
 	})
@@ -362,7 +362,7 @@ func TestHandleUnrestricted(t *testing.T) {
 	}
 	// create an external service
 	err := db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
-		Kind:        extsvc.KindBitbucketCloud,
+		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket #1",
 		Config:      `{"url": "https://bitbucket.com", "username": "username", "appPassword": "pwd"}`,
 	})
