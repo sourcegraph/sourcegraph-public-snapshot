@@ -5,7 +5,6 @@ import {
     COMPLETED_BATCH_SPEC,
     COMPLETED_WITH_ERRORS_BATCH_SPEC,
     EXECUTING_BATCH_SPEC,
-    FAILED_BATCH_SPEC,
     mockBatchChange,
 } from '../batch-spec.mock'
 import { BatchSpecContextProvider } from '../BatchSpecContext'
