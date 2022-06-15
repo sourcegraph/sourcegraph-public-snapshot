@@ -12,13 +12,13 @@ This page lists the changes that are relevant for [upgrading Sourcegraph on Dock
 
 - `cadvisor` now defaults to run in `privileged` mode. This allows `cadvisor` to collect out of memory events happening to containers which can be used to discover underprovisoned resources. [#804](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/804)
 
-Follow the [standard upgrade procedure](../deploy/docker-compose/index.md#upgrade) to upgrade your deployment.
+Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.40).*
 
 ## 3.39.0 -> 3.39.1
 
-Follow the [standard upgrade procedure](../deploy/docker-compose/index.md#upgrade) to upgrade your deployment.
+Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.38).*
 
@@ -30,13 +30,13 @@ We made a number of changes to our built-in postgres databases (the `pgsql`, `co
 - Increased the minimal memory requirement of `pgsql` and `codeintel-db` from `2GB` to `4GB`
 -`codeinsights-db` container no longer uses TimescaleDB and is now based on the standard Postgres image [sourcegraph/deploy-sourcegraph-docker#780](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/780). Metrics scraping is also enabled.
 
-Follow the [standard upgrade procedure](../deploy/docker-compose/index.md#upgrade) to upgrade your deployment.
+Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39).*
 
 ## 3.38.0 -> 3.38.1
 
-Follow the [standard upgrade procedure](../deploy/docker-compose/index.md#upgrade) to upgrade your deployment.
+Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.38).*
 
@@ -46,7 +46,7 @@ Follow the [standard upgrade procedure](../deploy/docker-compose/index.md#upgrad
 
 This release adds the requirement that the environment variables `SRC_GIT_SERVERS`, `SEARCHER_URL`, `SYMBOLS_URL`, and `INDEXED_SEARCH_SERVERS` are set for the worker process.
 
-Follow the [standard upgrade procedure](../deploy/docker-compose/index.md#upgrade) to upgrade your deployment.
+Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.37).*
 
@@ -54,13 +54,13 @@ Follow the [standard upgrade procedure](../deploy/docker-compose/index.md#upgrad
 
 This release adds a new container that runs database migrations (`migrator`) independently of the frontend container. Confirm the environment variables on this new container match your database settings. [Docs](../deploy/docker-compose/index.md#database-migrations)
 
-Follow the [standard upgrade procedure](../deploy/docker-compose/index.md#upgrade) to upgrade your deployment.
+Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.36).*
 
 ## 3.35 -> 3.36
 
-No manual migration is required - follow the [standard upgrade procedure](../deploy/docker-compose/index.md#upgrade) to upgrade your deployment.
+No manual migration is required - follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.35).*
 
@@ -76,26 +76,26 @@ There is a [known issue](../../code_insights/how-tos/Troubleshooting.md#oob-migr
 
 The `query-runner` service has been decommissioned in the 3.35 release and will be removed during the upgrade.
 
-Follow the [standard upgrade procedure](../deploy/docker-compose/index.md#upgrade) to upgrade your deployment.
+Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
 To delete the `query-runner` service, specify `--remove-orphans` to your `docker-compose` command.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.34).*
 
 ## 3.33 -> 3.34
 
-No manual migration is required - follow the [standard upgrade procedure](../deploy/docker-compose/index.md#upgrade) to upgrade your deployment.
+No manual migration is required - follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.33).*
 
 ## 3.32 -> 3.33
 
-No manual migration is required - follow the [standard upgrade procedure](../deploy/docker-compose/index.md#upgrade) to upgrade your deployment.
+No manual migration is required - follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.32).*
 
 ## 3.31 -> 3.32
 
-No manual migration is required - follow the [standard upgrade procedure](../deploy/docker-compose/index.md#upgrade) to upgrade your deployment.
+No manual migration is required - follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.31).*
 
@@ -308,4 +308,4 @@ docker run --rm -it -v /var/lib/docker:/docker alpine:latest sh -c 'chown -R 999
 
 ### Standard upgrade procedure
 
-Refer to the [upgrade guide](../deploy/docker-compose/index.md#upgrade).
+Refer to the [upgrade guide](upgrade_docker-compose.md).
