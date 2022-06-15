@@ -1080,6 +1080,18 @@ func (r *Resolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.D
 		return nil, err
 	}
 
+	insights, err := r.insightStore.GetMapped(ctx, store.InsightQueryArgs{WithoutAuthorization: true, UniqueID: viewId})
+	if len(insights) != 1 {
+		return nil, errors.New("Insight not found.")
+	}
+
+	for _, series := range insights[0].Series {
+		err = r.insightStore.RemoveSeriesFromView(ctx, series.SeriesID, insights[0].ViewID)
+		if err != nil {
+			return nil, errors.Wrap(err, "RemoveSeriesFromView")
+		}
+	}
+
 	err = r.insightStore.DeleteViewByUniqueID(ctx, viewId)
 	if err != nil {
 		return nil, errors.Wrap(err, "DeleteView")
