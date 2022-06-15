@@ -15,6 +15,7 @@
 // Constrain the width of the video player at different viewpoint sizes to prevent layout
 // shift as the video loads.
 .video-container {
+    // stylelint-disable declaration-property-unit-allowed-list
     margin: 2rem auto 0 auto;
     width: 700px;
     height: 408.33px;
@@ -28,6 +29,7 @@
         width: 300px;
         height: 175px;
     }
+    // stylelint-enable declaration-property-unit-allowed-list
 }
 
 .errors {
