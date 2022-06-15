@@ -3,8 +3,11 @@ package docker
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/src-cli/internal/exec/expect"
 )
 
@@ -76,6 +79,26 @@ func TestImage_Digest(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("docker timeout", func(t *testing.T) {
+		// We're more interested in the context error handling than the parsing
+		// of the timeout, and we don't want to slow down the test, so we're
+		// going to construct a context that has already exceeded its deadline
+		// at the point it is provided to Digest.
+		ctx, cancel := context.WithTimeout(context.Background(), -1*time.Second)
+		t.Cleanup(cancel)
+
+		expect.Commands(t, inspectSuccess("foo", ""))
+		image := &image{name: "foo"}
+
+		digest, err := image.Digest(ctx)
+		assert.Empty(t, digest)
+
+		as := &dockerImageInspectTimeoutError{}
+		assert.ErrorAs(t, err, &as)
+		assert.Equal(t, "foo", as.image)
+		assert.Equal(t, dockerImageInspectTimeoutDefault, as.timeout)
+	})
 }
 
 func TestImage_Ensure(t *testing.T) {
