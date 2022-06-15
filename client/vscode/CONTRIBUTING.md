@@ -208,7 +208,7 @@ The release process for the VS Code Extension for Sourcegraph is currently autom
      - Make a commit for the release and push to the current branch
 3. Merge the current branch into main
 4. Once the main branch has the updated version number and changelog, run `git push origin main:vsce/release`
-   - This will trigger the build pipeline for publishing the extension
+   - This will trigger the build pipeline for publishing the extension using the `yarn release` command
    - The extension will be published with the correct package name via the [vsce CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
 5. Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=vsce%2Frelease) to watch the build process
 

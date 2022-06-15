@@ -503,14 +503,12 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 
 // Release the VS Code extension.
 func addVsceReleaseSteps(pipeline *bk.Pipeline) {
-	addVsceIntegrationTests(pipeline)
-	pipeline.AddWait()
 	// Publish extension to the VS Code Marketplace
 	pipeline.AddStep(":vscode: Extension release",
 		withYarnCache(),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn generate"),
-		bk.Cmd("yarn --cwd client/vscode -s run publish"))
+		bk.Cmd("yarn --cwd client/vscode -s run release"))
 }
 
 // Adds a Buildkite pipeline "Wait".
