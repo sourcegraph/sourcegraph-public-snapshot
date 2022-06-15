@@ -25,20 +25,6 @@ var feedbackCommand = &cli.Command{
 	Usage:    "opens up a Github disccussion page to provide feedback about sg",
 	Category: CategoryCompany,
 	Action:   feedbackExec,
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:        "title",
-			Usage:       "Title of the feedback discussion to be created",
-			Required:    false,
-			Destination: &feedbackTitle,
-		},
-		&cli.StringFlag{
-			Name:        "message",
-			Usage:       "The feedback you want to provide",
-			Required:    false,
-			Destination: &feedbackBody,
-		},
-	},
 }
 
 func feedbackExec(ctx *cli.Context) error {
@@ -51,7 +37,7 @@ func feedbackExec(ctx *cli.Context) error {
 func addSGInformation(content string) string {
 	tplt := template.Must(template.New("SG").Parse(`{{.Content}}
 
-### SG Information
+### {{.Tick}}sg{{.Tick}} Information
 
 Commit: {{.Tick}}{{.Commit}}{{.Tick}}
     `))
