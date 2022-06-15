@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
@@ -92,6 +93,10 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 	svc, err := h.db.ExternalServices().GetByID(ctx, job.ExternalServiceID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get external service %d", job.ExternalServiceID)
+	}
+
+	if svc.Kind != extsvc.KindBitbucketServer {
+		return errcode.MakeNonRetryable(errors.Newf("expected Bitbucket Server external service, got: %s", svc.Kind))
 	}
 
 	// get repos from the Bitbucket project

@@ -1,7 +1,6 @@
 import { MockedResponse } from '@apollo/client/testing'
 import { fireEvent, render, RenderResult, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -55,9 +54,7 @@ describe('UserSettingsProfilePage', () => {
         queries = render(
             <MockedTestProvider mocks={mocks}>
                 <MemoryRouter>
-                    <CompatRouter>
-                        <UserSettingsProfilePage user={mockUser} />
-                    </CompatRouter>
+                    <UserSettingsProfilePage user={mockUser} />
                 </MemoryRouter>
             </MockedTestProvider>
         )
