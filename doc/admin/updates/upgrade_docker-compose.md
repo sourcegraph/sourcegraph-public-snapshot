@@ -67,7 +67,7 @@ docker-compose up -d
 ```
 ### Check on the status of migrations
 
-Before ugrading to the next minor version in your upgrade sequence, you must allow the migrator service to finish any required database and out of band migrations associated with the upgrade. You check the migrator service and frontend service logs for information regading the database migration status, and you check the out of band migration status in Sourcegraph in the `Site Admin > Maintenance > Migrations` page shows the progress of all active migrations. This page will also display a prominent warning if when upgrade (or downgrade) would result in an instance that refuses to start due to an illegal migration state.
+Before upgrading to the next minor version in your upgrade sequence, you must allow the migrator service to finish any required database and out-of-band migrations associated with the upgrade. Check the migrator service and frontend service logs for information regarding the database migration status. Check the out of band migration status in Sourcegraph in the `Site Admin > Maintenance > Migrations` page to show the progress of all active migrations. This page will also display a prominent warning if an upgrade (or downgrade) would result in an instance that refuses to start due to an illegal migration state.
 
 ![Unfinished migration warning](https://storage.googleapis.com/sourcegraph-assets/oobmigration-warning.png)
 
