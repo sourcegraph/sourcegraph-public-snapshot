@@ -78,6 +78,7 @@ Background jobs, etc. can have additional top-level loggers created that better 
 
 - The logger parameter should either be immediately after `ctx context.Context`, or be the first parameter.
 - In some cases there might already be a `log` module imported. Use the alias `sglog` to refer to `github.com/sourcegraph/log`, for example `import sglog "github.com/sourcegraph/log"`.
+- When testing, provide [test loggers](#testing-usage) for improved output management.
 
 ### Sub-loggers
 
@@ -105,8 +106,9 @@ In general:
 - From the caller, only add a scope if, as a caller, you care that the log output enough to want to differentiate it
   - For example, if you create multiple clients for a service, you will probably want to create a separate scoped logger for each
 - From the callee, add a scope if you will be logging output that should be meaningfully differentiated (e.g. inside a client, or inside a significant helper function)
+- Scope names should be `CamelCase` or `camelCase`, and the scope description should follow [the same conventions as a log message](#writing-log-messages).
 
-Scope names should be `CamelCase` or `camelCase`, and the scope description should follow [the same conventions as a log message](#writing-log-messages).
+Example:
 
 ```go
 func NewClient() *Client {
@@ -241,28 +243,14 @@ Additionally, in `SRC_DEVELOPMENT=true` using `log.Scoped` without calling `log.
 
 For testing purposes, we also provide:
 
-1. An optional initialization function to be called in `func TestMain(*testing.M)`, [`logtest.Init`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Init+lang:go&patternType=literal)
-2. A getter to retrieve a `log.Logger` instance and a callback to programmatically iterate log output, [`logtest.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Scoped+lang:go&patternType=literal)
+1. A getter to retrieve a `log.Logger` instance and a callback to programmatically iterate log output, [`logtest.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Scoped+lang:go&patternType=literal)
    1. The standard `log.Scoped` will also work after `logtest.Init`
    2. Programatically iterable logs are available from the `logtest.Captured` logger instance
+   3. Can be provided in code that accepts [injected loggers](#injected-loggers)
+2. An *optional* initialization function to be called in `func TestMain(*testing.M)`, [`logtest.Init`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Init+lang:go&patternType=literal).
+   1. Useful for testing code that [*does not* accept injected loggers](#instantiated-loggers)
 
-In the absense of `log.Init` in `main()`, `github.com/sourcegraph/log` can be initialized using `libtest` in packages that use `log.Scoped`:
-
-```go
-import (
-  "os"
-  "testing"
-
-  "github.com/sourcegraph/log/logtest"
-)
-
-func TestMain(m *testing.M) {
-  logtest.Init(m)
-  os.Exit(m.Run())
-}
-```
-
-You can control the log level used during initialization with `logtest.InitWithLevel`.
+### Injected loggers
 
 If the code you are testing accepts `Logger` instances as a parameter, you can skip the above and simply use `logtest.Scoped` to instantiate a `Logger` to provide. You can also use `logtest.Captured`, which also provides a callback for exporting logs, though be wary of making overly strict assertions on log entries to avoid brittle tests:
 
@@ -287,4 +275,24 @@ func TestFooBar(t *testing.T) {
 
 When writing a test, ensure that `logtest.Scope` in the tightest scope possible. This ensures that if a test fails, that the logging is closely tied to the test that failed. Especially if you testcase has sub tests with `t.Run`, prefer to created the test logger inside `t.Run`.
 
-If you can provide a `Logger` instance, `logtest.NoOp()` can be used to silence output. Levels can also be adjusted using `(Logger).IncreaseLevel`.
+Alternatively, `logtest.NoOp()` creates a logger that can be used to silence output. Levels can also be adjusted using `(Logger).IncreaseLevel`.
+
+### Instantiated loggers
+
+In the absense of `log.Init` in `main()`, testing code that instantiates loggers with `log.Scoped` (as opposed to `(Logger).Scoped`), `github.com/sourcegraph/log` can be initialized using `libtest` in packages that use `log.Scoped`:
+
+```go
+import (
+  "os"
+  "testing"
+
+  "github.com/sourcegraph/log/logtest"
+)
+
+func TestMain(m *testing.M) {
+  logtest.Init(m)
+  os.Exit(m.Run())
+}
+```
+
+You can control the log level used during initialization with `logtest.InitWithLevel`.
