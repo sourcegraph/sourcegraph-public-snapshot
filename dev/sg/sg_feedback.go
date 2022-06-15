@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
+	"fmt"
+	"io"
 	"net/url"
+	"os"
 	"text/template"
 
 	"github.com/urfave/cli/v2"
@@ -12,13 +16,12 @@ import (
 	_ "github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 const newDiscussionURL = "https://github.com/sourcegraph/sourcegraph/discussions/new"
 
-var feedbackTitle string
-var feedbackBody string
-var feedbackEditor string
+type stopReadFunc func(lastRead string, err error) bool
 
 var feedbackCommand = &cli.Command{
 	Name:     "feedback",
@@ -28,10 +31,71 @@ var feedbackCommand = &cli.Command{
 }
 
 func feedbackExec(ctx *cli.Context) error {
-	if err := sendFeedback(ctx.Context, feedbackTitle, "developer-experience", feedbackBody); err != nil {
+	title, body, err := gatherFeedback(ctx.Context)
+	if err != nil {
+		return err
+	}
+
+	if err := sendFeedback(ctx.Context, title, "developer-experience", body); err != nil {
 		return err
 	}
 	return nil
+}
+
+func gatherFeedback(ctx context.Context) (string, string, error) {
+	std.Out.WriteLine(output.Line("📝", output.StylePending, "Gathering feedback for sg"))
+
+	fmt.Println("What is the title of your feedback ?")
+	title, err := readUntilDelim(os.Stdin, '\n')
+
+	fmt.Println("Write your feedback below and press <CTRL+D> when you're done.")
+	body, err := readUntilEOF(os.Stdin)
+	if err != nil {
+		return "", "", err
+	}
+
+	return title, body, nil
+}
+
+func readUntilEOF(r io.Reader) (string, error) {
+	reader := bufio.NewReader(r)
+
+	readFunc := func() (string, error) { return reader.ReadString('\n') }
+
+	var eofFunc stopReadFunc = func(data string, err error) bool {
+		if err != io.EOF {
+			return true
+		}
+		return false
+	}
+
+	return readUntil(readFunc, eofFunc)
+}
+
+func readUntilDelim(r io.Reader, delim byte) (string, error) {
+	reader := bufio.NewReader(r)
+
+	readFunc := func() (string, error) { return reader.ReadString(delim) }
+	var firstReadStop stopReadFunc = func(data string, err error) bool {
+		return true
+	}
+
+	return readUntil(readFunc, firstReadStop)
+
+}
+
+func readUntil(readFunc func() (string, error), stopRead stopReadFunc) (string, error) {
+	var data string
+	for {
+		line, err := readFunc()
+		data = data + line
+
+		if stopRead(data, err) {
+			break
+		}
+	}
+
+	return data, nil
 }
 
 func addSGInformation(content string) string {
