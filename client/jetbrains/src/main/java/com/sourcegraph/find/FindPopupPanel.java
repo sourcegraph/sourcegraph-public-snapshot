@@ -65,9 +65,11 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
 
         selectionMetadataLabel = new JLabel();
         externalLinkLabel = new JLabel("", AllIcons.Ide.External_link_arrow, SwingConstants.LEFT);
+        externalLinkLabel.setVisible(false);
         KeyboardShortcut altEnterShortcut = new KeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.ALT_DOWN_MASK), null);
         String altEnterShortcutText = KeymapUtil.getShortcutText(altEnterShortcut);
         openShortcutLabel = new JLabel(altEnterShortcutText);
+        openShortcutLabel.setVisible(false);
 
         selectionMetadataPanel.add(selectionMetadataLabel);
         selectionMetadataPanel.add(externalLinkLabel);
