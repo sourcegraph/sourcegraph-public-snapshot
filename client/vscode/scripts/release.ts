@@ -23,14 +23,17 @@ if (isValidType) {
      * tag in semver is not supported by VS Code
      * ref: https://code.visualstudio.com/api/working-with-extensions/publishing-extension#prerelease-extensions
      */
-    const releaseType: semver.ReleaseType =
-        vsceReleaseType === 'major'
-            ? 'major'
-            : vsceReleaseType === 'minor'
-            ? 'minor'
-            : vsceReleaseType === 'patch'
-            ? 'patch'
-            : 'minor'
+    let releaseType: semver.ReleaseType = 'patch'
+    switch (vsceReleaseType) {
+        case 'major':
+            releaseType = 'major'
+            break
+        case 'patch':
+            releaseType = 'patch'
+            break
+        default:
+            releaseType = 'minor' // Use minor for both minor and prerelease
+    }
     // Get the version nubmer of the last release from VS Code Marketplace using the vsce cli tool
     const response = childProcess.execSync('vsce show sourcegraph.sourcegraph --json').toString()
     const currentVersion: string = JSON.parse(response).versions[0].version

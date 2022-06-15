@@ -3,11 +3,14 @@
 import childProcess from 'child_process'
 import fs from 'fs'
 
+import * as semver from 'semver'
+
+import { version } from '../package.json'
 /**
  * This script is used by the CI to publish the extension to the VS Code Marketplace
  * It is triggered when a commit has been made to the vsce release branch
  */
-
+const isPreRelease = semver.minor(version) % 2 !== 0
 try {
     // Get current package.json and changelog files
     const originalPackageJson = fs.readFileSync('package.json').toString()
@@ -20,8 +23,10 @@ try {
         // allows all events to activate the extension
         childProcess.execSync(
             // Use vsce package command for testing this script without publishing the extension
-            // 'yarn vsce package $VSCODE_RELEASE_TYPE --yarn --allow-star-activation',
-            'yarn vsce publish $VSCODE_RELEASE_TYPE --pat $VSCODE_MARKETPLACE_TOKEN --yarn --allow-star-activation',
+            // 'yarn vsce package --yarn --allow-star-activation',
+            `yarn vsce publish ${
+                isPreRelease ? '--pre-release' : ''
+            } --pat $VSCODE_MARKETPLACE_TOKEN --yarn --allow-star-activation`,
             {
                 stdio: 'inherit',
             }
