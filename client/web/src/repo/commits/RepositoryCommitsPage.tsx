@@ -8,6 +8,9 @@ import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
+import {
+    H2
+} from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -141,6 +144,7 @@ export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChild
     return (
         <div className={styles.repositoryCommitsPage} data-testid="commits-page">
             <PageTitle title="Commits" />
+            <H2>Commits</H2>
             <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact' | 'wrapperElement'>>
                 className={styles.content}
                 listClassName="list-group list-group-flush"

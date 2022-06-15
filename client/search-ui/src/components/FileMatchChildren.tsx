@@ -269,7 +269,10 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
 
     return (
         <div className={styles.fileMatchChildren} data-testid="file-match-children">
-            {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
+            <div className='d-flex align-items-end flex-column p-2'>
+               {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched}/>}
+            </div>
+
             {/* Path */}
             {result.type === 'path' && (
                 <div className={styles.item} data-testid="file-match-children-item">

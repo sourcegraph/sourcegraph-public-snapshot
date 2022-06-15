@@ -6,8 +6,6 @@ import WeatherCloudyClockIcon from 'mdi-react/WeatherCloudyClockIcon'
 
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import styles from './LastSyncedIcon.module.scss'
-
 interface Props {
     lastSyncedTime: string
     className?: string
@@ -20,7 +18,7 @@ export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Pro
         <Tooltip content={`Last synced: ${formattedTime}`}>
             <Icon
                 tabIndex={0}
-                className={classNames(props.className, styles.lastSyncedIcon, 'text-muted')}
+                className={classNames(props.className, 'text-muted')}
                 as={WeatherCloudyClockIcon}
                 aria-label={`Last synced: ${formattedTime}`}
             />
