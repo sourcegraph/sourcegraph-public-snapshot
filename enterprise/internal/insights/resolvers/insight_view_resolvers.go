@@ -3,9 +3,12 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/Masterminds/semver"
 
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
@@ -189,21 +192,26 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 		filters = &i.view.Filters
 	}
 
-	var seriesOptions *types.SeriesDisplayOptions
+	var seriesOptions types.SeriesDisplayOptions
 	if i.overrideSeriesOptions != nil {
-		seriesOptions = i.overrideSeriesOptions
+		seriesOptions = *i.overrideSeriesOptions
 	} else {
-		seriesOptions = &i.view.SeriesOptions
+		seriesOptions = i.view.SeriesOptions
 	}
 
 	for _, current := range i.view.Series {
-		seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters, *seriesOptions)
+		seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters)
 		if err != nil {
 			return nil, errors.Wrapf(err, "generate for seriesID: %s", current.SeriesID)
 		}
 		resolvers = append(resolvers, seriesResolvers...)
 	}
-	return resolvers, nil
+
+	sortedAndLimitedResovlers, err := sortSeriesResolvers(ctx, seriesOptions, resolvers)
+	if err != nil {
+		return nil, errors.Wrapf(err, "sortSeriesResolvers for insightViewID: %s", i.view.UniqueID)
+	}
+	return sortedAndLimitedResovlers, nil
 }
 
 func (i *insightViewResolver) Dashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) graphqlbackend.InsightsDashboardConnectionResolver {
@@ -1130,4 +1138,106 @@ func filtersFromInput(input *graphqlbackend.InsightViewFiltersInput) types.Insig
 		}
 	}
 	return filters
+}
+
+func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayOptions, resolvers []graphqlbackend.InsightSeriesResolver) ([]graphqlbackend.InsightSeriesResolver, error) {
+	var sortMode types.SeriesSortMode = types.ResultCount
+	var sortDirection types.SeriesSortDirection = types.Desc
+	var limit int32 = 20
+
+	if seriesOptions.SortOptions != nil {
+		sortMode = seriesOptions.SortOptions.Mode
+		sortDirection = seriesOptions.SortOptions.Direction
+	}
+	if seriesOptions.Limit != nil {
+		limit = *seriesOptions.Limit
+	}
+
+	// All the points are already loaded from their source at this point db or by executing queries
+	// Make a map for faster lookup and to deal with possible errors once
+	resolverPoints := make(map[string][]graphqlbackend.InsightsDataPointResolver, len(resolvers))
+	for _, resolver := range resolvers {
+		points, err := resolver.Points(ctx, nil)
+		if err != nil {
+			return nil, err
+		}
+		resolverPoints[resolver.SeriesId()] = points
+	}
+
+	getMostRecentValue := func(points []graphqlbackend.InsightsDataPointResolver) float64 {
+		return points[len(points)-1].Value()
+	}
+
+	ascLexSort := func(s1 string, s2 string) (hasSemVar bool, result bool) {
+		version1, err1 := semver.NewVersion(s1)
+		version2, err2 := semver.NewVersion(s2)
+		if err1 == nil && err2 == nil {
+			return true, version1.Compare(version2) < 0
+		}
+		if err1 != nil && err2 == nil {
+			return true, false
+		}
+		if err1 == nil && err2 != nil {
+			return true, true
+		}
+		return false, false
+	}
+
+	// First sort lexicographically (ascending) to make sure the ordering is consistent even if some result counts are equal.
+	sort.SliceStable(resolvers, func(i, j int) bool {
+		hasSemVar, result := ascLexSort(resolvers[i].Label(), resolvers[j].Label())
+		if hasSemVar == true {
+			return result
+		}
+		return strings.Compare(resolvers[i].Label(), resolvers[j].Label()) < 0
+	})
+
+	switch sortMode {
+	case types.ResultCount:
+
+		if sortDirection == types.Asc {
+			sort.SliceStable(resolvers, func(i, j int) bool {
+				return getMostRecentValue(resolverPoints[resolvers[i].SeriesId()]) < getMostRecentValue(resolverPoints[resolvers[j].SeriesId()])
+			})
+		} else {
+			sort.SliceStable(resolvers, func(i, j int) bool {
+				return getMostRecentValue(resolverPoints[resolvers[i].SeriesId()]) > getMostRecentValue(resolverPoints[resolvers[j].SeriesId()])
+			})
+		}
+	case types.Lexicographical:
+		if sortDirection == types.Asc {
+			// Already pre-sorted by default
+		} else {
+			sort.SliceStable(resolvers, func(i, j int) bool {
+				hasSemVar, result := ascLexSort(resolvers[i].Label(), resolvers[j].Label())
+				if hasSemVar == true {
+					return !result
+				}
+				return strings.Compare(resolvers[i].Label(), resolvers[j].Label()) > 0
+			})
+		}
+	case types.DateAdded:
+		if sortDirection == types.Asc {
+			sort.SliceStable(resolvers, func(i, j int) bool {
+				iPoints := resolverPoints[resolvers[i].SeriesId()]
+				jPoints := resolverPoints[resolvers[j].SeriesId()]
+				return iPoints[0].DateTime().Time.Before(jPoints[0].DateTime().Time)
+			})
+		} else {
+			sort.SliceStable(resolvers, func(i, j int) bool {
+				iPoints := resolverPoints[resolvers[i].SeriesId()]
+				jPoints := resolverPoints[resolvers[j].SeriesId()]
+				return iPoints[0].DateTime().Time.After(jPoints[0].DateTime().Time)
+			})
+		}
+	}
+
+	return resolvers[:minInt(int32(len(resolvers)), limit)], nil
+}
+
+func minInt(a, b int32) int32 {
+	if a < b {
+		return a
+	}
+	return b
 }
