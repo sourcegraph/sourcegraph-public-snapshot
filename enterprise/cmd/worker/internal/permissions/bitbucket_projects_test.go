@@ -265,7 +265,7 @@ func TestHandleRestricted(t *testing.T) {
 	err := db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket #1",
-		Config:      `{"url": "https://bitbucket.com", "username": "username", "appPassword": "qwerty"}`,
+		Config:      `{"url": "https://bitbucket.com", "username": "username", "token": "qwerty", "repositoryQuery": ["none"]}`,
 	})
 	require.NoError(t, err)
 
@@ -364,7 +364,7 @@ func TestHandleUnrestricted(t *testing.T) {
 	err := db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket #1",
-		Config:      `{"url": "https://bitbucket.com", "username": "username", "appPassword": "pwd"}`,
+		Config:      `{"url": "https://bitbucket.com", "username": "username", "token": "qwerty", "repositoryQuery": ["none"]}`,
 	})
 	require.NoError(t, err)
 
