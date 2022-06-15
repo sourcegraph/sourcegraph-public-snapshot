@@ -130,7 +130,7 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
         </div>
     )
 
-    // a constant to hold git commits history
+    // a constant to hold git commits history for the repo filter
     // call streamComputeQuery from stream
 
     const gitRepository = useObservable(
