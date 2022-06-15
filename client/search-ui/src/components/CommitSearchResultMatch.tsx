@@ -122,9 +122,7 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
         >
             <div className={styles.commitSearchResultMatch}>
                 <div className="d-flex align-items-end flex-column p-2">
-                    {item.repoLastFetched && (
-                    <LastSyncedIcon lastSyncedTime={item.repoLastFetched} />
-                )}
+                    {item.repoLastFetched && <LastSyncedIcon lastSyncedTime={item.repoLastFetched} />}
                 </div>
 
                 {syntaxHighlighting !== undefined ? (
