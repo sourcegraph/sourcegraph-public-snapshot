@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -23,9 +24,6 @@ import (
 )
 
 func TestStore(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
 	db := database.NewDB(dbtest.NewDB(t))
 
@@ -56,10 +54,6 @@ func mustParseTime(v string) time.Time {
 }
 
 func TestGetBitbucketClient(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	t.Parallel()
 	ctx := context.Background()
 
@@ -79,6 +73,29 @@ func TestGetBitbucketClient(t *testing.T) {
 	client, err := handler.getBitbucketClient(ctx, &svc)
 	require.NoError(t, err)
 	require.NotNil(t, client)
+}
+
+func TestHandle_UnsupportedCodeHost(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	externalServices := database.NewMockExternalServiceStore()
+	externalServices.GetByIDFunc.SetDefaultReturn(
+		&types.ExternalService{
+			ID:          1,
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "github",
+		},
+		nil,
+	)
+
+	db := database.NewMockDB()
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+
+	handler := &bitbucketProjectPermissionsHandler{db: edb.NewEnterpriseDB(db)}
+	err := handler.Handle(ctx, log.Scoped("test", "test"), &types.BitbucketProjectPermissionJob{ExternalServiceID: 1})
+
+	require.True(t, errcode.IsNonRetryable(err))
 }
 
 func TestSetPermissionsForUsers(t *testing.T) {
@@ -246,9 +263,9 @@ func TestHandleRestricted(t *testing.T) {
 	}
 	// create an external service
 	err := db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
-		Kind:        extsvc.KindBitbucketCloud,
+		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket #1",
-		Config:      `{"url": "https://bitbucket.com", "username": "username", "appPassword": "qwerty"}`,
+		Config:      `{"url": "https://bitbucket.com", "username": "username", "token": "qwerty", "repositoryQuery": ["none"]}`,
 	})
 	require.NoError(t, err)
 
@@ -345,9 +362,9 @@ func TestHandleUnrestricted(t *testing.T) {
 	}
 	// create an external service
 	err := db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
-		Kind:        extsvc.KindBitbucketCloud,
+		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket #1",
-		Config:      `{"url": "https://bitbucket.com", "username": "username", "appPassword": "pwd"}`,
+		Config:      `{"url": "https://bitbucket.com", "username": "username", "token": "qwerty", "repositoryQuery": ["none"]}`,
 	})
 	require.NoError(t, err)
 
