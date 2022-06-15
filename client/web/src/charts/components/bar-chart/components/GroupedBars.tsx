@@ -23,6 +23,7 @@ interface GroupedBarsProps<Datum> extends ComponentProps<typeof Group> {
 
 export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement {
     const {
+        width,
         categories,
         height,
         xScale,
@@ -66,13 +67,7 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
     }
 
     return (
-        <Group
-            {...attributes}
-            pointerEvents="bounding-box"
-            onMouseMove={handleGroupMouseMove}
-            onMouseLeave={onBarLeave}
-            onClick={handleGroupClick}
-        >
+        <Group {...attributes} pointerEvents="bounding-rect">
             {categories.map(category => (
                 <Group key={category.id} left={xScale(category.id)} height={height}>
                     {category.data.map(datum => {
@@ -100,6 +95,15 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
                     })}
                 </Group>
             ))}
+
+            <rect
+                width={width}
+                height={height}
+                fill="transparent"
+                onMouseMove={handleGroupMouseMove}
+                onMouseLeave={onBarLeave}
+                onClick={handleGroupClick}
+            />
         </Group>
     )
 }
@@ -111,12 +115,24 @@ interface GetActiveBarInput<Datum> {
     xCategoriesScale: ScaleBand<string>
 }
 
+function scaleBandInvert(scale: ScaleBand<string>): (x: number) => number {
+    const domains = scale.domain()
+    const paddingOuter = scale.paddingOuter()
+    const eachBand = scale.step()
+
+    return function (value: number) {
+        return Math.max(0, Math.min(domains.length - 1, Math.floor((value - paddingOuter) / eachBand)))
+    }
+}
+
 function getActiveBar<Datum>(input: GetActiveBarInput<Datum>): [datum: Datum | null, category: Category<Datum> | null] {
     const { event, xCategoriesScale, categories, xScale } = input
-    const rectangle = (event.currentTarget as Element).getBoundingClientRect()
-    const xCord = event.clientX - rectangle.left
-    const categoryPossibleIndex = Math.floor(xCord / xScale.step())
 
+    const targetRectangle = (event.currentTarget as Element).getBoundingClientRect()
+    const xCord = event.clientX - targetRectangle.left
+
+    const invertX = scaleBandInvert(xScale)
+    const categoryPossibleIndex = invertX(xCord)
     const category = categories[categoryPossibleIndex]
 
     if (!category) {
@@ -129,8 +145,9 @@ function getActiveBar<Datum>(input: GetActiveBarInput<Datum>): [datum: Datum | n
         return [category.data[0], category]
     }
 
-    const categoryWindow = categoryPossibleIndex * xScale.step()
-    const possibleBarIndex = Math.floor((xCord - categoryWindow) / xCategoriesScale.step())
+    const invertCategories = scaleBandInvert(xCategoriesScale)
+    const categoryWindow = xScale(category.id) ?? 0
+    const possibleBarIndex = invertCategories(xCord - categoryWindow)
 
     if (category.data[possibleBarIndex]) {
         return [category.data[possibleBarIndex], category]

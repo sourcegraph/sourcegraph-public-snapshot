@@ -150,6 +150,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
                     left={content.left}
                     top={content.top}
                     height={content.height}
+                    width={content.width}
                     onBarHover={(datum, category) => setActiveSegment({ datum, category })}
                     onBarLeave={() => setActiveSegment(null)}
                     onBarClick={handleBarClick}
