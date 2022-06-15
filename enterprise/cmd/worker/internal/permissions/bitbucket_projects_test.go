@@ -248,7 +248,7 @@ func TestHandleRestricted(t *testing.T) {
 	err := db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
 		Kind:        extsvc.KindBitbucketCloud,
 		DisplayName: "Bitbucket #1",
-		Config:      `{"url": "https://bitbucket.com", "username": "username", "appPassword": "pwd"}`,
+		Config:      `{"url": "https://bitbucket.com", "username": "username", "appPassword": "qwerty"}`,
 	})
 	require.NoError(t, err)
 
