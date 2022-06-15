@@ -34,10 +34,10 @@ if (isValidType) {
         default:
             releaseType = 'minor' // Use minor for both minor and prerelease
     }
-    // Get the version nubmer of the last release from VS Code Marketplace using the vsce cli tool
+    // Get the latest release version nubmer of the last release from VS Code Marketplace using the vsce cli tool
     const response = childProcess.execSync('vsce show sourcegraph.sourcegraph --json').toString()
-    const currentVersion: string = JSON.parse(response).versions[0].version
-    if (!semver.valid(currentVersion) || version !== currentVersion) {
+    const latestVersion: string = JSON.parse(response).versions[0].version
+    if (!semver.valid(latestVersion) || version !== latestVersion) {
         throw new Error(
             'The current version number is not align with the version number of the latest release. Make sure you have the vsce cli tool installed.'
         )
@@ -45,11 +45,11 @@ if (isValidType) {
     // Increase minor version number by twice for minor release because ODD minor number is for pre-release
     const nextVersion =
         vsceReleaseType === 'minor'
-            ? semver.inc(semver.inc(currentVersion, releaseType)!, releaseType)!
-            : semver.inc(currentVersion, releaseType)!
+            ? semver.inc(semver.inc(latestVersion, releaseType)!, releaseType)!
+            : semver.inc(latestVersion, releaseType)!
     // commit message for the release, eg. vsce: minor release v1.0.1
     const releaseCommitMessage = `vsce: ${releaseType} release v${nextVersion}`
-    if (nextVersion && nextVersion !== currentVersion) {
+    if (nextVersion && nextVersion !== latestVersion) {
         try {
             // Update version number in package.json
             const packageJson = originalPackageJson.replace(`"version": "${version}"`, `"version": "${nextVersion}"`)
