@@ -16,7 +16,7 @@ import (
 // and remove dbutil.DB altogether.
 type DB interface {
 	dbutil.DB
-	basestore.ShareableStore[schemas.Production]
+	basestore.ShareableStore[schemas.Frontend]
 
 	AccessTokens() AccessTokenStore
 	Authz() AuthzStore
@@ -57,15 +57,15 @@ var _ DB = (*db)(nil)
 // NewDB creates a new DB from a dbutil.DB, providing a thin wrapper
 // that has constructor methods for the more specialized stores.
 func NewDB(inner *sql.DB) DB {
-	return &db{basestore.NewWithHandle(basestore.NewHandleWithDB[schemas.Production](inner, sql.TxOptions{}))}
+	return &db{basestore.NewWithHandle(basestore.NewHandleWithDB[schemas.Frontend](inner, sql.TxOptions{}))}
 }
 
-func NewDBWith(other basestore.ShareableStore[schemas.Production]) DB {
+func NewDBWith(other basestore.ShareableStore[schemas.Frontend]) DB {
 	return &db{basestore.NewWithHandle(other.Handle())}
 }
 
 type db struct {
-	*basestore.Store[schemas.Production]
+	*basestore.Store[schemas.Frontend]
 }
 
 func (d *db) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {

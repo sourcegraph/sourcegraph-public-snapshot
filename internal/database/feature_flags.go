@@ -18,8 +18,8 @@ var (
 )
 
 type FeatureFlagStore interface {
-	basestore.ShareableStore[schemas.Production]
-	With(basestore.ShareableStore[schemas.Production]) FeatureFlagStore
+	basestore.ShareableStore[schemas.Frontend]
+	With(basestore.ShareableStore[schemas.Frontend]) FeatureFlagStore
 	Transact(context.Context) (FeatureFlagStore, error)
 	CreateFeatureFlag(context.Context, *ff.FeatureFlag) (*ff.FeatureFlag, error)
 	UpdateFeatureFlag(context.Context, *ff.FeatureFlag) (*ff.FeatureFlag, error)
@@ -42,14 +42,14 @@ type FeatureFlagStore interface {
 }
 
 type featureFlagStore struct {
-	*basestore.Store[schemas.Production]
+	*basestore.Store[schemas.Frontend]
 }
 
-func FeatureFlagsWith(other basestore.ShareableStore[schemas.Production]) FeatureFlagStore {
+func FeatureFlagsWith(other basestore.ShareableStore[schemas.Frontend]) FeatureFlagStore {
 	return &featureFlagStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (f *featureFlagStore) With(other basestore.ShareableStore[schemas.Production]) FeatureFlagStore {
+func (f *featureFlagStore) With(other basestore.ShareableStore[schemas.Frontend]) FeatureFlagStore {
 	return &featureFlagStore{Store: f.Store.With(other)}
 }
 

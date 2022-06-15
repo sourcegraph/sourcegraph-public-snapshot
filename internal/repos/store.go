@@ -38,8 +38,8 @@ type Store interface {
 	// SetTracer updates tracer for the store in place.
 	SetTracer(t trace.Tracer)
 
-	basestore.ShareableStore[schemas.Production]
-	With(other basestore.ShareableStore[schemas.Production]) Store
+	basestore.ShareableStore[schemas.Frontend]
+	With(other basestore.ShareableStore[schemas.Frontend]) Store
 	// Transact begins a new transaction and make a new Store over it.
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
@@ -98,7 +98,7 @@ type Store interface {
 
 // A Store exposes methods to read and write repos and external services.
 type store struct {
-	*basestore.Store[schemas.Production]
+	*basestore.Store[schemas.Frontend]
 
 	// Logger used by the store. Does not have a default - it must be provided.
 	Logger log.Logger
@@ -136,7 +136,7 @@ func (s *store) ExternalServiceStore() database.ExternalServiceStore {
 func (s *store) SetMetrics(m StoreMetrics) { s.Metrics = m }
 func (s *store) SetTracer(t trace.Tracer)  { s.Tracer = t }
 
-func (s *store) With(other basestore.ShareableStore[schemas.Production]) Store {
+func (s *store) With(other basestore.ShareableStore[schemas.Frontend]) Store {
 	return &store{
 		Store:   s.Store.With(other),
 		Logger:  s.Logger,

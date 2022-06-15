@@ -23,7 +23,7 @@ func TestBulkProcessor(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	db := database.NewDBWith(dbtest.New[schemas.Production](t))
+	db := database.NewDBWith(dbtest.New[schemas.Frontend](t))
 	bstore := store.New(db, &observation.TestContext, nil)
 
 	user := ct.CreateTestUser(t, db, true)

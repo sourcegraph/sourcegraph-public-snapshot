@@ -13,7 +13,7 @@ import (
 )
 
 type Store struct {
-	*basestore.Store[schemas.Production]
+	*basestore.Store[schemas.Frontend]
 	operations *operations
 }
 
@@ -31,7 +31,7 @@ func NewWithDB(db database.DB, observationContext *observation.Context) *Store {
 	}
 }
 
-func (s *Store) With(other basestore.ShareableStore[schemas.Production]) *Store {
+func (s *Store) With(other basestore.ShareableStore[schemas.Frontend]) *Store {
 	return &Store{
 		Store:      s.Store.With(other),
 		operations: s.operations,

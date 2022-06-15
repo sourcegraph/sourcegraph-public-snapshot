@@ -23,7 +23,7 @@ import (
 
 // CodeMonitorStore is an interface for interacting with the code monitor tables in the database
 type CodeMonitorStore interface {
-	basestore.ShareableStore[schemas.Production]
+	basestore.ShareableStore[schemas.Frontend]
 	Transact(context.Context) (CodeMonitorStore, error)
 	Done(error) error
 	Now() time.Time
@@ -95,7 +95,7 @@ type CodeMonitorStore interface {
 // codeMonitorStore exposes methods to read and write codemonitors domain models
 // from persistent storage.
 type codeMonitorStore struct {
-	*basestore.Store[schemas.Production]
+	*basestore.Store[schemas.Frontend]
 	now func() time.Time
 }
 

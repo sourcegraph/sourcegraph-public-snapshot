@@ -63,9 +63,9 @@ func (e *RepoNotFoundErr) NotFound() bool {
 }
 
 type RepoStore interface {
-	basestore.ShareableStore[schemas.Production]
+	basestore.ShareableStore[schemas.Frontend]
 	Transact(context.Context) (RepoStore, error)
-	With(basestore.ShareableStore[schemas.Production]) RepoStore
+	With(basestore.ShareableStore[schemas.Frontend]) RepoStore
 	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 	Done(error) error
 
@@ -89,12 +89,12 @@ var _ RepoStore = (*repoStore)(nil)
 
 // repoStore handles access to the repo table
 type repoStore struct {
-	*basestore.Store[schemas.Production]
+	*basestore.Store[schemas.Frontend]
 }
 
 // ReposWith instantiates and returns a new RepoStore using the other
 // store handle.
-func ReposWith(other basestore.ShareableStore[schemas.Production]) RepoStore {
+func ReposWith(other basestore.ShareableStore[schemas.Frontend]) RepoStore {
 	return &repoStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 

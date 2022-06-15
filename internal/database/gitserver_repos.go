@@ -19,8 +19,8 @@ import (
 )
 
 type GitserverRepoStore interface {
-	basestore.ShareableStore[schemas.Production]
-	With(other basestore.ShareableStore[schemas.Production]) GitserverRepoStore
+	basestore.ShareableStore[schemas.Frontend]
+	With(other basestore.ShareableStore[schemas.Frontend]) GitserverRepoStore
 	Upsert(ctx context.Context, repos ...*types.GitserverRepo) error
 	IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions, repoFn func(repo types.RepoGitserverStatus) error) error
 	GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error)
@@ -41,16 +41,16 @@ var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
 
 // gitserverRepoStore is responsible for data stored in the gitserver_repos table.
 type gitserverRepoStore struct {
-	*basestore.Store[schemas.Production]
+	*basestore.Store[schemas.Frontend]
 }
 
 // GitserverReposWith instantiates and returns a new gitserverRepoStore using
 // the other store handle.
-func GitserverReposWith(other basestore.ShareableStore[schemas.Production]) GitserverRepoStore {
+func GitserverReposWith(other basestore.ShareableStore[schemas.Frontend]) GitserverRepoStore {
 	return &gitserverRepoStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (s *gitserverRepoStore) With(other basestore.ShareableStore[schemas.Production]) GitserverRepoStore {
+func (s *gitserverRepoStore) With(other basestore.ShareableStore[schemas.Frontend]) GitserverRepoStore {
 	return &gitserverRepoStore{Store: s.Store.With(other)}
 }
 

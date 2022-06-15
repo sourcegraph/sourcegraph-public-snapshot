@@ -63,7 +63,7 @@ func RandomID() (string, error) {
 // Store exposes methods to read and write batches domain models
 // from persistent storage.
 type Store struct {
-	*basestore.Store[schemas.Production]
+	*basestore.Store[schemas.Frontend]
 	key                encryption.Key
 	now                func() time.Time
 	operations         *operations

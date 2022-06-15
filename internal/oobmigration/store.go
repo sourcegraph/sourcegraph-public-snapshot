@@ -115,7 +115,7 @@ func scanMigrations(rows *sql.Rows, queryErr error) (_ []Migration, err error) {
 
 // Store is the interface over the out-of-band migrations tables.
 type Store struct {
-	*basestore.Store[schemas.Production]
+	*basestore.Store[schemas.Frontend]
 }
 
 // NewStoreWithDB creates a new Store with the given database connection.
@@ -123,14 +123,14 @@ func NewStoreWithDB(db database.DB) *Store {
 	return &Store{Store: basestore.NewWithHandle(db.Handle())}
 }
 
-var _ basestore.ShareableStore[schemas.Production] = &Store{}
+var _ basestore.ShareableStore[schemas.Frontend] = &Store{}
 
 // With creates a new store with the underlying database handle from the given store.
 // This method should be used when two distinct store instances need to perform an
 // operation within the same shared transaction.
 //
 // This method wraps the basestore.With method.
-func (s *Store) With(other basestore.ShareableStore[schemas.Production]) *Store {
+func (s *Store) With(other basestore.ShareableStore[schemas.Frontend]) *Store {
 	return &Store{Store: s.Store.With(other)}
 }
 

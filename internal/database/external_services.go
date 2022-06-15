@@ -131,7 +131,7 @@ type ExternalServiceStore interface {
 	Transact(ctx context.Context) (ExternalServiceStore, error)
 	With(other basestore.ShareableStore[schemas.Production]) ExternalServiceStore
 	Done(err error) error
-	basestore.ShareableStore[schemas.Production]
+	basestore.ShareableStore[schemas.Frontend]
 }
 
 // An externalServiceStore stores external services and their configuration.
@@ -139,7 +139,7 @@ type ExternalServiceStore interface {
 // The enterprise code registers additional validators at run-time and sets the
 // global instance in stores.go
 type externalServiceStore struct {
-	*basestore.Store[schemas.Production]
+	*basestore.Store[schemas.Frontend]
 
 	key encryption.Key
 }
@@ -152,11 +152,11 @@ func (e *externalServiceStore) copy() *externalServiceStore {
 }
 
 // ExternalServicesWith instantiates and returns a new ExternalServicesStore with prepared statements.
-func ExternalServicesWith(other basestore.ShareableStore[schemas.Production]) ExternalServiceStore {
+func ExternalServicesWith(other basestore.ShareableStore[schemas.Frontend]) ExternalServiceStore {
 	return &externalServiceStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (e *externalServiceStore) With(other basestore.ShareableStore[schemas.Production]) ExternalServiceStore {
+func (e *externalServiceStore) With(other basestore.ShareableStore[schemas.Frontend]) ExternalServiceStore {
 	s := e.copy()
 	s.Store = e.Store.With(other)
 	return s

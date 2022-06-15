@@ -22,7 +22,7 @@ type CodeInsights struct {
 
 func (CodeInsights) codeInsights() {}
 
-type Production struct {
+type TestDB struct {
 	SchemaKind
 	Frontend
 	CodeIntel

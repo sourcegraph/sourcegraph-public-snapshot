@@ -14,7 +14,7 @@ func TestLock(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	handle := dbtest.New[schemas.Production](t)
+	handle := dbtest.New[schemas.TestDB](t)
 	locker := NewWith(handle, "test")
 
 	key := rand.Int31n(1000)
@@ -56,7 +56,7 @@ func TestLockBlockingAcquire(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	handle := dbtest.New[schemas.Production](t)
+	handle := dbtest.New[schemas.Frontend](t)
 	locker := NewWith(handle, "test")
 
 	key := rand.Int31n(1000)
@@ -112,7 +112,7 @@ func TestLockBadTransactionState(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	handle := dbtest.New[schemas.Production](t)
+	handle := dbtest.New[schemas.Frontend](t)
 	locker := NewWith(handle, "test")
 
 	key := rand.Int31n(1000)
