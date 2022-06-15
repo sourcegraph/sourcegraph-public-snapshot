@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 
 import VisuallyHidden from '@reach/visually-hidden'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -65,6 +65,14 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<
     const history = useHistory()
 
     const deselectWorkspace = useCallback(() => history.push(batchSpec.executionURL), [batchSpec.executionURL, history])
+
+    const videoRef = useRef<HTMLVideoElement | null>(null)
+    // Pause the execution animation loop when the batch spec stops executing.
+    useEffect(() => {
+        if (!batchSpec.isExecuting) {
+            videoRef.current?.pause()
+        }
+    }, [batchSpec.isExecuting])
 
     return (
         <div className={styles.container}>
