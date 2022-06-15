@@ -223,6 +223,48 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 	return batchChange, nil
 }
 
+type UpsertEmptyBatchChangeOpts struct {
+	NamespaceUserID int32
+	NamespaceOrgID  int32
+
+	Name string
+}
+
+// UpsertEmptyBatchChange creates a new batch change with an empty batch spec if a batch change with that name doesn't exist,
+// otherwise it returns the existing batch change.
+// It enforces namespace permissions of the caller and validates that the combination of name +
+// namespace is unique.
+func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	getBatchChangeOpts := store.GetBatchChangeOpts{
+		Name:            opts.Name,
+		NamespaceUserID: opts.NamespaceUserID,
+		NamespaceOrgID:  opts.NamespaceOrgID,
+	}
+
+	// check if batch change already exists
+	batchChange, err = s.store.GetBatchChange(ctx, getBatchChangeOpts)
+	if err != nil {
+		if err == store.ErrNoResults {
+			// this means batch change doesn't exist so we create it
+			return s.CreateEmptyBatchChange(ctx, CreateEmptyBatchChangeOpts{
+				Name:            opts.Name,
+				NamespaceUserID: opts.NamespaceUserID,
+				NamespaceOrgID:  opts.NamespaceOrgID,
+			})
+		}
+
+		return nil, err
+	}
+
+	return batchChange, nil
+}
+
 type CreateBatchSpecOpts struct {
 	RawSpec string `json:"raw_spec"`
 
