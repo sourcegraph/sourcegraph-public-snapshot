@@ -10,6 +10,11 @@ class C1 {
     C1(int p1) {
         //   vv constructor.p1 ref
         f1 = p1;
+
+        var c2 = new C2();
+
+        //      vv f2 ref
+        f1 = c2.f2;
     }
 
     //   vv m1 def

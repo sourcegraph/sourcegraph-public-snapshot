@@ -16,7 +16,7 @@ func slackMention(slackUserID string) string {
 	return fmt.Sprintf("<@%s>", slackUserID)
 }
 
-func slackSummary(locked bool, branch string, discussionChannel string, failedCommits []CommitInfo) string {
+func generateBranchEventSummary(locked bool, branch string, discussionChannel string, failedCommits []CommitInfo) string {
 	branchStr := fmt.Sprintf("`%s`", branch)
 	if !locked {
 		return fmt.Sprintf(":white_check_mark: Pipeline healthy - %s unlocked!", branchStr)
@@ -53,6 +53,20 @@ If unable to resolve the issue, please start an incident with the '/incident' Sl
 
 cc: @dev-experience-support`, branchStr, discussionChannel)
 	return message
+}
+
+func generateWeeklySummary(dateFrom, dateTo string, builds, flakes int, avgFlakes float64, downtime time.Duration) string {
+	return fmt.Sprintf(`:bar_chart: Welcome to the weekly CI report for period *%s* to *%s*!
+
+• Total builds: *%d*
+• Total flakes: *%d*
+• Average %% of build flakes: *%v%%*
+• Total incident duration: *%v*
+
+For a more detailed breakdown, view the dashboards in <https://sourcegraph.grafana.net/d/iBBWbxFnk/buildkite?orgId=1&from=now-7d&to=now|Grafana>.
+
+For a high-level overview, view the dashboards at <https://app.okayhq.com/dashboards/3856903d-33ea-4d60-9719-68fec0eb4313/build-stats-kpis|OkayHQ>.
+`, dateFrom, dateTo, builds, flakes, avgFlakes, downtime)
 }
 
 // postSlackUpdate attempts to send the given summary to at each of the provided webhooks.

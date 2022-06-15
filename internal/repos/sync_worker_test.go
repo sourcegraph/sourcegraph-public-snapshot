@@ -34,7 +34,7 @@ func testSyncWorkerPlumbing(repoStore repos.Store) func(t *testing.T) {
 
 		// Add item to queue
 		q := sqlf.Sprintf(`insert into external_service_sync_jobs (external_service_id) values (%s);`, testSvc.ID)
-		result, err := repoStore.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		result, err := repoStore.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -51,7 +51,7 @@ func testSyncWorkerPlumbing(repoStore repos.Store) func(t *testing.T) {
 		h := &fakeRepoSyncHandler{
 			jobChan: jobChan,
 		}
-		worker, resetter := repos.NewSyncWorker(ctx, repoStore.Handle().DB(), h, repos.SyncWorkerOptions{
+		worker, resetter := repos.NewSyncWorker(ctx, repoStore.Handle(), h, repos.SyncWorkerOptions{
 			NumHandlers:    1,
 			WorkerInterval: 1 * time.Millisecond,
 		})

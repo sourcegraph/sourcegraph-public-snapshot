@@ -249,7 +249,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
-		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
+		gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
 			return &util.FileInfo{}, os.ErrNotExist
 		}
 		defer git.ResetMocks()
@@ -273,7 +273,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
-		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
+		gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
 			return &util.FileInfo{Mode_: os.ModeDir}, nil
 		}
 
@@ -314,11 +314,11 @@ c.go`
 		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
-		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
+		gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
 			return &util.FileInfo{Mode_: 0}, nil
 		}
 
-		git.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
+		gitserver.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader("this is a test file")), nil
 		}
 
@@ -351,11 +351,11 @@ c.go`
 		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
-		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
+		gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
 			return &util.FileInfo{Mode_: 0}, nil
 		}
 
-		git.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
+		gitserver.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader("this is a test file")), nil
 		}
 

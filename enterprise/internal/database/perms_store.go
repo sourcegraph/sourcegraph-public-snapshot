@@ -39,6 +39,9 @@ type PermsStore interface {
 	// LoadUserPermissions loads stored user permissions into p. An ErrPermsNotFound
 	// is returned when there are no valid permissions available.
 	LoadUserPermissions(ctx context.Context, p *authz.UserPermissions) error
+	// FetchReposByUserAndExternalService fetches repo ids that the given user can
+	// read and that originate from the given external service.
+	FetchReposByUserAndExternalService(ctx context.Context, userID int32, serviceType, serviceID string) ([]api.RepoID, error)
 	// LoadRepoPermissions loads stored repository permissions into p. An
 	// ErrPermsNotFound is returned when there are no valid permissions available.
 	LoadRepoPermissions(ctx context.Context, p *authz.RepoPermissions) error
@@ -247,6 +250,45 @@ func (s *permsStore) LoadUserPermissions(ctx context.Context, p *authz.UserPermi
 	p.UpdatedAt = updatedAt
 	p.SyncedAt = syncedAt
 	return nil
+}
+
+func (s *permsStore) FetchReposByUserAndExternalService(ctx context.Context, userID int32, serviceType, serviceID string) (ids []api.RepoID, err error) {
+	const format = `
+-- source: enterprise/internal/database/perms_store.go:FetchReposByUserAndExternalService
+SELECT id
+FROM repo
+WHERE external_service_id = %s
+  AND external_service_type = %s
+  AND id = ANY (ARRAY(SELECT object_ids_ints
+                      FROM user_permissions
+                      WHERE user_id = %s
+                        AND permission = 'read'
+                        AND object_type = 'repos'))
+`
+
+	q := sqlf.Sprintf(
+		format,
+		serviceID,
+		serviceType,
+		userID,
+	)
+
+	ctx, save := s.observe(ctx, "FetchReposByUserAndExternalService", "")
+	defer func() {
+		save(&err)
+	}()
+
+	repos, err := basestore.ScanInt32s(s.Query(ctx, q))
+	if err != nil {
+		return nil, errors.Wrap(err, "scanning repo ids")
+	}
+
+	ids = make([]api.RepoID, 0, len(repos))
+	for _, id := range repos {
+		ids = append(ids, api.RepoID(id))
+	}
+
+	return ids, nil
 }
 
 func (s *permsStore) LoadRepoPermissions(ctx context.Context, p *authz.RepoPermissions) (err error) {

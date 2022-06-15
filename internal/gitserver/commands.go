@@ -26,6 +26,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -1307,4 +1308,150 @@ func (c *ClientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 		return nil, err
 	}
 	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
+}
+
+// ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
+// file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
+func (c *ClientImplementor) ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) ([]byte, error) {
+	if Mocks.ReadFile != nil {
+		return Mocks.ReadFile(commit, name)
+	}
+
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadFile")
+	span.SetTag("Name", name)
+	defer span.Finish()
+
+	br, err := c.NewFileReader(ctx, repo, commit, name, checker)
+	if err != nil {
+		return nil, err
+	}
+	defer br.Close()
+
+	r := io.Reader(br)
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+// NewFileReader returns an io.ReadCloser reading from the named file at commit.
+// The caller should always close the reader after use
+func (c *ClientImplementor) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
+	if Mocks.NewFileReader != nil {
+		return Mocks.NewFileReader(commit, name)
+	}
+	a := actor.FromContext(ctx)
+	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, name); err != nil {
+		return nil, err
+	} else if !hasAccess {
+		return nil, os.ErrNotExist
+	}
+
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetFileReader")
+	span.SetTag("Name", name)
+	defer span.Finish()
+
+	name = util.Rel(name)
+	br, err := c.newBlobReader(ctx, repo, commit, name)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting blobReader for %q", name)
+	}
+	return br, nil
+}
+
+// blobReader, which should be created using newBlobReader, is a struct that allows
+// us to get a ReadCloser to a specific named file at a specific commit
+type blobReader struct {
+	c      *ClientImplementor
+	ctx    context.Context
+	repo   api.RepoName
+	commit api.CommitID
+	name   string
+	cmd    GitCommand
+	rc     io.ReadCloser
+}
+
+func (c *ClientImplementor) newBlobReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (*blobReader, error) {
+	if err := gitdomain.EnsureAbsoluteCommit(commit); err != nil {
+		return nil, err
+	}
+
+	cmd := c.GitCommand(repo, "show", string(commit)+":"+name)
+	stdout, err := cmd.StdoutReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &blobReader{
+		c:      c,
+		ctx:    ctx,
+		repo:   repo,
+		commit: commit,
+		name:   name,
+		cmd:    cmd,
+		rc:     stdout,
+	}, nil
+}
+
+func (br *blobReader) Read(p []byte) (int, error) {
+	n, err := br.rc.Read(p)
+	if err != nil {
+		return n, br.convertError(err)
+	}
+	return n, nil
+}
+
+func (br *blobReader) Close() error {
+	return br.rc.Close()
+}
+
+// convertError converts an error returned from 'git show' into a more appropriate error type
+func (br *blobReader) convertError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if err == io.EOF {
+		return err
+	}
+	if strings.Contains(err.Error(), "exists on disk, but not in") || strings.Contains(err.Error(), "does not exist") {
+		return &os.PathError{Op: "open", Path: br.name, Err: os.ErrNotExist}
+	}
+	if strings.Contains(err.Error(), "fatal: bad object ") {
+		// Could be a git submodule.
+		fi, err := br.c.Stat(br.ctx, authz.DefaultSubRepoPermsChecker, br.repo, br.commit, br.name)
+		if err != nil {
+			return err
+		}
+		// Return EOF for a submodule for now which indicates zero content
+		if fi.Mode()&gitdomain.ModeSubmodule != 0 {
+			return io.EOF
+		}
+	}
+	return errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", br.cmd.Args(), err))
+}
+
+// Stat returns a FileInfo describing the named file at commit.
+func (c *ClientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+	if Mocks.Stat != nil {
+		return Mocks.Stat(commit, path)
+	}
+
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Stat")
+	span.SetTag("Commit", commit)
+	span.SetTag("Path", path)
+	defer span.Finish()
+
+	if err := checkSpecArgSafety(string(commit)); err != nil {
+		return nil, err
+	}
+
+	path = util.Rel(path)
+
+	fi, err := c.LStat(ctx, checker, repo, commit, path)
+	if err != nil {
+		return nil, err
+	}
+
+	return fi, nil
 }

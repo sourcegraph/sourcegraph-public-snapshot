@@ -107,13 +107,12 @@ func (r *Runner[Args]) Interactive(
 		return err
 	}
 
-	// Keep interactive runner up until all issues are fixed.
+	// Keep interactive runner up until all issues are fixed or the user exits
 	results := &runAllCategoryChecksResult{
 		failed: []int{1}, // initialize, this gets reset immediately
 	}
 	for len(results.failed) != 0 {
-		r.out.Output.ClearScreen()
-
+		// Update results
 		results = r.runAllCategoryChecks(ctx, args)
 		if len(results.failed) == 0 {
 			break
@@ -135,9 +134,11 @@ func (r *Runner[Args]) Interactive(
 		err = r.presentFailedCategoryWithOptions(ctx, idx, &selectedCategory, args, results)
 		if err != nil {
 			if err == io.EOF {
-				return nil
+				return nil // we are done
 			}
-			return err
+
+			r.out.WriteWarningf("Encountered error while fixing: %s", err.Error())
+			// continue, do not exit
 		}
 	}
 
@@ -173,7 +174,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 	var (
 		categoriesWg sync.WaitGroup
-		skipped      = map[int]struct{}{}
+		skipped      = map[int]error{}
 
 		// used for progress bar
 		checksDone           atomic.Float64
@@ -186,7 +187,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		progress.StatusBarUpdatef(i, "Determining status...")
 
 		if err := category.CheckEnabled(ctx, args); err != nil {
-			skipped[i] = struct{}{}
+			skipped[i] = err
 			// Mark as done
 			progress.StatusBarCompletef(i, "Category skipped: %s", err.Error())
 			continue
@@ -242,8 +243,8 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		idx := i + 1
 
 		if _, ok := skipped[i]; ok {
-			r.out.WriteSkippedf("%d. %s %s[SKIPPED]%s", idx, category.Name,
-				output.StyleBold, output.StyleReset)
+			r.out.WriteSkippedf("%d. %s %s[SKIPPED. Reason: %s]%s", idx, category.Name,
+				output.StyleBold, skipped[i], output.StyleReset)
 			results.skipped = append(results.skipped, i)
 			continue
 		}
