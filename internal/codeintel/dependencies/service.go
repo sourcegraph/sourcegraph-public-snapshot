@@ -128,7 +128,6 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 			}
 
 			// TODO: See todo above, we need to clean this up properly
-
 			if notFoundRevs, ok := notFound[repoName]; ok {
 				for commit := range commits {
 					delete(notFoundRevs, commit)
