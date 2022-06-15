@@ -441,7 +441,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		}
 	})
 
-	t.Run("invalid codehost", func(t *testing.T) {
+	t.Run("invalid code host", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
@@ -468,6 +468,41 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		}
 	})
 
+	t.Run("non-Bitbucket code host", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		extSvc := database.NewMockExternalServiceStore()
+		extSvc.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) (*types.ExternalService, error) {
+			if id == 1 {
+				return &types.ExternalService{
+						ID:          1,
+						Kind:        extsvc.KindBitbucketCloud,
+						DisplayName: "github :)",
+					},
+					nil
+			} else {
+				return nil, errors.Errorf("Cannot find external service with given ID")
+			}
+		})
+		db.ExternalServicesFunc.SetDefaultReturn(extSvc)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx,
+			&graphqlbackend.RepoPermsBitbucketProjectArgs{
+				CodeHost: graphqlbackend.MarshalExternalServiceID(1),
+			},
+		)
+
+		assert.EqualError(t, err, fmt.Sprintf("expected Bitbucket Server external service, got: %s", extsvc.KindBitbucketCloud))
+		require.Nil(t, result)
+	})
+
 	t.Run("job enqueued", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
@@ -478,6 +513,21 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.BitbucketProjectPermissionsFunc.SetDefaultReturn(bb)
+
+		extSvc := database.NewMockExternalServiceStore()
+		extSvc.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) (*types.ExternalService, error) {
+			if id == 1 {
+				return &types.ExternalService{
+						ID:          1,
+						Kind:        extsvc.KindBitbucketServer,
+						DisplayName: "bb server no jokes here",
+					},
+					nil
+			} else {
+				return nil, errors.Errorf("Cannot find external service with given ID")
+			}
+		})
+		db.ExternalServicesFunc.SetDefaultReturn(extSvc)
 
 		r := &Resolver{db: db}
 

@@ -235,7 +235,7 @@ func serveRaw(db database.DB) handlerFunc {
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.Header().Set("X-Content-Type-Options", "nosniff")
 
-			fi, err := git.Stat(r.Context(), db, authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath)
+			fi, err := gitserver.NewClient(db).Stat(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath)
 			if err != nil {
 				if os.IsNotExist(err) {
 					requestType = "404"
@@ -270,7 +270,7 @@ func serveRaw(db database.DB) handlerFunc {
 			// File
 			requestType = "file"
 			size = fi.Size()
-			f, err := git.NewFileReader(r.Context(), db, common.Repo.Name, common.CommitID, requestedPath, authz.DefaultSubRepoPermsChecker)
+			f, err := gitserver.NewClient(db).NewFileReader(r.Context(), common.Repo.Name, common.CommitID, requestedPath, authz.DefaultSubRepoPermsChecker)
 			if err != nil {
 				return err
 			}

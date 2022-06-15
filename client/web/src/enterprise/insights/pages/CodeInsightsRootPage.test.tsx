@@ -6,7 +6,6 @@ import userEvent from '@testing-library/user-event'
 import * as H from 'history'
 import { MemoryRouter } from 'react-router'
 import { Route } from 'react-router-dom'
-import { CompatRouter } from 'react-router-dom-v5-compat'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -68,17 +67,15 @@ const renderWithBrandedContext = (component: React.ReactElement, { route = '/', 
             <MockedTestProvider>
                 <Wrapper api={api}>
                     <MemoryRouter initialEntries={[route]}>
-                        <CompatRouter>
-                            {component}
-                            <Route
-                                path="*"
-                                render={({ history, location }) => {
-                                    routerSettings.testHistory = history
-                                    routerSettings.testLocation = location
-                                    return null
-                                }}
-                            />
-                        </CompatRouter>
+                        {component}
+                        <Route
+                            path="*"
+                            render={({ history, location }) => {
+                                routerSettings.testHistory = history
+                                routerSettings.testLocation = location
+                                return null
+                            }}
+                        />
                     </MemoryRouter>
                 </Wrapper>
             </MockedTestProvider>

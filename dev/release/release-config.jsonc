@@ -17,7 +17,7 @@
     "upcomingRelease": "3.41.0",
     // Release dates
     "oneWorkingWeekBeforeRelease": "13 June 2022 10:00 PST",
-    "oneWorkingDayBeforeRelease": "17 June 2022 10:00 PST",
+    "threeWorkingDaysBeforeRelease": "17 June 2022 10:00 PST",
     "releaseDate": "20 June 2022 10:00 PST",
     "oneWorkingDayAfterRelease": "21 June 2022 10:00 PST",
     // Channel where messages from the tooling are posted

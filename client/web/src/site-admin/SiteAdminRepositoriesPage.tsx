@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback } from 'react'
 
+import classNames from 'classnames'
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
@@ -10,6 +11,7 @@ import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, Button, Link, Alert, Icon, H2, Text } from '@sourcegraph/wildcard'
 
+import { TerminalLine } from '../auth/Terminal'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -20,6 +22,8 @@ import { RepositoriesResult, SiteAdminRepositoryFields } from '../graphql-operat
 import { refreshSiteFlags } from '../site/backend'
 
 import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
+
+import styles from './SiteAdminRepositoriesPage.module.scss'
 
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
@@ -48,6 +52,7 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                     </small>
                 )}
             </div>
+
             <div className="repository-node__actions">
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
                     <Button to={node.url} variant="secondary" size="sm" as={Link}>
@@ -67,6 +72,15 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                 }{' '}
             </div>
         </div>
+
+        {node.mirrorInfo.lastError && (
+            <div className={classNames(styles.alertWrapper)}>
+                <Alert variant="warning">
+                    <TerminalLine>Error updating repo:</TerminalLine>
+                    <TerminalLine>{node.mirrorInfo.lastError}</TerminalLine>
+                </Alert>
+            </div>
+        )}
     </li>
 )
 

@@ -12,10 +12,10 @@ import { useMutation } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     SettingsCascadeProps,
-    SettingsOrgSubject,
-    SettingsUserSubject,
+    // SettingsOrgSubject,
+    // SettingsUserSubject,
 } from '@sourcegraph/shared/src/settings/settings'
-import { Button, Container, Input, Icon, RadioButton, H3 } from '@sourcegraph/wildcard'
+import { Button, Container, Input, Icon, RadioButton } from '@sourcegraph/wildcard'
 
 import {
     BatchChangeFields,
@@ -77,15 +77,19 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
     const loading = batchChangeLoading || batchSpecLoading
     const error = batchChangeError || batchSpecError
 
-    const { namespaces, defaultSelectedNamespace } = useNamespaces(
+    const { namespaces, defaultSelectedNamespace: _defaultSelectedNamespace, userNamespace } = useNamespaces(
         settingsCascade,
         batchChange?.namespace.id || initialNamespaceID
     )
 
-    // The namespace selected for creating the new batch change under.
-    const [selectedNamespace, setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
-        defaultSelectedNamespace
-    )
+    // TODO: As we haven't finished implementing support for orgs, we've temporary
+    // disabled the namespace selector. This code should be uncommented to restore the
+    // selector.
+    // // The namespace selected for creating the new batch change under.
+    // const [selectedNamespace, setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
+    //     defaultSelectedNamespace
+    // )
+    const selectedNamespace = userNamespace
 
     const [nameInput, setNameInput] = useState(batchChange?.name || '')
     const [isNameValid, setIsNameValid] = useState<boolean>()
@@ -138,8 +142,12 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                 <NamespaceSelector
                     namespaces={namespaces}
                     selectedNamespace={selectedNamespace.id}
-                    onSelect={setSelectedNamespace}
-                    disabled={isReadOnly}
+                    // TODO: As we haven't finished implementing support for orgs, we've temporary
+                    // disabled the namespace selector. This code should be uncommented to restore it
+                    // onSelect={setSelectedNamespace}
+                    // disabled={isReadOnly}
+                    onSelect={noop}
+                    disabled={true}
                 />
                 <Input
                     label="Batch change name"
@@ -161,9 +169,15 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                     </small>
                 )}
                 <hr className="my-3" />
-                <H3 className="text-muted">
-                    Visibility <Icon aria-label="Coming soon" data-tooltip="Coming soon" as={InfoCircleOutlineIcon} />
-                </H3>
+                <strong className="d-block mb-2">
+                    Visibility
+                    <Icon
+                        aria-label="Coming soon"
+                        data-tooltip="Coming soon"
+                        as={InfoCircleOutlineIcon}
+                        className="ml-1"
+                    />
+                </strong>
                 <div className="form-group mb-1">
                     <RadioButton
                         name="visibility"

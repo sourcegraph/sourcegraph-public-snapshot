@@ -257,6 +257,63 @@ func testPermsStore_LoadRepoPermissions(db database.DB) func(*testing.T) {
 	}
 }
 
+func testPermsStore_FetchReposByUserAndExternalService(db database.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		t.Run("found matching", func(t *testing.T) {
+			ctx := context.Background()
+			s := perms(db, clock)
+			if _, err := db.ExecContext(ctx, `INSERT into repo (name, external_service_type, external_service_id) values ('github.com/test/test', 'github', 'https://github.com/')`); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				cleanupReposTable(t, s)
+				cleanupPermsTables(t, s)
+			})
+
+			rp := &authz.RepoPermissions{
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toMapset(2),
+			}
+			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+				t.Fatal(err)
+			}
+
+			repos, err := s.FetchReposByUserAndExternalService(ctx, 2, "github", "https://github.com/")
+			if err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "repos", []api.RepoID{1}, repos)
+		})
+		t.Run("skips non matching", func(t *testing.T) {
+			ctx := context.Background()
+			s := perms(db, clock)
+			if _, err := db.ExecContext(ctx, `INSERT into repo (name, external_service_type, external_service_id) values ('github.com/test/test', 'github', 'https://github.com/')`); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				cleanupReposTable(t, s)
+				cleanupPermsTables(t, s)
+			})
+
+			rp := &authz.RepoPermissions{
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toMapset(2),
+			}
+			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+				t.Fatal(err)
+			}
+
+			repos, err := s.FetchReposByUserAndExternalService(ctx, 2, "gitlab", "https://gitlab.com/")
+			if err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "repos", []api.RepoID{}, repos)
+		})
+	}
+}
+
 func checkRegularPermsTable(s *permsStore, sql string, expects map[int32][]uint32) error {
 	rows, err := s.Handle().QueryContext(context.Background(), sql)
 	if err != nil {

@@ -64,6 +64,7 @@ func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.Rep
 	gitRepo, err := s.DB.GitserverRepos().GetByName(ctx, repo)
 	if err == nil {
 		resp.Size = gitRepo.RepoSizeBytes
+		resp.LastError = gitRepo.LastError
 	}
 	return &resp, nil
 }

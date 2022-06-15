@@ -510,6 +510,11 @@ func (r *batchSpecResolver) ViewerCanRetry(ctx context.Context) (bool, error) {
 		return false, err
 	}
 
+	// If the spec finished successfully, there's nothing to retry.
+	if state == btypes.BatchSpecStateCompleted {
+		return false, nil
+	}
+
 	return state.Finished(), nil
 }
 
