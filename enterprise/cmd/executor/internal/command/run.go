@@ -156,7 +156,10 @@ func readProcessPipes(logWriter io.WriteCloser, stdout, stderr io.Reader) *errgr
 		// TODO: Tweak this value as needed.
 		scanner.Buffer(buf, 100*1024*1024)
 		for scanner.Scan() {
-			fmt.Fprintf(logWriter, "%s: %s\n", prefix, scanner.Text())
+			_, err := fmt.Fprintf(logWriter, "%s: %s\n", prefix, scanner.Text())
+			if err != nil {
+				return err
+			}
 		}
 		return scanner.Err()
 	}
