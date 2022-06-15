@@ -11310,6 +11310,10 @@ type MockPermsStore struct {
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *PermsStoreDoneFunc
+	// FetchReposByUserAndExternalServiceFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// FetchReposByUserAndExternalService.
+	FetchReposByUserAndExternalServiceFunc *PermsStoreFetchReposByUserAndExternalServiceFunc
 	// GetUserIDsByExternalAccountsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetUserIDsByExternalAccounts.
@@ -11399,6 +11403,11 @@ func NewMockPermsStore() *MockPermsStore {
 		},
 		DoneFunc: &PermsStoreDoneFunc{
 			defaultHook: func(error) (r0 error) {
+				return
+			},
+		},
+		FetchReposByUserAndExternalServiceFunc: &PermsStoreFetchReposByUserAndExternalServiceFunc{
+			defaultHook: func(context.Context, int32, string, string) (r0 []api.RepoID, r1 error) {
 				return
 			},
 		},
@@ -11534,6 +11543,11 @@ func NewStrictMockPermsStore() *MockPermsStore {
 				panic("unexpected invocation of MockPermsStore.Done")
 			},
 		},
+		FetchReposByUserAndExternalServiceFunc: &PermsStoreFetchReposByUserAndExternalServiceFunc{
+			defaultHook: func(context.Context, int32, string, string) ([]api.RepoID, error) {
+				panic("unexpected invocation of MockPermsStore.FetchReposByUserAndExternalService")
+			},
+		},
 		GetUserIDsByExternalAccountsFunc: &PermsStoreGetUserIDsByExternalAccountsFunc{
 			defaultHook: func(context.Context, *extsvc.Accounts) (map[string]int32, error) {
 				panic("unexpected invocation of MockPermsStore.GetUserIDsByExternalAccounts")
@@ -11659,6 +11673,9 @@ func NewMockPermsStoreFrom(i PermsStore) *MockPermsStore {
 		},
 		DoneFunc: &PermsStoreDoneFunc{
 			defaultHook: i.Done,
+		},
+		FetchReposByUserAndExternalServiceFunc: &PermsStoreFetchReposByUserAndExternalServiceFunc{
+			defaultHook: i.FetchReposByUserAndExternalService,
 		},
 		GetUserIDsByExternalAccountsFunc: &PermsStoreGetUserIDsByExternalAccountsFunc{
 			defaultHook: i.GetUserIDsByExternalAccounts,
@@ -12045,6 +12062,124 @@ func (c PermsStoreDoneFuncCall) Args() []interface{} {
 // invocation.
 func (c PermsStoreDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// PermsStoreFetchReposByUserAndExternalServiceFunc describes the behavior
+// when the FetchReposByUserAndExternalService method of the parent
+// MockPermsStore instance is invoked.
+type PermsStoreFetchReposByUserAndExternalServiceFunc struct {
+	defaultHook func(context.Context, int32, string, string) ([]api.RepoID, error)
+	hooks       []func(context.Context, int32, string, string) ([]api.RepoID, error)
+	history     []PermsStoreFetchReposByUserAndExternalServiceFuncCall
+	mutex       sync.Mutex
+}
+
+// FetchReposByUserAndExternalService delegates to the next hook function in
+// the queue and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) FetchReposByUserAndExternalService(v0 context.Context, v1 int32, v2 string, v3 string) ([]api.RepoID, error) {
+	r0, r1 := m.FetchReposByUserAndExternalServiceFunc.nextHook()(v0, v1, v2, v3)
+	m.FetchReposByUserAndExternalServiceFunc.appendCall(PermsStoreFetchReposByUserAndExternalServiceFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// FetchReposByUserAndExternalService method of the parent MockPermsStore
+// instance is invoked and the hook queue is empty.
+func (f *PermsStoreFetchReposByUserAndExternalServiceFunc) SetDefaultHook(hook func(context.Context, int32, string, string) ([]api.RepoID, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// FetchReposByUserAndExternalService method of the parent MockPermsStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *PermsStoreFetchReposByUserAndExternalServiceFunc) PushHook(hook func(context.Context, int32, string, string) ([]api.RepoID, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreFetchReposByUserAndExternalServiceFunc) SetDefaultReturn(r0 []api.RepoID, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, string, string) ([]api.RepoID, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreFetchReposByUserAndExternalServiceFunc) PushReturn(r0 []api.RepoID, r1 error) {
+	f.PushHook(func(context.Context, int32, string, string) ([]api.RepoID, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreFetchReposByUserAndExternalServiceFunc) nextHook() func(context.Context, int32, string, string) ([]api.RepoID, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreFetchReposByUserAndExternalServiceFunc) appendCall(r0 PermsStoreFetchReposByUserAndExternalServiceFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// PermsStoreFetchReposByUserAndExternalServiceFuncCall objects describing
+// the invocations of this function.
+func (f *PermsStoreFetchReposByUserAndExternalServiceFunc) History() []PermsStoreFetchReposByUserAndExternalServiceFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreFetchReposByUserAndExternalServiceFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreFetchReposByUserAndExternalServiceFuncCall is an object that
+// describes an invocation of method FetchReposByUserAndExternalService on
+// an instance of MockPermsStore.
+type PermsStoreFetchReposByUserAndExternalServiceFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []api.RepoID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreFetchReposByUserAndExternalServiceFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreFetchReposByUserAndExternalServiceFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // PermsStoreGetUserIDsByExternalAccountsFunc describes the behavior when
