@@ -262,12 +262,16 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 	logger := s.logger.Scoped("maybeRefreshGitLabOAuthTokenFromAccount", "").With(log.Int32("externalAccountID", acct.ID))
 
 	var oauthConfig *oauth2.Config
+	expiryWindow := 10 * time.Minute
 	for _, authProvider := range conf.SiteConfig().AuthProviders {
 		if authProvider.Gitlab == nil ||
 			strings.TrimSuffix(acct.ServiceID, "/") != strings.TrimSuffix(authProvider.Gitlab.Url, "/") {
 			continue
 		}
 		oauthConfig = oauth2ConfigFromGitLabProvider(authProvider.Gitlab)
+		if authProvider.Gitlab.TokenExpiryWindowMinutes > 0 {
+			expiryWindow = time.Duration(authProvider.Gitlab.TokenExpiryWindowMinutes) * time.Minute
+		}
 		break
 	}
 	if oauthConfig == nil {
@@ -282,9 +286,9 @@ func (s *PermsSyncer) maybeRefreshGitLabOAuthTokenFromAccount(ctx context.Contex
 		return errors.New("no token found in the external account data")
 	}
 
-	// The default grace period for the oauth2 library is only 10 seconds, we extend
-	// this to give ourselves a better chance of not having a token expire.
-	tok.Expiry = tok.Expiry.Add(-10 * time.Minute)
+	// The default window for the oauth2 library is only 10 seconds, we extend this
+	// to give ourselves a better chance of not having a token expire.
+	tok.Expiry = tok.Expiry.Add(expiryWindow)
 
 	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
 	if err != nil {
