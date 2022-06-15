@@ -121,9 +121,12 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
             offset={visibilitySensorOffset}
         >
             <div className={styles.commitSearchResultMatch}>
-                {item.repoLastFetched && (
-                    <LastSyncedIcon className={styles.lastSyncedIcon} lastSyncedTime={item.repoLastFetched} />
+                <div className="d-flex align-items-end flex-column p-2">
+                    {item.repoLastFetched && (
+                    <LastSyncedIcon lastSyncedTime={item.repoLastFetched} />
                 )}
+                </div>
+
                 {syntaxHighlighting !== undefined ? (
                     <Link
                         key={item.url}

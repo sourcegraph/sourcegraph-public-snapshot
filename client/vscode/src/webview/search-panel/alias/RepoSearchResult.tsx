@@ -44,10 +44,10 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     const renderBody = (): JSX.Element => (
         <div data-testid="search-repo-result">
             <div className={classNames(styles.searchResultMatch, 'p-2 flex-column')}>
-                {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
-                <div className="d-flex align-items-center flex-row">
-                    <div className={styles.matchType}>
+                <div className="d-flex align-items-center flex-row w-100">
+                    <div className="w-100 d-flex flex-row justify-content-between">
                         <small>Repository match</small>
+                        {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                     </div>
                     {result.fork && (
                         <>
