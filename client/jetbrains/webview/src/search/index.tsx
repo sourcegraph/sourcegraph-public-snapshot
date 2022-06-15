@@ -44,8 +44,6 @@ window.initializeSourcegraph = async () => {
         console.warn(`No initial authenticated user with access token “${accessToken}”`)
     }
 
-    polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
-
     renderReactApp()
 
     await indicateFinishedLoading()
@@ -75,6 +73,7 @@ export function applyConfig(config: PluginConfig): void {
     instanceURL = config.instanceURL
     isGlobbingEnabled = config.isGlobbingEnabled || false
     accessToken = config.accessToken || null
+    polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
 }
 
 export function applyTheme(theme: Theme): void {
