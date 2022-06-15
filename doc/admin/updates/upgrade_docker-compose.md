@@ -44,7 +44,7 @@ For each conflict, you need to reconcile any customizations you made with the up
 
 SSH into your instance and navigate to the appropriate folder:  
 - AWS: `/home/ec2-user/deploy-sourcegraph-docker/docker-compose`  
-- Digital Ocean: `/root/deploy-sourcerph-docker/docker-compose`  
+- Digital Ocean: `/root/deploy-sourcegraph-docker/docker-compose`  
 - Google Cloud: `/root/deploy-sourcegraph-docker/docker-compose`  
 
 Download all the latest docker images to your local docker daemon:
