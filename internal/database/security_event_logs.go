@@ -101,8 +101,8 @@ func (s *securityEventLogsStore) Insert(ctx context.Context, e *SecurityEvent) e
 
 func (s *securityEventLogsStore) LogEvent(ctx context.Context, e *SecurityEvent) {
 	// We don't want to begin logging authentication or authorization events in
-	// on-premises installations yet.
-	if !envvar.SourcegraphDotComMode() {
+	// on-premises installations yet, but we allow to turn on this feature explicitly.
+	if !envvar.SourcegraphDotComMode() && !envvar.AuditLogEnabled() {
 		return
 	}
 

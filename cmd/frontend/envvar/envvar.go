@@ -19,6 +19,7 @@ var HTTPAddrInternal = env.Get(
 )
 
 var sourcegraphDotComMode, _ = strconv.ParseBool(env.Get("SOURCEGRAPHDOTCOM_MODE", "false", "run as Sourcegraph.com, with add'l marketing and redirects"))
+var auditLogEnabled, _ = strconv.ParseBool(env.Get("AUDIT_LOG_ENABLED", "false", "enable audit log"))
 var openGraphPreviewServiceURL = env.Get("OPENGRAPH_PREVIEW_SERVICE_URL", "", "The URL of the OpenGraph preview image generating service")
 
 // SourcegraphDotComMode is true if this server is running Sourcegraph.com
@@ -35,4 +36,8 @@ func MockSourcegraphDotComMode(value bool) {
 
 func OpenGraphPreviewServiceURL() string {
 	return openGraphPreviewServiceURL
+}
+
+func AuditLogEnabled() bool {
+	return auditLogEnabled
 }
