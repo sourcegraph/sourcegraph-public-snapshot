@@ -132,7 +132,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, sglog.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2}))
+	}, sglog.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
 
 	logger := sglog.Scoped("server", "the frontend server program")
