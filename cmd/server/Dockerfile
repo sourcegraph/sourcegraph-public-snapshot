@@ -39,12 +39,8 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
+# Misc. tools we can install from default repository
 RUN apk add --no-cache --verbose \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.14/main \
-    # [NOTE: git-version-min-requirement]
-    # We require git 2.34.1 because we use git-repack with flag --write-midx.
-    'git>=2.34.1' \
-    git-p4 \
     'bash>=5.0.17' \
     'redis>=5.0' \
     python2 \
@@ -59,6 +55,14 @@ RUN apk add --no-cache --verbose \
     # We require libstdc++ for p4-fusion
     libstdc++
 
+# [NOTE: git-version-min-requirement]
+# We require git 2.34.1 because we use git-repack with flag --write-midx. This must be
+# installed from 3.15+
+RUN apk add --no-cache --verbose \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main \
+    'git>=2.34.1' \
+    git-p4
+
 # NOTE that the Postgres version we run is different
 # from our *Minimum Supported Version* which alone dictates
 # the features we can depend on. See this link for more information:
@@ -66,7 +70,7 @@ RUN apk add --no-cache --verbose \
 # You can't just bump the major version since that requires pgupgrade
 # between Sourcegraph releases.
 #
-# We require a separate 'apk add' from a different repository because of the lack of
+# We require a separate 'apk add' from the 3.15/community repository because of the lack of
 # availability on alpine main repositories.
 RUN apk add --no-cache --verbose \
     --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/community \
