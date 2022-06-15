@@ -234,7 +234,7 @@ func TestSubRepoPermsGetByUserAndService(t *testing.T) {
 			serviceType: "github",
 			serviceID:   "https://github.com/",
 			want: map[api.ExternalRepoSpec]authz.SubRepoPermissions{
-				api.ExternalRepoSpec{
+				{
 					ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
 					ServiceType: "github",
 					ServiceID:   "https://github.com/",
@@ -242,7 +242,7 @@ func TestSubRepoPermsGetByUserAndService(t *testing.T) {
 					PathIncludes: []string{"/src/foo/*"},
 					PathExcludes: []string{"/src/bar/*"},
 				},
-				api.ExternalRepoSpec{
+				{
 					ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOB==",
 					ServiceType: "github",
 					ServiceID:   "https://github.com/",
