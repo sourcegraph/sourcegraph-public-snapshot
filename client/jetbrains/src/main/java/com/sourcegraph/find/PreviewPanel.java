@@ -22,7 +22,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         super(new BorderLayout());
 
         this.project = project;
-        this.getEmptyText().setText("(No preview available)");
+        this.getEmptyText().setText("No preview available");
     }
 
     @Nullable

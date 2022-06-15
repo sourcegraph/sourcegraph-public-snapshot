@@ -77,7 +77,7 @@ function handleRequest(
 
             let htmlContent: string
             if (previewContent.content === null) {
-                htmlContent = '(No preview available)'
+                htmlContent = 'No preview available'
             } else {
                 const decodedContent = atob(previewContent.content || '')
                 htmlContent = escapeHTML(decodedContent.slice(0, start))
