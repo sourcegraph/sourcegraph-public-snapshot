@@ -1,7 +1,6 @@
 import { render } from '@testing-library/react'
 import { createBrowserHistory } from 'history'
 import { BrowserRouter } from 'react-router-dom'
-import { CompatRouter } from 'react-router-dom-v5-compat'
 import { NEVER } from 'rxjs'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -59,9 +58,7 @@ describe('Layout', () => {
         render(
             <MockedTestProvider>
                 <BrowserRouter>
-                    <CompatRouter>
-                        <Layout {...defaultProps} history={history} location={history.location} />
-                    </CompatRouter>
+                    <Layout {...defaultProps} history={history} location={history.location} />
                 </BrowserRouter>
             </MockedTestProvider>
         )
@@ -78,9 +75,7 @@ describe('Layout', () => {
         render(
             <MockedTestProvider>
                 <BrowserRouter>
-                    <CompatRouter>
-                        <Layout {...defaultProps} history={history} location={history.location} />
-                    </CompatRouter>
+                    <Layout {...defaultProps} history={history} location={history.location} />
                 </BrowserRouter>
             </MockedTestProvider>
         )
@@ -97,9 +92,7 @@ describe('Layout', () => {
         render(
             <MockedTestProvider>
                 <BrowserRouter>
-                    <CompatRouter>
-                        <Layout {...defaultProps} history={history} location={history.location} />
-                    </CompatRouter>
+                    <Layout {...defaultProps} history={history} location={history.location} />
                 </BrowserRouter>
             </MockedTestProvider>
         )
@@ -116,9 +109,7 @@ describe('Layout', () => {
         render(
             <MockedTestProvider>
                 <BrowserRouter>
-                    <CompatRouter>
-                        <Layout {...defaultProps} history={history} location={history.location} />
-                    </CompatRouter>
+                    <Layout {...defaultProps} history={history} location={history.location} />
                 </BrowserRouter>
             </MockedTestProvider>
         )

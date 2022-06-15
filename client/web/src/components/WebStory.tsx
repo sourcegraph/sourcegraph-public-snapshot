@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react'
 
 import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { MockedStoryProvider, MockedStoryProviderProps, usePrependStyles, useTheme } from '@sourcegraph/storybook'
 // Add root Tooltip for Storybook
+// eslint-disable-next-line no-restricted-imports
 import { DeprecatedTooltip, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { setExperimentalFeaturesForTesting } from '../stores/experimentalFeatures'
@@ -44,14 +44,12 @@ export const WebStory: React.FunctionComponent<React.PropsWithChildren<WebStoryP
         <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
             <WildcardThemeContext.Provider value={{ isBranded: true }}>
                 <MemoryRouter {...memoryRouterProps}>
-                    <CompatRouter>
-                        <DeprecatedTooltip />
-                        <Children
-                            {...breadcrumbSetters}
-                            isLightTheme={isLightTheme}
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
-                        />
-                    </CompatRouter>
+                    <DeprecatedTooltip />
+                    <Children
+                        {...breadcrumbSetters}
+                        isLightTheme={isLightTheme}
+                        telemetryService={NOOP_TELEMETRY_SERVICE}
+                    />
                 </MemoryRouter>
             </WildcardThemeContext.Provider>
         </MockedStoryProvider>
