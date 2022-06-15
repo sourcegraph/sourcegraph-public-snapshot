@@ -311,3 +311,7 @@ func mustParseTime(v string) time.Time {
 	}
 	return t
 }
+
+func TestScanJobFromModel(t *testing.T) {
+	scanJobFromModel()
+}

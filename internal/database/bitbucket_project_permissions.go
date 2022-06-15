@@ -9,6 +9,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -196,6 +198,32 @@ func scanOneJob(rows *sql.Rows) (*types.BitbucketProjectPermissionJob, error) {
 		job.Permissions = append(job.Permissions, types.UserPermission(perm))
 	}
 	return &job, nil
+}
+
+// Test this function with go test -v -run TestScanJobFromModel
+func scanJobFromModel() (*types.BitbucketProjectPermissionsJobModel, error) {
+	dsn := "host=localhost user=sourcegraph password=sourcegraph dbname=sourcegraph port=5432 sslmode=disable TimeZone=UTC"
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
+
+	x := types.BitbucketProjectPermissionsJobModel{
+		// TODO: no DB cleanup at the moment, so duplicate ID won't work on a rerun.
+		ID:           3,
+		State:        "foo",
+		Unrestricted: true,
+	}
+
+	db.Create(&x)
+
+	var y types.BitbucketProjectPermissionsJobModel
+	db.First(&y, 1)
+
+	fmt.Printf("%#v\n", y)
+
+	return nil, nil
 }
 
 const maxJobsCount = 500
