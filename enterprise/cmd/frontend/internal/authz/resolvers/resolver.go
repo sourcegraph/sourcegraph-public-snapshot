@@ -284,7 +284,7 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 		return nil, err
 	}
 
-	codeHostID, err := graphqlbackend.UnmarshalExternalServiceID(args.CodeHost)
+	externalServiceID, err := graphqlbackend.UnmarshalExternalServiceID(args.CodeHost)
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +294,17 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 		unrestricted = *args.Unrestricted
 	}
 
-	jobID, err := r.db.BitbucketProjectPermissions().Enqueue(ctx, args.ProjectKey, codeHostID, args.UserPermissions, unrestricted)
+	// get the external service and check if it is Bitbucket Server
+	svc, err := r.db.ExternalServices().GetByID(ctx, externalServiceID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get external service %d", externalServiceID)
+	}
+
+	if svc.Kind != extsvc.KindBitbucketServer {
+		return nil, errors.Newf("expected Bitbucket Server external service, got: %s", svc.Kind)
+	}
+
+	jobID, err := r.db.BitbucketProjectPermissions().Enqueue(ctx, args.ProjectKey, externalServiceID, args.UserPermissions, unrestricted)
 	if err != nil {
 		return nil, err
 	}
