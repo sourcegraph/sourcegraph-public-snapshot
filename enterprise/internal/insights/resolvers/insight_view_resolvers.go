@@ -1203,6 +1203,9 @@ func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayO
 	}
 
 	getMostRecentValue := func(points []graphqlbackend.InsightsDataPointResolver) float64 {
+		if len(points) == 0 {
+			return 0
+		}
 		return points[len(points)-1].Value()
 	}
 
