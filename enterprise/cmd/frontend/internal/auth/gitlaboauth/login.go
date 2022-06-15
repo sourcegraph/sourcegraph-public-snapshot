@@ -24,7 +24,7 @@ func CallbackHandler(config *oauth2.Config, success, failure http.Handler) http.
 }
 
 func gitlabHandler(config *oauth2.Config, success, failure http.Handler) http.Handler {
-	logger := log.Scoped("gitlab-handler", "Gitlab Handler")
+	logger := log.Scoped("GitlabOAuthHandler", "Gitlab OAuth Handler")
 
 	if failure == nil {
 		failure = gologin.DefaultFailureHandler
