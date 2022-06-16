@@ -26,10 +26,9 @@ func TestExecutionKey_Key(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		name          string
-		keyer         ExecutionKey
-		expectedKey   string
-		expectedError error
+		name        string
+		keyer       ExecutionKey
+		expectedKey string
 	}{
 		{
 			name: "simple key",
@@ -108,7 +107,7 @@ func TestExecutionKey_Key(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			key, err := test.keyer.Key()
-			assert.ErrorIs(t, err, test.expectedError)
+			assert.NoError(t, err)
 			assert.Equal(t, test.expectedKey, key)
 		})
 	}
