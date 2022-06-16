@@ -125,7 +125,7 @@ func TestTransformRecord(t *testing.T) {
 					Commands: []string{"batch", "exec", "-f", "input.json", "-repo", "repository", "-cache", "cache", "-tmp", ".src-tmp", "-sourcegraphVersion", version.Version()},
 					Dir:      ".",
 					Env: []string{
-						"SRC_ENDPOINT=http://127.0.0.1:10001",
+						"SRC_ENDPOINT=http://this-will-never-exist-i-hope",
 					},
 				},
 			},
@@ -163,7 +163,7 @@ func TestTransformRecord(t *testing.T) {
 					Commands: []string{"batch", "exec", "-f", "input.json", "-repo", "repository", "-cache", "cache", "-tmp", ".src-tmp", "-sourcegraphVersion", version.Version()},
 					Dir:      ".",
 					Env: []string{
-						"SRC_ENDPOINT=http://127.0.0.1:10001",
+						"SRC_ENDPOINT=http://this-will-never-exist-i-hope",
 					},
 				},
 			},
