@@ -28,7 +28,7 @@ steps:
           types: [ closed, edited, opened, synchronize, ready_for_review ]
 
       jobs:
-        run:
+        check-pr:
           runs-on: ubuntu-latest
           steps:
             - uses: actions/checkout@v2
