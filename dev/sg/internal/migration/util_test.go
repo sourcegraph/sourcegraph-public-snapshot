@@ -14,9 +14,9 @@ func TestMakeMigrationFilenamesFromDir(t *testing.T) {
 	}{
 		{
 			autogold.Want("simple-filenames", MigrationFiles{
-				UpFile:       "foobar/1_do_the_thing!/up.sql",
-				DownFile:     "foobar/1_do_the_thing!/down.sql",
-				MetadataFile: "foobar/1_do_the_thing!/metadata.yaml",
+				UpFile:       "foobar/1_do_the_thing/up.sql",
+				DownFile:     "foobar/1_do_the_thing/down.sql",
+				MetadataFile: "foobar/1_do_the_thing/metadata.yaml",
 			}),
 			"do the thing!",
 		},

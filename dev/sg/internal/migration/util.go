@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -38,8 +39,12 @@ func makeMigrationFilenames(database db.Database, migrationIndex int, name strin
 	return makeMigrationFilenamesFromDir(baseDir, migrationIndex, name)
 }
 
+var nonAlphaNumericOrUnderscore = regexp.MustCompile("[^a-z0-9_]+")
+
 func makeMigrationFilenamesFromDir(baseDir string, migrationIndex int, name string) (MigrationFiles, error) {
-	sanitizedName := strings.ReplaceAll(strings.ToLower(name), " ", "_")
+	sanitizedName := nonAlphaNumericOrUnderscore.ReplaceAllString(
+		strings.ReplaceAll(strings.ToLower(name), " ", "_"), "",
+	)
 	return MigrationFiles{
 		UpFile:       filepath.Join(baseDir, fmt.Sprintf("%d_%s/up.sql", migrationIndex, sanitizedName)),
 		DownFile:     filepath.Join(baseDir, fmt.Sprintf("%d_%s/down.sql", migrationIndex, sanitizedName)),
