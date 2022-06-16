@@ -281,6 +281,9 @@ input FetchPermissionsOptions {
     invalidateCaches: Boolean
 }
 
+"""
+Information about Bitbucket Projects permission synchronization jobs.
+"""
 type BitbucketProjectPermissionJobs {
     """
     Number of jobs.
@@ -292,6 +295,9 @@ type BitbucketProjectPermissionJobs {
     jobs: [BitbucketProjectPermissionJob!]!
 }
 
+"""
+Information about a single Projects permission synchronization job.
+"""
 type BitbucketProjectPermissionJob {
     """
     Internal ID of the job.
