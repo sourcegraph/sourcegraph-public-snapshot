@@ -161,7 +161,7 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
     const gitRepository = useObservable(
         useMemo(
             () =>
-            (checkHomePanelsFeatureFlag && authenticatedUser)
+                checkHomePanelsFeatureFlag && authenticatedUser
                     ? streamComputeQuery(
                           `content:output((.|\n)* -> $repo) author:${authenticatedUser.email} type:commit after:"1 year ago" count:all`
                       )
