@@ -4,7 +4,6 @@ import { Meta, Story } from '@storybook/react'
 import { ParentSize } from '@visx/responsive'
 
 import { WebStory } from '../../../components/WebStory'
-import { useSeriesToggle } from '../../../insights/utils/use-series-toggle'
 import { Series } from '../../types'
 
 import { LineChart, LegendList, LegendItem, getLineColor } from '.'
@@ -146,73 +145,41 @@ const STANDARD_SERIES: Series<StandardDatum>[] = [
     },
 ]
 
-const PlainChart = () => {
-    const seriesToggleState = useSeriesToggle()
-
-    return (
-        <div style={{ width: 400, height: 400 }}>
-            <ParentSize className="flex-1">
-                {({ width, height }) => (
-                    <LineChart
-                        width={width}
-                        height={height}
-                        series={STANDARD_SERIES}
-                        seriesToggleState={seriesToggleState}
-                    />
-                )}
-            </ParentSize>
-        </div>
-    )
-}
+const PlainChart = () => (
+    <div style={{ width: 400, height: 400 }}>
+        <ParentSize className="flex-1">
+            {({ width, height }) => <LineChart width={width} height={height} series={STANDARD_SERIES} />}
+        </ParentSize>
+    </div>
+)
 
 const PlainStackedChart = () => {
     const [active, setActive] = useState(false)
-    const seriesToggleState = useSeriesToggle()
 
     return (
         <section>
             <button className="d-block" onClick={() => setActive(!active)}>
                 Toggle zero Y axis state
             </button>
-            <LineChart
-                width={400}
-                height={400}
-                series={STANDARD_SERIES}
-                stacked={true}
-                zeroYAxisMin={active}
-                seriesToggleState={seriesToggleState}
-            />
+            <LineChart width={400} height={400} series={STANDARD_SERIES} stacked={true} zeroYAxisMin={active} />
         </section>
     )
 }
 
-const WithLegendExample = () => {
-    const seriesToggleState = useSeriesToggle()
-
-    return (
-        <div className="d-flex flex-column" style={{ width: 400, height: 400 }}>
-            <ParentSize className="flex-1">
-                {({ width, height }) => (
-                    <LineChart<StandardDatum>
-                        width={width}
-                        height={height}
-                        series={STANDARD_SERIES}
-                        seriesToggleState={seriesToggleState}
-                    />
-                )}
-            </ParentSize>
-            <LegendList>
-                {STANDARD_SERIES.map(line => (
-                    <LegendItem key={line.id} color={getLineColor(line)} name={line.name} />
-                ))}
-            </LegendList>
-        </div>
-    )
-}
+const WithLegendExample = () => (
+    <div className="d-flex flex-column" style={{ width: 400, height: 400 }}>
+        <ParentSize className="flex-1">
+            {({ width, height }) => <LineChart<StandardDatum> width={width} height={height} series={STANDARD_SERIES} />}
+        </ParentSize>
+        <LegendList>
+            {STANDARD_SERIES.map(line => (
+                <LegendItem key={line.id} color={getLineColor(line)} name={line.name} />
+            ))}
+        </LegendList>
+    </div>
+)
 
 const WithHugeData = () => {
-    const seriesToggleState = useSeriesToggle()
-
     const SERIES: Series<StandardDatum>[] = [
         {
             id: 'series_001',
@@ -261,22 +228,13 @@ const WithHugeData = () => {
     return (
         <div style={{ width: 400, height: 400 }}>
             <ParentSize>
-                {({ width, height }) => (
-                    <LineChart<StandardDatum>
-                        width={width}
-                        height={height}
-                        series={SERIES}
-                        seriesToggleState={seriesToggleState}
-                    />
-                )}
+                {({ width, height }) => <LineChart<StandardDatum> width={width} height={height} series={SERIES} />}
             </ParentSize>
         </div>
     )
 }
 
 const WithZeroOneData = () => {
-    const seriesToggleState = useSeriesToggle()
-
     const SERIES: Series<StandardDatum>[] = [
         {
             id: 'series_001',
@@ -294,22 +252,13 @@ const WithZeroOneData = () => {
     return (
         <div style={{ width: 400, height: 400 }}>
             <ParentSize>
-                {({ width, height }) => (
-                    <LineChart<StandardDatum>
-                        width={width}
-                        height={height}
-                        series={SERIES}
-                        seriesToggleState={seriesToggleState}
-                    />
-                )}
+                {({ width, height }) => <LineChart<StandardDatum> width={width} height={height} series={SERIES} />}
             </ParentSize>
         </div>
     )
 }
 
 const WithDataSteps = () => {
-    const seriesToggleState = useSeriesToggle()
-
     const SERIES: Series<StandardDatum>[] = [
         {
             id: 'series_001',
@@ -338,22 +287,13 @@ const WithDataSteps = () => {
     return (
         <div style={{ width: 400, height: 400 }}>
             <ParentSize>
-                {({ width, height }) => (
-                    <LineChart<StandardDatum>
-                        width={width}
-                        height={height}
-                        series={SERIES}
-                        seriesToggleState={seriesToggleState}
-                    />
-                )}
+                {({ width, height }) => <LineChart<StandardDatum> width={width} height={height} series={SERIES} />}
             </ParentSize>
         </div>
     )
 }
 
 const WithDataMissingValues = () => {
-    const seriesToggleState = useSeriesToggle()
-
     const SERIES: Series<StandardDatum>[] = [
         {
             id: 'series_001',
@@ -393,13 +333,7 @@ const WithDataMissingValues = () => {
         <div style={{ width: 400, height: 400 }}>
             <ParentSize>
                 {({ width, height }) => (
-                    <LineChart<StandardDatum>
-                        width={width}
-                        height={height}
-                        series={SERIES}
-                        zeroYAxisMin={true}
-                        seriesToggleState={seriesToggleState}
-                    />
+                    <LineChart<StandardDatum> width={width} height={height} series={SERIES} zeroYAxisMin={true} />
                 )}
             </ParentSize>
         </div>
@@ -407,8 +341,6 @@ const WithDataMissingValues = () => {
 }
 
 const StackedWithDataMissingValues = () => {
-    const seriesToggleState = useSeriesToggle()
-
     const SERIES: Series<StandardDatum>[] = [
         {
             id: 'series_001',
@@ -473,13 +405,7 @@ const StackedWithDataMissingValues = () => {
         <div style={{ width: 400, height: 400 }}>
             <ParentSize>
                 {({ width, height }) => (
-                    <LineChart<StandardDatum>
-                        width={width}
-                        height={height}
-                        series={SERIES}
-                        stacked={true}
-                        seriesToggleState={seriesToggleState}
-                    />
+                    <LineChart<StandardDatum> width={width} height={height} series={SERIES} stacked={true} />
                 )}
             </ParentSize>
         </div>
