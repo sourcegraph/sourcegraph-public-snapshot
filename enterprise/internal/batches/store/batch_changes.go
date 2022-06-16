@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/keegancsmith/sqlf"
@@ -56,10 +55,6 @@ func (s *Store) UpsertBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 	defer endObservation(1, observation.Args{})
 
 	q := s.upsertBatchChangeQuery(c)
-
-	fmt.Println(q.Query(sqlf.PostgresBindVar))
-	fmt.Println("")
-	fmt.Println(q.Args()...)
 
 	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBatchChange(c, sc)
