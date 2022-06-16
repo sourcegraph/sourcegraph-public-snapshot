@@ -65,7 +65,16 @@ func main() {
 }
 ```
 
-Once initialized, you can use `log.Scoped()` to create some top-level loggers to propagate, from which you can:
+### Basic conventions
+
+- The logger parameter should either be immediately after `ctx context.Context`, or be the first parameter.
+- In some cases there might already be a `log` module imported. Use the alias `sglog` to refer to `github.com/sourcegraph/log`, for example `import sglog "github.com/sourcegraph/log"`.
+- When testing, provide [test loggers](#testing-usage) for improved output management.
+- For more conventions, see relevant subsections in this guide, such as [top-level loggers](#top-level-loggers), [sub-loggers](#sub-loggers), and [writing log messages](#writing-log-messages).
+
+### Top-level loggers
+
+Once initialized, you can use `log.Scoped()` to create some top-level loggers to propagate. From each logger, you can:
 
 - [create sub-loggers](#sub-loggers)
 - [write log entries](#writing-log-messages)
@@ -73,12 +82,6 @@ Once initialized, you can use `log.Scoped()` to create some top-level loggers to
 The first top-level scoped logger is typically `"server"`, since most logging is related to server initialization and service-level logging - the name of the service itself is already logged as part of the [`Resource` field](https://opentelemetry.io/docs/reference/specification/logs/data-model/#field-resource) provided during initialization.
 
 Background jobs, etc. can have additional top-level loggers created that better describe each components.
-
-### Basic conventions
-
-- The logger parameter should either be immediately after `ctx context.Context`, or be the first parameter.
-- In some cases there might already be a `log` module imported. Use the alias `sglog` to refer to `github.com/sourcegraph/log`, for example `import sglog "github.com/sourcegraph/log"`.
-- When testing, provide [test loggers](#testing-usage) for improved output management.
 
 ### Sub-loggers
 
