@@ -67,9 +67,7 @@ export const BatchChangeRepoPage: React.FunctionComponent<React.PropsWithChildre
             {hasChangesets && stats?.batchChangesDiffStat && stats?.changesetsStats ? (
                 <div className="mt-4 mb-3 d-flex align-items-center">
                     <H2 className="pb-1 mb-0">{repoDisplayName}</H2>
-                    <div className="flex-1 ml-2 d-flex">
-                        <DiffStat expandedCounts={true} {...stats.batchChangesDiffStat} />
-                    </div>
+                    <DiffStat className="flex-1 ml-2 d-flex" expandedCounts={true} {...stats.batchChangesDiffStat} />
                     <StatsBar stats={stats.changesetsStats} />
                 </div>
             ) : null}
