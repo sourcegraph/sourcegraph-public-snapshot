@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/env"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestExecutionKey_Key(t *testing.T) {
@@ -244,7 +244,28 @@ func TestExecutionKey_Key_Mount(t *testing.T) {
 				string(modDateVal),
 			),
 		},
-		// TODO unhappy paths
+		{
+			name: "file does not exist",
+			keyer: ExecutionKey{
+				Repository: batches.Repository{
+					ID:          "my-repo",
+					Name:        "github.com/sourcegraph/src-cli",
+					BaseRef:     "refs/heads/f00b4r",
+					BaseRev:     "c0mmit",
+					FileMatches: []string{"baz.go"},
+				},
+				Steps: []batches.Step{
+					{
+						Run: "foo",
+						Mount: []batches.Mount{{
+							Path:       filepath.Join(tempDir, "some-file-does-not-exist.sh"),
+							Mountpoint: "/tmp/file.sh",
+						}},
+					},
+				},
+			},
+			expectedError: errors.Newf("path %s does not exist", filepath.Join(tempDir, "some-file-does-not-exist.sh")),
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
