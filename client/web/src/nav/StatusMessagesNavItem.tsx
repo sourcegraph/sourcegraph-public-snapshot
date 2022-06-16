@@ -1,6 +1,5 @@
 import React from 'react'
 
-import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual, upperFirst } from 'lodash'
@@ -420,10 +419,12 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             : 'No repositories'
         if (isNoActivityReason(this.state.messagesOrError)) {
             return (
-                <>
-                    {codeHostMessage && <VisuallyHidden>{codeHostMessage}</VisuallyHidden>}
-                    <Icon data-tooltip={codeHostMessage} as={CloudOffOutlineIcon} size="md" aria-hidden={true} />
-                </>
+                <Icon
+                    data-tooltip={codeHostMessage}
+                    as={CloudOffOutlineIcon}
+                    size="md"
+                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
+                />
             )
         }
 
@@ -432,27 +433,33 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         ) {
             codeHostMessage = this.state.isOpen ? undefined : 'Syncing repositories failed!'
             return (
-                <>
-                    {codeHostMessage && <VisuallyHidden>{codeHostMessage}</VisuallyHidden>}
-                    <Icon data-tooltip={codeHostMessage} as={CloudAlertIconRefresh} size="md" aria-hidden={true} />
-                </>
+                <Icon
+                    data-tooltip={codeHostMessage}
+                    as={CloudAlertIconRefresh}
+                    size="md"
+                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
+                />
             )
         }
         if (this.state.messagesOrError.some(({ type }) => type === 'CloningProgress')) {
             codeHostMessage = this.state.isOpen ? undefined : 'Cloning repositories...'
             return (
-                <>
-                    {codeHostMessage && <VisuallyHidden>{codeHostMessage}</VisuallyHidden>}
-                    <Icon data-tooltip={codeHostMessage} as={CloudSyncIconRefresh} size="md" aria-hidden={true} />
-                </>
+                <Icon
+                    data-tooltip={codeHostMessage}
+                    as={CloudSyncIconRefresh}
+                    size="md"
+                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
+                />
             )
         }
         codeHostMessage = this.state.isOpen ? undefined : 'Repositories up-to-date'
         return (
-            <>
-                {codeHostMessage && <VisuallyHidden>{codeHostMessage}</VisuallyHidden>}
-                <Icon data-tooltip={codeHostMessage} as={CloudCheckIconRefresh} size="md" aria-hidden={true} />
-            </>
+            <Icon
+                data-tooltip={codeHostMessage}
+                as={CloudCheckIconRefresh}
+                size="md"
+                {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
+            />
         )
     }
 

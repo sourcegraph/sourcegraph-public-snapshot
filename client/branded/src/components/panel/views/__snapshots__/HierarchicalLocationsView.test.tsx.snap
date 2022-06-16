@@ -51,13 +51,8 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
             <div
               class="header"
             >
-              <span
-                style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
-              >
-                content result
-              </span>
               <svg
-                aria-hidden="true"
+                aria-label="content result"
                 class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
@@ -320,13 +315,8 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             <div
               class="header"
             >
-              <span
-                style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
-              >
-                content result
-              </span>
               <svg
-                aria-hidden="true"
+                aria-label="content result"
                 class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
@@ -545,13 +535,8 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
             <div
               class="header"
             >
-              <span
-                style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
-              >
-                content result
-              </span>
               <svg
-                aria-hidden="true"
+                aria-label="content result"
                 class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
