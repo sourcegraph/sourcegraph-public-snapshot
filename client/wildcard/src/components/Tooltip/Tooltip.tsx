@@ -66,20 +66,22 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = ({
                      * Rendering the Content within the Trigger is a workaround to support being able to hover over the Tooltip content itself.
                      * Refrence: https://github.com/radix-ui/primitives/issues/620#issuecomment-1079147761
                      */
-                    <TooltipPrimitive.TooltipContent
-                        onPointerDownOutside={onPointerDownOutside}
-                        className={styles.tooltipContent}
-                        side={placement}
-                        role="tooltip"
-                    >
-                        {content}
+                    <TooltipPrimitive.Portal>
+                        <TooltipPrimitive.TooltipContent
+                            onPointerDownOutside={onPointerDownOutside}
+                            className={styles.tooltipContent}
+                            side={placement}
+                            role="tooltip"
+                        >
+                            {content}
 
-                        <TooltipPrimitive.Arrow
-                            className={styles.tooltipArrow}
-                            height={TOOLTIP_ARROW_HEIGHT}
-                            width={TOOLTIP_ARROW_WIDTH}
-                        />
-                    </TooltipPrimitive.TooltipContent>
+                            <TooltipPrimitive.Arrow
+                                className={styles.tooltipArrow}
+                                height={TOOLTIP_ARROW_HEIGHT}
+                                width={TOOLTIP_ARROW_WIDTH}
+                            />
+                        </TooltipPrimitive.TooltipContent>
+                    </TooltipPrimitive.Portal>
                 )
             }
         </TooltipPrimitive.Trigger>
