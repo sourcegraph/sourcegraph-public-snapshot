@@ -1,5 +1,6 @@
 package com.sourcegraph.config;
 
+import com.google.gson.JsonObject;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.find.Search;
 import org.jetbrains.annotations.Contract;
@@ -9,6 +10,14 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 public class ConfigUtil {
+    public static JsonObject getConfigAsJson(@NotNull Project project) {
+        JsonObject configAsJson = new JsonObject();
+        configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(project));
+        configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(project));
+        configAsJson.addProperty("accessToken", ConfigUtil.getAccessToken(project));
+        return configAsJson;
+    }
+
     @Nullable
     public static String getDefaultBranchName(@NotNull Project project) {
         String defaultBranch = Objects.requireNonNull(SourcegraphConfig.getInstance(project)).getDefaultBranchName();

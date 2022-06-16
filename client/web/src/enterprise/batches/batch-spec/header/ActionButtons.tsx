@@ -6,7 +6,9 @@ export const ActionButtons: React.FunctionComponent<React.PropsWithChildren<{ cl
     children,
     className,
 }) => (
-    <div className={classNames('d-flex flex-column flex-0 align-items-center justify-content-center', className)}>
+    <div
+        className={classNames('d-flex flex-column flex-shrink-0 align-items-center justify-content-center', className)}
+    >
         {children}
     </div>
 )

@@ -28,6 +28,7 @@ tr:global(.highlighted) {
 .item {
     overflow: hidden;
     text-overflow: ellipsis;
+    display: inline-block;
 }
 
 .contents {
