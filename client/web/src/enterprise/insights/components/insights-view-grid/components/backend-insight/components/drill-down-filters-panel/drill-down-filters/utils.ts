@@ -34,20 +34,24 @@ export function getSerializedRepositoriesFilter(filter: InsightRepositoriesFilte
     return `${includeString} ${excludeString}`.trim()
 }
 
-export const getSortPreview = (seriesDisplayOptions: SeriesDisplayOptionsInputRequired): string => {
-    const {
-        sortOptions: { mode, direction },
-        limit,
-    } = seriesDisplayOptions
-    const ascending = direction === SeriesSortDirection.ASC
+export const getSortPreview = (seriesDisplayOptions: SeriesDisplayOptionsInput): string => {
+    const { sortOptions, limit } = seriesDisplayOptions
+
+    if (!limit) {
+        throw new Error('Limit is required to parse series display options.')
+    }
+
+    const ascending = sortOptions?.direction === SeriesSortDirection.ASC
+    const mode = sortOptions?.mode
     let sortBy
 
     switch (mode) {
-        case SeriesSortMode.LEXICOGRAPHICAL:
-            sortBy = ascending ? 'A-Z' : 'Z-A'
-            break
+        case undefined:
         case SeriesSortMode.RESULT_COUNT:
             sortBy = `by result count ${ascending ? 'low to high' : 'high to low'}`
+            break
+        case SeriesSortMode.LEXICOGRAPHICAL:
+            sortBy = ascending ? 'A-Z' : 'Z-A'
             break
         case SeriesSortMode.DATE_ADDED:
             sortBy = `by date ${ascending ? 'newest to oldest' : 'oldest to newest'}`
@@ -71,15 +75,21 @@ export function getSerializedSearchContextFilter(
     return withContextPrefix ? `context:${filterValue}` : filterValue
 }
 
-// To simplify logic on the front end we ensure that a value is always proved
+/**
+ * Returns a SeriesDisplayOptionsInput object with default values
+ *
+ * @param seriesCount The total series available for this insight. Used to set the max limit value
+ * @param options series display options
+ */
 export const parseSeriesDisplayOptions = (
+    seriesCount: number,
     options?: SeriesDisplayOptions | SeriesDisplayOptionsInput
 ): SeriesDisplayOptionsInputRequired => {
     if (!options) {
-        return DEFAULT_SERIES_DISPLAY_OPTIONS
+        return { ...DEFAULT_SERIES_DISPLAY_OPTIONS, limit: seriesCount }
     }
 
-    const limit = options.limit || DEFAULT_SERIES_DISPLAY_OPTIONS.limit
+    const limit = Math.min(options.limit || seriesCount, seriesCount)
     const sortOptions = options.sortOptions || DEFAULT_SERIES_DISPLAY_OPTIONS.sortOptions
 
     return {

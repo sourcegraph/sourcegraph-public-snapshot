@@ -7,11 +7,7 @@ import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Posit
 
 import { SeriesDisplayOptionsInput } from '../../../../../../../../graphql-operations'
 import { Insight, InsightFilters } from '../../../../../../core'
-import {
-    InsightType,
-    SeriesDisplayOptions,
-    SeriesDisplayOptionsInputRequired,
-} from '../../../../../../core/types/insight/common'
+import { InsightType, SeriesDisplayOptions } from '../../../../../../core/types/insight/common'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 import {
     DrillDownInsightCreationForm,
@@ -37,7 +33,7 @@ interface DrillDownFiltersPopoverProps {
     onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
     onVisibilityChange: (open: boolean) => void
     originalSeriesDisplayOptions: SeriesDisplayOptions
-    onSeriesDisplayOptionsChange: (options: SeriesDisplayOptionsInputRequired) => void
+    onSeriesDisplayOptionsChange: (options: SeriesDisplayOptionsInput) => void
 }
 
 // To prevent grid layout position change animation. Attempts to drag
@@ -122,7 +118,10 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
                         onFiltersChange={handleFilterChange}
                         onFilterSave={onFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
-                        originalSeriesDisplayOptions={parseSeriesDisplayOptions(originalSeriesDisplayOptions)}
+                        originalSeriesDisplayOptions={parseSeriesDisplayOptions(
+                            insight.seriesCount,
+                            originalSeriesDisplayOptions
+                        )}
                         onSeriesDisplayOptionsChange={onSeriesDisplayOptionsChange}
                     />
                 )}

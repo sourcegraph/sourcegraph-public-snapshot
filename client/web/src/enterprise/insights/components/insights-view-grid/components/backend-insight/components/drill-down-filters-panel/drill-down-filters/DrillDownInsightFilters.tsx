@@ -207,7 +207,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         open={isHorizontalMode || activeSection === FilterSection.SortFilter}
                         title="Sort & Limit"
                         aria-label="sort and limit filter section"
-                        preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
+                        preview={getSortPreview(parseSeriesDisplayOptions(seriesCount, seriesDisplayOptions))}
                         hasActiveFilter={hasSeriesDisplayOptionsChanged}
                         withSeparators={!isHorizontalMode}
                         onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}

@@ -14,23 +14,21 @@ const TEST_SERIES_DISPLAY_OPTIONS: SeriesDisplayOptionsInputRequired = {
 
 describe('BackendInsight', () => {
     describe('parseSeriesDisplayOptions', () => {
-        it('returns default values when provided an empty object', () => {
-            const parsed = parseSeriesDisplayOptions()
-            expect(parsed).toEqual(DEFAULT_SERIES_DISPLAY_OPTIONS)
-        })
-
         it('returns given object when provided complete values', () => {
-            const parsed = parseSeriesDisplayOptions(TEST_SERIES_DISPLAY_OPTIONS)
+            const parsed = parseSeriesDisplayOptions(TEST_SERIES_DISPLAY_OPTIONS.limit, TEST_SERIES_DISPLAY_OPTIONS)
             expect(parsed).toEqual(TEST_SERIES_DISPLAY_OPTIONS)
         })
 
         it('provides default limit', () => {
-            const parsed = parseSeriesDisplayOptions({ ...TEST_SERIES_DISPLAY_OPTIONS, limit: null })
-            expect(parsed.limit).toEqual(DEFAULT_SERIES_DISPLAY_OPTIONS.limit)
+            const parsed = parseSeriesDisplayOptions(TEST_SERIES_DISPLAY_OPTIONS.limit, {
+                ...TEST_SERIES_DISPLAY_OPTIONS,
+                limit: null,
+            })
+            expect(parsed.limit).toEqual(TEST_SERIES_DISPLAY_OPTIONS.limit)
         })
 
         it('provides default sortOptions', () => {
-            const parsed = parseSeriesDisplayOptions({
+            const parsed = parseSeriesDisplayOptions(TEST_SERIES_DISPLAY_OPTIONS.limit, {
                 ...TEST_SERIES_DISPLAY_OPTIONS,
                 sortOptions: { mode: null, direction: null },
             })

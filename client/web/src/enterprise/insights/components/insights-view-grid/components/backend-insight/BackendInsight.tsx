@@ -199,6 +199,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                             onInsightCreate={handleInsightFilterCreation}
                             onVisibilityChange={setIsFiltersOpen}
                             originalSeriesDisplayOptions={parseSeriesDisplayOptions(
+                                insight.seriesCount,
                                 insight.defaultSeriesDisplayOptions
                             )}
                             onSeriesDisplayOptionsChange={setSeriesDisplayOptions}

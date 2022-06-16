@@ -68,7 +68,7 @@ export function getCaptureGroupInsightUpdateInput(
                 excludeRepoRegex: filters.excludeRepoRegexp,
                 searchContexts: insight.filters.context ? [filters.context] : [],
             },
-            seriesDisplayOptions: parseSeriesDisplayOptions(seriesDisplayOptions),
+            seriesDisplayOptions: parseSeriesDisplayOptions(insight.seriesCount, seriesDisplayOptions),
         },
     }
 }

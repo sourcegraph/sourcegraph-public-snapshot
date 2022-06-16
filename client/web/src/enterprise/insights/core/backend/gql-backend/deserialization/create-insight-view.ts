@@ -17,7 +17,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
         id: insight.id,
         isFrozen: insight.isFrozen,
         dashboardReferenceCount: insight.dashboardReferenceCount,
-        seriesDisplayOptions: parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
+        seriesDisplayOptions: parseSeriesDisplayOptions(insight.seriesCount, insight.appliedSeriesDisplayOptions),
         dashboards: insight.dashboards?.nodes ?? [],
         appliedSeriesDisplayOptions: insight.appliedSeriesDisplayOptions,
         defaultSeriesDisplayOptions: insight.defaultSeriesDisplayOptions,
@@ -53,8 +53,8 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                         excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
                         context: appliedFilters.searchContexts?.[0] ?? '',
                     },
-                    appliedSeriesDisplayOptions: parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
-                    defaultSeriesDisplayOptions: parseSeriesDisplayOptions(insight.defaultSeriesDisplayOptions),
+                    appliedSeriesDisplayOptions: insight.appliedSeriesDisplayOptions,
+                    defaultSeriesDisplayOptions: insight.defaultSeriesDisplayOptions,
                 }
             }
 
