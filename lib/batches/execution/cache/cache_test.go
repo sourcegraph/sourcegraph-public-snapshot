@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestExecutionKey_Key(t *testing.T) {
+func TestKeyer_Key(t *testing.T) {
 	var singleStepEnv env.Environment
 	err := json.Unmarshal([]byte(`{"FOO": "BAR"}`), &singleStepEnv)
 	require.NoError(t, err)
@@ -31,14 +31,20 @@ func TestExecutionKey_Key(t *testing.T) {
 	err = json.Unmarshal([]byte(`{"FOO": "BAR", "TEST_EXECUTION_CACHE_KEY_ENV": null}`), &nullStepEnv)
 	require.NoError(t, err)
 
+	var stepEnv env.Environment
+	// use an array to get the key to have a nil value
+	err = json.Unmarshal([]byte(`["SOME_ENV"]`), &stepEnv)
+	require.NoError(t, err)
+
 	tests := []struct {
-		name        string
-		keyer       ExecutionKey
-		expectedKey string
+		name          string
+		keyer         Keyer
+		expectedKey   string
+		expectedError error
 	}{
 		{
-			name: "simple key",
-			keyer: ExecutionKey{
+			name: "ExecutionKey simple",
+			keyer: &ExecutionKey{
 				Repository: batches.Repository{
 					ID:          "my-repo",
 					Name:        "github.com/sourcegraph/src-cli",
@@ -51,8 +57,8 @@ func TestExecutionKey_Key(t *testing.T) {
 			expectedKey: "cu8r-xdguU4s0kn9_uxL5g",
 		},
 		{
-			name: "multiple steps",
-			keyer: ExecutionKey{
+			name: "ExecutionKey multiple steps",
+			keyer: &ExecutionKey{
 				Repository: batches.Repository{
 					ID:          "my-repo",
 					Name:        "github.com/sourcegraph/src-cli",
@@ -68,8 +74,8 @@ func TestExecutionKey_Key(t *testing.T) {
 			expectedKey: "nXrDA5Sv3jE2wGVTrixgJw",
 		},
 		{
-			name: "step env",
-			keyer: ExecutionKey{
+			name: "ExecutionKey step env",
+			keyer: &ExecutionKey{
 				Repository: batches.Repository{
 					ID:          "my-repo",
 					Name:        "github.com/sourcegraph/src-cli",
@@ -82,8 +88,8 @@ func TestExecutionKey_Key(t *testing.T) {
 			expectedKey: "Ye3eFDmvvADzZuz-TWEA2g",
 		},
 		{
-			name: "multiple step envs",
-			keyer: ExecutionKey{
+			name: "ExecutionKey multiple step envs",
+			keyer: &ExecutionKey{
 				Repository: batches.Repository{
 					ID:          "my-repo",
 					Name:        "github.com/sourcegraph/src-cli",
@@ -96,8 +102,8 @@ func TestExecutionKey_Key(t *testing.T) {
 			expectedKey: "mZk8q7zjJioxI2nTwrt7XQ",
 		},
 		{
-			name: "null step env",
-			keyer: ExecutionKey{
+			name: "ExecutionKey null step env",
+			keyer: &ExecutionKey{
 				Repository: batches.Repository{
 					ID:          "my-repo",
 					Name:        "github.com/sourcegraph/src-cli",
@@ -109,17 +115,125 @@ func TestExecutionKey_Key(t *testing.T) {
 			},
 			expectedKey: "_txGuv3XrkWWVQz6hGsKhw",
 		},
+		{
+			name: "ExecutionKeyWithGlobalEnv simple",
+			keyer: &ExecutionKeyWithGlobalEnv{
+				ExecutionKey: &ExecutionKey{
+					Repository: batches.Repository{
+						ID:          "my-repo",
+						Name:        "github.com/sourcegraph/src-cli",
+						BaseRef:     "refs/heads/f00b4r",
+						BaseRev:     "c0mmit",
+						FileMatches: []string{"baz.go"},
+					},
+					Steps: []batches.Step{{Run: "foo"}},
+				},
+				GlobalEnv: []string{},
+			},
+			expectedKey: "cu8r-xdguU4s0kn9_uxL5g",
+		},
+		{
+			name: "ExecutionKeyWithGlobalEnv has global env",
+			keyer: &ExecutionKeyWithGlobalEnv{
+				ExecutionKey: &ExecutionKey{
+					Repository: batches.Repository{
+						ID:          "my-repo",
+						Name:        "github.com/sourcegraph/src-cli",
+						BaseRef:     "refs/heads/f00b4r",
+						BaseRev:     "c0mmit",
+						FileMatches: []string{"baz.go"},
+					},
+					Steps: []batches.Step{{Run: "foo", Env: stepEnv}},
+				},
+				GlobalEnv: []string{"SOME_ENV=FOO", "FAZ=BAZ"},
+			},
+			expectedKey: "UWaad_y5HkY90tPkgBO7og",
+		},
+		{
+			name: "ExecutionKeyWithGlobalEnv env not updated",
+			keyer: &ExecutionKeyWithGlobalEnv{
+				ExecutionKey: &ExecutionKey{
+					Repository: batches.Repository{
+						ID:          "my-repo",
+						Name:        "github.com/sourcegraph/src-cli",
+						BaseRef:     "refs/heads/f00b4r",
+						BaseRev:     "c0mmit",
+						FileMatches: []string{"baz.go"},
+					},
+					Steps: []batches.Step{{Run: "foo", Env: stepEnv}},
+				},
+				GlobalEnv: []string{"FAZ=BAZ"},
+			},
+			expectedKey: "tq9NsiMdvoKqMpgxE00XGQ",
+		},
+		{
+			name: "ExecutionKeyWithGlobalEnv malformed global env",
+			keyer: &ExecutionKeyWithGlobalEnv{
+				ExecutionKey: &ExecutionKey{
+					Repository: batches.Repository{
+						ID:          "my-repo",
+						Name:        "github.com/sourcegraph/src-cli",
+						BaseRef:     "refs/heads/f00b4r",
+						BaseRev:     "c0mmit",
+						FileMatches: []string{"baz.go"},
+					},
+					Steps: []batches.Step{{Run: "foo", Env: stepEnv}},
+				},
+				GlobalEnv: []string{"SOME_ENV"},
+			},
+			expectedError: errors.New("resolving environment for step 0: unable to parse environment variable \"SOME_ENV\""),
+		},
+		{
+			name: "StepsCacheKey simple",
+			keyer: StepsCacheKey{
+				ExecutionKey: &ExecutionKey{
+					Repository: batches.Repository{
+						ID:          "my-repo",
+						Name:        "github.com/sourcegraph/src-cli",
+						BaseRef:     "refs/heads/f00b4r",
+						BaseRev:     "c0mmit",
+						FileMatches: []string{"baz.go"},
+					},
+					Steps: []batches.Step{{Run: "foo"}},
+				},
+				StepIndex: 0,
+			},
+			expectedKey: "cu8r-xdguU4s0kn9_uxL5g-step-0",
+		},
+		{
+			name: "StepsCacheKey multiple steps",
+			keyer: StepsCacheKey{
+				ExecutionKey: &ExecutionKey{
+					Repository: batches.Repository{
+						ID:          "my-repo",
+						Name:        "github.com/sourcegraph/src-cli",
+						BaseRef:     "refs/heads/f00b4r",
+						BaseRev:     "c0mmit",
+						FileMatches: []string{"baz.go"},
+					},
+					Steps: []batches.Step{
+						{Run: "foo"},
+						{Run: "bar"},
+					},
+				},
+				StepIndex: 0,
+			},
+			expectedKey: "cu8r-xdguU4s0kn9_uxL5g-step-0",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			key, err := test.keyer.Key()
-			assert.NoError(t, err)
-			assert.Equal(t, test.expectedKey, key)
+			if test.expectedError != nil {
+				assert.Equal(t, test.expectedError.Error(), err.Error())
+			} else {
+				assert.Equal(t, test.expectedKey, key)
+			}
 		})
 	}
 }
 
-func TestExecutionKey_Key_Mount(t *testing.T) {
+func TestKeyer_Key_Mount(t *testing.T) {
 	// Mounts are trickier because there are temp paths and modifications dates. Each run will generate new temp paths
 	// and modification dates. Also, different Operating Systems will yield different results causing an expectedKey
 	// assertion to fail.
@@ -145,16 +259,21 @@ func TestExecutionKey_Key_Mount(t *testing.T) {
 	err = os.Chtimes(anotherScriptPath, modDate, modDate)
 	require.NoError(t, err)
 
+	var stepEnv env.Environment
+	// use an array to get the key to have a nil value
+	err = json.Unmarshal([]byte(`["SOME_ENV"]`), &stepEnv)
+	require.NoError(t, err)
+
 	tests := []struct {
 		name  string
-		keyer ExecutionKey
+		keyer Keyer
 		// Instead of an expectedKey, use raw so the data that will be manually hashed can be controlled.
 		expectedRaw   string
 		expectedError error
 	}{
 		{
-			name: "single file",
-			keyer: ExecutionKey{
+			name: "ExecutionKey single file",
+			keyer: &ExecutionKey{
 				Repository: batches.Repository{
 					ID:          "my-repo",
 					Name:        "github.com/sourcegraph/src-cli",
@@ -180,8 +299,8 @@ func TestExecutionKey_Key_Mount(t *testing.T) {
 			),
 		},
 		{
-			name: "multiple files",
-			keyer: ExecutionKey{
+			name: "ExecutionKey multiple files",
+			keyer: &ExecutionKey{
 				Repository: batches.Repository{
 					ID:          "my-repo",
 					Name:        "github.com/sourcegraph/src-cli",
@@ -216,8 +335,8 @@ func TestExecutionKey_Key_Mount(t *testing.T) {
 			),
 		},
 		{
-			name: "directory",
-			keyer: ExecutionKey{
+			name: "ExecutionKey directory",
+			keyer: &ExecutionKey{
 				Repository: batches.Repository{
 					ID:          "my-repo",
 					Name:        "github.com/sourcegraph/src-cli",
@@ -245,8 +364,8 @@ func TestExecutionKey_Key_Mount(t *testing.T) {
 			),
 		},
 		{
-			name: "file does not exist",
-			keyer: ExecutionKey{
+			name: "ExecutionKey file does not exist",
+			keyer: &ExecutionKey{
 				Repository: batches.Repository{
 					ID:          "my-repo",
 					Name:        "github.com/sourcegraph/src-cli",
@@ -266,155 +385,9 @@ func TestExecutionKey_Key_Mount(t *testing.T) {
 			},
 			expectedError: errors.Newf("path %s does not exist", filepath.Join(tempDir, "some-file-does-not-exist.sh")),
 		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			key, err := test.keyer.Key()
-			if test.expectedError != nil {
-				assert.Equal(t, test.expectedError.Error(), err.Error())
-			} else {
-				expectedHash := sha256.Sum256([]byte(test.expectedRaw))
-				expectedKey := base64.RawURLEncoding.EncodeToString(expectedHash[:16])
-				assert.Equal(t, expectedKey, key)
-			}
-		})
-	}
-}
-
-func TestExecutionKeyWithGlobalEnv_Key(t *testing.T) {
-	var stepEnv env.Environment
-	// use an array to get the key to have a nil value
-	err := json.Unmarshal([]byte(`["SOME_ENV"]`), &stepEnv)
-	require.NoError(t, err)
-
-	tests := []struct {
-		name          string
-		keyer         ExecutionKeyWithGlobalEnv
-		expectedKey   string
-		expectedError error
-	}{
 		{
-			name: "simple key",
-			keyer: ExecutionKeyWithGlobalEnv{
-				ExecutionKey: &ExecutionKey{
-					Repository: batches.Repository{
-						ID:          "my-repo",
-						Name:        "github.com/sourcegraph/src-cli",
-						BaseRef:     "refs/heads/f00b4r",
-						BaseRev:     "c0mmit",
-						FileMatches: []string{"baz.go"},
-					},
-					Steps: []batches.Step{{Run: "foo"}},
-				},
-				GlobalEnv: []string{},
-			},
-			expectedKey: "cu8r-xdguU4s0kn9_uxL5g",
-		},
-		{
-			name: "has global env",
-			keyer: ExecutionKeyWithGlobalEnv{
-				ExecutionKey: &ExecutionKey{
-					Repository: batches.Repository{
-						ID:          "my-repo",
-						Name:        "github.com/sourcegraph/src-cli",
-						BaseRef:     "refs/heads/f00b4r",
-						BaseRev:     "c0mmit",
-						FileMatches: []string{"baz.go"},
-					},
-					Steps: []batches.Step{{Run: "foo", Env: stepEnv}},
-				},
-				GlobalEnv: []string{"SOME_ENV=FOO", "FAZ=BAZ"},
-			},
-			expectedKey: "UWaad_y5HkY90tPkgBO7og",
-		},
-		{
-			name: "env not updated",
-			keyer: ExecutionKeyWithGlobalEnv{
-				ExecutionKey: &ExecutionKey{
-					Repository: batches.Repository{
-						ID:          "my-repo",
-						Name:        "github.com/sourcegraph/src-cli",
-						BaseRef:     "refs/heads/f00b4r",
-						BaseRev:     "c0mmit",
-						FileMatches: []string{"baz.go"},
-					},
-					Steps: []batches.Step{{Run: "foo", Env: stepEnv}},
-				},
-				GlobalEnv: []string{"FAZ=BAZ"},
-			},
-			expectedKey: "tq9NsiMdvoKqMpgxE00XGQ",
-		},
-		{
-			name: "malformed global env",
-			keyer: ExecutionKeyWithGlobalEnv{
-				ExecutionKey: &ExecutionKey{
-					Repository: batches.Repository{
-						ID:          "my-repo",
-						Name:        "github.com/sourcegraph/src-cli",
-						BaseRef:     "refs/heads/f00b4r",
-						BaseRev:     "c0mmit",
-						FileMatches: []string{"baz.go"},
-					},
-					Steps: []batches.Step{{Run: "foo", Env: stepEnv}},
-				},
-				GlobalEnv: []string{"SOME_ENV"},
-			},
-			expectedError: errors.New("resolving environment for step 0: unable to parse environment variable \"SOME_ENV\""),
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			key, err := test.keyer.Key()
-			if test.expectedError != nil {
-				assert.Equal(t, test.expectedError.Error(), err.Error())
-			} else {
-				assert.Equal(t, test.expectedKey, key)
-			}
-		})
-	}
-}
-
-func TestExecutionKeyWithGlobalEnv_Key_Mount(t *testing.T) {
-	// Mounts are trickier because there are temp paths and modifications dates. Each run will generate new temp paths
-	// and modification dates. Also, different Operating Systems will yield different results causing an expectedKey
-	// assertion to fail.
-	// So unfortunately, asserting the cache key is not as pretty for mounts.
-
-	tempDir := t.TempDir()
-
-	// Set a specific date on the temp files
-	modDate := time.Date(2022, 1, 2, 3, 5, 6, 7, time.UTC)
-	modDateVal, err := modDate.MarshalJSON()
-	require.NoError(t, err)
-
-	// create temp files/dirs that can be used by the tests
-	sampleScriptPath := filepath.Join(tempDir, "sample.sh")
-	_, err = os.Create(sampleScriptPath)
-	require.NoError(t, err)
-	err = os.Chtimes(sampleScriptPath, modDate, modDate)
-	require.NoError(t, err)
-
-	anotherScriptPath := filepath.Join(tempDir, "another.sh")
-	_, err = os.Create(anotherScriptPath)
-	require.NoError(t, err)
-	err = os.Chtimes(anotherScriptPath, modDate, modDate)
-	require.NoError(t, err)
-
-	var stepEnv env.Environment
-	// use an array to get the key to have a nil value
-	err = json.Unmarshal([]byte(`["SOME_ENV"]`), &stepEnv)
-	require.NoError(t, err)
-
-	tests := []struct {
-		name  string
-		keyer ExecutionKeyWithGlobalEnv
-		// Instead of an expectedKey, use raw so the data that will be manually hashed can be controlled.
-		expectedRaw   string
-		expectedError error
-	}{
-		{
-			name: "single file",
-			keyer: ExecutionKeyWithGlobalEnv{
+			name: "ExecutionKeyWithGlobalEnv single file",
+			keyer: &ExecutionKeyWithGlobalEnv{
 				ExecutionKey: &ExecutionKey{
 					Repository: batches.Repository{
 						ID:          "my-repo",
@@ -444,8 +417,8 @@ func TestExecutionKeyWithGlobalEnv_Key_Mount(t *testing.T) {
 			),
 		},
 		{
-			name: "multiple files",
-			keyer: ExecutionKeyWithGlobalEnv{
+			name: "ExecutionKeyWithGlobalEnv multiple files",
+			keyer: &ExecutionKeyWithGlobalEnv{
 				ExecutionKey: &ExecutionKey{
 					Repository: batches.Repository{
 						ID:          "my-repo",
@@ -484,8 +457,8 @@ func TestExecutionKeyWithGlobalEnv_Key_Mount(t *testing.T) {
 			),
 		},
 		{
-			name: "directory",
-			keyer: ExecutionKeyWithGlobalEnv{
+			name: "ExecutionKeyWithGlobalEnv directory",
+			keyer: &ExecutionKeyWithGlobalEnv{
 				ExecutionKey: &ExecutionKey{
 					Repository: batches.Repository{
 						ID:          "my-repo",
@@ -516,46 +489,8 @@ func TestExecutionKeyWithGlobalEnv_Key_Mount(t *testing.T) {
 				string(modDateVal),
 			),
 		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			key, err := test.keyer.Key()
-			if test.expectedError != nil {
-				assert.Equal(t, test.expectedError.Error(), err.Error())
-			} else {
-				expectedHash := sha256.Sum256([]byte(test.expectedRaw))
-				expectedKey := base64.RawURLEncoding.EncodeToString(expectedHash[:16])
-				assert.Equal(t, expectedKey, key)
-			}
-		})
-	}
-}
-
-func TestStepsCacheKey_Key(t *testing.T) {
-	tests := []struct {
-		name        string
-		keyer       StepsCacheKey
-		expectedKey string
-	}{
 		{
-			name: "simple key",
-			keyer: StepsCacheKey{
-				ExecutionKey: &ExecutionKey{
-					Repository: batches.Repository{
-						ID:          "my-repo",
-						Name:        "github.com/sourcegraph/src-cli",
-						BaseRef:     "refs/heads/f00b4r",
-						BaseRev:     "c0mmit",
-						FileMatches: []string{"baz.go"},
-					},
-					Steps: []batches.Step{{Run: "foo"}},
-				},
-				StepIndex: 0,
-			},
-			expectedKey: "cu8r-xdguU4s0kn9_uxL5g-step-0",
-		},
-		{
-			name: "multiple steps",
+			name: "StepsCacheKey single file",
 			keyer: StepsCacheKey{
 				ExecutionKey: &ExecutionKey{
 					Repository: batches.Repository{
@@ -566,78 +501,43 @@ func TestStepsCacheKey_Key(t *testing.T) {
 						FileMatches: []string{"baz.go"},
 					},
 					Steps: []batches.Step{
-						{Run: "foo"},
-						{Run: "bar"},
+						{
+							Run: "foo",
+							Mount: []batches.Mount{
+								{
+									Path:       sampleScriptPath,
+									Mountpoint: "/tmp/sample.sh",
+								},
+							},
+						},
 					},
 				},
 				StepIndex: 0,
 			},
-			expectedKey: "cu8r-xdguU4s0kn9_uxL5g-step-0",
+			expectedRaw: fmt.Sprintf(`{"Repository":{"ID":"my-repo","Name":"github.com/sourcegraph/src-cli","BaseRef":"refs/heads/f00b4r","BaseRev":"c0mmit","FileMatches":["baz.go"]},"Path":"","OnlyFetchWorkspace":false,"Steps":[{"run":"foo","env":{},"mount":[{"mountpoint":"/tmp/sample.sh","path":"%s"}]}],"BatchChangeAttributes":null,"Environments":[{}],"MountsMetadata":[{"Path":"%s","Size":0,"Modified":%s}]}`,
+				sampleScriptPath,
+				sampleScriptPath,
+				string(modDateVal),
+			),
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			key, err := test.keyer.Key()
-			assert.NoError(t, err)
-			assert.Equal(t, test.expectedKey, key)
+			if test.expectedError != nil {
+				assert.Equal(t, test.expectedError.Error(), err.Error())
+			} else {
+				expectedHash := sha256.Sum256([]byte(test.expectedRaw))
+				expectedKey := base64.RawURLEncoding.EncodeToString(expectedHash[:16])
+				switch test.keyer.(type) {
+				case StepsCacheKey, *StepsCacheKeyWithGlobalEnv:
+					assert.Equal(t, fmt.Sprintf("%s-step-0", expectedKey), key)
+				case *ExecutionKey, *ExecutionKeyWithGlobalEnv:
+					assert.Equal(t, expectedKey, key)
+				default:
+					assert.Fail(t, "unexpected Keyer implementation")
+				}
+			}
 		})
 	}
-}
-
-func TestStepsCacheKey_Key_Mount(t *testing.T) {
-	// Mounts are trickier because there are temp paths and modifications dates. Each run will generate new temp paths
-	// and modification dates. Also, different Operating Systems will yield different results causing an expectedKey
-	// assertion to fail.
-	// So unfortunately, asserting the cache key is not as pretty for mounts.
-
-	tempDir := t.TempDir()
-
-	// Set a specific date on the temp files
-	modDate := time.Date(2022, 1, 2, 3, 5, 6, 7, time.UTC)
-	modDateVal, err := modDate.MarshalJSON()
-	_ = modDateVal
-	require.NoError(t, err)
-
-	// create temp files/dirs that can be used by the tests
-	sampleScriptPath := filepath.Join(tempDir, "sample.sh")
-	_, err = os.Create(sampleScriptPath)
-	require.NoError(t, err)
-	err = os.Chtimes(sampleScriptPath, modDate, modDate)
-	require.NoError(t, err)
-
-	keyer := StepsCacheKey{
-		ExecutionKey: &ExecutionKey{
-			Repository: batches.Repository{
-				ID:          "my-repo",
-				Name:        "github.com/sourcegraph/src-cli",
-				BaseRef:     "refs/heads/f00b4r",
-				BaseRev:     "c0mmit",
-				FileMatches: []string{"baz.go"},
-			},
-			Steps: []batches.Step{
-				{
-					Run: "foo",
-					Mount: []batches.Mount{
-						{
-							Path:       sampleScriptPath,
-							Mountpoint: "/tmp/sample.sh",
-						},
-					},
-				},
-			},
-		},
-		StepIndex: 0,
-	}
-
-	expectedRaw := fmt.Sprintf(`{"Repository":{"ID":"my-repo","Name":"github.com/sourcegraph/src-cli","BaseRef":"refs/heads/f00b4r","BaseRev":"c0mmit","FileMatches":["baz.go"]},"Path":"","OnlyFetchWorkspace":false,"Steps":[{"run":"foo","env":{},"mount":[{"mountpoint":"/tmp/sample.sh","path":"%s"}]}],"BatchChangeAttributes":null,"Environments":[{}],"MountsMetadata":[{"Path":"%s","Size":0,"Modified":%s}]}`,
-		sampleScriptPath,
-		sampleScriptPath,
-		string(modDateVal),
-	)
-	expectedHash := sha256.Sum256([]byte(expectedRaw))
-	expectedKey := base64.RawURLEncoding.EncodeToString(expectedHash[:16])
-
-	key, err := keyer.Key()
-	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("%s-step-0", expectedKey), key)
 }
