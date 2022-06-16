@@ -27,11 +27,41 @@ import {
 import styles from './LineChart.module.scss'
 
 export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<SVGSVGElement> {
+    /**
+     * The width of the chart
+     */
     width: number
+
+    /**
+     * The height of the chart
+     */
     height: number
+
+    /**
+     * Whether to start Y axis at zero
+     */
     zeroYAxisMin?: boolean
+
+    /**
+     * If provided, uses this series to render the tooltip
+     */
     tooltipSeries?: Series<Datum>[]
+
+    /**
+     * Function to style a given line group
+     *
+     * @param id The id of the series
+     * @param hasActivePoint Whether the chart has some active point
+     * @param isActive Whether this series contains the active point
+     */
     getLineGroupStyle?: (id: string, hasActivePoint: boolean, isActive: boolean) => CSSProperties
+
+    /**
+     * If provided, uses this to render lines on the chart instead of `series`
+     *
+     * @param dataSeries a SeriesWithData array containing the data to render
+     * @returns a SeriesWithData array that has been filtered
+     */
     getActiveSeries?: <D>(dataSeries: SeriesWithData<D>[]) => SeriesWithData<D>[]
 }
 
