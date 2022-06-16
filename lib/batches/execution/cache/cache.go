@@ -156,7 +156,7 @@ func getMountMetadata(path string) ([]mountMetadata, error) {
 	}
 	var metadata []mountMetadata
 	if info.IsDir() {
-		dirMetadata, err := handleDir(path)
+		dirMetadata, err := getDirectoryMountMetadata(path)
 		if err != nil {
 			return nil, err
 		}
@@ -167,7 +167,7 @@ func getMountMetadata(path string) ([]mountMetadata, error) {
 	return metadata, nil
 }
 
-func handleDir(path string) ([]mountMetadata, error) {
+func getDirectoryMountMetadata(path string) ([]mountMetadata, error) {
 	dir, err := os.ReadDir(path)
 	if err != nil {
 		return nil, err
