@@ -1429,8 +1429,8 @@ func TestResolver_BitbucketProjectPermissionJobs(t *testing.T) {
 			Query: `
 query {
   bitbucketProjectPermissionJobs(status:"queueueueud") {
-    count,
-    jobs {
+    totalCount,
+    nodes {
       InternalJobID,
       State,
       Unrestricted,
@@ -1492,8 +1492,8 @@ query {
 			Query: `
 query {
   bitbucketProjectPermissionJobs(count:1) {
-    count,
-    jobs {
+    totalCount,
+    nodes {
       InternalJobID,
       State,
       StartedAt,
@@ -1518,8 +1518,8 @@ query {
 			ExpectedResult: `
 {
   "bitbucketProjectPermissionJobs": {
-    "count": 1,
-    "jobs": [
+    "totalCount": 1,
+    "nodes": [
 	  {
 	    "InternalJobID": 1,
 	    "State": "queued",
