@@ -1538,7 +1538,7 @@ func (r *Resolver) CreateEmptyBatchChange(ctx context.Context, args *graphqlback
 }
 
 func (r *Resolver) UpsertEmptyBatchChange(ctx context.Context, args *graphqlbackend.UpsertEmptyBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.UpsertEmptyBatchChange", fmt.Sprintf("Namespace: %+v", args.Namespace))
+	tr, ctx := trace.New(ctx, "Resolver.UpsertEmptyBatchChange", fmt.Sprintf("Namespace: %s", args.Namespace))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
