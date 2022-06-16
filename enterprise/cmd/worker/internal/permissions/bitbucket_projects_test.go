@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -93,7 +93,7 @@ func TestHandle_UnsupportedCodeHost(t *testing.T) {
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 	handler := &bitbucketProjectPermissionsHandler{db: edb.NewEnterpriseDB(db)}
-	err := handler.Handle(ctx, log.Scoped("test", "test"), &types.BitbucketProjectPermissionJob{ExternalServiceID: 1})
+	err := handler.Handle(ctx, logtest.Scoped(t), &types.BitbucketProjectPermissionJob{ExternalServiceID: 1})
 
 	require.True(t, errcode.IsNonRetryable(err))
 }
@@ -176,7 +176,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// set permissions for 3 users (2 existing, 1 pending) and 2 repos
 	err = h.setPermissionsForUsers(
 		ctx,
-		log.Scoped("test", "test"),
+		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
@@ -194,7 +194,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// run the same set of permissions again, shouldn't change anything
 	err = h.setPermissionsForUsers(
 		ctx,
-		log.Scoped("test", "test"),
+		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
@@ -212,7 +212,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// test with wrong bindids
 	err = h.setPermissionsForUsers(
 		ctx,
-		log.Scoped("test", "test"),
+		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "pushpa", Permission: "read"},
 			{BindID: "igor", Permission: "read"},
@@ -234,7 +234,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// run the same set of permissions again
 	err = h.setPermissionsForUsers(
 		ctx,
-		log.Scoped("test", "test"),
+		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
@@ -323,7 +323,7 @@ func TestHandleRestricted(t *testing.T) {
 	}
 
 	// set permissions for 3 users (2 existing, 1 pending) and 2 repos
-	err = h.Handle(ctx, log.Scoped("test", "test"), &types.BitbucketProjectPermissionJob{
+	err = h.Handle(ctx, logtest.Scoped(t), &types.BitbucketProjectPermissionJob{
 		ExternalServiceID: 1,
 		ProjectKey:        "SGDEMO",
 		Permissions: []types.UserPermission{
@@ -431,7 +431,7 @@ func TestHandleUnrestricted(t *testing.T) {
 	}
 
 	// set permissions for 3 users (2 existing, 1 pending) and 2 repos
-	err = h.Handle(ctx, log.Scoped("test", "test"), &types.BitbucketProjectPermissionJob{
+	err = h.Handle(ctx, logtest.Scoped(t), &types.BitbucketProjectPermissionJob{
 		ExternalServiceID: 1,
 		ProjectKey:        "SGDEMO",
 		Unrestricted:      true,
