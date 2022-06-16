@@ -1,6 +1,7 @@
-import React, { CSSProperties, SVGProps, useCallback } from 'react'
+import React, { SVGProps, useCallback } from 'react'
 
 import { LineChart, SeriesLikeChart } from '../../../../../../charts'
+import { LineChartProps } from '../../../../../../charts/components/line-chart/LineChart'
 import { SeriesWithData } from '../../../../../../charts/components/line-chart/utils'
 import { UseSeriesToggleReturn } from '../../../../../../insights/utils/use-series-toggle'
 import { SeriesBasedChartTypes } from '../../types'
@@ -50,7 +51,7 @@ export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactE
         return FULL_COLOR
     }
 
-    const getHoverStyle = (id: string, hasActivePoint: boolean, isActive: boolean): CSSProperties => {
+    const getHoverStyle: LineChartProps<Datum>['getLineGroupStyle'] = ({ id, hasActivePoint, isActive }) => {
         const opacity = getOpacity(id, hasActivePoint, isActive)
 
         return {

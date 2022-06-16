@@ -26,6 +26,17 @@ import {
 
 import styles from './LineChart.module.scss'
 
+interface GetLineGroupStyleOptions {
+    // Whether this series contains the active point
+    id: string
+
+    // The id of the series
+    hasActivePoint: boolean
+
+    // Whether the chart has some active point
+    isActive: boolean
+}
+
 export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<SVGSVGElement> {
     /**
      * The width of the chart
@@ -44,12 +55,8 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
 
     /**
      * Function to style a given line group
-     *
-     * @param id The id of the series
-     * @param hasActivePoint Whether the chart has some active point
-     * @param isActive Whether this series contains the active point
      */
-    getLineGroupStyle?: (id: string, hasActivePoint: boolean, isActive: boolean) => CSSProperties
+    getLineGroupStyle?: (options: GetLineGroupStyleOptions) => CSSProperties
 
     /**
      * If provided, uses this to render lines on the chart instead of `series`
@@ -205,7 +212,11 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 {sortedSeries.map(line => (
                     <Group
                         key={line.id}
-                        style={getLineGroupStyle?.(`${line.id}`, !!activePoint, activePoint?.seriesId === line.id)}
+                        style={getLineGroupStyle?.({
+                            id: `${line.id}`,
+                            hasActivePoint: !!activePoint,
+                            isActive: activePoint?.seriesId === line.id,
+                        })}
                     >
                         <LinePath
                             data={line.data as SeriesDatum<D>[]}
