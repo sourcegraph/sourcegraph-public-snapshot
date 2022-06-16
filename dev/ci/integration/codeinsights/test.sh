@@ -79,6 +79,17 @@ function test_setup() {
   # shellcheck disable=SC1091
   source /root/.profile
 
+  echo "--- TEST: Checking Sourcegraph instance is accessible"
+  PODS=$(kubectl get pod -l app=sourcegraph-frontend -o custom-columns=:metadata.name -n "$NAMESPACE")
+  for p in $PODS; do
+    i=0
+    until kubectl logs "$p" -c frontend -n "$NAMESPACE" | grep "Sourcegraph is ready at" || $i <= 5; do
+      echo "waiting for frontend"
+      ((i = i + 1))
+      sleep 5
+    done
+  done
+
   export SOURCEGRAPH_BASE_URL="http://sourcegraph-frontend.$NAMESPACE.svc.cluster.local:30080"
   curl "$SOURCEGRAPH_BASE_URL"
 
@@ -93,18 +104,6 @@ function test_setup() {
   # shellcheck disable=SC1091
   source /root/.sg_envrc
   set -u
-
-  echo "--- TEST: Checking Sourcegraph instance is accessible"
-
-  PODS=$(kubectl get pod -l app=sourcegraph-frontend -o custom-columns=:metadata.name -n "$NAMESPACE")
-  for p in $PODS; do
-    i=0
-    until kubectl logs "$p" -n "$NAMESPACE" | grep "Sourcegraph is ready at" || $i <= 5; do
-      echo "waiting for frontend"
-      ((i = i + 1))
-      sleep 5
-    done
-  done
 
   curl --fail "$SOURCEGRAPH_BASE_URL"
   curl --fail "$SOURCEGRAPH_BASE_URL/healthz"
