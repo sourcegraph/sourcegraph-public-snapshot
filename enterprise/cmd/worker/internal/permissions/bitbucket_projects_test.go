@@ -8,19 +8,22 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log"
+
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestStore(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
 	db := database.NewDB(dbtest.NewDB(t))
 
@@ -51,10 +54,6 @@ func mustParseTime(v string) time.Time {
 }
 
 func TestGetBitbucketClient(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	t.Parallel()
 	ctx := context.Background()
 
@@ -74,6 +73,29 @@ func TestGetBitbucketClient(t *testing.T) {
 	client, err := handler.getBitbucketClient(ctx, &svc)
 	require.NoError(t, err)
 	require.NotNil(t, client)
+}
+
+func TestHandle_UnsupportedCodeHost(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	externalServices := database.NewMockExternalServiceStore()
+	externalServices.GetByIDFunc.SetDefaultReturn(
+		&types.ExternalService{
+			ID:          1,
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "github",
+		},
+		nil,
+	)
+
+	db := database.NewMockDB()
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+
+	handler := &bitbucketProjectPermissionsHandler{db: edb.NewEnterpriseDB(db)}
+	err := handler.Handle(ctx, log.Scoped("test", "test"), &types.BitbucketProjectPermissionJob{ExternalServiceID: 1})
+
+	require.True(t, errcode.IsNonRetryable(err))
 }
 
 func TestSetPermissionsForUsers(t *testing.T) {
@@ -150,10 +172,11 @@ func TestSetPermissionsForUsers(t *testing.T) {
 		}, up.IDs)
 	}
 
+	h := bitbucketProjectPermissionsHandler{db: db}
 	// set permissions for 3 users (2 existing, 1 pending) and 2 repos
-	err = setPermissionsForUsers(
+	err = h.setPermissionsForUsers(
 		ctx,
-		db,
+		log.Scoped("test", "test"),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
@@ -163,14 +186,15 @@ func TestSetPermissionsForUsers(t *testing.T) {
 			1,
 			2,
 		},
+		"foo",
 	)
 	require.NoError(t, err)
 	check()
 
 	// run the same set of permissions again, shouldn't change anything
-	err = setPermissionsForUsers(
+	err = h.setPermissionsForUsers(
 		ctx,
-		db,
+		log.Scoped("test", "test"),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
@@ -180,14 +204,15 @@ func TestSetPermissionsForUsers(t *testing.T) {
 			1,
 			2,
 		},
+		"foo",
 	)
 	require.NoError(t, err)
 	check()
 
 	// test with wrong bindids
-	err = setPermissionsForUsers(
+	err = h.setPermissionsForUsers(
 		ctx,
-		db,
+		log.Scoped("test", "test"),
 		[]types.UserPermission{
 			{BindID: "pushpa", Permission: "read"},
 			{BindID: "igor", Permission: "read"},
@@ -197,6 +222,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 			1,
 			2,
 		},
+		"foo",
 	)
 	// should fail if the bind ids are wrong
 	require.Error(t, err)
@@ -206,9 +232,9 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	require.NoError(t, err)
 
 	// run the same set of permissions again
-	err = setPermissionsForUsers(
+	err = h.setPermissionsForUsers(
 		ctx,
-		db,
+		log.Scoped("test", "test"),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
@@ -218,6 +244,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 			1,
 			2,
 		},
+		"foo",
 	)
 	require.NoError(t, err)
 	check()
@@ -227,4 +254,197 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	err = db.QueryRowContext(ctx, "SELECT unrestricted FROM repo_permissions WHERE repo_id = 1").Scan(&unrestricted)
 	require.NoError(t, err)
 	require.False(t, unrestricted)
+}
+
+func TestHandleRestricted(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+
+	ctx := context.Background()
+
+	db := edb.NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
+
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	// create an external service
+	err := db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
+		Kind:        extsvc.KindBitbucketServer,
+		DisplayName: "Bitbucket #1",
+		Config:      `{"url": "https://bitbucket.com", "username": "username", "token": "qwerty", "repositoryQuery": ["none"]}`,
+	})
+	require.NoError(t, err)
+
+	// create 3 users
+	users := db.Users()
+	igor, err := users.Create(ctx,
+		database.NewUser{
+			Email:           "igor@example.com",
+			Username:        "igor",
+			EmailIsVerified: true,
+		},
+	)
+	require.NoError(t, err)
+	pushpa, err := users.Create(ctx,
+		database.NewUser{
+			Email:           "pushpa@example.com",
+			Username:        "pushpa",
+			EmailIsVerified: true,
+		},
+	)
+	require.NoError(t, err)
+	_, err = users.Create(ctx,
+		database.NewUser{
+			Email:           "omar@example.com",
+			Username:        "omar",
+			EmailIsVerified: true,
+		},
+	)
+	require.NoError(t, err)
+
+	// create 6 repos
+	_, err = db.ExecContext(ctx, `--sql
+	INSERT INTO repo (id, name, fork)
+	VALUES
+		(10060, 'go', false),
+		(10056, 'jenkins', false),
+		(10061, 'mux', false),
+		(10058, 'sentry', false),
+		(10059, 'sinatra', false),
+		(10072, 'sourcegraph', false)
+`)
+	require.NoError(t, err)
+
+	h := bitbucketProjectPermissionsHandler{
+		db:     db,
+		client: bitbucketserver.NewTestClient(t, "client", false),
+	}
+
+	// set permissions for 3 users (2 existing, 1 pending) and 2 repos
+	err = h.Handle(ctx, log.Scoped("test", "test"), &types.BitbucketProjectPermissionJob{
+		ExternalServiceID: 1,
+		ProjectKey:        "SGDEMO",
+		Permissions: []types.UserPermission{
+			{BindID: "pushpa@example.com", Permission: "read"},
+			{BindID: "igor@example.com", Permission: "read"},
+			{BindID: "sayako", Permission: "read"},
+		},
+	})
+	require.NoError(t, err)
+
+	// check that the permissions were set
+	perms := db.Perms()
+
+	for _, repoID := range []int32{10060, 10056, 10061, 10058, 10059, 10072} {
+		p := authz.RepoPermissions{RepoID: repoID, Perm: authz.Read}
+		err = perms.LoadRepoPermissions(ctx, &p)
+		require.NoError(t, err)
+		require.Equal(t, map[int32]struct{}{
+			pushpa.ID: {},
+			igor.ID:   {},
+		}, p.UserIDs)
+	}
+
+	up := authz.UserPermissions{UserID: pushpa.ID, Perm: authz.Read, Type: authz.PermRepos}
+	err = perms.LoadUserPermissions(ctx, &up)
+	require.NoError(t, err)
+	require.Equal(t, map[int32]struct{}{
+		10060: {}, 10056: {}, 10061: {}, 10058: {}, 10059: {}, 10072: {},
+	}, up.IDs)
+}
+
+func TestHandleUnrestricted(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+
+	ctx := context.Background()
+
+	db := edb.NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
+
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	// create an external service
+	err := db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
+		Kind:        extsvc.KindBitbucketServer,
+		DisplayName: "Bitbucket #1",
+		Config:      `{"url": "https://bitbucket.com", "username": "username", "token": "qwerty", "repositoryQuery": ["none"]}`,
+	})
+	require.NoError(t, err)
+
+	// create 3 users
+	users := db.Users()
+	_, err = users.Create(ctx,
+		database.NewUser{
+			Email:           "igor@example.com",
+			Username:        "igor",
+			EmailIsVerified: true,
+		},
+	)
+	require.NoError(t, err)
+	_, err = users.Create(ctx,
+		database.NewUser{
+			Email:           "pushpa@example.com",
+			Username:        "pushpa",
+			EmailIsVerified: true,
+		},
+	)
+	require.NoError(t, err)
+	_, err = users.Create(ctx,
+		database.NewUser{
+			Email:           "omar@example.com",
+			Username:        "omar",
+			EmailIsVerified: true,
+		},
+	)
+	require.NoError(t, err)
+
+	// create 6 repos
+	_, err = db.ExecContext(ctx, `--sql
+	INSERT INTO repo (id, name, fork)
+	VALUES
+		(10060, 'go', false),
+		(10056, 'jenkins', false),
+		(10061, 'mux', false),
+		(10058, 'sentry', false),
+		(10059, 'sinatra', false),
+		(10072, 'sourcegraph', false);
+
+	INSERT INTO repo_permissions (repo_id, permission, updated_at)
+	VALUES
+		(10060, 'read', now()),
+		(10056, 'read', now()),
+		(10061, 'read', now()),
+		(10058, 'read', now()),
+		(10059, 'read', now()),
+		(10072, 'read', now());
+`)
+	require.NoError(t, err)
+
+	h := bitbucketProjectPermissionsHandler{
+		db:     db,
+		client: bitbucketserver.NewTestClient(t, "client", false),
+	}
+
+	// set permissions for 3 users (2 existing, 1 pending) and 2 repos
+	err = h.Handle(ctx, log.Scoped("test", "test"), &types.BitbucketProjectPermissionJob{
+		ExternalServiceID: 1,
+		ProjectKey:        "SGDEMO",
+		Unrestricted:      true,
+	})
+	require.NoError(t, err)
+
+	// check that the permissions were set
+	perms := db.Perms()
+
+	for _, repoID := range []int32{10060, 10056, 10061, 10058, 10059, 10072} {
+		p := authz.RepoPermissions{RepoID: repoID, Perm: authz.Read}
+		err = perms.LoadRepoPermissions(ctx, &p)
+		require.NoError(t, err)
+		require.True(t, p.Unrestricted)
+	}
 }

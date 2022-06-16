@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -141,7 +139,7 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 	createMockStore := func(logs []*types.WebhookLog, next int64, err error) *database.MockWebhookLogStore {
 		store := database.NewMockWebhookLogStore()
 		store.ListFunc.SetDefaultReturn(logs, next, err)
-		store.HandleFunc.SetDefaultReturn(basestore.NewHandleWithDB(nil, sql.TxOptions{}))
+		store.HandleFunc.SetDefaultReturn(nil)
 
 		return store
 	}

@@ -76,10 +76,10 @@ const DependencySyncingJobMaxNumResets = 3
 
 var dependencySyncingJobWorkerStoreOptions = dbworkerstore.Options{
 	Name:              "codeintel_dependency_syncing",
-	TableName:         "lsif_dependency_syncing_jobs j",
+	TableName:         "lsif_dependency_syncing_jobs",
 	ColumnExpressions: dependencySyncingJobColumns,
 	Scan:              scanFirstDependencySyncingJobRecord,
-	OrderByExpression: sqlf.Sprintf("j.queued_at, j.upload_id"),
+	OrderByExpression: sqlf.Sprintf("lsif_dependency_syncing_jobs.queued_at, lsif_dependency_syncing_jobs.upload_id"),
 	StalledMaxAge:     StalledDependencySyncingJobMaxAge,
 	MaxNumResets:      DependencySyncingJobMaxNumResets,
 }
@@ -102,10 +102,10 @@ const DependencyIndexingJobMaxNumResets = 3
 
 var dependencyIndexingJobWorkerStoreOptions = dbworkerstore.Options{
 	Name:              "codeintel_dependency_indexing",
-	TableName:         "lsif_dependency_indexing_jobs j",
+	TableName:         "lsif_dependency_indexing_jobs",
 	ColumnExpressions: dependencyIndexingJobColumns,
 	Scan:              scanFirstDependencyIndexingJobRecord,
-	OrderByExpression: sqlf.Sprintf("j.queued_at, j.upload_id"),
+	OrderByExpression: sqlf.Sprintf("lsif_dependency_indexing_jobs.queued_at, lsif_dependency_indexing_jobs.upload_id"),
 	StalledMaxAge:     StalledDependencyIndexingJobMaxAge,
 	MaxNumResets:      DependencyIndexingJobMaxNumResets,
 }

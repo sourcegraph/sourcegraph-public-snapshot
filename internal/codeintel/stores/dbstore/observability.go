@@ -99,7 +99,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				return observation.EmitForSentry | observation.EmitForDefault
+				return observation.EmitForDefault
 			},
 		})
 	}

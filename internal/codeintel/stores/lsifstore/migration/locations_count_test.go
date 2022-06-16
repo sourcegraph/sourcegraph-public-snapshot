@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -17,7 +18,7 @@ import (
 )
 
 func TestLocationsCountMigrator(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := stores.NewCodeIntelDB(dbtest.NewDB(t))
 	store := lsifstore.NewStore(db, conf.DefaultClient(), &observation.TestContext)
 	migrator := NewLocationsCountMigrator(store, "lsif_data_definitions", 250)
 	serializer := lsifstore.NewSerializer()

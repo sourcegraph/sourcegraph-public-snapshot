@@ -36,6 +36,7 @@ func TestIntegration_PermsStore(t *testing.T) {
 		test func(*testing.T)
 	}{
 		{"LoadUserPermissions", testPermsStore_LoadUserPermissions(db)},
+		{"FetchReposByUserAndExternalService", testPermsStore_FetchReposByUserAndExternalService(db)},
 		{"LoadRepoPermissions", testPermsStore_LoadRepoPermissions(db)},
 		{"SetUserPermissions", testPermsStore_SetUserPermissions(db)},
 		{"SetRepoPermissions", testPermsStore_SetRepoPermissions(db)},

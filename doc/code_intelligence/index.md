@@ -65,9 +65,10 @@ Code Intelligence is made up of multiple features that build on top of each othe
 
 Here's how you go from search-based code intelligence to **automatically-updating, precise code intelligence across multiple repositories and dependencies**:
 
-1. Navigate code with [search-based code intelligence](explanations/search_based_code_intelligence.md) and [Sourcegraph extensions](../../../extensions/index.md):
+1. Navigate code with [search-based code intelligence](explanations/search_based_code_intelligence.md) and [Sourcegraph extensions](../../../extensions/index.md).
 
-    Included in a standard Sourcegraph installation and works out of the box!
+    Included in a standard Sourcegraph installation and works out of the box on the instances connected to the Internet.
+    To see how to enable code intelligence on the air-gapped instances please check [this guide](how-to/enable_code_intel_on_air_gapped_instances.md).
 1. Start using [precise code intelligence](explanations/precise_code_intelligence.md) by creating an index of a repository and uploading it to your Sourcegraph instance:
 
     - [Index a Go repository](how-to/index_a_go_repository.md#manual-indexing)
@@ -107,6 +108,8 @@ Once setup, code intelligence is available for use across popular development to
 
 - General
   - [Configure data retention policies](how-to/configure_data_retention.md)
+  - [Enable code intelligence on the air-gapped instances](how-to/enable_code_intel_on_air_gapped_instances.md)
+
 - Language-specific guides
   - [Index a Go repository](how-to/index_a_go_repository.md)
   - [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md)

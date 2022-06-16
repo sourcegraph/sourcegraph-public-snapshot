@@ -841,7 +841,9 @@ type GitLabAuthProvider struct {
 	// ClientSecret description: The Client Secret of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance).
 	ClientSecret string `json:"clientSecret"`
 	DisplayName  string `json:"displayName,omitempty"`
-	Type         string `json:"type"`
+	// TokenRefreshWindowMinutes description: Time in minutes before token expiry when we should attempt to refresh it
+	TokenRefreshWindowMinutes int    `json:"tokenRefreshWindowMinutes,omitempty"`
+	Type                      string `json:"type"`
 	// Url description: URL of the GitLab instance, such as https://gitlab.com or https://gitlab.example.com.
 	Url string `json:"url,omitempty"`
 }

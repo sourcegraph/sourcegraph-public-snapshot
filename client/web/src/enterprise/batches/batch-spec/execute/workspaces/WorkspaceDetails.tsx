@@ -1,12 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import VisuallyHidden from '@reach/visually-hidden'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { cloneDeep } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckBoldIcon from 'mdi-react/CheckBoldIcon'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
-import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import EyeOffOutlineIcon from 'mdi-react/EyeOffOutlineIcon'
 import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
@@ -14,7 +13,6 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import TimelineClockOutlineIcon from 'mdi-react/TimelineClockOutlineIcon'
-import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import indicator from 'ordinal/indicator'
 import { useHistory } from 'react-router'
 
@@ -40,9 +38,12 @@ import {
     H4,
     Text,
     Alert,
+    CollapsePanel,
+    CollapseHeader,
+    Collapse,
+    Heading,
 } from '@sourcegraph/wildcard'
 
-import { Collapsible } from '../../../../../components/Collapsible'
 import { DiffStat } from '../../../../../components/diff/DiffStat'
 import { FileDiffConnection } from '../../../../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../../../../components/diff/FileDiffNode'
@@ -67,6 +68,7 @@ import {
 } from '../backend'
 import { TimelineModal } from '../TimelineModal'
 
+import { StepStateIcon } from './StepStateIcon'
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
 
 import styles from './WorkspaceDetails.module.scss'
@@ -157,7 +159,7 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                 <span className={styles.workspaceDetail}>{workspace.path}</span>
             )}
             {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
-                <span className={styles.workspaceDetail}>
+                <span className={classNames(styles.workspaceDetail, 'text-monospace')}>
                     <Icon aria-hidden={true} as={SourceBranchIcon} /> {workspace.branch.displayName}
                 </span>
             )}
@@ -351,6 +353,10 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
 }) => {
     const history = useHistory()
 
+    // TODO: Under what conditions should this be auto-expanded?
+    const [isExpanded, setIsExpanded] = useState(true)
+    const [areChangesExpanded, setAreChangesExpanded] = useState(true)
+
     // TODO: This should not happen. When the workspace is visibile, the changeset spec should be visible as well.
     if (node.__typename === 'HiddenChangesetSpec') {
         return (
@@ -368,53 +374,60 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
     }
 
     return (
-        <Collapsible
-            title={
-                <div className="d-flex justify-content-between">
-                    <div>
-                        <H4 className="mb-0 d-inline-block mr-2">
-                            <H3 className={styles.result}>Result</H3>
-                            {node.description.published !== null && (
-                                <Badge className="text-uppercase">
-                                    {publishBadgeLabel(node.description.published)}
-                                </Badge>
-                            )}{' '}
-                        </H4>
-                        <span className="text-muted">
-                            <Icon aria-hidden={true} as={SourceBranchIcon} /> {node.description.headRef}
-                        </span>
-                    </div>
-                    <DiffStat {...node.description.diffStat} expandedCounts={true} />
+        <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded} openByDefault={true}>
+            <CollapseHeader
+                as={Button}
+                className="w-100 p-0 m-0 border-0 d-flex align-items-center justify-content-between"
+            >
+                <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} className="mr-1" />
+                <div className={styles.collapseHeader}>
+                    <H4 className="mb-0 d-inline-block mr-2">
+                        <H3 className={styles.result}>Result</H3>
+                        {node.description.published !== null && (
+                            <Badge className="text-uppercase">{publishBadgeLabel(node.description.published)}</Badge>
+                        )}{' '}
+                    </H4>
+                    <Icon aria-hidden={true} className="text-muted mr-1 flex-shrink-0" as={SourceBranchIcon} />
+                    <span className={classNames('text-monospace text-muted', styles.changesetSpecBranch)}>
+                        {node.description.headRef}
+                    </span>
                 </div>
-            }
-            titleClassName="flex-grow-1"
-            // TODO: Under what conditions should this be auto-expanded?
-            defaultExpanded={true}
-        >
-            <Card className={classNames('mt-2', styles.resultCard)}>
-                <CardBody>
-                    <H3>Changeset template</H3>
-                    <H4>{node.description.title}</H4>
-                    <Text className="mb-0">{node.description.body}</Text>
-                    <Text>
-                        <strong>Published:</strong> <PublishedValue published={node.description.published} />
-                    </Text>
-                    <Collapsible
-                        title={<H3 className="mb-0">Changes</H3>}
-                        titleClassName="flex-grow-1"
-                        defaultExpanded={true}
-                    >
-                        <ChangesetSpecFileDiffConnection
-                            history={history}
-                            isLightTheme={isLightTheme}
-                            location={history.location}
-                            spec={node.id}
-                            queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
-                        />
-                    </Collapsible>
-                </CardBody>
-            </Card>
-        </Collapsible>
+                <DiffStat {...node.description.diffStat} expandedCounts={true} className="ml-3" />
+            </CollapseHeader>
+            <CollapsePanel>
+                <Card className={classNames('mt-2', styles.resultCard)}>
+                    <CardBody>
+                        <H3>Changeset template</H3>
+                        <H4>{node.description.title}</H4>
+                        <Text className="mb-0">{node.description.body}</Text>
+                        <Text>
+                            <strong>Published:</strong> <PublishedValue published={node.description.published} />
+                        </Text>
+                        <Collapse isOpen={areChangesExpanded} onOpenChange={setAreChangesExpanded} openByDefault={true}>
+                            <CollapseHeader as={Button} className="w-100 p-0 m-0 border-0 d-flex align-items-center">
+                                <Icon
+                                    aria-hidden={true}
+                                    as={areChangesExpanded ? ChevronDownIcon : ChevronRightIcon}
+                                    className="mr-1"
+                                />
+                                <Heading className="mb-0" as="h4" styleAs="h3">
+                                    Changes
+                                </Heading>
+                            </CollapseHeader>
+                            <CollapsePanel>
+                                <ChangesetSpecFileDiffConnection
+                                    history={history}
+                                    isLightTheme={isLightTheme}
+                                    location={history.location}
+                                    spec={node.id}
+                                    queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
+                                />
+                            </CollapsePanel>
+                        </Collapse>
+                    </CardBody>
+                </Card>
+            </CollapsePanel>
+        </Collapse>
     )
 }
 
@@ -456,6 +469,8 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
     cachedResultFound,
     queryBatchSpecWorkspaceStepFileDiffs,
 }) => {
+    const [isExpanded, setIsExpanded] = useState(false)
+
     const outputLines = useMemo(() => {
         const outputLines = cloneDeep(step.outputLines)
         if (outputLines !== null) {
@@ -478,172 +493,116 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
     }, [step.exitCode, step.outputLines])
 
     return (
-        <Collapsible
-            titleClassName={styles.collapsible}
-            title={
-                <>
-                    <div className={classNames(styles.stepHeader, step.skipped && 'text-muted')}>
-                        <StepStateIcon step={step} />
-                        <H3 className={styles.stepNumber}>Step {step.number}</H3>
-                        <span className={classNames('text-monospace text-muted', styles.stepCommand)}>{step.run}</span>
-                    </div>
-                    {step.diffStat && (
-                        <DiffStat className={styles.stepDiffStat} {...step.diffStat} expandedCounts={true} />
-                    )}
-                    {step.startedAt && (
-                        <span className={classNames('text-monospace text-muted', styles.stepTime)}>
-                            <StepTimer startedAt={step.startedAt} finishedAt={step.finishedAt} />
-                        </span>
-                    )}
-                </>
-            }
-        >
-            <Card className={classNames('mt-2', styles.stepCard)}>
-                <CardBody>
-                    {!step.skipped && (
-                        <Tabs size="small" behavior="forceRender">
-                            <TabList>
-                                <Tab key="logs">Logs</Tab>
-                                <Tab key="output-variables">Output variables</Tab>
-                                <Tab key="diff">Diff</Tab>
-                                <Tab key="files-env">Files / Env</Tab>
-                                <Tab key="command-container">Commands / Container</Tab>
-                            </TabList>
-                            <TabPanels>
-                                <TabPanel className="pt-2" key="logs">
-                                    {!step.startedAt && <Text className="text-muted mb-0">Step not started yet</Text>}
-                                    {step.startedAt && outputLines && <LogOutput text={outputLines.join('\n')} />}
-                                </TabPanel>
-                                <TabPanel className="pt-2" key="output-variables">
-                                    {!step.startedAt && <Text className="text-muted mb-0">Step not started yet</Text>}
-                                    {step.outputVariables?.length === 0 && (
-                                        <Text className="text-muted mb-0">No output variables specified</Text>
+        <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded}>
+            <CollapseHeader
+                as={Button}
+                className="w-100 p-0 m-0 border-0 d-flex align-items-center justify-content-between"
+            >
+                <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} className="mr-1" />
+                <div className={classNames(styles.collapseHeader, step.skipped && 'text-muted')}>
+                    <StepStateIcon step={step} />
+                    <H3 className={styles.stepNumber}>Step {step.number}</H3>
+                    <span className={classNames('text-monospace text-muted', styles.stepCommand)}>{step.run}</span>
+                </div>
+                {step.diffStat && <DiffStat className={styles.stepDiffStat} {...step.diffStat} expandedCounts={true} />}
+                {step.startedAt && (
+                    <span className={classNames('text-monospace text-muted', styles.stepTime)}>
+                        <StepTimer startedAt={step.startedAt} finishedAt={step.finishedAt} />
+                    </span>
+                )}
+            </CollapseHeader>
+            <CollapsePanel>
+                <Card className={classNames('mt-2', styles.stepCard)}>
+                    <CardBody>
+                        {!step.skipped && (
+                            <Tabs size="small" behavior="forceRender">
+                                <TabList>
+                                    <Tab key="logs">Logs</Tab>
+                                    <Tab key="output-variables">Output variables</Tab>
+                                    <Tab key="diff">Diff</Tab>
+                                    <Tab key="files-env">Files / Env</Tab>
+                                    <Tab key="command-container">Commands / Container</Tab>
+                                </TabList>
+                                <TabPanels>
+                                    <TabPanel className="pt-2" key="logs">
+                                        {!step.startedAt && (
+                                            <Text className="text-muted mb-0">Step not started yet</Text>
+                                        )}
+                                        {step.startedAt && outputLines && <LogOutput text={outputLines.join('\n')} />}
+                                    </TabPanel>
+                                    <TabPanel className="pt-2" key="output-variables">
+                                        {!step.startedAt && (
+                                            <Text className="text-muted mb-0">Step not started yet</Text>
+                                        )}
+                                        {step.outputVariables?.length === 0 && (
+                                            <Text className="text-muted mb-0">No output variables specified</Text>
+                                        )}
+                                        <ul className="mb-0">
+                                            {step.outputVariables?.map(variable => (
+                                                <li key={variable.name}>
+                                                    {variable.name}: {variable.value}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </TabPanel>
+                                    <TabPanel className="pt-2" key="diff">
+                                        {!step.startedAt && (
+                                            <Text className="text-muted mb-0">Step not started yet</Text>
+                                        )}
+                                        {step.startedAt && (
+                                            <WorkspaceStepFileDiffConnection
+                                                isLightTheme={isLightTheme}
+                                                step={step.number}
+                                                workspaceID={workspaceID}
+                                                queryBatchSpecWorkspaceStepFileDiffs={
+                                                    queryBatchSpecWorkspaceStepFileDiffs
+                                                }
+                                            />
+                                        )}
+                                    </TabPanel>
+                                    <TabPanel className="pt-2" key="files-env">
+                                        {step.environment.length === 0 && (
+                                            <Text className="text-muted mb-0">No environment variables specified</Text>
+                                        )}
+                                        <ul className="mb-0">
+                                            {step.environment.map(variable => (
+                                                <li key={variable.name}>
+                                                    {variable.name}: {variable.value}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </TabPanel>
+                                    <TabPanel className="pt-2" key="command-container">
+                                        {step.ifCondition !== null && (
+                                            <>
+                                                <H4>If condition</H4>
+                                                <LogOutput text={step.ifCondition} className="mb-2" />
+                                            </>
+                                        )}
+                                        <H4>Command</H4>
+                                        <LogOutput text={step.run} className="mb-2" />
+                                        <H4>Container</H4>
+                                        <Text className="text-monospace mb-0">{step.container}</Text>
+                                    </TabPanel>
+                                </TabPanels>
+                            </Tabs>
+                        )}
+                        {step.skipped && (
+                            <Text className="mb-0">
+                                <strong>
+                                    Step has been skipped
+                                    {cachedResultFound && <> because a cached result was found for this workspace</>}
+                                    {!cachedResultFound && step.cachedResultFound && (
+                                        <> because a cached result was found for this step</>
                                     )}
-                                    <ul className="mb-0">
-                                        {step.outputVariables?.map(variable => (
-                                            <li key={variable.name}>
-                                                {variable.name}: {variable.value}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </TabPanel>
-                                <TabPanel className="pt-2" key="diff">
-                                    {!step.startedAt && <Text className="text-muted mb-0">Step not started yet</Text>}
-                                    {step.startedAt && (
-                                        <WorkspaceStepFileDiffConnection
-                                            isLightTheme={isLightTheme}
-                                            step={step.number}
-                                            workspaceID={workspaceID}
-                                            queryBatchSpecWorkspaceStepFileDiffs={queryBatchSpecWorkspaceStepFileDiffs}
-                                        />
-                                    )}
-                                </TabPanel>
-                                <TabPanel className="pt-2" key="files-env">
-                                    {step.environment.length === 0 && (
-                                        <Text className="text-muted mb-0">No environment variables specified</Text>
-                                    )}
-                                    <ul className="mb-0">
-                                        {step.environment.map(variable => (
-                                            <li key={variable.name}>
-                                                {variable.name}: {variable.value}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </TabPanel>
-                                <TabPanel className="pt-2" key="command-container">
-                                    {step.ifCondition !== null && (
-                                        <>
-                                            <H4>If condition</H4>
-                                            <LogOutput text={step.ifCondition} className="mb-2" />
-                                        </>
-                                    )}
-                                    <H4>Command</H4>
-                                    <LogOutput text={step.run} className="mb-2" />
-                                    <H4>Container</H4>
-                                    <Text className="text-monospace mb-0">{step.container}</Text>
-                                </TabPanel>
-                            </TabPanels>
-                        </Tabs>
-                    )}
-                    {step.skipped && (
-                        <Text className="mb-0">
-                            <strong>
-                                Step has been skipped
-                                {cachedResultFound && <> because a cached result was found for this workspace</>}
-                                {!cachedResultFound && step.cachedResultFound && (
-                                    <> because a cached result was found for this step</>
-                                )}
-                                .
-                            </strong>
-                        </Text>
-                    )}
-                </CardBody>
-            </Card>
-        </Collapsible>
-    )
-}
-
-interface StepStateIconProps {
-    step: BatchSpecWorkspaceStepFields
-}
-const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIconProps>> = ({ step }) => {
-    if (step.cachedResultFound) {
-        return (
-            <Icon
-                className="text-success flex-shrink-0"
-                aria-label="A cached result for this step has been found"
-                data-tooltip="A cached result for this step has been found"
-                as={ContentSaveIcon}
-            />
-        )
-    }
-    if (step.skipped) {
-        return (
-            <Icon
-                className="text-muted flex-shrink-0"
-                aria-label="The step has been skipped"
-                data-tooltip="The step has been skipped"
-                as={LinkVariantRemoveIcon}
-            />
-        )
-    }
-    if (!step.startedAt) {
-        return (
-            <Icon
-                className="text-muted flex-shrink-0"
-                aria-label="This step is waiting to be processed"
-                data-tooltip="This step is waiting to be processed"
-                as={TimerSandIcon}
-            />
-        )
-    }
-    if (!step.finishedAt) {
-        return (
-            <Icon
-                className="text-muted flex-shrink-0"
-                aria-label="This step is currently running"
-                data-tooltip="This step is currently running"
-                as={LoadingSpinner}
-            />
-        )
-    }
-    if (step.exitCode === 0) {
-        return (
-            <Icon
-                className="text-success flex-shrink-0"
-                aria-label="This step ran successfully"
-                data-tooltip="This step ran successfully"
-                as={CheckBoldIcon}
-            />
-        )
-    }
-    return (
-        <Icon
-            className="text-danger flex-shrink-0"
-            aria-label={`This step failed with exit code ${String(step.exitCode)}`}
-            data-tooltip={`This step failed with exit code ${String(step.exitCode)}`}
-            as={AlertCircleIcon}
-        />
+                                    .
+                                </strong>
+                            </Text>
+                        )}
+                    </CardBody>
+                </Card>
+            </CollapsePanel>
+        </Collapse>
     )
 }
 

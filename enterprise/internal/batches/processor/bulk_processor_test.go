@@ -2,6 +2,7 @@ package processor
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
@@ -11,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -25,7 +27,7 @@ func TestBulkProcessor(t *testing.T) {
 	sqlDB := dbtest.NewDB(t)
 	tx := dbtest.NewTx(t, sqlDB)
 	db := database.NewDB(sqlDB)
-	bstore := store.New(database.NewUntypedDB(tx), &observation.TestContext, nil)
+	bstore := store.New(database.NewDBWith(basestore.NewWithHandle(basestore.NewHandleWithTx(tx, sql.TxOptions{}))), &observation.TestContext, nil)
 	user := ct.CreateTestUser(t, db, true)
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
 	ct.CreateTestSiteCredential(t, bstore, repo)

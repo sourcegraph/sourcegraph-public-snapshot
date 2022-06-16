@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -497,6 +498,61 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
 		}
+	})
+
+	t.Run("GetBatchSpecDiffStat", func(t *testing.T) {
+		user := ct.CreateTestUser(t, s.DatabaseDB(), false)
+		admin := ct.CreateTestUser(t, s.DatabaseDB(), true)
+		repo1, _ := ct.CreateTestRepo(t, ctx, s.DatabaseDB())
+		repo2, _ := ct.CreateTestRepo(t, ctx, s.DatabaseDB())
+		// Give access to repo1 but not repo2.
+		ct.MockRepoPermissions(t, s.DatabaseDB(), user.ID, repo1.ID)
+
+		batchSpec := &btypes.BatchSpec{
+			UserID:          user.ID,
+			NamespaceUserID: user.ID,
+		}
+
+		if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := s.CreateChangesetSpec(ctx,
+			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, RepoID: repo1.ID, DiffStatAdded: 10, DiffStatChanged: 10, DiffStatDeleted: 10},
+			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, RepoID: repo2.ID, DiffStatAdded: 20, DiffStatChanged: 20, DiffStatDeleted: 20},
+		); err != nil {
+			t.Fatal(err)
+		}
+
+		assertDiffStat := func(wantAdded, wantChanged, wantDeleted int64) func(added, changed, deleted int64, err error) {
+			return func(added, changed, deleted int64, err error) {
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if added != wantAdded {
+					t.Errorf("invalid added returned, want=%d have=%d", wantAdded, added)
+				}
+
+				if changed != wantChanged {
+					t.Errorf("invalid changed returned, want=%d have=%d", wantChanged, changed)
+				}
+
+				if deleted != wantDeleted {
+					t.Errorf("invalid deleted returned, want=%d have=%d", wantDeleted, deleted)
+				}
+			}
+		}
+
+		t.Run("no user in context", func(t *testing.T) {
+			assertDiffStat(0, 0, 0)(s.GetBatchSpecDiffStat(ctx, batchSpec.ID))
+		})
+		t.Run("regular user in context with access to repo1", func(t *testing.T) {
+			assertDiffStat(10, 10, 10)(s.GetBatchSpecDiffStat(actor.WithActor(ctx, actor.FromUser(user.ID)), batchSpec.ID))
+		})
+		t.Run("admin user in context", func(t *testing.T) {
+			assertDiffStat(30, 30, 30)(s.GetBatchSpecDiffStat(actor.WithActor(ctx, actor.FromUser(admin.ID)), batchSpec.ID))
+		})
 	})
 
 	t.Run("DeleteExpiredBatchSpecs", func(t *testing.T) {

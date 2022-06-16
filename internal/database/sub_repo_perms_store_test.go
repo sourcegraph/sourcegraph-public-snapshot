@@ -184,6 +184,87 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 	}
 }
 
+func TestSubRepoPermsGetByUserAndService(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+
+	db := NewDB(dbtest.NewDB(t))
+
+	ctx := context.Background()
+	s := db.SubRepoPerms()
+	prepareSubRepoTestData(ctx, t, db)
+
+	userID := int32(1)
+	perms := authz.SubRepoPermissions{
+		PathIncludes: []string{"/src/foo/*"},
+		PathExcludes: []string{"/src/bar/*"},
+	}
+	if err := s.Upsert(ctx, userID, api.RepoID(1), perms); err != nil {
+		t.Fatal(err)
+	}
+
+	userID = int32(1)
+	perms = authz.SubRepoPermissions{
+		PathIncludes: []string{"/src/foo2/*"},
+		PathExcludes: []string{"/src/bar2/*"},
+	}
+	if err := s.Upsert(ctx, userID, api.RepoID(2), perms); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range []struct {
+		name        string
+		userID      int32
+		serviceType string
+		serviceID   string
+		want        map[api.ExternalRepoSpec]authz.SubRepoPermissions
+	}{
+		{
+			name:        "Unknown service",
+			userID:      userID,
+			serviceType: "abc",
+			serviceID:   "xyz",
+			want:        map[api.ExternalRepoSpec]authz.SubRepoPermissions{},
+		},
+		{
+			name:        "Known service",
+			userID:      userID,
+			serviceType: "github",
+			serviceID:   "https://github.com/",
+			want: map[api.ExternalRepoSpec]authz.SubRepoPermissions{
+				{
+					ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+					ServiceType: "github",
+					ServiceID:   "https://github.com/",
+				}: {
+					PathIncludes: []string{"/src/foo/*"},
+					PathExcludes: []string{"/src/bar/*"},
+				},
+				{
+					ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOB==",
+					ServiceType: "github",
+					ServiceID:   "https://github.com/",
+				}: {
+					PathIncludes: []string{"/src/foo2/*"},
+					PathExcludes: []string{"/src/bar2/*"},
+				},
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			have, err := s.GetByUserAndService(ctx, userID, tc.serviceType, tc.serviceID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(tc.want, have); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
 func TestSubRepoPermsSupportedForRepoId(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

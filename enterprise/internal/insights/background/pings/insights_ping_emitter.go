@@ -7,8 +7,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
@@ -17,7 +17,7 @@ import (
 
 // NewInsightsPingEmitterJob will emit pings from Code Insights that involve enterprise features such as querying
 // directly against the code insights database.
-func NewInsightsPingEmitterJob(ctx context.Context, base dbutil.DB, insights dbutil.DB) goroutine.BackgroundRoutine {
+func NewInsightsPingEmitterJob(ctx context.Context, base database.DB, insights edb.InsightsDB) goroutine.BackgroundRoutine {
 	interval := time.Minute * 60
 	e := InsightsPingEmitter{
 		postgresDb: base,
@@ -29,8 +29,8 @@ func NewInsightsPingEmitterJob(ctx context.Context, base dbutil.DB, insights dbu
 }
 
 type InsightsPingEmitter struct {
-	postgresDb dbutil.DB
-	insightsDb dbutil.DB
+	postgresDb database.DB
+	insightsDb edb.InsightsDB
 }
 
 func (e *InsightsPingEmitter) emit(ctx context.Context) error {
@@ -204,7 +204,7 @@ func (e *InsightsPingEmitter) emitInsightsPerDashboard(ctx context.Context) erro
 }
 
 func (e *InsightsPingEmitter) SaveEvent(ctx context.Context, name string, argument json.RawMessage) error {
-	store := database.NewUntypedDB(e.postgresDb).EventLogs()
+	store := e.postgresDb.EventLogs()
 
 	err := store.Insert(ctx, &database.Event{
 		Name:            name,

@@ -76,7 +76,7 @@ export async function build(): Promise<void> {
                         util: require.resolve('util'),
                         events: require.resolve('events'),
                         buffer: require.resolve('buffer/'),
-                        './browserActionsNode': path.resolve(__dirname, '../src', 'link-commands', 'browserActionsWeb'),
+                        './browserActionsNode': path.resolve(__dirname, '../src', 'commands', 'browserActionsWeb'),
                     }),
                 ],
                 ...SHARED_CONFIG,
