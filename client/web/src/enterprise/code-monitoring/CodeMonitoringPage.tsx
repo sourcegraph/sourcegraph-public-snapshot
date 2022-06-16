@@ -1,9 +1,9 @@
-import React, { useMemo, useEffect, useState } from 'react'
+import React, { useMemo, useEffect, useState, useLayoutEffect } from 'react'
 
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { of } from 'rxjs'
-import { catchError, map, startWith } from 'rxjs/operators'
+import { catchError, map } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -49,8 +49,6 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
     isLightTheme,
     testForceTab,
 }) => {
-    const LOADING = 'loading' as const
-
     const userHasCodeMonitors = useObservable(
         useMemo(
             () =>
@@ -61,7 +59,6 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                           after: null,
                       }).pipe(
                           map(monitors => monitors.nodes.length > 0),
-                          startWith(LOADING),
                           catchError(error => [asError(error)])
                       )
                     : of(false),
@@ -69,38 +66,43 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
         )
     )
 
-    const [currentTab, setCurrentTab] = useState<'list' | 'getting-started' | 'logs'>('list')
+    const [currentTab, setCurrentTab] = useState<'list' | 'getting-started' | 'logs' | null>(null)
 
-    // If user has no code monitors, default to the getting started tab after loading
-    useEffect(() => {
-        if (userHasCodeMonitors === false) {
+    // Select the appropriate tab after loading:
+    // - If the user has code monitors, show the list tab
+    // - If the user has no code monitors, show the getting started tab
+    useLayoutEffect(() => {
+        if (userHasCodeMonitors === true) {
+            setCurrentTab('list')
+        } else if (userHasCodeMonitors === false) {
             setCurrentTab('getting-started')
         }
     }, [userHasCodeMonitors])
 
     // Force tab for testing
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (testForceTab && testForceTab !== currentTab) {
             setCurrentTab(testForceTab)
         }
     }, [currentTab, testForceTab])
 
-    // Log page view and selected tab
-    useEffect(() => eventLogger.logPageView('CodeMonitoring'), [])
+    // Log page view of selected tab
     useEffect(() => {
-        if (userHasCodeMonitors !== LOADING) {
+        if (userHasCodeMonitors !== undefined) {
             switch (currentTab) {
                 case 'getting-started':
-                    eventLogger.log('CodeMoitoringGettingStartedPageViewed')
+                    eventLogger.logPageView('CodeMonitoringGettingStartedPage')
                     break
                 case 'logs':
-                    eventLogger.log('CodeMoitoringLogsPageViewed')
+                    eventLogger.logPageView('CodeMonitoringLogsPage')
                     break
+                case 'list':
+                    eventLogger.logPageView('CodeMonitoringPage')
             }
         }
     }, [currentTab, userHasCodeMonitors])
 
-    const showList = userHasCodeMonitors !== 'loading' && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
+    const showList = userHasCodeMonitors !== undefined && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
 
     const showLogsTab = useExperimentalFeatures(features => features.showCodeMonitoringLogs)
 
@@ -116,14 +118,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                     )
                 }
                 description={
-                    userHasCodeMonitors &&
-                    userHasCodeMonitors !== 'loading' &&
-                    !isErrorLike(userHasCodeMonitors) && (
-                        <>
-                            Watch your code for changes and trigger actions to get notifications, send webhooks, and
-                            more.
-                        </>
-                    )
+                    <>Watch your code for changes and trigger actions to get notifications, send webhooks, and more.</>
                 }
                 className="mb-3"
             >
@@ -132,7 +127,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                 </PageHeader.Heading>
             </PageHeader>
 
-            {userHasCodeMonitors === 'loading' ? (
+            {userHasCodeMonitors === undefined ? (
                 <LoadingSpinner inline={false} />
             ) : (
                 <div className="d-flex flex-column">
