@@ -2510,7 +2510,7 @@ changesetTemplate:
 	})
 
 	t.Run("UpsertEmptyBatchChange", func(t *testing.T) {
-		t.Run("creates new Batch Change if it is non-existent", func(t *testing.T) {
+		t.Run("creates new batch change if it is non-existent", func(t *testing.T) {
 			name := "random-bc-name"
 
 			// verify that the batch change doesn't exist
