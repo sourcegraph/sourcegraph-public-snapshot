@@ -74,21 +74,24 @@ func SerializePackageDependency(dep reposource.PackageDependency) PackageDepende
 type DependencyGraph interface {
 	Roots() []PackageDependency
 	AllEdges() [][]PackageDependency
+
+	Empty() bool
 }
 
 var _ DependencyGraph = DependencyGraphLiteral{}
 
 func TestDependencyGraphLiteral(roots []PackageDependency, edges [][]PackageDependency) DependencyGraph {
-	return DependencyGraphLiteral{edges: edges, roots: roots}
+	return DependencyGraphLiteral{Edges: edges, RootPkgs: roots}
 }
 
 type DependencyGraphLiteral struct {
-	roots []PackageDependency
-	edges [][]PackageDependency
+	RootPkgs []PackageDependency
+	Edges    [][]PackageDependency
 }
 
-func (dg DependencyGraphLiteral) AllEdges() [][]PackageDependency { return dg.edges }
-func (dg DependencyGraphLiteral) Roots() []PackageDependency      { return dg.roots }
+func (dg DependencyGraphLiteral) AllEdges() [][]PackageDependency { return dg.Edges }
+func (dg DependencyGraphLiteral) Roots() []PackageDependency      { return dg.RootPkgs }
+func (dg DependencyGraphLiteral) Empty() bool                     { return len(dg.RootPkgs) == 0 }
 
 func SerializeDependencyGraph(graph *lockfiles.DependencyGraph) DependencyGraph {
 	var (
@@ -96,7 +99,7 @@ func SerializeDependencyGraph(graph *lockfiles.DependencyGraph) DependencyGraph 
 		roots []PackageDependency
 	)
 	if graph == nil {
-		return DependencyGraphLiteral{roots: roots, edges: edges}
+		return DependencyGraphLiteral{RootPkgs: roots, Edges: edges}
 	}
 
 	for _, edge := range graph.AllEdges() {
@@ -110,5 +113,5 @@ func SerializeDependencyGraph(graph *lockfiles.DependencyGraph) DependencyGraph 
 		roots = append(roots, root)
 	}
 
-	return DependencyGraphLiteral{roots: roots, edges: edges}
+	return DependencyGraphLiteral{RootPkgs: roots, Edges: edges}
 }

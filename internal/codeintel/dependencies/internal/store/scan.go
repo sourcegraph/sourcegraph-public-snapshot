@@ -60,3 +60,13 @@ func scanDependencyRepo(s dbutil.Scanner) (shared.Repo, error) {
 // Scans `[]shared.Repo`
 
 var scanDependencyRepos = basestore.NewSliceScanner(scanDependencyRepo)
+
+// // scanStringInts scans a single int32 array from the given scanner.
+// func scanStringINts(s dbutil.Scanner) ([]int32, error) {
+// 	var value pq.Int32Array
+// 	if err := s.Scan(&value); err != nil {
+// 		return nil, err
+// 	}
+
+// 	return []int32(value), nil
+// }

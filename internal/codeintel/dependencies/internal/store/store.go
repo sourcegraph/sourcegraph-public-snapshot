@@ -295,7 +295,8 @@ const upsertLockfileReferences2Query = `
 -- source: internal/codeintel/dependencies/internal/store/store.go:UpsertLockfileDependencies
 WITH ins AS (
 	INSERT INTO codeintel_lockfile_references (repository_name, revspec, package_scheme, package_name, package_version, depends_on, resolution_id)
-	SELECT repository_name, revspec, package_scheme, package_name, package_version, depends_on, resolution_id FROM t_codeintel_lockfile_references
+	SELECT repository_name, revspec, package_scheme, package_name, package_version, depends_on, resolution_id
+	FROM t_codeintel_lockfile_references
 	ON CONFLICT DO NOTHING
 	RETURNING id, package_name
 ),
@@ -393,21 +394,8 @@ func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit string
 		return err
 	}
 
-	// TODO:
-	if graph == nil {
-		// we still gotta insert
-		idsArray := pq.Array([]int{})
-		return tx.db.Exec(ctx, sqlf.Sprintf(
-			insertLockfilesQuery,
-			dbutil.CommitBytea(commit),
-			idsArray,
-			resolutionID,
-			repoName,
-			idsArray,
-		))
-	}
-
 	nameIDs := make(map[string]int, len(deps))
+	ids := make([]int, len(deps))
 
 	rows, err := tx.db.Query(ctx, sqlf.Sprintf(upsertLockfileReferences2Query))
 	if err != nil {
@@ -426,6 +414,21 @@ func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit string
 		}
 
 		nameIDs[name] = id
+		ids = append(ids, id)
+	}
+
+	// If we don't have a graph, we insert all of the dependencies as direct
+	// dependencies and return.
+	if graph.Empty() {
+		idsArray := pq.Array(ids)
+		return tx.db.Exec(ctx, sqlf.Sprintf(
+			insertLockfilesQuery,
+			dbutil.CommitBytea(commit),
+			idsArray,
+			resolutionID,
+			repoName,
+			idsArray,
+		))
 	}
 
 	//
