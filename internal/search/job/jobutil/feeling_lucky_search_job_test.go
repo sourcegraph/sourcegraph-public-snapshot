@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -12,6 +14,7 @@ import (
 )
 
 func TestNewFeelingLuckySearchJob(t *testing.T) {
+	var log log.Logger
 	test := func(q string) string {
 		inputs := &run.SearchInputs{
 			UserSettings: &schema.Settings{},
@@ -20,7 +23,7 @@ func TestNewFeelingLuckySearchJob(t *testing.T) {
 		}
 		var j job.Job
 		plan, _ := query.Pipeline(query.InitLiteral(q))
-		fj := NewFeelingLuckySearchJob(nil, inputs, plan)
+		fj := NewFeelingLuckySearchJob(log, nil, inputs, plan)
 		generated := []job.Job{}
 
 		for _, next := range fj.generators {

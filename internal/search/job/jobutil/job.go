@@ -44,7 +44,7 @@ func NewPlanJob(log slog.Logger, inputs *run.SearchInputs, plan query.Plan) (job
 	jobTree := NewOrJob(children...)
 
 	if inputs.PatternType == query.SearchTypeLucky {
-		jobTree = NewFeelingLuckySearchJob(jobTree, inputs, plan)
+		jobTree = NewFeelingLuckySearchJob(log, jobTree, inputs, plan)
 	}
 
 	return NewAlertJob(inputs, jobTree), nil

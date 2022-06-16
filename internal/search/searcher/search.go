@@ -45,7 +45,8 @@ type TextSearchJob struct {
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
 
-	log slog.Logger
+	Features search.Features
+	log      slog.Logger
 }
 
 // Run calls the searcher service on a set of repositories.
