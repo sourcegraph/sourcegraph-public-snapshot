@@ -5,7 +5,9 @@ description: Roll out pr-auditor workflow patch.
 
 on:
   - repositoriesMatchingQuery: |
-      repohasfile:.github/workflows/pr-auditor.yml count:all
+      repo:github.com/sourcegraph/.*
+      repohasfile:.github/workflows/pr-auditor.yml
+      count:all
 
 changesetTemplate:
   title: 'workflows: update pr-auditor workflow'
