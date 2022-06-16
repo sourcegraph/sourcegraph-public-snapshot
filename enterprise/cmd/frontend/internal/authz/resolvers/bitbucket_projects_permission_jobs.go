@@ -19,11 +19,11 @@ func NewBitbucketProjectsPermissionJobsResolver(jobs []*types.BitbucketProjectPe
 	}
 }
 
-func (b bitbucketProjectsPermissionJobsResolver) Count() int32 {
+func (b bitbucketProjectsPermissionJobsResolver) TotalCount() int32 {
 	return int32(len(b.jobs))
 }
 
-func (b bitbucketProjectsPermissionJobsResolver) Jobs() ([]graphqlbackend.BitbucketProjectsPermissionJobResolver, error) {
+func (b bitbucketProjectsPermissionJobsResolver) Nodes() ([]graphqlbackend.BitbucketProjectsPermissionJobResolver, error) {
 	resolvers := make([]graphqlbackend.BitbucketProjectsPermissionJobResolver, 0, len(b.jobs))
 	for _, job := range b.jobs {
 		resolvers = append(resolvers, convertJobToResolver(job))

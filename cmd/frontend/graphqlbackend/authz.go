@@ -83,8 +83,8 @@ type BitbucketProjectPermissionJobsArgs struct {
 }
 
 type BitbucketProjectsPermissionJobsResolver interface {
-	Count() int32
-	Jobs() ([]BitbucketProjectsPermissionJobResolver, error)
+	TotalCount() int32
+	Nodes() ([]BitbucketProjectsPermissionJobResolver, error)
 }
 
 type BitbucketProjectsPermissionJobResolver interface {

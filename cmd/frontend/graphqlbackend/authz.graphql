@@ -288,11 +288,11 @@ type BitbucketProjectPermissionJobs {
     """
     Number of jobs.
     """
-    count: Int!
+    totalCount: Int!
     """
     Bitbucket Projects permission sync jobs.
     """
-    jobs: [BitbucketProjectPermissionJob!]!
+    nodes: [BitbucketProjectPermissionJob!]!
 }
 
 """
