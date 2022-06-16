@@ -583,3 +583,61 @@ func TestStepsCacheKey_Key(t *testing.T) {
 		})
 	}
 }
+
+func TestStepsCacheKey_Key_Mount(t *testing.T) {
+	// Mounts are trickier because there are temp paths and modifications dates. Each run will generate new temp paths
+	// and modification dates. Also, different Operating Systems will yield different results causing an expectedKey
+	// assertion to fail.
+	// So unfortunately, asserting the cache key is not as pretty for mounts.
+
+	tempDir := t.TempDir()
+
+	// Set a specific date on the temp files
+	modDate := time.Date(2022, 1, 2, 3, 5, 6, 7, time.UTC)
+	modDateVal, err := modDate.MarshalJSON()
+	_ = modDateVal
+	require.NoError(t, err)
+
+	// create temp files/dirs that can be used by the tests
+	sampleScriptPath := filepath.Join(tempDir, "sample.sh")
+	_, err = os.Create(sampleScriptPath)
+	require.NoError(t, err)
+	err = os.Chtimes(sampleScriptPath, modDate, modDate)
+	require.NoError(t, err)
+
+	keyer := StepsCacheKey{
+		ExecutionKey: &ExecutionKey{
+			Repository: batches.Repository{
+				ID:          "my-repo",
+				Name:        "github.com/sourcegraph/src-cli",
+				BaseRef:     "refs/heads/f00b4r",
+				BaseRev:     "c0mmit",
+				FileMatches: []string{"baz.go"},
+			},
+			Steps: []batches.Step{
+				{
+					Run: "foo",
+					Mount: []batches.Mount{
+						{
+							Path:       sampleScriptPath,
+							Mountpoint: "/tmp/sample.sh",
+						},
+					},
+				},
+			},
+		},
+		StepIndex: 0,
+	}
+
+	expectedRaw := fmt.Sprintf(`{"Repository":{"ID":"my-repo","Name":"github.com/sourcegraph/src-cli","BaseRef":"refs/heads/f00b4r","BaseRev":"c0mmit","FileMatches":["baz.go"]},"Path":"","OnlyFetchWorkspace":false,"Steps":[{"run":"foo","env":{},"mount":[{"mountpoint":"/tmp/sample.sh","path":"%s"}]}],"BatchChangeAttributes":null,"Environments":[{}],"MountsMetadata":[{"Path":"%s","Size":0,"Modified":%s}]}`,
+		sampleScriptPath,
+		sampleScriptPath,
+		string(modDateVal),
+	)
+	expectedHash := sha256.Sum256([]byte(expectedRaw))
+	expectedKey := base64.RawURLEncoding.EncodeToString(expectedHash[:16])
+
+	key, err := keyer.Key()
+	assert.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf("%s-step-0", expectedKey), key)
+}
