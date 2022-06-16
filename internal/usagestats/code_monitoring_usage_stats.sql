@@ -68,6 +68,7 @@ WITH event_log_stats AS (
     LEFT JOIN cm_webhooks ON cm_webhooks.id = cm_action_jobs.webhook
     LEFT JOIN cm_monitors ON cm_monitors.id = COALESCE(cm_emails.monitor, cm_slack_webhooks.monitor, cm_webhooks.monitor)
     LEFT JOIN users ON cm_monitors.namespace_user_id = users.id
+    WHERE cm_action_jobs.started_at > now() - '1 week'::interval
 ), trigger_jobs AS (
     SELECT
         NULLIF(COUNT(*), 0) :: INT AS trigger_runs,
@@ -84,6 +85,7 @@ WITH event_log_stats AS (
     LEFT JOIN cm_queries ON cm_queries.id = cm_trigger_jobs.query
     LEFT JOIN cm_monitors ON cm_monitors.id = cm_queries.monitor
     LEFT JOIN users ON cm_monitors.namespace_user_id = users.id
+    WHERE cm_trigger_jobs.started_at > now() - '1 week'::interval
 ), monitored_repos AS (
     SELECT
         COUNT(DISTINCT repo_id) as repos_monitored
