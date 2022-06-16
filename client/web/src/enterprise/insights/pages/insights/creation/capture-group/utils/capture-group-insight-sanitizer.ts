@@ -21,6 +21,7 @@ export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields):
         },
         dashboards: [],
         seriesDisplayOptions: {},
+        seriesCount: 0,
     }
 }
 

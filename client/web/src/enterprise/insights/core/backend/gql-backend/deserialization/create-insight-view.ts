@@ -21,6 +21,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
         dashboards: insight.dashboards?.nodes ?? [],
         appliedSeriesDisplayOptions: insight.appliedSeriesDisplayOptions,
         defaultSeriesDisplayOptions: insight.defaultSeriesDisplayOptions,
+        seriesCount: insight.seriesCount,
     }
 
     switch (insight.presentation.__typename) {

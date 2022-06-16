@@ -43,6 +43,7 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
                 includeRepoRegexp: '',
                 context: '',
             },
+            seriesCount: 0,
         }
     }
 
@@ -59,5 +60,6 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
             includeRepoRegexp: '',
             context: '',
         },
+        seriesCount: 0,
     }
 }

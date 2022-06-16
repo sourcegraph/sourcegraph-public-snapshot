@@ -44,6 +44,7 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
     isFrozen: false,
     seriesDisplayOptions: {},
     dashboards: [],
+    seriesCount: 2,
 }
 
 interface BackendInsightDatum {
@@ -235,6 +236,7 @@ const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     isFrozen: false,
     repositories: [],
     dashboards: [],
+    seriesCount: 3,
 }
 
 const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
@@ -253,6 +255,7 @@ const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     isFrozen: false,
     repositories: [],
     dashboards: [],
+    seriesCount: 3,
 }
 
 const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
@@ -267,6 +270,7 @@ const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
     dashboardReferenceCount: 0,
     isFrozen: false,
     dashboards: [],
+    seriesCount: 0,
 }
 
 const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewResult> = {

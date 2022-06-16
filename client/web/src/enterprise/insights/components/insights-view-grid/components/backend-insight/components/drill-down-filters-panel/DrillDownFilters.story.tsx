@@ -33,6 +33,7 @@ export const DrillDownPopover: Story = () => {
         filters: initialFiltersValue,
         dashboardReferenceCount: 0,
         dashboards: [],
+        seriesCount: 0,
     }
 
     return (

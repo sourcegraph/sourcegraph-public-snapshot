@@ -42,6 +42,7 @@ export interface BaseInsight {
     dashboardReferenceCount: number
     dashboards: InsightDashboardReference[]
     isFrozen: boolean
+    seriesCount: number
 
     seriesDisplayOptions?: SeriesDisplayOptionsInput
     appliedSeriesDisplayOptions?: SeriesDisplayOptions

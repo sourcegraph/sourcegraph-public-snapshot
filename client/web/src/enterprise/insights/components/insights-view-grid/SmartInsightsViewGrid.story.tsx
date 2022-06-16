@@ -36,6 +36,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         isFrozen: false,
         seriesDisplayOptions: {},
         dashboards: [],
+        seriesCount: 1,
     },
     {
         id: 'searchInsights.insight.Backend_2',
@@ -50,6 +51,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         isFrozen: false,
         seriesDisplayOptions: {},
         dashboards: [],
+        seriesCount: 0,
     },
     {
         id: 'searchInsights.insight.Backend_3',
@@ -71,6 +73,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         isFrozen: false,
         seriesDisplayOptions: {},
         dashboards: [],
+        seriesCount: 6,
     },
     {
         id: 'searchInsights.insight.Backend_4',
@@ -85,6 +88,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         isFrozen: false,
         seriesDisplayOptions: {},
         dashboards: [],
+        seriesCount: 1,
     },
     {
         id: 'searchInsights.insight.Backend_5',
@@ -120,6 +124,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         isFrozen: false,
         seriesDisplayOptions: {},
         dashboards: [],
+        seriesCount: 20,
     },
     {
         id: 'searchInsights.insight.Backend_6',
@@ -134,6 +139,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         isFrozen: false,
         seriesDisplayOptions: {},
         dashboards: [],
+        seriesCount: 1,
     },
     {
         id: 'searchInsights.insight.Backend_7',
@@ -148,6 +154,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         isFrozen: false,
         seriesDisplayOptions: {},
         dashboards: [],
+        seriesCount: 1,
     },
 ]
 
