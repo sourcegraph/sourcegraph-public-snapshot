@@ -68,3 +68,52 @@ func TestWithDefaults(t *testing.T) {
 		})
 	}
 }
+
+func TestDefaults(t *testing.T) {
+	tests := []struct {
+		name  string
+		input bool
+		want  query.Parameters
+	}{
+		{
+			name:  "all repos",
+			input: true,
+			want: query.Parameters{{
+				Field:      query.FieldFork,
+				Value:      string(query.No),
+				Negated:    false,
+				Annotation: query.Annotation{},
+			}, {
+				Field:      query.FieldArchived,
+				Value:      string(query.No),
+				Negated:    false,
+				Annotation: query.Annotation{},
+			}},
+		},
+		{
+			name:  "some repos",
+			input: false,
+			want: query.Parameters{{
+				Field:      query.FieldFork,
+				Value:      string(query.Yes),
+				Negated:    false,
+				Annotation: query.Annotation{},
+			}, {
+				Field:      query.FieldArchived,
+				Value:      string(query.Yes),
+				Negated:    false,
+				Annotation: query.Annotation{},
+			}},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := CodeInsightsQueryDefaults(test.input)
+
+			if diff := cmp.Diff(test.want, got); diff != "" {
+				t.Fatalf("%s failed (want/got): %s", test.name, diff)
+			}
+		})
+	}
+}
