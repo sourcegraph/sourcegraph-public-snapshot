@@ -85,6 +85,11 @@
         }
     }
 
+    &__context-menu {
+        // On JetBrains, the menu always appears under the context button with a top positon of 40px
+        max-height: calc(100vh - 40px);
+    }
+
     &__separator {
         // stylelint-disable-next-line declaration-property-unit-allowed-list
         width: 1px;
