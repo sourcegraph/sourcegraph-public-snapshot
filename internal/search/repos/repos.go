@@ -545,12 +545,20 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		return nil, nil, nil, errors.Errorf("support for `repo:dependencies()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 
-	repoRevs, err := listDependencyRepos(ctx, r.DB.Repos(), op.Dependencies, op.CaseSensitiveRepoFilters)
+	includeTransitive := false
+	repoRevPatterns := make([]string, 0, len(op.Dependencies))
+	for _, depParam := range op.Dependencies {
+		repoRevPatterns = append(repoRevPatterns, depParam.Dependency)
+		if depParam.Transitive != nil && *depParam.Transitive == query.Yes {
+			includeTransitive = true
+		}
+	}
+	repoRevs, err := listDependencyRepos(ctx, r.DB.Repos(), repoRevPatterns, op.CaseSensitiveRepoFilters)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	dependencyRepoRevs, notFound, err := livedependencies.GetService(r.DB, livedependencies.NewSyncer()).Dependencies(ctx, repoRevs)
+	dependencyRepoRevs, notFound, err := livedependencies.GetService(r.DB, livedependencies.NewSyncer()).Dependencies(ctx, repoRevs, includeTransitive)
 	if err != nil {
 		return nil, nil, nil, err
 	}

@@ -3,6 +3,7 @@ package query
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
@@ -336,10 +337,31 @@ func (p Parameters) Exists(field string) bool {
 	return found
 }
 
-func (p Parameters) Dependencies() (dependencies []string) {
+type DependencyParam struct {
+	Dependency string
+	Transitive *YesNoOnly
+}
+
+func (p Parameters) Dependencies() (dependencies []DependencyParam) {
 	VisitPredicate(toNodes(p), func(field, name, value string) {
 		if field == FieldRepo && (name == "dependencies" || name == "deps") {
-			dependencies = append(dependencies, value)
+			elems := strings.Split(strings.TrimSpace(value), " ")
+
+			switch len(elems) {
+			case 1:
+				dependencies = append(dependencies, DependencyParam{Dependency: elems[0]})
+			case 2:
+				transitiveElems := strings.Split(strings.TrimSpace(elems[1]), ":")
+
+				if len(transitiveElems) != 2 {
+					panic(fmt.Sprintf("invalid transitive value: %s", elems[1]))
+				}
+				yno := parseYesNoOnly(transitiveElems[1])
+				if yno == Invalid {
+					panic(fmt.Sprintf("Invalid value %q for field %q", value, field))
+				}
+				dependencies = append(dependencies, DependencyParam{Dependency: elems[0], Transitive: &yno})
+			}
 		}
 	})
 	return dependencies

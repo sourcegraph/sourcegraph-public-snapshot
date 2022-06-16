@@ -53,7 +53,7 @@ func newService(
 
 // Dependencies resolves the (transitive) dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
-func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependencyRevs map[api.RepoName]types.RevSpecSet, notFound map[api.RepoName]types.RevSpecSet, err error) {
+func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet, includeTransitive bool) (dependencyRevs map[api.RepoName]types.RevSpecSet, notFound map[api.RepoName]types.RevSpecSet, err error) {
 	ctx, _, endObservation := s.operations.dependencies.With(ctx, &err, observation.Args{LogFields: constructLogFields(repoRevs)})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
@@ -69,7 +69,7 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 	}
 
 	// Load lockfile dependencies for the given repository and revision pairs
-	deps, notFoundRepoCommits, err := s.resolveLockfileDependenciesFromStore(ctx, repoCommits)
+	deps, notFoundRepoCommits, err := s.resolveLockfileDependenciesFromStore(ctx, repoCommits, includeTransitive)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -227,7 +227,7 @@ func (s *Service) resolveRepoCommits(ctx context.Context, repoRevs map[api.RepoN
 // The returned `numUnqueried` value is the number of elements at the prefix of the slice that had no data.
 // It is expected that the remaining elements be passed to the fallback dependencies resolver, if one is
 // registered.
-func (s *Service) resolveLockfileDependenciesFromStore(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, notFound []repoCommitResolvedCommit, err error) {
+func (s *Service) resolveLockfileDependenciesFromStore(ctx context.Context, repoCommits []repoCommitResolvedCommit, includeTransitive bool) (deps []shared.PackageDependency, notFound []repoCommitResolvedCommit, err error) {
 	ctx, _, endObservation := s.operations.resolveLockfileDependenciesFromStore.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
@@ -240,7 +240,7 @@ func (s *Service) resolveLockfileDependenciesFromStore(ctx context.Context, repo
 		if repoDeps, ok, err := s.dependenciesStore.LockfileDependencies(ctx, store.LockfileDependenciesOpts{
 			RepoName:          string(repoCommit.Repo),
 			Commit:            repoCommit.ResolvedCommit,
-			IncludeTransitive: false,
+			IncludeTransitive: includeTransitive,
 		}); err != nil {
 			return nil, notFound, errors.Wrap(err, "store.LockfileDependencies")
 		} else if !ok {

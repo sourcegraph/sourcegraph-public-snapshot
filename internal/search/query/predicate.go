@@ -1,6 +1,7 @@
 package query
 
 import (
+	"fmt"
 	"regexp/syntax" //nolint:depguard
 	"strings"
 
@@ -275,7 +276,23 @@ func (f *RepoContainsCommitAfterPredicate) Plan(parent Basic) (Plan, error) {
 type RepoDependenciesPredicate struct{}
 
 func (f *RepoDependenciesPredicate) ParseParams(params string) (err error) {
-	re := params
+	fmt.Println("horse")
+	elems := strings.Split(strings.TrimSpace(params), " ")
+
+	if len(elems) >= 2 {
+		transitiveElems := strings.Split(strings.TrimSpace(elems[1]), ":")
+
+		if len(transitiveElems) != 2 {
+			return errors.Newf("invalid transitive value: %s", elems[1])
+		}
+
+		yno := parseYesNoOnly(transitiveElems[1])
+		if yno == Invalid {
+			return errors.Newf(fmt.Sprintf("Invalid value %q", params))
+		}
+	}
+
+	re := elems[0]
 	if n := strings.LastIndex(params, "@"); n > 0 {
 		re = re[:n]
 	}
