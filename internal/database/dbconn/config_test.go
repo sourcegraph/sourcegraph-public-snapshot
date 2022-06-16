@@ -3,7 +3,7 @@ package dbconn
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
+	"github.com/sourcegraph/log/logtest"
 )
 
 func TestBuildConfig(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
+	"github.com/sourcegraph/log/logtest"
 )
 
 func TestDesugarOperation(t *testing.T) {

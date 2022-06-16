@@ -11,6 +11,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
@@ -25,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
 	"github.com/sourcegraph/sourcegraph/lib/batches/yaml"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestBatchSpecResolver(t *testing.T) {

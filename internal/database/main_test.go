@@ -6,8 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
+	"github.com/sourcegraph/log/logtest"
 )
 
 func TestMain(m *testing.M) {
