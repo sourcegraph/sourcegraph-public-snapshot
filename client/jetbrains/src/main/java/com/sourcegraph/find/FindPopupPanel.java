@@ -22,6 +22,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.util.Date;
 import java.util.Objects;
 
 /**
@@ -96,6 +97,20 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         }
 
         previewPanel.dispose();
+    }
+
+    public void indicateLoading() {
+        previewPanel.setLoading(true);
+        previewPanel.clearContent();
+        clearSelectionMetadataLabel();
+    }
+
+    public boolean isCurrentContentOlderThan(@NotNull Date date) {
+        PreviewContent currentPreviewContent = previewPanel.getPreviewContent();
+        if (currentPreviewContent == null) {
+            return true;
+        }
+        return currentPreviewContent.getDataReceivedDateTime().before(date);
     }
 
     public void setPreviewContent(@NotNull PreviewContent previewContent) {
