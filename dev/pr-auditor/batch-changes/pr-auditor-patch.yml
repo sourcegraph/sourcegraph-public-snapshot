@@ -21,10 +21,11 @@ steps:
   # Overwrite the GitHub action
   - run: |
       read -r -d '' TEMPLATE << 'EOF'
+      # See https://docs.sourcegraph.com/dev/background-information/ci#pr-auditor
       name: pr-auditor
       on:
         pull_request:
-          types: [ closed, edited, opened ]
+          types: [ closed, edited, opened, synchronize, ready_for_review ]
 
       jobs:
         run:
