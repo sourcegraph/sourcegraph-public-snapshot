@@ -1,9 +1,15 @@
 package cache
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -109,6 +115,158 @@ func TestExecutionKey_Key(t *testing.T) {
 			key, err := test.keyer.Key()
 			assert.NoError(t, err)
 			assert.Equal(t, test.expectedKey, key)
+		})
+	}
+}
+
+func TestExecutionKey_Key_Mount(t *testing.T) {
+	// Mounts are trickier because there are temp paths and modifications dates. Each run will generate new temp paths
+	// and modification dates. Also, different Operating Systems will yield different results causing an expectedKey
+	// assertion to fail.
+	// So unfortunately, asserting the cache key is not as pretty for mounts.
+
+	var singleStepEnv env.Environment
+	err := json.Unmarshal([]byte(`{"FOO": "BAR"}`), &singleStepEnv)
+	require.NoError(t, err)
+
+	var multipleStepEnv env.Environment
+	err = json.Unmarshal([]byte(`{"FOO": "BAR", "BAZ": "FAZ"}`), &multipleStepEnv)
+	require.NoError(t, err)
+
+	var nullStepEnv env.Environment
+	err = json.Unmarshal([]byte(`{"FOO": "BAR", "TEST_EXECUTION_CACHE_KEY_ENV": null}`), &nullStepEnv)
+	require.NoError(t, err)
+
+	tempDir := t.TempDir()
+
+	// Set a specific date on the temp files
+	modDate := time.Date(2022, 1, 2, 3, 5, 6, 7, time.UTC)
+	modDateVal, err := modDate.MarshalJSON()
+	require.NoError(t, err)
+
+	// create temp files/dirs that can be used by the tests
+	sampleScriptPath := filepath.Join(tempDir, "sample.sh")
+	_, err = os.Create(sampleScriptPath)
+	require.NoError(t, err)
+	err = os.Chtimes(sampleScriptPath, modDate, modDate)
+	require.NoError(t, err)
+
+	anotherScriptPath := filepath.Join(tempDir, "another.sh")
+	_, err = os.Create(anotherScriptPath)
+	require.NoError(t, err)
+	err = os.Chtimes(anotherScriptPath, modDate, modDate)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name  string
+		keyer ExecutionKey
+		// Instead of an expectedKey, use raw so the data that will be manually hashed can be controlled.
+		expectedRaw   string
+		expectedError error
+	}{
+		{
+			name: "single file",
+			keyer: ExecutionKey{
+				Repository: batches.Repository{
+					ID:          "my-repo",
+					Name:        "github.com/sourcegraph/src-cli",
+					BaseRef:     "refs/heads/f00b4r",
+					BaseRev:     "c0mmit",
+					FileMatches: []string{"baz.go"},
+				},
+				Steps: []batches.Step{
+					{
+						Run: "foo",
+						Mount: []batches.Mount{{
+							Path:       sampleScriptPath,
+							Mountpoint: "/tmp/foo.sh",
+						}},
+					},
+				},
+			},
+			expectedRaw: fmt.Sprintf(
+				`{"Repository":{"ID":"my-repo","Name":"github.com/sourcegraph/src-cli","BaseRef":"refs/heads/f00b4r","BaseRev":"c0mmit","FileMatches":["baz.go"]},"Path":"","OnlyFetchWorkspace":false,"Steps":[{"run":"foo","env":{},"mount":[{"mountpoint":"/tmp/foo.sh","path":"%s"}]}],"BatchChangeAttributes":null,"Environments":[{}],"MountsMetadata":[{"Path":"%s","Size":0,"Modified":%s}]}`,
+				sampleScriptPath,
+				sampleScriptPath,
+				string(modDateVal),
+			),
+		},
+		{
+			name: "multiple files",
+			keyer: ExecutionKey{
+				Repository: batches.Repository{
+					ID:          "my-repo",
+					Name:        "github.com/sourcegraph/src-cli",
+					BaseRef:     "refs/heads/f00b4r",
+					BaseRev:     "c0mmit",
+					FileMatches: []string{"baz.go"},
+				},
+				Steps: []batches.Step{
+					{
+						Run: "foo",
+						Mount: []batches.Mount{
+							{
+								Path:       sampleScriptPath,
+								Mountpoint: "/tmp/foo.sh",
+							},
+							{
+								Path:       anotherScriptPath,
+								Mountpoint: "/tmp/bar.sh",
+							},
+						},
+					},
+				},
+			},
+			expectedRaw: fmt.Sprintf(
+				`{"Repository":{"ID":"my-repo","Name":"github.com/sourcegraph/src-cli","BaseRef":"refs/heads/f00b4r","BaseRev":"c0mmit","FileMatches":["baz.go"]},"Path":"","OnlyFetchWorkspace":false,"Steps":[{"run":"foo","env":{},"mount":[{"mountpoint":"/tmp/foo.sh","path":"%s"},{"mountpoint":"/tmp/bar.sh","path":"%s"}]}],"BatchChangeAttributes":null,"Environments":[{}],"MountsMetadata":[{"Path":"%s","Size":0,"Modified":%s},{"Path":"%s","Size":0,"Modified":%s}]}`,
+				sampleScriptPath,
+				anotherScriptPath,
+				sampleScriptPath,
+				string(modDateVal),
+				anotherScriptPath,
+				string(modDateVal),
+			),
+		},
+		{
+			name: "directory",
+			keyer: ExecutionKey{
+				Repository: batches.Repository{
+					ID:          "my-repo",
+					Name:        "github.com/sourcegraph/src-cli",
+					BaseRef:     "refs/heads/f00b4r",
+					BaseRev:     "c0mmit",
+					FileMatches: []string{"baz.go"},
+				},
+				Steps: []batches.Step{
+					{
+						Run: "foo",
+						Mount: []batches.Mount{{
+							Path:       tempDir,
+							Mountpoint: "/tmp/scripts",
+						}},
+					},
+				},
+			},
+			expectedRaw: fmt.Sprintf(
+				`{"Repository":{"ID":"my-repo","Name":"github.com/sourcegraph/src-cli","BaseRef":"refs/heads/f00b4r","BaseRev":"c0mmit","FileMatches":["baz.go"]},"Path":"","OnlyFetchWorkspace":false,"Steps":[{"run":"foo","env":{},"mount":[{"mountpoint":"/tmp/scripts","path":"%s"}]}],"BatchChangeAttributes":null,"Environments":[{}],"MountsMetadata":[{"Path":"%s","Size":0,"Modified":%s},{"Path":"%s","Size":0,"Modified":%s}]}`,
+				tempDir,
+				anotherScriptPath,
+				string(modDateVal),
+				sampleScriptPath,
+				string(modDateVal),
+			),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			key, err := test.keyer.Key()
+			if test.expectedError != nil {
+				assert.Equal(t, test.expectedError.Error(), err.Error())
+			} else {
+				expectedHash := sha256.Sum256([]byte(test.expectedRaw))
+				expectedKey := base64.RawURLEncoding.EncodeToString(expectedHash[:16])
+				assert.Equal(t, expectedKey, key)
+			}
 		})
 	}
 }
