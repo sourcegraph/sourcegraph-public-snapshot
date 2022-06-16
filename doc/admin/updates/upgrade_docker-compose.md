@@ -54,20 +54,12 @@ docker-compose pull --include-deps
 ```
 ## 3. Restart Sourcegraph and allow migrations to finish
 
-### Stop sourcegraph
+### Restart 
 
-Ensure that the current Sourcegraph instance is completely stopped:
-
-```bash
-docker-compose down --remove-orphans
-```
-
-### Restart Sourcegraph 
-
-**Once the instance has fully stopped**, you can then start Docker Compose again, now using the new minor version along with your customizations:
+Restart Docker Compose using the new minor version along with your customizations:
 
 ```bash
-docker-compose up -d
+docker-compose up -d ---remove-orphans
 ```
 ### Check on the status of migrations
 
