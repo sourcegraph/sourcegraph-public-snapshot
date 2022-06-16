@@ -87,7 +87,7 @@ export const OldBatchChangePageContent: React.FunctionComponent<React.PropsWithC
                         ))}
                     </SidebarGroup>
                 </div>
-                <Container className="ml-3 flex-grow-1">
+                <Container className="ml-3 flex-grow-1 overflow-auto">
                     <CodeSnippet code={selectedSample.file} language="yaml" className="mb-0" />
                 </Container>
             </div>

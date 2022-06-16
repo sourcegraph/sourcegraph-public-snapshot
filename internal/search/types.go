@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -62,6 +63,14 @@ type SymbolsParameters struct {
 
 	// First indicates that only the first n symbols should be returned.
 	First int
+
+	// Timeout in seconds.
+	Timeout int
+}
+
+type SymbolsResponse struct {
+	Symbols result.Symbols `json:"symbols,omitempty"`
+	Err     string         `json:"error,omitempty"`
 }
 
 // GlobalSearchMode designates code paths which optimize performance for global
@@ -133,6 +142,9 @@ type SearcherParameters struct {
 	// repository if this field is true. Another example is we set this field
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
+
+	// Features are feature flags that can affect behaviour of searcher.
+	Features Features
 }
 
 // TextPatternInfo is the struct used by vscode pass on search queries. Keep it in
@@ -233,6 +245,11 @@ type Features struct {
 	// the content of the file, rather than just file name patterns. This is
 	// currently just supported by Zoekt.
 	ContentBasedLangFilters bool
+
+	// HybridSearch when true will consult the Zoekt index when running
+	// unindexed searches. Searcher (unindexed search) will the only search
+	// what has changed since the indexed commit.
+	HybridSearch bool
 }
 
 type RepoOptions struct {

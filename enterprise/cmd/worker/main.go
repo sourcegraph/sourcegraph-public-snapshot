@@ -29,11 +29,11 @@ import (
 )
 
 func main() {
-	syncLogs := log.Init(log.Resource{
+	liblog := log.Init(log.Resource{
 		Name:    env.MyName,
 		Version: version.Version(),
 	})
-	defer syncLogs.Sync()
+	defer liblog.Sync()
 
 	logger := log.Scoped("worker", "worker enterprise edition")
 

@@ -318,7 +318,7 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 	}
 
 	db := c.db
-	out, err := git.ReadFile(ctx, db, repo, api.CommitID(commit), file, authz.DefaultSubRepoPermsChecker)
+	out, err := gitserver.NewClient(db).ReadFile(ctx, repo, api.CommitID(commit), file, authz.DefaultSubRepoPermsChecker)
 	if err == nil {
 		return out, nil
 	}
@@ -394,7 +394,7 @@ func (c *Client) FileExists(ctx context.Context, repositoryID int, commit, file 
 		return false, errors.Wrap(err, "git.ResolveRevision")
 	}
 
-	if _, err := git.Stat(ctx, db, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), file); err != nil {
+	if _, err := gitserver.NewClient(db).Stat(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), file); err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
 		}

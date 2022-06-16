@@ -41,7 +41,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
@@ -199,7 +198,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 					return nil, nil
 				}
 
-				// Repository is not clonable.
+				// Repository is not cloneable.
 				dangerouslyServeError(w, r, db, errors.New("repository could not be cloned"), http.StatusInternalServerError)
 				return nil, nil
 			}
@@ -342,7 +341,7 @@ func serveSignIn(db database.DB) handlerFunc {
 func serveEmbed(db database.DB) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		flagSet := featureflag.FromContext(r.Context())
-		if enabled := flagSet["enable-embed-route"]; !enabled {
+		if enabled := flagSet.GetBoolOr("enable-embed-route", false); !enabled {
 			w.WriteHeader(http.StatusNotFound)
 			return nil
 		}
@@ -387,7 +386,7 @@ func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseW
 		}
 		return false, nil
 	}
-	stat, err := git.Stat(r.Context(), db, authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, path)
+	stat, err := gitserver.NewClient(db).Stat(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			serveError(w, r, db, err, http.StatusNotFound)

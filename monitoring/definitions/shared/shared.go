@@ -62,7 +62,7 @@ func (o Observable) WithNoAlerts(interpretation string) Observable {
 	o.Warning = nil
 	o.Critical = nil
 	o.NoAlert = true
-	o.PossibleSolutions = ""
+	o.NextSteps = ""
 	o.Interpretation = interpretation
 	return o
 }
@@ -91,7 +91,7 @@ func WarningOption(a *monitoring.ObservableAlertDefinition) ObservableOption {
 func CriticalOption(a *monitoring.ObservableAlertDefinition, possibleSolution string) ObservableOption {
 	return func(observable Observable) Observable {
 		observable = observable.WithCritical(a)
-		observable.PossibleSolutions = possibleSolution
+		observable.NextSteps = possibleSolution
 		return observable
 	}
 }

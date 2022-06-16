@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -29,6 +30,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -47,6 +49,13 @@ const (
 type Service struct {
 	Store *Store
 	Log   log.Logger
+
+	// GitOutput returns the stdout of running git with args against the repo.
+	//
+	// TODO pick a design which doesn't directly depend on Command. Probably
+	// adding a relevant function to the gitserver client. This is only used
+	// by FeatHybrid.
+	GitOutput func(ctx context.Context, repo api.RepoName, args ...string) ([]byte, error)
 }
 
 // ServeHTTP handles HTTP based search requests
@@ -75,6 +84,12 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.streamSearch(ctx, w, p)
 }
 
+// isNetOpError returns true if net.OpError is contained in err. This is
+// useful to ignore errors when the connection has gone away.
+func isNetOpError(err error) bool {
+	return errors.HasType(err, (*net.OpError)(nil))
+}
+
 func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p protocol.Request) {
 	if p.Limit == 0 {
 		// No limit for streaming search since upstream limits
@@ -92,7 +107,7 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 		return eventWriter.EventBytes("matches", data)
 	})
 	onMatches := func(match protocol.FileMatch) {
-		if err := matchesBuf.Append(match); err != nil {
+		if err := matchesBuf.Append(match); err != nil && !isNetOpError(err) {
 			s.Log.Warn("failed appending match to buffer", log.Error(err))
 		}
 	}
@@ -109,10 +124,10 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 	}
 
 	// Flush remaining matches before sending a different event
-	if err := matchesBuf.Flush(); err != nil {
+	if err := matchesBuf.Flush(); err != nil && !isNetOpError(err) {
 		s.Log.Warn("failed to flush matches", log.Error(err))
 	}
-	if err := eventWriter.Event("done", doneEvent); err != nil {
+	if err := eventWriter.Event("done", doneEvent); err != nil && !isNetOpError(err) {
 		s.Log.Warn("failed to send done event", log.Error(err))
 	}
 }
@@ -215,6 +230,38 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		}
 		zf, err := s.Store.zipCache.Get(path)
 		return path, zf, err
+	}
+
+	hybrid := !p.IsStructuralPat && p.FeatHybrid
+	if hybrid {
+		unsearched, ok, err := s.hybrid(ctx, p, sender)
+		if err != nil {
+			s.Log.Error("hybrid search failed",
+				log.String("repo", string(p.Repo)),
+				log.String("commit", string(p.Commit)),
+				log.Error(err))
+			return errors.Wrap(err, "hybrid search failed")
+		}
+		if !ok {
+			s.Log.Warn("hybrid search is falling back to normal unindexed search",
+				log.String("repo", string(p.Repo)),
+				log.String("commit", string(p.Commit)))
+		} else {
+			// now we only need to search unsearched
+			if len(unsearched) == 0 {
+				// indexed search did it all
+				return nil
+			}
+
+			getZf = func() (string, *zipFile, error) {
+				path, err := s.Store.PrepareZipPaths(prepareCtx, p.Repo, p.Commit, unsearched)
+				if err != nil {
+					return "", nil, err
+				}
+				zf, err := s.Store.zipCache.Get(path)
+				return path, zf, err
+			}
+		}
 	}
 
 	zipPath, zf, err := getZipFileWithRetry(getZf)

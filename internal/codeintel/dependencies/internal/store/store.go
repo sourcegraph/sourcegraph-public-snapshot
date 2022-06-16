@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -12,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -39,9 +39,9 @@ type store struct {
 }
 
 // New returns a new store.
-func New(db dbutil.DB, op *observation.Context) *store {
+func New(db database.DB, op *observation.Context) *store {
 	return &store{
-		db:         basestore.NewWithDB(db, sql.TxOptions{}),
+		db:         basestore.NewWithHandle(db.Handle()),
 		operations: newOperations(op),
 	}
 }
@@ -187,7 +187,7 @@ func (s *store) UpsertLockfileDependencies(ctx context.Context, repoName, commit
 
 	if err := batch.InsertValues(
 		ctx,
-		tx.db.Handle().DB(),
+		tx.db.Handle(),
 		"t_codeintel_lockfile_references",
 		batch.MaxNumPostgresParameters,
 		[]string{"repository_name", "revspec", "package_scheme", "package_name", "package_version"},
@@ -512,7 +512,7 @@ func (s *store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (
 
 	err = batch.WithInserterWithReturn(
 		ctx,
-		s.db.Handle().DB(),
+		s.db.Handle(),
 		"lsif_dependency_repos",
 		batch.MaxNumPostgresParameters,
 		[]string{"scheme", "name", "version"},

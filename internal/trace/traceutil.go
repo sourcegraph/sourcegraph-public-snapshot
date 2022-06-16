@@ -17,7 +17,6 @@ import (
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace"
 
 	sglog "github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/log/otfields"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"

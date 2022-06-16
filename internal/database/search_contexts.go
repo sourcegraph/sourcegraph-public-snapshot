@@ -65,12 +65,12 @@ const searchContextsPermissionsConditionFmtStr = `(
     OR (sc.namespace_user_id IS NULL AND sc.namespace_org_id IS NULL AND EXISTS (SELECT FROM users u WHERE u.id = %d AND u.site_admin))
 )`
 
-func searchContextsPermissionsCondition(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
+func searchContextsPermissionsCondition(ctx context.Context, store basestore.ShareableStore) (*sqlf.Query, error) {
 	a := actor.FromContext(ctx)
 	authenticatedUserID := int32(0)
 	bypassPermissionsCheck := a.Internal
 	if !bypassPermissionsCheck && a.IsAuthenticated() {
-		currentUser, err := Users(db).GetByCurrentAuthUser(ctx)
+		currentUser, err := UsersWith(store).GetByCurrentAuthUser(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -222,7 +222,7 @@ func getSearchContextsQueryConditions(opts ListSearchContextsOptions) []*sqlf.Qu
 }
 
 func (s *searchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf.Query, orderBy *sqlf.Query, limit int32, offset int32) ([]*types.SearchContext, error) {
-	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
+	permissionsCond, err := searchContextsPermissionsCondition(ctx, s)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +242,7 @@ func (s *searchContextsStore) ListSearchContexts(ctx context.Context, pageOpts L
 
 func (s *searchContextsStore) CountSearchContexts(ctx context.Context, opts ListSearchContextsOptions) (int32, error) {
 	conds := getSearchContextsQueryConditions(opts)
-	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
+	permissionsCond, err := searchContextsPermissionsCondition(ctx, s)
 	if err != nil {
 		return -1, err
 	}
@@ -273,7 +273,7 @@ func (s *searchContextsStore) GetSearchContext(ctx context.Context, opts GetSear
 	}
 	conds = append(conds, sqlf.Sprintf("sc.name = %s", opts.Name))
 
-	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
+	permissionsCond, err := searchContextsPermissionsCondition(ctx, s)
 	if err != nil {
 		return nil, err
 	}
@@ -403,7 +403,7 @@ func createSearchContext(ctx context.Context, s SearchContextsStore, searchConte
 		nullInt32Column(searchContext.NamespaceOrgID),
 		nullStringColumn(searchContext.Query),
 	)
-	_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := s.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -423,7 +423,7 @@ func updateSearchContext(ctx context.Context, s SearchContextsStore, searchConte
 		nullStringColumn(searchContext.Query),
 		searchContext.ID,
 	)
-	_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := s.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -494,7 +494,7 @@ WHERE sc.search_context_id = %d
 `
 
 func (s *searchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64) ([]*types.SearchContextRepositoryRevisions, error) {
-	authzConds, err := AuthzQueryConds(ctx, NewDB(s.Handle().DB()))
+	authzConds, err := AuthzQueryConds(ctx, NewDBWith(s))
 	if err != nil {
 		return nil, err
 	}

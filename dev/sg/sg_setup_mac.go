@@ -83,9 +83,9 @@ It contains convenient preconfigured settings and code host connections.
 It needs to be cloned into the same folder as sourcegraph/sourcegraph,
 so they sit alongside each other, like this:
 
-   /dir
-   |-- dev-private
-   +-- sourcegraph
+    /dir
+    |-- dev-private
+    +-- sourcegraph
 
 NOTE: You can ignore this if you're not a Sourcegraph teammate.
 `,
@@ -292,11 +292,11 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 			{
 				name:          "1password",
 				onlyTeammates: true,
+				check:         check1password(),
 				instructionsCommands: `
 brew install --cask 1password/tap/1password-cli
 eval $(op account add --address team-sourcegraph.1password.com --signin)
 `,
-				check: check1password,
 			},
 		},
 	},

@@ -21,6 +21,7 @@ const (
 	Terraform
 	SVG
 	Shell
+	DockerImages
 
 	// All indicates all changes should be considered included in this diff, except None.
 	All
@@ -69,6 +70,11 @@ func ParseDiff(files []string) (diff Diff) {
 			if strings.HasPrefix(p, dir+"/") {
 				diff |= Go
 			}
+		}
+		if p == "sg.config.yaml" {
+			// sg config affects generated output and potentially tests and checks that we
+			// run in the future, so we consider this to have affected Go.
+			diff |= Go
 		}
 
 		// Client
@@ -126,6 +132,11 @@ func ParseDiff(files []string) (diff Diff) {
 		if strings.HasSuffix(p, ".sh") {
 			diff |= Shell
 		}
+
+		// Affects docker-images directories
+		if strings.HasPrefix(p, "docker-images/") {
+			diff |= DockerImages
+		}
 	}
 	return
 }
@@ -157,6 +168,8 @@ func (d Diff) String() string {
 		return "SVG"
 	case Shell:
 		return "Shell"
+	case DockerImages:
+		return "DockerImages"
 
 	case All:
 		return "All"

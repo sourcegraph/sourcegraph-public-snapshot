@@ -52,7 +52,7 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
-	user, err := Users(db).Create(ctx, NewUser{Username: "u"})
+	user, err := db.Users().Create(ctx, NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,7 +121,7 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	user, err := Users(db).GetByID(ctx, userID)
+	user, err := db.Users().GetByID(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -170,7 +170,7 @@ func TestExternalAccounts_CreateUserAndSave_NilData(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	user, err := Users(db).GetByID(ctx, userID)
+	user, err := db.Users().GetByID(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -271,6 +271,27 @@ func TestExternalAccounts_List(t *testing.T) {
 				ServiceType: "xa",
 				ServiceID:   "xb",
 				ClientID:    "xc",
+			},
+		},
+		{
+			name:        "ListByServiceTypeOnly",
+			expectedIDs: []int32{userIDs[0], userIDs[1]},
+			args: ExternalAccountsListOptions{
+				ServiceType: "xa",
+			},
+		},
+		{
+			name:        "ListByServiceIDOnly",
+			expectedIDs: []int32{userIDs[0], userIDs[1]},
+			args: ExternalAccountsListOptions{
+				ServiceID: "xb",
+			},
+		},
+		{
+			name:        "ListByClientIDOnly",
+			expectedIDs: []int32{userIDs[2]},
+			args: ExternalAccountsListOptions{
+				ClientID: "yc",
 			},
 		},
 		{
@@ -445,6 +466,25 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 
 		if len(accts) > 0 {
 			t.Fatalf("Want no external accounts but got %d", len(accts))
+		}
+	})
+
+	t.Run("Include expired", func(t *testing.T) {
+		err := db.UserExternalAccounts().TouchExpired(ctx, acct.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{
+			UserID:      userID,
+			OnlyExpired: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(accts) == 0 {
+			t.Fatalf("Want external accounts but got 0")
 		}
 	})
 

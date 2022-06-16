@@ -39,7 +39,7 @@ Follow the printed instructions, which will guide you through the installation o
 
 ## Run databases
 
-If you chose to run PostgreSQL and Redis **without Docker** (recommended) they should already be running. You can jump the next section.
+If you chose to run PostgreSQL and Redis **without Docker** (recommended) they should already be running. You can jump to the next section.
 
 If you chose to run Redis and PostgreSQL **with Docker** to then we need to run them:
 

@@ -2,6 +2,7 @@ package com.sourcegraph.find;
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.codeInsight.highlighting.HighlightManager;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.colors.EditorColors;
@@ -25,12 +26,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Objects;
 
-public class PreviewPanel extends JBPanelWithEmptyText {
+public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
     private final Project project;
     private JComponent editorComponent;
 
     private PreviewContent previewContent;
     private VirtualFile virtualFile;
+    private Editor editor;
 
     public PreviewPanel(Project project) {
         super(new BorderLayout());
@@ -61,7 +63,7 @@ public class PreviewPanel extends JBPanelWithEmptyText {
             virtualFile = new LightVirtualFile(this.previewContent.getFileName(), fileContent);
             Document document = editorFactory.createDocument(fileContent);
             document.setReadOnly(true);
-            Editor editor = editorFactory.createEditor(document, project, virtualFile, true, EditorKind.MAIN_EDITOR);
+            editor = editorFactory.createEditor(document, project, virtualFile, true, EditorKind.MAIN_EDITOR);
 
             EditorSettings settings = editor.getSettings();
             settings.setLineMarkerAreaShown(true);
@@ -74,10 +76,9 @@ public class PreviewPanel extends JBPanelWithEmptyText {
             editorComponent = editor.getComponent();
             add(editorComponent, BorderLayout.CENTER);
 
-            addHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
-
-            invalidate(); // TODO: Is this needed? What does it do? Maybe use revalidate()? If needed then document
             validate();
+
+            addAndScrollToHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
         });
     }
 
@@ -120,10 +121,19 @@ public class PreviewPanel extends JBPanelWithEmptyText {
         }
     }
 
-    private void addHighlights(Editor editor, @NotNull int[][] absoluteOffsetAndLengths) {
+    private void addAndScrollToHighlights(Editor editor, int[][] absoluteOffsetAndLengths) {
+        int firstOffset = -1;
         HighlightManager highlightManager = HighlightManager.getInstance(project);
         for (int[] offsetAndLength : absoluteOffsetAndLengths) {
-            highlightManager.addOccurrenceHighlight(editor, offsetAndLength[0], offsetAndLength[0] + offsetAndLength[1], EditorColors.SEARCH_RESULT_ATTRIBUTES, 0, null);
+            if (firstOffset == -1) {
+                firstOffset = offsetAndLength[0] + offsetAndLength[1];
+            }
+
+            highlightManager.addOccurrenceHighlight(editor, offsetAndLength[0], offsetAndLength[0] + offsetAndLength[1], EditorColors.TEXT_SEARCH_RESULT_ATTRIBUTES, 0, null);
+        }
+
+        if (firstOffset != -1) {
+            editor.getScrollingModel().scrollTo(editor.offsetToLogicalPosition(firstOffset), ScrollType.CENTER);
         }
     }
 
@@ -134,6 +144,13 @@ public class PreviewPanel extends JBPanelWithEmptyText {
                 editorComponent = null;
                 virtualFile = null;
             });
+        }
+    }
+
+    @Override
+    public void dispose() {
+        if (editor != null) {
+            EditorFactory.getInstance().releaseEditor(editor);
         }
     }
 }

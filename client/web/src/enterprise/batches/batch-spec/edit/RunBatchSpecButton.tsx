@@ -69,7 +69,8 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
 
             <PopoverContent className={styles.menuList} position={Position.bottomEnd}>
                 <H3 className="pb-2 pt-3 pl-3 pr-3 m-0">Execution options</H3>
-                <ExecutionOption moreInfo="When this batch spec is executed, it will not use cached results from any previous execution.">
+                {/* TODO: Once the execution mutation honors execution options, this can be removed. */}
+                <ExecutionOption moreInfo="When this batch spec is executed, it will not use cached results from any previous execution. Currently, toggling this option also requires updating the workspaces preview.">
                     <Checkbox
                         name="run-without-cache"
                         id="run-without-cache"
@@ -107,7 +108,6 @@ const ExecutionOption: React.FunctionComponent<React.PropsWithChildren<Execution
 
     const info = props.disabled ? (
         <Icon
-            role="img"
             className="ml-2"
             data-tooltip={props.disabledTooltip}
             aria-label={props.disabledTooltip}
@@ -116,7 +116,7 @@ const ExecutionOption: React.FunctionComponent<React.PropsWithChildren<Execution
         />
     ) : props.moreInfo ? (
         <Button className="m-0 ml-2 p-0 border-0" onClick={() => setInfoOpen(!infoOpen)}>
-            <Icon role="img" aria-hidden={true} as={InfoCircleOutlineIcon} />
+            <Icon aria-hidden={true} as={InfoCircleOutlineIcon} />
 
             <VisuallyHidden>More info</VisuallyHidden>
         </Button>

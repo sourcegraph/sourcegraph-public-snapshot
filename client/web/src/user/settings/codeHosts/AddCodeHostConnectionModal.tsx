@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { Button, Modal, Label, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Modal, H3, Input, Text } from '@sourcegraph/wildcard'
 
 import { addExternalService } from '../../../components/externalServices/backend'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
@@ -93,20 +93,18 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<
                     <div className="form-group mb-4">
                         {didAckMachineUserHint ? (
                             <>
-                                <Label htmlFor="code-host-token">Access token</Label>
                                 <div className="position-relative">
-                                    <input
+                                    <Input
                                         id="code-host-token"
                                         name="code-host-token"
-                                        type="text"
                                         value={token}
                                         onChange={onChangeToken}
-                                        className="form-control pr-4"
+                                        inputClassName="pr-4"
                                         autoComplete="off"
+                                        className="mb-0"
+                                        label="Access token"
+                                        inputSymbol={<EncryptedDataIcon />}
                                     />
-                                    <small>
-                                        <EncryptedDataIcon />
-                                    </small>
                                 </div>
                                 <Text className="mt-1">{hintFragment}</Text>
                             </>

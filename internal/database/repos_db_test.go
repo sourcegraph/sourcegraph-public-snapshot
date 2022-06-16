@@ -194,7 +194,7 @@ func upsertRepo(ctx context.Context, db DB, op InsertRepoOp) error {
 		return nil
 	}
 
-	_, err = s.Handle().DB().ExecContext(
+	_, err = s.Handle().ExecContext(
 		ctx,
 		upsertSQL,
 		op.Name,
@@ -396,7 +396,7 @@ func TestRepos_ListMinimalRepos_userID(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Create a user
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a1@example.com",
 		Username:              "u1",
 		Password:              "p",
@@ -730,7 +730,7 @@ func TestRepos_List_LastChanged(t *testing.T) {
 	})
 
 	// Our test helpers don't do updated_at, so manually doing it.
-	_, err := db.Handle().DB().ExecContext(ctx, "update repo set updated_at = $1", now.Add(-24*time.Hour))
+	_, err := db.Handle().ExecContext(ctx, "update repo set updated_at = $1", now.Add(-24*time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -740,7 +740,7 @@ func TestRepos_List_LastChanged(t *testing.T) {
 		CloneStatus: types.CloneStatusCloned,
 		LastChanged: now.Add(-24 * time.Hour),
 	})
-	_, err = db.Handle().DB().ExecContext(ctx, "update repo set updated_at = $1 where name = 'newMeta'", now)
+	_, err = db.Handle().ExecContext(ctx, "update repo set updated_at = $1 where name = 'newMeta'", now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -770,7 +770,7 @@ func TestRepos_List_LastChanged(t *testing.T) {
 			}
 		}
 		mkSearchContext("old", ReposListOptions{})
-		_, err = db.Handle().DB().ExecContext(ctx, "update search_contexts set updated_at = $1", now.Add(-24*time.Hour))
+		_, err = db.Handle().ExecContext(ctx, "update search_contexts set updated_at = $1", now.Add(-24*time.Hour))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2160,7 +2160,7 @@ func TestRepos_ListRepos_UserPublicRepos(t *testing.T) {
 	_, otherRepo := initUserAndRepo(t, ctx, db)
 
 	// register our interest in the other user's repo
-	err := UserPublicRepos(db).SetUserRepo(ctx, UserPublicRepo{UserID: user.ID, RepoURI: otherRepo.URI, RepoID: otherRepo.ID})
+	err := db.UserPublicRepos().SetUserRepo(ctx, UserPublicRepo{UserID: user.ID, RepoURI: otherRepo.URI, RepoID: otherRepo.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2232,7 +2232,7 @@ func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 
 func initUserAndRepo(t *testing.T, ctx context.Context, db DB) (*types.User, *types.Repo) {
 	id := rand.String(8)
-	user, err := Users(db).Create(ctx, NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 id + "@example.com",
 		Username:              "u" + id,
 		Password:              "p",

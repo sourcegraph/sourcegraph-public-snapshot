@@ -12,28 +12,18 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-
-	sctypes "github.com/sourcegraph/sourcegraph/internal/types"
-
-	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/sourcegraph/sourcegraph/internal/database"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+	sctypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ graphqlbackend.InsightSeriesResolver = &precalculatedInsightSeriesResolver{}
@@ -87,7 +77,7 @@ func (r *insightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.In
 		excludeRepo(*r.filters.ExcludeRepoRegex)
 	}
 
-	scLoader := &scLoader{primary: r.workerBaseStore.Handle().DB()}
+	scLoader := &scLoader{primary: database.NewDBWith(r.workerBaseStore)}
 	inc, exc, err := unwrapSearchContexts(ctx, scLoader, r.filters.SearchContexts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unwrapSearchContexts")
@@ -114,13 +104,12 @@ type SearchContextLoader interface {
 }
 
 type scLoader struct {
-	primary dbutil.DB
+	primary database.DB
 	log     log.Logger
 }
 
 func (l *scLoader) GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error) {
-	db := database.NewDB(l.primary)
-	return searchcontexts.ResolveSearchContextSpec(l.log, ctx, db, name)
+	return searchcontexts.ResolveSearchContextSpec(l.log, ctx, l.primary, name)
 }
 
 func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawContexts []string) ([]string, []string, error) {
@@ -297,7 +286,7 @@ func newSeriesResolverGenerator(handles handleSeriesFunc, generate resolverGener
 	}
 }
 
-func getRecordedSeriesPointOpts(ctx context.Context, db dbutil.DB, definition types.InsightViewSeries, filters types.InsightViewFilters) (*store.SeriesPointsOpts, error) {
+func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition types.InsightViewSeries, filters types.InsightViewFilters) (*store.SeriesPointsOpts, error) {
 	opts := &store.SeriesPointsOpts{}
 	// Query data points only for the series we are representing.
 	seriesID := definition.SeriesID
@@ -341,7 +330,7 @@ func getRecordedSeriesPointOpts(ctx context.Context, db dbutil.DB, definition ty
 }
 
 func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
-	opts, err := getRecordedSeriesPointOpts(ctx, r.workerBaseStore.Handle().DB(), definition, filters)
+	opts, err := getRecordedSeriesPointOpts(ctx, database.NewDBWith(r.workerBaseStore), definition, filters)
 	if err != nil {
 		return nil, errors.Wrap(err, "getRecordedSeriesPointOpts")
 	}
@@ -374,7 +363,7 @@ func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r b
 }
 
 func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
-	opts, err := getRecordedSeriesPointOpts(ctx, r.workerBaseStore.Handle().DB(), definition, filters)
+	opts, err := getRecordedSeriesPointOpts(ctx, database.NewDBWith(r.workerBaseStore), definition, filters)
 	if err != nil {
 		return nil, errors.Wrap(err, "getRecordedSeriesPointOpts")
 	}

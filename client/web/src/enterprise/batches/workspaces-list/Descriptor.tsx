@@ -35,7 +35,7 @@ export const Descriptor = <Workspace extends WorkspaceBaseFields>({
             ) : null}
             {workspace && (
                 <div className="d-flex align-items-center text-muted text-monospace pt-1">
-                    <Icon role="img" aria-hidden={true} className="mr-1" as={SourceBranchIcon} />
+                    <Icon aria-hidden={true} className="mr-1" as={SourceBranchIcon} />
                     <small>{workspace.branch.displayName}</small>
                 </div>
             )}

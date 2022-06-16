@@ -121,12 +121,13 @@ exports[`FilterLink should have correct links for repos 1`] = `
           r:
         </span>
         <span
-          aria-label="gitlab.com"
-          role="img"
-          title="gitlab.com"
+          class="tooltip"
+          data-state="closed"
+          data-test-content="gitlab.com"
+          role="presentation"
         >
           <svg
-            aria-hidden="true"
+            aria-label="gitlab.com"
             class="mdi-icon iconInline text-muted sidebarSectionIcon"
             fill="currentColor"
             height="24"
@@ -167,12 +168,13 @@ exports[`FilterLink should have correct links for repos 1`] = `
           r:
         </span>
         <span
-          aria-label="github.com"
-          role="img"
-          title="github.com"
+          class="tooltip"
+          data-state="closed"
+          data-test-content="github.com"
+          role="presentation"
         >
           <svg
-            aria-hidden="true"
+            aria-label="github.com"
             class="mdi-icon iconInline text-muted sidebarSectionIcon"
             fill="currentColor"
             height="24"
@@ -247,12 +249,13 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
           r:
         </span>
         <span
-          aria-label="gitlab.com"
-          role="img"
-          title="gitlab.com"
+          class="tooltip"
+          data-state="closed"
+          data-test-content="gitlab.com"
+          role="presentation"
         >
           <svg
-            aria-hidden="true"
+            aria-label="gitlab.com"
             class="mdi-icon iconInline text-muted sidebarSectionIcon"
             fill="currentColor"
             height="24"
@@ -293,12 +296,13 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
           r:
         </span>
         <span
-          aria-label="github.com"
-          role="img"
-          title="github.com"
+          class="tooltip"
+          data-state="closed"
+          data-test-content="github.com"
+          role="presentation"
         >
           <svg
-            aria-hidden="true"
+            aria-label="github.com"
             class="mdi-icon iconInline text-muted sidebarSectionIcon"
             fill="currentColor"
             height="24"

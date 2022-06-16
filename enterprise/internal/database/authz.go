@@ -8,13 +8,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewAuthzStore returns an OSS database.AuthzStore set with enterprise implementation.
-func NewAuthzStore(db dbutil.DB, clock func() time.Time) database.AuthzStore {
+func NewAuthzStore(db database.DB, clock func() time.Time) database.AuthzStore {
 	return &authzStore{
 		store: Perms(db, clock),
 	}
@@ -43,7 +42,12 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *database
 	}
 
 	// Gather external accounts associated to the user.
-	extAccounts, err := s.store.ListExternalAccounts(ctx, args.UserID)
+	extAccounts, err := database.ExternalAccountsWith(s.store).List(ctx,
+		database.ExternalAccountsListOptions{
+			UserID:         args.UserID,
+			ExcludeExpired: true,
+		},
+	)
 	if err != nil {
 		return errors.Wrap(err, "list external accounts")
 	}

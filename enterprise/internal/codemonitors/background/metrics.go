@@ -18,9 +18,9 @@ type codeMonitorsMetrics struct {
 	errors        prometheus.Counter
 }
 
-func newMetricsForTriggerQueries() codeMonitorsMetrics {
+func newMetricsForTriggerQueries(logger log.Logger) codeMonitorsMetrics {
 	observationContext := &observation.Context{
-		Logger:     log.Scoped("triggers", "code monitor triggers"),
+		Logger:     logger.Scoped("triggers", "code monitor triggers"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -51,9 +51,9 @@ func newMetricsForTriggerQueries() codeMonitorsMetrics {
 	}
 }
 
-func newActionMetrics() codeMonitorsMetrics {
+func newActionMetrics(logger log.Logger) codeMonitorsMetrics {
 	observationContext := &observation.Context{
-		Logger:     log.Scoped("actions", "code monitors actions"),
+		Logger:     logger.Scoped("actions", "code monitors actions"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

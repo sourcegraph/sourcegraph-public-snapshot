@@ -26,7 +26,7 @@ type SearchInputs struct {
 	PatternType         query.SearchType
 	UserSettings        *schema.Settings
 	OnSourcegraphDotCom bool
-	Features            featureflag.FlagSet
+	Features            *featureflag.FlagSet
 	Protocol            search.Protocol
 }
 
@@ -116,11 +116,10 @@ func (e *QueryError) Error() string {
 	return fmt.Sprintf("invalid query %q: %s", e.Query, e.Err)
 }
 
-// detectSearchType returns the search type to perform ("regexp", or
-// "literal"). The search type derives from three sources: the version and
-// patternType parameters passed to the search endpoint (literal search is the
-// default in V2), and the `patternType:` filter in the input query string which
-// overrides the searchType, if present.
+// detectSearchType returns the search type to perform. The search type derives
+// from three sources: the version and patternType parameters passed to the
+// search endpoint (literal search is the default in V2), and the `patternType:`
+// filter in the input query string which overrides the searchType, if present.
 func detectSearchType(version string, patternType *string) (query.SearchType, error) {
 	var searchType query.SearchType
 	if patternType != nil {
@@ -131,6 +130,8 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 			searchType = query.SearchTypeRegex
 		case "structural":
 			searchType = query.SearchTypeStructural
+		case "lucky":
+			searchType = query.SearchTypeLucky
 		default:
 			return -1, errors.Errorf("unrecognized patternType %q", *patternType)
 		}
@@ -163,6 +164,8 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 			searchType = query.SearchTypeLiteralDefault
 		case "structural":
 			searchType = query.SearchTypeStructural
+		case "lucky":
+			searchType = query.SearchTypeLucky
 		}
 	})
 	return searchType

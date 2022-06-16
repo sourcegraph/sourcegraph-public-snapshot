@@ -37,7 +37,7 @@ on:
 
 # In each repository, run this command. Each repository's resulting diff is captured.
 steps:
-  - run: echo Hello World | tee -a $(find -name README.md)
+  - run: IFS=$'\n'; echo Hello World | tee -a $(find -name README.md)
     container: alpine:3
 
 # Transform the changes produced in each repository.

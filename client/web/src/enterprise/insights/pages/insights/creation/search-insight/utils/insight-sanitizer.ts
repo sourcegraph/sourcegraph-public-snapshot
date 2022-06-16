@@ -37,6 +37,7 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
             title: rawInsight.title,
             series: getSanitizedSeries(rawInsight.series),
             step: { [rawInsight.step]: +rawInsight.stepValue },
+            dashboards: [],
             filters: {
                 excludeRepoRegexp: '',
                 includeRepoRegexp: '',
@@ -52,6 +53,7 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
         repositories: getSanitizedRepositories(rawInsight.repositories),
         series: getSanitizedSeries(rawInsight.series),
         step: { [rawInsight.step]: +rawInsight.stepValue },
+        dashboards: [],
         filters: {
             excludeRepoRegexp: '',
             includeRepoRegexp: '',

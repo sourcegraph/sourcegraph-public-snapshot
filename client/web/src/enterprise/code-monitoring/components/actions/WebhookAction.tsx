@@ -102,7 +102,7 @@ export const WebhookAction: React.FunctionComponent<React.PropsWithChildren<Acti
         <ActionEditor
             title={
                 <div className="d-flex align-items-center">
-                    Call a webhook <ProductStatusBadge className="ml-1" status="experimental" />{' '}
+                    Call a webhook <ProductStatusBadge className="ml-1" status="beta" />{' '}
                 </div>
             }
             label="Call a webhook"

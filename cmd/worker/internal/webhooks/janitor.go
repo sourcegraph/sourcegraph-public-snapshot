@@ -45,7 +45,7 @@ func (j *janitor) Routines(ctx context.Context, logger log.Logger) ([]goroutine.
 		// operation more frequently than that, given it's purely a debugging
 		// tool.
 		goroutine.NewPeriodicGoroutine(context.Background(), 1*time.Hour, &handler{
-			store: database.WebhookLogs(db, keyring.Default().WebhookLogKey),
+			store: database.NewDB(db).WebhookLogs(keyring.Default().WebhookLogKey),
 		}),
 	}, nil
 }

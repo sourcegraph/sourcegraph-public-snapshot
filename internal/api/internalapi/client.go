@@ -68,14 +68,6 @@ func (c *internalClient) OrgsGetByName(ctx context.Context, orgName string) (org
 	return orgID, nil
 }
 
-func (c *internalClient) UsersGetByUsername(ctx context.Context, username string) (user *int32, err error) {
-	err = c.postInternal(ctx, "users/get-by-username", username, &user)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
 func (c *internalClient) UserEmailsGetEmail(ctx context.Context, userID int32) (email *string, err error) {
 	err = c.postInternal(ctx, "user-emails/get-email", userID, &email)
 	if err != nil {
@@ -96,15 +88,6 @@ func (c *internalClient) ExternalURL(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return externalURL, nil
-}
-
-// TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func (c *internalClient) CanSendEmail(ctx context.Context) (canSendEmail bool, err error) {
-	err = c.postInternal(ctx, "can-send-email", nil, &canSendEmail)
-	if err != nil {
-		return false, err
-	}
-	return canSendEmail, nil
 }
 
 // TODO(slimsag): needs cleanup as part of upcoming configuration refactor.

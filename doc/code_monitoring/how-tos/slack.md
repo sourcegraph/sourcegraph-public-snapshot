@@ -1,8 +1,8 @@
 # Setting up Slack notifications
 
-<aside class="experimental">
+<aside class="note">
 <p>
-<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+<span class="badge badge-beta">Beta</span> This feature is currently in beta and may change in the future.
 </p>
 
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
@@ -16,7 +16,7 @@ use that webhook's URL.
 
 ## Prerequisites
 
-- You must have the experimental feature flag `  "experimentalFeatures": { "codeMonitoringWebHooks": true } ` set in your user, org, or global settings.
+- You must not have have the setting `experimentalFeatures.codeMonitoringWebHooks` disabled in your user, org, or global settings.
 - You must have permission to create apps inside of your organization's Slack workspace
 
 ## Creating a Slack webhook

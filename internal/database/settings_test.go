@@ -16,11 +16,11 @@ func TestSettings_ListAll(t *testing.T) {
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
-	user1, err := Users(db).Create(ctx, NewUser{Username: "u1"})
+	user1, err := db.Users().Create(ctx, NewUser{Username: "u1"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	user2, err := Users(db).Create(ctx, NewUser{Username: "u2"})
+	user2, err := db.Users().Create(ctx, NewUser{Username: "u2"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func TestCreateIfUpToDate(t *testing.T) {
 	t.Parallel()
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
-	u, err := Users(db).Create(ctx, NewUser{Username: "test"})
+	u, err := db.Users().Create(ctx, NewUser{Username: "test"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func TestGetLatestSchemaSettings(t *testing.T) {
 	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
-	user1, err := Users(db).Create(ctx, NewUser{Username: "u1"})
+	user1, err := db.Users().Create(ctx, NewUser{Username: "u1"})
 	if err != nil {
 		t.Fatal(err)
 	}

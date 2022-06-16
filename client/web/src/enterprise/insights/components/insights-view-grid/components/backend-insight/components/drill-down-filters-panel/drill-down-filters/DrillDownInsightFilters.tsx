@@ -12,6 +12,7 @@ import { Button, Icon, Link, H4 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
 import { SeriesDisplayOptionsInput } from '../../../../../../../../../graphql-operations'
+import { DEFAULT_SERIES_DISPLAY_OPTIONS } from '../../../../../../../core'
 import { SeriesDisplayOptionsInputRequired } from '../../../../../../../core/types/insight/common'
 import { useField } from '../../../../../../form/hooks/useField'
 import { FormChangeEvent, SubmissionResult, useForm, FORM_ERROR } from '../../../../../../form/hooks/useForm'
@@ -101,12 +102,11 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     })
 
     const client = useApolloClient()
-    const contextValidator = useMemo(() => createSearchContextValidator(client), [client])
 
     const contexts = useField({
         name: 'context',
         formApi: formAPI,
-        validators: { async: contextValidator },
+        validators: { async: useMemo(() => createSearchContextValidator(client), [client]) },
     })
 
     const includeRegex = useField({
@@ -123,8 +123,8 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
 
     const currentRepositoriesFilters = { include: includeRegex.input.value, exclude: excludeRegex.input.value }
     const hasFiltersChanged = !isEqual(originalValues, values)
-    const hasAppliedFilters = hasActiveFilters(originalValues) && !hasFiltersChanged
-    const hasSeriesDisplayOptionsChanged = !isEqual(originalSeriesDisplayOptions, seriesDisplayOptions)
+    const hasSeriesDisplayOptionsChanged = !isEqual(DEFAULT_SERIES_DISPLAY_OPTIONS, seriesDisplayOptions)
+    const hasAppliedFilters = hasActiveFilters(originalValues) && !hasFiltersChanged && !hasSeriesDisplayOptionsChanged
 
     const handleCollapseState = (section: FilterSection, opened: boolean): void => {
         if (!opened) {
@@ -201,8 +201,9 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     <FilterCollapseSection
                         open={isHorizontalMode || activeSection === FilterSection.SortFilter}
                         title="Sort & Limit"
+                        aria-label="sort and limit filter section"
                         preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
-                        hasActiveFilter={false}
+                        hasActiveFilter={hasSeriesDisplayOptionsChanged}
                         withSeparators={!isHorizontalMode}
                         onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
                     >
@@ -217,6 +218,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                 <FilterCollapseSection
                     open={isHorizontalMode || activeSection === FilterSection.SearchContext}
                     title="Search context"
+                    aria-label="search context filter section"
                     preview={getSerializedSearchContextFilter(contexts.input.value)}
                     hasActiveFilter={hasActiveUnaryFilter(contexts.input.value)}
                     withSeparators={!isHorizontalMode}
@@ -248,6 +250,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                 <FilterCollapseSection
                     open={isHorizontalMode || activeSection === FilterSection.RegularExpressions}
                     title="Regular expression"
+                    aria-label="regular expressions filter section"
                     preview={getSerializedRepositoriesFilter(currentRepositoriesFilters)}
                     hasActiveFilter={
                         hasActiveUnaryFilter(includeRegex.input.value) || hasActiveUnaryFilter(excludeRegex.input.value)
@@ -321,7 +324,11 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         loading={formAPI.submitting}
                         label={getSubmitButtonText({ submitting: formAPI.submitting, hasAppliedFilters })}
                         type="submit"
-                        disabled={!formAPI.valid || formAPI.submitting || !hasFiltersChanged}
+                        disabled={
+                            !formAPI.valid ||
+                            formAPI.submitting ||
+                            (!hasFiltersChanged && !hasSeriesDisplayOptionsChanged)
+                        }
                         variant="secondary"
                         size="sm"
                         outline={true}
@@ -335,7 +342,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         disabled={(!hasFiltersChanged && !hasSeriesDisplayOptionsChanged) || !formAPI.valid}
                         onClick={onCreateInsightRequest}
                     >
-                        <Icon role="img" aria-hidden={true} className="mr-1" as={PlusIcon} />
+                        <Icon aria-hidden={true} className="mr-1" as={PlusIcon} />
                         Save as new view
                     </Button>
                 </div>

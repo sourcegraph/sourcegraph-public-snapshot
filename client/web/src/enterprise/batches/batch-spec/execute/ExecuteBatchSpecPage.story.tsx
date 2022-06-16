@@ -3,6 +3,7 @@ import { addMinutes } from 'date-fns'
 import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import {
     EMPTY_SETTINGS_CASCADE,
     SettingsOrgSubject,
@@ -23,8 +24,8 @@ import {
     COMPLETED_BATCH_SPEC,
     COMPLETED_WITH_ERRORS_BATCH_SPEC,
     EXECUTING_BATCH_SPEC,
-    FAILED_BATCH_SPEC,
     mockBatchChange,
+    mockFullBatchSpec,
     mockWorkspaceResolutionStatus,
     mockWorkspaces,
 } from '../batch-spec.mock'
@@ -136,33 +137,6 @@ add('executing', () => (
     </WebStory>
 ))
 
-const FAILED_MOCKS = buildMocks(FAILED_BATCH_SPEC, { state: BatchSpecWorkspaceState.FAILED, failureMessage: 'Uh oh!' })
-
-add('failed', () => {
-    console.log(mockWorkspaces(50, { state: BatchSpecWorkspaceState.FAILED, failureMessage: 'Uh oh!' }))
-    return (
-        <WebStory>
-            {props => (
-                <MockedTestProvider link={new WildcardMockLink(FAILED_MOCKS)}>
-                    <ExecuteBatchSpecPage
-                        {...props}
-                        batchSpecID="spec1234"
-                        batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
-                        testContextState={{
-                            errors: {
-                                execute:
-                                    "Oh no something went wrong. This is a longer error message to demonstrate how this might take up a decent portion of screen real estate but hopefully it's still helpful information so it's worth the cost. Here's a long error message with some bullets:\n  * This is a bullet\n  * This is another bullet\n  * This is a third bullet and it's also the most important one so it's longer than all the others wow look at that.",
-                            },
-                        }}
-                        authenticatedUser={mockAuthenticatedUser}
-                        settingsCascade={SETTINGS_CASCADE}
-                    />
-                </MockedTestProvider>
-            )}
-        </WebStory>
-    )
-})
-
 const COMPLETED_MOCKS = buildMocks(COMPLETED_BATCH_SPEC, { state: BatchSpecWorkspaceState.COMPLETED })
 
 add('completed', () => (
@@ -193,6 +167,24 @@ add('completed with errors', () => (
                     {...props}
                     batchSpecID="spec1234"
                     batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
+                    authenticatedUser={mockAuthenticatedUser}
+                    settingsCascade={SETTINGS_CASCADE}
+                />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+))
+
+const LOCAL_MOCKS = buildMocks(mockFullBatchSpec({ source: BatchSpecSource.LOCAL }))
+
+add('for a locally-executed spec', () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={new WildcardMockLink(LOCAL_MOCKS)}>
+                <ExecuteBatchSpecPage
+                    {...props}
+                    batchSpecID="spec1234"
+                    batchChange={{ name: 'my-local-batch-change', namespace: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
                     settingsCascade={SETTINGS_CASCADE}
                 />

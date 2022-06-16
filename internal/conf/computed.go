@@ -155,6 +155,15 @@ func ExecutorsEnabled() bool {
 	return Get().ExecutorsAccessToken != ""
 }
 
+func ExecutorsFrontendURL() string {
+	current := Get()
+	if current.ExecutorsFrontendURL != "" {
+		return current.ExecutorsFrontendURL
+	}
+
+	return current.ExternalURL
+}
+
 func CodeIntelAutoIndexingEnabled() bool {
 	if enabled := Get().CodeIntelAutoIndexingEnabled; enabled != nil {
 		return *enabled

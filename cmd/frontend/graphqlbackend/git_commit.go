@@ -255,7 +255,7 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 	defer span.Finish()
 	span.SetTag("path", path)
 
-	stat, err := git.Stat(ctx, r.db, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), path)
+	stat, err := gitserver.NewClient(r.db).Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -327,10 +327,25 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 	}, nil
 }
 
+func (r *GitCommitResolver) Diff(ctx context.Context, args *struct {
+	Base *string
+}) (*RepositoryComparisonResolver, error) {
+	oidString := string(r.oid)
+	base := oidString + "~"
+	if args.Base != nil {
+		base = *args.Base
+	}
+	return NewRepositoryComparison(ctx, r.db, r.repoResolver, &RepositoryComparisonInput{
+		Base:         &base,
+		Head:         &oidString,
+		FetchMissing: false,
+	})
+}
+
 func (r *GitCommitResolver) BehindAhead(ctx context.Context, args *struct {
 	Revspec string
 }) (*behindAheadCountsResolver, error) {
-	counts, err := git.GetBehindAhead(ctx, r.db, r.gitRepo, args.Revspec, string(r.oid))
+	counts, err := gitserver.NewClient(r.db).GetBehindAhead(ctx, r.gitRepo, args.Revspec, string(r.oid))
 	if err != nil {
 		return nil, err
 	}

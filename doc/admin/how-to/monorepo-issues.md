@@ -58,7 +58,7 @@ Selecting the Show History button while viewing a file initiates a request to [f
 
 ## Common alerts
 
-The following alerts are common to instances underprovisioned in relation to their monorepos, [learn more about alerts](https://docs.sourcegraph.com/admin/observability/alert_solutions):
+The following alerts are common to instances underprovisioned in relation to their monorepos, [learn more about alerts](https://docs.sourcegraph.com/admin/observability/alerts):
 
 - frontend: 20s+ 99th percentile code-intel successful search request duration over 5m
 - frontend: 15s+ 90th percentile code-intel successful search request duration over 5m

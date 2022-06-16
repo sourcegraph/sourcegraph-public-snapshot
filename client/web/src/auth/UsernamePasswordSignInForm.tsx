@@ -5,7 +5,7 @@ import * as H from 'history'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
-import { Button, LoadingSpinner, Link, Text, Input } from '@sourcegraph/wildcard'
+import { Label, Button, LoadingSpinner, Link, Text, Input } from '@sourcegraph/wildcard'
 
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
@@ -110,21 +110,24 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
                     autoComplete="username"
                 />
 
-                <PasswordInput
-                    onChange={onPasswordFieldChange}
-                    value={password}
-                    required={true}
-                    label={
-                        <div className="d-flex justify-content-between">
-                            <span>Password</span>
-                            {context.resetPasswordEnabled && <Link to="/password-reset">Forgot password?</Link>}
-                        </div>
-                    }
-                    disabled={loading}
-                    autoComplete="current-password"
-                    className="form-group"
-                    placeholder=" "
-                />
+                <div className="form-group d-flex flex-column align-content-start position-relative">
+                    <Label htmlFor="password" className="align-self-start">
+                        Password
+                    </Label>
+                    <PasswordInput
+                        onChange={onPasswordFieldChange}
+                        value={password}
+                        required={true}
+                        disabled={loading}
+                        autoComplete="current-password"
+                        placeholder=" "
+                    />
+                    {context.resetPasswordEnabled && (
+                        <small className="form-text text-muted align-self-end position-absolute">
+                            <Link to="/password-reset">Forgot password?</Link>
+                        </small>
+                    )}
+                </div>
 
                 <div
                     className={classNames('form-group', {

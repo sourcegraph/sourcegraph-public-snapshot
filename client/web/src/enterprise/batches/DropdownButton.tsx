@@ -12,6 +12,7 @@ import {
     MenuList,
     Position,
     MenuItem,
+    MenuDivider,
     H4,
     Text,
 } from '@sourcegraph/wildcard'
@@ -152,7 +153,7 @@ export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Pro
                         {actions.map((action, index) => (
                             <React.Fragment key={action.type}>
                                 <DropdownItem action={action} setSelectedType={onSelectedTypeSelect} />
-                                {index !== actions.length - 1 && <div className="dropdown-divider" />}
+                                {index !== actions.length - 1 && <MenuDivider />}
                             </React.Fragment>
                         ))}
                     </MenuList>

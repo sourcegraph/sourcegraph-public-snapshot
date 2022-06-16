@@ -57,7 +57,7 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<React.PropsWithChild
                 <div className={styles.modalHeader}>
                     <H4 id={MODAL_LABEL_ID}>Keyboard shortcuts</H4>
                     <Button variant="icon" aria-label="Close" onClick={toggleIsOpen}>
-                        <Icon role="img" as={CloseIcon} aria-hidden={true} />
+                        <Icon as={CloseIcon} aria-hidden={true} />
                     </Button>
                 </div>
                 <div>

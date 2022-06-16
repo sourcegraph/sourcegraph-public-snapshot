@@ -130,11 +130,19 @@ func (userEmails) Add(ctx context.Context, db database.DB, userID int32, email s
 			return err
 		}
 
+		defer func() {
+			// Note: We want to mark as sent regardless because every part of the codebase
+			// assumed the email sending would never fail and uses the value of the
+			// "last_verification_sent_at" column to calculate cooldown (instead of using
+			// cache), while still aligning the semantics to the column name.
+			if err = db.UserEmails().SetLastVerification(ctx, userID, email, *code); err != nil {
+				log15.Warn("Failed to set last verification sent at for the user email", "userID", userID, "error", err)
+			}
+		}()
+
 		// Send email verification email.
 		if err := SendUserEmailVerificationEmail(ctx, usr.Username, email, *code); err != nil {
 			return errors.Wrap(err, "SendUserEmailVerificationEmail")
-		} else if err = db.UserEmails().SetLastVerification(ctx, userID, email, *code); err != nil {
-			return errors.Wrap(err, "SetLastVerificationSentAt")
 		}
 	}
 	return nil
