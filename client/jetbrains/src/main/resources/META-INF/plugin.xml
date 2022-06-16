@@ -18,7 +18,7 @@
             nonDefaultProject="false"
         />
         <notificationGroup id="Sourcegraph" displayType="BALLOON"/>
-        <projectService id="sourcegraph.JCEFService" serviceImplementation="com.sourcegraph.find.JCEFService"/>
+        <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
     </extensions>
 
     <actions>
@@ -64,7 +64,7 @@
         </action>
         <action
             id="sourcegraph.openSearch"
-            class="com.sourcegraph.find.OpenSearchAction"
+            class="com.sourcegraph.find.OpenFindAction"
             text="Open Sourcegraph Search View"
             description="Open Sourcegraph search view"
             icon="/icons/icon.png">

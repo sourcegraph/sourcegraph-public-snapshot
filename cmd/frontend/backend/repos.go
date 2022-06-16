@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
@@ -219,7 +218,7 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return nil, err
 	}
 
-	root, err := git.Stat(ctx, s.db, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "")
+	root, err := gitserver.NewClient(s.db).Stat(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "")
 	if err != nil {
 		return nil, err
 	}

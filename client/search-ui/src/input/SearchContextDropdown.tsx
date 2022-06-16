@@ -30,6 +30,7 @@ export interface SearchContextDropdownProps
     className?: string
     onEscapeMenuClose?: () => void
     isExternalServicesUserModeAll?: boolean
+    menuClassName?: string
 }
 
 export const SearchContextDropdown: React.FunctionComponent<
@@ -51,6 +52,7 @@ export const SearchContextDropdown: React.FunctionComponent<
         onEscapeMenuClose,
         showSearchContextManagement,
         isExternalServicesUserModeAll,
+        menuClassName,
     } = props
 
     const [contextCtaDismissed, setContextCtaDismissed] = useTemporarySetting('search.contexts.ctaDismissed', false)
@@ -159,6 +161,7 @@ export const SearchContextDropdown: React.FunctionComponent<
                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                     fetchSearchContexts={fetchSearchContexts}
                     closeMenu={onCloseMenu}
+                    className={menuClassName}
                 />
                 {isSourcegraphDotCom && !isUserAnOrgMember && !hasUserAddedRepositories && !contextCtaDismissed && (
                     <SearchContextCtaPrompt

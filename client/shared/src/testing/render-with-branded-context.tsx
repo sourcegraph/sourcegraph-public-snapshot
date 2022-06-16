@@ -3,7 +3,6 @@ import { ReactNode } from 'react'
 import { RenderResult, render } from '@testing-library/react'
 import { MemoryHistory, createMemoryHistory } from 'history'
 import { Router } from 'react-router-dom'
-import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
 
@@ -22,9 +21,7 @@ export function renderWithBrandedContext(
     return {
         ...render(
             <WildcardThemeContext.Provider value={wildcardTheme}>
-                <Router history={history}>
-                    <CompatRouter>{children}</CompatRouter>
-                </Router>
+                <Router history={history}>{children}</Router>
             </WildcardThemeContext.Provider>
         ),
         history,

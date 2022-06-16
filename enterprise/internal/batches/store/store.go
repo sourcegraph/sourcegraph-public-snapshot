@@ -183,8 +183,10 @@ type operations struct {
 	deleteBatchSpec         *observation.Operation
 	countBatchSpecs         *observation.Operation
 	getBatchSpec            *observation.Operation
+	getBatchSpecDiffStat    *observation.Operation
 	getNewestBatchSpec      *observation.Operation
 	listBatchSpecs          *observation.Operation
+	listBatchSpecRepoIDs    *observation.Operation
 	deleteExpiredBatchSpecs *observation.Operation
 
 	getBulkOperation        *observation.Operation
@@ -257,9 +259,6 @@ type operations struct {
 	getBatchSpecResolutionJob    *observation.Operation
 	listBatchSpecResolutionJobs  *observation.Operation
 
-	setBatchSpecWorkspaceExecutionJobAccessToken   *observation.Operation
-	resetBatchSpecWorkspaceExecutionJobAccessToken *observation.Operation
-
 	listBatchSpecExecutionCacheEntries     *observation.Operation
 	markUsedBatchSpecExecutionCacheEntries *observation.Operation
 	createBatchSpecExecutionCacheEntry     *observation.Operation
@@ -316,8 +315,10 @@ func newOperations(observationContext *observation.Context) *operations {
 			deleteBatchSpec:         op("DeleteBatchSpec"),
 			countBatchSpecs:         op("CountBatchSpecs"),
 			getBatchSpec:            op("GetBatchSpec"),
+			getBatchSpecDiffStat:    op("GetBatchSpecDiffStat"),
 			getNewestBatchSpec:      op("GetNewestBatchSpec"),
 			listBatchSpecs:          op("ListBatchSpecs"),
+			listBatchSpecRepoIDs:    op("ListBatchSpecRepoIDs"),
 			deleteExpiredBatchSpecs: op("DeleteExpiredBatchSpecs"),
 
 			getBulkOperation:        op("GetBulkOperation"),
@@ -389,9 +390,6 @@ func newOperations(observationContext *observation.Context) *operations {
 			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
 			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
 			listBatchSpecResolutionJobs:  op("ListBatchSpecResolutionJobs"),
-
-			setBatchSpecWorkspaceExecutionJobAccessToken:   op("SetBatchSpecWorkspaceExecutionJobAccessToken"),
-			resetBatchSpecWorkspaceExecutionJobAccessToken: op("ResetBatchSpecWorkspaceExecutionJobAccessToken"),
 
 			listBatchSpecExecutionCacheEntries:     op("ListBatchSpecExecutionCacheEntries"),
 			markUsedBatchSpecExecutionCacheEntries: op("MarkUsedBatchSpecExecutionCacheEntries"),

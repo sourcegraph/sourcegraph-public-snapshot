@@ -88,8 +88,8 @@ const MemoizedActionsMenu: React.FunctionComponent<
         setShowCancelModal(true)
     }, [])
 
-    const showPreviewButton = !location.pathname.endsWith('preview') && !!batchSpec.applyURL
-    const failed = state === BatchSpecState.FAILED
+    const showPreviewButton = !location.pathname.endsWith('preview') && state === BatchSpecState.COMPLETED
+    const showPreviewMenuItem = !location.pathname.endsWith('preview') && state === BatchSpecState.FAILED
 
     // The actions menu button is wider than the "Preview" button, so to prevent layout
     // shift, we apply the width of the actions menu button to the "Preview" button
@@ -101,17 +101,11 @@ const MemoizedActionsMenu: React.FunctionComponent<
             {showPreviewButton && (
                 <Button
                     to={`${batchSpec.executionURL}/preview`}
-                    variant={failed ? 'warning' : 'primary'}
+                    variant="primary"
                     as={Link}
                     className={styles.previewButton}
-                    style={{ width: failed ? undefined : menuWidth }}
-                    data-tooltip={
-                        failed
-                            ? "Execution didn't finish successfully in all workspaces. Some changesets may be missing in preview."
-                            : undefined
-                    }
+                    style={{ width: menuWidth }}
                 >
-                    {failed && <Icon aria-hidden={true} className="mr-1" as={AlertCircleIcon} />}
                     Preview
                 </Button>
             )}
@@ -123,6 +117,11 @@ const MemoizedActionsMenu: React.FunctionComponent<
                     </MenuButton>
                 </div>
                 <MenuList position={Position.bottomEnd}>
+                    {showPreviewMenuItem && (
+                        <MenuItem onSelect={() => history.push(`${batchSpec.executionURL}/preview`)}>
+                            <Icon aria-hidden={true} as={AlertCircleIcon} /> Preview with errors
+                        </MenuItem>
+                    )}
                     <MenuItem onSelect={onSelectEdit}>
                         <Icon aria-hidden={true} as={PencilIcon} /> Edit spec{isExecuting ? '...' : ''}
                     </MenuItem>
