@@ -513,8 +513,6 @@ WHERE
 	repo.deleted_at IS NULL
 	AND batch_specs.id = %s
 	AND %s -- authz query conds
-ORDER BY
-	repo.id ASC
 `
 
 // DeleteExpiredBatchSpecs deletes BatchSpecs that have not been attached
