@@ -10,15 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type TaskLogger interface {
-	Close() error
-	Log(string)
-	Logf(string, ...interface{})
-	MarkErrored()
-	Path() string
-	PrefixWriter(prefix string) io.Writer
-}
-
 type FileTaskLogger struct {
 	f *os.File
 

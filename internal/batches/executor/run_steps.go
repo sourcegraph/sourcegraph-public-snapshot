@@ -40,6 +40,8 @@ type executionOpts struct {
 
 	allowPathMounts bool
 
+	globalEnv []string
+
 	writeStepCacheResult func(ctx context.Context, stepResult execution.AfterStepResult, task *Task) error
 }
 
@@ -261,7 +263,7 @@ func executeSingleStep(
 	defer cleanup()
 
 	// Resolve step.Env given the current environment.
-	stepEnv, err := step.Env.Resolve(os.Environ())
+	stepEnv, err := step.Env.Resolve(opts.globalEnv)
 	if err != nil {
 		err = errors.Wrap(err, "resolving step environment")
 		opts.ui.StepPreparingFailed(i+1, err)

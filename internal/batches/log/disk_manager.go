@@ -6,26 +6,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type LogManager interface {
-	AddTask(string) (TaskLogger, error)
-	Close() error
-	LogFiles() []string
-}
+var _ LogManager = &DiskManager{}
 
-var _ LogManager = &Manager{}
-
-type Manager struct {
+type DiskManager struct {
 	dir      string
 	keepLogs bool
 
 	tasks sync.Map
 }
 
-func NewManager(dir string, keepLogs bool) *Manager {
-	return &Manager{dir: dir, keepLogs: keepLogs}
+func NewDiskManager(dir string, keepLogs bool) *DiskManager {
+	return &DiskManager{dir: dir, keepLogs: keepLogs}
 }
 
-func (lm *Manager) AddTask(slug string) (TaskLogger, error) {
+func (lm *DiskManager) AddTask(slug string) (TaskLogger, error) {
 	tl, err := newTaskLogger(slug, lm.keepLogs, lm.dir)
 	if err != nil {
 		return nil, err
@@ -35,7 +29,7 @@ func (lm *Manager) AddTask(slug string) (TaskLogger, error) {
 	return tl, nil
 }
 
-func (lm *Manager) Close() error {
+func (lm *DiskManager) Close() error {
 	var errs errors.MultiError
 
 	lm.tasks.Range(func(_, v interface{}) bool {
@@ -51,7 +45,7 @@ func (lm *Manager) Close() error {
 	return errs
 }
 
-func (lm *Manager) LogFiles() []string {
+func (lm *DiskManager) LogFiles() []string {
 	var files []string
 
 	lm.tasks.Range(func(_, v interface{}) bool {

@@ -31,8 +31,6 @@ type dockerVolumeWorkspaceCreator struct {
 
 var _ Creator = &dockerVolumeWorkspaceCreator{}
 
-func (wc *dockerVolumeWorkspaceCreator) Type() CreatorType { return CreatorTypeVolume }
-
 func (wc *dockerVolumeWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, steps []batcheslib.Step, archive repozip.Archive) (Workspace, error) {
 	volume, err := wc.createVolume(ctx)
 	if err != nil {

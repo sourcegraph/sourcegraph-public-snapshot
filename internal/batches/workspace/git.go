@@ -15,6 +15,8 @@ func runGitCmd(ctx context.Context, dir string, args ...string) ([]byte, error) 
 		"GIT_CONFIG_NOSYSTEM=1",
 		// And also not any other, because they can mess up output, change defaults, .. which can do unexpected things.
 		"GIT_CONFIG=/dev/null",
+		// Don't ask interactively for credentials.
+		"GIT_TERMINAL_PROMPT=0",
 		// Set user.name and user.email in the local repository. The user name and
 		// e-mail will eventually be ignored anyway, since we're just using the Git
 		// repository to generate diffs, but we don't want git to generate alarming

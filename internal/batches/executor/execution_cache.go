@@ -158,7 +158,8 @@ type JSONCacheWriter interface {
 }
 
 type ServerSideCache struct {
-	Writer JSONCacheWriter
+	CacheDir string
+	Writer   JSONCacheWriter
 }
 
 func (c *ServerSideCache) Get(ctx context.Context, key cache.Keyer) (result execution.Result, found bool, err error) {
@@ -194,7 +195,9 @@ func (c *ServerSideCache) GetStepResult(ctx context.Context, key cache.Keyer) (r
 		return result, false, err
 	}
 
-	found, err = readCacheFile(rawKey+cacheFileExt, &result)
+	file := rawKey + cacheFileExt
+	path := filepath.Join(c.CacheDir, file)
+	found, err = readCacheFile(path, &result)
 	if err != nil {
 		return result, false, err
 	}

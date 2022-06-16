@@ -94,8 +94,8 @@ func (ui *JSONLines) CheckingCacheSuccess(cachedSpecsFound int, tasksToExecute i
 	})
 }
 
-func (ui *JSONLines) ExecutingTasks(verbose bool, parallelism int) executor.TaskExecutionUI {
-	return &taskExecutionJSONLines{verbose: verbose, parallelism: parallelism}
+func (ui *JSONLines) ExecutingTasks(_ bool, _ int) executor.TaskExecutionUI {
+	return &taskExecutionJSONLines{}
 }
 
 func (ui *JSONLines) ExecutingTasksSkippingErrors(err error) {
@@ -186,9 +186,6 @@ func (ui *JSONLines) WriteAfterStepResult(key string, value execution.AfterStepR
 }
 
 type taskExecutionJSONLines struct {
-	verbose     bool
-	parallelism int
-
 	linesTasks map[*executor.Task]batcheslib.JSONLinesTask
 }
 
@@ -283,21 +280,17 @@ type stepsExecutionJSONLines struct {
 const stepFlushDuration = 500 * time.Millisecond
 
 func (ui *stepsExecutionJSONLines) ArchiveDownloadStarted() {
-	logOperationStart(batcheslib.LogEventOperationTaskDownloadingArchive, &batcheslib.TaskDownloadingArchiveMetadata{TaskID: ui.linesTask.ID})
+	// We don't fetch archives in executor mode.
 }
 func (ui *stepsExecutionJSONLines) ArchiveDownloadFinished(err error) {
-	if err != nil {
-		logOperationFailure(batcheslib.LogEventOperationTaskDownloadingArchive, &batcheslib.TaskDownloadingArchiveMetadata{TaskID: ui.linesTask.ID, Error: err.Error()})
-	} else {
-		logOperationSuccess(batcheslib.LogEventOperationTaskDownloadingArchive, &batcheslib.TaskDownloadingArchiveMetadata{TaskID: ui.linesTask.ID})
-	}
+	// We don't fetch archives in executor mode.
 }
 
 func (ui *stepsExecutionJSONLines) WorkspaceInitializationStarted() {
-	logOperationStart(batcheslib.LogEventOperationTaskInitializingWorkspace, &batcheslib.TaskInitializingWorkspaceMetadata{TaskID: ui.linesTask.ID})
+	// No workspace initialization required for executor mode.
 }
 func (ui *stepsExecutionJSONLines) WorkspaceInitializationFinished() {
-	logOperationSuccess(batcheslib.LogEventOperationTaskInitializingWorkspace, &batcheslib.TaskInitializingWorkspaceMetadata{TaskID: ui.linesTask.ID})
+	// No workspace initialization required for executor mode.
 }
 
 func (ui *stepsExecutionJSONLines) SkippingStepsUpto(startStep int) {

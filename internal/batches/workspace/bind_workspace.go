@@ -25,8 +25,6 @@ type dockerBindWorkspaceCreator struct {
 
 var _ Creator = &dockerBindWorkspaceCreator{}
 
-func (wc *dockerBindWorkspaceCreator) Type() CreatorType { return CreatorTypeBind }
-
 func (wc *dockerBindWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, steps []batcheslib.Step, archive repozip.Archive) (Workspace, error) {
 	w, err := wc.unzipToWorkspace(ctx, repo, archive.Path())
 	if err != nil {
@@ -104,9 +102,15 @@ func (wc *dockerBindWorkspaceCreator) copyToWorkspace(ctx context.Context, w *do
 	return nil
 }
 
+// dockerBindWorkspace implements a workspace that operates on the host FS
+// and is mounted into the docker containers using a bind mount in the end.
 type dockerBindWorkspace struct {
+	// tempDir is a temporary directory that will be used for ephemeral files
+	// that are needed throughout the process.
 	tempDir string
-
+	// dir is the directory where the repo archive is unzipped to.
+	// This is also the path that is directly mounted into the docker
+	// containers.
 	dir string
 }
 
@@ -130,7 +134,7 @@ func (w *dockerBindWorkspace) Changes(ctx context.Context) (*git.Changes, error)
 		return nil, errors.Wrap(err, "git add failed")
 	}
 
-	statusOut, err := runGitCmd(ctx, w.dir, "status", "--porcelain")
+	statusOut, err := runGitCmd(ctx, w.dir, "status", "--porcelain", "--no-ahead-behind")
 	if err != nil {
 		return nil, errors.Wrap(err, "git status failed")
 	}

@@ -25,6 +25,8 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/executor"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
+	"github.com/sourcegraph/src-cli/internal/batches/log"
+	"github.com/sourcegraph/src-cli/internal/batches/repozip"
 	"github.com/sourcegraph/src-cli/internal/batches/service"
 	"github.com/sourcegraph/src-cli/internal/batches/ui"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
@@ -86,30 +88,31 @@ type batchExecuteFlags struct {
 	textOnly bool
 }
 
-func newBatchExecuteFlags(flagSet *flag.FlagSet, workspaceExecution bool, cacheDir, tempDir string) *batchExecuteFlags {
+func newBatchExecuteFlags(flagSet *flag.FlagSet, cacheDir, tempDir string) *batchExecuteFlags {
 	caf := &batchExecuteFlags{
 		batchExecutionFlags: newBatchExecutionFlags(flagSet),
 	}
 
-	if !workspaceExecution {
-		flagSet.BoolVar(
-			&caf.textOnly, "text-only", false,
-			"INTERNAL USE ONLY. EXPERIMENTAL. Switches off the TUI to only print JSON lines.",
-		)
-		flagSet.BoolVar(
-			&caf.apply, "apply", false,
-			"Ignored.",
-		)
-		flagSet.BoolVar(
-			&caf.keepLogs, "keep-logs", false,
-			"Retain logs after executing steps.",
-		)
-	}
+	flagSet.BoolVar(
+		&caf.textOnly, "text-only", false,
+		"INTERNAL USE ONLY. EXPERIMENTAL. Switches off the TUI to only print JSON lines.",
+	)
+
+	flagSet.BoolVar(
+		&caf.apply, "apply", false,
+		"Ignored.",
+	)
+
+	flagSet.BoolVar(
+		&caf.keepLogs, "keep-logs", false,
+		"Retain logs after executing steps.",
+	)
 
 	flagSet.StringVar(
 		&caf.cacheDir, "cache", cacheDir,
 		"Directory for caching results and repository archives.",
 	)
+
 	flagSet.StringVar(
 		&caf.tempDir, "tmp", tempDir,
 		"Directory for storing temporary data, such as log files. Default is /tmp. Can also be set with environment variable SRC_BATCH_TMP_DIR; if both are set, this flag will be used and not the environment variable.",
@@ -124,14 +127,17 @@ func newBatchExecuteFlags(flagSet *flag.FlagSet, workspaceExecution bool, cacheD
 		&caf.parallelism, "j", runtime.GOMAXPROCS(0),
 		"The maximum number of parallel jobs. Default is GOMAXPROCS.",
 	)
+
 	flagSet.DurationVar(
 		&caf.timeout, "timeout", 60*time.Minute,
 		"The maximum duration a single batch spec step can take.",
 	)
+
 	flagSet.BoolVar(
 		&caf.cleanArchives, "clean-archives", true,
 		"If true, deletes downloaded repository archives after executing batch spec steps.",
 	)
+
 	flagSet.BoolVar(
 		&caf.skipErrors, "skip-errors", false,
 		"If true, errors encountered while executing steps in a repository won't stop the execution of the batch spec but only cause that repository to be skipped.",
@@ -316,14 +322,15 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 		ui.PreparingContainerImagesSuccess()
 
 		ui.DeterminingWorkspaceCreatorType()
-		workspaceCreator = workspace.NewCreator(ctx, opts.flags.workspace, opts.flags.cacheDir, opts.flags.tempDir, images)
-		if workspaceCreator.Type() == workspace.CreatorTypeVolume {
+		var typ workspace.CreatorType
+		workspaceCreator, typ = workspace.NewCreator(ctx, opts.flags.workspace, opts.flags.cacheDir, opts.flags.tempDir, images)
+		if typ == workspace.CreatorTypeVolume {
 			_, err = svc.EnsureImage(ctx, workspace.DockerVolumeWorkspaceImage)
 			if err != nil {
 				return err
 			}
 		}
-		ui.DeterminingWorkspaceCreatorTypeSuccess(workspaceCreator.Type())
+		ui.DeterminingWorkspaceCreatorTypeSuccess(typ)
 	}
 
 	ui.ResolvingRepositories()
@@ -347,19 +354,22 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 	}
 	ui.DeterminingWorkspacesSuccess(len(workspaces))
 
+	archiveRegistry := repozip.NewArchiveRegistry(opts.client, opts.flags.cacheDir, opts.flags.cleanArchives)
+
 	// EXECUTION OF TASKS
-	coord := svc.NewCoordinator(executor.NewCoordinatorOpts{
-		Creator:         workspaceCreator,
-		CacheDir:        opts.flags.cacheDir,
-		Cache:           executor.NewDiskCache(opts.flags.cacheDir),
-		SkipErrors:      opts.flags.skipErrors,
-		CleanArchives:   opts.flags.cleanArchives,
-		Parallelism:     opts.flags.parallelism,
-		Timeout:         opts.flags.timeout,
-		KeepLogs:        opts.flags.keepLogs,
-		TempDir:         opts.flags.tempDir,
-		AllowPathMounts: true,
-	})
+	coord := svc.NewCoordinator(
+		archiveRegistry,
+		log.NewDiskManager(opts.flags.tempDir, opts.flags.keepLogs),
+		executor.NewCoordinatorOpts{
+			Creator:         workspaceCreator,
+			Cache:           executor.NewDiskCache(opts.flags.cacheDir),
+			Parallelism:     opts.flags.parallelism,
+			Timeout:         opts.flags.timeout,
+			TempDir:         opts.flags.tempDir,
+			GlobalEnv:       os.Environ(),
+			AllowPathMounts: true,
+		},
+	)
 
 	ui.CheckingCache()
 	tasks := svc.BuildTasks(

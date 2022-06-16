@@ -381,9 +381,10 @@ func TestExecutor_Integration(t *testing.T) {
 			cacheCount := 0
 			var cacheLock sync.Mutex
 
+			cr, _ := workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, images)
 			// Setup executor
 			opts := newExecutorOpts{
-				Creator:             workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, images),
+				Creator:             cr,
 				RepoArchiveRegistry: repozip.NewArchiveRegistry(client, testTempDir, false),
 				Logger:              mock.LogNoOpManager{},
 				EnsureImage:         imageMapEnsurer(images),
@@ -811,9 +812,10 @@ func testExecuteTasks(t *testing.T, tasks []*Task, archives ...mock.RepoArchive)
 		}
 	}
 
+	cr, _ := workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, images)
 	// Setup executor
 	executor := newExecutor(newExecutorOpts{
-		Creator:             workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, images),
+		Creator:             cr,
 		RepoArchiveRegistry: repozip.NewArchiveRegistry(client, testTempDir, false),
 		Logger:              mock.LogNoOpManager{},
 		EnsureImage:         imageMapEnsurer(images),

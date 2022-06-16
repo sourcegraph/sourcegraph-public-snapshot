@@ -2,7 +2,6 @@ package executor
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"sync"
 	"testing"
@@ -223,41 +222,6 @@ func TestCoordinator_Execute(t *testing.T) {
 				buildSpecFor(testRepo2, func(spec *batcheslib.ChangesetSpec) {
 					spec.HeadRef = util.EnsureRefPrefix(testChangesetTemplate.Branch)
 					spec.Commits[0].Diff = nestedChangesDiffSubdirA
-				}),
-			},
-		},
-		{
-			name: "skip errors",
-			opts: NewCoordinatorOpts{Features: featuresAllEnabled(), SkipErrors: true},
-
-			tasks: []*Task{srcCLITask, sourcegraphTask},
-
-			batchSpec: &batcheslib.BatchSpec{
-				Name:              "my-batch-change",
-				Description:       "the description",
-				ChangesetTemplate: testChangesetTemplate,
-			},
-
-			// Execution succeeded in srcCLIRepo, but fails in sourcegraphRepo
-			executor: &dummyExecutor{
-				results: []taskResult{
-					{task: srcCLITask, result: execution.Result{Diff: `dummydiff1`}},
-				},
-				waitErr: stepFailedErr{
-					Err:         fmt.Errorf("something went wrong"),
-					Run:         "broken command",
-					Container:   "alpine:3",
-					TmpFilename: "/tmp/foobar",
-					Stderr:      "unknown command: broken",
-				},
-			},
-
-			wantErrInclude: "run: broken command",
-			// We want 1 cache entry and 1 spec
-			wantCacheEntries: 1,
-			wantSpecs: []*batcheslib.ChangesetSpec{
-				buildSpecFor(testRepo1, func(spec *batcheslib.ChangesetSpec) {
-					spec.Commits[0].Diff = `dummydiff1`
 				}),
 			},
 		},

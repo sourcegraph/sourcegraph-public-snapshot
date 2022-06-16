@@ -64,6 +64,7 @@ type newExecutorOpts struct {
 	Timeout              time.Duration
 	TempDir              string
 	AllowPathMounts      bool
+	GlobalEnv            []string
 	WriteStepCacheResult func(ctx context.Context, stepResult execution.AfterStepResult, task *Task) error
 }
 
@@ -180,6 +181,7 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 		ensureImage:     x.opts.EnsureImage,
 		tempDir:         x.opts.TempDir,
 		allowPathMounts: x.opts.AllowPathMounts,
+		globalEnv:       x.opts.GlobalEnv,
 
 		ui:                   ui.StepsExecutionUI(task),
 		writeStepCacheResult: x.opts.WriteStepCacheResult,
