@@ -237,7 +237,11 @@ func (s *Service) resolveLockfileDependenciesFromStore(ctx context.Context, repo
 
 	for _, repoCommit := range repoCommits {
 		// TODO - batch these requests in the store layer
-		if repoDeps, ok, err := s.dependenciesStore.LockfileDependencies(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit); err != nil {
+		if repoDeps, ok, err := s.dependenciesStore.LockfileDependencies(ctx, store.LockfileDependenciesOpts{
+			RepoName:          string(repoCommit.Repo),
+			Commit:            repoCommit.ResolvedCommit,
+			IncludeTransitive: false,
+		}); err != nil {
 			return nil, notFound, errors.Wrap(err, "store.LockfileDependencies")
 		} else if !ok {
 			fmt.Printf("no dependencies found for %s at %s\n", repoCommit.Repo, repoCommit.ResolvedCommit)

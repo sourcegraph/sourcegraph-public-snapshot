@@ -325,27 +325,61 @@ func TestLockfileDependencies(t *testing.T) {
 		}
 	}
 
-	for commit, expectedDeps := range depsAtCommit {
-		// Querying direct dependencies
-		directDeps, found, err := store.LockfileDependencies(ctx, "foo", commit)
-		if err != nil {
-			t.Fatalf("unexpected error querying lockfile dependencies of %s: %s", commit, err)
-		}
-		if !found {
-			t.Fatalf("expected dependencies to be cached for %s", commit)
-		}
-		sort.Slice(directDeps, func(i, j int) bool { return directDeps[i].RepoName() < directDeps[j].RepoName() })
+	t.Run("IncludeTransitive:false", func(t *testing.T) {
+		// Query direct dependencies
+		for commit, expectedDeps := range depsAtCommit {
+			directDeps, found, err := store.LockfileDependencies(ctx, LockfileDependenciesOpts{
+				RepoName: "foo",
+				Commit:   commit,
+			})
+			if err != nil {
+				t.Fatalf("unexpected error querying lockfile dependencies of %s: %s", commit, err)
+			}
+			if !found {
+				t.Fatalf("expected dependencies to be cached for %s", commit)
+			}
+			sort.Slice(directDeps, func(i, j int) bool { return directDeps[i].RepoName() < directDeps[j].RepoName() })
 
-		if a, b := len(expectedDeps.graph.RootPkgs), len(directDeps); a != b {
-			t.Fatalf("unexpected len of dependencies for commit %s: want=%d, have=%d", commit, a, b)
+			if a, b := len(expectedDeps.graph.RootPkgs), len(directDeps); a != b {
+				t.Fatalf("unexpected len of dependencies for commit %s: want=%d, have=%d", commit, a, b)
+			}
+			if diff := cmp.Diff(expectedDeps.graph.RootPkgs, directDeps); diff != "" {
+				t.Fatalf("unexpected dependencies for commit %s (-have, +want): %s", commit, diff)
+			}
 		}
-		if diff := cmp.Diff(expectedDeps.graph.RootPkgs, directDeps); diff != "" {
-			t.Fatalf("unexpected dependencies for commit %s (-have, +want): %s", commit, diff)
+	})
+
+	t.Run("IncludeTransitive:true", func(t *testing.T) {
+		// Query direct + transitive dependencies
+		for commit, expectedDeps := range depsAtCommit {
+			allDeps, found, err := store.LockfileDependencies(ctx, LockfileDependenciesOpts{
+				RepoName:          "foo",
+				Commit:            commit,
+				IncludeTransitive: true,
+			})
+			if err != nil {
+				t.Fatalf("unexpected error querying lockfile dependencies of %s: %s", commit, err)
+			}
+			if !found {
+				t.Fatalf("expected dependencies to be cached for %s", commit)
+			}
+			sort.Slice(allDeps, func(i, j int) bool { return allDeps[i].RepoName() < allDeps[j].RepoName() })
+
+			// With IncludeTransitive
+			if a, b := len(expectedDeps.list), len(allDeps); a != b {
+				t.Fatalf("unexpected len of dependencies for commit %s: want=%d, have=%d", commit, a, b)
+			}
+			if diff := cmp.Diff(expectedDeps.list, allDeps); diff != "" {
+				t.Fatalf("unexpected dependencies for commit %s (-have, +want): %s", commit, diff)
+			}
 		}
-	}
+	})
 
 	missingCommit := "d00dd00d"
-	_, found, err := store.LockfileDependencies(ctx, "foo", missingCommit)
+	_, found, err := store.LockfileDependencies(ctx, LockfileDependenciesOpts{
+		RepoName: "foo",
+		Commit:   missingCommit,
+	})
 	if err != nil {
 		t.Fatalf("unexpected error querying lockfile dependencies: %s", err)
 	} else if found {

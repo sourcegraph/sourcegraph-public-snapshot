@@ -24,7 +24,7 @@ import (
 type Store interface {
 	PreciseDependencies(ctx context.Context, repoName, commit string) (deps map[api.RepoName]types.RevSpecSet, err error)
 	PreciseDependents(ctx context.Context, repoName, commit string) (deps map[api.RepoName]types.RevSpecSet, err error)
-	LockfileDependencies(ctx context.Context, repoName, commit string) (deps []shared.PackageDependency, found bool, err error)
+	LockfileDependencies(ctx context.Context, opts LockfileDependenciesOpts) (deps []shared.PackageDependency, found bool, err error)
 	UpsertLockfileDependencies(ctx context.Context, repoName, commit string, deps []shared.PackageDependency) (err error)
 	UpsertLockfileGraph(ctx context.Context, repoName, commit string, deps []shared.PackageDependency, graph shared.DependencyGraph) (err error)
 	SelectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration) (_ map[string][]string, err error)
@@ -97,40 +97,20 @@ JOIN repo rr ON rr.id = ru.repository_id
 WHERE pr.name = %s AND pu.commit = %s
 `
 
-const recursiveLockfileDependenciesQuery = `
-WITH RECURSIVE dependencies(id, depends_on, level, max_level) AS (
-  SELECT
-    id, depends_on, 0 AS level, 3 AS max_level
-  FROM
-    codeintel_lockfile_references
-  WHERE
-    ARRAY [id] @> (SELECT codeintel_lockfile_reference_ids FROM codeintel_lockfiles WHERE repository_id = 5)
+type LockfileDependenciesOpts struct {
+	RepoName string
+	Commit   string
 
-  UNION ALL
-
-  SELECT
-    lr.id, lr.depends_on, (dependencies.level+1) AS level, dependencies.max_level
-  FROM
-    codeintel_lockfile_references lr
-  JOIN dependencies ON lr.id = ANY (dependencies.depends_on)
-  WHERE
-    level < dependencies.max_level
-)
-SELECT
-  dependencies.level, lr.*
-FROM
-  dependencies, codeintel_lockfile_references lr
-WHERE
-  dependencies.id = lr.id;
-`
+	IncludeTransitive bool
+}
 
 // LockfileDependencies returns package dependencies from a previous lockfiles result for
 // the given repository and commit. It is assumed that the given commit is the canonical
 // 40-character hash.
-func (s *store) LockfileDependencies(ctx context.Context, repoName, commit string) (deps []shared.PackageDependency, found bool, err error) {
+func (s *store) LockfileDependencies(ctx context.Context, opts LockfileDependenciesOpts) (deps []shared.PackageDependency, found bool, err error) {
 	ctx, _, endObservation := s.operations.lockfileDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoName", repoName),
-		log.String("commit", commit),
+		log.String("repoName", opts.RepoName),
+		log.String("commit", opts.Commit),
 	}})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
@@ -145,14 +125,28 @@ func (s *store) LockfileDependencies(ctx context.Context, repoName, commit strin
 	}
 	defer func() { err = tx.db.Done(err) }()
 
-	resolutionID := fmt.Sprintf("resolution-%s-%s", repoName, commit)
+	resolutionID := fmt.Sprintf("resolution-%s-%s", opts.RepoName, opts.Commit)
 
-	deps, err = scanPackageDependencies(tx.db.Query(ctx, sqlf.Sprintf(
-		lockfileDependenciesQuery,
-		repoName,
-		dbutil.CommitBytea(commit),
-		resolutionID,
-	)))
+	var q *sqlf.Query
+	if !opts.IncludeTransitive {
+		q = sqlf.Sprintf(
+			lockfileDependenciesQuery,
+			opts.RepoName,
+			dbutil.CommitBytea(opts.Commit),
+			resolutionID,
+		)
+	} else {
+		const maxLevel = 9999
+		q = sqlf.Sprintf(
+			recursiveLockfileDependenciesQuery,
+			maxLevel,
+			opts.RepoName,
+			dbutil.CommitBytea(opts.Commit),
+			resolutionID,
+		)
+	}
+
+	deps, err = scanPackageDependencies(tx.db.Query(ctx, q))
 	if err != nil {
 		return nil, false, err
 	}
@@ -163,8 +157,8 @@ func (s *store) LockfileDependencies(ctx context.Context, repoName, commit strin
 		// dependencies service.
 		_, found, err = basestore.ScanFirstInt(tx.db.Query(ctx, sqlf.Sprintf(
 			lockfileDependenciesExistsQuery,
-			repoName,
-			dbutil.CommitBytea(commit),
+			opts.RepoName,
+			dbutil.CommitBytea(opts.Commit),
 		)))
 
 		return nil, found, err
@@ -190,6 +184,46 @@ WHERE id IN (
 	AND resolution_id = %s
 )
 ORDER BY repository_name, revspec
+`
+
+const recursiveLockfileDependenciesQuery = `
+WITH RECURSIVE dependencies(id, depends_on, resolution_id, level, max_level) AS (
+  SELECT
+    id, depends_on, resolution_id, 0 AS level, %s::int AS max_level
+  FROM
+    codeintel_lockfile_references
+  WHERE
+    (
+      SELECT
+        codeintel_lockfile_reference_ids
+      FROM
+        codeintel_lockfiles
+      WHERE repository_id = (SELECT id FROM repo WHERE name = %s)
+      AND commit_bytea = %s
+      AND resolution_id = %s
+    ) @> ARRAY [id]
+
+  UNION ALL
+
+  SELECT
+    lr.id, lr.depends_on, lr.resolution_id, (dependencies.level+1) AS level, dependencies.max_level
+  FROM
+    codeintel_lockfile_references lr
+  JOIN dependencies ON lr.id = ANY (dependencies.depends_on) AND lr.resolution_id = dependencies.resolution_id
+  WHERE
+    level < dependencies.max_level
+)
+SELECT
+  -- We could also select dependencies.level here
+  lr.repository_name,
+  lr.revspec,
+  lr.package_scheme,
+  lr.package_name,
+  lr.package_version
+FROM
+  dependencies, codeintel_lockfile_references lr
+WHERE
+  dependencies.id = lr.id;
 `
 
 const lockfileDependenciesExistsQuery = `
@@ -614,7 +648,7 @@ const lockfileDependentsQuery = `
 -- source: internal/codeintel/dependencies/internal/store/store.go:LockfileDependents
 SELECT r.name, encode(lf.commit_bytea, 'hex') AS commit
 FROM codeintel_lockfile_references lr
-JOIN codeintel_lockfiles lf ON LF.codeintel_lockfile_reference_ids @> ARRAY [ lr.id ] AND lf.resolution_id = lr.resolution_id
+JOIN codeintel_lockfiles lf ON LF.codeintel_lockfile_reference_ids @> ARRAY [lr.id] AND lf.resolution_id = lr.resolution_id
 JOIN repo r ON r.id = lf.repository_id
 JOIN repo rr ON rr.id = lr.repository_id
 WHERE rr.name = %s AND lr.commit_bytea = %s

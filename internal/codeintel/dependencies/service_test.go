@@ -79,8 +79,8 @@ func TestDependencies(t *testing.T) {
 	})
 
 	// Return canned dependencies for repo `baz`
-	mockStore.LockfileDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName, commit string) ([]shared.PackageDependency, bool, error) {
-		if repoName != "github.com/example/baz" {
+	mockStore.LockfileDependenciesFunc.SetDefaultHook(func(ctx context.Context, opts store.LockfileDependenciesOpts) ([]shared.PackageDependency, bool, error) {
+		if opts.RepoName != "github.com/example/baz" {
 			return nil, false, nil
 		}
 
