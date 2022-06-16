@@ -94,7 +94,7 @@ Using sub-loggers allows you to easily trace, for example, the execution of an e
 
 #### Scoped loggers
 
-Scopes are used to identify the component of a system a log message comes from, and generally should provide enough information for an uninitiated reader (such as a new teammate, or a Sourcegraph administrator) to get a rough idea the context in which a log message might have occured.
+Scopes are used to identify the component of a system a log message comes from, and generally should provide enough information for an uninitiated reader (such as a new teammate, or a Sourcegraph administrator) to get a rough idea the context in which a log message might have occurred.
 
 There are several ways to create scoped loggers:
 
