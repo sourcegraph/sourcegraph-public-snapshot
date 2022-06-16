@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react'
 
+import { Slottable } from '@radix-ui/react-slot'
 import * as TooltipPrimitive from '@radix-ui/react-tooltip'
-import classNames from 'classnames'
 import { isEmpty } from 'lodash'
 
 import styles from './Tooltip.module.scss'
@@ -58,40 +58,30 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = ({
     // GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/36080
     <TooltipPrimitive.Root delayDuration={0} defaultOpen={defaultOpen}>
         <TooltipPrimitive.Trigger asChild={true}>
-            {/** The onClick and role attributes here are part of the onPointerDownOutside fix described above. */}
-            <span
-                role="presentation"
-                className={classNames(styles.tooltip, className)}
-                onClick={event => event.preventDefault()}
-                data-testid={dataTestId}
-                data-test-content={content}
-            >
-                {children}
+            <Slottable>{children}</Slottable>
+            {
+                // The rest of the Tooltip components still need to be rendered for the content to correctly be shown conditionally.
+                isEmpty(content) ? null : (
+                    /*
+                     * Rendering the Content within the Trigger is a workaround to support being able to hover over the Tooltip content itself.
+                     * Refrence: https://github.com/radix-ui/primitives/issues/620#issuecomment-1079147761
+                     */
+                    <TooltipPrimitive.TooltipContent
+                        onPointerDownOutside={onPointerDownOutside}
+                        className={styles.tooltipContent}
+                        side={placement}
+                        role="tooltip"
+                    >
+                        {content}
 
-                {
-                    // The rest of the Tooltip components still need to be rendered for the content to correctly be shown conditionally.
-                    isEmpty(content) ? null : (
-                        /*
-                         * Rendering the Content within the Trigger is a workaround to support being able to hover over the Tooltip content itself.
-                         * Refrence: https://github.com/radix-ui/primitives/issues/620#issuecomment-1079147761
-                         */
-                        <TooltipPrimitive.TooltipContent
-                            onPointerDownOutside={onPointerDownOutside}
-                            className={styles.tooltipContent}
-                            side={placement}
-                            role="tooltip"
-                        >
-                            {content}
-
-                            <TooltipPrimitive.Arrow
-                                className={styles.tooltipArrow}
-                                height={TOOLTIP_ARROW_HEIGHT}
-                                width={TOOLTIP_ARROW_WIDTH}
-                            />
-                        </TooltipPrimitive.TooltipContent>
-                    )
-                }
-            </span>
+                        <TooltipPrimitive.Arrow
+                            className={styles.tooltipArrow}
+                            height={TOOLTIP_ARROW_HEIGHT}
+                            width={TOOLTIP_ARROW_WIDTH}
+                        />
+                    </TooltipPrimitive.TooltipContent>
+                )
+            }
         </TooltipPrimitive.Trigger>
     </TooltipPrimitive.Root>
 )
