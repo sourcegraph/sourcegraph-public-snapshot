@@ -6,9 +6,11 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"go.uber.org/atomic"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -16,26 +18,31 @@ import (
 )
 
 type Runner[Args any] struct {
-	in         io.Reader
-	out        *std.Output
-	categories []Category[Args]
+	Input      io.Reader
+	Output     *std.Output
+	Categories []Category[Args]
 
-	renderDescription func(*std.Output)
+	// RenderDescription sets a description to render before core check loops, such as a
+	// massive ASCII art thing.
+	RenderDescription func(*std.Output)
+	// GenerateAnnotations toggles whether check execution should render annotations to
+	// the './annotations' directory.
+	GenerateAnnotations bool
+	// RunPostFixChecks toggles whether to run checks again after a fix is applied.
+	RunPostFixChecks bool
+	// AnalyticsCategory is the category to track analytics with.
+	AnalyticsCategory string
 }
 
 // NewRunner creates a Runner for executing checks and applying fixes in a variety of ways.
+// It is a convenience function that indicates the required fields that must be provided
+// to a Runner - fields can also be set directly on the struct.
 func NewRunner[Args any](in io.Reader, out *std.Output, categories []Category[Args]) *Runner[Args] {
 	return &Runner[Args]{
-		in:         in,
-		out:        out,
-		categories: categories,
+		Input:      in,
+		Output:     out,
+		Categories: categories,
 	}
-}
-
-// SetDescription sets a description to render before core check loops, such as a massive
-// ASCII art thing.
-func (r *Runner[Args]) SetDescription(render func(out *std.Output)) {
-	r.renderDescription = render
 }
 
 // Check executes all checks exactly once and exits.
@@ -50,7 +57,10 @@ func (r *Runner[Args]) Check(
 
 	results := r.runAllCategoryChecks(ctx, args)
 	if len(results.failed) > 0 {
-		return errors.Newf("%d checks failed (%d skipped)", len(results.failed), len(results.skipped))
+		if len(results.skipped) > 0 {
+			return errors.Newf("%d checks failed (%d skipped)", len(results.failed), len(results.skipped))
+		}
+		return errors.Newf("%d checks failed", len(results.failed))
 	}
 
 	return nil
@@ -73,9 +83,9 @@ func (r *Runner[Args]) Fix(
 		return nil
 	}
 
-	r.out.WriteNoticef("Attempting to fix %d failed categories", len(results.failed))
+	r.Output.WriteNoticef("Attempting to fix %d failed categories", len(results.failed))
 	for _, i := range results.failed {
-		category := r.categories[i]
+		category := r.Categories[i]
 
 		ok := r.fixCategoryAutomatically(ctx, i+1, &category, args, results)
 		results.categories[category.Name] = ok
@@ -118,18 +128,18 @@ func (r *Runner[Args]) Interactive(
 			break
 		}
 
-		r.out.WriteWarningf("Some checks failed. Which one do you want to fix?")
+		r.Output.WriteWarningf("Some checks failed. Which one do you want to fix?")
 
-		idx, err := getNumberOutOf(r.in, r.out, results.failed)
+		idx, err := getNumberOutOf(r.Input, r.Output, results.failed)
 		if err != nil {
 			if err == io.EOF {
 				return nil
 			}
 			return err
 		}
-		selectedCategory := r.categories[idx]
+		selectedCategory := r.Categories[idx]
 
-		r.out.ClearScreen()
+		r.Output.ClearScreen()
 
 		err = r.presentFailedCategoryWithOptions(ctx, idx, &selectedCategory, args, results)
 		if err != nil {
@@ -137,7 +147,7 @@ func (r *Runner[Args]) Interactive(
 				return nil // we are done
 			}
 
-			r.out.WriteWarningf("Encountered error while fixing: %s", err.Error())
+			r.Output.WriteWarningf("Encountered error while fixing: %s", err.Error())
 			// continue, do not exit
 		}
 	}
@@ -157,24 +167,27 @@ type runAllCategoryChecksResult struct {
 
 // runAllCategoryChecks is the main entrypoint for running the checks in this runner.
 func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *runAllCategoryChecksResult {
-	if r.renderDescription != nil {
-		r.renderDescription(r.out)
+	if r.RenderDescription != nil {
+		r.RenderDescription(r.Output)
 	}
 
 	statuses := []*output.StatusBar{}
 	var checks float64
-	for i, category := range r.categories {
+	for i, category := range r.Categories {
 		statuses = append(statuses, output.NewStatusBarWithLabel(fmt.Sprintf("%d. %s", i+1, category.Name)))
 		checks += float64(len(category.Checks))
 	}
-	progress := r.out.ProgressWithStatusBars([]output.ProgressBar{{
+	progress := r.Output.ProgressWithStatusBars([]output.ProgressBar{{
 		Label: "Running checks",
 		Max:   checks,
 	}}, statuses, nil)
 
 	var (
-		categoriesWg sync.WaitGroup
-		skipped      = map[int]error{}
+		start = time.Now()
+
+		categoriesWg        sync.WaitGroup
+		categoriesSkipped   = map[int]error{}
+		categoriesDurations sync.Map
 
 		// used for progress bar
 		checksDone           atomic.Float64
@@ -183,11 +196,12 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 			checksDone.Add(1)
 		}
 	)
-	for i, category := range r.categories {
-		progress.StatusBarUpdatef(i, "Determining status...")
+	for i, category := range r.Categories {
+		progress.StatusBarUpdatef(i, "Running checks...")
 
 		if err := category.CheckEnabled(ctx, args); err != nil {
-			skipped[i] = err
+			// Safe because we do this NOT in a goroutine
+			categoriesSkipped[i] = err
 			// Mark as done
 			progress.StatusBarCompletef(i, "Category skipped: %s", err.Error())
 			continue
@@ -196,7 +210,11 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		// Run categories concurrently
 		categoriesWg.Add(1)
 		go func(i int, category Category[Args]) {
-			defer categoriesWg.Done()
+			defer func() {
+				// record duration
+				categoriesDurations.Store(category.Name, time.Since(start))
+				categoriesWg.Done()
+			}()
 
 			// Run all checks for this category concurrently
 			var checksWg sync.WaitGroup
@@ -204,11 +222,16 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 			for _, check := range category.Checks {
 				checksWg.Add(1)
 				go func(check *Check[Args]) {
-					defer updateChecksProgress()
-					defer checksWg.Done()
+					var event string
+					defer func() {
+						updateChecksProgress()
+						r.logEvent(ctx, []string{"check", category.Name, check.Name}, start, event)
+						checksWg.Done()
+					}()
 
 					if err := check.IsEnabled(ctx, args); err != nil {
 						progress.StatusBarUpdatef(i, "Check %s skipped: %s", check.Name, err.Error())
+						event = "skipped"
 						return
 					}
 
@@ -219,7 +242,11 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 						progress.StatusBarFailf(i, "Check %s failed: %s", check.Name, err.Error())
 						check.cachedCheckOutput = updateOutput.String()
 						didErr.Store(true)
+						event = "error"
+					} else {
+						event = "success"
 					}
+
 				}(check)
 			}
 			checksWg.Wait()
@@ -233,18 +260,25 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 	categoriesWg.Wait()
 
 	// Destroy progress and render a complete summary.
-	// TODO we can probably refine and improe the summary a bit more.
 	progress.Destroy()
-	results := runAllCategoryChecksResult{
+	results := &runAllCategoryChecksResult{
 		categories: make(map[string]bool),
 	}
-	for i, category := range r.categories {
+	for i, category := range r.Categories {
 		results.all = append(results.all, i)
 		idx := i + 1
 
-		if _, ok := skipped[i]; ok {
-			r.out.WriteSkippedf("%d. %s %s[SKIPPED. Reason: %s]%s", idx, category.Name,
-				output.StyleBold, skipped[i], output.StyleReset)
+		summaryStr := fmt.Sprintf("%d. %s", idx, category.Name)
+		v, ok := categoriesDurations.Load(category.Name)
+		if ok {
+			if dur, ok := v.(time.Duration); ok {
+				summaryStr = fmt.Sprintf("%s (%ds)", summaryStr, dur/time.Second)
+			}
+		}
+
+		if _, ok := categoriesSkipped[i]; ok {
+			r.Output.WriteSkippedf("%s %s[SKIPPED. Reason: %s]%s", summaryStr,
+				output.StyleBold, categoriesSkipped[i], output.StyleReset)
 			results.skipped = append(results.skipped, i)
 			continue
 		}
@@ -253,17 +287,29 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		satisfied := category.IsSatisfied()
 		results.categories[category.Name] = satisfied
 		if satisfied {
-			r.out.WriteSuccessf("%d. %s", idx, category.Name)
+			r.Output.WriteSuccessf(summaryStr)
 		} else {
 			results.failed = append(results.failed, i)
-			r.out.WriteFailuref("%d. %s", idx, category.Name)
-			for _, c := range category.Checks {
-				if c.cachedCheckErr != nil {
-					r.out.WriteLine(output.Styledf(output.CombineStyles(output.StyleBold, output.StyleWarning),
-						"%s: %s", c.Name, c.cachedCheckErr))
+			r.Output.WriteFailuref(summaryStr)
+			for _, check := range category.Checks {
+				if check.cachedCheckErr != nil {
+					// Slightly different formatting for each destination
+					terminalSummary := fmt.Sprintf("**%s**\n\n%s", check.Name, check.cachedCheckErr)
+					annotationSummary := fmt.Sprintf("```\n%s\n```", check.cachedCheckErr)
+
 					// Render additional details
-					if c.cachedCheckOutput != "" {
-						r.out.Write(c.cachedCheckOutput)
+					if check.cachedCheckOutput != "" {
+						outputMarkdown := fmt.Sprintf("\n\n```term\n%s\n```",
+							strings.TrimSpace(check.cachedCheckOutput))
+
+						terminalSummary += outputMarkdown
+						annotationSummary += outputMarkdown
+					}
+
+					r.Output.WriteMarkdown(terminalSummary)
+
+					if r.GenerateAnnotations {
+						generateAnnotation(category.Name, check.Name, annotationSummary)
 					}
 				}
 			}
@@ -272,15 +318,15 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 	if len(results.failed) == 0 {
 		if len(results.skipped) == 0 {
-			r.out.Write("")
-			r.out.WriteLine(output.Linef(output.EmojiOk, output.StyleBold, "Everything looks good! Happy hacking!"))
+			r.Output.Write("")
+			r.Output.WriteLine(output.Linef(output.EmojiOk, output.StyleBold, "Everything looks good! Happy hacking!"))
 		} else {
-			r.out.Write("")
-			r.out.WriteWarningf("Some checks were skipped.")
+			r.Output.Write("")
+			r.Output.WriteWarningf("Some checks were skipped.")
 		}
 	}
 
-	return &results
+	return results
 }
 
 func (r *Runner[Args]) presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, category *Category[Args], args Args, results *runAllCategoryChecksResult) error {
@@ -297,7 +343,7 @@ func (r *Runner[Args]) presentFailedCategoryWithOptions(ctx context.Context, cat
 		choices[2] = "Go back"
 	}
 
-	choice, err := getChoice(r.in, r.out, choices)
+	choice, err := getChoice(r.Input, r.Output, choices)
 	if err != nil {
 		return err
 	}
@@ -305,7 +351,7 @@ func (r *Runner[Args]) presentFailedCategoryWithOptions(ctx context.Context, cat
 	switch choice {
 	case 1:
 		if fixableCategory {
-			r.out.ClearScreen()
+			r.Output.ClearScreen()
 			if !r.fixCategoryAutomatically(ctx, categoryIdx, category, args, results) {
 				err = errors.Newf("%s: failed to fix category automatically", category.Name)
 			}
@@ -321,19 +367,19 @@ func (r *Runner[Args]) presentFailedCategoryWithOptions(ctx context.Context, cat
 }
 
 func (r *Runner[Args]) printCategoryHeaderAndDependencies(categoryIdx int, category *Category[Args]) {
-	r.out.WriteLine(output.Linef(output.EmojiLightbulb, output.CombineStyles(output.StyleSearchQuery, output.StyleBold), "%d. %s", categoryIdx, category.Name))
-	r.out.Write("")
-	r.out.Write("Checks:")
+	r.Output.WriteLine(output.Linef(output.EmojiLightbulb, output.CombineStyles(output.StyleSearchQuery, output.StyleBold), "%d. %s", categoryIdx, category.Name))
+	r.Output.Write("")
+	r.Output.Write("Checks:")
 
 	for i, dep := range category.Checks {
 		idx := i + 1
 		if dep.IsSatisfied() {
-			r.out.WriteSuccessf("%d. %s", idx, dep.Name)
+			r.Output.WriteSuccessf("%d. %s", idx, dep.Name)
 		} else {
 			if dep.cachedCheckErr != nil {
-				r.out.WriteFailuref("%d. %s: %s", idx, dep.Name, dep.cachedCheckErr)
+				r.Output.WriteFailuref("%d. %s: %s", idx, dep.Name, dep.cachedCheckErr)
 			} else {
-				r.out.WriteFailuref("%d. %s: %s", idx, dep.Name, "check failed")
+				r.Output.WriteFailuref("%d. %s: %s", idx, dep.Name, "check failed")
 			}
 		}
 	}
@@ -360,9 +406,9 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 		if len(toFix) == 1 {
 			idx = toFix[0]
 		} else {
-			r.out.WriteNoticef("Which one do you want to fix?")
+			r.Output.WriteNoticef("Which one do you want to fix?")
 			var err error
-			idx, err = getNumberOutOf(r.in, r.out, toFix)
+			idx, err = getNumberOutOf(r.Input, r.Output, toFix)
 			if err != nil {
 				if err == io.EOF {
 					return nil
@@ -373,29 +419,29 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 
 		check := category.Checks[idx]
 
-		r.out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "%s", check.Name))
-		r.out.Write("")
+		r.Output.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "%s", check.Name))
+		r.Output.Write("")
 
 		if check.cachedCheckErr != nil {
-			r.out.WriteLine(output.Styledf(output.StyleBold, "Check encountered the following error:\n\n%s%s\n", output.StyleReset, check.cachedCheckErr))
+			r.Output.WriteLine(output.Styledf(output.StyleBold, "Check encountered the following error:\n\n%s%s\n", output.StyleReset, check.cachedCheckErr))
 		}
 
 		if check.Description == "" {
 			return errors.Newf("No description available for manual fix - good luck!")
 		}
 
-		r.out.WriteLine(output.Styled(output.StyleBold, "How to fix:"))
+		r.Output.WriteLine(output.Styled(output.StyleBold, "How to fix:"))
 
-		r.out.WriteMarkdown(check.Description)
+		r.Output.WriteMarkdown(check.Description)
 
 		// Wait for user to finish
-		r.out.Promptf("Hit 'Return' or 'Enter' when you are done.")
-		waitForReturn(r.in)
+		r.Output.Promptf("Hit 'Return' or 'Enter' when you are done.")
+		waitForReturn(r.Input)
 
 		// Check statuses
-		r.out.WriteLine(output.Styled(output.StylePending, "Determining status..."))
-		if err := check.Update(ctx, r.out, args); err != nil {
-			r.out.WriteWarningf("Check %q still not satisfied", check.Name)
+		r.Output.WriteLine(output.Styled(output.StylePending, "Running check..."))
+		if err := check.Update(ctx, r.Output, args); err != nil {
+			r.Output.WriteWarningf("Check %q still not satisfied", check.Name)
 			return err
 		}
 
@@ -408,14 +454,15 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 
 func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx int, category *Category[Args], args Args, results *runAllCategoryChecksResult) (ok bool) {
 	// Best to be verbose when fixing, in case something goes wrong
-	r.out.SetVerbose()
-	defer r.out.UnsetVerbose()
+	r.Output.SetVerbose()
+	defer r.Output.UnsetVerbose()
 
-	r.out.WriteLine(output.Styledf(output.StylePending, "Trying my hardest to fix %q automatically...", category.Name))
+	start := time.Now()
+	r.Output.WriteLine(output.Styledf(output.StylePending, "Trying my hardest to fix %q automatically...", category.Name))
 
 	// Make sure to call this with a final message before returning!
 	complete := func(emoji string, style output.Style, fmtStr string, args ...any) {
-		r.out.WriteLine(output.Linef(emoji, output.CombineStyles(style, output.StyleBold),
+		r.Output.WriteLine(output.Linef(emoji, output.CombineStyles(style, output.StyleBold),
 			"%d. %s - "+fmtStr, append([]any{categoryIdx, category.Name}, args...)...))
 	}
 
@@ -447,6 +494,10 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 
 	// now go through the real dependencies
 	for _, c := range category.Checks {
+		logEvent := func(event string) {
+			r.logEvent(ctx, []string{"fix", category.Name, c.Name}, start, event)
+		}
+
 		// If category is fixed, we are good to go
 		if c.IsSatisfied() {
 			continue
@@ -454,38 +505,52 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 
 		// Skip
 		if err := c.IsEnabled(ctx, args); err != nil {
-			r.out.WriteLine(output.Linef(output.EmojiQuestionMark, output.CombineStyles(output.StyleGrey, output.StyleBold),
+			r.Output.WriteLine(output.Linef(output.EmojiQuestionMark, output.CombineStyles(output.StyleGrey, output.StyleBold),
 				"%q skipped: %s", c.Name, err.Error()))
+			logEvent("skipped")
 			continue
 		}
 
 		// Otherwise, check if this is fixable at all
 		if c.Fix == nil {
-			r.out.WriteLine(output.Linef(output.EmojiShrug, output.CombineStyles(output.StyleWarning, output.StyleBold),
+			r.Output.WriteLine(output.Linef(output.EmojiShrug, output.CombineStyles(output.StyleWarning, output.StyleBold),
 				"%q cannot be fixed automatically.", c.Name))
+			logEvent("unfixable")
 			continue
 		}
 
 		// Attempt fix. Get new args because things might have changed due to another
 		// fix being run.
-		r.out.VerboseLine(output.Linef(output.EmojiAsterisk, output.StylePending,
+		r.Output.VerboseLine(output.Linef(output.EmojiAsterisk, output.StylePending,
 			"Fixing %q...", c.Name))
-		if err := c.Fix(ctx, IO{
-			Input:  r.in,
-			Output: r.out,
-		}, args); err != nil {
-			r.out.WriteLine(output.Linef(output.EmojiWarning, output.CombineStyles(output.StyleFailure, output.StyleBold),
+		err := c.Fix(ctx, IO{
+			Input:  r.Input,
+			Output: r.Output,
+		}, args)
+		if err != nil {
+			r.Output.WriteLine(output.Linef(output.EmojiWarning, output.CombineStyles(output.StyleFailure, output.StyleBold),
 				"Failed to fix %q: %s", c.Name, err.Error()))
+			logEvent("failed")
 			continue
 		}
 
-		// Check is the fix worked
-		if err := c.Update(ctx, r.out, args); err != nil {
-			r.out.WriteLine(output.Styledf(output.CombineStyles(output.StyleWarning, output.StyleBold),
-				"Check %q still failing: %s", c.Name, err.Error()))
+		// Check if the fix worked, or just don't check
+		if !r.RunPostFixChecks {
+			err = nil
+			c.cachedCheckErr = nil
+			c.cachedCheckOutput = ""
 		} else {
-			r.out.WriteLine(output.Styledf(output.CombineStyles(output.StyleSuccess, output.StyleBold),
+			err = c.Update(ctx, r.Output, args)
+		}
+
+		if err != nil {
+			r.Output.WriteLine(output.Styledf(output.CombineStyles(output.StyleWarning, output.StyleBold),
+				"Check %q still failing: %s", c.Name, err.Error()))
+			logEvent("unfixed")
+		} else {
+			r.Output.WriteLine(output.Styledf(output.CombineStyles(output.StyleSuccess, output.StyleBold),
 				"Check %q is satisfied now!", c.Name))
+			logEvent("success")
 		}
 	}
 
@@ -497,4 +562,11 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 	}
 
 	return
+}
+
+// logEvent logs an event if AnalyticsCategory is set.
+func (r *Runner[Args]) logEvent(ctx context.Context, labels []string, startedAt time.Time, events ...string) {
+	if r.AnalyticsCategory != "" {
+		analytics.LogEvent(ctx, r.AnalyticsCategory, labels, startedAt, events...)
+	}
 }
