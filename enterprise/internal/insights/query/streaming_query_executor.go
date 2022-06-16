@@ -78,7 +78,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 				continue
 			}
 
-			modified, err := querybuilder.SingleRepoQuery(query, repository, string(commits[0].ID))
+			modified, err := querybuilder.SingleRepoQuery(query, repository, string(commits[0].ID), querybuilder.CodeInsightsQueryDefaults(false))
 			if err != nil {
 				return nil, errors.Wrap(err, "SingleRepoQuery")
 			}
