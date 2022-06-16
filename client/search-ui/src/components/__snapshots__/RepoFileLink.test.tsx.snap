@@ -2,31 +2,25 @@
 
 exports[`RepoFileLink renders 1`] = `
 <DocumentFragment>
-  <span
-    class="tooltip"
-    data-state="closed"
-    role="presentation"
+  <div
+    class=""
   >
-    <div
-      class=""
+    <a
+      class="anchorLink"
+      href="https://example.com"
     >
-      <a
-        class="anchorLink"
-        href="https://example.com"
-      >
-        my/repo
-      </a>
-       › 
-      <a
-        class="anchorLink"
-        href="/file?subtree=true"
-      >
-        my/
-        <strong>
-          file
-        </strong>
-      </a>
-    </div>
-  </span>
+      my/repo
+    </a>
+     › 
+    <a
+      class="anchorLink"
+      href="/file?subtree=true"
+    >
+      my/
+      <strong>
+        file
+      </strong>
+    </a>
+  </div>
 </DocumentFragment>
 `;

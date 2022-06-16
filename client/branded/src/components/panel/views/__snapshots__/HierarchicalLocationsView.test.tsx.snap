@@ -91,29 +91,23 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 class="headerTitle test-search-result-label"
                 data-testid="result-container-header"
               >
-                <span
-                  class="tooltip"
-                  data-state="closed"
-                  role="presentation"
+                <div
+                  class="ml-1 flex-shrink-past-contents text-truncate"
                 >
-                  <div
-                    class="ml-1 flex-shrink-past-contents text-truncate"
+                  <a
+                    class="anchorLink"
+                    href="/github.com/foo/bar"
                   >
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar"
-                    >
-                      foo/bar
-                    </a>
-                     › 
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar/-/blob/?subtree=true"
-                    >
-                      <strong />
-                    </a>
-                  </div>
-                </span>
+                    foo/bar
+                  </a>
+                   › 
+                  <a
+                    class="anchorLink"
+                    href="/github.com/foo/bar/-/blob/?subtree=true"
+                  >
+                    <strong />
+                  </a>
+                </div>
                 <span
                   class="ml-2 headerDescription"
                 />
@@ -355,31 +349,25 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 class="headerTitle test-search-result-label"
                 data-testid="result-container-header"
               >
-                <span
-                  class="tooltip"
-                  data-state="closed"
-                  role="presentation"
+                <div
+                  class="ml-1 flex-shrink-past-contents text-truncate"
                 >
-                  <div
-                    class="ml-1 flex-shrink-past-contents text-truncate"
+                  <a
+                    class="anchorLink"
+                    href="/github.com/foo/bar"
                   >
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar"
-                    >
-                      foo/bar
-                    </a>
-                     › 
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
-                    >
-                      <strong>
-                        file1.txt
-                      </strong>
-                    </a>
-                  </div>
-                </span>
+                    foo/bar
+                  </a>
+                   › 
+                  <a
+                    class="anchorLink"
+                    href="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
+                  >
+                    <strong>
+                      file1.txt
+                    </strong>
+                  </a>
+                </div>
                 <span
                   class="ml-2 headerDescription"
                 />
@@ -575,29 +563,23 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 class="headerTitle test-search-result-label"
                 data-testid="result-container-header"
               >
-                <span
-                  class="tooltip"
-                  data-state="closed"
-                  role="presentation"
+                <div
+                  class="ml-1 flex-shrink-past-contents text-truncate"
                 >
-                  <div
-                    class="ml-1 flex-shrink-past-contents text-truncate"
+                  <a
+                    class="anchorLink"
+                    href="/github.com/foo/bar"
                   >
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar"
-                    >
-                      foo/bar
-                    </a>
-                     › 
-                    <a
-                      class="anchorLink"
-                      href="/github.com/foo/bar/-/blob/?subtree=true"
-                    >
-                      <strong />
-                    </a>
-                  </div>
-                </span>
+                    foo/bar
+                  </a>
+                   › 
+                  <a
+                    class="anchorLink"
+                    href="/github.com/foo/bar/-/blob/?subtree=true"
+                  >
+                    <strong />
+                  </a>
+                </div>
                 <span
                   class="ml-2 headerDescription"
                 />
