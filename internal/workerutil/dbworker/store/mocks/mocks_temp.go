@@ -78,7 +78,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		HandleFunc: &StoreHandleFunc{
-			defaultHook: func() (r0 *basestore.TransactableHandle) {
+			defaultHook: func() (r0 basestore.TransactableHandle) {
 				return
 			},
 		},
@@ -150,7 +150,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		HandleFunc: &StoreHandleFunc{
-			defaultHook: func() *basestore.TransactableHandle {
+			defaultHook: func() basestore.TransactableHandle {
 				panic("unexpected invocation of MockStore.Handle")
 			},
 		},
@@ -483,15 +483,15 @@ func (c StoreDequeueFuncCall) Results() []interface{} {
 // StoreHandleFunc describes the behavior when the Handle method of the
 // parent MockStore instance is invoked.
 type StoreHandleFunc struct {
-	defaultHook func() *basestore.TransactableHandle
-	hooks       []func() *basestore.TransactableHandle
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
 	history     []StoreHandleFuncCall
 	mutex       sync.Mutex
 }
 
 // Handle delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) Handle() *basestore.TransactableHandle {
+func (m *MockStore) Handle() basestore.TransactableHandle {
 	r0 := m.HandleFunc.nextHook()()
 	m.HandleFunc.appendCall(StoreHandleFuncCall{r0})
 	return r0
@@ -499,7 +499,7 @@ func (m *MockStore) Handle() *basestore.TransactableHandle {
 
 // SetDefaultHook sets function that is called when the Handle method of the
 // parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreHandleFunc) SetDefaultHook(hook func() *basestore.TransactableHandle) {
+func (f *StoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
 	f.defaultHook = hook
 }
 
@@ -507,7 +507,7 @@ func (f *StoreHandleFunc) SetDefaultHook(hook func() *basestore.TransactableHand
 // Handle method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreHandleFunc) PushHook(hook func() *basestore.TransactableHandle) {
+func (f *StoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -515,20 +515,20 @@ func (f *StoreHandleFunc) PushHook(hook func() *basestore.TransactableHandle) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreHandleFunc) SetDefaultReturn(r0 *basestore.TransactableHandle) {
-	f.SetDefaultHook(func() *basestore.TransactableHandle {
+func (f *StoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreHandleFunc) PushReturn(r0 *basestore.TransactableHandle) {
-	f.PushHook(func() *basestore.TransactableHandle {
+func (f *StoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
 		return r0
 	})
 }
 
-func (f *StoreHandleFunc) nextHook() func() *basestore.TransactableHandle {
+func (f *StoreHandleFunc) nextHook() func() basestore.TransactableHandle {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -563,7 +563,7 @@ func (f *StoreHandleFunc) History() []StoreHandleFuncCall {
 type StoreHandleFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *basestore.TransactableHandle
+	Result0 basestore.TransactableHandle
 }
 
 // Args returns an interface slice containing the arguments of this

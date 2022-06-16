@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -14,13 +15,13 @@ import (
 )
 
 func TestClear(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := stores.NewCodeIntelDB(dbtest.NewDB(t))
 	store := NewStore(db, conf.DefaultClient(), &observation.TestContext)
 
 	for i := 0; i < 5; i++ {
 		query := sqlf.Sprintf("INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES (%s, 0)", i+1)
 
-		if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("unexpected error inserting repo: %s", err)
 		}
 	}
@@ -29,7 +30,7 @@ func TestClear(t *testing.T) {
 		t.Fatalf("unexpected error clearing bundle data: %s", err)
 	}
 
-	dumpIDs, err := basestore.ScanInts(db.Query("SELECT dump_id FROM lsif_data_metadata"))
+	dumpIDs, err := basestore.ScanInts(db.QueryContext(context.Background(), "SELECT dump_id FROM lsif_data_metadata"))
 	if err != nil {
 		t.Fatalf("Unexpected error querying dump identifiers: %s", err)
 	}

@@ -8,7 +8,7 @@ import { PathSearchResult } from './PathSearchResult'
 import { RepoSearchResult } from './RepoSearchResult'
 import {
     getFirstResultId,
-    getLineMatchIndexOrSymbolIndexForFileResult,
+    getLineOrSymbolMatchIndexForFileResult,
     getMatchId,
     getMatchIdForResult,
     getSearchResultElement,
@@ -18,9 +18,9 @@ import {
 import styles from './SearchResultList.module.scss'
 
 interface Props {
-    onPreviewChange: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => Promise<void>
+    onPreviewChange: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
     onPreviewClear: () => Promise<void>
-    onOpen: (match: SearchMatch, lineMatchIndexOrSymbolIndex?: number) => Promise<void>
+    onOpen: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
     matches: SearchMatch[]
 }
 
@@ -53,7 +53,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                     onPreviewChange(
                         match,
                         match.type === 'content' || match.type === 'symbol'
-                            ? getLineMatchIndexOrSymbolIndexForFileResult(resultId)
+                            ? getLineOrSymbolMatchIndexForFileResult(resultId)
                             : undefined
                     )
                         .then(() => {})
@@ -111,7 +111,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                     onOpen(
                         match,
                         match.type === 'content' || match.type === 'symbol'
-                            ? getLineMatchIndexOrSymbolIndexForFileResult(selectedResultId)
+                            ? getLineOrSymbolMatchIndexForFileResult(selectedResultId)
                             : undefined
                     )
                         .then(() => {})

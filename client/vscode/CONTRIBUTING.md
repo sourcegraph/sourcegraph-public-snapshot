@@ -4,6 +4,10 @@ Thank you for your interest in contributing to Sourcegraph!
 The goal of this document is to provide a high-level overview of how you can contribute to the Sourcegraph VS Code Extension.
 Please refer to our [main CONTRIBUTING](https://github.com/sourcegraph/sourcegraph/blob/main/CONTRIBUTING.md) docs for general information regarding contributing to any Sourcegraph repository.
 
+## License
+
+Apache
+
 ## Feedback
 
 Your feedback is important to us and is greatly appreciated. Please do not hesitate to submit your ideas or suggestions about how we can improve the extension to our [VS Code Extension Feedback Discussion Thread](https://github.com/sourcegraph/sourcegraph/discussions/34821) on GitHub.
@@ -148,10 +152,6 @@ If you need guidance or have any questions regarding Sourcegraph or the extensio
 - [Report a bug](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board)
 - [Troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension)
 
-## License
-
-Apache
-
 ## Release Process
 
 The release process for the VS Code Extension for Sourcegraph is currently automated.
@@ -167,3 +167,40 @@ The release process for the VS Code Extension for Sourcegraph is currently autom
    - The extension is published with the [auto-incremented](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#autoincrementing-the-extension-version) version number by running the `vsce publish $RELEASE_TYPE` command provided by the [vsce CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
 4. Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=vsce%2Frelease) to watch the build process
 5. Once the build is completed with no error, you should see the new version being verified for the Sourcegraph extension in your [Marketplace Publisher Dashboard](https://marketplace.visualstudio.com/manage/publishers)
+
+#### File Structure
+
+Below is a quick overview of the Sourcegraph extension file structure. It does not include all the files and folders.
+
+```
+client/vscode
+├── images
+├── scripts                       // Command line scripts, for example, script to release and publish the extension
+├── src                           // Extension source code
+│   └── extension.ts              // Extension entry file
+│   └── backend                   // All graphQL queries
+│   └── code-intel                // Build the extension host that processes code-intel data
+│   └── common                    // Commonly assets that can be shared among different contexts
+│   └── commands                  // Build and register commands
+│       └── browserActionsNode    // Browser action commands when running as a regular extension where Node.js is available
+│       └── browserActionsWeb     // Browser action commands when running as a web extension where Node.js is not available
+│   └── file-system               // Build and register the custom file system
+│   └── settings                  // Extension settings and configurations
+│   └── webview                   // Components to build the search panel and sidebars
+│       └── comlink               // Handle communications between contexts
+│       └── platform              // Platform context for the webview
+│       └── search-panel          // UI for the homepage and search panel
+│           └── alias             // Alias files for Web extension. See README file in this directory for details
+│       └── sidebars              // UI for all the sidebars
+│       └── theming               // Styling the webview using the predefined VS Code themes
+│       └── commands.ts           // Commands to build the webview views and panel
+├── tests                         // Extension test code
+├── .gitignore                    // Ignore build output and node_modules
+├── .vscodeignore                 // Ignore build output and node_modules
+├── CHANGELOG.md                  // An ordered list of changes and fixes
+├── CONTRIBUTING.md               // General guide for developers and contributors
+├── package.json                  // Extension manifest
+├── README.md                     // General information about the extension
+├── tsconfig.json                 // TypeScript configuration
+├── webpackconfig.js              // Webpack configuration
+```

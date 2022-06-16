@@ -152,3 +152,9 @@ func (o *Output) Promptf(fmtStr string, args ...any) {
 	l.Prompt = true
 	o.WriteLine(l)
 }
+
+// PromptPasswordf tries to securely prompt a user for sensitive input.
+func (o *Output) PromptPasswordf(input io.Reader, fmtStr string, args ...any) (string, error) {
+	l := output.Linef(output.EmojiFingerPointRight, output.StyleBold, fmtStr, args...)
+	return o.PromptPassword(input, l)
+}

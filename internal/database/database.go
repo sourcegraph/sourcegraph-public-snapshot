@@ -55,7 +55,7 @@ var _ DB = (*db)(nil)
 
 // NewDB creates a new DB from a dbutil.DB, providing a thin wrapper
 // that has constructor methods for the more specialized stores.
-func NewDB(inner dbutil.DB) DB {
+func NewDB(inner *sql.DB) DB {
 	return &db{basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
 }
 
@@ -68,16 +68,16 @@ type db struct {
 }
 
 func (d *db) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
-	return d.Handle().DB().QueryContext(ctx, q, args...)
+	return d.Handle().QueryContext(ctx, q, args...)
 }
 
 func (d *db) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
-	return d.Handle().DB().ExecContext(ctx, q, args...)
+	return d.Handle().ExecContext(ctx, q, args...)
 
 }
 
 func (d *db) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
-	return d.Handle().DB().QueryRowContext(ctx, q, args...)
+	return d.Handle().QueryRowContext(ctx, q, args...)
 }
 
 func (d *db) Transact(ctx context.Context) (DB, error) {
@@ -206,12 +206,4 @@ func (d *db) Users() UserStore {
 
 func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {
 	return WebhookLogsWith(d.Store, key)
-}
-
-func (d *db) Unwrap() dbutil.DB {
-	// Recursively unwrap in case we ever call `database.NewDB()` with a `database.DB`
-	if unwrapper, ok := d.Handle().DB().(dbutil.Unwrapper); ok {
-		return unwrapper.Unwrap()
-	}
-	return d.Handle().DB()
 }

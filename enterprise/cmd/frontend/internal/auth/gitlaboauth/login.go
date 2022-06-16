@@ -8,9 +8,9 @@ import (
 	oauth2Login "github.com/dghubble/gologin/oauth2"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -24,6 +24,8 @@ func CallbackHandler(config *oauth2.Config, success, failure http.Handler) http.
 }
 
 func gitlabHandler(config *oauth2.Config, success, failure http.Handler) http.Handler {
+	logger := log.Scoped("GitlabOAuthHandler", "Gitlab OAuth Handler")
+
 	if failure == nil {
 		failure = gologin.DefaultFailureHandler
 	}
@@ -47,7 +49,7 @@ func gitlabHandler(config *oauth2.Config, success, failure http.Handler) http.Ha
 		if err != nil {
 			// TODO: Prefer a more general purpose fix, potentially
 			// https://github.com/sourcegraph/sourcegraph/pull/20000
-			sentry.CaptureError(err, map[string]string{})
+			logger.Warn("invalid response", log.Error(err))
 		}
 		if err != nil {
 			ctx = gologin.WithError(ctx, err)

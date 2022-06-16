@@ -32,12 +32,11 @@ export async function browserActions(action: string, logRedirectEvent: (uri: str
         }
         let { remoteURL, branch, fileRelative } = repositoryInfo
         // construct sourcegraph url for current file
-        // set branch as 'HEAD' if user wants to open file in main
-        // else use the branch we have retreive from the repository info
-        // which will set branch as default or 'HEAD' if current branch does not exist
+        // Ask if user want to open file in HEAD instead if set current branch or default branch
+        // do not exist on Sourcegraph
         if (!branch) {
             const userChoice = await vscode.window.showInformationMessage(
-                'Current branch does not exist on Sourcegraph. Publish your branch or continue to main branch.',
+                'Current (or default) branch does not exist on Sourcegraph. Publish your branch or continue to main branch.',
                 'Continue to main',
                 'Cancel'
             )

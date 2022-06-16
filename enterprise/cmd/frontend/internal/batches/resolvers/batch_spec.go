@@ -10,6 +10,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
@@ -208,35 +210,16 @@ func (r *batchChangeDescriptionResolver) Description() string {
 }
 
 func (r *batchSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	specsConnection := &changesetSpecConnectionResolver{
-		store: r.store,
-		opts:  store.ListChangesetSpecsOpts{BatchSpecID: r.batchSpec.ID},
-	}
-
-	specs, err := specsConnection.Nodes(ctx)
+	added, changed, deleted, err := r.store.GetBatchSpecDiffStat(ctx, r.batchSpec.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	totalStat := &graphqlbackend.DiffStat{}
-	for _, spec := range specs {
-		// If we can't convert it, that means it's hidden from the user and we
-		// can simply skip it.
-		if _, ok := spec.ToVisibleChangesetSpec(); !ok {
-			continue
-		}
-
-		resolver, ok := spec.(*changesetSpecResolver)
-		if !ok {
-			// This should never happen.
-			continue
-		}
-
-		stat := resolver.changesetSpec.DiffStat()
-		totalStat.AddStat(stat)
-	}
-
-	return totalStat, nil
+	return graphqlbackend.NewDiffStat(diff.Stat{
+		Added:   int32(added),
+		Changed: int32(changed),
+		Deleted: int32(deleted),
+	}), nil
 }
 
 func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlbackend.BatchChangeResolver, error) {
@@ -508,6 +491,11 @@ func (r *batchSpecResolver) ViewerCanRetry(ctx context.Context) (bool, error) {
 	state, err := r.computeState(ctx)
 	if err != nil {
 		return false, err
+	}
+
+	// If the spec finished successfully, there's nothing to retry.
+	if state == btypes.BatchSpecStateCompleted {
+		return false, nil
 	}
 
 	return state.Finished(), nil
