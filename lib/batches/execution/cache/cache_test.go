@@ -220,6 +220,31 @@ func TestKeyer_Key(t *testing.T) {
 			},
 			expectedKey: "cu8r-xdguU4s0kn9_uxL5g-step-0",
 		},
+		{
+			name: "StepsCacheKeyWithGlobalEnv env set",
+			keyer: &StepsCacheKeyWithGlobalEnv{
+				StepsCacheKey: &StepsCacheKey{
+					ExecutionKey: &ExecutionKey{
+						Repository: batches.Repository{
+							ID:          "my-repo",
+							Name:        "github.com/sourcegraph/src-cli",
+							BaseRef:     "refs/heads/f00b4r",
+							BaseRev:     "c0mmit",
+							FileMatches: []string{"baz.go"},
+						},
+						Steps: []batches.Step{
+							{
+								Run: "foo",
+								Env: stepEnv,
+							},
+						},
+					},
+					StepIndex: 0,
+				},
+				GlobalEnv: []string{"SOME_ENV=FOO", "FAZ=BAZ"},
+			},
+			expectedKey: "UWaad_y5HkY90tPkgBO7og-step-0",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
