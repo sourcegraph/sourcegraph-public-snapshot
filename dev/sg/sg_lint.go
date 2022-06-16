@@ -92,6 +92,7 @@ sg lint --help
 
 		runner := check.NewRunner(nil, std.Out, lintTargets)
 		runner.GenerateAnnotations = cmd.Bool("annotations")
+		runner.AnalyticsCategory = "lint"
 
 		if cmd.Bool("fix") {
 			return runner.Fix(cmd.Context, repoState)
