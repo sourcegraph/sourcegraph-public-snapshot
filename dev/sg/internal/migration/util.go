@@ -7,8 +7,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/iancoleman/strcase"
-
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
@@ -41,7 +39,7 @@ func makeMigrationFilenames(database db.Database, migrationIndex int, name strin
 }
 
 func makeMigrationFilenamesFromDir(baseDir string, migrationIndex int, name string) (MigrationFiles, error) {
-	sanitizedName := strcase.ToSnake(name)
+	sanitizedName := strings.ReplaceAll(strings.ToLower(name), " ", "_")
 	return MigrationFiles{
 		UpFile:       filepath.Join(baseDir, fmt.Sprintf("%d_%s/up.sql", migrationIndex, sanitizedName)),
 		DownFile:     filepath.Join(baseDir, fmt.Sprintf("%d_%s/down.sql", migrationIndex, sanitizedName)),

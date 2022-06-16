@@ -22,9 +22,9 @@ func TestMakeMigrationFilenamesFromDir(t *testing.T) {
 		},
 		{
 			autogold.Want("long-filenames", MigrationFiles{
-				UpFile:       "foobar/1_revert_081_d_1_edb_9_a_5_a_0_c_87094_e_89_df_75_da_2_d_140_d_6_ee_669/up.sql",
-				DownFile:     "foobar/1_revert_081_d_1_edb_9_a_5_a_0_c_87094_e_89_df_75_da_2_d_140_d_6_ee_669/down.sql",
-				MetadataFile: "foobar/1_revert_081_d_1_edb_9_a_5_a_0_c_87094_e_89_df_75_da_2_d_140_d_6_ee_669/metadata.yaml",
+				UpFile:       "foobar/1_revert_081d1edb9a5a0c87094e89df75da2d140d6ee669/up.sql",
+				DownFile:     "foobar/1_revert_081d1edb9a5a0c87094e89df75da2d140d6ee669/down.sql",
+				MetadataFile: "foobar/1_revert_081d1edb9a5a0c87094e89df75da2d140d6ee669/metadata.yaml",
 			}),
 			"revert 081d1edb9a5a0c87094e89df75da2d140d6ee669",
 		},
