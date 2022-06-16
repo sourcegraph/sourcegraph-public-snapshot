@@ -21,6 +21,7 @@ import {
     generatePointsField,
     getChartContentSizes,
     getMinMaxBoundaries,
+    SeriesWithData,
 } from './utils'
 
 import styles from './LineChart.module.scss'
@@ -30,9 +31,8 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
     height: number
     zeroYAxisMin?: boolean
     tooltipSeries?: Series<Datum>[]
-    isSeriesSelected: (id: string) => boolean
-    isSeriesHovered: (id: string) => boolean
     getLineGroupStyle?: (id: string, hasActivePoint: boolean, isActive: boolean) => CSSProperties
+    getActiveSeries?: <D>(dataSeries: SeriesWithData<D>[]) => SeriesWithData<D>[]
 }
 
 const sortByDataKey = (dataKey: string | number | symbol, activeDataKey: string): number =>
@@ -52,9 +52,8 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         tooltipSeries,
         className,
         onDatumClick = noop,
-        isSeriesSelected,
-        isSeriesHovered,
         getLineGroupStyle,
+        getActiveSeries,
         ...attributes
     } = props
 
@@ -106,10 +105,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         [minY, maxY, margin.top, height]
     )
 
-    const activeSeries = useMemo(
-        () => dataSeries.filter(series => isSeriesSelected(`${series.id}`) || isSeriesHovered(`${series.id}`)),
-        [dataSeries, isSeriesSelected, isSeriesHovered]
-    )
+    const activeSeries = useMemo(() => getActiveSeries?.(dataSeries) || dataSeries, [getActiveSeries, dataSeries])
 
     const points = useMemo(
         () =>

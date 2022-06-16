@@ -1,6 +1,7 @@
 import React, { CSSProperties, SVGProps, useMemo } from 'react'
 
 import { LineChart, SeriesLikeChart } from '../../../../../../charts'
+import { SeriesWithData } from '../../../../../../charts/components/line-chart/utils'
 import { UseSeriesToggleReturn } from '../../../../../../insights/utils/use-series-toggle'
 import { SeriesBasedChartTypes } from '../../types'
 import { LockedChart } from '../locked/LockedChart'
@@ -69,6 +70,9 @@ export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactE
         }
     }
 
+    const getActiveSeries = <D,>(dataSeries: SeriesWithData<D>[]): SeriesWithData<D>[] =>
+        dataSeries.filter(series => isSeriesSelected(`${series.id}`) || isSeriesHovered(`${series.id}`))
+
     if (locked) {
         return <LockedChart />
     }
@@ -77,9 +81,8 @@ export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactE
         <LineChart
             series={series}
             tooltipSeries={selectedSeries}
-            isSeriesSelected={isSeriesSelected}
-            isSeriesHovered={isSeriesHovered}
             getLineGroupStyle={getHoverStyle}
+            getActiveSeries={getActiveSeries}
             {...otherProps}
         />
     )
