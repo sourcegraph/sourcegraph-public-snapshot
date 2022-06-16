@@ -166,6 +166,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
                         originalSeriesDisplayOptions={DEFAULT_SERIES_DISPLAY_OPTIONS}
                         onSeriesDisplayOptionsChange={setSeriesDisplayOptions}
+                        seriesCount={insight.seriesCount}
                     />
                 )}
 

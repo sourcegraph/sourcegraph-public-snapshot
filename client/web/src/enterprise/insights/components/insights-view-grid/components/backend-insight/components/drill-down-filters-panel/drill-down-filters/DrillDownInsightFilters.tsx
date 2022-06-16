@@ -61,6 +61,8 @@ interface DrillDownInsightFilters {
 
     showSeriesDisplayOptions: boolean
 
+    seriesCount: number
+
     /** Fires whenever the user changes filter value in any form input. */
     onFiltersChange: (filters: FormChangeEvent<DrillDownFiltersFormValues>) => void
 
@@ -90,6 +92,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         originalSeriesDisplayOptions,
         onSeriesDisplayOptionsChange,
         onVisualModeChange = noop,
+        seriesCount,
     } = props
 
     const [activeSection, setActiveSection] = useState<FilterSection | null>(FilterSection.RegularExpressions)
@@ -213,6 +216,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                             limit={seriesDisplayOptions.limit}
                             selectedOption={seriesDisplayOptions.sortOptions}
                             onChange={handleSeriesDisplayOptionsChange}
+                            seriesCount={seriesCount}
                         />
                     </FilterCollapseSection>
                 )}

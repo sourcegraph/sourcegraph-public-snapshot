@@ -114,6 +114,7 @@ export const DrillDownFiltersShowcase: Story = () => (
             onCreateInsightRequest={console.log}
             onSeriesDisplayOptionsChange={console.log}
             originalSeriesDisplayOptions={ORIGINAL_SERIES_DISPLAY_OPTIONS}
+            seriesCount={20}
         />
     </MockedTestProvider>
 )
@@ -137,6 +138,7 @@ export const DrillDownFiltersHorizontalMode: Story = () => {
                     limit: 20,
                     sortOptions: { direction: SeriesSortDirection.DESC, mode: SeriesSortMode.RESULT_COUNT },
                 }}
+                seriesCount={20}
             />
         </MockedTestProvider>
     )

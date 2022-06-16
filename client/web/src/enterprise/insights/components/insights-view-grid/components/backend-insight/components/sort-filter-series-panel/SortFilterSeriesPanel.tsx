@@ -17,16 +17,18 @@ const getClasses = (selected: SeriesSortOptionsInput, value: SeriesSortOptionsIn
 interface SortFilterSeriesPanelProps {
     selectedOption: SeriesSortOptionsInput
     limit: number
+    seriesCount: number
     onChange: (parameter: SeriesDisplayOptionsInputRequired) => void
 }
 
 export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPanelProps> = ({
     selectedOption,
     limit,
+    seriesCount: maxLimit,
     onChange,
 }) => {
     const [selected, setSelected] = useState(selectedOption)
-    const [seriesCount, setSeriesCount] = useState(limit)
+    const [seriesCount, setSeriesCount] = useState(Math.min(limit, maxLimit))
 
     const handleToggle = (value: SeriesSortOptionsInput): void => {
         setSelected(value)
@@ -34,7 +36,7 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
     }
 
     const handleChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        const count = parseInt(event.target.value, 10) || 1
+        const count = Math.min(parseInt(event.target.value, 10) || 1, maxLimit)
         setSeriesCount(count)
         onChange({ limit: count, sortOptions: selected })
     }
@@ -101,12 +103,14 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                 </div>
             </section>
             <footer className={styles.footer}>
-                <span>Number of data series</span>
+                <span>
+                    Number of data series <small className="text-muted">(max {maxLimit})</small>
+                </span>
                 <Input
                     type="number"
                     step="1"
-                    max={20}
-                    value={limit || seriesCount}
+                    max={maxLimit}
+                    value={seriesCount}
                     onChange={handleChange}
                     variant="small"
                 />

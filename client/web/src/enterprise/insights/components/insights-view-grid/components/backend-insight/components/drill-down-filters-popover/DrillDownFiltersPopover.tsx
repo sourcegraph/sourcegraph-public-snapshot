@@ -118,6 +118,7 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
                         originalValues={originalFiltersValue}
                         visualMode={FilterSectionVisualMode.CollapseSections}
                         showSeriesDisplayOptions={insight.type === InsightType.CaptureGroup}
+                        seriesCount={insight.seriesCount}
                         onFiltersChange={handleFilterChange}
                         onFilterSave={onFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
