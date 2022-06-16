@@ -1,6 +1,6 @@
 # Updating a Docker Compose Sourcegraph instance
 
-This page lists the changes that are relevant for [upgrading Sourcegraph on Docker Compose](upgrade_docker-compose.md). You can also view the [product changelog](CHANGELOG.md). 
+This page lists the changes that are relevant for [upgrading Sourcegraph on Docker Compose](upgrade_docker-compose.md). You can also view the [product changelog](../../../CHANGELOG.md). 
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
