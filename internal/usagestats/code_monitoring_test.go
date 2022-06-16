@@ -28,7 +28,7 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 			(name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
 		VALUES
 			('ViewCodeMonitoringPage', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			('CodeMonitoringViewed', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			('CodeMonitoringPageViewed', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
 			('ViewCreateCodeMonitorPage', '{"hasTriggerQuery": false}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
 			('ViewCreateCodeMonitorPage', '{"hasTriggerQuery": false}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
 			('ViewCreateCodeMonitorPage', '{"hasTriggerQuery": true}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
