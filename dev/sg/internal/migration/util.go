@@ -37,12 +37,16 @@ func makeMigrationFilenames(database db.Database, migrationIndex int, name strin
 		return MigrationFiles{}, err
 	}
 
-	sanitizedName := strcase.ToSnake(name)
+	return makeMigrationFilenamesFromDir(baseDir, migrationIndex, name)
+}
 
-	upPath := filepath.Join(baseDir, fmt.Sprintf("%d_%s/up.sql", migrationIndex, sanitizedName))
-	downPath := filepath.Join(baseDir, fmt.Sprintf("%d_%s/down.sql", migrationIndex, sanitizedName))
-	metadataPath := filepath.Join(baseDir, fmt.Sprintf("%d_%s/metadata.yaml", migrationIndex, sanitizedName))
-	return MigrationFiles{upPath, downPath, metadataPath}, nil
+func makeMigrationFilenamesFromDir(baseDir string, migrationIndex int, name string) (MigrationFiles, error) {
+	sanitizedName := strcase.ToSnake(name)
+	return MigrationFiles{
+		UpFile:       filepath.Join(baseDir, fmt.Sprintf("%d_%s/up.sql", migrationIndex, sanitizedName)),
+		DownFile:     filepath.Join(baseDir, fmt.Sprintf("%d_%s/down.sql", migrationIndex, sanitizedName)),
+		MetadataFile: filepath.Join(baseDir, fmt.Sprintf("%d_%s/metadata.yaml", migrationIndex, sanitizedName)),
+	}, nil
 }
 
 // migrationDirectoryForDatabase returns the directory where migration files are stored for the
