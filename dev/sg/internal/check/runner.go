@@ -55,7 +55,7 @@ func (r *Runner[Args]) Check(
 	results := r.runAllCategoryChecks(ctx, args)
 	if len(results.failed) > 0 {
 		if len(results.skipped) > 0 {
-			errors.Newf("%d checks failed (%d skipped)", len(results.failed), len(results.skipped))
+			return errors.Newf("%d checks failed (%d skipped)", len(results.failed), len(results.skipped))
 		}
 		return errors.Newf("%d checks failed", len(results.failed))
 	}
