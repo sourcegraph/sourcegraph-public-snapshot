@@ -28,6 +28,11 @@ export interface PreviewContent {
     relativeUrl?: string
 }
 
+export interface PreviewLoadingRequest {
+    action: 'previewLoading'
+    arguments: { timeAsISOString: string }
+}
+
 export interface PreviewRequest {
     action: 'preview'
     arguments: PreviewContent
@@ -65,6 +70,7 @@ interface IndicateFinishedLoadingRequest {
 }
 
 export type Request =
+    | PreviewLoadingRequest
     | PreviewRequest
     | OpenRequest
     | GetConfigRequest
@@ -110,6 +116,9 @@ export async function indicateFinishedLoading(): Promise<void> {
 
 export async function onPreviewChange(match: SearchMatch, lineOrSymbolMatchIndex?: number): Promise<void> {
     try {
+        if (match.type === 'content' || match.type === 'path' || match.type === 'symbol') {
+            await callJava({ action: 'previewLoading', arguments: { timeAsISOString: new Date().toISOString() } })
+        }
         await callJava({ action: 'preview', arguments: await createPreviewContent(match, lineOrSymbolMatchIndex) })
     } catch (error) {
         console.error(`Failed to preview match: ${(error as Error).message}`)
