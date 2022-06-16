@@ -77,8 +77,10 @@ public class JSToJavaBridgeRequestHandler {
                         } catch (InterruptedException ignored) {
                         }
                         ApplicationManager.getApplication().invokeLater(() -> {
-                            if (findPopupPanel.isCurrentContentOlderThan(Date.from(Instant.from(
-                                DateTimeFormatter.ISO_INSTANT.parse(arguments.get("timeAsISOString").getAsString()))))) {
+                            Date previewLoadingDate = Date.from(Instant.from(
+                                DateTimeFormatter.ISO_INSTANT.parse(arguments.get("timeAsISOString").getAsString())));
+                            if (findPopupPanel.getLastPreviewUpdate().before(previewLoadingDate)) {
+                                findPopupPanel.setLastPreviewUpdate(previewLoadingDate);
                                 findPopupPanel.indicateLoading();
                             }
                         });
@@ -88,7 +90,8 @@ public class JSToJavaBridgeRequestHandler {
                     arguments = request.getAsJsonObject("arguments");
                     previewContent = PreviewContent.fromJson(project, arguments);
                     ApplicationManager.getApplication().invokeLater(() -> {
-                        if (findPopupPanel.isCurrentContentOlderThan(previewContent.getDataReceivedDateTime())) {
+                        if (findPopupPanel.getLastPreviewUpdate().before(previewContent.getReceivedDateTime())) {
+                            findPopupPanel.setLastPreviewUpdate(previewContent.getReceivedDateTime());
                             findPopupPanel.setPreviewContent(previewContent);
                             findPopupPanel.setSelectionMetadataLabel(previewContent);
                         }
@@ -97,8 +100,10 @@ public class JSToJavaBridgeRequestHandler {
                 case "clearPreview":
                     arguments = request.getAsJsonObject("arguments");
                     ApplicationManager.getApplication().invokeLater(() -> {
-                        if (findPopupPanel.isCurrentContentOlderThan(Date.from(Instant.from(
-                            DateTimeFormatter.ISO_INSTANT.parse(arguments.get("timeAsISOString").getAsString()))))) {
+                        Date clearPreviewDate = Date.from(Instant.from(
+                            DateTimeFormatter.ISO_INSTANT.parse(arguments.get("timeAsISOString").getAsString())));
+                        if (findPopupPanel.getLastPreviewUpdate().before(clearPreviewDate)) {
+                            findPopupPanel.setLastPreviewUpdate(clearPreviewDate);
                             findPopupPanel.clearPreviewContent();
                             findPopupPanel.clearSelectionMetadataLabel();
                         }

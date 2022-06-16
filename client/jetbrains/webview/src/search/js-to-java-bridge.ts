@@ -80,6 +80,8 @@ export type Request =
     | ClearPreviewRequest
     | IndicateFinishedLoadingRequest
 
+let lastPreviewUpdateCallSendDateTime = new Date()
+
 export async function getConfigAlwaysFulfill(): Promise<PluginConfig> {
     try {
         return (await callJava({ action: 'getConfig' })) as PluginConfig
@@ -116,10 +118,21 @@ export async function indicateFinishedLoading(): Promise<void> {
 
 export async function onPreviewChange(match: SearchMatch, lineOrSymbolMatchIndex?: number): Promise<void> {
     try {
+        const initiationDateTime = new Date()
         if (match.type === 'content' || match.type === 'path' || match.type === 'symbol') {
-            await callJava({ action: 'previewLoading', arguments: { timeAsISOString: new Date().toISOString() } })
+            lastPreviewUpdateCallSendDateTime = initiationDateTime
+            await callJava({
+                action: 'previewLoading',
+                arguments: { timeAsISOString: lastPreviewUpdateCallSendDateTime.toISOString() },
+            })
         }
-        await callJava({ action: 'preview', arguments: await createPreviewContent(match, lineOrSymbolMatchIndex) })
+        const previewContent = await createPreviewContent(match, lineOrSymbolMatchIndex)
+        if (initiationDateTime < lastPreviewUpdateCallSendDateTime) {
+            // Apparently, the content was slow to load, and we already sent a newer request in the meantime.
+            // The best we can do is to ignore this change to prevent overwriting the newer content.
+            return
+        }
+        await callJava({ action: 'preview', arguments: previewContent })
     } catch (error) {
         console.error(`Failed to preview match: ${(error as Error).message}`)
     }
@@ -127,7 +140,11 @@ export async function onPreviewChange(match: SearchMatch, lineOrSymbolMatchIndex
 
 export async function onPreviewClear(): Promise<void> {
     try {
-        await callJava({ action: 'clearPreview', arguments: { timeAsISOString: new Date().toISOString() } })
+        lastPreviewUpdateCallSendDateTime = new Date()
+        await callJava({
+            action: 'clearPreview',
+            arguments: { timeAsISOString: lastPreviewUpdateCallSendDateTime.toISOString() },
+        })
     } catch (error) {
         console.error(`Failed to clear preview: ${(error as Error).message}`)
     }

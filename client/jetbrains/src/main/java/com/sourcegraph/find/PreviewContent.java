@@ -27,7 +27,7 @@ import java.util.Objects;
 
 public class PreviewContent {
     private final Project project;
-    private final Date dataReceivedDateTime;
+    private final Date receivedDateTime;
     private final String resultType;
     private final String fileName;
     private final String repoUrl;
@@ -58,7 +58,7 @@ public class PreviewContent {
         this.project = project;
         // It seems like the constructor is not called when we use the JSON parser to create instances of this class, so
         // avoid adding any computation here.
-        this.dataReceivedDateTime = receivedDateTime;
+        this.receivedDateTime = receivedDateTime;
         this.resultType = resultType;
         this.fileName = fileName;
         this.repoUrl = repoUrl;
@@ -102,8 +102,8 @@ public class PreviewContent {
     }
 
     @NotNull
-    public Date getDataReceivedDateTime() {
-        return dataReceivedDateTime;
+    public Date getReceivedDateTime() {
+        return receivedDateTime;
     }
 
     @Nullable

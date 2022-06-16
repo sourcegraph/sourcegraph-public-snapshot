@@ -35,6 +35,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
     private JLabel selectionMetadataLabel;
     private JLabel externalLinkLabel;
     private JLabel openShortcutLabel;
+    private Date lastPreviewUpdate;
 
     public FindPopupPanel(@NotNull Project project) {
         super(new BorderLayout());
@@ -57,6 +58,8 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         }
         splitter.setFirstComponent(browserAndLoadingPanel);
         splitter.setSecondComponent(bottomPanel);
+
+        lastPreviewUpdate = new Date();
     }
 
     @NotNull
@@ -90,6 +93,15 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         return previewPanel;
     }
 
+    @NotNull
+    public Date getLastPreviewUpdate() {
+        return lastPreviewUpdate;
+    }
+
+    public void setLastPreviewUpdate(@NotNull Date lastPreviewUpdate) {
+        this.lastPreviewUpdate = lastPreviewUpdate;
+    }
+
     @Override
     public void dispose() {
         if (browser != null) {
@@ -103,14 +115,6 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         previewPanel.setLoading(true);
         previewPanel.clearContent();
         clearSelectionMetadataLabel();
-    }
-
-    public boolean isCurrentContentOlderThan(@NotNull Date date) {
-        PreviewContent currentPreviewContent = previewPanel.getPreviewContent();
-        if (currentPreviewContent == null) {
-            return true;
-        }
-        return currentPreviewContent.getDataReceivedDateTime().before(date);
     }
 
     public void setPreviewContent(@NotNull PreviewContent previewContent) {
