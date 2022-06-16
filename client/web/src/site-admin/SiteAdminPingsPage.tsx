@@ -313,10 +313,10 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         <li>Total number of clicks on the code monitor email search link</li>
                         <li>Total number of clicks on example monitors</li>
                         <li>Total number of views of the getting started page</li>
+                        <li>Total number of submissions of the code monitor creation form</li>
                         <li>Total number of submissions of the manage code monitor form</li>
                         <li>Total number of deletions from the manage code monitor form</li>
                         <li>Total number of views of the logs page</li>
-                        <li>Total number of Slack, webhook, and email actions configured and saved</li>
                         <li>Current number of Slack, webhook, and email actions enabled</li>
                         <li>Current number of unique users with Slack, webhook, and email actions enabled</li>
                         <li>Total number of Slack, webhook, and email actions triggered</li>
