@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -82,21 +80,18 @@ func (image *image) Ensure(ctx context.Context) error {
 				// Desktop VMs running out of memory, whereupon the Linux
 				// kernel's OOM killer sometimes chooses to kill components of
 				// Docker instead of processes within containers.
-				timeout, err := dockerImageInspectTimeout()
+				dctx, cancel, err := withFastCommandContext(ctx)
 				if err != nil {
 					return "", err
 				}
-				dctx, cancel := context.WithTimeout(ctx, timeout)
 				defer cancel()
 
-				out, err := exec.CommandContext(dctx, "docker", "image", "inspect", "--format", "{{ .Id }}", image.name).CombinedOutput()
+				args := []string{"image", "inspect", "--format", "{{ .Id }}", image.name}
+				out, err := exec.CommandContext(dctx, "docker", args...).CombinedOutput()
 				id := string(bytes.TrimSpace(out))
 
-				if errors.Is(errors.Cause(err), context.DeadlineExceeded) {
-					return "", &dockerImageInspectTimeoutError{
-						image:   image.name,
-						timeout: timeout,
-					}
+				if errors.IsDeadlineExceeded(err) || errors.IsDeadlineExceeded(dctx.Err()) {
+					return "", newFastCommandTimeoutError(dctx, args...)
 				} else if err != nil {
 					return "", err
 				}
@@ -107,7 +102,7 @@ func (image *image) Ensure(ctx context.Context) error {
 			// docker image inspect will return a non-zero exit code if the image and
 			// tag don't exist locally, regardless of the format.
 			var digest string
-			if digest, err = inspectDigest(); errors.HasType(err, &dockerImageInspectTimeoutError{}) {
+			if digest, err = inspectDigest(); errors.HasType(err, &fastCommandTimeoutError{}) {
 				// Ensure we immediately propagate a timeout up, rather than
 				// trying to tell an unresponsive Docker to pull.
 				return err
@@ -175,51 +170,4 @@ func (image *image) UIDGID(ctx context.Context) (UIDGID, error) {
 	})
 
 	return image.uidGid, image.uidGidErr
-}
-
-const (
-	dockerImageInspectTimeoutDefault = 5 * time.Second
-	dockerImageInspectTimeoutEnv     = "SRC_DOCKER_IMAGE_INSPECT_TIMEOUT"
-)
-
-var dockerImageInspectTimeoutData = struct {
-	once    sync.Once
-	timeout time.Duration
-	err     error
-}{
-	timeout: dockerImageInspectTimeoutDefault,
-	err:     nil,
-}
-
-// dockerImageInspectTimeout returns a timeout appropriate for invoking `docker
-// image inspect`. This defaults to 5 seconds, but can be overridden by the
-// undocumented $SRC_DOCKER_IMAGE_INSPECT_TIMEOUT environment variable.
-func dockerImageInspectTimeout() (time.Duration, error) {
-	dockerImageInspectTimeoutData.once.Do(func() {
-		if userTimeout, ok := os.LookupEnv(dockerImageInspectTimeoutEnv); ok {
-			parsed, err := time.ParseDuration(userTimeout)
-			if err != nil {
-				dockerImageInspectTimeoutData.err = errors.Wrapf(err, "parsing timeout duration from environment variable %s", dockerImageInspectTimeoutEnv)
-			} else {
-				dockerImageInspectTimeoutData.timeout = parsed
-			}
-		}
-	})
-
-	return dockerImageInspectTimeoutData.timeout, dockerImageInspectTimeoutData.err
-}
-
-type dockerImageInspectTimeoutError struct {
-	image   string
-	timeout time.Duration
-}
-
-var _ error = &dockerImageInspectTimeoutError{}
-
-func (e *dockerImageInspectTimeoutError) Error() string {
-	return fmt.Sprintf(
-		"`docker image inspect --format '{{ .Id }}' %s` failed to respond within %s; "+
-			"please verify that Docker has been started and is responding normally",
-		e.image, e.timeout,
-	)
 }

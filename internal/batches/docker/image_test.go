@@ -94,10 +94,10 @@ func TestImage_Digest(t *testing.T) {
 		digest, err := image.Digest(ctx)
 		assert.Empty(t, digest)
 
-		as := &dockerImageInspectTimeoutError{}
+		as := &fastCommandTimeoutError{}
 		assert.ErrorAs(t, err, &as)
-		assert.Equal(t, "foo", as.image)
-		assert.Equal(t, dockerImageInspectTimeoutDefault, as.timeout)
+		assert.Equal(t, "foo", as.args[len(as.args)-1])
+		assert.Equal(t, fastCommandTimeoutDefault, as.timeout)
 	})
 }
 

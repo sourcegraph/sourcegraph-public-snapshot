@@ -212,3 +212,27 @@ func NewGlobValidator(wantName string, wantArg ...string) CommandValidator {
 		return errs
 	}
 }
+
+// NewLiteral is a convenience function that creates an Expectation that
+// validates commands literally.
+//
+// You don't need to use this, but it tends to make Commands() calls more
+// readable.
+func NewLiteral(behaviour Behaviour, wantName string, wantArg ...string) *Expectation {
+	return &Expectation{
+		Behaviour: behaviour,
+		Validator: func(haveName string, haveArg ...string) error {
+			var errs errors.MultiError
+
+			if wantName != haveName {
+				errs = errors.Append(errs, errors.Errorf("name does not match: have=%q want=%q", haveName, wantName))
+			}
+
+			if diff := cmp.Diff(haveArg, wantArg); diff != "" {
+				errs = errors.Append(errs, errors.Errorf("arguments do not match (-have +want):\n%s", diff))
+			}
+
+			return errs
+		},
+	}
+}

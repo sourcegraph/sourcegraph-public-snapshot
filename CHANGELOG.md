@@ -15,6 +15,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
+- The default parallelism of `src batch preview` and `src batch apply` are now based on the number of CPU cores available to Docker, rather than the host system running `src`. This can be overridden [with the `-j` flag](https://docs.sourcegraph.com/cli/references/batch/preview). [#786](https://github.com/sourcegraph/src-cli/pull/786)
+
 ### Fixed
 
 ### Removed
