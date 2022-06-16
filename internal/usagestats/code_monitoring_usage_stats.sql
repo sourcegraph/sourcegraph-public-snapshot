@@ -1,36 +1,31 @@
 WITH event_log_stats AS (
     SELECT
-        NULLIF(COUNT(*) FILTER (WHERE name IN ('ViewCodeMonitoringPage', 'CodeMonitoringPageView')), 0) :: INT AS code_monitoring_page_views,
-        NULLIF(COUNT(*) FILTER (WHERE name IN ('ViewCreateCodeMonitorPage', 'CreateCodeMonitorPageView')), 0) :: INT AS create_code_monitor_page_views,
-        NULLIF(COUNT(*) FILTER (WHERE name IN ('ViewCreateCodeMonitorPage', 'CreateCodeMonitorPageView') AND (argument->>'hasTriggerQuery')::bool), 0) :: INT AS create_code_monitor_page_views_with_trigger_query,
-        NULLIF(COUNT(*) FILTER (WHERE name IN ('ViewCreateCodeMonitorPage', 'CreateCodeMonitorPageView') AND NOT (argument->>'hasTriggerQuery')::bool), 0) :: INT AS create_code_monitor_page_views_without_trigger_query,
-        NULLIF(COUNT(*) FILTER (WHERE name IN ('ViewManageCodeMonitorPage', 'ManageCodeMonitorPageView')), 0) :: INT AS manage_code_monitor_page_views,
+        NULLIF(COUNT(*) FILTER (WHERE name IN ('ViewCodeMonitoringPage', 'CodeMonitoringViewed')), 0) :: INT AS code_monitoring_page_views,
+        NULLIF(COUNT(*) FILTER (WHERE name IN ('ViewCreateCodeMonitorPage', 'CreateCodeMonitorPageViewed')), 0) :: INT AS create_code_monitor_page_views,
+        NULLIF(COUNT(*) FILTER (WHERE name IN ('ViewCreateCodeMonitorPage', 'CreateCodeMonitorPageViewed') AND (argument->>'hasTriggerQuery')::bool), 0) :: INT AS create_code_monitor_page_views_with_trigger_query,
+        NULLIF(COUNT(*) FILTER (WHERE name IN ('ViewCreateCodeMonitorPage', 'CreateCodeMonitorPageViewed') AND NOT (argument->>'hasTriggerQuery')::bool), 0) :: INT AS create_code_monitor_page_views_without_trigger_query,
+        NULLIF(COUNT(*) FILTER (WHERE name IN ('ViewManageCodeMonitorPage', 'ManageCodeMonitorPageViewed')), 0) :: INT AS manage_code_monitor_page_views,
         NULLIF(COUNT(*) FILTER (WHERE name = 'CodeMonitorEmailLinkClicked'), 0) :: INT AS code_monitor_email_link_clicks,
         NULLIF(COUNT(*) FILTER (WHERE name = 'CodeMonitoringExampleMonitorClicked'), 0) :: INT AS code_monitor_example_monitor_clicked,
         NULLIF(COUNT(*) FILTER (WHERE name = 'CodeMonitoringGettingStartedPageViewed'), 0) :: INT AS code_monitor_getting_started_page_viewed,
+        NULLIF(COUNT(*) FILTER (WHERE name = 'CreateCodeMonitorFormSubmitted'), 0) :: INT AS code_monitor_create_form_submitted,
         NULLIF(COUNT(*) FILTER (WHERE name = 'ManageCodeMonitorFormSubmitted'), 0) :: INT AS code_monitor_manage_form_submitted,
         NULLIF(COUNT(*) FILTER (WHERE name = 'ManageCodeMonitorDeleteSubmitted'), 0) :: INT AS code_monitor_manage_delete_submitted,
-        NULLIF(COUNT(*) FILTER (WHERE name = 'CodeMonitoringLogsPageViewed'), 0) :: INT AS code_monitor_logs_page_viewed,
-        NULLIF(COUNT(*) FILTER (WHERE name = 'CodeMonitoringSlackActionSaved'), 0) :: INT AS code_monitor_slack_action_saved,
-        NULLIF(COUNT(*) FILTER (WHERE name = 'CodeMonitoringWebhookActionSaved'), 0) :: INT AS code_monitor_webhook_action_saved,
-        NULLIF(COUNT(*) FILTER (WHERE name = 'CodeMonitoringEmailActionSaved'), 0) :: INT AS code_monitor_email_action_saved
+        NULLIF(COUNT(*) FILTER (WHERE name = 'CodeMonitoringLogsPageViewed'), 0) :: INT AS code_monitor_logs_page_viewed
     FROM event_logs
     WHERE
         name IN (
-            -- TODO triple check this matches with events sent from frontend
             -- The events that share a line are events that changed names and are aliases of each other
-            'ViewCodeMonitoringPage', 'CodeMonitoringPageView',
-            'ViewCreateCodeMonitorPage', 'CreateCodeMonitorPageView',
-            'ViewManageCodeMonitorPage', 'ManageCodeMonitorPageView',
+            'ViewCodeMonitoringPage', 'CodeMonitoringViewed',
+            'ViewCreateCodeMonitorPage', 'CreateCodeMonitorPageViewed',
+            'ViewManageCodeMonitorPage', 'ManageCodeMonitorPageViewed',
             'CodeMonitorEmailLinkClicked',
             'CodeMonitoringExampleMonitorClicked',
             'CodeMonitoringGettingStartedPageViewed',
+            'CreateCodeMonitorFormSubmitted',
             'ManageCodeMonitorFormSubmitted',
             'ManageCodeMonitorDeleteSubmitted',
-            'CodeMonitoringLogsPageViewed',
-            'CodeMonitoringSlackActionSaved',
-            'CodeMonitoringWebhookActionSaved',
-            'CodeMonitoringEmailActionSaved'
+            'CodeMonitoringLogsPageViewed'
         )
 ), email_actions AS (
 	SELECT
@@ -103,12 +98,10 @@ SELECT
     event_log_stats.code_monitor_email_link_clicks,
     event_log_stats.code_monitor_example_monitor_clicked,
     event_log_stats.code_monitor_getting_started_page_viewed,
+    event_log_stats.code_monitor_create_form_submitted,
     event_log_stats.code_monitor_manage_form_submitted,
     event_log_stats.code_monitor_manage_delete_submitted,
     event_log_stats.code_monitor_logs_page_viewed,
-    event_log_stats.code_monitor_slack_action_saved,
-    event_log_stats.code_monitor_webhook_action_saved,
-    event_log_stats.code_monitor_email_action_saved,
     email_actions.email_actions_enabled,
     email_actions.email_actions_enabled_unique_users,
     slack_actions.slack_actions_enabled,
