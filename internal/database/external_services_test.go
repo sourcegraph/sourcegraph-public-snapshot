@@ -1075,7 +1075,7 @@ func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
 		t.Fatal("External service is not deleted")
 	}
 
-	rows, err := db.Handle().DB().QueryContext(ctx, `select * from repo where deleted_at is null`)
+	rows, err := db.Handle().QueryContext(ctx, `select * from repo where deleted_at is null`)
 	if err != nil {
 		t.Fatal("Error during fetching repos from the DB")
 	}
@@ -1276,7 +1276,7 @@ func TestGetAffiliatedSyncErrors(t *testing.T) {
 
 	// Add two failures for the same service
 	failure1 := "oops"
-	_, err = db.Handle().DB().ExecContext(ctx, `
+	_, err = db.Handle().ExecContext(ctx, `
 INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
 VALUES ($1,'errored', now(), $2)
 `, siteLevel.ID, failure1)
@@ -1284,7 +1284,7 @@ VALUES ($1,'errored', now(), $2)
 		t.Fatal(err)
 	}
 	failure2 := "oops again"
-	_, err = db.Handle().DB().ExecContext(ctx, `
+	_, err = db.Handle().ExecContext(ctx, `
 INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
 VALUES ($1,'errored', now(), $2)
 `, siteLevel.ID, failure2)
@@ -1310,7 +1310,7 @@ VALUES ($1,'errored', now(), $2)
 	}
 
 	// Adding a second failing service
-	_, err = db.Handle().DB().ExecContext(ctx, `
+	_, err = db.Handle().ExecContext(ctx, `
 INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
 VALUES ($1,'errored', now(), $2)
 `, adminOwned.ID, failure1)
@@ -1345,7 +1345,7 @@ VALUES ($1,'errored', now(), $2)
 
 	// Add a failure to user service
 	failure3 := "user failure"
-	_, err = db.Handle().DB().ExecContext(ctx, `
+	_, err = db.Handle().ExecContext(ctx, `
 INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
 VALUES ($1,'errored', now(), $2)
 `, userOwned.ID, failure3)
@@ -1373,7 +1373,7 @@ VALUES ($1,'errored', now(), $2)
 	// Add a failure to org service
 	orgOwned := createService(nil, org1, "GITHUB Org owned")
 
-	_, err = db.Handle().DB().ExecContext(ctx, `
+	_, err = db.Handle().ExecContext(ctx, `
 INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
 VALUES ($1,'errored', now(), $2)
 `, orgOwned.ID, "org failure")
@@ -1439,7 +1439,7 @@ func TestGetLastSyncError(t *testing.T) {
 	}
 
 	// Could have failure message
-	_, err = db.Handle().DB().ExecContext(ctx, `
+	_, err = db.Handle().ExecContext(ctx, `
 INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at)
 VALUES ($1,'errored', now())
 `, es.ID)
@@ -1458,7 +1458,7 @@ VALUES ($1,'errored', now())
 
 	// Add sync error
 	expectedError := "oops"
-	_, err = db.Handle().DB().ExecContext(ctx, `
+	_, err = db.Handle().ExecContext(ctx, `
 INSERT INTO external_service_sync_jobs (external_service_id, failure_message, state, finished_at)
 VALUES ($1,$2,'errored', now())
 `, es.ID, expectedError)
@@ -2055,7 +2055,7 @@ func TestExternalServiceStore_GetExternalServiceSyncJobs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = db.Handle().DB().ExecContext(ctx, "INSERT INTO external_service_sync_jobs (external_service_id) VALUES ($1)", es.ID)
+	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_sync_jobs (external_service_id) VALUES ($1)", es.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2166,7 +2166,7 @@ func TestExternalServiceStore_SyncDue(t *testing.T) {
 	}
 
 	makeSyncJob := func(svcID int64, state string) {
-		_, err = db.Handle().DB().ExecContext(ctx, `
+		_, err = db.Handle().ExecContext(ctx, `
 INSERT INTO external_service_sync_jobs (external_service_id, state)
 VALUES ($1,$2)
 `, svcID, state)
@@ -2179,7 +2179,7 @@ VALUES ($1,$2)
 	assertDue(1*time.Second, true)
 
 	// next_sync_at in the future
-	_, err = db.Handle().DB().ExecContext(ctx, "UPDATE external_services SET next_sync_at = $1", now.Add(10*time.Minute))
+	_, err = db.Handle().ExecContext(ctx, "UPDATE external_services SET next_sync_at = $1", now.Add(10*time.Minute))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2192,7 +2192,7 @@ VALUES ($1,$2)
 	assertDue(1*time.Minute, true)
 
 	// Sync jobs not running
-	_, err = db.Handle().DB().ExecContext(ctx, "UPDATE external_service_sync_jobs SET state = 'completed'")
+	_, err = db.Handle().ExecContext(ctx, "UPDATE external_service_sync_jobs SET state = 'completed'")
 	if err != nil {
 		t.Fatal(err)
 	}

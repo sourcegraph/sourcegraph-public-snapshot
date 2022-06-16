@@ -380,7 +380,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                                 variant="primary"
                                 as={Link}
                             >
-                                <Icon role="img" as={AddIcon} aria-hidden={true} /> Add repositories
+                                <Icon as={AddIcon} aria-hidden={true} /> Add repositories
                             </Button>
                         ) : externalServices && externalServices.length !== 0 ? (
                             <Button
@@ -389,7 +389,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                                 variant="primary"
                                 as={Link}
                             >
-                                <Icon role="img" as={AddIcon} aria-hidden={true} /> Add repositories
+                                <Icon as={AddIcon} aria-hidden={true} /> Add repositories
                             </Button>
                         ) : (
                             <Button
@@ -398,7 +398,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                                 variant="primary"
                                 as={Link}
                             >
-                                <Icon role="img" as={AddIcon} aria-hidden={true} /> Connect code hosts
+                                <Icon as={AddIcon} aria-hidden={true} /> Connect code hosts
                             </Button>
                         )}
                     </span>

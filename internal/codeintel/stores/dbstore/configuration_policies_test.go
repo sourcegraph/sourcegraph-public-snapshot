@@ -12,13 +12,14 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetConfigurationPolicies(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 	ctx := context.Background()
 
@@ -151,7 +152,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 
 func TestGetConfigurationPolicyByID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 	ctx := context.Background()
 
@@ -227,7 +228,7 @@ func TestGetConfigurationPolicyByID(t *testing.T) {
 
 func TestGetConfigurationPolicyByIDUnknownID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	_, ok, err := store.GetConfigurationPolicyByID(context.Background(), 15)
@@ -241,7 +242,7 @@ func TestGetConfigurationPolicyByIDUnknownID(t *testing.T) {
 
 func TestCreateConfigurationPolicy(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
@@ -289,7 +290,7 @@ func TestCreateConfigurationPolicy(t *testing.T) {
 
 func TestUpdateConfigurationPolicy(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
@@ -352,7 +353,7 @@ func TestUpdateConfigurationPolicy(t *testing.T) {
 
 func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
@@ -383,7 +384,7 @@ func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
 	}
 
 	// Mark configuration policy as protected (no other way to do so outside of migrations)
-	if _, err := db.Exec("UPDATE lsif_configuration_policies SET protected = true"); err != nil {
+	if _, err := db.ExecContext(context.Background(), "UPDATE lsif_configuration_policies SET protected = true"); err != nil {
 		t.Fatalf("unexpected error marking configuration policy as protected: %s", err)
 	}
 
@@ -462,7 +463,7 @@ func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
 
 func TestDeleteConfigurationPolicyByID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
@@ -506,7 +507,7 @@ func TestDeleteConfigurationPolicyByID(t *testing.T) {
 
 func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
@@ -536,7 +537,7 @@ func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 	}
 
 	// Mark configuration policy as protected (no other way to do so outside of migrations)
-	if _, err := db.Exec("UPDATE lsif_configuration_policies SET protected = true"); err != nil {
+	if _, err := db.ExecContext(context.Background(), "UPDATE lsif_configuration_policies SET protected = true"); err != nil {
 		t.Fatalf("unexpected error marking configuration policy as protected: %s", err)
 	}
 
@@ -555,7 +556,7 @@ func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 
 func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 	ctx := context.Background()
 

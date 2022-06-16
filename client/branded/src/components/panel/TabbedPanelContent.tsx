@@ -333,7 +333,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                             data-tooltip="Close panel"
                             data-placement="left"
                         >
-                            <Icon role="img" as={CloseIcon} aria-hidden={true} />
+                            <Icon as={CloseIcon} aria-hidden={true} />
                         </Button>
                     </div>
                 }

@@ -83,7 +83,6 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusAccepted {
@@ -176,7 +175,6 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusAccepted {
@@ -240,7 +238,6 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusAccepted {
@@ -313,7 +310,6 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusNoContent {
@@ -389,7 +385,6 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusNoContent {
@@ -554,7 +549,6 @@ func TestHandleEnqueueAuth(t *testing.T) {
 			false,
 			authValidators,
 			NewOperations(&observation.TestContext),
-			nil,
 		).ServeHTTP(w, r)
 
 		if w.Code != user.statusCode {

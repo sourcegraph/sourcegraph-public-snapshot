@@ -80,13 +80,17 @@ func render(message Message) (*email.Email, error) {
 //
 // Callers that do not live in the frontend should call internalapi.Client.SendEmail
 // instead. TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func Send(ctx context.Context, message Message) error {
+func Send(ctx context.Context, message Message) (err error) {
 	if MockSend != nil {
 		return MockSend(ctx, message)
 	}
 	if disableSilently {
 		return nil
 	}
+
+	defer func() {
+		emailSendCounter.WithLabelValues(strconv.FormatBool(err == nil)).Inc()
+	}()
 
 	conf := conf.Get()
 	if conf.EmailAddress == "" {
@@ -98,9 +102,12 @@ func Send(ctx context.Context, message Message) error {
 
 	m, err := render(message)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "render")
 	}
-	m.From = conf.EmailAddress
+	raw, err := m.Bytes()
+	if err != nil {
+		return errors.Wrap(err, "get bytes")
+	}
 
 	// Disable Mandrill features, because they make the emails look sketchy.
 	if conf.EmailSmtp.Host == "smtp.mandrillapp.com" {
@@ -114,6 +121,37 @@ func Send(ctx context.Context, message Message) error {
 		m.Headers["X-MC-ViewContentLink"] = []string{"false"}
 	}
 
+	client, err := smtp.Dial(net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)))
+	if err != nil {
+		return errors.Wrap(err, "new SMTP client")
+	}
+	defer func() { _ = client.Close() }()
+
+	// NOTE: Some services (e.g. Google SMTP relay) require to echo desired hostname,
+	// our current email dependency "github.com/jordan-wright/email" has no option
+	// for it and always echoes "localhost" which makes it unusable.
+	heloHostname := conf.EmailSmtp.Domain
+	if heloHostname == "" {
+		heloHostname = "localhost" // CI:LOCALHOST_OK
+	}
+	err = client.Hello(heloHostname)
+	if err != nil {
+		return errors.Wrap(err, "send HELO")
+	}
+
+	// Use TLS if available
+	if ok, _ := client.Extension("STARTTLS"); ok {
+		err = client.StartTLS(
+			&tls.Config{
+				InsecureSkipVerify: conf.EmailSmtp.NoVerifyTLS,
+				ServerName:         conf.EmailSmtp.Host,
+			},
+		)
+		if err != nil {
+			return errors.Wrap(err, "send STARTTLS")
+		}
+	}
+
 	var smtpAuth smtp.Auth
 	switch conf.EmailSmtp.Authentication {
 	case "none": // nothing to do
@@ -125,23 +163,42 @@ func Send(ctx context.Context, message Message) error {
 		return errors.Errorf("invalid SMTP authentication type %q", conf.EmailSmtp.Authentication)
 	}
 
-	if conf.EmailSmtp.NoVerifyTLS {
-		err = m.SendWithStartTLS(
-			net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)),
-			smtpAuth,
-			&tls.Config{
-				InsecureSkipVerify: true,
-			},
-		)
-	} else {
-		err = m.Send(
-			net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)),
-			smtpAuth,
-		)
+	if smtpAuth != nil {
+		if ok, _ := client.Extension("AUTH"); ok {
+			if err = client.Auth(smtpAuth); err != nil {
+				return errors.Wrap(err, "auth")
+			}
+		}
 	}
-	emailSendCounter.WithLabelValues(strconv.FormatBool(err == nil)).Inc()
-	return err
 
+	err = client.Mail(conf.EmailAddress)
+	if err != nil {
+		return errors.Wrap(err, "send MAIL")
+	}
+	for _, addr := range m.To {
+		if err = client.Rcpt(addr); err != nil {
+			return errors.Wrap(err, "send RCPT")
+		}
+	}
+	w, err := client.Data()
+	if err != nil {
+		return errors.Wrap(err, "send DATA")
+	}
+
+	_, err = w.Write(raw)
+	if err != nil {
+		return errors.Wrap(err, "write")
+	}
+	err = w.Close()
+	if err != nil {
+		return errors.Wrap(err, "close")
+	}
+
+	err = client.Quit()
+	if err != nil {
+		return errors.Wrap(err, "send QUIT")
+	}
+	return nil
 }
 
 // MockSend is used in tests to mock the Send func.

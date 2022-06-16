@@ -1,6 +1,6 @@
 # Testing Go code
 
-This document contains tips for writing unit tests for Go code.
+This document contains tips for writing and running unit tests for Go code.
 
 ## Conventions
 
@@ -205,3 +205,23 @@ func TestGetRepos(t *testing.T) {
 ```
 
 You will also see references to the `internal/database/dbtesting` package in the codebase, but use of that package is waning because it relies on a global database connection, which is not isolated between tests, and cannot be safely parallelized.
+
+### Verifying fixes to flaky tests
+
+For verifying fixes to flaky tests, pass the `-count` flag to `go test`.
+This bypasses the default caching of test results, and repeatedly runs the test in a loop.
+From the [official `go test` docs](https://pkg.go.dev/cmd/go/internal/test):
+
+```text
+	-count n
+	    Run each test, benchmark, and fuzz seed n times (default 1).
+	    If -cpu is set, run n times for each GOMAXPROCS value.
+	    Examples are always run once. -count does not apply to
+	    fuzz tests matched by -fuzz.
+```
+
+Example usage:
+
+```bash
+go test ./path/to/package -run MyTestName -count 100
+```

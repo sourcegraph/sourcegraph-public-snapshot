@@ -11,12 +11,12 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 func TestActionRunner(t *testing.T) {
-
 	logger := logtest.Scoped(t)
 	tests := []struct {
 		name           string
@@ -40,7 +40,7 @@ func TestActionRunner(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := dbtest.NewDB(logger, t)
+			db := database.NewDB(logger, dbtest.NewDB(logger, t))
 			testQuery := "test patternType:literal"
 			externalURL := "https://www.sourcegraph.com"
 

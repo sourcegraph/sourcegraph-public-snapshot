@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -17,7 +18,7 @@ import (
 
 func TestInsertCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	commitStore := NewCommitStore(insightsDB)
 
 	commit1 := makeCommit("abc123", time.Date(2021, time.April, 21, 1, 1, 0, 0, time.UTC))

@@ -10,24 +10,23 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
-
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/time/rate"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	itypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -86,8 +85,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		Metrics: metrics,
 	})
 
-	db := workerBaseStore.Handle().DB()
-	repoStore := database.NewDB(observationContext.Logger, db).Repos()
+	repoStore := database.NewDBWith(observationContext.Logger, workerBaseStore).Repos()
 
 	iterator := discovery.NewAllReposIterator(
 		dbcache.NewIndexableReposLister(observationContext.Logger, repoStore),
@@ -103,7 +101,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 
 	enq := globalBackfiller(observationContext.Logger, workerBaseStore, dataSeriesStore, insightsStore)
 	maxTime := time.Now().Add(-1 * 365 * 24 * time.Hour)
-	enq.analyzer.frameFilter = compression.NewHistoricalFilter(true, maxTime, insightsStore.Handle().DB())
+	enq.analyzer.frameFilter = compression.NewHistoricalFilter(true, maxTime, edb.NewInsightsDBWith(insightsStore))
 	enq.repoIterator = iterator.ForEach
 
 	defaultRateLimit := rate.Limit(20.0)
@@ -177,7 +175,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 		}
 	}
 
-	frontend := database.NewDB(s.logger, s.workerBaseStore.Handle().DB())
+	frontend := database.NewDBWith(s.logger, s.workerBaseStore)
 	iterator, err := discovery.NewScopedRepoIterator(ctx, repositories, frontend.Repos())
 	if err != nil {
 		return errors.Wrap(err, "NewScopedRepoIterator")
@@ -234,7 +232,7 @@ func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer 
 		statistics:         statistics,
 		frameFilter:        &compression.NoopFilter{},
 		limiter:            limiter,
-		gitFirstEverCommit: (&cachedGitFirstEverCommit{impl: gitFirstEverCommit}).gitFirstEverCommit,
+		gitFirstEverCommit: (&cachedGitFirstEverCommit{impl: discovery.GitFirstEverCommit}).gitFirstEverCommit,
 		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
 			return git.Commits(ctx, frontend, repoName, git.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 		},
@@ -242,8 +240,7 @@ func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer 
 }
 
 func globalBackfiller(logger sglog.Logger, workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store) *historicalEnqueuer {
-	db := workerBaseStore.Handle().DB()
-	dbConn := database.NewDB(logger, db)
+	dbConn := database.NewDBWith(logger, workerBaseStore)
 
 	statistics := make(statistics)
 
@@ -473,7 +470,7 @@ func (a *backfillAnalyzer) buildForRepo(ctx context.Context, definitions []itype
 			log15.Warn("insights backfill repository skipped - missing rev/repo", "repo_id", id, "repo_name", repoName)
 			return nil, nil, nil, softErr // no error - repo may not be cloned yet (or not even pushed to code host yet)
 		}
-		if strings.Contains(err.Error(), `failed (output: "usage: git rev-list [OPTION] <commit-id>...`) {
+		if errors.Is(err, discovery.EmptyRepoErr) {
 			log15.Warn("insights backfill repository skipped - empty repo", "repo_id", id, "repo_name", repoName)
 			return nil, nil, nil, softErr // repository is empty
 		}
@@ -673,8 +670,4 @@ func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, db da
 	}
 	c.cache[repoName] = entry
 	return entry, nil
-}
-
-func gitFirstEverCommit(ctx context.Context, db database.DB, repoName api.RepoName) (*gitdomain.Commit, error) {
-	return git.FirstEverCommit(ctx, db, repoName, authz.DefaultSubRepoPermsChecker)
 }

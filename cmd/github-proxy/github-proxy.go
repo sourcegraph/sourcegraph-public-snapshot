@@ -21,7 +21,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/otfields"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -29,12 +28,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	// "github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
@@ -63,15 +60,17 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	logging.Init()
-	syncLogs := log.Init(otfields.Resource{
+
+	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	})
-	defer syncLogs.Sync()
+	}, log.NewSentrySink())
+
+	defer liblog.Sync()
 	conf.Init()
+	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
 	// Ready immediately
@@ -79,7 +78,7 @@ func main() {
 	close(ready)
 	go debugserver.NewServerRoutine(ready).Start()
 
-	logger := log.Scoped("service", "the github-proxy service")
+	logger := log.Scoped("server", "the github-proxy service")
 
 	p := &githubProxy{
 		logger: logger,
@@ -97,7 +96,7 @@ func main() {
 		h = handlers.LoggingHandler(os.Stdout, h)
 	}
 	h = instrumentHandler(prometheus.DefaultRegisterer, h)
-	h = trace.HTTPMiddleware(h, conf.DefaultClient())
+	h = trace.HTTPMiddleware(logger, h, conf.DefaultClient())
 	h = ot.HTTPMiddleware(h)
 	http.Handle("/", h)
 

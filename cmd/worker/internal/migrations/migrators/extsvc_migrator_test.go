@@ -139,7 +139,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		}
 
 		// was the config actually encrypted?
-		rows, err := db.Handle().DB().QueryContext(ctx, "SELECT config, encryption_key_id FROM external_services ORDER BY id")
+		rows, err := db.Handle().QueryContext(ctx, "SELECT config, encryption_key_id FROM external_services ORDER BY id")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -212,7 +212,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		}
 
 		// was the config actually reverted?
-		rows, err := db.Handle().DB().QueryContext(ctx, "SELECT config, encryption_key_id FROM external_services ORDER BY id")
+		rows, err := db.Handle().QueryContext(ctx, "SELECT config, encryption_key_id FROM external_services ORDER BY id")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -304,7 +304,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		}
 
 		// was the config actually reverted?
-		rows, err := db.Handle().DB().QueryContext(ctx, "SELECT config, encryption_key_id FROM external_services ORDER BY id")
+		rows, err := db.Handle().QueryContext(ctx, "SELECT config, encryption_key_id FROM external_services ORDER BY id")
 		if err != nil {
 			t.Fatal(err)
 		}

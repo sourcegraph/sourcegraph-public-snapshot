@@ -100,7 +100,7 @@ var _ UserStore = (*userStore)(nil)
 func Users(logger log.Logger, db dbutil.DB) UserStore {
 	return &userStore{
 		logger: logger,
-		Store:  basestore.NewWithDB(db, sql.TxOptions{}),
+		Store:  &basestore.Store{},
 	}
 }
 
@@ -228,7 +228,7 @@ func (u *userStore) Create(ctx context.Context, info NewUser) (newUser *types.Us
 	defer func() { err = tx.Done(err) }()
 	newUser, err = tx.CreateInTransaction(ctx, info)
 	if err == nil {
-		logAccountCreatedEvent(ctx, u.logger, u.Handle().DB(), newUser, "")
+		logAccountCreatedEvent(ctx, NewDBWith(u.logger, u), newUser, "")
 	}
 	return newUser, err
 }
@@ -293,7 +293,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 
 	// Run BeforeCreateUser hook.
 	if BeforeCreateUser != nil {
-		if err := BeforeCreateUser(ctx, NewDB(u.logger, u.Store.Handle().DB())); err != nil {
+		if err := BeforeCreateUser(ctx, NewDBWith(u.logger, u.Store)); err != nil {
 			return nil, errors.Wrap(err, "pre create user hook")
 		}
 	}
@@ -380,7 +380,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 
 		// Run AfterCreateUser hook
 		if AfterCreateUser != nil {
-			if err := AfterCreateUser(ctx, NewDB(u.logger, u.Store.Handle().DB()), user); err != nil {
+			if err := AfterCreateUser(ctx, NewDBWith(u.logger, u.Store), user); err != nil {
 				return nil, errors.Wrap(err, "after create user hook")
 			}
 		}
@@ -389,7 +389,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 	return user, nil
 }
 
-func logAccountCreatedEvent(ctx context.Context, logger log.Logger, db dbutil.DB, u *types.User, serviceType string) {
+func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceType string) {
 	a := actor.FromContext(ctx)
 	arg, _ := json.Marshal(struct {
 		Creator     int32  `json:"creator"`
@@ -411,7 +411,7 @@ func logAccountCreatedEvent(ctx context.Context, logger log.Logger, db dbutil.DB
 		Timestamp:       time.Now(),
 	}
 
-	NewDB(logger, db).SecurityEventLogs().LogEvent(ctx, event)
+	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
@@ -543,7 +543,7 @@ func (u *userStore) Delete(ctx context.Context, id int32) (err error) {
 		return err
 	}
 
-	logUserDeletionEvent(ctx, u.logger, u.Handle().DB(), id, SecurityEventNameAccountDeleted)
+	logUserDeletionEvent(ctx, NewDBWith(u.logger, u), id, SecurityEventNameAccountDeleted)
 
 	return nil
 }
@@ -613,12 +613,12 @@ func (u *userStore) HardDelete(ctx context.Context, id int32) (err error) {
 		return userNotFoundErr{args: []any{id}}
 	}
 
-	logUserDeletionEvent(ctx, u.logger, u.Handle().DB(), id, SecurityEventNameAccountNuked)
+	logUserDeletionEvent(ctx, NewDBWith(u.logger, u), id, SecurityEventNameAccountNuked)
 
 	return nil
 }
 
-func logUserDeletionEvent(ctx context.Context, logger log.Logger, db dbutil.DB, id int32, name SecurityEventName) {
+func logUserDeletionEvent(ctx context.Context, db DB, id int32, name SecurityEventName) {
 	// The actor deleting the user could be a different user, for example a site
 	// admin
 	a := actor.FromContext(ctx)
@@ -638,7 +638,7 @@ func logUserDeletionEvent(ctx context.Context, logger log.Logger, db dbutil.DB, 
 		Timestamp:       time.Now(),
 	}
 
-	NewDB(logger, db).SecurityEventLogs().LogEvent(ctx, event)
+	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
 // SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin.
@@ -1055,12 +1055,12 @@ func (u *userStore) RandomizePasswordAndClearPasswordResetRateLimit(ctx context.
 	// can't be reused, and so a new valid reset code can be generated afterward.
 	err = u.Exec(ctx, sqlf.Sprintf("UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=%s WHERE id=%s", passwd, id))
 	if err == nil {
-		LogPasswordEvent(ctx, u.logger, u.Handle().DB(), nil, SecurityEventNamPasswordRandomized, id)
+		LogPasswordEvent(ctx, NewDBWith(u.logger, u), nil, SecurityEventNamPasswordRandomized, id)
 	}
 	return err
 }
 
-func LogPasswordEvent(ctx context.Context, logger log.Logger, db dbutil.DB, r *http.Request, name SecurityEventName, userID int32) {
+func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name SecurityEventName, userID int32) {
 	a := actor.FromContext(ctx)
 	args, _ := json.Marshal(struct {
 		Requester int32 `json:"requester"`
@@ -1082,7 +1082,7 @@ func LogPasswordEvent(ctx context.Context, logger log.Logger, db dbutil.DB, r *h
 	}
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
-	NewDB(logger, db).SecurityEventLogs().LogEvent(ctx, event)
+	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
 func hashPassword(password string) (sql.NullString, error) {

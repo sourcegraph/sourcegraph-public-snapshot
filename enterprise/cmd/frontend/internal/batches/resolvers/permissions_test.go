@@ -47,7 +47,7 @@ func TestPermissionLevels(t *testing.T) {
 
 	cstore := store.New(db, &observation.TestContext, key)
 	sr := New(cstore)
-	s, err := graphqlbackend.NewSchema(database.NewDB(logger, db), sr, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +175,10 @@ func TestPermissionLevels(t *testing.T) {
 	cleanUpBatchSpecs := func(t *testing.T, s *store.Store) {
 		t.Helper()
 
-		batchChanges, next, err := s.ListBatchSpecs(ctx, store.ListBatchSpecsOpts{LimitOpts: store.LimitOpts{Limit: 1000}})
+		batchChanges, next, err := s.ListBatchSpecs(ctx, store.ListBatchSpecsOpts{
+			LimitOpts:                   store.LimitOpts{Limit: 1000},
+			IncludeLocallyExecutedSpecs: true,
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -602,6 +605,7 @@ func TestPermissionLevels(t *testing.T) {
 					},
 				},
 			}
+
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
 					actorCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
@@ -611,10 +615,19 @@ func TestPermissionLevels(t *testing.T) {
 						expectedIDs[graphqlID] = true
 					}
 
-					query := `query { batchSpecs() { totalCount, nodes { id } } }`
+					input := map[string]any{
+						"includeLocallyExecutedSpecs": true,
+					}
+
+					query := `
+query($includeLocallyExecutedSpecs: Boolean) {
+	batchSpecs(includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) {
+		totalCount, nodes { id }
+	}
+}`
 
 					var res struct{ BatchSpecs apitest.BatchSpecConnection }
-					apitest.MustExec(actorCtx, t, s, nil, &res, query)
+					apitest.MustExec(actorCtx, t, s, input, &res, query)
 
 					if have, want := res.BatchSpecs.TotalCount, len(tc.wantBatchSpecs); have != want {
 						t.Fatalf("wrong count of batch changes returned, want=%d have=%d", want, have)
@@ -1262,7 +1275,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	bstore := store.New(db, &observation.TestContext, nil)
 	sr := &Resolver{store: bstore}
-	s, err := graphqlbackend.NewSchema(database.NewDB(logger, db), sr, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

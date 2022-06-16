@@ -55,7 +55,7 @@ func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
 	defer git.ResetMocks()
 
 	repoIndexResolver := &repositoryTextSearchIndexResolver{
-		repo:   NewRepositoryResolver(database.NewDB(logger, db), &types.Repo{Name: "alice/repo"}),
+		repo:   NewRepositoryResolver(db, &types.Repo{Name: "alice/repo"}),
 		client: &repoListerMock{},
 	}
 	refs, err := repoIndexResolver.Refs(context.Background())

@@ -11,15 +11,15 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	internalTypes "github.com/sourcegraph/sourcegraph/internal/types"
@@ -34,7 +34,7 @@ func TestResolver_InsightConnection(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 
 	testSetup := func(t *testing.T) (context.Context, graphqlbackend.InsightConnectionResolver) {
 		// Setup the GraphQL resolver.
@@ -125,7 +125,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
@@ -150,7 +150,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	// Create three repositories -
 	// 1) private repo that will be assigned to user 1
 	// 2 & 3) public repos
-	_, err = postgres.Handle().DB().ExecContext(ctx, `
+	_, err = postgres.Handle().ExecContext(ctx, `
 		INSERT INTO repo (id, name, description, fork, created_at, updated_at, external_id, external_service_type,
 					  external_service_id, archived, uri, deleted_at, metadata, private, stars)
 		VALUES
@@ -177,7 +177,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = postgres.Handle().DB().ExecContext(ctx, `
+	_, err = postgres.Handle().ExecContext(ctx, `
 		INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
 		VALUES
 		       ($1, 1, ''),
@@ -190,14 +190,14 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	}
 
 	for i := 0; i < 3; i++ {
-		_, err = insightsDB.Exec(`INSERT INTO repo_names (name) VALUES ($1);`, fmt.Sprint("ignore-me-", i))
+		_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO repo_names (name) VALUES ($1);`, fmt.Sprint("ignore-me-", i))
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
 	// Create some timeseries data, one row in each repository
-	_, err = insightsDB.Exec(`
+	_, err = insightsDB.ExecContext(context.Background(), `
 		INSERT INTO series_points (series_id, "time", "value", metadata_id, repo_id, repo_name_id, original_repo_name_id)
 		VALUES
 			('s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E', $1, 5.0, null, 1, 3, 3),

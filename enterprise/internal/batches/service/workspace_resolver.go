@@ -29,7 +29,6 @@ import (
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	onlib "github.com/sourcegraph/sourcegraph/lib/batches/on"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -369,6 +368,7 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 		for path := range repoFileMatches[repo.ID] {
 			fileMatches = append(fileMatches, path)
 		}
+		// Sort file matches so cache results always match.
 		sort.Strings(fileMatches)
 		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, database.NewDBWith(wr.logger, wr.store), repo, fileMatches)
 		if err != nil {
@@ -454,7 +454,7 @@ func hasBatchIgnoreFile(ctx context.Context, db database.DB, r *RepoRevision) (_
 	}()
 
 	const path = ".batchignore"
-	stat, err := git.Stat(ctx, db, authz.DefaultSubRepoPermsChecker, r.Repo.Name, r.Commit, path)
+	stat, err := gitserver.NewClient(db).Stat(ctx, authz.DefaultSubRepoPermsChecker, r.Repo.Name, r.Commit, path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil

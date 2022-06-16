@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestCreateCodeMonitor(t *testing.T) {
@@ -30,6 +31,8 @@ func TestCreateCodeMonitor(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	r := newTestResolver(t, db)
+
+	graphqlbackend.MockDecodedViewerFinalSettings = &schema.Settings{}
 
 	user := insertTestUser(t, db, "cm-user1", true)
 
@@ -1263,6 +1266,8 @@ func TestTriggerTestEmailAction(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
+
 	got := background.TemplateDataNewSearchResults{}
 	background.MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *background.TemplateDataNewSearchResults) error {
 		got = *data
@@ -1270,7 +1275,8 @@ func TestTriggerTestEmailAction(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	r := newTestResolver(t, nil)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	r := newTestResolver(t, db)
 
 	namespaceID := relay.MarshalID("User", actor.FromContext(ctx).UID)
 

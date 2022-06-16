@@ -78,7 +78,6 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                     <div className="d-flex align-items-center">
                         <H3 className="mb-0 mr-1">Manifest</H3>
                         <Icon
-                            role="img"
                             className="text-muted"
                             data-tooltip="The published JSON description of how to run or access the extension"
                             as={InformationOutlineIcon}
@@ -88,7 +87,7 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                     <div>
                         {this.props.extension.manifest && (
                             <Button onClick={this.onViewModeButtonClick} variant="secondary">
-                                <Icon role="img" as={EyeIcon} aria-hidden={true} /> Use{' '}
+                                <Icon as={EyeIcon} aria-hidden={true} /> Use{' '}
                                 {this.state.viewMode === ViewMode.Plain ? ViewMode.Rich : ViewMode.Plain} viewer
                             </Button>
                         )}{' '}

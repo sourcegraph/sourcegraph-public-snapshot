@@ -110,7 +110,7 @@ export const StatusBar: React.FunctionComponent<React.PropsWithChildren<StatusBa
                         variant="link"
                         aria-label="Scroll left"
                     >
-                        <Icon role="img" as={ChevronLeftIcon} aria-hidden={true} />
+                        <Icon as={ChevronLeftIcon} aria-hidden={true} />
                     </Button>
                 )}
                 <div className={classNames('d-flex align-items-center px-2', styles.items)} ref={carouselReference}>
@@ -147,7 +147,7 @@ export const StatusBar: React.FunctionComponent<React.PropsWithChildren<StatusBa
                         variant="link"
                         aria-label="Scroll right"
                     >
-                        <Icon role="img" as={ChevronRightIcon} aria-hidden={true} />
+                        <Icon as={ChevronRightIcon} aria-hidden={true} />
                     </Button>
                 )}
             </ErrorBoundary>

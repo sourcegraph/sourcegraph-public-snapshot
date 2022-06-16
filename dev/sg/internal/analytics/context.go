@@ -41,12 +41,19 @@ func getStore(ctx context.Context) *eventStore {
 //
 // Events are automatically created with a duration relative to the provided start time,
 // and persisted to disk at the end of command execution.
-func LogEvent(ctx context.Context, category string, labels []string, startedAt time.Time, events ...string) {
-	store := getStore(ctx)
-	if store == nil {
-		return
+//
+// It returns the event that was created so that you can add additional metadata if
+// desired - use sparingly.
+func LogEvent(ctx context.Context, category string, labels []string, startedAt time.Time, events ...string) *okay.Event {
+	// Validate the incoming event
+	if category == "" {
+		panic("LogEvent.category must be set")
+	}
+	if startedAt.IsZero() {
+		panic("LogEvent.startedAt must be a valid time")
 	}
 
+	// Set events as metrics
 	metrics := map[string]okay.Metric{
 		"duration": okay.Duration(time.Since(startedAt)),
 	}
@@ -54,7 +61,8 @@ func LogEvent(ctx context.Context, category string, labels []string, startedAt t
 		metrics[event] = okay.Count(1)
 	}
 
-	store.events = append(store.events, &okay.Event{
+	// Create the event
+	event := &okay.Event{
 		Name:      category,
 		Labels:    labels,
 		Timestamp: startedAt, // Timestamp as start of event
@@ -63,5 +71,13 @@ func LogEvent(ctx context.Context, category string, labels []string, startedAt t
 		Properties: map[string]string{
 			"event_id": uuid.NewString(),
 		},
-	})
+	}
+
+	// Set to store
+	store := getStore(ctx)
+	if store != nil {
+		store.events = append(store.events, event)
+	}
+
+	return event
 }

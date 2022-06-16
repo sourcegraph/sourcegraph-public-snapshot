@@ -85,7 +85,7 @@ var sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "-1", "the maximum n
 var enableSGMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "true", "Use sg maintenance during janitorial cleanup phases"))
 
 // The limit of repos cloned on the wrong shard to delete in one janitor run - value <=0 disables delete.
-var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "0", "the maximum number of repos not assigned to this shard we delete in one run"))
+var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "10", "the maximum number of repos not assigned to this shard we delete in one run"))
 
 var (
 	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -146,10 +146,18 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	}()
 	defer janitorRunning.Set(0)
 	cleanupLogger := s.Logger.Scoped("cleanup", "cleanup operation")
-	gitServerAddressSet := map[string]struct{}{}
-	for _, server := range gitServerAddrs {
-		gitServerAddressSet[server] = struct{}{}
+
+	isKnownGitServerShard := false
+	for _, addr := range gitServerAddrs {
+		if s.hostnameMatch(addr) {
+			isKnownGitServerShard = true
+			break
+		}
 	}
+	if !isKnownGitServerShard {
+		s.Logger.Warn("current shard is not included in the list of known gitserver shards, will not delete repos", log.String("current-hostname", s.Hostname), log.Strings("all-shards", gitServerAddrs))
+	}
+
 	bCtx, bCancel := s.serverContext()
 	defer bCancel()
 
@@ -186,11 +194,7 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		if !s.hostnameMatch(addr) {
 			wrongShardRepoCount++
 			wrongShardRepoSize += size
-			if wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
-				if _, ok := gitServerAddressSet[s.Hostname]; !ok {
-					s.Logger.Warn("current shard is not included in the list of known gitserver shards, skipping", log.String("dir", string(dir)), log.String("current-hostname", s.Hostname), log.String("target-shard", addr), log.Strings("all-shards", gitServerAddrs))
-					return false, nil
-				}
+			if isKnownGitServerShard && wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
 				s.Logger.Info("removing repo cloned on the wrong shard", log.String("dir", string(dir)), log.String("target-shard", addr), log.String("current-shard", s.Hostname), log.Int64("size-bytes", size))
 				if err := s.removeRepoDirectory(dir); err != nil {
 					return false, err

@@ -6,11 +6,11 @@
 | Name | Description | Default Value |
 |------|-------------|---------------|
 | `-dump-requests` | Log GraphQL requests and responses to stdout | `false` |
-| `-f` | Format for the output, using the syntax of Go package text/template. (e.g. "{{.ExtensionID}}: {{.Manifest.Description}} ({{.RemoteURL}})" or "{{.|json}}") | `{{.ExtensionID}}` |
+| `-f` | Format for the output, using the syntax of Go package text/template. (e.g. "{{.ExtensionID}}: {{.Manifest.Description}} ({{.RemoteURL}})" or "{{.\|json}}") | `{{.ExtensionID}}` |
 | `-first` | Returns the first n extensions from the list. (use -1 for unlimited) | `1000` |
 | `-get-curl` | Print the curl command for executing this query and exit (WARNING: includes printing your access token!) | `false` |
 | `-insecure-skip-verify` | Skip validation of TLS certificates against trusted chains | `false` |
-| `-query` | Returns extensions whose extension IDs match the query. (e.g. "myextension") |  |
+| `-query` | Extension query consisting of the following optional argumanets: query string (compared with extension ID), `category` and `tag`. |  |
 | `-trace` | Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing | `false` |
 | `-user-agent-telemetry` | Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph | `true` |
 
@@ -30,7 +30,7 @@ Usage of 'src extensions list':
   -insecure-skip-verify
     	Skip validation of TLS certificates against trusted chains
   -query string
-    	Returns extensions whose extension IDs match the query. (e.g. "myextension")
+    	Returns extensions matching the the query (e.g. "sourcegraph/ category:'Programming languages' tag:'fuzzy'").
   -trace
     	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
@@ -44,11 +44,15 @@ Examples:
 
   List extensions whose names match the query:
 
-    	$ src extensions list -query='myquery'
+    	$ src extensions list -query="myquery"
+
+  List extensions whose name, category and tag matches the query:
+
+      $ src extensions list -query="sourcegraph/ category:'Programming languages' tag:'fuzzy'"
 
   List *all* extensions (may be slow!):
 
-    	$ src extensions list -first='-1'
+    	$ src extensions list -first="-1"
 
 
 

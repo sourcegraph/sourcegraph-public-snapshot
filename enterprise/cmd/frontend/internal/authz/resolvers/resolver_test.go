@@ -10,8 +10,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -185,6 +187,24 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 					return errors.Errorf("accounts: %v", diff)
 				}
 				return nil
+			})
+			perms.MapUsersFunc.SetDefaultHook(func(ctx context.Context, s []string, pum *schema.PermissionsUserMapping) (map[string]int32, error) {
+				if pum.BindID != test.config.BindID {
+					return nil, errors.Errorf("unexpected BindID: %q", pum.BindID)
+				}
+
+				m := make(map[string]int32)
+				if pum.BindID == "username" {
+					for _, u := range test.mockUsers {
+						m[u.Username] = u.ID
+					}
+				} else {
+					for _, u := range test.mockVerifiedEmails {
+						m[u.Email] = u.UserID
+					}
+				}
+
+				return m, nil
 			})
 
 			db := edb.NewStrictMockEnterpriseDB()
@@ -370,6 +390,189 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+	})
+}
+
+func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
+	t.Run("disabled on dotcom", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx, nil)
+
+		if !errors.Is(err, errDisabledSourcegraphDotCom) {
+			t.Errorf("err: want %q, but got %q", errDisabledSourcegraphDotCom, err)
+		}
+
+		if result != nil {
+			t.Errorf("result: want nil but got %v", result)
+		}
+
+		// Reset the env var for other tests.
+		envvar.MockSourcegraphDotComMode(false)
+	})
+
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx, nil)
+
+		if !errors.Is(err, backend.ErrMustBeSiteAdmin) {
+			t.Errorf("err: want %q, but got %q", backend.ErrMustBeSiteAdmin, err)
+		}
+
+		if result != nil {
+			t.Errorf("result: want nil but got %v", result)
+		}
+	})
+
+	t.Run("invalid code host", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx,
+			&graphqlbackend.RepoPermsBitbucketProjectArgs{
+				// Note: Usage of graphqlbackend.MarshalOrgID here is NOT a typo. Intentionally use an
+				// incorrect format for the CodeHost ID.
+				CodeHost: graphqlbackend.MarshalOrgID(1),
+			},
+		)
+
+		if err == nil {
+			t.Error("expected error, but got nil")
+		}
+
+		if result != nil {
+			t.Errorf("result: want nil but got %v", result)
+		}
+	})
+
+	t.Run("non-Bitbucket code host", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		extSvc := database.NewMockExternalServiceStore()
+		extSvc.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) (*types.ExternalService, error) {
+			if id == 1 {
+				return &types.ExternalService{
+						ID:          1,
+						Kind:        extsvc.KindBitbucketCloud,
+						DisplayName: "github :)",
+					},
+					nil
+			} else {
+				return nil, errors.Errorf("Cannot find external service with given ID")
+			}
+		})
+		db.ExternalServicesFunc.SetDefaultReturn(extSvc)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx,
+			&graphqlbackend.RepoPermsBitbucketProjectArgs{
+				CodeHost: graphqlbackend.MarshalExternalServiceID(1),
+			},
+		)
+
+		assert.EqualError(t, err, fmt.Sprintf("expected Bitbucket Server external service, got: %s", extsvc.KindBitbucketCloud))
+		require.Nil(t, result)
+	})
+
+	t.Run("job enqueued", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		bb := database.NewMockBitbucketProjectPermissionsStore()
+		bb.EnqueueFunc.SetDefaultReturn(1, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.BitbucketProjectPermissionsFunc.SetDefaultReturn(bb)
+
+		extSvc := database.NewMockExternalServiceStore()
+		extSvc.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) (*types.ExternalService, error) {
+			if id == 1 {
+				return &types.ExternalService{
+						ID:          1,
+						Kind:        extsvc.KindBitbucketServer,
+						DisplayName: "bb server no jokes here",
+					},
+					nil
+			} else {
+				return nil, errors.Errorf("Cannot find external service with given ID")
+			}
+		})
+		db.ExternalServicesFunc.SetDefaultReturn(extSvc)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		t.Run("unrestricted not set", func(t *testing.T) {
+			result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx,
+				&graphqlbackend.RepoPermsBitbucketProjectArgs{
+					CodeHost: graphqlbackend.MarshalExternalServiceID(1),
+				},
+			)
+
+			assert.NoError(t, err)
+			require.NotNil(t, result)
+			require.Equal(t, &graphqlbackend.EmptyResponse{}, result)
+
+		})
+
+		t.Run("unrestricted set to false", func(t *testing.T) {
+			u := false
+			result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx,
+				&graphqlbackend.RepoPermsBitbucketProjectArgs{
+					CodeHost:     graphqlbackend.MarshalExternalServiceID(1),
+					Unrestricted: &u,
+				},
+			)
+
+			assert.NoError(t, err)
+			require.NotNil(t, result)
+			require.Equal(t, &graphqlbackend.EmptyResponse{}, result)
+		})
+
+		t.Run("unrestricted set to true", func(t *testing.T) {
+			u := true
+			result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx,
+				&graphqlbackend.RepoPermsBitbucketProjectArgs{
+					CodeHost:     graphqlbackend.MarshalExternalServiceID(1),
+					Unrestricted: &u,
+				},
+			)
+
+			assert.NoError(t, err)
+			require.NotNil(t, result)
+			require.Equal(t, &graphqlbackend.EmptyResponse{}, result)
+		})
 	})
 }
 
@@ -1126,6 +1329,16 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(usersStore)
 		db.SubRepoPermsFunc.SetDefaultReturn(subReposStore)
 		db.ReposFunc.SetDefaultReturn(reposStore)
+
+		perms := edb.NewStrictMockPermsStore()
+		perms.TransactFunc.SetDefaultReturn(perms, nil)
+		perms.DoneFunc.SetDefaultReturn(nil)
+		perms.MapUsersFunc.SetDefaultHook(func(ctx context.Context, s []string, pum *schema.PermissionsUserMapping) (map[string]int32, error) {
+			return map[string]int32{
+				"alice": 1,
+			}, nil
+		})
+		db.PermsFunc.SetDefaultReturn(perms)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 

@@ -1,7 +1,6 @@
 package repos_test
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/opentracing/opentracing-go"
@@ -55,7 +54,7 @@ func TestIntegration(t *testing.T) {
 		{"Syncer/SyncReposWithLastErrorsHitRateLimit", testSyncReposWithLastErrorsHitsRateLimiter},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(logger, t)), sql.TxOptions{Isolation: sql.LevelReadCommitted})
+			store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 			store.SetMetrics(repos.NewStoreMetrics())
 			store.SetTracer(trace.Tracer{Tracer: opentracing.GlobalTracer()})

@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -22,7 +23,7 @@ import (
 
 func TestDocumentColumnSplitMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := stores.NewCodeIntelDB(dbtest.NewDB(logger, t))
 	store := lsifstore.NewStore(db, conf.DefaultClient(), &observation.TestContext)
 	migrator := NewDocumentColumnSplitMigrator(store, 250)
 	serializer := lsifstore.NewSerializer()

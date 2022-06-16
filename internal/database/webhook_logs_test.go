@@ -15,6 +15,7 @@ import (
 	keytesting "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestWebhookLogStore(t *testing.T) {
@@ -22,7 +23,7 @@ func TestWebhookLogStore(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	t.Run("Create", func(t *testing.T) {
 		t.Parallel()
@@ -30,10 +31,11 @@ func TestWebhookLogStore(t *testing.T) {
 		t.Run("unencrypted", func(t *testing.T) {
 			t.Parallel()
 
-			tx, err := db.Begin()
+			tx, err := db.Transact(ctx)
 			assert.Nil(t, err)
-			defer tx.Rollback()
-			store := WebhookLogs(tx, nil)
+			defer func() { _ = tx.Done(errors.New("rollback")) }()
+
+			store := tx.WebhookLogs(nil)
 
 			log := createWebhookLog(0, http.StatusCreated, time.Now())
 			err = store.Create(ctx, log)
@@ -60,10 +62,11 @@ func TestWebhookLogStore(t *testing.T) {
 		t.Run("encrypted", func(t *testing.T) {
 			t.Parallel()
 
-			tx, err := db.Begin()
+			tx, err := db.Transact(ctx)
 			assert.Nil(t, err)
-			defer tx.Rollback()
-			store := WebhookLogs(tx, keytesting.TestKey{})
+			defer func() { _ = tx.Done(errors.New("rollback")) }()
+
+			store := tx.WebhookLogs(keytesting.TestKey{})
 
 			// Weirdly, Go doesn't have a HTTP constant for "418 I'm a Teapot".
 			log := createWebhookLog(0, 418, time.Now())
@@ -91,10 +94,11 @@ func TestWebhookLogStore(t *testing.T) {
 		t.Run("bad key", func(t *testing.T) {
 			t.Parallel()
 
-			tx, err := db.Begin()
+			tx, err := db.Transact(ctx)
 			assert.Nil(t, err)
-			defer tx.Rollback()
-			store := WebhookLogs(tx, &keytesting.BadKey{})
+			defer func() { _ = tx.Done(errors.New("rollback")) }()
+
+			store := tx.WebhookLogs(&keytesting.BadKey{})
 
 			log := createWebhookLog(0, http.StatusExpectationFailed, time.Now())
 			err = store.Create(ctx, log)
@@ -105,10 +109,11 @@ func TestWebhookLogStore(t *testing.T) {
 	t.Run("GetByID", func(t *testing.T) {
 		t.Parallel()
 
-		tx, err := db.Begin()
+		tx, err := db.Transact(ctx)
 		assert.Nil(t, err)
-		defer tx.Rollback()
-		store := WebhookLogs(tx, keytesting.TestKey{})
+		defer func() { _ = tx.Done(errors.New("rollback")) }()
+
+		store := tx.WebhookLogs(keytesting.TestKey{})
 
 		log := createWebhookLog(0, http.StatusInternalServerError, time.Now())
 		err = store.Create(ctx, log)
@@ -126,7 +131,7 @@ func TestWebhookLogStore(t *testing.T) {
 		})
 
 		t.Run("different key", func(t *testing.T) {
-			store := WebhookLogs(tx, &keytesting.TransparentKey{})
+			store := tx.WebhookLogs(&keytesting.TransparentKey{})
 			_, err := store.GetByID(ctx, log.ID)
 			assert.NotNil(t, err)
 		})
@@ -135,12 +140,11 @@ func TestWebhookLogStore(t *testing.T) {
 	t.Run("List/Count", func(t *testing.T) {
 		t.Parallel()
 
-		logger := logtest.Scoped(t)
-		tx, err := db.Begin()
+		tx, err := db.Transact(ctx)
 		assert.Nil(t, err)
-		defer tx.Rollback()
+		defer func() { _ = tx.Done(errors.New("rollback")) }()
 
-		esStore := NewDB(logger, tx).ExternalServices()
+		esStore := tx.ExternalServices()
 		es := &types.ExternalService{
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "GitLab",
@@ -148,7 +152,7 @@ func TestWebhookLogStore(t *testing.T) {
 		}
 		assert.Nil(t, esStore.Upsert(ctx, es))
 
-		store := WebhookLogs(tx, keytesting.TestKey{})
+		store := tx.WebhookLogs(keytesting.TestKey{})
 
 		okTime := time.Date(2021, 10, 29, 18, 46, 0, 0, time.UTC)
 		okLog := createWebhookLog(es.ID, http.StatusOK, okTime)
@@ -252,12 +256,11 @@ func TestWebhookLogStore(t *testing.T) {
 	t.Run("DeleteStale", func(t *testing.T) {
 		t.Parallel()
 
-		logger := logtest.Scoped(t)
-		tx, err := db.Begin()
+		tx, err := db.Transact(ctx)
 		assert.Nil(t, err)
-		defer tx.Rollback()
+		defer func() { _ = tx.Done(errors.New("rollback")) }()
 
-		esStore := NewDB(logger, tx).ExternalServices()
+		esStore := tx.ExternalServices()
 		es := &types.ExternalService{
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "GitLab",
@@ -265,7 +268,7 @@ func TestWebhookLogStore(t *testing.T) {
 		}
 		assert.Nil(t, esStore.Upsert(ctx, es))
 
-		store := WebhookLogs(tx, keytesting.TestKey{})
+		store := tx.WebhookLogs(keytesting.TestKey{})
 		retention, err := time.ParseDuration("24h")
 		assert.Nil(t, err)
 

@@ -737,7 +737,7 @@ func TestService(t *testing.T) {
 			opts := MoveBatchChangeOpts{BatchChangeID: batchChange.ID, NewNamespaceOrgID: orgID}
 
 			_, err := svc.MoveBatchChange(userCtx, opts)
-			if have, want := err, backend.ErrNotAnOrgMember; have != want {
+			if have, want := err, backend.ErrNotAnOrgMember; !errors.Is(have, want) {
 				t.Fatalf("expected %s error but got %s", want, have)
 			}
 		})
@@ -1502,6 +1502,31 @@ func TestService(t *testing.T) {
 			assertNoChangesetSpecs(t, newSpec.ID)
 			assertNoChangesetSpecs(t, spec.ID)
 		})
+
+		t.Run("mount error", func(t *testing.T) {
+			spec := createBatchSpecWithWorkspacesAndChangesetSpecs(t)
+
+			_, err := svc.ReplaceBatchSpecInput(adminCtx, ReplaceBatchSpecInputOpts{
+				BatchSpecRandID: spec.RandID,
+				RawSpec: `
+name: test-spec
+description: A test spec
+steps:
+  - run: /tmp/sample.sh
+    container: alpine:3
+    mount:
+      - path: /some/path/sample.sh
+        mountpoint: /tmp/sample.sh
+changesetTemplate:
+  title: Test Mount
+  body: Test a mounted path
+  branch: test
+  commit:
+    message: Test
+`,
+			})
+			assert.Equal(t, "mounts are not allowed for server-side processing", err.Error())
+		})
 	})
 
 	t.Run("CreateBatchSpecFromRaw", func(t *testing.T) {
@@ -1555,6 +1580,29 @@ func TestService(t *testing.T) {
 				t.Fatalf("wrong error message: %s", err)
 			}
 		})
+
+		t.Run("mount error", func(t *testing.T) {
+			_, err := svc.CreateBatchSpecFromRaw(adminCtx, CreateBatchSpecFromRawOpts{
+				RawSpec: `
+name: test-spec
+description: A test spec
+steps:
+  - run: /tmp/sample.sh
+    container: alpine:3
+    mount:
+      - path: /some/path/sample.sh
+        mountpoint: /tmp/sample.sh
+changesetTemplate:
+  title: Test Mount
+  body: Test a mounted path
+  branch: test
+  commit:
+    message: Test
+`,
+				NamespaceUserID: admin.ID,
+			})
+			assert.Equal(t, "mounts are not allowed for server-side processing", err.Error())
+		})
 	})
 
 	t.Run("UpsertBatchSpecInput", func(t *testing.T) {
@@ -1597,6 +1645,29 @@ func TestService(t *testing.T) {
 				ID: oldSpec.ID,
 			})
 			assert.Equal(t, store.ErrNoResults, err)
+		})
+
+		t.Run("mount error", func(t *testing.T) {
+			_, err := svc.UpsertBatchSpecInput(adminCtx, UpsertBatchSpecInputOpts{
+				RawSpec: `
+name: test-spec
+description: A test spec
+steps:
+  - run: /tmp/sample.sh
+    container: alpine:3
+    mount:
+      - path: /some/path/sample.sh
+        mountpoint: /tmp/sample.sh
+changesetTemplate:
+  title: Test Mount
+  body: Test a mounted path
+  branch: test
+  commit:
+    message: Test
+`,
+				NamespaceUserID: admin.ID,
+			})
+			assert.Equal(t, "mounts are not allowed for server-side processing", err.Error())
 		})
 	})
 
@@ -2164,7 +2235,7 @@ func TestService(t *testing.T) {
 			if err == nil {
 				t.Fatal("no error")
 			}
-			if err != ErrRetryNonFinal {
+			if !errors.Is(err, ErrRetryNonFinal) {
 				t.Fatalf("wrong error: %s", err)
 			}
 		})

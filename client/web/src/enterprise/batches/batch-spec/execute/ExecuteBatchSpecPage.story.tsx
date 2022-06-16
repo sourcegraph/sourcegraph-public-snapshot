@@ -1,8 +1,10 @@
 import { storiesOf } from '@storybook/react'
 import { addMinutes } from 'date-fns'
+import { MemoryRouter } from 'react-router'
 import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import {
     EMPTY_SETTINGS_CASCADE,
     SettingsOrgSubject,
@@ -23,13 +25,14 @@ import {
     COMPLETED_BATCH_SPEC,
     COMPLETED_WITH_ERRORS_BATCH_SPEC,
     EXECUTING_BATCH_SPEC,
-    FAILED_BATCH_SPEC,
     mockBatchChange,
+    mockFullBatchSpec,
     mockWorkspaceResolutionStatus,
     mockWorkspaces,
+    PROCESSING_WORKSPACE,
 } from '../batch-spec.mock'
 
-import { BATCH_SPEC_WORKSPACES, FETCH_BATCH_SPEC_EXECUTION } from './backend'
+import { BATCH_SPEC_WORKSPACES, BATCH_SPEC_WORKSPACE_BY_ID, FETCH_BATCH_SPEC_EXECUTION } from './backend'
 import { ExecuteBatchSpecPage } from './ExecuteBatchSpecPage'
 
 const { add } = storiesOf('web/batches/batch-spec/execute/ExecuteBatchSpecPage', module)
@@ -110,58 +113,90 @@ const buildMocks = (
     },
 ]
 
+// A true executing batch spec wouldn't have a finishedAt set, but we need to have one so
+// that Chromatic doesn't exhibit flakiness based on how long it takes to actually take
+// the snapshot, since the timer in ExecuteBatchSpecPage is live in that case.
+const EXECUTING_BATCH_SPEC_WITH_END_TIME = {
+    ...EXECUTING_BATCH_SPEC,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    finishedAt: addMinutes(Date.parse(EXECUTING_BATCH_SPEC.startedAt!), 15).toISOString(),
+}
+
 add('executing', () => (
     <WebStory>
-        {props => {
-            const mock = EXECUTING_BATCH_SPEC
-
-            // A true executing batch spec wouldn't have a finishedAt set, but
-            // we need to have one so that Chromatic doesn't exhibit flakiness
-            // based on how long it takes to actually take the snapshot, since
-            // the timer in ExecuteBatchSpecPage is live in that case.
-            mock.finishedAt = addMinutes(Date.parse(mock.startedAt!), 15).toISOString()
-
-            return (
-                <MockedTestProvider link={new WildcardMockLink(buildMocks({ ...EXECUTING_BATCH_SPEC }))}>
-                    <ExecuteBatchSpecPage
-                        {...props}
-                        batchSpecID="spec1234"
-                        batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
-                        authenticatedUser={mockAuthenticatedUser}
-                        settingsCascade={SETTINGS_CASCADE}
-                    />
-                </MockedTestProvider>
-            )
-        }}
+        {props => (
+            <MockedTestProvider link={new WildcardMockLink(buildMocks({ ...EXECUTING_BATCH_SPEC_WITH_END_TIME }))}>
+                <ExecuteBatchSpecPage
+                    {...props}
+                    batchSpecID="spec1234"
+                    batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
+                    authenticatedUser={mockAuthenticatedUser}
+                    settingsCascade={SETTINGS_CASCADE}
+                />
+            </MockedTestProvider>
+        )}
     </WebStory>
 ))
 
-const FAILED_MOCKS = buildMocks(FAILED_BATCH_SPEC, { state: BatchSpecWorkspaceState.FAILED, failureMessage: 'Uh oh!' })
+// A true processing workspace wouldn't have a finishedAt set, but we need to have one so
+// that Chromatic doesn't exhibit flakiness based on how long it takes to actually take
+// the snapshot, since the timer in the workspace details section is live in that case.
+const PROCESSING_WORKSPACE_WITH_END_TIMES = {
+    ...PROCESSING_WORKSPACE,
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    finishedAt: addMinutes(Date.parse(PROCESSING_WORKSPACE.startedAt!), 15).toISOString(),
+    steps: [
+        PROCESSING_WORKSPACE.steps[0]!,
+        {
+            ...PROCESSING_WORKSPACE.steps[1],
+            startedAt: null,
+        },
+        PROCESSING_WORKSPACE.steps[2]!,
+    ],
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+}
 
-add('failed', () => {
-    console.log(mockWorkspaces(50, { state: BatchSpecWorkspaceState.FAILED, failureMessage: 'Uh oh!' }))
-    return (
-        <WebStory>
-            {props => (
-                <MockedTestProvider link={new WildcardMockLink(FAILED_MOCKS)}>
+add('executing, with a workspace selected', () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider
+                link={
+                    new WildcardMockLink([
+                        ...buildMocks({ ...EXECUTING_BATCH_SPEC_WITH_END_TIME }),
+                        {
+                            request: {
+                                query: getDocumentNode(BATCH_SPEC_WORKSPACE_BY_ID),
+                                variables: MATCH_ANY_PARAMETERS,
+                            },
+                            result: { data: { node: PROCESSING_WORKSPACE_WITH_END_TIMES } },
+                            nMatches: Number.POSITIVE_INFINITY,
+                        },
+                    ])
+                }
+            >
+                <MemoryRouter
+                    initialEntries={[
+                        '/users/my-username/batch-changes/my-batch-change/executions/spec1234/execution/workspaces/workspace1234',
+                    ]}
+                >
                     <ExecuteBatchSpecPage
                         {...props}
                         batchSpecID="spec1234"
                         batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
-                        testContextState={{
-                            errors: {
-                                execute:
-                                    "Oh no something went wrong. This is a longer error message to demonstrate how this might take up a decent portion of screen real estate but hopefully it's still helpful information so it's worth the cost. Here's a long error message with some bullets:\n  * This is a bullet\n  * This is another bullet\n  * This is a third bullet and it's also the most important one so it's longer than all the others wow look at that.",
-                            },
-                        }}
                         authenticatedUser={mockAuthenticatedUser}
                         settingsCascade={SETTINGS_CASCADE}
+                        match={{
+                            isExact: false,
+                            params: { batchChangeName: 'my-batch-change', batchSpecID: 'spec1234' },
+                            path: '/users/my-username/batch-changes/:batchChangeName/executions/:batchSpecID',
+                            url: '/users/my-username/batch-changes/my-batch-change/executions/spec1234',
+                        }}
                     />
-                </MockedTestProvider>
-            )}
-        </WebStory>
-    )
-})
+                </MemoryRouter>
+            </MockedTestProvider>
+        )}
+    </WebStory>
+))
 
 const COMPLETED_MOCKS = buildMocks(COMPLETED_BATCH_SPEC, { state: BatchSpecWorkspaceState.COMPLETED })
 
@@ -193,6 +228,24 @@ add('completed with errors', () => (
                     {...props}
                     batchSpecID="spec1234"
                     batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
+                    authenticatedUser={mockAuthenticatedUser}
+                    settingsCascade={SETTINGS_CASCADE}
+                />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+))
+
+const LOCAL_MOCKS = buildMocks(mockFullBatchSpec({ source: BatchSpecSource.LOCAL }))
+
+add('for a locally-executed spec', () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={new WildcardMockLink(LOCAL_MOCKS)}>
+                <ExecuteBatchSpecPage
+                    {...props}
+                    batchSpecID="spec1234"
+                    batchChange={{ name: 'my-local-batch-change', namespace: 'user1234' }}
                     authenticatedUser={mockAuthenticatedUser}
                     settingsCascade={SETTINGS_CASCADE}
                 />

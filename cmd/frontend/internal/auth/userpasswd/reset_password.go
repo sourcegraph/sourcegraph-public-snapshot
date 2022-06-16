@@ -8,8 +8,6 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -39,7 +37,6 @@ func SendResetPasswordURLEmail(ctx context.Context, email, username string, rese
 
 // HandleResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.
 func HandleResetPasswordInit(db database.DB) func(w http.ResponseWriter, r *http.Request) {
-	logger := log.Scoped("HandleResetPasswordInit", "initiates the builtin-auth password reset flow by sending a password-reset email")
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(w) {
 			return
@@ -89,7 +86,7 @@ func HandleResetPasswordInit(db database.DB) func(w http.ResponseWriter, r *http
 			httpLogAndError(w, "Could not send reset password email", http.StatusInternalServerError, "err", err)
 			return
 		}
-		database.LogPasswordEvent(ctx, logger, db, r, database.SecurityEventNamPasswordResetRequested, usr.ID)
+		database.LogPasswordEvent(ctx, db, r, database.SecurityEventNamPasswordResetRequested, usr.ID)
 	}
 }
 
@@ -171,7 +168,6 @@ To set the password for {{.Username}} on Sourcegraph, follow this link:
 
 // HandleResetPasswordCode resets the password if the correct code is provided.
 func HandleResetPasswordCode(db database.DB) func(w http.ResponseWriter, r *http.Request) {
-	logger := log.Scoped("HandleResetPasswordCode", "resets the password if the correct code is provided.")
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(w) {
 			return
@@ -207,7 +203,7 @@ func HandleResetPasswordCode(db database.DB) func(w http.ResponseWriter, r *http
 			return
 		}
 
-		database.LogPasswordEvent(ctx, logger, db, r, database.SecurityEventNamePasswordChanged, params.UserID)
+		database.LogPasswordEvent(ctx, db, r, database.SecurityEventNamePasswordChanged, params.UserID)
 
 		if conf.CanSendEmail() {
 			if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, db, params.UserID, "reset the password"); err != nil {

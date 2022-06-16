@@ -22,7 +22,7 @@ import (
 func TestSiteCredentialMigrator(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 

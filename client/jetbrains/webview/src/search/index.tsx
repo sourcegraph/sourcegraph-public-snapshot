@@ -9,10 +9,10 @@ import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
 import { App } from './App'
 import { handleRequest } from './java-to-js-bridge'
 import {
-    getConfig,
-    getTheme,
+    getConfigAlwaysFulfill,
+    getThemeAlwaysFulfill,
     indicateFinishedLoading,
-    loadLastSearch,
+    loadLastSearchAlwaysFulfill,
     onOpen,
     onPreviewChange,
     onPreviewClear,
@@ -30,9 +30,9 @@ let initialAuthenticatedUser: AuthenticatedUser | null
 
 window.initializeSourcegraph = async () => {
     const [theme, config, lastSearch, authenticatedUser] = await Promise.allSettled([
-        getTheme(),
-        getConfig(),
-        loadLastSearch(),
+        getThemeAlwaysFulfill(),
+        getConfigAlwaysFulfill(),
+        loadLastSearchAlwaysFulfill(),
         getAuthenticatedUser(instanceURL, accessToken),
     ])
 
@@ -43,8 +43,6 @@ window.initializeSourcegraph = async () => {
     if (accessToken && authenticatedUser.status === 'rejected') {
         console.warn(`No initial authenticated user with access token “${accessToken}”`)
     }
-
-    polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
 
     renderReactApp()
 
@@ -75,6 +73,7 @@ export function applyConfig(config: PluginConfig): void {
     instanceURL = config.instanceURL
     isGlobbingEnabled = config.isGlobbingEnabled || false
     accessToken = config.accessToken || null
+    polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
 }
 
 export function applyTheme(theme: Theme): void {
@@ -84,13 +83,24 @@ export function applyTheme(theme: Theme): void {
     document.documentElement.classList.add(theme.isDarkTheme ? 'theme-dark' : 'theme-light')
     isDarkTheme = theme.isDarkTheme
 
-    // Button color (test)
-    const buttonColor = theme.buttonColor
+    // Find the name of properties here: https://plugins.jetbrains.com/docs/intellij/themes-metadata.html#key-naming-scheme
+    const intelliJTheme = theme.intelliJTheme
     const root = document.querySelector(':root') as HTMLElement
-    if (buttonColor) {
-        root.style.setProperty('--button-color', buttonColor)
-    }
-    root.style.setProperty('--primary', buttonColor)
+
+    root.style.setProperty('--button-color', intelliJTheme['Button.default.startBackground'])
+    root.style.setProperty('--primary', intelliJTheme['Button.default.startBackground'])
+    root.style.setProperty('--subtle-bg', intelliJTheme['ScrollPane.background'])
+
+    root.style.setProperty('--dropdown-link-active-bg', intelliJTheme['List.selectionBackground'])
+    root.style.setProperty('--light-text', intelliJTheme['List.selectionForeground'])
+
+    root.style.setProperty('--jb-border-color', intelliJTheme['Component.borderColor'])
+    root.style.setProperty('--jb-icon-color', intelliJTheme['Component.iconColor'] || '#7f8b91')
+
+    // There is no color for this in the serialized theme so I have picked this option from the
+    // Dracula theme
+    root.style.setProperty('--code-bg', theme.isDarkTheme ? '#2b2b2b' : '#ffffff')
+    root.style.setProperty('--body-bg', theme.isDarkTheme ? '#2b2b2b' : '#ffffff')
 }
 
 function applyLastSearch(lastSearch: Search | null): void {

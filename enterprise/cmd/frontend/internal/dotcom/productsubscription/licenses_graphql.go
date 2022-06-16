@@ -55,7 +55,7 @@ func productLicenseByDBID(ctx context.Context, logger log.Logger, db database.DB
 	if err != nil {
 		return nil, err
 	}
-	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(logger, db), sub.v.UserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, db, sub.v.UserID); err != nil {
 		return nil, err
 	}
 

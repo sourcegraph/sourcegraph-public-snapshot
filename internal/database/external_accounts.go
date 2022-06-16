@@ -33,7 +33,7 @@ func (err userExternalAccountNotFoundError) NotFound() bool {
 	return true
 }
 
-// userExternalAccountsStore provides access to the `user_external_accounts` table.
+// UserExternalAccountsStore provides access to the `user_external_accounts` table.
 type UserExternalAccountsStore interface {
 	// AssociateUserAndSave is used for linking a new, additional external account with an existing
 	// Sourcegraph account.
@@ -150,7 +150,7 @@ func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec 
 		data.Data = rawMessagePtr(encrypted)
 	}
 
-	err = s.Handle().DB().QueryRowContext(ctx, `
+	err = s.Handle().QueryRowContext(ctx, `
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.LookupUserAndSave
 UPDATE user_external_accounts
 SET
@@ -275,7 +275,7 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 
 	err = tx.Insert(ctx, createdUser.ID, spec, data)
 	if err == nil {
-		logAccountCreatedEvent(ctx, s.logger, s.Handle().DB(), createdUser, spec.ServiceType)
+		logAccountCreatedEvent(ctx, NewDBWith(s.logger, s), createdUser, spec.ServiceType)
 	}
 	return createdUser.ID, err
 }
@@ -309,7 +309,7 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 }
 
 func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, id int32) error {
-	_, err := s.Handle().DB().ExecContext(ctx, `
+	_, err := s.Handle().ExecContext(ctx, `
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchExpired
 UPDATE user_external_accounts
 SET expired_at = now()
@@ -319,7 +319,7 @@ WHERE id = $1
 }
 
 func (s *userExternalAccountsStore) TouchLastValid(ctx context.Context, id int32) error {
-	_, err := s.Handle().DB().ExecContext(ctx, `
+	_, err := s.Handle().ExecContext(ctx, `
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchLastValid
 UPDATE user_external_accounts
 SET
@@ -331,7 +331,7 @@ WHERE id = $1
 }
 
 func (s *userExternalAccountsStore) Delete(ctx context.Context, id int32) error {
-	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	res, err := s.Handle().ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
 	}
@@ -350,7 +350,11 @@ type ExternalAccountsListOptions struct {
 	UserID                           int32
 	ServiceType, ServiceID, ClientID string
 	AccountID                        int64
-	ExcludeExpired                   bool
+
+	// Only one of these should be set
+	ExcludeExpired bool
+	OnlyExpired    bool
+
 	*LimitOffset
 }
 
@@ -450,14 +454,23 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 	if opt.UserID != 0 {
 		conds = append(conds, sqlf.Sprintf("user_id=%d", opt.UserID))
 	}
-	if opt.ServiceType != "" || opt.ServiceID != "" || opt.ClientID != "" {
-		conds = append(conds, sqlf.Sprintf("(service_type=%s AND service_id=%s AND client_id=%s)", opt.ServiceType, opt.ServiceID, opt.ClientID))
+	if opt.ServiceType != "" {
+		conds = append(conds, sqlf.Sprintf("service_type=%s", opt.ServiceType))
+	}
+	if opt.ServiceID != "" {
+		conds = append(conds, sqlf.Sprintf("service_id=%s", opt.ServiceID))
+	}
+	if opt.ClientID != "" {
+		conds = append(conds, sqlf.Sprintf("client_id=%s", opt.ClientID))
 	}
 	if opt.AccountID != 0 {
 		conds = append(conds, sqlf.Sprintf("account_id=%d", strconv.Itoa(int(opt.AccountID))))
 	}
 	if opt.ExcludeExpired {
 		conds = append(conds, sqlf.Sprintf("expired_at IS NULL"))
+	}
+	if opt.OnlyExpired {
+		conds = append(conds, sqlf.Sprintf("expired_at IS NOT NULL"))
 	}
 
 	return conds

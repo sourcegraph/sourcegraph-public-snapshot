@@ -406,7 +406,7 @@ func createSearchContext(ctx context.Context, s SearchContextsStore, searchConte
 		nullInt32Column(searchContext.NamespaceOrgID),
 		nullStringColumn(searchContext.Query),
 	)
-	_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := s.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -426,7 +426,7 @@ func updateSearchContext(ctx context.Context, s SearchContextsStore, searchConte
 		nullStringColumn(searchContext.Query),
 		searchContext.ID,
 	)
-	_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := s.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -497,7 +497,7 @@ WHERE sc.search_context_id = %d
 `
 
 func (s *searchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64) ([]*types.SearchContextRepositoryRevisions, error) {
-	authzConds, err := AuthzQueryConds(ctx, NewDB(s.logger, s.Handle().DB()))
+	authzConds, err := AuthzQueryConds(ctx, NewDBWith(s.logger, s))
 	if err != nil {
 		return nil, err
 	}

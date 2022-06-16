@@ -10,23 +10,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewAuthzStore returns an OSS database.AuthzStore set with enterprise implementation.
-func NewAuthzStore(logger log.Logger, db dbutil.DB, clock func() time.Time) database.AuthzStore {
+func NewAuthzStore(logger log.Logger, db database.DB, clock func() time.Time) database.AuthzStore {
 	return &authzStore{
 		logger: logger,
-		store:  Perms(db, clock),
+		store:  Perms(logger, db, clock),
 	}
 }
 
 func NewAuthzStoreWith(logger log.Logger, other basestore.ShareableStore, clock func() time.Time) database.AuthzStore {
 	return &authzStore{
 		logger: logger,
-		store:  PermsWith(other, clock),
+		store:  PermsWith(logger, other, clock),
 	}
 }
 

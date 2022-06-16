@@ -50,23 +50,23 @@ var auditCommand = &cli.Command{
 				Value:       os.Getenv("GITHUB_TOKEN"),
 			},
 		},
-		Action: execAdapter(func(ctx context.Context, args []string) error {
-			ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
+		Action: func(ctx *cli.Context) error {
+			ghc := github.NewClient(oauth2.NewClient(ctx.Context, oauth2.StaticTokenSource(
 				&oauth2.Token{AccessToken: auditPRGitHubToken},
 			)))
 
-			logger := log.Scoped("audit pr", "sg audit pr")
+			logger := log.Scoped("auditPR", "sg audit pr")
 			logger.Debug("fetching issues")
-			issues, err := fetchIssues(ctx, logger, ghc)
+			issues, err := fetchIssues(ctx.Context, logger, ghc)
 			if err != nil {
 				return err
 			}
-			slack, err := sgslack.NewClient(ctx)
+			slack, err := sgslack.NewClient(ctx.Context)
 			if err != nil {
 				return err
 			}
 			logger.Debug("formatting results")
-			prAuditIssues, err := presentIssues(ctx, ghc, slack, issues)
+			prAuditIssues, err := presentIssues(ctx.Context, ghc, slack, issues)
 			if err != nil {
 				return err
 			}
@@ -89,7 +89,7 @@ var auditCommand = &cli.Command{
 			}
 
 			return nil
-		}),
+		},
 	}},
 }
 

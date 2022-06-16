@@ -8,8 +8,7 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/inconshreveable/log15"
 )

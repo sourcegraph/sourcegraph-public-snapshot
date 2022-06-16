@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	pgs "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -19,7 +20,7 @@ import (
 
 func TestExecutorsList(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(db)
 	ctx := context.Background()
 
@@ -132,7 +133,7 @@ func TestExecutorsList(t *testing.T) {
 
 func TestExecutorsGetByID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(db)
 	ctx := context.Background()
 
@@ -192,7 +193,7 @@ func TestExecutorsGetByID(t *testing.T) {
 
 func TestExecutorsGetByHostname(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(db)
 	ctx := context.Background()
 
@@ -254,7 +255,7 @@ func TestExecutorsGetByHostname(t *testing.T) {
 
 func TestExecutorsDeleteInactiveHeartbeats(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(db)
 	ctx := context.Background()
 

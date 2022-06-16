@@ -70,6 +70,7 @@ const authUser: AuthenticatedUser = {
     databaseID: 0,
     tosAccepted: true,
     searchable: true,
+    emails: [],
 }
 
 const repositories: ISearchContextRepositoryRevisions[] = [

@@ -80,7 +80,7 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 		s.initialUnmodifiedDiffFromStore(ctx, store)
 	}
 
-	worker, resetter := NewSyncWorker(ctx, store.Handle().DB(), &syncHandler{
+	worker, resetter := NewSyncWorker(ctx, store.Handle(), &syncHandler{
 		syncer:          s,
 		store:           store,
 		minSyncInterval: opts.MinSyncInterval,

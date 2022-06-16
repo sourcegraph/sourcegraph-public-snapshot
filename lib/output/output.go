@@ -2,13 +2,16 @@
 package output
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"os"
 	"sync"
 
 	"github.com/charmbracelet/glamour"
 	glamouransi "github.com/charmbracelet/glamour/ansi"
 	"github.com/mattn/go-runewidth"
+	"golang.org/x/term"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -129,7 +132,12 @@ func (o *Output) SetVerbose() {
 	o.lock.Lock()
 	defer o.lock.Unlock()
 	o.verbose = true
+}
 
+func (o *Output) UnsetVerbose() {
+	o.lock.Lock()
+	defer o.lock.Unlock()
+	o.verbose = false
 }
 
 func (o *Output) Unlock() {
@@ -176,11 +184,6 @@ func (o *Output) WriteLine(line FancyLine) {
 	line.write(o.w, o.caps)
 }
 
-// WriteBytes writes bytes as a string line. It can be provided to run.Cmd(...).StreamLines()
-func (o *Output) WriteBytes(b []byte) {
-	o.Write(string(b))
-}
-
 // Block starts a new block context. This should not be invoked if there is an
 // active Pending or Progress context.
 func (o *Output) Block(summary FancyLine) *Block {
@@ -212,6 +215,38 @@ func (o *Output) Progress(bars []ProgressBar, opts *ProgressOpts) Progress {
 // A Progress instance must be disposed of via the Complete or Destroy methods.
 func (o *Output) ProgressWithStatusBars(bars []ProgressBar, statusBars []*StatusBar, opts *ProgressOpts) ProgressWithStatusBars {
 	return newProgressWithStatusBars(bars, statusBars, o, opts)
+}
+
+type readWriter struct {
+	io.Reader
+	io.Writer
+}
+
+// PromptPassword tries to securely prompt a user for sensitive input.
+func (o *Output) PromptPassword(input io.Reader, prompt FancyLine) (string, error) {
+	o.lock.Lock()
+	defer o.lock.Unlock()
+
+	// Render the prompt
+	prompt.Prompt = true
+	var promptText bytes.Buffer
+	prompt.write(&promptText, o.caps)
+
+	// If input is a file and terminal, read from it directly
+	if f, ok := input.(*os.File); ok {
+		fd := int(f.Fd())
+		if term.IsTerminal(fd) {
+			_, _ = o.w.Write(promptText.Bytes())
+			val, err := term.ReadPassword(fd)
+			_, _ = o.w.Write([]byte("\n")) // once we've read an input
+			return string(val), err
+		}
+	}
+
+	// Otherwise, create a terminal
+	t := term.NewTerminal(&readWriter{Reader: input, Writer: o.w}, "")
+	_ = t.SetSize(o.caps.Width, o.caps.Height)
+	return t.ReadPassword(promptText.String())
 }
 
 // WriteMarkdown renders Markdown nicely, unless color is disabled.

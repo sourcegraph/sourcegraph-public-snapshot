@@ -145,7 +145,7 @@ var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "metric to measure the impact of logging access granted to private repos",
 })
 
-func logPrivateRepoAccessGranted(ctx context.Context, logger log.Logger, db dbutil.DB, ids []api.RepoID) {
+func logPrivateRepoAccessGranted(ctx context.Context, db DB, ids []api.RepoID) {
 	if disabled, _ := strconv.ParseBool(os.Getenv("SRC_DISABLE_LOG_PRIVATE_REPO_ACCESS")); disabled {
 		return
 	}
@@ -178,7 +178,7 @@ func logPrivateRepoAccessGranted(ctx context.Context, logger log.Logger, db dbut
 		event.AnonymousUserID = "internal"
 	}
 
-	NewDB(logger, db).SecurityEventLogs().LogEvent(ctx, event)
+	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
 // GetByName returns the repository with the given nameOrUri from the
@@ -771,7 +771,7 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 
 	if len(privateIDs) > 0 {
 		counterAccessGranted.Inc()
-		logPrivateRepoAccessGranted(ctx, s.logger, s.Handle().DB(), privateIDs)
+		logPrivateRepoAccessGranted(ctx, NewDBWith(s.logger, s), privateIDs)
 	}
 
 	return nil
@@ -802,7 +802,7 @@ func (s *repoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 
 	if len(privateIDs) > 0 {
 		counterAccessGranted.Inc()
-		logPrivateRepoAccessGranted(ctx, s.logger, s.Handle().DB(), privateIDs)
+		logPrivateRepoAccessGranted(ctx, NewDBWith(s.logger, s), privateIDs)
 	}
 
 	return rs, err
@@ -1042,7 +1042,7 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		columns = opt.Select
 	}
 
-	authzConds, err := AuthzQueryConds(ctx, NewDB(s.logger, s.Handle().DB()))
+	authzConds, err := AuthzQueryConds(ctx, NewDBWith(s.logger, s))
 	if err != nil {
 		return nil, err
 	}

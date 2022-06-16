@@ -182,8 +182,7 @@ func compareNotebookAPIResponses(t *testing.T, wantNotebookResponse notebooksapi
 func TestSingleNotebookCRUD(t *testing.T) {
 	logger := logtest.Scoped(t)
 	internalCtx := actor.WithInternalActor(context.Background())
-	testdb := database.NewDB(logger, dbtest.NewDB(logger, t))
-	db := database.NewDB(logger, testdb)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	u := db.Users()
 	o := db.Orgs()
 	om := db.OrgMembers()
@@ -601,8 +600,7 @@ func TestListNotebooks(t *testing.T) {
 		return ids
 	}
 
-	database := database.NewDB(logger, db)
-	schema, err := graphqlbackend.NewSchema(database, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(database), nil)
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil)
 	if err != nil {
 		t.Fatal(err)
 	}

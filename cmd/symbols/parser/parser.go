@@ -2,8 +2,6 @@ package parser
 
 import (
 	"context"
-	"log"
-	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -11,6 +9,9 @@ import (
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-ctags"
+
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/std"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
@@ -30,7 +31,7 @@ type SymbolOrError struct {
 }
 
 type parser struct {
-	parserPool         ParserPool
+	parserPool         *parserPool
 	repositoryFetcher  fetcher.RepositoryFetcher
 	requestBufferSize  int
 	numParserProcesses int
@@ -38,7 +39,7 @@ type parser struct {
 }
 
 func NewParser(
-	parserPool ParserPool,
+	parserPool *parserPool,
 	repositoryFetcher fetcher.RepositoryFetcher,
 	requestBufferSize int,
 	numParserProcesses int,
@@ -249,16 +250,18 @@ func shouldPersistEntry(e *ctags.Entry) bool {
 	return true
 }
 
-func SpawnCtags(ctagsConfig types.CtagsConfig) (ctags.Parser, error) {
+func SpawnCtags(logger log.Logger, ctagsConfig types.CtagsConfig) (ctags.Parser, error) {
+	logger = logger.Scoped("ctags", "ctags processes")
+
 	options := ctags.Options{
 		Bin:                ctagsConfig.Command,
 		PatternLengthLimit: ctagsConfig.PatternLengthLimit,
 	}
 	if ctagsConfig.LogErrors {
-		options.Info = log.New(os.Stderr, "ctags: ", log.LstdFlags)
+		options.Info = std.NewLogger(logger, log.LevelInfo)
 	}
 	if ctagsConfig.DebugLogs {
-		options.Debug = log.New(os.Stderr, "DBUG ctags: ", log.LstdFlags)
+		options.Debug = std.NewLogger(logger, log.LevelDebug)
 	}
 
 	parser, err := ctags.New(options)

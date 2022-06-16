@@ -2,23 +2,20 @@ package background
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
-
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -32,12 +29,12 @@ func TestPerformPurge(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := dbtest.NewInsightsDB(logger, t)
-	postgres := dbtest.NewDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := store.NewInsightPermissionStore(postgres)
 	timeseriesStore := store.NewWithClock(insightsDB, permStore, clock)
 	insightStore := store.NewInsightStore(insightsDB)
-	workerBaseStore := basestore.NewWithDB(postgres, sql.TxOptions{})
+	workerBaseStore := basestore.NewWithHandle(postgres.Handle())
 
 	getTimeSeriesCountForSeries := func(ctx context.Context, seriesId string) int {
 		q := sqlf.Sprintf("select count(*) from series_points where series_id = %s;", seriesId)

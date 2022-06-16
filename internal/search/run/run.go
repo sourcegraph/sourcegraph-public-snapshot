@@ -24,7 +24,7 @@ type SearchInputs struct {
 	PatternType         query.SearchType
 	UserSettings        *schema.Settings
 	OnSourcegraphDotCom bool
-	Features            featureflag.FlagSet
+	Features            *featureflag.FlagSet
 	Protocol            search.Protocol
 }
 

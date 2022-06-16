@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -22,10 +23,12 @@ import (
 )
 
 func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	batchSpecs := make([]*btypes.BatchSpec, 0, 3)
+	batchSpecs := make([]*btypes.BatchSpec, 0, 4)
 
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(batchSpecs); i++ {
+			// only the fourth batch spec should be locally-created
+			createdFromRaw := i != 3
 			falsy := overridable.FromBoolOrString(false)
 			c := &btypes.BatchSpec{
 				RawSpec: `{"name": "Foobar", "description": "My description"}`,
@@ -42,7 +45,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 						Published: &falsy,
 					},
 				},
-				CreatedFromRaw:   true,
+				CreatedFromRaw:   createdFromRaw,
 				AllowUnsupported: true,
 				AllowIgnored:     true,
 				UserID:           int32(i + 1234),
@@ -88,29 +91,43 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	}
 
 	t.Run("Count", func(t *testing.T) {
-		count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{})
-		if err != nil {
-			t.Fatal(err)
-		}
+		t.Run("IncludeLocallyExecutedSpecs", func(t *testing.T) {
+			count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{
+				IncludeLocallyExecutedSpecs: true,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		if have, want := count, len(batchSpecs); have != want {
-			t.Fatalf("have count: %d, want: %d", have, want)
-		}
+			if have, want := count, len(batchSpecs); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		})
+
+		t.Run("ExcludeLocallyExecutedSpecs", func(t *testing.T) {
+			count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{
+				IncludeLocallyExecutedSpecs: false,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, len(batchSpecs)-1; have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		})
 
 		t.Run("ExcludeCreatedFromRawNotOwnedByUser", func(t *testing.T) {
 			for _, spec := range batchSpecs {
-				spec.CreatedFromRaw = true
-				if err := s.UpdateBatchSpec(ctx, spec); err != nil {
-					t.Fatal(err)
-				}
+				if spec.CreatedFromRaw {
+					count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{ExcludeCreatedFromRawNotOwnedByUser: spec.UserID})
+					if err != nil {
+						t.Fatal(err)
+					}
 
-				count, err = s.CountBatchSpecs(ctx, CountBatchSpecsOpts{ExcludeCreatedFromRawNotOwnedByUser: spec.UserID})
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if have, want := count, 1; have != want {
-					t.Fatalf("have count: %d, want: %d", have, want)
+					if have, want := count, 1; have != want {
+						t.Fatalf("have count: %d, want: %d", have, want)
+					}
 				}
 			}
 		})
@@ -118,7 +135,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 	t.Run("List", func(t *testing.T) {
 		t.Run("NewestFirst", func(t *testing.T) {
-			ts, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{NewestFirst: true})
+			ts, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{NewestFirst: true, IncludeLocallyExecutedSpecs: true})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -137,7 +154,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		})
 
 		t.Run("OldestFirst", func(t *testing.T) {
-			ts, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{NewestFirst: false})
+			ts, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{NewestFirst: false, IncludeLocallyExecutedSpecs: true})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -159,7 +176,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			var cursor int64
 			lastID := 99999
 			for i := 1; i <= len(batchSpecs); i++ {
-				opts := ListBatchSpecsOpts{Cursor: cursor, NewestFirst: true}
+				opts := ListBatchSpecsOpts{Cursor: cursor, NewestFirst: true, IncludeLocallyExecutedSpecs: true}
 				ts, next, err := s.ListBatchSpecs(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
@@ -179,7 +196,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			var cursor int64
 			var lastID int
 			for i := 1; i <= len(batchSpecs); i++ {
-				opts := ListBatchSpecsOpts{Cursor: cursor, NewestFirst: false}
+				opts := ListBatchSpecsOpts{Cursor: cursor, NewestFirst: false, IncludeLocallyExecutedSpecs: true}
 				ts, next, err := s.ListBatchSpecs(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
@@ -197,7 +214,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		t.Run("NoLimit", func(t *testing.T) {
 			// Empty should return all entries
-			opts := ListBatchSpecsOpts{}
+			opts := ListBatchSpecsOpts{IncludeLocallyExecutedSpecs: true}
 
 			ts, next, err := s.ListBatchSpecs(ctx, opts)
 			if err != nil {
@@ -220,7 +237,10 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		t.Run("WithLimit", func(t *testing.T) {
 			for i := 1; i <= len(batchSpecs); i++ {
-				cs, next, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{LimitOpts: LimitOpts{Limit: i}})
+				cs, next, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{
+					LimitOpts:                   LimitOpts{Limit: i},
+					IncludeLocallyExecutedSpecs: true,
+				})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -253,7 +273,11 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		t.Run("WithLimitAndCursor", func(t *testing.T) {
 			var cursor int64
 			for i := 1; i <= len(batchSpecs); i++ {
-				opts := ListBatchSpecsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
+				opts := ListBatchSpecsOpts{
+					Cursor:                      cursor,
+					LimitOpts:                   LimitOpts{Limit: 1},
+					IncludeLocallyExecutedSpecs: true,
+				}
 				have, next, err := s.ListBatchSpecs(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
@@ -270,21 +294,50 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		t.Run("ExcludeCreatedFromRawNotOwnedByUser", func(t *testing.T) {
 			for _, spec := range batchSpecs {
-				spec.CreatedFromRaw = true
-				if err := s.UpdateBatchSpec(ctx, spec); err != nil {
-					t.Fatal(err)
-				}
+				if spec.CreatedFromRaw {
+					opts := ListBatchSpecsOpts{
+						ExcludeCreatedFromRawNotOwnedByUser: spec.UserID,
+						IncludeLocallyExecutedSpecs:         false,
+					}
+					have, _, err := s.ListBatchSpecs(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
 
-				opts := ListBatchSpecsOpts{ExcludeCreatedFromRawNotOwnedByUser: spec.UserID}
-				have, _, err := s.ListBatchSpecs(ctx, opts)
-				if err != nil {
-					t.Fatal(err)
+					want := []*btypes.BatchSpec{spec}
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatalf("opts: %+v, diff: %s", opts, diff)
+					}
 				}
+			}
+		})
 
-				want := []*btypes.BatchSpec{spec}
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
-				}
+		t.Run("IncludeLocallyExecutedSpecs", func(t *testing.T) {
+			opts := ListBatchSpecsOpts{
+				IncludeLocallyExecutedSpecs: true,
+			}
+			have, _, err := s.ListBatchSpecs(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, batchSpecs); diff != "" {
+				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			}
+		})
+
+		t.Run("ExcludeLocallyExecutedSpecs", func(t *testing.T) {
+			opts := ListBatchSpecsOpts{
+				IncludeLocallyExecutedSpecs: false,
+			}
+			have, _, err := s.ListBatchSpecs(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want := batchSpecs[:(len(batchSpecs) - 1)]
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatalf("opts: %+v, diff: %s", opts, diff)
 			}
 		})
 	})
@@ -436,7 +489,9 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				t.Fatal(err)
 			}
 
-			count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{})
+			count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{
+				IncludeLocallyExecutedSpecs: true,
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -445,6 +500,61 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
 		}
+	})
+
+	t.Run("GetBatchSpecDiffStat", func(t *testing.T) {
+		user := ct.CreateTestUser(t, s.DatabaseDB(), false)
+		admin := ct.CreateTestUser(t, s.DatabaseDB(), true)
+		repo1, _ := ct.CreateTestRepo(t, ctx, s.DatabaseDB())
+		repo2, _ := ct.CreateTestRepo(t, ctx, s.DatabaseDB())
+		// Give access to repo1 but not repo2.
+		ct.MockRepoPermissions(t, s.DatabaseDB(), user.ID, repo1.ID)
+
+		batchSpec := &btypes.BatchSpec{
+			UserID:          user.ID,
+			NamespaceUserID: user.ID,
+		}
+
+		if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := s.CreateChangesetSpec(ctx,
+			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, RepoID: repo1.ID, DiffStatAdded: 10, DiffStatChanged: 10, DiffStatDeleted: 10},
+			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, RepoID: repo2.ID, DiffStatAdded: 20, DiffStatChanged: 20, DiffStatDeleted: 20},
+		); err != nil {
+			t.Fatal(err)
+		}
+
+		assertDiffStat := func(wantAdded, wantChanged, wantDeleted int64) func(added, changed, deleted int64, err error) {
+			return func(added, changed, deleted int64, err error) {
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if added != wantAdded {
+					t.Errorf("invalid added returned, want=%d have=%d", wantAdded, added)
+				}
+
+				if changed != wantChanged {
+					t.Errorf("invalid changed returned, want=%d have=%d", wantChanged, changed)
+				}
+
+				if deleted != wantDeleted {
+					t.Errorf("invalid deleted returned, want=%d have=%d", wantDeleted, deleted)
+				}
+			}
+		}
+
+		t.Run("no user in context", func(t *testing.T) {
+			assertDiffStat(0, 0, 0)(s.GetBatchSpecDiffStat(ctx, batchSpec.ID))
+		})
+		t.Run("regular user in context with access to repo1", func(t *testing.T) {
+			assertDiffStat(10, 10, 10)(s.GetBatchSpecDiffStat(actor.WithActor(ctx, actor.FromUser(user.ID)), batchSpec.ID))
+		})
+		t.Run("admin user in context", func(t *testing.T) {
+			assertDiffStat(30, 30, 30)(s.GetBatchSpecDiffStat(actor.WithActor(ctx, actor.FromUser(admin.ID)), batchSpec.ID))
+		})
 	})
 
 	t.Run("DeleteExpiredBatchSpecs", func(t *testing.T) {
@@ -642,6 +752,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 
 			clone := *job
 			clone.BatchSpecWorkspaceID = ws.ID
+			clone.UserID = spec.UserID
 			if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, &clone); err != nil {
 				t.Fatal(err)
 			}

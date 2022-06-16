@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -18,7 +19,7 @@ import (
 
 func TestReferenceCountMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := dbstore.NewWithDB(db, &observation.TestContext)
 	migrator := NewReferenceCountMigrator(store, 75)
 

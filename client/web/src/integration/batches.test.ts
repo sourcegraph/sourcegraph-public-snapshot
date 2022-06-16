@@ -8,6 +8,7 @@ import {
     ExternalServiceKind,
     SharedGraphQlOperations,
 } from '@sourcegraph/shared/src/graphql-operations'
+import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -352,6 +353,7 @@ function mockCommonGraphQLResponses(
                     id: 'specID1',
                     originalInput: 'name: awesome-batch-change\ndescription: somesttring',
                     supersedingBatchSpec: null,
+                    source: BatchSpecSource.REMOTE,
                     codeHostsWithoutWebhooks: {
                         nodes: [],
                         pageInfo: { hasNextPage: false },
@@ -551,7 +553,8 @@ describe('Batches', () => {
         })
     })
 
-    describe('Batch changes details', () => {
+    // Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/37233
+    describe.skip('Batch changes details', () => {
         for (const entityType of ['user', 'org'] as const) {
             it(`displays a single batch change for ${entityType}`, async () => {
                 testContext.overrideGraphQL({
@@ -568,10 +571,11 @@ describe('Batches', () => {
                 await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change')
                 // View overview page.
                 await driver.page.waitForSelector('.test-batch-change-details-page')
-                await percySnapshotWithVariants(driver.page, 'Batch change details page')
+                await percySnapshotWithVariants(driver.page, `Batch change details page ${entityType}`)
                 await accessibilityAudit(driver.page)
 
-                // Expand one changeset.
+                // TODO: This is the part of the test that flakes because "Error: Node is
+                // either not clickable or not an HTMLElement"
                 await driver.page.click('.test-batches-expand-changeset')
                 // Expect one diff to be rendered.
                 await driver.page.waitForSelector('.test-file-diff-node')
@@ -818,7 +822,7 @@ describe('Batches', () => {
                 await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/apply/spec123')
                 // View overview page.
                 await driver.page.waitForSelector('.test-batch-change-apply-page')
-                await percySnapshotWithVariants(driver.page, 'Batch change preview page')
+                await percySnapshotWithVariants(driver.page, `Batch change preview page ${entityType}`)
                 await accessibilityAudit(driver.page)
 
                 // Expand one changeset.

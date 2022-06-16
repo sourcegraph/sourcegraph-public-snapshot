@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
 	workerinsights "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/permissions"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -29,27 +30,28 @@ import (
 )
 
 func main() {
-	syncLogs := log.Init(log.Resource{
+	liblog := log.Init(log.Resource{
 		Name:    env.MyName,
 		Version: version.Version(),
 	})
-	defer syncLogs.Sync()
+	defer liblog.Sync()
 
 	logger := log.Scoped("worker", "worker enterprise edition")
 
 	go setAuthzProviders(logger)
 
 	additionalJobs := map[string]job.Job{
-		"codehost-version-syncing":   versions.NewSyncingJob(),
-		"insights-job":               workerinsights.NewInsightsJob(),
-		"insights-query-runner-job":  workerinsights.NewInsightsQueryRunnerJob(),
-		"batches-janitor":            batches.NewJanitorJob(),
-		"batches-scheduler":          batches.NewSchedulerJob(),
-		"batches-reconciler":         batches.NewReconcilerJob(),
-		"batches-bulk-processor":     batches.NewBulkOperationProcessorJob(),
-		"batches-workspace-resolver": batches.NewWorkspaceResolverJob(),
-		"executors-janitor":          executors.NewJanitorJob(),
-		"codemonitors-job":           codemonitors.NewCodeMonitorJob(),
+		"codehost-version-syncing":      versions.NewSyncingJob(),
+		"insights-job":                  workerinsights.NewInsightsJob(),
+		"insights-query-runner-job":     workerinsights.NewInsightsQueryRunnerJob(),
+		"batches-janitor":               batches.NewJanitorJob(),
+		"batches-scheduler":             batches.NewSchedulerJob(),
+		"batches-reconciler":            batches.NewReconcilerJob(),
+		"batches-bulk-processor":        batches.NewBulkOperationProcessorJob(),
+		"batches-workspace-resolver":    batches.NewWorkspaceResolverJob(),
+		"executors-janitor":             executors.NewJanitorJob(),
+		"codemonitors-job":              codemonitors.NewCodeMonitorJob(),
+		"bitbucket-project-permissions": permissions.NewBitbucketProjectPermissionsJob(),
 
 		// fresh
 		"codeintel-upload-janitor":         freshcodeintel.NewUploadJanitorJob(),

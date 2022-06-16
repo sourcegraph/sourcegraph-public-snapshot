@@ -8,17 +8,12 @@ import (
 
 type ParserFactory func() (ctags.Parser, error)
 
-type ParserPool interface {
-	Get(ctx context.Context) (ctags.Parser, error)
-	Done(parser ctags.Parser)
-}
-
 type parserPool struct {
 	newParser ParserFactory
 	pool      chan ctags.Parser
 }
 
-func NewParserPool(newParser ParserFactory, numParserProcesses int) (ParserPool, error) {
+func NewParserPool(newParser ParserFactory, numParserProcesses int) (*parserPool, error) {
 	pool := make(chan ctags.Parser, numParserProcesses)
 	for i := 0; i < numParserProcesses; i++ {
 		parser, err := newParser()

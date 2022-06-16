@@ -82,8 +82,8 @@ func main() {
 		os.Setenv("SRC_LOG_FORMAT", "console")
 		os.Setenv("SRC_DEVELOPMENT", "true")
 	}
-	syncLogs := log.Init(log.Resource{Name: "lsif-index-tester"})
-	defer syncLogs.Sync()
+	liblog := log.Init(log.Resource{Name: "lsif-index-tester"})
+	defer liblog.Sync()
 
 	logger := log.Scoped(raw_indexer, "indexer testing").With(log.String("directory", directory))
 

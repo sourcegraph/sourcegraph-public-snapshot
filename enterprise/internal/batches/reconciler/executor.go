@@ -1,11 +1,13 @@
 package reconciler
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/url"
 	"strings"
 	"sync"
+	"text/template"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -592,10 +594,27 @@ func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getN
 		return errors.Wrap(err, "building URL")
 	}
 
-	cs.Body = fmt.Sprintf(
-		"%s\n\n[_Created by Sourcegraph batch change `%s/%s`._](%s)",
-		cs.Body, ns.Name, batchChange.Name, u,
-	)
+	bcl := fmt.Sprintf("[_Created by Sourcegraph batch change `%s/%s`._](%s)", ns.Name, batchChange.Name, u)
+
+	// Check if the batch change link template variable is present in the changeset
+	// template body.
+	if strings.Contains(cs.Body, "batch_change_link") {
+		// Since we already ran this template before, `cs.Body` should only contain valid templates for `batch_change_link` at this point.
+		t, err := template.New("changeset_template").Delims("${{", "}}").Funcs(template.FuncMap{"batch_change_link": func() string { return bcl }}).Parse(cs.Body)
+		if err != nil {
+			return errors.Wrap(err, "handling batch_change_link: parsing changeset template")
+		}
+
+		var out bytes.Buffer
+		if err := t.Execute(&out, nil); err != nil {
+			return errors.Wrap(err, "handling batch_change_link: executing changeset template")
+		}
+
+		cs.Body = out.String()
+	} else {
+		// Otherwise, append to the end of the body.
+		cs.Body = fmt.Sprintf("%s\n\n%s", cs.Body, bcl)
+	}
 
 	return nil
 }

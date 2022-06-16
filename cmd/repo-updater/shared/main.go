@@ -2,7 +2,6 @@ package shared
 
 import (
 	"context"
-	"database/sql"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -45,7 +44,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -59,7 +57,7 @@ var stateHTMLTemplate string
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
+type EnterpriseInit func(logger log.Logger, db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
 
 type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc
@@ -77,18 +75,19 @@ func Main(enterpriseInit EnterpriseInit) {
 	env.HandleHelpFlag()
 
 	conf.Init()
-	syncLogs := log.Init(log.Resource{
+	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	})
-	defer syncLogs.Sync()
+	}, log.NewSentrySink())
+	defer liblog.Sync()
+	go conf.Watch(liblog.Update(conf.GetLogSinks))
+
 	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 
-	logger := log.Scoped("repo-updater", "repo-updater service")
+	logger := log.Scoped("service", "repo-updater service")
 
 	// Signals health of startup
 	ready := make(chan struct{})
@@ -120,7 +119,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	repos.MustRegisterMetrics(db, envvar.SourcegraphDotComMode())
 
-	store := repos.NewStore(logger.Scoped("store", "repo store"), db, sql.TxOptions{Isolation: sql.LevelDefault})
+	store := repos.NewStore(logger.Scoped("store", "repo store"), db)
 	{
 		m := repos.NewStoreMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
@@ -159,7 +158,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	// All dependencies ready
 	var debugDumpers []debugserver.Dumper
 	if enterpriseInit != nil {
-		debugDumpers = enterpriseInit(db, store, keyring.Default(), cf, server)
+		debugDumpers = enterpriseInit(logger, db, store, keyring.Default(), cf, server)
 	}
 
 	syncer := &repos.Syncer{
@@ -251,7 +250,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.HTTPMiddleware(trace.HTTPMiddleware(authzBypass(handler), conf.DefaultClient())),
+		Handler:      ot.HTTPMiddleware(trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient())),
 	})
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }

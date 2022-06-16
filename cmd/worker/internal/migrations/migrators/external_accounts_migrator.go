@@ -2,7 +2,6 @@ package migrators
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -10,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -37,8 +35,8 @@ func NewExternalAccountsMigrator(logger log.Logger, store *basestore.Store) *Ext
 	return &ExternalAccountsMigrator{logger: logger, store: store, BatchSize: 50}
 }
 
-func NewExternalAccountsMigratorWithDB(logger log.Logger, db dbutil.DB) *ExternalAccountsMigrator {
-	return NewExternalAccountsMigrator(logger, basestore.NewWithDB(db, sql.TxOptions{}))
+func NewExternalAccountsMigratorWithDB(logger log.Logger, db database.DB) *ExternalAccountsMigrator {
+	return NewExternalAccountsMigrator(logger, basestore.NewWithHandle(db.Handle()))
 }
 
 // ID of the migration row in the out_of_band_migrations table.

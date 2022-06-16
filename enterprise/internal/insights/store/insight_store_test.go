@@ -5,25 +5,24 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/hexops/autogold"
 	"github.com/hexops/valast"
-
 	"github.com/inconshreveable/log15"
-
-	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/log/logtest"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestGet(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 
-	_, err := insightsDB.Exec(`INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
+	_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
 									VALUES (1, 'test title', 'test description', 'unique-1', false),
 									       (2, 'test title 2', 'test description 2', 'unique-2', true)`)
 	if err != nil {
@@ -31,14 +30,14 @@ func TestGet(t *testing.T) {
 	}
 
 	// assign some global grants just so the test can immediately fetch the created views
-	_, err = insightsDB.Exec(`INSERT INTO insight_view_grants (insight_view_id, global)
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view_grants (insight_view_id, global)
 									VALUES (1, true),
 									       (2, true)`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = insightsDB.Exec(`INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
                             next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method)
                             VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search'),
 									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search'),
@@ -47,7 +46,7 @@ func TestGet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = insightsDB.Exec(`INSERT INTO insight_view_series (insight_view_id, insight_series_id, label, stroke)
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view_series (insight_view_id, insight_series_id, label, stroke)
 									VALUES (1, 1, 'label1', 'color1'),
 											(1, 2, 'label2', 'color2'),
 											(2, 2, 'second-label-2', 'second-color-2'),
@@ -255,7 +254,7 @@ func TestGet(t *testing.T) {
 
 func TestGetAll(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -272,7 +271,7 @@ func TestGetAll(t *testing.T) {
 	})
 
 	// Set up some insight views to test pagination and permissions.
-	_, err := insightsDB.Exec(`INSERT INTO insight_view (id, title, description, unique_id)
+	_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id)
 	VALUES (1, 'user cannot view', '', 'a'),
 		   (2, 'user can view 1', '', 'd'),
 		   (3, 'user can view 2', '', 'e'),
@@ -281,14 +280,14 @@ func TestGetAll(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = insightsDB.Exec(`INSERT INTO insight_series (id, series_id, query, created_at, oldest_historical_at, last_recorded_at,
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_series (id, series_id, query, created_at, oldest_historical_at, last_recorded_at,
 		next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method)
 		VALUES  (1, 'series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search'),
 				(2, 'series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search')`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = insightsDB.Exec(`INSERT INTO insight_view_series (insight_view_id, insight_series_id, label, stroke)
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view_series (insight_view_id, insight_series_id, label, stroke)
 	VALUES  (1, 1, 'label1-1', 'color'),
 			(2, 1, 'label2-1', 'color'),
 			(2, 2, 'label2-2', 'color'),
@@ -300,22 +299,22 @@ func TestGetAll(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = insightsDB.Exec(`INSERT INTO insight_view_grants (insight_view_id, global)
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view_grants (insight_view_id, global)
 	VALUES (2, true), (3, true)`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Attach one of the insights to a dashboard to test insight permission via dashboard permissions.
-	_, err = insightsDB.Exec(`INSERT INTO dashboard (id, title) VALUES (1, 'dashboard 1');`)
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard (id, title) VALUES (1, 'dashboard 1');`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = insightsDB.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) VALUES (1, 5)`)
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) VALUES (1, 5)`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = insightsDB.Exec(`INSERT INTO dashboard_grants (dashboard_id, global) VALUES (1, true)`)
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard_grants (dashboard_id, global) VALUES (1, true)`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -616,10 +615,10 @@ func TestGetAll(t *testing.T) {
 
 func TestGetAllOnDashboard(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 
-	_, err := insightsDB.Exec(`INSERT INTO insight_view (id, title, description, unique_id)
+	_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id)
 									VALUES (1, 'test title', 'test description', 'unique-1'),
 									       (2, 'test title 2', 'test description 2', 'unique-2'),
 										   (3, 'test title 3', 'test description 3', 'unique-3'),
@@ -628,7 +627,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = insightsDB.Exec(`INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
                             next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method)
                             VALUES  ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search'),
 									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search'),
@@ -637,7 +636,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = insightsDB.Exec(`INSERT INTO insight_view_series (insight_view_id, insight_series_id, label, stroke)
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view_series (insight_view_id, insight_series_id, label, stroke)
 									VALUES  (1, 1, 'label1-1', 'color1'),
 											(2, 2, 'label2-2', 'color2'),
 											(3, 1, 'label3-1', 'color3'),
@@ -646,12 +645,12 @@ func TestGetAllOnDashboard(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = insightsDB.Exec(`INSERT INTO dashboard (id, title) VALUES  (1, 'dashboard 1');`)
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard (id, title) VALUES  (1, 'dashboard 1');`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = insightsDB.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
 									VALUES  (1, 2),
 											(1, 1),
 											(1, 4),
@@ -873,7 +872,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 
 func TestCreateSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Date(2021, 5, 1, 1, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 
 	store := NewInsightStore(insightsDB)
@@ -962,7 +961,7 @@ func TestCreateSeries(t *testing.T) {
 
 func TestCreateView(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -1007,7 +1006,7 @@ func TestCreateView(t *testing.T) {
 
 func TestCreateGetView_WithGrants(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -1138,7 +1137,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 
 func TestUpdateView(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -1193,7 +1192,7 @@ func TestUpdateView(t *testing.T) {
 
 func TestUpdateViewSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -1253,7 +1252,7 @@ func TestUpdateViewSeries(t *testing.T) {
 
 func TestDeleteView(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -1320,7 +1319,7 @@ func TestDeleteView(t *testing.T) {
 
 func TestAttachSeriesView(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1399,7 +1398,7 @@ func TestAttachSeriesView(t *testing.T) {
 
 func TestRemoveSeriesFromView(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1497,7 +1496,7 @@ func TestRemoveSeriesFromView(t *testing.T) {
 
 func TestInsightStore_GetDataSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1578,7 +1577,7 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 
 func TestInsightStore_StampRecording(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Date(2020, 1, 5, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1622,7 +1621,7 @@ func TestInsightStore_StampRecording(t *testing.T) {
 
 func TestInsightStore_StampBackfill(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1680,7 +1679,7 @@ func TestInsightStore_StampBackfill(t *testing.T) {
 
 func TestDirtyQueries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1750,7 +1749,7 @@ func TestDirtyQueries(t *testing.T) {
 
 func TestDirtyQueriesAggregated(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1825,7 +1824,7 @@ func TestDirtyQueriesAggregated(t *testing.T) {
 
 func TestSetSeriesEnabled(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1890,7 +1889,7 @@ func TestSetSeriesEnabled(t *testing.T) {
 
 func TestFindMatchingSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1963,7 +1962,7 @@ func TestFindMatchingSeries(t *testing.T) {
 
 func TestUpdateFrontendSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -2044,7 +2043,7 @@ func TestUpdateFrontendSeries(t *testing.T) {
 
 func TestGetReferenceCount(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 
 	store := NewInsightStore(insightsDB)
@@ -2052,7 +2051,7 @@ func TestGetReferenceCount(t *testing.T) {
 		return now
 	}
 
-	_, err := insightsDB.Exec(`INSERT INTO insight_view (id, title, description, unique_id)
+	_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id)
 									VALUES (1, 'test title', 'test description', 'unique-1'),
 									       (2, 'test title 2', 'test description 2', 'unique-2'),
 										   (3, 'test title 3', 'test description 3', 'unique-3')`)
@@ -2060,13 +2059,13 @@ func TestGetReferenceCount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = insightsDB.Exec(`INSERT INTO dashboard (id, title)
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard (id, title)
 		VALUES (1, 'dashboard 1'), (2, 'dashboard 2'), (3, 'dashboard 3');`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = insightsDB.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
+	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
 									VALUES  (1, 1),
 											(2, 1),
 											(3, 1),
@@ -2102,7 +2101,7 @@ func TestGetReferenceCount(t *testing.T) {
 
 func TestGetSoftDeletedSeries(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -2143,7 +2142,7 @@ func TestGetSoftDeletedSeries(t *testing.T) {
 
 func TestGetUnfrozenInsightCount(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	store := NewInsightStore(insightsDB)
 	ctx := context.Background()
 
@@ -2156,7 +2155,7 @@ func TestGetUnfrozenInsightCount(t *testing.T) {
 		autogold.Want("TotalCount", totalCount).Equal(t, 0)
 	})
 	t.Run("returns count for unfrozen insights not attached to dashboards", func(t *testing.T) {
-		_, err := insightsDB.Exec(`INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
+		_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
 										VALUES (1, 'unattached insight', 'test description', 'unique-1', false)`)
 		if err != nil {
 			t.Fatal(err)
@@ -2170,7 +2169,7 @@ func TestGetUnfrozenInsightCount(t *testing.T) {
 		autogold.Want("TotalCount", totalCount).Equal(t, 1)
 	})
 	t.Run("returns correct counts for unfrozen insights", func(t *testing.T) {
-		_, err := insightsDB.Exec(`INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
+		_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
 										VALUES (2, 'private insight 2', 'test description', 'unique-2', true),
 											   (3, 'org insight 1', 'test description', 'unique-3', false),
 											   (4, 'global insight 1', 'test description', 'unique-4', false),
@@ -2179,7 +2178,7 @@ func TestGetUnfrozenInsightCount(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = insightsDB.Exec(`INSERT INTO dashboard (id, title)
+		_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard (id, title)
 										VALUES (1, 'private dashboard 1'),
 											   (2, 'org dashboard 1'),
 										 	   (3, 'global dashboard 1'),
@@ -2187,7 +2186,7 @@ func TestGetUnfrozenInsightCount(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = insightsDB.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
+		_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
 										VALUES  (1, 2),
 												(2, 3),
 												(3, 4),
@@ -2196,7 +2195,7 @@ func TestGetUnfrozenInsightCount(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = insightsDB.Exec(`INSERT INTO dashboard_grants (id, dashboard_id, user_id, org_id, global)
+		_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard_grants (id, dashboard_id, user_id, org_id, global)
 										VALUES  (1, 1, 1, NULL, NULL),
 												(2, 2, NULL, 1, NULL),
 												(3, 3, NULL, NULL, TRUE),
@@ -2216,7 +2215,7 @@ func TestGetUnfrozenInsightCount(t *testing.T) {
 
 func TestUnfreezeGlobalInsights(t *testing.T) {
 	logger := logtest.Scoped(t)
-	insightsDB := dbtest.NewInsightsDB(logger, t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	store := NewInsightStore(insightsDB)
 	ctx := context.Background()
 
@@ -2233,14 +2232,14 @@ func TestUnfreezeGlobalInsights(t *testing.T) {
 		autogold.Want("TotalCount", totalCount).Equal(t, 0)
 	})
 	t.Run("does not unfreeze anything if there are no global insights", func(t *testing.T) {
-		_, err := insightsDB.Exec(`INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
+		_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
 										VALUES (1, 'private insight 1', 'test description', 'unique-1', true),
 											   (2, 'org insight 1', 'test description', 'unique-2', true),
 											   (3, 'unattached insight', 'test description', 'unique-3', true);`)
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = insightsDB.Exec(`INSERT INTO dashboard (id, title)
+		_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard (id, title)
 										VALUES (1, 'private dashboard 1'),
 											   (2, 'org dashboard 1'),
 										 	   (3, 'global dashboard 1'),
@@ -2248,13 +2247,13 @@ func TestUnfreezeGlobalInsights(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = insightsDB.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
+		_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
 										VALUES  (1, 1),
 												(2, 2);`)
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = insightsDB.Exec(`INSERT INTO dashboard_grants (id, dashboard_id, user_id, org_id, global)
+		_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard_grants (id, dashboard_id, user_id, org_id, global)
 										VALUES  (1, 1, 1, NULL, NULL),
 												(2, 2, NULL, 1, NULL),
 												(3, 3, NULL, NULL, TRUE),
@@ -2276,14 +2275,14 @@ func TestUnfreezeGlobalInsights(t *testing.T) {
 		autogold.Want("TotalCount", totalCount).Equal(t, 0)
 	})
 	t.Run("unfreezes 2 global insights", func(t *testing.T) {
-		_, err := insightsDB.Exec(`INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
+		_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
 										VALUES (4, 'global insight 1', 'test description', 'unique-4', true),
 											   (5, 'global insight 2', 'test description', 'unique-5', true),
 											   (6, 'global insight 3', 'test description', 'unique-6', true)`)
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = insightsDB.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
+		_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
 										VALUES  (3, 4),
 												(3, 5),
 												(4, 6);`)

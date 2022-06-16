@@ -62,7 +62,7 @@ func TestBatchChangeResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(logger, db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,7 +158,7 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(logger, db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -223,7 +223,10 @@ func assertBatchSpecsInResponse(t *testing.T, ctx context.Context, s *graphql.Sc
 
 	batchChangeAPIID := string(marshalBatchChangeID(batchChangeID))
 
-	input := map[string]any{"batchChange": batchChangeAPIID}
+	input := map[string]any{
+		"batchChange":                 batchChangeAPIID,
+		"includeLocallyExecutedSpecs": true,
+	}
 
 	var res struct{ Node apitest.BatchChange }
 	apitest.MustExec(ctx, t, s, input, &res, queryBatchChangeBatchSpecs)
@@ -295,11 +298,11 @@ query($namespace: ID!, $name: String!){
 `
 
 const queryBatchChangeBatchSpecs = `
-query($batchChange: ID!){
+query($batchChange: ID!, $includeLocallyExecutedSpecs: Boolean){
   node(id: $batchChange) {
     ... on BatchChange {
       id
-      batchSpecs { totalCount nodes { id } }
+      batchSpecs(includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) { totalCount nodes { id } }
     }
   }
 }

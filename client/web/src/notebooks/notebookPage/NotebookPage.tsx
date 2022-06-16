@@ -226,19 +226,6 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                         <>
                             <PageHeader
                                 className="mt-2"
-                                path={[
-                                    { to: '/notebooks', icon: BookOutlineIcon, ariaLabel: 'Notebooks' },
-                                    {
-                                        text: (
-                                            <NotebookTitle
-                                                title={notebookOrError.title}
-                                                viewerCanManage={notebookOrError.viewerCanManage}
-                                                onUpdateTitle={onUpdateTitle}
-                                                telemetryService={telemetryService}
-                                            />
-                                        ),
-                                    },
-                                ]}
                                 actions={
                                     <NotebookPageHeaderActions
                                         isSourcegraphDotCom={isSourcegraphDotCom}
@@ -256,7 +243,23 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                         telemetryService={telemetryService}
                                     />
                                 }
-                            />
+                            >
+                                <PageHeader.Heading as="h2" styleAs="h1">
+                                    <PageHeader.Breadcrumb
+                                        icon={BookOutlineIcon}
+                                        to="/notebooks"
+                                        aria-label="Notebooks"
+                                    />
+                                    <PageHeader.Breadcrumb>
+                                        <NotebookTitle
+                                            title={notebookOrError.title}
+                                            viewerCanManage={notebookOrError.viewerCanManage}
+                                            onUpdateTitle={onUpdateTitle}
+                                            telemetryService={telemetryService}
+                                        />
+                                    </PageHeader.Breadcrumb>
+                                </PageHeader.Heading>
+                            </PageHeader>
                             <small className="d-flex align-items-center mt-2">
                                 <div className="mr-2">
                                     Created{' '}
@@ -357,7 +360,7 @@ const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProp
                     size="sm"
                     className={styles.notepadCtaCloseButton}
                 >
-                    <Icon role="img" aria-hidden={true} as={CloseIcon} />
+                    <Icon aria-hidden={true} as={CloseIcon} />
                 </Button>
                 <img
                     className="flex-shrink-0 mr-3"
