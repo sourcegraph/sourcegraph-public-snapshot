@@ -40,7 +40,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				return observation.EmitForSentry | observation.EmitForDefault
+				return observation.EmitForDefault
 			},
 		})
 	}

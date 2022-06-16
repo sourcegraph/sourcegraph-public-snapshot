@@ -1,30 +1,32 @@
 package com.sourcegraph.browser;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.jcef.JBCefJSQuery;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.ThemeUtil;
-import com.sourcegraph.find.BrowserAndLoadingPanel;
+import com.sourcegraph.find.FindPopupPanel;
 import com.sourcegraph.find.PreviewContent;
-import com.sourcegraph.find.PreviewPanel;
 import com.sourcegraph.find.Search;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
 public class JSToJavaBridgeRequestHandler {
     private final Project project;
-    private final PreviewPanel previewPanel;
-    private final BrowserAndLoadingPanel topPanel;
+    private final FindPopupPanel findPopupPanel;
+
+    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull FindPopupPanel findPopupPanel) {
+        this.project = project;
+        this.findPopupPanel = findPopupPanel;
+    }
 
     public JBCefJSQuery.Response handle(@NotNull JsonObject request) {
         String action = request.get("action").getAsString();
         JsonObject arguments;
-        Gson gson = new Gson();
         PreviewContent previewContent;
         try {
             switch (action) {
@@ -65,23 +67,29 @@ public class JSToJavaBridgeRequestHandler {
                     return createSuccessResponse(lastSearchAsJson);
                 case "preview":
                     arguments = request.getAsJsonObject("arguments");
-                    previewContent = gson.fromJson(arguments, PreviewContent.class);
-                    previewPanel.setContent(previewContent);
+                    previewContent = PreviewContent.fromJson(project, arguments);
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        findPopupPanel.setPreviewContent(previewContent);
+                        findPopupPanel.setSelectionMetadataLabel(previewContent);
+                    });
                     return createSuccessResponse(null);
                 case "clearPreview":
-                    previewPanel.clearContent();
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        findPopupPanel.clearPreviewContent();
+                        findPopupPanel.clearSelectionMetadataLabel();
+                    });
                     return createSuccessResponse(null);
                 case "open":
                     arguments = request.getAsJsonObject("arguments");
-                    previewContent = gson.fromJson(arguments, PreviewContent.class);
+                    previewContent = PreviewContent.fromJson(project, arguments);
                     try {
-                        previewPanel.openInEditorOrBrowser(previewContent);
+                        previewContent.openInEditorOrBrowser();
                     } catch (Exception e) {
                         return createErrorResponse("Error while opening link: " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
                     }
                     return createSuccessResponse(null);
                 case "indicateFinishedLoading":
-                    topPanel.setBrowserVisible(true);
+                    findPopupPanel.setBrowserVisible(true);
                     return createSuccessResponse(null);
                 default:
                     return createErrorResponse("Unknown action: '" + action + "'.", "No stack trace");
@@ -91,13 +99,8 @@ public class JSToJavaBridgeRequestHandler {
         }
     }
 
-    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull PreviewPanel previewPanel, @NotNull BrowserAndLoadingPanel topPanel) {
-        this.project = project;
-        this.previewPanel = previewPanel;
-        this.topPanel = topPanel;
-    }
-
-    public JBCefJSQuery.Response handleInvalidRequest(Exception e) {
+    @NotNull
+    public JBCefJSQuery.Response handleInvalidRequest(@NotNull Exception e) {
         return createErrorResponse("Invalid JSON passed to bridge. The error is: " + e.getClass() + ": " + e.getMessage(), convertStackTraceToString(e));
     }
 

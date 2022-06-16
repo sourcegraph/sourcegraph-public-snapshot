@@ -10,6 +10,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Icon, LoadingSpinner, H4, Alert } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../components/HeroPage'
+import { useFeatureFlag } from '../../../../featureFlags/useFeatureFlag'
 import {
     CheckExecutorsAccessTokenResult,
     CheckExecutorsAccessTokenVariables,
@@ -158,6 +159,11 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
         'batches.downloadSpecModalDismissed',
         false
     )
+    /**
+     * For managed instances we want to hide the `run server side` button by default. To do this we make use of a
+     * feature flag to ensure Managed Instances.
+     */
+    const [isRunBatchSpecButtonHidden] = useFeatureFlag('hide-run-batch-spec-for-mi', false)
 
     const activeExecutorsActionButtons = (
         <>
@@ -202,9 +208,15 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 </Button>
             )}
 
-            <Button className={styles.downloadLink} variant="link" onClick={() => setIsRunServerSideModalOpen(true)}>
-                or run server-side
-            </Button>
+            {!isRunBatchSpecButtonHidden && (
+                <Button
+                    className={styles.downloadLink}
+                    variant="link"
+                    onClick={() => setIsRunServerSideModalOpen(true)}
+                >
+                    or run server-side
+                </Button>
+            )}
         </>
     )
 

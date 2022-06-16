@@ -54,7 +54,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -95,7 +94,6 @@ func main() {
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
 	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 

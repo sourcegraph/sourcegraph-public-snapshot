@@ -1,7 +1,6 @@
 import React, { Suspense, useEffect } from 'react'
 
 import { BrowserRouter, Route, RouteComponentProps, Switch } from 'react-router-dom'
-import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Alert, LoadingSpinner, setLinkComponent, WildcardTheme, WildcardThemeContext } from '@sourcegraph/wildcard'
@@ -56,44 +55,42 @@ export const EmbeddedWebApp: React.FunctionComponent<React.PropsWithChildren<unk
     // IMPORTANT: Please consult with the security team if you are unsure whether your changes could introduce security exploits.
     return (
         <BrowserRouter>
-            <CompatRouter>
-                <WildcardThemeContext.Provider value={WILDCARD_THEME}>
-                    <div className={styles.body}>
-                        <Suspense
-                            fallback={
-                                <div className="d-flex justify-content-center p-3">
-                                    <LoadingSpinner />
-                                </div>
-                            }
-                        >
-                            <Switch>
-                                <Route
-                                    path="/embed/notebooks/:notebookId"
-                                    render={(props: RouteComponentProps<{ notebookId: string }>) => (
-                                        <EmbeddedNotebookPage
-                                            notebookId={props.match.params.notebookId}
-                                            searchContextsEnabled={true}
-                                            showSearchContext={true}
-                                            isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                            authenticatedUser={null}
-                                            isLightTheme={isLightTheme}
-                                            settingsCascade={EMPTY_SETTINGS_CASCADE}
-                                        />
-                                    )}
-                                />
-                                <Route
-                                    path="*"
-                                    render={() => (
-                                        <Alert variant="danger">
-                                            Invalid embedding route, please check the embedding URL.
-                                        </Alert>
-                                    )}
-                                />
-                            </Switch>
-                        </Suspense>
-                    </div>
-                </WildcardThemeContext.Provider>
-            </CompatRouter>
+            <WildcardThemeContext.Provider value={WILDCARD_THEME}>
+                <div className={styles.body}>
+                    <Suspense
+                        fallback={
+                            <div className="d-flex justify-content-center p-3">
+                                <LoadingSpinner />
+                            </div>
+                        }
+                    >
+                        <Switch>
+                            <Route
+                                path="/embed/notebooks/:notebookId"
+                                render={(props: RouteComponentProps<{ notebookId: string }>) => (
+                                    <EmbeddedNotebookPage
+                                        notebookId={props.match.params.notebookId}
+                                        searchContextsEnabled={true}
+                                        showSearchContext={true}
+                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                        authenticatedUser={null}
+                                        isLightTheme={isLightTheme}
+                                        settingsCascade={EMPTY_SETTINGS_CASCADE}
+                                    />
+                                )}
+                            />
+                            <Route
+                                path="*"
+                                render={() => (
+                                    <Alert variant="danger">
+                                        Invalid embedding route, please check the embedding URL.
+                                    </Alert>
+                                )}
+                            />
+                        </Switch>
+                    </Suspense>
+                </div>
+            </WildcardThemeContext.Provider>
         </BrowserRouter>
     )
 }
