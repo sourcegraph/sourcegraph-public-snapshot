@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react'
+import React from 'react'
 
 import { Slottable } from '@radix-ui/react-slot'
 import * as TooltipPrimitive from '@radix-ui/react-tooltip'
@@ -8,7 +8,7 @@ import styles from './Tooltip.module.scss'
 
 interface TooltipProps {
     /** A single child element that will trigger the Tooltip to open on hover. */
-    children: ReactNode
+    children: React.ReactElement
     /** The text that will be displayed in the Tooltip. If `null`, no Tooltip will be rendered, allowing for Tooltips to be shown conditionally. */
     content: string | null
     /** The open state of the tooltip when it is initially rendered. Defaults to `false`. */

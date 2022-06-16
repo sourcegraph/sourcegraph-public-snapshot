@@ -16,6 +16,11 @@ interface Props {
 export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const formattedTime = format(Date.parse(props.lastSyncedTime), "yyyy-MM-dd'T'HH:mm:ss")
 
+    /**
+     * TODO: Icon not showing Tooltip on hover.
+     * Need to wrap in Button?
+     * Investigate out why only necessary for SVGs
+     */
     return (
         <Tooltip content={`Last synced: ${formattedTime}`}>
             <Icon
