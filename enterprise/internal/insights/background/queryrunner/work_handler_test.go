@@ -694,7 +694,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		}
 	})
 
-	t.Run("compute stream job returns error event", func(t *testing.T) {
+	t.Run("compute stream job returns retryable error event", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
 		job := Job{
 			SeriesID:        "testseries1",
@@ -731,9 +731,51 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		if err == nil {
 			t.Error("Expected error but received nil")
 		}
-		var streamingErr StreamingError
-		if !errors.As(err, &streamingErr) {
-			t.Errorf("Expected StreamingError, got %v", err)
+		if strings.Contains(err.Error(), "terminal") {
+			t.Errorf("Expected retryable error, got %v", err)
+		}
+	})
+
+	t.Run("compute stream job returns terminal error event", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
+			return &streaming.ComputeTabulationResult{
+				StreamDecoderEvents: streaming.StreamDecoderEvents{
+					Errors: []string{"not terminal", "invalid query"},
+				},
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore:     nil,
+			insightsStore:       nil,
+			metadadataStore:     nil,
+			limiter:             nil,
+			mu:                  sync.RWMutex{},
+			seriesCache:         nil,
+			computeSearchStream: mocked,
+		}
+
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as we errored on compute stream")
+		}
+		if err == nil {
+			t.Error("Expected error but received nil")
+		}
+		var terminalError TerminalStreamingError
+		if !errors.As(err, &terminalError) {
+			t.Errorf("Expected terminal error, got %v", err)
 		}
 	})
 
@@ -1091,7 +1133,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 		}
 	})
 
-	t.Run("search stream job returns error event", func(t *testing.T) {
+	t.Run("search stream job returns retryable error event", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
 		job := Job{
 			SeriesID:        "testseries1",
@@ -1125,9 +1167,54 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on stream")
 		}
-		var streamingErr StreamingError
-		if !errors.As(err, &streamingErr) {
-			t.Errorf("Expected StreamingError, got %v", err)
+		if err == nil {
+			t.Error("Expected error but received nil")
+		}
+		if strings.Contains(err.Error(), "terminal") {
+			t.Errorf("Expected retryable error, got %v", err)
+		}
+	})
+
+	t.Run("search stream job returns retryable error event", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
+			return &streaming.TabulationResult{
+				StreamDecoderEvents: streaming.StreamDecoderEvents{
+					Errors: []string{"retryable event", "invalid query"},
+				},
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore: nil,
+			insightsStore:   nil,
+			metadadataStore: nil,
+			limiter:         nil,
+			mu:              sync.RWMutex{},
+			seriesCache:     nil,
+			searchStream:    mocked,
+		}
+
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as we errored on stream")
+		}
+		if err == nil {
+			t.Error("Expected error but received nil")
+		}
+		var terminalError TerminalStreamingError
+		if !errors.As(err, &terminalError) {
+			t.Errorf("Expected terminal error, got %v", err)
 		}
 	})
 

@@ -38,8 +38,8 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 		"dependencies":          func() Predicate { return &RepoDependenciesPredicate{} },
 		"deps":                  func() Predicate { return &RepoDependenciesPredicate{} },
-		"dependents":            func() Predicate { return &RepoDependenciesPredicate{} },
-		"revdeps":               func() Predicate { return &RepoDependenciesPredicate{} },
+		"dependents":            func() Predicate { return &RepoDependentsPredicate{} },
+		"revdeps":               func() Predicate { return &RepoDependentsPredicate{} },
 	},
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },

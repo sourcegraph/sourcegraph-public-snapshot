@@ -3,6 +3,7 @@
 exports[`Icon renders a medium icon correctly 1`] = `
 <DocumentFragment>
   <svg
+    aria-hidden="true"
     class="iconInline iconInlineMd"
     fill="none"
     role="img"
@@ -28,6 +29,7 @@ exports[`Icon renders a medium icon correctly 1`] = `
 exports[`Icon renders a simple inline icon correctly 1`] = `
 <DocumentFragment>
   <svg
+    aria-hidden="true"
     class="iconInline"
     fill="none"
     role="img"

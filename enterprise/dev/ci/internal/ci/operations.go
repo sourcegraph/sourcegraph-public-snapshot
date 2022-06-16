@@ -501,25 +501,14 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("yarn workspace @sourcegraph/browser release:npm"))
 }
 
-// Release the browser extension.
-func addVsceReleaseSteps(buildOptions bk.BuildOptions) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		// Check Commit Message to determine version incremented
-		// Uses Semantic Versioning: major / minor / patch
-		// Example Commit Message: minor release
-		releaseType := strings.TrimSpace(strings.Split(buildOptions.Message, "release")[0])
-		if releaseType == "major" || releaseType == "minor" || releaseType == "patch" {
-			addVsceIntegrationTests(pipeline)
-			pipeline.AddWait()
-			// Release to the VS Code Marketplace
-			pipeline.AddStep(":vscode: Extension release",
-				bk.Env("VSCODE_RELEASE_TYPE", releaseType),
-				withYarnCache(),
-				bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-				bk.Cmd("yarn generate"),
-				bk.Cmd("yarn --cwd client/vscode -s run release"))
-		}
-	}
+// Release the VS Code extension.
+func addVsceReleaseSteps(pipeline *bk.Pipeline) {
+	// Publish extension to the VS Code Marketplace
+	pipeline.AddStep(":vscode: Extension release",
+		withYarnCache(),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn generate"),
+		bk.Cmd("yarn --cwd client/vscode -s run release"))
 }
 
 // Adds a Buildkite pipeline "Wait".

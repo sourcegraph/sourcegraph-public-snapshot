@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -93,7 +94,7 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 	// get the external service
 	svc, err := h.db.ExternalServices().GetByID(ctx, job.ExternalServiceID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get external service %d", job.ExternalServiceID)
+		return errcode.MakeNonRetryable(errors.Wrapf(err, "failed to get external service %d", job.ExternalServiceID))
 	}
 
 	if svc.Kind != extsvc.KindBitbucketServer {
@@ -196,7 +197,7 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 	}
 
 	if len(mapping) == 0 {
-		return errors.Errorf("no users found for bind IDs: %v", bindIDs)
+		return errcode.MakeNonRetryable(errors.Errorf("no users found for bind IDs: %v", bindIDs))
 	}
 
 	userIDs := make(map[int32]struct{}, len(mapping))
@@ -228,7 +229,7 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Context, repoID api.RepoID, _ []types.UserPermission, userIDs map[int32]struct{}, pendingBindIDs []string) (err error) {
 	// Make sure the repo ID is valid.
 	if _, err := h.db.Repos().Get(ctx, repoID); err != nil {
-		return errors.Wrapf(err, "failed to query repo %d", repoID)
+		return errcode.MakeNonRetryable(errors.Wrapf(err, "failed to query repo %d", repoID))
 	}
 
 	p := authz.RepoPermissions{
