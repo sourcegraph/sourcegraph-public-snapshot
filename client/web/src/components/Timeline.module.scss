@@ -1,4 +1,5 @@
 .details {
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
     border-left: 0.25rem solid var(--border-color);
     margin: -1rem 1rem;
     padding: 1rem 0 2rem 2rem;
@@ -25,6 +26,7 @@
 
 .separator {
     height: 2.25rem;
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
     border-left: 0.25rem solid var(--border-color);
     margin-left: 1rem;
     margin-top: -1rem;
