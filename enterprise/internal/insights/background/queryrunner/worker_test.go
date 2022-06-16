@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
@@ -24,7 +26,8 @@ import (
 // database.
 func TestJobQueue(t *testing.T) {
 	t.Parallel()
-	mainAppDB := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	mainAppDB := dbtest.NewDB(logger, t)
 
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -75,7 +78,8 @@ func TestJobQueue(t *testing.T) {
 
 func TestJobQueueDependencies(t *testing.T) {
 	t.Parallel()
-	mainAppDB := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	mainAppDB := dbtest.NewDB(logger, t)
 
 	ctx := actor.WithInternalActor(context.Background())
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})

@@ -5,12 +5,13 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -142,7 +143,7 @@ func (p *phabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*t
 		},
 	}
 	for {
-		svcs, err := ExternalServicesWith(p).List(ctx, opt)
+		svcs, err := ExternalServicesWith(p.logger, p).List(ctx, opt)
 		if err != nil {
 			return nil, errors.Wrap(err, "list")
 		}

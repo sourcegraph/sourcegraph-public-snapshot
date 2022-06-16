@@ -8,6 +8,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -26,7 +28,8 @@ import (
 )
 
 func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 4)
 
@@ -163,7 +166,8 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 }
 
 func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
 
@@ -460,7 +464,8 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 }
 
 func TestBatchSpecWorkspaceCreatorProcess_Importing(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
 
@@ -519,7 +524,8 @@ importChangesets:
 }
 
 func TestBatchSpecWorkspaceCreatorProcess_NoDiff(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
 

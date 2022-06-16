@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 
@@ -47,8 +49,9 @@ func TestToInsightUniqueIdQuery(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := dbtest.NewInsightsDB(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 
 	migrator := migrator{insightStore: store.NewInsightStore(insightsDB)}
 
@@ -153,8 +156,9 @@ func TestCreateSpecialCaseDashboard(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := dbtest.NewInsightsDB(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	migrator := migrator{insightStore: store.NewInsightStore(insightsDB), dashboardStore: store.NewDashboardStore(insightsDB)}
 
 	newView := func(insightId string) {

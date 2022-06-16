@@ -7,9 +7,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/pings"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 
@@ -46,7 +47,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB *sql.DB
 	}
 
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
-	featureFlagStore := database.NewDB(mainAppDB).FeatureFlags()
+	featureFlagStore := database.NewDB(logger, mainAppDB).FeatureFlags()
 
 	// Start background goroutines for all of our workers.
 	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
@@ -58,7 +59,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB *sql.DB
 	}
 
 	// todo(insights) add setting to disable this indexer
-	routines = append(routines, compression.NewCommitIndexerWorker(ctx, database.NewDB(mainAppDB), insightsDB, time.Now, observationContext))
+	routines = append(routines, compression.NewCommitIndexerWorker(ctx, database.NewDB(logger, mainAppDB), insightsDB, time.Now, observationContext))
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
 	// work to fill them - if not disabled.
@@ -72,7 +73,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB *sql.DB
 	enableSync, _ := strconv.ParseBool(os.Getenv("ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE"))
 	if enableSync {
 		observationContext.Logger.Info("Enabling Code Insights Settings Storage - This is a deprecated functionality!")
-		routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, database.NewDB(mainAppDB), insightsDB))
+		routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, database.NewDB(logger, mainAppDB), insightsDB))
 	}
 	routines = append(
 		routines,
@@ -93,7 +94,7 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 	// Create a base store to be used for storing worker state. We store this in the main app Postgres
 	// DB, not the insights DB (which we use only for storing insights data.)
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
-	repoStore := database.NewDB(mainAppDB).Repos()
+	repoStore := database.NewDB(logger, mainAppDB).Repos()
 
 	// Create basic metrics for recording information about background jobs.
 	observationContext := &observation.Context{

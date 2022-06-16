@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -21,10 +23,12 @@ import (
 func TestBulkProcessor(t *testing.T) {
 	t.Parallel()
 
+	logger := logtest.Scoped(t)
+
 	ctx := context.Background()
-	sqlDB := dbtest.NewDB(t)
+	sqlDB := dbtest.NewDB(logger, t)
 	tx := dbtest.NewTx(t, sqlDB)
-	db := database.NewDB(sqlDB)
+	db := database.NewDB(logger, sqlDB)
 	bstore := store.New(tx, &observation.TestContext, nil)
 	user := ct.CreateTestUser(t, db, true)
 	repo, _ := ct.CreateTestRepo(t, ctx, db)

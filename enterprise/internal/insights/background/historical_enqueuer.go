@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 
 	"github.com/inconshreveable/log15"
@@ -16,6 +17,8 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
@@ -84,10 +87,10 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 	})
 
 	db := workerBaseStore.Handle().DB()
-	repoStore := database.NewDB(db).Repos()
+	repoStore := database.NewDB(observationContext.Logger, db).Repos()
 
 	iterator := discovery.NewAllReposIterator(
-		dbcache.NewIndexableReposLister(repoStore),
+		dbcache.NewIndexableReposLister(observationContext.Logger, repoStore),
 		repoStore,
 		time.Now,
 		envvar.SourcegraphDotComMode(),
@@ -98,7 +101,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 			Help:      "Counter of the number of repositories analyzed and queued for processing for insights.",
 		})
 
-	enq := globalBackfiller(workerBaseStore, dataSeriesStore, insightsStore)
+	enq := globalBackfiller(observationContext.Logger, workerBaseStore, dataSeriesStore, insightsStore)
 	maxTime := time.Now().Add(-1 * 365 * 24 * time.Hour)
 	enq.analyzer.frameFilter = compression.NewHistoricalFilter(true, maxTime, insightsStore.Handle().DB())
 	enq.repoIterator = iterator.ForEach
@@ -137,6 +140,8 @@ type ScopedBackfiller struct {
 	// frontend     database.DB
 	// codeinsights database.DB
 
+	logger sglog.Logger
+
 	workerBaseStore *basestore.Store
 	insightsStore   *store.Store
 
@@ -145,6 +150,7 @@ type ScopedBackfiller struct {
 
 func NewScopedBackfiller(workerBaseStore *basestore.Store, insightsStore *store.Store) *ScopedBackfiller {
 	return &ScopedBackfiller{
+		logger:          sglog.Scoped("ScopedBackfiller", ""),
 		insightsStore:   insightsStore,
 		workerBaseStore: workerBaseStore,
 		enqueueQueryRunnerJob: func(ctx context.Context, job *queryrunner.Job) error {
@@ -171,7 +177,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 		}
 	}
 
-	frontend := database.NewDB(s.workerBaseStore.Handle().DB())
+	frontend := database.NewDB(s.logger, s.workerBaseStore.Handle().DB())
 	iterator, err := discovery.NewScopedRepoIterator(ctx, repositories, frontend.Repos())
 	if err != nil {
 		return errors.Wrap(err, "NewScopedRepoIterator")
@@ -235,9 +241,9 @@ func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer 
 	}
 }
 
-func globalBackfiller(workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store) *historicalEnqueuer {
+func globalBackfiller(logger sglog.Logger, workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store) *historicalEnqueuer {
 	db := workerBaseStore.Handle().DB()
-	dbConn := database.NewDB(db)
+	dbConn := database.NewDB(logger, db)
 
 	statistics := make(statistics)
 

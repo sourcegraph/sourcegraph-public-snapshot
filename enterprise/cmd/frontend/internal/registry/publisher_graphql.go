@@ -6,6 +6,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
@@ -26,8 +28,10 @@ func extensionRegistryViewerPublishers(ctx context.Context, db database.DB) ([]g
 		return nil, err
 	}
 
+	logger := log.Scoped("extensionRegistryViewerPublishers", "")
+
 	var publishers []graphqlbackend.RegistryPublisher
-	user, err := graphqlbackend.CurrentUser(ctx, database.NewDB(db))
+	user, err := graphqlbackend.CurrentUser(ctx, database.NewDB(logger, db))
 	if err != nil || user == nil {
 		return nil, err
 	}
@@ -38,7 +42,7 @@ func extensionRegistryViewerPublishers(ctx context.Context, db database.DB) ([]g
 		return nil, err
 	}
 	for _, org := range orgs {
-		publishers = append(publishers, &registryPublisher{org: graphqlbackend.NewOrg(database.NewDB(db), org)})
+		publishers = append(publishers, &registryPublisher{org: graphqlbackend.NewOrg(database.NewDB(logger, db), org)})
 	}
 	return publishers, nil
 }

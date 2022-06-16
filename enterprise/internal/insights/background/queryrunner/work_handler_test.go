@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -1349,7 +1351,8 @@ func mockComputeSearch(results []computeSearch) func(context.Context, string) ([
 }
 
 func TestGetSeries(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	metadataStore := store.NewInsightStore(insightsDB)
 	metadataStore.Now = func() time.Time {

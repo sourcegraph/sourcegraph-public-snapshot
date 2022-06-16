@@ -6,9 +6,10 @@ import (
 
 	"github.com/jackc/pgconn"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func (r *Runner) Run(ctx context.Context, options Options) error {

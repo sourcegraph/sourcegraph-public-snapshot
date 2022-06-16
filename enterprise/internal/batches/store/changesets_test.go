@@ -27,9 +27,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+	logger := logtest.Scoped(t)
 	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
@@ -49,8 +51,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		HeadRefName:  "batch-changes/test",
 	}
 
-	rs := database.ReposWith(s)
-	es := database.ExternalServicesWith(s)
+	rs := database.ReposWith(logger, s)
+	es := database.ExternalServicesWith(logger, s)
 
 	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
 	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
@@ -1445,6 +1447,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 }
 
 func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+	logger := logtest.Scoped(t)
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
@@ -1484,8 +1487,8 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		IncludesCreatedEdit: false,
 	}
 
-	rs := database.ReposWith(s)
-	es := database.ExternalServicesWith(s)
+	rs := database.ReposWith(logger, s)
+	es := database.ExternalServicesWith(logger, s)
 
 	githubRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
 	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
@@ -1723,6 +1726,8 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	// 3. Repo name search.
 	// 4. Negation of all of the above.
 
+	logger := logtest.Scoped(t)
+
 	// Let's define some helpers.
 	createChangesetSpec := func(title string) *btypes.ChangesetSpec {
 		spec := &btypes.ChangesetSpec{
@@ -1771,8 +1776,8 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		return cs
 	}
 
-	rs := database.ReposWith(s)
-	es := database.ExternalServicesWith(s)
+	rs := database.ReposWith(logger, s)
+	es := database.ExternalServicesWith(logger, s)
 
 	// Set up repositories for each code host type we want to test.
 	var (
@@ -2022,8 +2027,9 @@ func testStoreChangesetScheduling(t *testing.T, ctx context.Context, s *Store, c
 	// in testStoreChangesets(), but we need a more fine grained set of
 	// changesets to handle the different scenarios.
 
-	rs := database.ReposWith(s)
-	es := database.ExternalServicesWith(s)
+	logger := logtest.Scoped(t)
+	rs := database.ReposWith(logger, s)
+	es := database.ExternalServicesWith(logger, s)
 
 	// We can just pre-can a repo. The kind doesn't matter here.
 	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
@@ -2157,8 +2163,9 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 	// want to access the database from different connections and the other
 	// integration/store tests all execute in a single transaction.
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	s := New(db, &observation.TestContext, nil)
 
@@ -2291,8 +2298,9 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 	// want to access the database from different connections and the other
 	// integration/store tests all execute in a single transaction.
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	s := New(db, &observation.TestContext, nil)
 

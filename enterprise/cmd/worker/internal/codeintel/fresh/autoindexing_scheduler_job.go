@@ -3,6 +3,8 @@ package codeintel
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -12,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type autoindexingScheduler struct{}
@@ -48,7 +49,7 @@ func (j *autoindexingScheduler) Routines(ctx context.Context, logger log.Logger)
 	}
 
 	repoUpdater := codeintel.InitRepoUpdaterClient()
-	autoindexingService := autoindexing.GetService(database.NewDB(db), &autoindexing.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdater)
+	autoindexingService := autoindexing.GetService(database.NewDB(logger, db), &autoindexing.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdater)
 
 	policyMatcher := policies.NewMatcher(gitserverClient, policies.IndexingExtractor, false, true)
 

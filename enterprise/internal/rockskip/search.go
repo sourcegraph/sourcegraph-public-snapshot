@@ -186,7 +186,7 @@ func (s *Service) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 const DEFAULT_LIMIT = 100
 
 func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameters, repoId int, commit int, threadStatus *ThreadStatus) (result.Symbols, error) {
-	db := database.NewDB(s.db)
+	db := database.NewDB(s.logger, s.db)
 	hops, err := getHops(ctx, db, commit, threadStatus.Tasklog)
 	if err != nil {
 		return nil, err

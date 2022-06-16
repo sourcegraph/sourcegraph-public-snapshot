@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
@@ -105,6 +107,7 @@ func TestEnforcement_PreCreateUser(t *testing.T) {
 }
 
 func TestEnforcement_AfterCreateUser(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if !licensing.EnforceTiers {
 		licensing.EnforceTiers = true
 		defer func() { licensing.EnforceTiers = false }()
@@ -163,7 +166,7 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 
 			hook := NewAfterCreateUserHook()
 			if hook != nil {
-				err := NewAfterCreateUserHook()(context.Background(), database.NewDB(db), user)
+				err := NewAfterCreateUserHook()(context.Background(), database.NewDB(logger, db), user)
 				if err != nil {
 					t.Fatal(err)
 				}

@@ -48,7 +48,7 @@ func lintLoggingLibraries() lint.Runner {
 		for _, l := range hunk.AddedLines {
 			for _, banned := range bannedImports {
 				if strings.TrimSpace(l) == banned {
-					return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/sourcegraph/lib/log" instead`,
+					return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/log" instead`,
 						banned)
 				}
 			}

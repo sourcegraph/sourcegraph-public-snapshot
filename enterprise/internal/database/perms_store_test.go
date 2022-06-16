@@ -19,6 +19,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -2859,7 +2861,8 @@ WHERE repo_id = 2`, clock().AddDate(-1, 0, 0))
 
 func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		db := database.NewDB(db)
+		logger := logtest.Scoped(t)
+		db := database.NewDB(logger, db)
 		s := perms(db, clock)
 		ctx := context.Background()
 		t.Cleanup(func() {

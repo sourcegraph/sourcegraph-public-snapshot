@@ -20,6 +20,8 @@ import (
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -41,7 +43,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var (
@@ -52,6 +53,7 @@ var (
 const port = "3181"
 
 func frontendDB() (database.DB, error) {
+	logger := log.Scoped("frontendDB", "")
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
@@ -59,7 +61,7 @@ func frontendDB() (database.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return database.NewDB(sqlDB), nil
+	return database.NewDB(logger, sqlDB), nil
 }
 
 func shutdownOnSignal(ctx context.Context, server *http.Server) error {
@@ -235,7 +237,7 @@ func main() {
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	})
-	defer syncLogs()
+	defer syncLogs.Sync()
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()

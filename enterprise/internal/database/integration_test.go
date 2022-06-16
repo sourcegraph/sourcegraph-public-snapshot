@@ -4,6 +4,8 @@ import (
 	"flag"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -28,7 +30,9 @@ func TestIntegration_PermsStore(t *testing.T) {
 
 	t.Parallel()
 
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+
+	db := dbtest.NewDB(logger, t)
 
 	for _, tc := range []struct {
 		name string

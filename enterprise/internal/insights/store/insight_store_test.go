@@ -12,12 +12,15 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestGet(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 
 	_, err := insightsDB.Exec(`INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
@@ -251,7 +254,8 @@ func TestGet(t *testing.T) {
 }
 
 func TestGetAll(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -611,7 +615,8 @@ func TestGetAll(t *testing.T) {
 }
 
 func TestGetAllOnDashboard(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 
 	_, err := insightsDB.Exec(`INSERT INTO insight_view (id, title, description, unique_id)
@@ -867,7 +872,8 @@ func TestGetAllOnDashboard(t *testing.T) {
 }
 
 func TestCreateSeries(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Date(2021, 5, 1, 1, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 
 	store := NewInsightStore(insightsDB)
@@ -955,7 +961,8 @@ func TestCreateSeries(t *testing.T) {
 }
 
 func TestCreateView(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -999,7 +1006,8 @@ func TestCreateView(t *testing.T) {
 }
 
 func TestCreateGetView_WithGrants(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -1129,7 +1137,8 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 }
 
 func TestUpdateView(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -1183,7 +1192,8 @@ func TestUpdateView(t *testing.T) {
 }
 
 func TestUpdateViewSeries(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -1242,7 +1252,8 @@ func TestUpdateViewSeries(t *testing.T) {
 }
 
 func TestDeleteView(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -1308,7 +1319,8 @@ func TestDeleteView(t *testing.T) {
 }
 
 func TestAttachSeriesView(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1386,7 +1398,8 @@ func TestAttachSeriesView(t *testing.T) {
 }
 
 func TestRemoveSeriesFromView(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1483,7 +1496,8 @@ func TestRemoveSeriesFromView(t *testing.T) {
 }
 
 func TestInsightStore_GetDataSeries(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1563,7 +1577,8 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 }
 
 func TestInsightStore_StampRecording(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Date(2020, 1, 5, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1606,7 +1621,8 @@ func TestInsightStore_StampRecording(t *testing.T) {
 }
 
 func TestInsightStore_StampBackfill(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1663,7 +1679,8 @@ func TestInsightStore_StampBackfill(t *testing.T) {
 }
 
 func TestDirtyQueries(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1732,7 +1749,8 @@ func TestDirtyQueries(t *testing.T) {
 }
 
 func TestDirtyQueriesAggregated(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Now().Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1806,7 +1824,8 @@ func TestDirtyQueriesAggregated(t *testing.T) {
 }
 
 func TestSetSeriesEnabled(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1870,7 +1889,8 @@ func TestSetSeriesEnabled(t *testing.T) {
 }
 
 func TestFindMatchingSeries(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -1942,7 +1962,8 @@ func TestFindMatchingSeries(t *testing.T) {
 }
 
 func TestUpdateFrontendSeries(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
 	ctx := context.Background()
 
@@ -2022,7 +2043,8 @@ func TestUpdateFrontendSeries(t *testing.T) {
 }
 
 func TestGetReferenceCount(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 
 	store := NewInsightStore(insightsDB)
@@ -2079,7 +2101,8 @@ func TestGetReferenceCount(t *testing.T) {
 }
 
 func TestGetSoftDeletedSeries(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -2119,7 +2142,8 @@ func TestGetSoftDeletedSeries(t *testing.T) {
 }
 
 func TestGetUnfrozenInsightCount(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	store := NewInsightStore(insightsDB)
 	ctx := context.Background()
 
@@ -2191,7 +2215,8 @@ func TestGetUnfrozenInsightCount(t *testing.T) {
 }
 
 func TestUnfreezeGlobalInsights(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
 	store := NewInsightStore(insightsDB)
 	ctx := context.Background()
 

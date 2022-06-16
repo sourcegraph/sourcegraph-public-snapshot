@@ -6,6 +6,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -16,6 +18,9 @@ import (
 // has_webhooks field on external services based on the external service
 // configuration.
 type ExternalServiceWebhookMigrator struct {
+	// logger is a standardized, strongly-typed, and structured logging interface
+	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
+	logger    log.Logger
 	store     *basestore.Store
 	BatchSize int
 }
@@ -24,7 +29,7 @@ var _ oobmigration.Migrator = &ExternalServiceWebhookMigrator{}
 
 func NewExternalServiceWebhookMigrator(store *basestore.Store) *ExternalServiceWebhookMigrator {
 	// Batch size arbitrarily chosen to match ExternalServiceConfigMigrator.
-	return &ExternalServiceWebhookMigrator{store: store, BatchSize: 50}
+	return &ExternalServiceWebhookMigrator{logger: log.Scoped("ExternalServiceWebhookMigrator", ""), store: store, BatchSize: 50}
 }
 
 func NewExternalServiceWebhookMigratorWithDB(db dbutil.DB) *ExternalServiceWebhookMigrator {
@@ -63,7 +68,7 @@ func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 	}
 	defer func() { err = tx.Done(err) }()
 
-	store := database.ExternalServicesWith(tx)
+	store := database.ExternalServicesWith(m.logger, tx)
 
 	svcs, err := store.List(ctx, database.ExternalServicesListOptions{
 		OrderByDirection: "ASC",

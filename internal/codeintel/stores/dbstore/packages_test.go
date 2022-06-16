@@ -4,13 +4,16 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestUpdatePackages(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	// for foreign key relation
@@ -41,7 +44,8 @@ func TestUpdatePackages(t *testing.T) {
 }
 
 func TestUpdatePackagesEmpty(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	if err := store.UpdatePackages(context.Background(), 0, nil); err != nil {

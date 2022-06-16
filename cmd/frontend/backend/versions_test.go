@@ -9,12 +9,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestGetFirstServiceVersion(t *testing.T) {
 	t.Parallel()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 
@@ -40,7 +43,9 @@ func TestGetFirstServiceVersion(t *testing.T) {
 func TestUpdateServiceVersion(t *testing.T) {
 	t.Parallel()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	for _, tc := range []struct {

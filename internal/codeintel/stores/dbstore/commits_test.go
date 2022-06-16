@@ -17,13 +17,16 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 func TestHasRepository(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	testCases := []struct {
@@ -54,7 +57,8 @@ func TestHasRepository(t *testing.T) {
 }
 
 func TestHasCommit(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	testCases := []struct {
@@ -86,7 +90,8 @@ func TestHasCommit(t *testing.T) {
 }
 
 func TestMarkRepositoryAsDirty(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	for _, id := range []int{50, 51, 52} {
@@ -116,7 +121,8 @@ func TestMarkRepositoryAsDirty(t *testing.T) {
 }
 
 func TestMaxStaleAge(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	for _, id := range []int{50, 51, 52} {
@@ -149,7 +155,8 @@ func TestMaxStaleAge(t *testing.T) {
 }
 
 func TestSkipsDeletedRepositories(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	insertRepo(t, db, 50, "should not be dirty")
@@ -182,7 +189,8 @@ func TestSkipsDeletedRepositories(t *testing.T) {
 }
 
 func TestCommitGraphMetadata(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	if err := store.MarkRepositoryAsDirty(context.Background(), 50); err != nil {
@@ -224,7 +232,8 @@ func TestCommitGraphMetadata(t *testing.T) {
 }
 
 func TestCalculateVisibleUploads(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -282,7 +291,8 @@ func TestCalculateVisibleUploads(t *testing.T) {
 }
 
 func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -334,7 +344,8 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 }
 
 func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -376,7 +387,8 @@ func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
 }
 
 func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -450,7 +462,8 @@ func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
 }
 
 func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -505,7 +518,8 @@ func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
 }
 
 func TestCalculateVisibleUploadsResetsDirtyFlag(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	uploads := []Upload{
@@ -571,7 +585,8 @@ func TestCalculateVisibleUploadsResetsDirtyFlag(t *testing.T) {
 }
 
 func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	uploads := []Upload{
@@ -605,7 +620,8 @@ func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T
 }
 
 func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -697,7 +713,8 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 }
 
 func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfiguration(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -856,7 +873,8 @@ func keysOf(m map[string][]int) (keys []string) {
 //
 
 func BenchmarkCalculateVisibleUploads(b *testing.B) {
-	db := dbtest.NewDB(b)
+	logger := logtest.Scoped(b)
+	db := dbtest.NewDB(logger, b)
 	store := testStore(db)
 
 	graph, err := readBenchmarkCommitGraph()

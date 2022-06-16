@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 
 	"github.com/keegancsmith/sqlf"
@@ -26,10 +28,12 @@ func TestPerformPurge(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
+
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := dbtest.NewInsightsDB(t)
-	postgres := dbtest.NewDB(t)
+	insightsDB := dbtest.NewInsightsDB(logger, t)
+	postgres := dbtest.NewDB(logger, t)
 	permStore := store.NewInsightPermissionStore(postgres)
 	timeseriesStore := store.NewWithClock(insightsDB, permStore, clock)
 	insightStore := store.NewInsightStore(insightsDB)

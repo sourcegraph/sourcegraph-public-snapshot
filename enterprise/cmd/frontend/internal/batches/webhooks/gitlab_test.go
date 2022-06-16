@@ -14,6 +14,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -34,6 +36,7 @@ import (
 
 func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		ctx := context.Background()
 
 		t.Run("ServeHTTP", func(t *testing.T) {
@@ -285,7 +288,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 
 			t.Run("error from handleEvent", func(t *testing.T) {
 				store := gitLabTestSetup(t, db)
-				repoStore := database.ReposWith(store)
+				repoStore := database.ReposWith(logger, store)
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 				repo := createGitLabRepo(t, ctx, repoStore, es)
@@ -336,7 +339,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				for _, action := range []string{"approved", "unapproved"} {
 					t.Run(action, func(t *testing.T) {
 						store := gitLabTestSetup(t, db)
-						repoStore := database.ReposWith(store)
+						repoStore := database.ReposWith(logger, store)
 						h := NewGitLabWebhook(store)
 						es := createGitLabExternalService(t, ctx, store.ExternalServices())
 						repo := createGitLabRepo(t, ctx, repoStore, es)
@@ -386,7 +389,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				} {
 					t.Run(action, func(t *testing.T) {
 						store := gitLabTestSetup(t, db)
-						repoStore := database.ReposWith(store)
+						repoStore := database.ReposWith(logger, store)
 						h := NewGitLabWebhook(store)
 						es := createGitLabExternalService(t, ctx, store.ExternalServices())
 						repo := createGitLabRepo(t, ctx, repoStore, es)
@@ -420,7 +423,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 
 			t.Run("valid pipeline events", func(t *testing.T) {
 				store := gitLabTestSetup(t, db)
-				repoStore := database.ReposWith(store)
+				repoStore := database.ReposWith(logger, store)
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 				repo := createGitLabRepo(t, ctx, repoStore, es)
@@ -526,7 +529,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			// connection on the repo store.
 			externalServices := database.NewMockExternalServiceStore()
 			externalServices.ListFunc.SetDefaultReturn(nil, errors.New("foo"))
-			mockDB := database.NewMockDBFrom(database.NewDB(db))
+			mockDB := database.NewMockDBFrom(database.NewDB(logger, db))
 			mockDB.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 			store := gitLabTestSetup(t, db).With(mockDB)
@@ -637,7 +640,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			// Since these tests don't write to the database, we can just share
 			// the same database setup.
 			store := gitLabTestSetup(t, db)
-			repoStore := database.ReposWith(store)
+			repoStore := database.ReposWith(logger, store)
 			h := NewGitLabWebhook(store)
 			es := createGitLabExternalService(t, ctx, store.ExternalServices())
 			repo := createGitLabRepo(t, ctx, repoStore, es)

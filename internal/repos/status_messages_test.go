@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -20,16 +22,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestStatusMessages(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
-	store := NewStore(logtest.Scoped(t), database.NewDB(db), sql.TxOptions{})
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := NewStore(logtest.Scoped(t), database.NewDB(logger, db), sql.TxOptions{})
 
 	admin, err := db.Users().Create(ctx, database.NewUser{
 		Email:                 "a1@example.com",
@@ -222,7 +225,6 @@ func TestStatusMessages(t *testing.T) {
 		},
 	}
 
-	logger := logtest.Scoped(t)
 	for _, tc := range testCases {
 		tc := tc
 		ctx := context.Background()
@@ -309,7 +311,7 @@ func TestStatusMessages(t *testing.T) {
 				Now:    clock.Now,
 			}
 
-			mockDB := database.NewMockDBFrom(database.NewDB(db))
+			mockDB := database.NewMockDBFrom(database.NewDB(logger, db))
 			if tc.sourcerErr != nil {
 				sourcer := NewFakeSourcer(tc.sourcerErr, NewFakeSource(siteLevelService, nil))
 				syncer.Sourcer = sourcer

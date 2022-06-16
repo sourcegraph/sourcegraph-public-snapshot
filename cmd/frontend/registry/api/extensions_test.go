@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestSplitExtensionID(t *testing.T) {
@@ -99,8 +100,9 @@ type mockRegistryExtension struct {
 }
 
 func TestGetExtensionByExtensionID(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(nil)
+	db := database.NewDB(logger, nil)
 
 	t.Run("root", func(t *testing.T) {
 		mockLocalRegistryExtensionIDPrefix = &strnilptr

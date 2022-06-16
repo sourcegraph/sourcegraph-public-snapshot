@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -24,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {
@@ -32,11 +33,11 @@ func main() {
 		Name:    env.MyName,
 		Version: version.Version(),
 	})
-	defer syncLogs()
+	defer syncLogs.Sync()
 
 	logger := log.Scoped("worker", "worker enterprise edition")
 
-	go setAuthzProviders()
+	go setAuthzProviders(logger)
 
 	additionalJobs := map[string]job.Job{
 		"codehost-version-syncing":   versions.NewSyncingJob(),
@@ -75,14 +76,14 @@ func init() {
 // current actor stored in an operation's context, which is likely an internal actor for many of
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
-func setAuthzProviders() {
+func setAuthzProviders(logger log.Logger) {
 	sqlDB, err := workerdb.Init()
 	if err != nil {
 		return
 	}
 
 	ctx := context.Background()
-	db := database.NewDB(sqlDB)
+	db := database.NewDB(logger, sqlDB)
 
 	for range time.NewTicker(eiauthz.RefreshInterval()).C {
 		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)

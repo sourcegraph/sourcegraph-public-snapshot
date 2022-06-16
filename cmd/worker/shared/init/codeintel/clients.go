@@ -4,13 +4,14 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // InitGitserverClient initializes and returns a gitserver client.
@@ -19,8 +20,9 @@ func InitGitserverClient() (*gitserver.Client, error) {
 }
 
 var initGitserverClient = memo.NewMemoizedConstructor(func() (*gitserver.Client, error) {
+	logger := log.Scoped("client.gitserver", "gitserver client")
 	observationContext := &observation.Context{
-		Logger:     log.Scoped("client.gitserver", "gitserver client"),
+		Logger:     logger,
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -30,7 +32,7 @@ var initGitserverClient = memo.NewMemoizedConstructor(func() (*gitserver.Client,
 		return nil, err
 	}
 
-	return gitserver.New(database.NewDBWith(dbStore), dbStore, observationContext), nil
+	return gitserver.New(database.NewDBWith(logger, dbStore), dbStore, observationContext), nil
 })
 
 func InitRepoUpdaterClient() *repoupdater.Client {

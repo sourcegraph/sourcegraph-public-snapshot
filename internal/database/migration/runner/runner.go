@@ -6,11 +6,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type Runner struct {
@@ -23,13 +24,13 @@ type Runner struct {
 
 type StoreFactory func(ctx context.Context) (Store, error)
 
-func NewRunner(storeFactories map[string]StoreFactory) *Runner {
-	return NewRunnerWithSchemas(storeFactories, schemas.Schemas)
+func NewRunner(logger log.Logger, storeFactories map[string]StoreFactory) *Runner {
+	return NewRunnerWithSchemas(logger, storeFactories, schemas.Schemas)
 }
 
-func NewRunnerWithSchemas(storeFactories map[string]StoreFactory, schemas []*schemas.Schema) *Runner {
+func NewRunnerWithSchemas(logger log.Logger, storeFactories map[string]StoreFactory, schemas []*schemas.Schema) *Runner {
 	return &Runner{
-		logger:         log.Scoped("Runner", ""),
+		logger:         logger,
 		storeFactories: storeFactories,
 		schemas:        schemas,
 	}
@@ -95,7 +96,7 @@ func (r *Runner) forEachSchema(ctx context.Context, schemaNames []string, visito
 			defer wg.Done()
 
 			errorCh <- visitor(ctx, schemaContext{
-				logger:               log.Scoped("schemaContext", "schema context"),
+				logger:               r.logger,
 				schema:               schemaMap[schemaName],
 				store:                storeMap[schemaName],
 				initialSchemaVersion: versionMap[schemaName],

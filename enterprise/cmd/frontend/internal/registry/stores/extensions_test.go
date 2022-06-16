@@ -11,6 +11,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgconn"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -42,7 +44,8 @@ var registryExtensionNamesForTests = []struct {
 }
 
 func TestRegistryExtensions_validNames(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	s := Extensions(db)
@@ -71,7 +74,8 @@ func TestRegistryExtensions_validNames(t *testing.T) {
 }
 
 func TestRegistryExtensions(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	releases := Releases(db)
@@ -329,7 +333,8 @@ func TestRegistryExtensions(t *testing.T) {
 }
 
 func TestRegistryExtensions_ListCount(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	releases := Releases(db)
@@ -418,7 +423,8 @@ func TestRegistryExtensions_ListCount(t *testing.T) {
 }
 
 func TestFeaturedExtensions(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	releases := Releases(db)

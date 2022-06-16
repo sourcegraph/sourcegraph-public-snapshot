@@ -3,8 +3,9 @@ package runner
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func (r *Runner) Validate(ctx context.Context, schemaNames ...string) error {

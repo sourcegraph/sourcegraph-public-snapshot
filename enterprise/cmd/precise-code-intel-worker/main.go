@@ -10,6 +10,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -39,7 +41,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const addr = ":3188"
@@ -57,7 +58,7 @@ func main() {
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	})
-	defer syncLogs()
+	defer syncLogs.Sync()
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
@@ -88,7 +89,7 @@ func main() {
 	}
 
 	// Connect to databases
-	db := database.NewDB(mustInitializeDB())
+	db := database.NewDB(logger, mustInitializeDB())
 	codeIntelDB := mustInitializeCodeIntelDB()
 
 	// Migrations may take a while, but after they're done we'll immediately
@@ -158,7 +159,7 @@ func mustInitializeDB() *sql.DB {
 	// START FLAILING
 
 	ctx := context.Background()
-	db := database.NewDB(sqlDB)
+	db := database.NewDB(logger, sqlDB)
 	go func() {
 		for range time.NewTicker(eiauthz.RefreshInterval()).C {
 			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)

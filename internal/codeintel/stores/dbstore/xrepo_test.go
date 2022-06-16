@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
@@ -17,7 +19,8 @@ import (
 )
 
 func TestDefinitionDumps(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	moniker1 := precise.QualifiedMonikerData{
@@ -154,7 +157,8 @@ func TestDefinitionDumps(t *testing.T) {
 }
 
 func TestReferenceIDs(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -274,7 +278,8 @@ func TestReferenceIDs(t *testing.T) {
 }
 
 func TestReferenceIDsVisibility(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -337,7 +342,8 @@ func TestReferenceIDsVisibility(t *testing.T) {
 }
 
 func TestReferenceIDsRemoteVisibility(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -406,7 +412,8 @@ func TestReferenceIDsRemoteVisibility(t *testing.T) {
 }
 
 func TestReferencesForUpload(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	store := testStore(db)
 
 	insertUploads(t, db,

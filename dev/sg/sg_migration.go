@@ -12,6 +12,8 @@ import (
 	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
@@ -25,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -187,6 +188,7 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 	// configuration and use process env as fallback.
 	var getEnv func(string) string
 	config, _ := sgconf.Get(configFile, configOverwriteFile)
+	logger := log.Scoped("makeRunner", "")
 	if config != nil {
 		getEnv = config.GetEnv
 	} else {
@@ -200,7 +202,7 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 	if err != nil {
 		return nil, err
 	}
-	r, err := connections.RunnerFromDSNsWithSchemas(postgresdsn.RawDSNsBySchema(schemaNames, getEnv), "sg", storeFactory, schemas)
+	r, err := connections.RunnerFromDSNsWithSchemas(logger, postgresdsn.RawDSNsBySchema(schemaNames, getEnv), "sg", storeFactory, schemas)
 	if err != nil {
 		return nil, err
 	}

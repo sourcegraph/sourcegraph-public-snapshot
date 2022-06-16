@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -14,6 +16,7 @@ import (
 )
 
 func TestExternalServiceConfigMigrator(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
@@ -33,7 +36,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	}
 
 	t.Run("Up/Down/Progress", func(t *testing.T) {
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 2
@@ -111,7 +114,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	})
 
 	t.Run("Up/Encryption", func(t *testing.T) {
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 10
@@ -178,7 +181,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	})
 
 	t.Run("Down/Decryption", func(t *testing.T) {
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 10
@@ -240,7 +243,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	})
 
 	t.Run("Up/InvalidKey", func(t *testing.T) {
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 10
@@ -271,7 +274,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	})
 
 	t.Run("Down/Disabled Decryption", func(t *testing.T) {
-		db := database.NewDB(dbtest.NewDB(t))
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 10

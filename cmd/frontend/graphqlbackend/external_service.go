@@ -8,6 +8,8 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,6 +22,7 @@ import (
 )
 
 type externalServiceResolver struct {
+	logger          log.Logger
 	db              database.DB
 	externalService *types.ExternalService
 	warning         string

@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -52,6 +54,7 @@ func WithBase(insightsDB dbutil.DB, primaryDB database.DB, clock func() time.Tim
 
 // Resolver is the GraphQL resolver of all things related to Insights.
 type Resolver struct {
+	logger               log.Logger
 	timeSeriesStore      store.Interface
 	insightMetadataStore store.InsightMetadataStore
 	dataSeriesStore      store.DataSeriesStore
@@ -70,6 +73,7 @@ func New(db dbutil.DB, postgres database.DB) graphqlbackend.InsightsResolver {
 func newWithClock(db dbutil.DB, postgres database.DB, clock func() time.Time) *Resolver {
 	base := WithBase(db, postgres, clock)
 	return &Resolver{
+		logger:               log.Scoped("Resolver", ""),
 		baseInsightResolver:  *base,
 		timeSeriesStore:      base.timeSeriesStore,
 		insightMetadataStore: base.insightStore,
@@ -91,7 +95,7 @@ func (r *Resolver) Insights(ctx context.Context, args *graphqlbackend.InsightsAr
 		workerBaseStore:      r.workerBaseStore,
 		insightMetadataStore: r.insightMetadataStore,
 		ids:                  idList,
-		orgStore:             database.NewDB(r.workerBaseStore.Handle().DB()).Orgs(),
+		orgStore:             database.NewDB(r.logger, r.workerBaseStore.Handle().DB()).Orgs(),
 	}, nil
 }
 

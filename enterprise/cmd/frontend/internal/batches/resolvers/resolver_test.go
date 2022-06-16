@@ -15,6 +15,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
@@ -40,10 +42,12 @@ import (
 func TestNullIDResilience(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+
+	db := dbtest.NewDB(logger, t)
 	sr := New(store.New(db, &observation.TestContext, nil))
 
-	s, err := newSchema(database.NewDB(db), sr)
+	s, err := newSchema(database.NewDB(logger, db), sr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,15 +123,16 @@ func TestCreateBatchSpec(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
 
 	cstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(cstore)
-	esStore := database.ExternalServicesWith(cstore)
+	repoStore := database.ReposWith(logger, cstore)
+	esStore := database.ExternalServicesWith(logger, cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/create-batch-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -150,7 +155,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(database.NewDB(logger, db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -301,14 +306,15 @@ func TestCreateChangesetSpec(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
 	cstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(cstore)
-	esStore := database.ExternalServicesWith(cstore)
+	repoStore := database.ReposWith(logger, cstore)
+	esStore := database.ExternalServicesWith(logger, cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/create-changeset-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -316,7 +322,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(database.NewDB(logger, db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -374,8 +380,9 @@ func TestApplyBatchChange(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	// Ensure our site configuration doesn't have rollout windows so we get a
 	// consistent initial state.
@@ -386,8 +393,8 @@ func TestApplyBatchChange(t *testing.T) {
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
-	repoStore := database.ReposWith(cstore)
-	esStore := database.ExternalServicesWith(cstore)
+	repoStore := database.ReposWith(logger, cstore)
+	esStore := database.ExternalServicesWith(logger, cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/apply-batch-change-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -432,7 +439,7 @@ func TestApplyBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(database.NewDB(logger, db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -541,13 +548,14 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(database.NewDB(logger, db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -626,8 +634,9 @@ func TestCreateBatchChange(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
@@ -647,7 +656,7 @@ func TestCreateBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(database.NewDB(logger, db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -690,8 +699,9 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	// Ensure our site configuration doesn't have rollout windows so we get a
 	// consistent initial state.
@@ -709,8 +719,8 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
-	repoStore := database.ReposWith(cstore)
-	esStore := database.ExternalServicesWith(cstore)
+	repoStore := database.ReposWith(logger, cstore)
+	esStore := database.ExternalServicesWith(logger, cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/apply-create-batch-change-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -718,7 +728,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(database.NewDB(logger, db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -877,8 +887,9 @@ func TestMoveBatchChange(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
@@ -910,7 +921,7 @@ func TestMoveBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(database.NewDB(logger, db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1170,8 +1181,10 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 
 	ct.MockRSAKeygen(t)
 
+	logger := logtest.Scoped(t)
+
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	pruneUserCredentials(t, db, nil)
 
@@ -1180,7 +1193,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(database.NewDB(logger, db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1299,9 +1312,9 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	}
 
 	ct.MockRSAKeygen(t)
-
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	pruneUserCredentials(t, db, nil)
 
@@ -1328,7 +1341,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(database.NewDB(logger, db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1389,8 +1402,9 @@ func TestCreateChangesetComments(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1411,7 +1425,7 @@ func TestCreateChangesetComments(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(database.NewDB(logger, db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1489,8 +1503,9 @@ func TestReenqueueChangesets(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1519,7 +1534,7 @@ func TestReenqueueChangesets(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(database.NewDB(logger, db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1596,8 +1611,9 @@ func TestMergeChangesets(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1629,7 +1645,7 @@ func TestMergeChangesets(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(database.NewDB(logger, db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1706,8 +1722,9 @@ func TestCloseChangesets(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1739,7 +1756,7 @@ func TestCloseChangesets(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(database.NewDB(logger, db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1816,8 +1833,9 @@ func TestPublishChangesets(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1865,7 +1883,7 @@ func TestPublishChangesets(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(database.NewDB(logger, db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1935,8 +1953,9 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 
 	ct.MockRSAKeygen(t)
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	pruneUserCredentials(t, db, nil)
 
@@ -1963,7 +1982,7 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(database.NewDB(logger, db), r)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -9,13 +9,16 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestTransaction(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	setupStoreTest(t, db)
 	store := testStore(db)
 
@@ -62,7 +65,8 @@ func TestTransaction(t *testing.T) {
 }
 
 func TestSavepoints(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	setupStoreTest(t, db)
 
 	NumSavepointTests := 10
@@ -88,7 +92,8 @@ func TestSavepoints(t *testing.T) {
 }
 
 func TestSetLocal(t *testing.T) {
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 	setupStoreTest(t, db)
 	store := testStore(db)
 

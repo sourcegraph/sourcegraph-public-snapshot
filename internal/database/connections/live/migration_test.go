@@ -7,6 +7,8 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -47,10 +49,11 @@ func getSchema(name string) (*schemas.Schema, bool) {
 func testMigrations(t *testing.T, name string, schema *schemas.Schema) {
 	t.Helper()
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := dbtest.NewRawDB(t)
+	db := dbtest.NewRawDB(logger, t)
 	storeFactory := newStoreFactory(&observation.TestContext)
-	migrationRunner := runnerFromDB(storeFactory, db, schema)
+	migrationRunner := runnerFromDB(logger, storeFactory, db, schema)
 	all := schema.Definitions.All()
 
 	t.Run("up", func(t *testing.T) {
@@ -115,7 +118,8 @@ func testMigrations(t *testing.T, name string, schema *schemas.Schema) {
 func testMigrationIdempotency(t *testing.T, name string, schema *schemas.Schema) {
 	t.Helper()
 
-	db := dbtest.NewRawDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewRawDB(logger, t)
 	all := schema.Definitions.All()
 
 	t.Run("idempotent up", func(t *testing.T) {

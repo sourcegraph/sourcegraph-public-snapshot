@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -14,20 +16,23 @@ import (
 )
 
 // NewAuthzStore returns an OSS database.AuthzStore set with enterprise implementation.
-func NewAuthzStore(db dbutil.DB, clock func() time.Time) database.AuthzStore {
+func NewAuthzStore(logger log.Logger, db dbutil.DB, clock func() time.Time) database.AuthzStore {
 	return &authzStore{
-		store: Perms(db, clock),
+		logger: logger,
+		store:  Perms(db, clock),
 	}
 }
 
-func NewAuthzStoreWith(other basestore.ShareableStore, clock func() time.Time) database.AuthzStore {
+func NewAuthzStoreWith(logger log.Logger, other basestore.ShareableStore, clock func() time.Time) database.AuthzStore {
 	return &authzStore{
-		store: PermsWith(other, clock),
+		logger: logger,
+		store:  PermsWith(other, clock),
 	}
 }
 
 type authzStore struct {
-	store PermsStore
+	logger log.Logger
+	store  PermsStore
 }
 
 // GrantPendingPermissions grants pending permissions for a user, which implements the database.AuthzStore interface.
@@ -43,7 +48,7 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *database
 	}
 
 	// Gather external accounts associated to the user.
-	extAccounts, err := database.ExternalAccountsWith(s.store).List(ctx,
+	extAccounts, err := database.ExternalAccountsWith(s.logger, s.store).List(ctx,
 		database.ExternalAccountsListOptions{
 			UserID:         args.UserID,
 			ExcludeExpired: true,
@@ -89,7 +94,7 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *database
 		}
 
 	case "username":
-		user, err := database.UsersWith(s.store).GetByID(ctx, args.UserID)
+		user, err := database.UsersWith(s.logger, s.store).GetByID(ctx, args.UserID)
 		if err != nil {
 			return errors.Wrap(err, "get user")
 		}

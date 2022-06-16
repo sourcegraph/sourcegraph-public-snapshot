@@ -7,13 +7,16 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestStaleSourcedCommits(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
 	store := testStore(db)
 
 	now := time.Unix(1587396557, 0).UTC()
@@ -69,8 +72,9 @@ func TestStaleSourcedCommits(t *testing.T) {
 }
 
 func TestUpdateSourcedCommits(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
 	store := testStore(db)
 
 	now := time.Unix(1587396557, 0).UTC()
@@ -135,8 +139,9 @@ func TestUpdateSourcedCommits(t *testing.T) {
 }
 
 func TestDeleteSourcedCommits(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
 	store := testStore(db)
 
 	now := time.Unix(1587396557, 0).UTC()
@@ -206,8 +211,9 @@ func TestDeleteSourcedCommits(t *testing.T) {
 }
 
 func TestDeleteOldAuditLogs(t *testing.T) {
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	logger := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, sqlDB)
 	store := testStore(db)
 
 	// Sanity check for syntax only

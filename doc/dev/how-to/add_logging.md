@@ -33,7 +33,7 @@ Initialize `lib/log` package within your program's `main()` function, for exampl
 
 ```go
 import (
-  "github.com/sourcegraph/sourcegraph/lib/log"
+  "github.com/sourcegraph/log"
   "github.com/sourcegraph/sourcegraph/internal/env"
   "github.com/sourcegraph/sourcegraph/internal/version"
   "github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -82,7 +82,7 @@ This allows you to easily trace, for example, the execution of an event or a par
 For example:
 
 ```go
-import "github.com/sourcegraph/sourcegraph/lib/log"
+import "github.com/sourcegraph/log"
 
 func newWorker(/* ... */) *Worker {
   logger := log.Scoped("worker", "the worker process handles ...").
@@ -246,4 +246,4 @@ When writing a test, ensure that `logtest.Scope` in the tightest scope possible.
 
 * The first scope of the logger should be the name of the service and following the same naming of the service. In general, if the logger is initialized as described in [handling logging](#handling-logging) the name should be correct.
 * The logger parameter should either be immediately after `ctx context.Context`, or be the first parameter.
-* In some cases there might already be a `log` module imported. Use the alias `sglog` to refer to `lib/log`, for example `import sglog "github.com/sourcegraph/sourcegraph/lib/log"`.
+* In some cases there might already be a `log` module imported. Use the alias `sglog` to refer to `lib/log`, for example `import sglog "github.com/sourcegraph/log"`.

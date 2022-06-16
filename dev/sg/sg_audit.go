@@ -15,11 +15,12 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
+
 	sgslack "github.com/sourcegraph/sourcegraph/dev/sg/internal/slack"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var auditFormatFlag string

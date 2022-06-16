@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 type repoListerMock struct{}
@@ -38,7 +39,8 @@ func (r repoListerMock) List(ctx context.Context, q zoektquery.Q, opts *zoekt.Li
 }
 
 func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
-	db := database.NewDB(nil)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, nil)
 	defaultBranchRef := "refs/heads/main"
 	gitserver.Mocks.ResolveRevision = func(rev string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if rev != defaultBranchRef && strings.HasSuffix(rev, defaultBranchRef) {
@@ -53,7 +55,7 @@ func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
 	defer git.ResetMocks()
 
 	repoIndexResolver := &repositoryTextSearchIndexResolver{
-		repo:   NewRepositoryResolver(database.NewDB(db), &types.Repo{Name: "alice/repo"}),
+		repo:   NewRepositoryResolver(database.NewDB(logger, db), &types.Repo{Name: "alice/repo"}),
 		client: &repoListerMock{},
 	}
 	refs, err := repoIndexResolver.Refs(context.Background())

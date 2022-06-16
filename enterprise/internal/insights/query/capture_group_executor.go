@@ -14,6 +14,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -31,7 +33,7 @@ type CaptureGroupExecutor struct {
 func NewCaptureGroupExecutor(postgres database.DB, clock func() time.Time) *CaptureGroupExecutor {
 	executor := CaptureGroupExecutor{
 		justInTimeExecutor: justInTimeExecutor{
-			db:        database.NewDB(postgres),
+			db:        database.NewDB(log.Scoped("CaptureGroupExecutor", ""), postgres),
 			repoStore: postgres.Repos(),
 			// filter:    compression.NewHistoricalFilter(true, clock().Add(time.Hour*24*365*-1), insightsDb),
 			filter: &compression.NoopFilter{},

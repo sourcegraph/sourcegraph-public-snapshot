@@ -6,10 +6,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // indexableReposMaxAge is how long we cache the list of indexable repos. The list
@@ -35,9 +36,9 @@ func (c *cachedRepos) repos() ([]types.MinimalRepo, bool) {
 
 var globalReposCache = reposCache{}
 
-func NewIndexableReposLister(store database.RepoStore) *IndexableReposLister {
+func NewIndexableReposLister(logger log.Logger, store database.RepoStore) *IndexableReposLister {
 	return &IndexableReposLister{
-		logger:     log.Scoped("IndexableReposLister", "List indexable repos"),
+		logger:     logger,
 		store:      store,
 		reposCache: &globalReposCache,
 	}

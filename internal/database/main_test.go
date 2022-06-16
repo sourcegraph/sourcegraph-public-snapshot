@@ -5,7 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 

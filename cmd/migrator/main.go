@@ -13,6 +13,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/log"
+
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -24,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -56,7 +57,7 @@ func mainErr(ctx context.Context, args []string) error {
 
 	logger := log.Scoped("mainErr", "")
 
-	defer syncLogs()
+	defer syncLogs.Sync()
 
 	runnerFactory := newRunnerFactory()
 	outputFactory := func() *output.Output { return out }
@@ -102,8 +103,9 @@ func mainErr(ctx context.Context, args []string) error {
 }
 
 func newRunnerFactory() func(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
+	logger := log.Scoped("runner", "")
 	observationContext := &observation.Context{
-		Logger:     log.Scoped("runner", ""),
+		Logger:     logger,
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -117,7 +119,7 @@ func newRunnerFactory() func(ctx context.Context, schemaNames []string) (cliutil
 		storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 			return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, operations))
 		}
-		r, err := connections.RunnerFromDSNs(dsns, appName, storeFactory)
+		r, err := connections.RunnerFromDSNs(logger, dsns, appName, storeFactory)
 		if err != nil {
 			return nil, err
 		}

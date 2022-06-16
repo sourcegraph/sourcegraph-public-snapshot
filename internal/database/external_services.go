@@ -16,6 +16,8 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -28,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -152,9 +153,9 @@ func (e *externalServiceStore) copy() *externalServiceStore {
 }
 
 // ExternalServicesWith instantiates and returns a new ExternalServicesStore with prepared statements.
-func ExternalServicesWith(other basestore.ShareableStore) ExternalServiceStore {
+func ExternalServicesWith(logger log.Logger, other basestore.ShareableStore) ExternalServiceStore {
 	return &externalServiceStore{
-		logger: log.Scoped("externalServiceStore", ""),
+		logger: logger,
 		Store:  basestore.NewWithHandle(other.Handle()),
 	}
 }
@@ -615,7 +616,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 	// Prior to saving the record, run a validation hook.
 	if BeforeCreateExternalService != nil {
-		if err := BeforeCreateExternalService(ctx, NewDB(e.Store.Handle().DB()).ExternalServices()); err != nil {
+		if err := BeforeCreateExternalService(ctx, NewDB(e.logger, e.Store.Handle().DB()).ExternalServices()); err != nil {
 			return err
 		}
 	}

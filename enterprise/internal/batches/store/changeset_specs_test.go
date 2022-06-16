@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 // Comparing the IDs is good enough, no need to bloat the tests here.
@@ -32,8 +33,9 @@ var cmtRewirerMappingsOpts = cmp.FilterPath(func(p cmp.Path) bool {
 }, cmp.Ignore())
 
 func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	repoStore := database.ReposWith(s)
-	esStore := database.ExternalServicesWith(s)
+	logger := logtest.Scoped(t)
+	repoStore := database.ReposWith(logger, s)
+	esStore := database.ExternalServicesWith(logger, s)
 
 	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(typestest.Opt.RepoDeletedAt(clock.Now()))
@@ -801,8 +803,9 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 }
 
 func testStoreGetRewirerMappingWithArchivedChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	repoStore := database.ReposWith(s)
-	esStore := database.ExternalServicesWith(s)
+	logger := logtest.Scoped(t)
+	repoStore := database.ReposWith(logger, s)
+	esStore := database.ExternalServicesWith(logger, s)
 
 	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -854,8 +857,9 @@ func testStoreGetRewirerMappingWithArchivedChangesets(t *testing.T, ctx context.
 }
 
 func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	repoStore := database.ReposWith(s)
-	esStore := database.ExternalServicesWith(s)
+	logger := logtest.Scoped(t)
+	repoStore := database.ReposWith(logger, s)
+	esStore := database.ExternalServicesWith(logger, s)
 
 	// Let's set up a batch change with one of every changeset state.
 
@@ -984,8 +988,9 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 }
 
 func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.Context, s *Store, _ ct.Clock) {
-	repoStore := database.ReposWith(s)
-	esStore := database.ExternalServicesWith(s)
+	logger := logtest.Scoped(t)
+	repoStore := database.ReposWith(logger, s)
+	esStore := database.ExternalServicesWith(logger, s)
 
 	// Let's set up a batch change with one of every changeset state.
 
@@ -1142,8 +1147,9 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 }
 
 func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	repoStore := database.ReposWith(s)
-	esStore := database.ExternalServicesWith(s)
+	logger := logtest.Scoped(t)
+	repoStore := database.ReposWith(logger, s)
+	esStore := database.ExternalServicesWith(logger, s)
 
 	// OK, let's set up an interesting scenario. We're going to set up a
 	// batch change that tracks two changesets in different repositories, and

@@ -10,6 +10,8 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 
 	sctypes "github.com/sourcegraph/sourcegraph/internal/types"
@@ -112,11 +114,12 @@ type SearchContextLoader interface {
 }
 
 type scLoader struct {
+	logger  log.Logger
 	primary dbutil.DB
 }
 
 func (l *scLoader) GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error) {
-	db := database.NewDB(l.primary)
+	db := database.NewDB(l.logger, l.primary)
 	return searchcontexts.ResolveSearchContextSpec(ctx, db, name)
 }
 

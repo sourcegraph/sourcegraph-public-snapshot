@@ -9,6 +9,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	keytesting "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -19,7 +21,8 @@ func TestWebhookLogStore(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
 
 	t.Run("Create", func(t *testing.T) {
 		t.Parallel()
@@ -132,11 +135,12 @@ func TestWebhookLogStore(t *testing.T) {
 	t.Run("List/Count", func(t *testing.T) {
 		t.Parallel()
 
+		logger := logtest.Scoped(t)
 		tx, err := db.Begin()
 		assert.Nil(t, err)
 		defer tx.Rollback()
 
-		esStore := NewDB(tx).ExternalServices()
+		esStore := NewDB(logger, tx).ExternalServices()
 		es := &types.ExternalService{
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "GitLab",
@@ -248,11 +252,12 @@ func TestWebhookLogStore(t *testing.T) {
 	t.Run("DeleteStale", func(t *testing.T) {
 		t.Parallel()
 
+		logger := logtest.Scoped(t)
 		tx, err := db.Begin()
 		assert.Nil(t, err)
 		defer tx.Rollback()
 
-		esStore := NewDB(tx).ExternalServices()
+		esStore := NewDB(logger, tx).ExternalServices()
 		es := &types.ExternalService{
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "GitLab",
