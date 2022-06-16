@@ -1,150 +1,208 @@
 package cache
 
 import (
-	"fmt"
-	"os"
+	"encoding/json"
+	"errors"
 	"testing"
 
-	"gopkg.in/yaml.v2"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/template"
+	"github.com/sourcegraph/sourcegraph/lib/batches/env"
 )
 
-const testExecutionCacheKeyEnv = "TEST_EXECUTION_CACHE_KEY_ENV"
+func TestExecutionKey_Key(t *testing.T) {
+	var singleStepEnv env.Environment
+	err := json.Unmarshal([]byte(`{"FOO": "BAR"}`), &singleStepEnv)
+	require.NoError(t, err)
 
-func TestExecutionKey_RegressionTest(t *testing.T) {
-	// This test is a regression that should fail when we change something that
-	// influences the cache key generation, which would lead to busted caches.
-	//
-	// If this test fails and you're sure about the change, update the `want`
-	// value below.
+	var multipleStepEnv env.Environment
+	err = json.Unmarshal([]byte(`{"FOO": "BAR", "BAZ": "FAZ"}`), &multipleStepEnv)
+	require.NoError(t, err)
 
-	var steps []batches.Step
-	if err := yaml.Unmarshal([]byte(`
-- run:  if [[ -f "package.json" ]]; then cat package.json | jq -j .name; fi
-  container: jiapantw/jq-alpine:latest
-  outputs:
-    projectName:
-      value: ${{ step.stdout }}
-- run:  echo "This only runs in automation-testing" >> message.txt
-  container: alpine:3
-  if: ${{ eq repository.name "github.com/sourcegraph/automation-testing" }}
-- run: bar
-  container: alpine:3
-  env:
-    - FILE_TO_CHECK: .tool-versions
-    - `+testExecutionCacheKeyEnv+`
-`), &steps); err != nil {
-		t.Fatal(err)
-	}
+	var nullStepEnv env.Environment
+	err = json.Unmarshal([]byte(`{"FOO": "BAR", "TEST_EXECUTION_CACHE_KEY_ENV": null}`), &nullStepEnv)
+	require.NoError(t, err)
 
-	key := ExecutionKey{
-		Repository: batches.Repository{
-			ID:          "graphql-id",
-			Name:        "github.com/sourcegraph/src-cli",
-			BaseRef:     "refs/heads/f00b4r",
-			BaseRev:     "c0mmit",
-			FileMatches: []string{"aa.go"},
+	tests := []struct {
+		name          string
+		keyer         ExecutionKey
+		expectedKey   string
+		expectedError error
+	}{
+		{
+			name: "simple key",
+			keyer: ExecutionKey{
+				Repository: batches.Repository{
+					ID:          "my-repo",
+					Name:        "github.com/sourcegraph/src-cli",
+					BaseRef:     "refs/heads/f00b4r",
+					BaseRev:     "c0mmit",
+					FileMatches: []string{"baz.go"},
+				},
+				Steps: []batches.Step{{Run: "foo"}},
+			},
+			expectedKey: "cu8r-xdguU4s0kn9_uxL5g",
 		},
-		Path:               "path/to/workspace",
-		OnlyFetchWorkspace: true,
-		Steps:              steps,
-		BatchChangeAttributes: &template.BatchChangeAttributes{
-			Name:        "Batch Change Name",
-			Description: "Batch Change Description",
+		{
+			name: "multiple steps",
+			keyer: ExecutionKey{
+				Repository: batches.Repository{
+					ID:          "my-repo",
+					Name:        "github.com/sourcegraph/src-cli",
+					BaseRef:     "refs/heads/f00b4r",
+					BaseRev:     "c0mmit",
+					FileMatches: []string{"baz.go"},
+				},
+				Steps: []batches.Step{
+					{Run: "foo"},
+					{Run: "bar"},
+				},
+			},
+			expectedKey: "nXrDA5Sv3jE2wGVTrixgJw",
+		},
+		{
+			name: "step env",
+			keyer: ExecutionKey{
+				Repository: batches.Repository{
+					ID:          "my-repo",
+					Name:        "github.com/sourcegraph/src-cli",
+					BaseRef:     "refs/heads/f00b4r",
+					BaseRev:     "c0mmit",
+					FileMatches: []string{"baz.go"},
+				},
+				Steps: []batches.Step{{Run: "foo", Env: singleStepEnv}},
+			},
+			expectedKey: "Ye3eFDmvvADzZuz-TWEA2g",
+		},
+		{
+			name: "multiple step envs",
+			keyer: ExecutionKey{
+				Repository: batches.Repository{
+					ID:          "my-repo",
+					Name:        "github.com/sourcegraph/src-cli",
+					BaseRef:     "refs/heads/f00b4r",
+					BaseRev:     "c0mmit",
+					FileMatches: []string{"baz.go"},
+				},
+				Steps: []batches.Step{{Run: "foo", Env: multipleStepEnv}},
+			},
+			expectedKey: "mZk8q7zjJioxI2nTwrt7XQ",
+		},
+		{
+			name: "null step env",
+			keyer: ExecutionKey{
+				Repository: batches.Repository{
+					ID:          "my-repo",
+					Name:        "github.com/sourcegraph/src-cli",
+					BaseRef:     "refs/heads/f00b4r",
+					BaseRev:     "c0mmit",
+					FileMatches: []string{"baz.go"},
+				},
+				Steps: []batches.Step{{Run: "foo", Env: nullStepEnv}},
+			},
+			expectedKey: "_txGuv3XrkWWVQz6hGsKhw",
 		},
 	}
-
-	have, err := key.Key()
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	want := "fsDKj1Uf1jNMhRXCJXE6nQ"
-	if have != want {
-		t.Fatalf("regression detected! cache key changed. have=%q, want=%q", have, want)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			key, err := test.keyer.Key()
+			assert.ErrorIs(t, err, test.expectedError)
+			assert.Equal(t, test.expectedKey, key)
+		})
 	}
 }
 
-func TestExecutionKeyWithEnvResolution(t *testing.T) {
-	// Let's set up an array of steps that we can test with. One step will
-	// depend on an environment variable outside the spec.
-	var steps []batches.Step
-	if err := yaml.Unmarshal([]byte(`
-- run: foo
-  env:
-    FOO: BAR
+func TestExecutionKeyWithGlobalEnv_Key(t *testing.T) {
+	var stepEnv env.Environment
+	// use an array to get the key to have a nil value
+	err := json.Unmarshal([]byte(`["SOME_ENV"]`), &stepEnv)
+	require.NoError(t, err)
 
-- run: bar
-  env:
-    - FOO: BAR
-    - `+testExecutionCacheKeyEnv+`
-`), &steps); err != nil {
-		t.Fatal(err)
-	}
-
-	// And now we can set up a key to work with.
-	key := ExecutionKeyWithGlobalEnv{
-		ExecutionKey: &ExecutionKey{
-			Repository: batches.Repository{
-				ID:          "graphql-id",
-				Name:        "github.com/sourcegraph/src-cli",
-				BaseRef:     "refs/heads/f00b4r",
-				BaseRev:     "c0mmit",
-				FileMatches: []string{"aa.go"},
+	tests := []struct {
+		name          string
+		keyer         ExecutionKeyWithGlobalEnv
+		expectedKey   string
+		expectedError error
+	}{
+		{
+			name: "simple key",
+			keyer: ExecutionKeyWithGlobalEnv{
+				ExecutionKey: &ExecutionKey{
+					Repository: batches.Repository{
+						ID:          "my-repo",
+						Name:        "github.com/sourcegraph/src-cli",
+						BaseRef:     "refs/heads/f00b4r",
+						BaseRev:     "c0mmit",
+						FileMatches: []string{"baz.go"},
+					},
+					Steps: []batches.Step{{Run: "foo"}},
+				},
+				GlobalEnv: []string{},
 			},
-			Steps: steps,
+			expectedKey: "cu8r-xdguU4s0kn9_uxL5g",
 		},
-		GlobalEnv: os.Environ(),
+		{
+			name: "has global env",
+			keyer: ExecutionKeyWithGlobalEnv{
+				ExecutionKey: &ExecutionKey{
+					Repository: batches.Repository{
+						ID:          "my-repo",
+						Name:        "github.com/sourcegraph/src-cli",
+						BaseRef:     "refs/heads/f00b4r",
+						BaseRev:     "c0mmit",
+						FileMatches: []string{"baz.go"},
+					},
+					Steps: []batches.Step{{Run: "foo", Env: stepEnv}},
+				},
+				GlobalEnv: []string{"SOME_ENV=FOO", "FAZ=BAZ"},
+			},
+			expectedKey: "UWaad_y5HkY90tPkgBO7og",
+		},
+		{
+			name: "env not updated",
+			keyer: ExecutionKeyWithGlobalEnv{
+				ExecutionKey: &ExecutionKey{
+					Repository: batches.Repository{
+						ID:          "my-repo",
+						Name:        "github.com/sourcegraph/src-cli",
+						BaseRef:     "refs/heads/f00b4r",
+						BaseRev:     "c0mmit",
+						FileMatches: []string{"baz.go"},
+					},
+					Steps: []batches.Step{{Run: "foo", Env: stepEnv}},
+				},
+				GlobalEnv: []string{"FAZ=BAZ"},
+			},
+			expectedKey: "tq9NsiMdvoKqMpgxE00XGQ",
+		},
+		{
+			name: "malformed global env",
+			keyer: ExecutionKeyWithGlobalEnv{
+				ExecutionKey: &ExecutionKey{
+					Repository: batches.Repository{
+						ID:          "my-repo",
+						Name:        "github.com/sourcegraph/src-cli",
+						BaseRef:     "refs/heads/f00b4r",
+						BaseRev:     "c0mmit",
+						FileMatches: []string{"baz.go"},
+					},
+					Steps: []batches.Step{{Run: "foo", Env: stepEnv}},
+				},
+				GlobalEnv: []string{"SOME_ENV"},
+			},
+			expectedError: errors.New("resolving environment for step 0: unable to parse environment variable \"SOME_ENV\""),
+		},
 	}
-
-	// All righty. Let's get ourselves a baseline cache key here.
-	initial, err := key.Key()
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	// Let's set an unrelated environment variable and ensure we still have the
-	// same key.
-	key.GlobalEnv = append(key.GlobalEnv, fmt.Sprintf("%s=%s", testExecutionCacheKeyEnv+"_UNRELATED", "foo"))
-	have, err := key.Key()
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if initial != have {
-		t.Errorf("unexpected change in key: initial=%q have=%q", initial, have)
-	}
-
-	// Let's now set the environment variable referenced in the steps and verify
-	// that the cache key does change.
-	key.GlobalEnv = append(key.GlobalEnv, fmt.Sprintf("%s=%s", testExecutionCacheKeyEnv, "foo"))
-	have, err = key.Key()
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if initial == have {
-		t.Errorf("unexpected lack of change in key: %q", have)
-	}
-
-	// And, just to be sure, let's change it again.
-	key.GlobalEnv[len(key.GlobalEnv)-1] = fmt.Sprintf("%s=%s", testExecutionCacheKeyEnv, "bar")
-	again, err := key.Key()
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if initial == again || have == again {
-		t.Errorf("unexpected lack of change in key: %q", again)
-	}
-
-	// Finally, if we unset the environment variable again, we should get a key
-	// that matches the initial key.
-	key.GlobalEnv = key.GlobalEnv[:len(key.GlobalEnv)-1]
-	have, err = key.Key()
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if initial != have {
-		t.Errorf("unexpected change in key: initial=%q have=%q", initial, have)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			key, err := test.keyer.Key()
+			if test.expectedError != nil {
+				assert.Equal(t, test.expectedError.Error(), err.Error())
+			} else {
+				assert.Equal(t, test.expectedKey, key)
+			}
+		})
 	}
 }
