@@ -239,7 +239,12 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 					// progress to discard.
 					var updateOutput strings.Builder
 					if err := check.Update(ctx, std.NewFixedOutput(&updateOutput, true), args); err != nil {
-						progress.StatusBarFailf(i, "Check %s failed: %s", check.Name, err.Error())
+						errParts := strings.SplitN(err.Error(), "\n", 2)
+						if len(errParts) > 2 {
+							// truncate to one line - writing multple lines causes some jank
+							errParts[0] += " ..."
+						}
+						progress.StatusBarFailf(i, "Check %s failed: %s", check.Name, errParts[0])
 						check.cachedCheckOutput = updateOutput.String()
 						didErr.Store(true)
 						event = "error"
