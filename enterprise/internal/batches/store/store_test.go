@@ -7,6 +7,7 @@ import (
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -25,7 +26,7 @@ func storeTest(db *sql.DB, key encryption.Key, f storeTestFunc) func(*testing.T)
 		// of the tests, so that foreign key constraints can be deferred and we
 		// don't need to insert a lot of dependencies into the DB (users,
 		// repos, ...) to setup the tests.
-		tx := database.NewUntypedDB(dbtest.NewTx(t, db))
+		tx := database.NewDBWith(basestore.NewWithHandle(basestore.NewHandleWithTx(dbtest.NewTx(t, db), sql.TxOptions{})))
 		s := NewWithClock(tx, &observation.TestContext, key, c.Now)
 
 		f(t, context.Background(), s, c)

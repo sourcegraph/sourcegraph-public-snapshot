@@ -274,6 +274,27 @@ func TestExternalAccounts_List(t *testing.T) {
 			},
 		},
 		{
+			name:        "ListByServiceTypeOnly",
+			expectedIDs: []int32{userIDs[0], userIDs[1]},
+			args: ExternalAccountsListOptions{
+				ServiceType: "xa",
+			},
+		},
+		{
+			name:        "ListByServiceIDOnly",
+			expectedIDs: []int32{userIDs[0], userIDs[1]},
+			args: ExternalAccountsListOptions{
+				ServiceID: "xb",
+			},
+		},
+		{
+			name:        "ListByClientIDOnly",
+			expectedIDs: []int32{userIDs[2]},
+			args: ExternalAccountsListOptions{
+				ClientID: "yc",
+			},
+		},
+		{
 			name:        "ListByServiceNotFound",
 			expectedIDs: []int32{},
 			args: ExternalAccountsListOptions{
@@ -445,6 +466,25 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 
 		if len(accts) > 0 {
 			t.Fatalf("Want no external accounts but got %d", len(accts))
+		}
+	})
+
+	t.Run("Include expired", func(t *testing.T) {
+		err := db.UserExternalAccounts().TouchExpired(ctx, acct.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{
+			UserID:      userID,
+			OnlyExpired: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(accts) == 0 {
+			t.Fatalf("Want external accounts but got 0")
 		}
 	})
 

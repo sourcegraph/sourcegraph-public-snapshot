@@ -553,7 +553,8 @@ describe('Batches', () => {
         })
     })
 
-    describe('Batch changes details', () => {
+    // Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/37233
+    describe.skip('Batch changes details', () => {
         for (const entityType of ['user', 'org'] as const) {
             it(`displays a single batch change for ${entityType}`, async () => {
                 testContext.overrideGraphQL({
@@ -573,7 +574,8 @@ describe('Batches', () => {
                 await percySnapshotWithVariants(driver.page, `Batch change details page ${entityType}`)
                 await accessibilityAudit(driver.page)
 
-                // Expand one changeset.
+                // TODO: This is the part of the test that flakes because "Error: Node is
+                // either not clickable or not an HTMLElement"
                 await driver.page.click('.test-batches-expand-changeset')
                 // Expect one diff to be rendered.
                 await driver.page.waitForSelector('.test-file-diff-node')

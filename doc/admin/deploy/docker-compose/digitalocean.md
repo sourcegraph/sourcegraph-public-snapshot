@@ -144,13 +144,7 @@ After initial setup, we recommend you do the following:
 
 ## Update your Sourcegraph version
 
-To update to the most recent version of Sourcegraph (X.Y.Z), SSH into your instance and run the following:
-
-```bash
-cd /root/deploy-sourcerph-docker/docker-compose
-```
-
-And refer to the [Upgrade section](index.md#upgrade) of the [Docker Compose deployment docs](index.md).
+Refer to the [Docker Compose upgrade docs](../../updates/upgrade_docker-compose.md).
 
 ## Storage and Backups
 

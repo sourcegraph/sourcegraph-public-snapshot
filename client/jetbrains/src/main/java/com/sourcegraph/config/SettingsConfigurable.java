@@ -2,6 +2,7 @@ package com.sourcegraph.config;
 
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.messages.MessageBus;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,12 +49,18 @@ public class SettingsConfigurable implements Configurable {
 
     @Override
     public void apply() {
+        MessageBus bus = project.getMessageBus();
+        PluginSettingChangeActionNotifier publisher = bus.syncPublisher(PluginSettingChangeActionNotifier.TOPIC);
+        publisher.beforeAction();
+
         SourcegraphConfig settings = SourcegraphConfig.getInstance(project);
         settings.url = mySettingsComponent.getSourcegraphUrl();
         settings.accessToken = mySettingsComponent.getAccessToken();
         settings.defaultBranch = mySettingsComponent.getDefaultBranchName();
         settings.remoteUrlReplacements = mySettingsComponent.getRemoteUrlReplacements();
         settings.isGlobbingEnabled = mySettingsComponent.isGlobbingEnabled();
+
+        publisher.afterAction();
     }
 
     @Override
