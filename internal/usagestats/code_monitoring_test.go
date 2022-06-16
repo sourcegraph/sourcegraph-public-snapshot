@@ -162,8 +162,8 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 		SELECT 
 			cm_queries.id, 
 			CASE WHEN s < 6 THEN 'completed' ELSE 'failed' END, 
-			now(), 
-			now() - s * '1 second'::interval
+			now() - s * '1 day'::interval, 
+			now() - s * '1 day'::interval - s * '1 second'::interval
 		FROM cm_queries
 		JOIN cm_monitors ON cm_queries.monitor = cm_monitors.id
 		CROSS JOIN generate_series(0, 10) s
@@ -173,12 +173,14 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 
 	_, err = db.ExecContext(ctx, `
 		INSERT INTO cm_action_jobs 
-			(email, webhook, slack_webhook, state)
+			(email, webhook, slack_webhook, state, finished_at, started_at)
 		SELECT 
 			cm_emails.id, 
 			NULL::bigint, 
 			NULL::bigint, 
-			CASE WHEN s < 6 THEN 'completed' ELSE 'failed' END
+			CASE WHEN s < 6 THEN 'completed' ELSE 'failed' END,
+			now() - s * '1 day'::interval, 
+			now() - s * '1 day'::interval - s * '1 second'::interval
 		FROM cm_emails
 		CROSS JOIN generate_series(1, 10) s
 		JOIN cm_monitors ON cm_emails.monitor = cm_monitors.id
@@ -189,7 +191,9 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 			NULL::bigint, 
 			cm_webhooks.id, 
 			NULL::bigint, 
-			CASE WHEN s < 6 THEN 'completed' ELSE 'failed' END
+			CASE WHEN s < 6 THEN 'completed' ELSE 'failed' END,
+			now() - s * '1 day'::interval, 
+			now() - s * '1 day'::interval - s * '1 second'::interval
 		FROM cm_webhooks
 		CROSS JOIN generate_series(1, 10) s
 		JOIN cm_monitors ON cm_webhooks.monitor = cm_monitors.id
@@ -200,7 +204,9 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 			NULL::bigint, 
 			NULL::bigint, 
 			cm_slack_webhooks.id, 
-			CASE WHEN s < 6 THEN 'completed' ELSE 'failed' END
+			CASE WHEN s < 6 THEN 'completed' ELSE 'failed' END,
+			now() - s * '1 day'::interval, 
+			now() - s * '1 day'::interval - s * '1 second'::interval
 		FROM cm_slack_webhooks
 		CROSS JOIN generate_series(1, 10) s
 		JOIN cm_monitors ON cm_slack_webhooks.monitor = cm_monitors.id
@@ -225,25 +231,25 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 		ManageFormSubmitted:                           ptr(int32(3)),
 		ManageDeleteSubmitted:                         ptr(int32(4)),
 		LogsPageViewed:                                ptr(int32(5)),
-		EmailActionsTriggered:                         ptr(int32(40)),
+		EmailActionsTriggered:                         ptr(int32(24)),
 		EmailActionsTriggeredUniqueUsers:              ptr(int32(4)),
-		EmailActionsErrored:                           ptr(int32(20)),
+		EmailActionsErrored:                           ptr(int32(4)),
 		EmailActionsEnabled:                           ptr(int32(4)),
 		EmailActionsEnabledUniqueUsers:                ptr(int32(4)),
-		SlackActionsTriggered:                         ptr(int32(20)),
+		SlackActionsTriggered:                         ptr(int32(12)),
 		SlackActionsTriggeredUniqueUsers:              ptr(int32(2)),
-		SlackActionsErrored:                           ptr(int32(10)),
+		SlackActionsErrored:                           ptr(int32(2)),
 		SlackActionsEnabled:                           ptr(int32(2)),
 		SlackActionsEnabledUniqueUsers:                ptr(int32(2)),
-		WebhookActionsTriggered:                       ptr(int32(20)),
+		WebhookActionsTriggered:                       ptr(int32(12)),
 		WebhookActionsTriggeredUniqueUsers:            ptr(int32(2)),
-		WebhookActionsErrored:                         ptr(int32(10)),
+		WebhookActionsErrored:                         ptr(int32(2)),
 		WebhookActionsEnabled:                         ptr(int32(2)),
 		WebhookActionsEnabledUniqueUsers:              ptr(int32(2)),
-		TriggerRuns:                                   ptr(int32(121)),
-		TriggerRunsErrored:                            ptr(int32(55)),
-		P50TriggerRunTimeSeconds:                      ptr(float32(5)),
-		P90TriggerRunTimeSeconds:                      ptr(float32(9)),
+		TriggerRuns:                                   ptr(int32(77)),
+		TriggerRunsErrored:                            ptr(int32(11)),
+		P50TriggerRunTimeSeconds:                      ptr(float32(3)),
+		P90TriggerRunTimeSeconds:                      ptr(float32(6)),
 	}
 	require.Equal(t, want, have)
 }
