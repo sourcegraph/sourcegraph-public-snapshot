@@ -56,6 +56,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                                 <Icon
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
                                     as={SourceForkIcon}
+                                    aria-label="Forked repository"
                                 />
                             </div>
                             <div>
@@ -70,6 +71,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                                 <Icon
                                     className={classNames('flex-shrink-0 text-muted', styles.icon)}
                                     as={ArchiveIcon}
+                                    aria-label="Archived repository"
                                 />
                             </div>
                             <div>
@@ -81,7 +83,11 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                         <>
                             <div className={styles.divider} />
                             <div>
-                                <Icon className={classNames('flex-shrink-0 text-muted', styles.icon)} as={LockIcon} />
+                                <Icon
+                                    className={classNames('flex-shrink-0 text-muted', styles.icon)}
+                                    as={LockIcon}
+                                    aria-label="Private repository"
+                                />
                             </div>
                             <div>
                                 <small>Private</small>

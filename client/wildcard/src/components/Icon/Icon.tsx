@@ -18,11 +18,11 @@ interface BaseIconProps extends Omit<MdiReactIconProps, 'children'> {
 }
 
 interface ScreenReaderIconProps extends BaseIconProps {
-    'aria-label'?: string
+    'aria-label': string
 }
 
 interface HiddenIconProps extends BaseIconProps {
-    'aria-hidden'?: true | 'true'
+    'aria-hidden': true | 'true'
 }
 
 // We're currently migrating our icons to provide a descriptive label or use aria-hidden to be excluded from screen readers.

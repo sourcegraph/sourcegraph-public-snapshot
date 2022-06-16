@@ -286,7 +286,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                                     <span className="text-nowrap">
                                         30 days{' '}
                                         <Link target="_blank" rel="noopener" to="https://about.sourcegraph.com/pricing">
-                                            <Icon as={HelpCircleOutlineIcon} />
+                                            <Icon as={HelpCircleOutlineIcon} aria-label="See Sourcegraph pricing" />
                                         </Link>
                                     </span>
                                 </>
@@ -319,9 +319,9 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                                     as="a"
                                 >
                                     {provider.serviceType === 'github' ? (
-                                        <Icon as={GithubIcon} />
+                                        <Icon as={GithubIcon} aria-hidden={true} />
                                     ) : provider.serviceType === 'gitlab' ? (
-                                        <Icon as={GitlabIcon} />
+                                        <Icon as={GitlabIcon} aria-hidden={true} />
                                     ) : null}{' '}
                                     Continue with {provider.displayName}
                                 </Button>
