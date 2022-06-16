@@ -2571,8 +2571,12 @@ changesetTemplate:
 				t.Fatal("BatchChange ID is 0")
 			}
 
-			if diff := cmp.Diff(bc, haveBatchChange); diff != "" {
-				t.Fatalf("wrong batch change was matched (-want +got):\n%s", diff)
+			if haveBatchChange.ID != bc.ID {
+				t.Fatal("expected same ID for batch change")
+			}
+
+			if haveBatchChange.BatchSpecID == bc.BatchSpecID {
+				t.Fatal("expected different spec ID for batch change")
 			}
 		})
 	})
