@@ -87,12 +87,20 @@ export function applyTheme(theme: Theme): void {
     const intelliJTheme = theme.intelliJTheme
     const root = document.querySelector(':root') as HTMLElement
 
-    // Button color (test)
     root.style.setProperty('--button-color', intelliJTheme['Button.default.startBackground'])
     root.style.setProperty('--primary', intelliJTheme['Button.default.startBackground'])
+    root.style.setProperty('--subtle-bg', intelliJTheme['ScrollPane.background'])
 
-    root.style.setProperty('--color-bg-3', intelliJTheme['List.selectionBackground'])
+    root.style.setProperty('--dropdown-link-active-bg', intelliJTheme['List.selectionBackground'])
     root.style.setProperty('--light-text', intelliJTheme['List.selectionForeground'])
+
+    root.style.setProperty('--jb-border-color', intelliJTheme['Component.borderColor'])
+    root.style.setProperty('--jb-icon-color', intelliJTheme['Component.iconColor'] || '#7f8b91')
+
+    // There is no color for this in the serialized theme so I have picked this option from the
+    // Dracula theme
+    root.style.setProperty('--code-bg', theme.isDarkTheme ? '#2b2b2b' : '#ffffff')
+    root.style.setProperty('--body-bg', theme.isDarkTheme ? '#2b2b2b' : '#ffffff')
 }
 
 function applyLastSearch(lastSearch: Search | null): void {
