@@ -394,27 +394,10 @@ func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit string
 		return err
 	}
 
-	nameIDs := make(map[string]int, len(deps))
-	ids := make([]int, len(deps))
-
-	rows, err := tx.db.Query(ctx, sqlf.Sprintf(upsertLockfileReferences2Query))
+	// Get IDs and name->ID mapping for upserted packages
+	nameIDs, ids, err := scanIdNames(tx.db.Query(ctx, sqlf.Sprintf(upsertLockfileReferences2Query)))
 	if err != nil {
 		return err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		var (
-			id   int
-			name string
-		)
-
-		if err := rows.Scan(&id, &name); err != nil {
-			return err
-		}
-
-		nameIDs[name] = id
-		ids = append(ids, id)
 	}
 
 	// If we don't have a graph, we insert all of the dependencies as direct
