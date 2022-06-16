@@ -10,6 +10,7 @@ import (
 
 	"go.uber.org/atomic"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -29,6 +30,8 @@ type Runner[Args any] struct {
 	GenerateAnnotations bool
 	// RunPostFixChecks toggles whether to run checks again after a fix is applied.
 	RunPostFixChecks bool
+	// AnalyticsCategory is the category to track analytics with.
+	AnalyticsCategory string
 }
 
 // NewRunner creates a Runner for executing checks and applying fixes in a variety of ways.
@@ -201,6 +204,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 			categoriesSkipped[i] = err
 			// Mark as done
 			progress.StatusBarCompletef(i, "Category skipped: %s", err.Error())
+			r.logEvent(ctx, []string{category.Name}, start, "skipped")
 			continue
 		}
 
@@ -219,11 +223,16 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 			for _, check := range category.Checks {
 				checksWg.Add(1)
 				go func(check *Check[Args]) {
+					var event string
 					defer updateChecksProgress()
 					defer checksWg.Done()
+					defer func() {
+						r.logEvent(ctx, []string{category.Name, check.Name}, start, event)
+					}()
 
 					if err := check.IsEnabled(ctx, args); err != nil {
 						progress.StatusBarUpdatef(i, "Check %s skipped: %s", check.Name, err.Error())
+						event = "skipped"
 						return
 					}
 
@@ -234,7 +243,11 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 						progress.StatusBarFailf(i, "Check %s failed: %s", check.Name, err.Error())
 						check.cachedCheckOutput = updateOutput.String()
 						didErr.Store(true)
+						event = "error"
+					} else {
+						event = "success"
 					}
+
 				}(check)
 			}
 			checksWg.Wait()
@@ -540,4 +553,11 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 	}
 
 	return
+}
+
+// logEvent logs an event if AnalyticsCategory is set.
+func (r *Runner[Args]) logEvent(ctx context.Context, labels []string, startedAt time.Time, events ...string) {
+	if r.AnalyticsCategory != "" {
+		analytics.LogEvent(ctx, r.AnalyticsCategory, labels, startedAt, events...)
+	}
 }
