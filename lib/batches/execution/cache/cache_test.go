@@ -18,6 +18,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var repo = batches.Repository{
+	ID:          "my-repo",
+	Name:        "github.com/sourcegraph/src-cli",
+	BaseRef:     "refs/heads/f00b4r",
+	BaseRev:     "c0mmit",
+	FileMatches: []string{"baz.go"},
+}
+
 func TestKeyer_Key(t *testing.T) {
 	var singleStepEnv env.Environment
 	err := json.Unmarshal([]byte(`{"FOO": "BAR"}`), &singleStepEnv)
@@ -45,27 +53,15 @@ func TestKeyer_Key(t *testing.T) {
 		{
 			name: "ExecutionKey simple",
 			keyer: &ExecutionKey{
-				Repository: batches.Repository{
-					ID:          "my-repo",
-					Name:        "github.com/sourcegraph/src-cli",
-					BaseRef:     "refs/heads/f00b4r",
-					BaseRev:     "c0mmit",
-					FileMatches: []string{"baz.go"},
-				},
-				Steps: []batches.Step{{Run: "foo"}},
+				Repository: repo,
+				Steps:      []batches.Step{{Run: "foo"}},
 			},
 			expectedKey: "cu8r-xdguU4s0kn9_uxL5g",
 		},
 		{
 			name: "ExecutionKey multiple steps",
 			keyer: &ExecutionKey{
-				Repository: batches.Repository{
-					ID:          "my-repo",
-					Name:        "github.com/sourcegraph/src-cli",
-					BaseRef:     "refs/heads/f00b4r",
-					BaseRev:     "c0mmit",
-					FileMatches: []string{"baz.go"},
-				},
+				Repository: repo,
 				Steps: []batches.Step{
 					{Run: "foo"},
 					{Run: "bar"},
@@ -76,42 +72,24 @@ func TestKeyer_Key(t *testing.T) {
 		{
 			name: "ExecutionKey step env",
 			keyer: &ExecutionKey{
-				Repository: batches.Repository{
-					ID:          "my-repo",
-					Name:        "github.com/sourcegraph/src-cli",
-					BaseRef:     "refs/heads/f00b4r",
-					BaseRev:     "c0mmit",
-					FileMatches: []string{"baz.go"},
-				},
-				Steps: []batches.Step{{Run: "foo", Env: singleStepEnv}},
+				Repository: repo,
+				Steps:      []batches.Step{{Run: "foo", Env: singleStepEnv}},
 			},
 			expectedKey: "Ye3eFDmvvADzZuz-TWEA2g",
 		},
 		{
 			name: "ExecutionKey multiple step envs",
 			keyer: &ExecutionKey{
-				Repository: batches.Repository{
-					ID:          "my-repo",
-					Name:        "github.com/sourcegraph/src-cli",
-					BaseRef:     "refs/heads/f00b4r",
-					BaseRev:     "c0mmit",
-					FileMatches: []string{"baz.go"},
-				},
-				Steps: []batches.Step{{Run: "foo", Env: multipleStepEnv}},
+				Repository: repo,
+				Steps:      []batches.Step{{Run: "foo", Env: multipleStepEnv}},
 			},
 			expectedKey: "mZk8q7zjJioxI2nTwrt7XQ",
 		},
 		{
 			name: "ExecutionKey null step env",
 			keyer: &ExecutionKey{
-				Repository: batches.Repository{
-					ID:          "my-repo",
-					Name:        "github.com/sourcegraph/src-cli",
-					BaseRef:     "refs/heads/f00b4r",
-					BaseRev:     "c0mmit",
-					FileMatches: []string{"baz.go"},
-				},
-				Steps: []batches.Step{{Run: "foo", Env: nullStepEnv}},
+				Repository: repo,
+				Steps:      []batches.Step{{Run: "foo", Env: nullStepEnv}},
 			},
 			expectedKey: "_txGuv3XrkWWVQz6hGsKhw",
 		},
@@ -119,14 +97,8 @@ func TestKeyer_Key(t *testing.T) {
 			name: "ExecutionKeyWithGlobalEnv simple",
 			keyer: &ExecutionKeyWithGlobalEnv{
 				ExecutionKey: &ExecutionKey{
-					Repository: batches.Repository{
-						ID:          "my-repo",
-						Name:        "github.com/sourcegraph/src-cli",
-						BaseRef:     "refs/heads/f00b4r",
-						BaseRev:     "c0mmit",
-						FileMatches: []string{"baz.go"},
-					},
-					Steps: []batches.Step{{Run: "foo"}},
+					Repository: repo,
+					Steps:      []batches.Step{{Run: "foo"}},
 				},
 				GlobalEnv: []string{},
 			},
@@ -136,14 +108,8 @@ func TestKeyer_Key(t *testing.T) {
 			name: "ExecutionKeyWithGlobalEnv has global env",
 			keyer: &ExecutionKeyWithGlobalEnv{
 				ExecutionKey: &ExecutionKey{
-					Repository: batches.Repository{
-						ID:          "my-repo",
-						Name:        "github.com/sourcegraph/src-cli",
-						BaseRef:     "refs/heads/f00b4r",
-						BaseRev:     "c0mmit",
-						FileMatches: []string{"baz.go"},
-					},
-					Steps: []batches.Step{{Run: "foo", Env: stepEnv}},
+					Repository: repo,
+					Steps:      []batches.Step{{Run: "foo", Env: stepEnv}},
 				},
 				GlobalEnv: []string{"SOME_ENV=FOO", "FAZ=BAZ"},
 			},
@@ -153,14 +119,8 @@ func TestKeyer_Key(t *testing.T) {
 			name: "ExecutionKeyWithGlobalEnv env not updated",
 			keyer: &ExecutionKeyWithGlobalEnv{
 				ExecutionKey: &ExecutionKey{
-					Repository: batches.Repository{
-						ID:          "my-repo",
-						Name:        "github.com/sourcegraph/src-cli",
-						BaseRef:     "refs/heads/f00b4r",
-						BaseRev:     "c0mmit",
-						FileMatches: []string{"baz.go"},
-					},
-					Steps: []batches.Step{{Run: "foo", Env: stepEnv}},
+					Repository: repo,
+					Steps:      []batches.Step{{Run: "foo", Env: stepEnv}},
 				},
 				GlobalEnv: []string{"FAZ=BAZ"},
 			},
@@ -170,14 +130,8 @@ func TestKeyer_Key(t *testing.T) {
 			name: "ExecutionKeyWithGlobalEnv malformed global env",
 			keyer: &ExecutionKeyWithGlobalEnv{
 				ExecutionKey: &ExecutionKey{
-					Repository: batches.Repository{
-						ID:          "my-repo",
-						Name:        "github.com/sourcegraph/src-cli",
-						BaseRef:     "refs/heads/f00b4r",
-						BaseRev:     "c0mmit",
-						FileMatches: []string{"baz.go"},
-					},
-					Steps: []batches.Step{{Run: "foo", Env: stepEnv}},
+					Repository: repo,
+					Steps:      []batches.Step{{Run: "foo", Env: stepEnv}},
 				},
 				GlobalEnv: []string{"SOME_ENV"},
 			},
@@ -187,14 +141,8 @@ func TestKeyer_Key(t *testing.T) {
 			name: "StepsCacheKey simple",
 			keyer: StepsCacheKey{
 				ExecutionKey: &ExecutionKey{
-					Repository: batches.Repository{
-						ID:          "my-repo",
-						Name:        "github.com/sourcegraph/src-cli",
-						BaseRef:     "refs/heads/f00b4r",
-						BaseRev:     "c0mmit",
-						FileMatches: []string{"baz.go"},
-					},
-					Steps: []batches.Step{{Run: "foo"}},
+					Repository: repo,
+					Steps:      []batches.Step{{Run: "foo"}},
 				},
 				StepIndex: 0,
 			},
@@ -204,13 +152,7 @@ func TestKeyer_Key(t *testing.T) {
 			name: "StepsCacheKey multiple steps",
 			keyer: StepsCacheKey{
 				ExecutionKey: &ExecutionKey{
-					Repository: batches.Repository{
-						ID:          "my-repo",
-						Name:        "github.com/sourcegraph/src-cli",
-						BaseRef:     "refs/heads/f00b4r",
-						BaseRev:     "c0mmit",
-						FileMatches: []string{"baz.go"},
-					},
+					Repository: repo,
 					Steps: []batches.Step{
 						{Run: "foo"},
 						{Run: "bar"},
@@ -225,13 +167,7 @@ func TestKeyer_Key(t *testing.T) {
 			keyer: &StepsCacheKeyWithGlobalEnv{
 				StepsCacheKey: &StepsCacheKey{
 					ExecutionKey: &ExecutionKey{
-						Repository: batches.Repository{
-							ID:          "my-repo",
-							Name:        "github.com/sourcegraph/src-cli",
-							BaseRef:     "refs/heads/f00b4r",
-							BaseRev:     "c0mmit",
-							FileMatches: []string{"baz.go"},
-						},
+						Repository: repo,
 						Steps: []batches.Step{
 							{
 								Run: "foo",
@@ -299,13 +235,7 @@ func TestKeyer_Key_Mount(t *testing.T) {
 		{
 			name: "ExecutionKey single file",
 			keyer: &ExecutionKey{
-				Repository: batches.Repository{
-					ID:          "my-repo",
-					Name:        "github.com/sourcegraph/src-cli",
-					BaseRef:     "refs/heads/f00b4r",
-					BaseRev:     "c0mmit",
-					FileMatches: []string{"baz.go"},
-				},
+				Repository: repo,
 				Steps: []batches.Step{
 					{
 						Run: "foo",
@@ -326,13 +256,7 @@ func TestKeyer_Key_Mount(t *testing.T) {
 		{
 			name: "ExecutionKey multiple files",
 			keyer: &ExecutionKey{
-				Repository: batches.Repository{
-					ID:          "my-repo",
-					Name:        "github.com/sourcegraph/src-cli",
-					BaseRef:     "refs/heads/f00b4r",
-					BaseRev:     "c0mmit",
-					FileMatches: []string{"baz.go"},
-				},
+				Repository: repo,
 				Steps: []batches.Step{
 					{
 						Run: "foo",
@@ -362,13 +286,7 @@ func TestKeyer_Key_Mount(t *testing.T) {
 		{
 			name: "ExecutionKey directory",
 			keyer: &ExecutionKey{
-				Repository: batches.Repository{
-					ID:          "my-repo",
-					Name:        "github.com/sourcegraph/src-cli",
-					BaseRef:     "refs/heads/f00b4r",
-					BaseRev:     "c0mmit",
-					FileMatches: []string{"baz.go"},
-				},
+				Repository: repo,
 				Steps: []batches.Step{
 					{
 						Run: "foo",
@@ -391,13 +309,7 @@ func TestKeyer_Key_Mount(t *testing.T) {
 		{
 			name: "ExecutionKey file does not exist",
 			keyer: &ExecutionKey{
-				Repository: batches.Repository{
-					ID:          "my-repo",
-					Name:        "github.com/sourcegraph/src-cli",
-					BaseRef:     "refs/heads/f00b4r",
-					BaseRev:     "c0mmit",
-					FileMatches: []string{"baz.go"},
-				},
+				Repository: repo,
 				Steps: []batches.Step{
 					{
 						Run: "foo",
@@ -414,13 +326,7 @@ func TestKeyer_Key_Mount(t *testing.T) {
 			name: "ExecutionKeyWithGlobalEnv single file",
 			keyer: &ExecutionKeyWithGlobalEnv{
 				ExecutionKey: &ExecutionKey{
-					Repository: batches.Repository{
-						ID:          "my-repo",
-						Name:        "github.com/sourcegraph/src-cli",
-						BaseRef:     "refs/heads/f00b4r",
-						BaseRev:     "c0mmit",
-						FileMatches: []string{"baz.go"},
-					},
+					Repository: repo,
 					Steps: []batches.Step{
 						{
 							Run: "foo",
@@ -445,13 +351,7 @@ func TestKeyer_Key_Mount(t *testing.T) {
 			name: "ExecutionKeyWithGlobalEnv multiple files",
 			keyer: &ExecutionKeyWithGlobalEnv{
 				ExecutionKey: &ExecutionKey{
-					Repository: batches.Repository{
-						ID:          "my-repo",
-						Name:        "github.com/sourcegraph/src-cli",
-						BaseRef:     "refs/heads/f00b4r",
-						BaseRev:     "c0mmit",
-						FileMatches: []string{"baz.go"},
-					},
+					Repository: repo,
 					Steps: []batches.Step{
 						{
 							Run: "foo",
@@ -485,13 +385,7 @@ func TestKeyer_Key_Mount(t *testing.T) {
 			name: "ExecutionKeyWithGlobalEnv directory",
 			keyer: &ExecutionKeyWithGlobalEnv{
 				ExecutionKey: &ExecutionKey{
-					Repository: batches.Repository{
-						ID:          "my-repo",
-						Name:        "github.com/sourcegraph/src-cli",
-						BaseRef:     "refs/heads/f00b4r",
-						BaseRev:     "c0mmit",
-						FileMatches: []string{"baz.go"},
-					},
+					Repository: repo,
 					Steps: []batches.Step{
 						{
 							Run: "foo",
@@ -518,13 +412,7 @@ func TestKeyer_Key_Mount(t *testing.T) {
 			name: "StepsCacheKey single file",
 			keyer: StepsCacheKey{
 				ExecutionKey: &ExecutionKey{
-					Repository: batches.Repository{
-						ID:          "my-repo",
-						Name:        "github.com/sourcegraph/src-cli",
-						BaseRef:     "refs/heads/f00b4r",
-						BaseRev:     "c0mmit",
-						FileMatches: []string{"baz.go"},
-					},
+					Repository: repo,
 					Steps: []batches.Step{
 						{
 							Run: "foo",
@@ -550,13 +438,7 @@ func TestKeyer_Key_Mount(t *testing.T) {
 			keyer: &StepsCacheKeyWithGlobalEnv{
 				StepsCacheKey: &StepsCacheKey{
 					ExecutionKey: &ExecutionKey{
-						Repository: batches.Repository{
-							ID:          "my-repo",
-							Name:        "github.com/sourcegraph/src-cli",
-							BaseRef:     "refs/heads/f00b4r",
-							BaseRev:     "c0mmit",
-							FileMatches: []string{"baz.go"},
-						},
+						Repository: repo,
 						Steps: []batches.Step{
 							{
 								Run: "foo",
