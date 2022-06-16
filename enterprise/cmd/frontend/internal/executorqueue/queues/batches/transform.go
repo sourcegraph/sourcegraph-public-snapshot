@@ -164,7 +164,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 					// TODO: This can go away once the execution mode is stripped down even
 					// further. There should be no code path doing a request, but you never
 					// know, software.
-					fmt.Sprintf("SRC_ENDPOINT=%s", "http://127.0.0.1:10001"),
+					fmt.Sprintf("SRC_ENDPOINT=%s", "http://this-will-never-exist-i-hope"),
 				},
 			},
 		},
