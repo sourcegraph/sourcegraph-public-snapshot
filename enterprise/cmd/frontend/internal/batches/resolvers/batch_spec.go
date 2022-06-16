@@ -299,12 +299,10 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 		return nil, backend.ErrNotAuthenticated
 	}
 
-	specs, _, err := r.store.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{BatchSpecID: r.batchSpec.ID})
+	repoIDs, err := r.store.ListBatchSpecRepoIDs(ctx, r.batchSpec.ID)
 	if err != nil {
 		return nil, err
 	}
-
-	repoIDs := specs.RepoIDs()
 
 	// If no changeset specs match, we don't need to compute anything.
 	if len(repoIDs) == 0 {
