@@ -365,6 +365,7 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 		for path := range repoFileMatches[repo.ID] {
 			fileMatches = append(fileMatches, path)
 		}
+		// Sort file matches so cache results always match.
 		sort.Strings(fileMatches)
 		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, database.NewDBWith(wr.store), repo, fileMatches)
 		if err != nil {

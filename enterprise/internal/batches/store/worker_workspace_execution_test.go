@@ -43,7 +43,6 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 
 	// See the `output` var below
 	cacheEntryKeys := []string{
-		"Nsw12JxoLSHN4ta6D3G7FQ",
 		"JkC7Q0OOCZZ3Acv79QfwSA-step-0",
 		"0ydsSXJ77syIPdwNrsGlzQ-step-1",
 		"utgLpuQ3njDtLe3eztArAQ-step-2",
@@ -53,7 +52,6 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 
 	// Log entries with cache entries that'll be used to build the changeset specs.
 	output := `
-stdout: {"operation":"CACHE_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"Nsw12JxoLSHN4ta6D3G7FQ","value":{"diff":"diff --git README.md README.md\nindex 1914491..d6782d3 100644\n--- README.md\n+++ README.md\n@@ -3,4 +3,7 @@ This repository is used to test opening and closing pull request with Automation\n \n (c) Copyright Sourcegraph 2013-2020.\n (c) Copyright Sourcegraph 2013-2020.\n-(c) Copyright Sourcegraph 2013-2020.\n\\ No newline at end of file\n+(c) Copyright Sourcegraph 2013-2020.this is step 2\n+this is step 3\n+this is step 4\n+previous_step.modified_files=[README.md]\ndiff --git README.txt README.txt\nnew file mode 100644\nindex 0000000..888e1ec\n--- /dev/null\n+++ README.txt\n@@ -0,0 +1 @@\n+this is step 1\ndiff --git my-output.txt my-output.txt\nnew file mode 100644\nindex 0000000..257ae8e\n--- /dev/null\n+++ my-output.txt\n@@ -0,0 +1 @@\n+this is step 5\n","changedFiles":{"modified":["README.md"],"added":["README.txt","my-output.txt"],"deleted":null,"renamed":null},"outputs":{"myOutput":"my-output.txt"},"Path":""}}}
 stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"JkC7Q0OOCZZ3Acv79QfwSA-step-0","value":{"stepIndex":0,"diff":"ZGlmZiAtLWdpdCBSRUFETUUudHh0IFJFQURNRS50eHQKbmV3IGZpbGUgbW9kZSAxMDA2NDQKaW5kZXggMDAwMDAwMC4uODg4ZTFlYwotLS0gL2Rldi9udWxsCisrKyBSRUFETUUudHh0CkBAIC0wLDAgKzEgQEAKK3RoaXMgaXMgc3RlcCAxCg==","outputs":{},"previousStepResult":{"Files":null,"Stdout":null,"Stderr":null}}}}
 stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"0ydsSXJ77syIPdwNrsGlzQ-step-1","value":{"stepIndex":1,"diff":"ZGlmZiAtLWdpdCBSRUFETUUubWQgUkVBRE1FLm1kCmluZGV4IDE5MTQ0OTEuLjVjMmI3MmQgMTAwNjQ0Ci0tLSBSRUFETUUubWQKKysrIFJFQURNRS5tZApAQCAtMyw0ICszLDQgQEAgVGhpcyByZXBvc2l0b3J5IGlzIHVzZWQgdG8gdGVzdCBvcGVuaW5nIGFuZCBjbG9zaW5nIHB1bGwgcmVxdWVzdCB3aXRoIEF1dG9tYXRpb24KIAogKGMpIENvcHlyaWdodCBTb3VyY2VncmFwaCAyMDEzLTIwMjAuCiAoYykgQ29weXJpZ2h0IFNvdXJjZWdyYXBoIDIwMTMtMjAyMC4KLShjKSBDb3B5cmlnaHQgU291cmNlZ3JhcGggMjAxMy0yMDIwLgpcIE5vIG5ld2xpbmUgYXQgZW5kIG9mIGZpbGUKKyhjKSBDb3B5cmlnaHQgU291cmNlZ3JhcGggMjAxMy0yMDIwLnRoaXMgaXMgc3RlcCAyCmRpZmYgLS1naXQgUkVBRE1FLnR4dCBSRUFETUUudHh0Cm5ldyBmaWxlIG1vZGUgMTAwNjQ0CmluZGV4IDAwMDAwMDAuLjg4OGUxZWMKLS0tIC9kZXYvbnVsbAorKysgUkVBRE1FLnR4dApAQCAtMCwwICsxIEBACit0aGlzIGlzIHN0ZXAgMQo=","outputs":{},"previousStepResult":{"Files":{"modified":null,"added":["README.txt"],"deleted":null,"renamed":null},"Stdout":{},"Stderr":{}}}}}
 stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"utgLpuQ3njDtLe3eztArAQ-step-2","value":{"stepIndex":2,"diff":"ZGlmZiAtLWdpdCBSRUFETUUubWQgUkVBRE1FLm1kCmluZGV4IDE5MTQ0OTEuLmNkMmNjYmYgMTAwNjQ0Ci0tLSBSRUFETUUubWQKKysrIFJFQURNRS5tZApAQCAtMyw0ICszLDUgQEAgVGhpcyByZXBvc2l0b3J5IGlzIHVzZWQgdG8gdGVzdCBvcGVuaW5nIGFuZCBjbG9zaW5nIHB1bGwgcmVxdWVzdCB3aXRoIEF1dG9tYXRpb24KIAogKGMpIENvcHlyaWdodCBTb3VyY2VncmFwaCAyMDEzLTIwMjAuCiAoYykgQ29weXJpZ2h0IFNvdXJjZWdyYXBoIDIwMTMtMjAyMC4KLShjKSBDb3B5cmlnaHQgU291cmNlZ3JhcGggMjAxMy0yMDIwLgpcIE5vIG5ld2xpbmUgYXQgZW5kIG9mIGZpbGUKKyhjKSBDb3B5cmlnaHQgU291cmNlZ3JhcGggMjAxMy0yMDIwLnRoaXMgaXMgc3RlcCAyCit0aGlzIGlzIHN0ZXAgMwpkaWZmIC0tZ2l0IFJFQURNRS50eHQgUkVBRE1FLnR4dApuZXcgZmlsZSBtb2RlIDEwMDY0NAppbmRleCAwMDAwMDAwLi44ODhlMWVjCi0tLSAvZGV2L251bGwKKysrIFJFQURNRS50eHQKQEAgLTAsMCArMSBAQAordGhpcyBpcyBzdGVwIDEK","outputs":{"myOutput":"my-output.txt"},"previousStepResult":{"Files":{"modified":["README.md"],"added":["README.txt"],"deleted":null,"renamed":null},"Stdout":{},"Stderr":{}}}}}
@@ -69,10 +67,9 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 	}
 
 	executionStore := &batchSpecWorkspaceExecutionWorkerStore{
-		Store:                   workStore,
-		observationContext:      &observation.TestContext,
-		logger:                  logtest.Scoped(t),
-		accessTokenDeleterForTX: func(tx *Store) accessTokenHardDeleter { return tx.DatabaseDB().AccessTokens().HardDeleteByID },
+		Store:              workStore,
+		observationContext: &observation.TestContext,
+		logger:             logtest.Scoped(t),
 	}
 	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
 
@@ -81,18 +78,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
 		job.WorkerHostname = opts.WorkerHostname
 		ct.UpdateJobState(t, ctx, s, job)
-	}
-
-	attachAccessToken := func(t *testing.T, job *btypes.BatchSpecWorkspaceExecutionJob) int64 {
-		t.Helper()
-		tokenID, _, err := db.AccessTokens().CreateInternal(ctx, user.ID, []string{"user:all"}, "testing", user.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, job.ID, tokenID); err != nil {
-			t.Fatal(err)
-		}
-		return tokenID
 	}
 
 	assertJobState := func(t *testing.T, job *btypes.BatchSpecWorkspaceExecutionJob, want btypes.BatchSpecWorkspaceExecutionJobState) {
@@ -154,7 +139,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 	t.Run("success", func(t *testing.T) {
 		job, workspace := setupEntities(t)
 		setProcessing(t, job)
-		tokenID := attachAccessToken(t, job)
 
 		ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
 		if !ok || err != nil {
@@ -203,7 +187,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 			}
 			entry := entries[0]
 
-			var cachedExecutionResult *execution.Result
+			var cachedExecutionResult *execution.AfterStepResult
 			if err := json.Unmarshal([]byte(entry.Value), &cachedExecutionResult); err != nil {
 				t.Fatal(err)
 			}
@@ -211,29 +195,11 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 				t.Fatalf("wrong diff extracted")
 			}
 		}
-
-		_, err = db.AccessTokens().GetByID(ctx, tokenID)
-		if err != database.ErrAccessTokenNotFound {
-			t.Fatalf("access token was not deleted")
-		}
-	})
-
-	t.Run("no token set", func(t *testing.T) {
-		job, _ := setupEntities(t)
-		setProcessing(t, job)
-
-		ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
-		if !ok || err != nil {
-			t.Fatalf("MarkComplete failed. ok=%t, err=%s", ok, err)
-		}
-
-		assertJobState(t, job, btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
 	})
 
 	t.Run("worker hostname mismatch", func(t *testing.T) {
 		job, _ := setupEntities(t)
 		setProcessing(t, job)
-		tokenID := attachAccessToken(t, job)
 
 		opts := opts
 		opts.WorkerHostname = "DOESNT-MATCH"
@@ -244,46 +210,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		}
 
 		assertJobState(t, job, btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
-
-		assertWorkspaceChangesets(t, job, []int64{})
-
-		_, err = db.AccessTokens().GetByID(ctx, tokenID)
-		if err == database.ErrAccessTokenNotFound {
-			t.Fatalf("access token was deleted")
-		} else if err != nil {
-			t.Fatal(err)
-		}
-
-		assertNoChangesetSpecsCreated(t)
-	})
-
-	t.Run("token set but deletion fails", func(t *testing.T) {
-		job, _ := setupEntities(t)
-		setProcessing(t, job)
-		tokenID := attachAccessToken(t, job)
-
-		accessTokens := database.NewMockAccessTokenStore()
-		accessTokens.HardDeleteByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) error {
-			if id != tokenID {
-				t.Fatalf("wrong token deleted")
-			}
-			return errors.New("internal database error")
-		})
-
-		prevDeleter := executionStore.accessTokenDeleterForTX
-		executionStore.accessTokenDeleterForTX = func(tx *Store) accessTokenHardDeleter {
-			return accessTokens.HardDeleteByID
-		}
-		t.Cleanup(func() {
-			executionStore.accessTokenDeleterForTX = prevDeleter
-		})
-
-		ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
-		if !ok || err != nil {
-			t.Fatalf("MarkComplete failed. ok=%t, err=%s", ok, err)
-		}
-
-		assertJobState(t, job, btypes.BatchSpecWorkspaceExecutionJobStateFailed)
 
 		assertWorkspaceChangesets(t, job, []int64{})
 
@@ -320,7 +246,6 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkFailed(t *testing.T) {
 
 	// See the `output` var below
 	cacheEntryKeys := []string{
-		"Nsw12JxoLSHN4ta6D3G7FQ",
 		"JkC7Q0OOCZZ3Acv79QfwSA-step-0",
 		"0ydsSXJ77syIPdwNrsGlzQ-step-1",
 		"utgLpuQ3njDtLe3eztArAQ-step-2",
@@ -330,7 +255,6 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkFailed(t *testing.T) {
 
 	// Log entries with cache entries that'll be used to build the changeset specs.
 	output := `
-stdout: {"operation":"CACHE_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"Nsw12JxoLSHN4ta6D3G7FQ","value":{"diff":"diff --git README.md README.md\nindex 1914491..d6782d3 100644\n--- README.md\n+++ README.md\n@@ -3,4 +3,7 @@ This repository is used to test opening and closing pull request with Automation\n \n (c) Copyright Sourcegraph 2013-2020.\n (c) Copyright Sourcegraph 2013-2020.\n-(c) Copyright Sourcegraph 2013-2020.\n\\ No newline at end of file\n+(c) Copyright Sourcegraph 2013-2020.this is step 2\n+this is step 3\n+this is step 4\n+previous_step.modified_files=[README.md]\ndiff --git README.txt README.txt\nnew file mode 100644\nindex 0000000..888e1ec\n--- /dev/null\n+++ README.txt\n@@ -0,0 +1 @@\n+this is step 1\ndiff --git my-output.txt my-output.txt\nnew file mode 100644\nindex 0000000..257ae8e\n--- /dev/null\n+++ my-output.txt\n@@ -0,0 +1 @@\n+this is step 5\n","changedFiles":{"modified":["README.md"],"added":["README.txt","my-output.txt"],"deleted":null,"renamed":null},"outputs":{"myOutput":"my-output.txt"},"Path":""}}}
 stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"JkC7Q0OOCZZ3Acv79QfwSA-step-0","value":{"stepIndex":0,"diff":"ZGlmZiAtLWdpdCBSRUFETUUudHh0IFJFQURNRS50eHQKbmV3IGZpbGUgbW9kZSAxMDA2NDQKaW5kZXggMDAwMDAwMC4uODg4ZTFlYwotLS0gL2Rldi9udWxsCisrKyBSRUFETUUudHh0CkBAIC0wLDAgKzEgQEAKK3RoaXMgaXMgc3RlcCAxCg==","outputs":{},"previousStepResult":{"Files":null,"Stdout":null,"Stderr":null}}}}
 stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"0ydsSXJ77syIPdwNrsGlzQ-step-1","value":{"stepIndex":1,"diff":"ZGlmZiAtLWdpdCBSRUFETUUubWQgUkVBRE1FLm1kCmluZGV4IDE5MTQ0OTEuLjVjMmI3MmQgMTAwNjQ0Ci0tLSBSRUFETUUubWQKKysrIFJFQURNRS5tZApAQCAtMyw0ICszLDQgQEAgVGhpcyByZXBvc2l0b3J5IGlzIHVzZWQgdG8gdGVzdCBvcGVuaW5nIGFuZCBjbG9zaW5nIHB1bGwgcmVxdWVzdCB3aXRoIEF1dG9tYXRpb24KIAogKGMpIENvcHlyaWdodCBTb3VyY2VncmFwaCAyMDEzLTIwMjAuCiAoYykgQ29weXJpZ2h0IFNvdXJjZWdyYXBoIDIwMTMtMjAyMC4KLShjKSBDb3B5cmlnaHQgU291cmNlZ3JhcGggMjAxMy0yMDIwLgpcIE5vIG5ld2xpbmUgYXQgZW5kIG9mIGZpbGUKKyhjKSBDb3B5cmlnaHQgU291cmNlZ3JhcGggMjAxMy0yMDIwLnRoaXMgaXMgc3RlcCAyCmRpZmYgLS1naXQgUkVBRE1FLnR4dCBSRUFETUUudHh0Cm5ldyBmaWxlIG1vZGUgMTAwNjQ0CmluZGV4IDAwMDAwMDAuLjg4OGUxZWMKLS0tIC9kZXYvbnVsbAorKysgUkVBRE1FLnR4dApAQCAtMCwwICsxIEBACit0aGlzIGlzIHN0ZXAgMQo=","outputs":{},"previousStepResult":{"Files":{"modified":null,"added":["README.txt"],"deleted":null,"renamed":null},"Stdout":{},"Stderr":{}}}}}
 stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"utgLpuQ3njDtLe3eztArAQ-step-2","value":{"stepIndex":2,"diff":"ZGlmZiAtLWdpdCBSRUFETUUubWQgUkVBRE1FLm1kCmluZGV4IDE5MTQ0OTEuLmNkMmNjYmYgMTAwNjQ0Ci0tLSBSRUFETUUubWQKKysrIFJFQURNRS5tZApAQCAtMyw0ICszLDUgQEAgVGhpcyByZXBvc2l0b3J5IGlzIHVzZWQgdG8gdGVzdCBvcGVuaW5nIGFuZCBjbG9zaW5nIHB1bGwgcmVxdWVzdCB3aXRoIEF1dG9tYXRpb24KIAogKGMpIENvcHlyaWdodCBTb3VyY2VncmFwaCAyMDEzLTIwMjAuCiAoYykgQ29weXJpZ2h0IFNvdXJjZWdyYXBoIDIwMTMtMjAyMC4KLShjKSBDb3B5cmlnaHQgU291cmNlZ3JhcGggMjAxMy0yMDIwLgpcIE5vIG5ld2xpbmUgYXQgZW5kIG9mIGZpbGUKKyhjKSBDb3B5cmlnaHQgU291cmNlZ3JhcGggMjAxMy0yMDIwLnRoaXMgaXMgc3RlcCAyCit0aGlzIGlzIHN0ZXAgMwpkaWZmIC0tZ2l0IFJFQURNRS50eHQgUkVBRE1FLnR4dApuZXcgZmlsZSBtb2RlIDEwMDY0NAppbmRleCAwMDAwMDAwLi44ODhlMWVjCi0tLSAvZGV2L251bGwKKysrIFJFQURNRS50eHQKQEAgLTAsMCArMSBAQAordGhpcyBpcyBzdGVwIDEK","outputs":{"myOutput":"my-output.txt"},"previousStepResult":{"Files":{"modified":["README.md"],"added":["README.txt"],"deleted":null,"renamed":null},"Stdout":{},"Stderr":{}}}}}
@@ -351,10 +275,9 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 	}
 
 	executionStore := &batchSpecWorkspaceExecutionWorkerStore{
-		Store:                   workStore,
-		observationContext:      &observation.TestContext,
-		logger:                  logtest.Scoped(t),
-		accessTokenDeleterForTX: func(tx *Store) accessTokenHardDeleter { return tx.DatabaseDB().AccessTokens().HardDeleteByID },
+		Store:              workStore,
+		observationContext: &observation.TestContext,
+		logger:             logtest.Scoped(t),
 	}
 	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
 	errMsg := "this job was no good"
@@ -364,18 +287,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
 		job.WorkerHostname = opts.WorkerHostname
 		ct.UpdateJobState(t, ctx, s, job)
-	}
-
-	attachAccessToken := func(t *testing.T) int64 {
-		t.Helper()
-		tokenID, _, err := db.AccessTokens().CreateInternal(ctx, user.ID, []string{"user:all"}, "testing", user.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, job.ID, tokenID); err != nil {
-			t.Fatal(err)
-		}
-		return tokenID
 	}
 
 	assertJobState := func(t *testing.T, want btypes.BatchSpecWorkspaceExecutionJobState) {
@@ -392,7 +303,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 
 	t.Run("success", func(t *testing.T) {
 		setProcessing(t)
-		tokenID := attachAccessToken(t)
 
 		ok, err := executionStore.MarkFailed(context.Background(), int(job.ID), errMsg, opts)
 		if !ok || err != nil {
@@ -425,18 +335,13 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 			}
 			entry := entries[0]
 
-			var cachedExecutionResult *execution.Result
+			var cachedExecutionResult *execution.AfterStepResult
 			if err := json.Unmarshal([]byte(entry.Value), &cachedExecutionResult); err != nil {
 				t.Fatal(err)
 			}
 			if cachedExecutionResult.Diff == "" {
 				t.Fatalf("wrong diff extracted")
 			}
-		}
-
-		_, err = db.AccessTokens().GetByID(ctx, tokenID)
-		if err != database.ErrAccessTokenNotFound {
-			t.Fatalf("access token was not deleted")
 		}
 	})
 
@@ -453,7 +358,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 
 	t.Run("worker hostname mismatch", func(t *testing.T) {
 		setProcessing(t)
-		tokenID := attachAccessToken(t)
 
 		opts := opts
 		opts.WorkerHostname = "DOESNT-MATCH"
@@ -464,42 +368,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		}
 
 		assertJobState(t, btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
-
-		_, err = db.AccessTokens().GetByID(ctx, tokenID)
-		if err == database.ErrAccessTokenNotFound {
-			t.Fatalf("access token was deleted")
-		} else if err != nil {
-			t.Fatal(err)
-		}
-	})
-
-	t.Run("token set but deletion fails", func(t *testing.T) {
-		setProcessing(t)
-		tokenID := attachAccessToken(t)
-
-		accessTokens := database.NewMockAccessTokenStore()
-		accessTokens.HardDeleteByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) error {
-			if id != tokenID {
-				t.Fatalf("wrong token deleted")
-			}
-			return errors.New("internal database error")
-		})
-
-		prevDeleter := executionStore.accessTokenDeleterForTX
-		executionStore.accessTokenDeleterForTX = func(tx *Store) accessTokenHardDeleter {
-			return accessTokens.HardDeleteByID
-		}
-		t.Cleanup(func() {
-			executionStore.accessTokenDeleterForTX = prevDeleter
-		})
-
-		ok, err := executionStore.MarkFailed(context.Background(), int(job.ID), errMsg, opts)
-		if !ok || err != nil {
-			t.Fatalf("MarkFailed failed. ok=%t, err=%s", ok, err)
-		}
-
-		// It should still be "failed".
-		assertJobState(t, btypes.BatchSpecWorkspaceExecutionJobStateFailed)
 	})
 }
 
@@ -531,11 +399,10 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete_EmptyDiff(t *testin
 		t.Fatal(err)
 	}
 
-	cacheEntryKeys := []string{"Nsw12JxoLSHN4ta6D3G7FQ", "JkC7Q0OOCZZ3Acv79QfwSA-step-0"}
+	cacheEntryKeys := []string{"JkC7Q0OOCZZ3Acv79QfwSA-step-0"}
 
 	// Log entries with cache entries that'll be used to build the changeset specs.
 	output := `
-stdout: {"operation":"CACHE_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"Nsw12JxoLSHN4ta6D3G7FQ","value":{"diff":"","changedFiles":{"modified":null,"added":null,"deleted":null,"renamed":null},"outputs":{},"Path":""}}}
 stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"JkC7Q0OOCZZ3Acv79QfwSA-step-0","value":{"stepIndex":0,"diff":"","outputs":{},"previousStepResult":{"Files":null,"Stdout":null,"Stderr":null}}}}`
 
 	entry := workerutil.ExecutionLogEntry{
@@ -551,25 +418,15 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		t.Fatal(err)
 	}
 
-	executionStore := &batchSpecWorkspaceExecutionWorkerStore{Store: workStore, observationContext: &observation.TestContext, accessTokenDeleterForTX: func(tx *Store) accessTokenHardDeleter { return tx.DatabaseDB().AccessTokens().HardDeleteByID }}
-	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
-
-	attachAccessToken := func(t *testing.T) int64 {
-		t.Helper()
-		tokenID, _, err := db.AccessTokens().CreateInternal(ctx, user.ID, []string{"user:all"}, "testing", user.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, job.ID, tokenID); err != nil {
-			t.Fatal(err)
-		}
-		return tokenID
+	executionStore := &batchSpecWorkspaceExecutionWorkerStore{
+		Store:              workStore,
+		observationContext: &observation.TestContext,
 	}
+	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
 
 	job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
 	job.WorkerHostname = opts.WorkerHostname
 	ct.UpdateJobState(t, ctx, s, job)
-	tokenID := attachAccessToken(t)
 
 	ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
 	if !ok || err != nil {
@@ -595,11 +452,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		if len(entries) != 1 {
 			t.Fatal("cache entry not found")
 		}
-	}
-
-	_, err = db.AccessTokens().GetByID(ctx, tokenID)
-	if err != database.ErrAccessTokenNotFound {
-		t.Fatalf("access token was not deleted")
 	}
 }
 

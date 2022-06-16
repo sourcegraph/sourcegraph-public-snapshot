@@ -35,7 +35,7 @@ export const StandaloneInsightDashboardPills: FunctionComponent<StandaloneInsigh
                     rel="noopener"
                     className={styles.pill}
                 >
-                    <Icon as={ViewDashboardIcon} />
+                    <Icon as={ViewDashboardIcon} aria-hidden={true} />
                     {dashboard.title}
                 </Button>
             ))}
