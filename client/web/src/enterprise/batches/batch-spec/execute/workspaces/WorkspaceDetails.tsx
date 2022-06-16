@@ -515,13 +515,33 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                 <Card className={classNames('mt-2', styles.stepCard)}>
                     <CardBody>
                         {!step.skipped && (
-                            <Tabs size="small" behavior="forceRender">
+                            <Tabs className={styles.stepTabs} size="small" behavior="forceRender">
                                 <TabList>
-                                    <Tab key="logs">Logs</Tab>
-                                    <Tab key="output-variables">Output variables</Tab>
-                                    <Tab key="diff">Diff</Tab>
-                                    <Tab key="files-env">Files / Env</Tab>
-                                    <Tab key="command-container">Commands / Container</Tab>
+                                    <Tab key="logs">
+                                        <span className="text-content" data-tab-content="Logs">
+                                            Logs
+                                        </span>
+                                    </Tab>
+                                    <Tab key="output-variables">
+                                        <span className="text-content" data-tab-content="Output variables">
+                                            Output variables
+                                        </span>
+                                    </Tab>
+                                    <Tab key="diff">
+                                        <span className="text-content" data-tab-content="Diff">
+                                            Diff
+                                        </span>
+                                    </Tab>
+                                    <Tab key="files-env">
+                                        <span className="text-content" data-tab-content="Files / Env">
+                                            Files / Env
+                                        </span>
+                                    </Tab>
+                                    <Tab key="command-container">
+                                        <span className="text-content" data-tab-content="Commands / Container">
+                                            Commands / Container
+                                        </span>
+                                    </Tab>
                                 </TabList>
                                 <TabPanels>
                                     <TabPanel className="pt-2" key="logs">
