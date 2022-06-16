@@ -111,8 +111,9 @@ func marshalAndHash(key *ExecutionKey, envs []map[string]string) (string, error)
 
 	raw, err := json.Marshal(struct {
 		*ExecutionKey
-		Environments   []map[string]string
-		MountsMetadata []mountMetadata
+		Environments []map[string]string
+		// Omit if empty to be backwards compatible
+		MountsMetadata []mountMetadata `json:"MountsMetadata,omitempty"`
 	}{
 		ExecutionKey:   key,
 		Environments:   envs,
