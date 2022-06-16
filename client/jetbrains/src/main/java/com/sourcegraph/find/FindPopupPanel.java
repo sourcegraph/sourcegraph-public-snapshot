@@ -57,9 +57,9 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
 
         // The border is needed because without it, window and splitter resize don't work because the JCEF
         // doesn't properly pass the mouse events to Swing.
-        // 3px is the minimum amount to make it work for the window resize, and 5px for the splitter.
+        // 4px is the minimum amount to make it work for the window resize, and 5px for the splitter.
         BorderLayoutPanel topPanel = new BorderLayoutPanel();
-        topPanel.setBorder(JBUI.Borders.empty(0, 3, 5, 3));
+        topPanel.setBorder(JBUI.Borders.empty(0, 4, 5, 4));
         topPanel.add(browserAndLoadingPanel, BorderLayout.CENTER);
 
         splitter.setFirstComponent(topPanel);
