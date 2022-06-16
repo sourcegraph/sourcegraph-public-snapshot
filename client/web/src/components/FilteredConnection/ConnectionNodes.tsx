@@ -2,6 +2,8 @@ import * as React from 'react'
 
 import * as H from 'history'
 
+import { H1 } from '@sourcegraph/wildcard'
+
 import { Connection } from './ConnectionType'
 import { ConnectionList, ShowMoreButton, SummaryContainer, ConnectionSummary } from './ui'
 import { hasID, hasNextPage, hasDisplayName } from './utils'
@@ -85,6 +87,9 @@ export interface ConnectionNodesDisplayProps {
 
     /** A function that generates an aria label given a node display name */
     ariaLabelFunction?: (displayName: string) => string
+
+    /** Displays the heading of a page */
+    pageHeading?:string
 }
 
 interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}, HP = {}>
@@ -141,6 +146,7 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
     showMoreClassName,
     compact,
     withCenteredSummary,
+    pageHeading
 }: ConnectionNodesProps<C, N, NP, HP>): JSX.Element => {
     const nextPage = hasNextPage(connection)
 
@@ -171,6 +177,7 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
 
     return (
         <>
+            {pageHeading ? <H1>{pageHeading}</H1> : <></>}
             <SummaryContainer compact={compact} centered={withCenteredSummary} className={summaryClassName}>
                 {connectionQuery && summary}
             </SummaryContainer>

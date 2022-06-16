@@ -78,6 +78,9 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps, Co
 
     /** A function that generates an aria label given a node display name */
     ariaLabelFunction?: (displayName: string) => string
+
+    /** Displays the heading of a page */
+    pageHeading?:string
 }
 
 /**
@@ -537,6 +540,7 @@ export class FilteredConnection<
                         totalCountSummaryComponent={this.props.totalCountSummaryComponent}
                         withCenteredSummary={this.props.withCenteredSummary}
                         ariaLabelFunction={this.props.ariaLabelFunction}
+                        pageHeading={this.props.pageHeading}
                     />
                 )}
 
