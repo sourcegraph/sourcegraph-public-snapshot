@@ -24,4 +24,4 @@ jobs:
                   team/frontend-platform=@taylorsperry @jasongornall
                   team/repo-management=@jplahn
                   team/devops=@sourcegraph/cloud-devops
-                  team/iam-admin-experience=@sourcegraph/iam-and-admin-experience
+                  team/iam=@sourcegraph/iam
