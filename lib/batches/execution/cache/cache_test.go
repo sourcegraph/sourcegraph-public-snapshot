@@ -529,6 +529,8 @@ func TestKeyer_Key_Mount(t *testing.T) {
 			} else {
 				expectedHash := sha256.Sum256([]byte(test.expectedRaw))
 				expectedKey := base64.RawURLEncoding.EncodeToString(expectedHash[:16])
+				// Since the expected key is being built manually, need to know if it is step and update the expected
+				// key accordingly.
 				switch test.keyer.(type) {
 				case StepsCacheKey, *StepsCacheKeyWithGlobalEnv:
 					assert.Equal(t, fmt.Sprintf("%s-step-0", expectedKey), key)
