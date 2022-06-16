@@ -6,7 +6,7 @@ import useResizeObserver from 'use-resize-observer'
 
 import { useDebounce } from '@sourcegraph/wildcard'
 
-import { getLineColor, LegendItem, LegendList, ScrollBox } from '../../../../../../../../charts'
+import { getLineColor, LegendItem, LegendList, ScrollBox, Series } from '../../../../../../../../charts'
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
 import { BackendInsightData } from '../../../../../../core'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
@@ -43,7 +43,6 @@ interface BackendInsightChartProps<Datum> extends BackendInsightData {
     locked: boolean
     zeroYAxisMin: boolean
     className?: string
-    onLegendItemClick: (id: string) => void
     onDatumClick: () => void
     seriesToggleState: UseSeriesToggleReturn
 }
@@ -56,7 +55,6 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
         zeroYAxisMin,
         className,
         onDatumClick,
-        onLegendItemClick,
         seriesToggleState,
     } = props
     const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
@@ -111,7 +109,9 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     className={classNames(styles.legendListItem, {
                                         [styles.clickable]: content.series.length > 1,
                                     })}
-                                    onClick={() => onLegendItemClick(`${series.id}`)}
+                                    onClick={() =>
+                                        seriesToggleState.toggle(`${series.id}`, mapSeriesIds(content.series))
+                                    }
                                     onMouseEnter={() => setHoveredId(`${series.id}`)}
                                     // prevent accidental dragging events
                                     onMouseDown={event => event.stopPropagation()}
@@ -124,3 +124,5 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
         </div>
     )
 }
+
+const mapSeriesIds = <D,>(series: Series<D>[]): string[] => series.map(series => `${series.id}`)

@@ -229,7 +229,6 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                     zeroYAxisMin={zeroYAxisMin}
                     seriesToggleState={seriesToggleState}
                     onDatumClick={trackDatumClicks}
-                    onLegendItemClick={seriesId => seriesToggleState.toggle(seriesId, mapSeriesIds(insightData))}
                 />
             )}
             {
@@ -240,5 +239,3 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
         </InsightCard>
     )
 }
-
-const mapSeriesIds = (data: BackendInsightData): string[] => data.content.series.map(series => `${series.id}`)

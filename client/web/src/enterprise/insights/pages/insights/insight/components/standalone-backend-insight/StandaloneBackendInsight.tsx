@@ -204,7 +204,6 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         locked={insight.isFrozen}
                         zeroYAxisMin={zeroYAxisMin}
                         onDatumClick={trackDatumClicks}
-                        onLegendItemClick={seriesId => seriesToggleState.toggle(seriesId, mapSeriesIds(insightData))}
                         seriesToggleState={seriesToggleState}
                     />
                 )}
@@ -212,5 +211,3 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         </div>
     )
 }
-
-const mapSeriesIds = (data: BackendInsightData): string[] => data.content.series.map(series => `${series.id}`)
