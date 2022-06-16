@@ -14,6 +14,7 @@ import { parseSearchURLQuery } from '..'
 import { streamComputeQuery } from '../../../../shared/src/search/stream'
 import { AuthenticatedUser } from '../../auth'
 import { RecentlySearchedRepositoriesFragment } from '../../graphql-operations'
+import { useExperimentalFeatures } from '../../stores'
 import { EventLogResult } from '../backend'
 
 import { EmptyPanelContainer } from './EmptyPanelContainer'
@@ -137,6 +138,7 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
             {repoFilterValues?.length && (
                 <ul className="list-group">
                     {repoFilterValues.map((repoFilterValue, index) => (
+                        // The repo is not guaranteed to be unique on its own, so we use index as well.
                         // eslint-disable-next-line react/no-array-index-key
                         <li key={`${repoFilterValue}-${index}`} className="text-monospace text-break mb-2">
                             <small>
@@ -148,25 +150,23 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
                     ))}
                 </ul>
             )}
-                        {searchEventLogs?.pageInfo.hasNextPage && (
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            {searchEventLogs?.pageInfo.hasNextPage && (
                 <ShowMoreButton className="test-repositories-panel-show-more" onClick={loadMoreItems} />
             )}
         </div>
     )
 
-    // a constant to hold git commits history for the repo filter
-    // call streamComputeQuery from stream
-
+    // Get the user's repos from their commit history and extract all unique repos
+    const checkHomePanelsFeatureFlag = useExperimentalFeatures(features => features.homePanelsComputeSuggestions)
     const gitRepository = useObservable(
         useMemo(
             () =>
-                authenticatedUser
+            (checkHomePanelsFeatureFlag && authenticatedUser)
                     ? streamComputeQuery(
                           `content:output((.|\n)* -> $repo) author:${authenticatedUser.email} type:commit after:"1 year ago" count:all`
                       )
                     : of([]),
-            [authenticatedUser]
+            [authenticatedUser, checkHomePanelsFeatureFlag]
         )
     )
 
@@ -189,12 +189,8 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
         return gitSet
     }, [gitRepository])
 
-    // A new display for git history
     const gitHistoryDisplay = (
         <div className="mt-2">
-            <div className="d-flex mb-1">
-                <small>Git history</small>
-            </div>
             {gitSet.size > 0 && (
                 <ul className="list-group">
                     {Array.from(gitSet).map(repo => (
