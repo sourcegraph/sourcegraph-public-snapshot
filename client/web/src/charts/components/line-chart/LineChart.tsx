@@ -7,7 +7,7 @@ import { voronoi } from '@visx/voronoi'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
-import { Series, SeriesLikeChart } from '../../types'
+import { SeriesLikeChart } from '../../types'
 
 import { AxisBottom, AxisLeft, Tooltip, TooltipContent, PointGlyph } from './components'
 import { StackedArea } from './components/stacked-area/StackedArea'
@@ -43,11 +43,6 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
     zeroYAxisMin?: boolean
 
     /**
-     * If provided, uses this series to render the tooltip
-     */
-    tooltipSeries?: Series<Datum>[]
-
-    /**
      * Function to style a given line group
      *
      * @param id The id of the series
@@ -68,6 +63,8 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
 const sortByDataKey = (dataKey: string | number | symbol, activeDataKey: string): number =>
     dataKey === activeDataKey ? 1 : -1
 
+const identity = <T,>(argument: T): T => argument
+
 /**
  * Visual component that renders svg line chart with pre-defined sizes, tooltip,
  * voronoi area distribution.
@@ -79,11 +76,10 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         series,
         stacked = false,
         zeroYAxisMin = false,
-        tooltipSeries,
         className,
-        onDatumClick = noop,
         getLineGroupStyle,
-        getActiveSeries,
+        getActiveSeries = identity,
+        onDatumClick = noop,
         ...attributes
     } = props
 
@@ -107,7 +103,6 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
     )
 
     const dataSeries = useMemo(() => getSeriesData({ series, stacked }), [series, stacked])
-
     const { minX, maxX, minY, maxY } = useMemo(() => getMinMaxBoundaries({ dataSeries, zeroYAxisMin }), [
         dataSeries,
         zeroYAxisMin,
@@ -135,8 +130,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         [minY, maxY, margin.top, height]
     )
 
-    const activeSeries = useMemo(() => getActiveSeries?.(dataSeries) || dataSeries, [getActiveSeries, dataSeries])
-
+    const activeSeries = useMemo(() => getActiveSeries(dataSeries), [getActiveSeries, dataSeries])
     const points = useMemo(
         () =>
             generatePointsField({
@@ -241,7 +235,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
 
             {activePoint && (
                 <Tooltip>
-                    <TooltipContent series={tooltipSeries || series} activePoint={activePoint} stacked={stacked} />
+                    <TooltipContent series={activeSeries} activePoint={activePoint} stacked={stacked} />
                 </Tooltip>
             )}
         </svg>

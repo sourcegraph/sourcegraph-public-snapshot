@@ -1,4 +1,4 @@
-import React, { CSSProperties, SVGProps, useMemo } from 'react'
+import React, { CSSProperties, SVGProps, useCallback } from 'react'
 
 import { LineChart, SeriesLikeChart } from '../../../../../../charts'
 import { SeriesWithData } from '../../../../../../charts/components/line-chart/utils'
@@ -17,24 +17,15 @@ export interface SeriesChartProps<D> extends SeriesLikeChart<D>, Omit<SVGProps<S
 
 const FULL_COLOR = 1
 const DIMMED_COLOR = 0.5
+const DEFAULT_TRUE_GETTER = (): true => true
 
 export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactElement {
     const { series, type, locked, seriesToggleState, ...otherProps } = props
-    const { isSeriesHovered = () => true, isSeriesSelected = () => true, hoveredId, hasSelections = () => true } =
+
+    const { isSeriesHovered = DEFAULT_TRUE_GETTER, isSeriesSelected = DEFAULT_TRUE_GETTER, hoveredId } =
         seriesToggleState || {}
 
-    const availableSeriesids = useMemo(() => series.map(({ id }) => `${id}`), [series])
-
-    const selectedSeries = useMemo(() => series.filter(({ id }) => isSeriesSelected(`${id}`)), [
-        series,
-        isSeriesSelected,
-    ])
-
     const getOpacity = (id: string, hasActivePoint: boolean, isActive: boolean): number => {
-        if (!hasSelections(availableSeriesids) && hoveredId && !isSeriesHovered(id)) {
-            return DIMMED_COLOR
-        }
-
         if (hoveredId && !isSeriesHovered(id)) {
             return DIMMED_COLOR
         }
@@ -70,8 +61,11 @@ export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactE
         }
     }
 
-    const getActiveSeries = <D,>(dataSeries: SeriesWithData<D>[]): SeriesWithData<D>[] =>
-        dataSeries.filter(series => isSeriesSelected(`${series.id}`) || isSeriesHovered(`${series.id}`))
+    const getActiveSeries = useCallback(
+        <D,>(dataSeries: SeriesWithData<D>[]): SeriesWithData<D>[] =>
+            dataSeries.filter(series => isSeriesSelected(`${series.id}`) || isSeriesHovered(`${series.id}`)),
+        [isSeriesSelected, isSeriesHovered]
+    )
 
     if (locked) {
         return <LockedChart />
@@ -80,7 +74,6 @@ export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactE
     return (
         <LineChart
             series={series}
-            tooltipSeries={selectedSeries}
             getLineGroupStyle={getHoverStyle}
             getActiveSeries={getActiveSeries}
             {...otherProps}

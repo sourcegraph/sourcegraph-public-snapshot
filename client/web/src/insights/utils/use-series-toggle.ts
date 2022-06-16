@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useState } from 'react'
+import { Dispatch, SetStateAction, useCallback, useState } from 'react'
 
 export interface UseSeriesToggleReturn {
     /* List of currently selected series ids */
@@ -9,7 +9,6 @@ export interface UseSeriesToggleReturn {
     // contained in the hook
     isSeriesSelected: (id: string) => boolean
     isSeriesHovered: (id: string) => boolean
-    hasSelections: (availableSeriesIds: string[]) => boolean
     setHoveredId: Dispatch<SetStateAction<string | undefined>>
     toggle: (id: string, availableSeriesIds: string[]) => void
 }
@@ -45,16 +44,19 @@ export const useSeriesToggle = (): UseSeriesToggleReturn => {
         selectSeries(seriesId, availableSeriesIds)
     }
 
-    const isSelected = (seriesId: string): boolean => {
-        // Return true for all series if no series are selected
-        // This is because we only want to hide series if something is
-        // specifically selected. Otherwise, they should all be "highlighted"
-        if (selectedSeriesIds.length === 0) {
-            return true
-        }
+    const isSelected = useCallback(
+        (seriesId: string): boolean => {
+            // Return true for all series if no series are selected
+            // This is because we only want to hide series if something is
+            // specifically selected. Otherwise, they should all be "highlighted"
+            if (selectedSeriesIds.length === 0) {
+                return true
+            }
 
-        return selectedSeriesIds.includes(seriesId)
-    }
+            return selectedSeriesIds.includes(seriesId)
+        },
+        [selectedSeriesIds]
+    )
 
     return {
         // state
@@ -63,9 +65,7 @@ export const useSeriesToggle = (): UseSeriesToggleReturn => {
 
         // functions
         isSeriesSelected: isSelected,
-        isSeriesHovered: (seriesId: string) => seriesId === hoveredId,
-        hasSelections: (availableSeriesIds: string[]) =>
-            selectedSeriesIds.length > 0 && selectedSeriesIds.length !== availableSeriesIds.length,
+        isSeriesHovered: useCallback((seriesId: string) => seriesId === hoveredId, [hoveredId]),
         setHoveredId,
         toggle,
     }
