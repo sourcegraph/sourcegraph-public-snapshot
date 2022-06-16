@@ -265,12 +265,12 @@ func TestLockfileDependencies(t *testing.T) {
 		t.Fatalf(err.Error())
 	}
 
-	packageA := shared.TestPackageDependencyLiteral(api.RepoName("A"), "1", "2", "3", "4")
-	packageB := shared.TestPackageDependencyLiteral(api.RepoName("B"), "2", "3", "4", "5")
-	packageC := shared.TestPackageDependencyLiteral(api.RepoName("C"), "3", "4", "5", "6")
-	packageD := shared.TestPackageDependencyLiteral(api.RepoName("D"), "4", "5", "6", "7")
-	packageE := shared.TestPackageDependencyLiteral(api.RepoName("E"), "5", "6", "7", "8")
-	packageF := shared.TestPackageDependencyLiteral(api.RepoName("F"), "6", "7", "8", "9")
+	packageA := shared.TestPackageDependencyLiteral(api.RepoName("A"), "1", "2", "pkg-A", "4")
+	packageB := shared.TestPackageDependencyLiteral(api.RepoName("B"), "2", "3", "pkg-B", "5")
+	packageC := shared.TestPackageDependencyLiteral(api.RepoName("C"), "3", "4", "pkg-C", "6")
+	packageD := shared.TestPackageDependencyLiteral(api.RepoName("D"), "4", "5", "pkg-D", "7")
+	packageE := shared.TestPackageDependencyLiteral(api.RepoName("E"), "5", "6", "pkg-E", "8")
+	packageF := shared.TestPackageDependencyLiteral(api.RepoName("F"), "6", "7", "pkg-F", "9")
 
 	depsAtCommit := map[string]struct {
 		list  []shared.PackageDependency
@@ -319,11 +319,11 @@ func TestLockfileDependencies(t *testing.T) {
 	}
 
 	// Update twice to show idempotency
-	// for commit, deps := range depsAtCommit {
-	// 	if err := store.UpsertLockfileGraph(ctx, "foo", commit, deps.list, deps.graph); err != nil {
-	// 		t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
-	// 	}
-	// }
+	for commit, deps := range depsAtCommit {
+		if err := store.UpsertLockfileGraph(ctx, "foo", commit, deps.list, deps.graph); err != nil {
+			t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
+		}
+	}
 
 	for commit, expectedDeps := range depsAtCommit {
 		// Querying direct dependencies

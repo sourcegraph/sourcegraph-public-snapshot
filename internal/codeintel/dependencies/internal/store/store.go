@@ -283,8 +283,8 @@ duplicates AS (
 		r.package_scheme = t.package_scheme AND
 		r.package_name = t.package_name AND
 		r.package_version = t.package_version AND
-		r.depends_on = t.depends_on AND
 		r.resolution_id = t.resolution_id
+		-- We ignore depends_on since that is updated in a second query and we can't use it to compare
 )
 SELECT id FROM ins UNION
 SELECT id FROM duplicates
@@ -310,8 +310,8 @@ duplicates AS (
 		r.package_scheme = t.package_scheme AND
 		r.package_name = t.package_name AND
 		r.package_version = t.package_version AND
-		r.depends_on = t.depends_on AND
 		r.resolution_id = t.resolution_id
+		-- We ignore depends_on since that is updated in a second query and we can't use it to compare
 )
 SELECT id, package_name FROM ins UNION
 SELECT id, package_name FROM duplicates
@@ -348,7 +348,6 @@ func populatePackageDependencyChannel(deps []shared.PackageDependency, resolutio
 				dep.Scheme(),
 				dep.PackageSyntax(),
 				dep.PackageVersion(),
-				// TODO: insert empty dependencies for now
 				pq.Array([]int{}),
 				resolutionId,
 			}
