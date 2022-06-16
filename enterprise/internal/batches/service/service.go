@@ -234,30 +234,60 @@ type UpsertEmptyBatchChangeOpts struct {
 // otherwise it returns the existing batch change.
 // It enforces namespace permissions of the caller and validates that the combination of name +
 // namespace is unique.
-func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
+func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBatchChangeOpts) (*btypes.BatchChange, error) {
 	// Check whether the current user has access to either one of the namespaces.
-	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
+	err := s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
 	if err != nil {
 		return nil, err
 	}
 
-	// check if batch change already exists
-	batchChange, err = s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{
+	// Construct and parse the batch spec YAML of just the provided name to validate the
+	// pattern of the name is okay
+	rawSpec, err := yaml.Marshal(struct {
+		Name string `yaml:"name"`
+	}{Name: opts.Name})
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling name")
+	}
+
+	spec, err := batcheslib.ParseBatchSpec(rawSpec, batcheslib.ParseBatchSpecOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	actor := actor.FromContext(ctx)
+	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
+
+	batchSpec := &btypes.BatchSpec{
+		RawSpec:         string(rawSpec),
+		Spec:            spec,
+		NamespaceUserID: opts.NamespaceUserID,
+		NamespaceOrgID:  opts.NamespaceOrgID,
+		UserID:          actor.UID,
+		CreatedFromRaw:  true,
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := tx.CreateBatchSpec(ctx, batchSpec); err != nil {
+		return nil, err
+	}
+
+	batchChange := &btypes.BatchChange{
 		Name:            opts.Name,
 		NamespaceUserID: opts.NamespaceUserID,
 		NamespaceOrgID:  opts.NamespaceOrgID,
-	})
+		BatchSpecID:     batchSpec.ID,
+		CreatorID:       actor.UID,
+	}
+
+	err = tx.UpsertBatchChange(ctx, batchChange)
 
 	if err != nil {
-		if err == store.ErrNoResults {
-			// this means batch change doesn't exist so we create it
-			return s.CreateEmptyBatchChange(ctx, CreateEmptyBatchChangeOpts{
-				Name:            opts.Name,
-				NamespaceUserID: opts.NamespaceUserID,
-				NamespaceOrgID:  opts.NamespaceOrgID,
-			})
-		}
-
 		return nil, err
 	}
 
