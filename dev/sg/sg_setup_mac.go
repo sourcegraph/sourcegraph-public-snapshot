@@ -44,7 +44,7 @@ var macOSDependencies = []dependencyCategory{
 			{
 				name:                 "docker",
 				check:                getCheck("docker-installed"),
-				instructionsCommands: `brew install --cask docker`,
+				instructionsCommands: `brew install --cask docker; open -a Docker`,
 			},
 		},
 		autoFixing:             true,
