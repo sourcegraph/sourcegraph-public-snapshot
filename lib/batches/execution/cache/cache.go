@@ -152,7 +152,9 @@ func getMountsMetadata(steps []batches.Step) ([]mountMetadata, error) {
 
 func getMountMetadata(path string) ([]mountMetadata, error) {
 	info, err := os.Stat(path)
-	if err != nil {
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, errors.Newf("path %s does not exist", path)
+	} else if err != nil {
 		return nil, err
 	}
 	var metadata []mountMetadata
