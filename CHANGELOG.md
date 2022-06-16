@@ -19,6 +19,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.40.11
+
+### Changed
+
+- Adjusted internal mechanisms used in server-side execution. This has no user-facing impact.
+
 ## 3.40.10
 
 ### Added
