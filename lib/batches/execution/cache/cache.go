@@ -163,7 +163,7 @@ func getMountMetadata(path string) ([]mountMetadata, error) {
 		}
 		metadata = append(metadata, dirMetadata...)
 	} else {
-		metadata = append(metadata, mountMetadata{Path: path, Size: info.Size(), Modified: info.ModTime()})
+		metadata = append(metadata, mountMetadata{Path: path, Size: info.Size(), Modified: info.ModTime().UTC()})
 	}
 	return metadata, nil
 }
