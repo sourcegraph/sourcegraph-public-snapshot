@@ -2564,11 +2564,11 @@ changesetTemplate:
 			}
 
 			if haveBatchChange == nil {
-				t.Fatalf("expected to have matching batch change, but got nil")
+				t.Fatal("expected to have matching batch change, but got nil")
 			}
 
 			if haveBatchChange.ID == 0 {
-				t.Fatalf("BatchChange ID is 0")
+				t.Fatal("BatchChange ID is 0")
 			}
 
 			if diff := cmp.Diff(bc, haveBatchChange); diff != "" {
