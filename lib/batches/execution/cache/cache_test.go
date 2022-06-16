@@ -244,6 +244,7 @@ func TestExecutionKey_Key_Mount(t *testing.T) {
 				string(modDateVal),
 			),
 		},
+		// TODO unhappy paths
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -505,6 +506,59 @@ func TestExecutionKeyWithGlobalEnv_Key_Mount(t *testing.T) {
 				expectedKey := base64.RawURLEncoding.EncodeToString(expectedHash[:16])
 				assert.Equal(t, expectedKey, key)
 			}
+		})
+	}
+}
+
+func TestStepsCacheKey_Key(t *testing.T) {
+	tests := []struct {
+		name        string
+		keyer       StepsCacheKey
+		expectedKey string
+	}{
+		{
+			name: "simple key",
+			keyer: StepsCacheKey{
+				ExecutionKey: &ExecutionKey{
+					Repository: batches.Repository{
+						ID:          "my-repo",
+						Name:        "github.com/sourcegraph/src-cli",
+						BaseRef:     "refs/heads/f00b4r",
+						BaseRev:     "c0mmit",
+						FileMatches: []string{"baz.go"},
+					},
+					Steps: []batches.Step{{Run: "foo"}},
+				},
+				StepIndex: 0,
+			},
+			expectedKey: "cu8r-xdguU4s0kn9_uxL5g-step-0",
+		},
+		{
+			name: "multiple steps",
+			keyer: StepsCacheKey{
+				ExecutionKey: &ExecutionKey{
+					Repository: batches.Repository{
+						ID:          "my-repo",
+						Name:        "github.com/sourcegraph/src-cli",
+						BaseRef:     "refs/heads/f00b4r",
+						BaseRev:     "c0mmit",
+						FileMatches: []string{"baz.go"},
+					},
+					Steps: []batches.Step{
+						{Run: "foo"},
+						{Run: "bar"},
+					},
+				},
+				StepIndex: 0,
+			},
+			expectedKey: "cu8r-xdguU4s0kn9_uxL5g-step-0",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			key, err := test.keyer.Key()
+			assert.NoError(t, err)
+			assert.Equal(t, test.expectedKey, key)
 		})
 	}
 }
