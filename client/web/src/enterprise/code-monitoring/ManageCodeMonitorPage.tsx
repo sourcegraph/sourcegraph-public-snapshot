@@ -53,7 +53,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
 }) => {
     const LOADING = 'loading' as const
 
-    useEffect(() => eventLogger.logViewEvent('ManageCodeMonitorPage'), [])
+    useEffect(() => eventLogger.logPageView('ManageCodeMonitorPage'), [])
 
     const [codeMonitorState, setCodeMonitorState] = React.useState<CodeMonitorFields>({
         id: '',
@@ -80,8 +80,9 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
     )
 
     const updateMonitorRequest = React.useCallback(
-        (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> =>
-            updateCodeMonitor(
+        (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> => {
+            eventLogger.log('ManageCodeMonitorFormSubmitted')
+            return updateCodeMonitor(
                 {
                     id: match.params.id,
                     update: {
@@ -92,8 +93,17 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
                 },
                 { id: codeMonitor.trigger.id, update: { query: codeMonitor.trigger.query } },
                 convertActionsForUpdate(codeMonitor.actions.nodes, authenticatedUser.id)
-            ),
+            )
+        },
         [authenticatedUser.id, match.params.id, updateCodeMonitor]
+    )
+
+    const deleteMonitorRequest = React.useCallback(
+        (id: string): Observable<void> => {
+            eventLogger.log('ManageCodeMonitorDeleteSubmitted')
+            return deleteCodeMonitor(id)
+        },
+        [deleteCodeMonitor]
     )
 
     return (
@@ -118,7 +128,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
                         history={history}
                         location={location}
                         authenticatedUser={authenticatedUser}
-                        deleteCodeMonitor={deleteCodeMonitor}
+                        deleteCodeMonitor={deleteMonitorRequest}
                         onSubmit={updateMonitorRequest}
                         codeMonitor={codeMonitorState}
                         submitButtonLabel="Save"
