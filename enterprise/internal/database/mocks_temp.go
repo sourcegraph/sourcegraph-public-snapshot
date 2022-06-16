@@ -73,10 +73,6 @@ type MockCodeMonitorStore struct {
 	// DeleteMonitorFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteMonitor.
 	DeleteMonitorFunc *CodeMonitorStoreDeleteMonitorFunc
-	// DeleteObsoleteTriggerJobsFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// DeleteObsoleteTriggerJobs.
-	DeleteObsoleteTriggerJobsFunc *CodeMonitorStoreDeleteObsoleteTriggerJobsFunc
 	// DeleteOldTriggerJobsFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteOldTriggerJobs.
 	DeleteOldTriggerJobsFunc *CodeMonitorStoreDeleteOldTriggerJobsFunc
@@ -275,11 +271,6 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 		},
 		DeleteMonitorFunc: &CodeMonitorStoreDeleteMonitorFunc{
 			defaultHook: func(context.Context, int64) (r0 error) {
-				return
-			},
-		},
-		DeleteObsoleteTriggerJobsFunc: &CodeMonitorStoreDeleteObsoleteTriggerJobsFunc{
-			defaultHook: func(context.Context) (r0 error) {
 				return
 			},
 		},
@@ -555,11 +546,6 @@ func NewStrictMockCodeMonitorStore() *MockCodeMonitorStore {
 				panic("unexpected invocation of MockCodeMonitorStore.DeleteMonitor")
 			},
 		},
-		DeleteObsoleteTriggerJobsFunc: &CodeMonitorStoreDeleteObsoleteTriggerJobsFunc{
-			defaultHook: func(context.Context) error {
-				panic("unexpected invocation of MockCodeMonitorStore.DeleteObsoleteTriggerJobs")
-			},
-		},
 		DeleteOldTriggerJobsFunc: &CodeMonitorStoreDeleteOldTriggerJobsFunc{
 			defaultHook: func(context.Context, int) error {
 				panic("unexpected invocation of MockCodeMonitorStore.DeleteOldTriggerJobs")
@@ -802,9 +788,6 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 		},
 		DeleteMonitorFunc: &CodeMonitorStoreDeleteMonitorFunc{
 			defaultHook: i.DeleteMonitor,
-		},
-		DeleteObsoleteTriggerJobsFunc: &CodeMonitorStoreDeleteObsoleteTriggerJobsFunc{
-			defaultHook: i.DeleteObsoleteTriggerJobs,
 		},
 		DeleteOldTriggerJobsFunc: &CodeMonitorStoreDeleteOldTriggerJobsFunc{
 			defaultHook: i.DeleteOldTriggerJobs,
@@ -2600,112 +2583,6 @@ func (c CodeMonitorStoreDeleteMonitorFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c CodeMonitorStoreDeleteMonitorFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// CodeMonitorStoreDeleteObsoleteTriggerJobsFunc describes the behavior when
-// the DeleteObsoleteTriggerJobs method of the parent MockCodeMonitorStore
-// instance is invoked.
-type CodeMonitorStoreDeleteObsoleteTriggerJobsFunc struct {
-	defaultHook func(context.Context) error
-	hooks       []func(context.Context) error
-	history     []CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall
-	mutex       sync.Mutex
-}
-
-// DeleteObsoleteTriggerJobs delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) DeleteObsoleteTriggerJobs(v0 context.Context) error {
-	r0 := m.DeleteObsoleteTriggerJobsFunc.nextHook()(v0)
-	m.DeleteObsoleteTriggerJobsFunc.appendCall(CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// DeleteObsoleteTriggerJobs method of the parent MockCodeMonitorStore
-// instance is invoked and the hook queue is empty.
-func (f *CodeMonitorStoreDeleteObsoleteTriggerJobsFunc) SetDefaultHook(hook func(context.Context) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DeleteObsoleteTriggerJobs method of the parent MockCodeMonitorStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *CodeMonitorStoreDeleteObsoleteTriggerJobsFunc) PushHook(hook func(context.Context) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *CodeMonitorStoreDeleteObsoleteTriggerJobsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeMonitorStoreDeleteObsoleteTriggerJobsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context) error {
-		return r0
-	})
-}
-
-func (f *CodeMonitorStoreDeleteObsoleteTriggerJobsFunc) nextHook() func(context.Context) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *CodeMonitorStoreDeleteObsoleteTriggerJobsFunc) appendCall(r0 CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall objects describing the
-// invocations of this function.
-func (f *CodeMonitorStoreDeleteObsoleteTriggerJobsFunc) History() []CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall {
-	f.mutex.Lock()
-	history := make([]CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall is an object that
-// describes an invocation of method DeleteObsoleteTriggerJobs on an
-// instance of MockCodeMonitorStore.
-type CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

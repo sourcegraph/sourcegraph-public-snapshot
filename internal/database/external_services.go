@@ -509,8 +509,8 @@ func validateBitbucketServerConnection(bitbucketServerValidators []func(connecti
 		err = errors.Append(err, validate(c))
 	}
 
-	if c.Repos == nil && c.RepositoryQuery == nil {
-		err = errors.Append(err, errors.New("at least one of repositoryQuery or repos must be set"))
+	if c.Repos == nil && c.RepositoryQuery == nil && c.ProjectKeys == nil {
+		err = errors.Append(err, errors.New("at least one of: repositoryQuery, projectKeys, or repos must be set"))
 	}
 	return err
 }
