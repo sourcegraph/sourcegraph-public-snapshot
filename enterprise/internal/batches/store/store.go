@@ -185,6 +185,7 @@ type operations struct {
 	getBatchSpec            *observation.Operation
 	getNewestBatchSpec      *observation.Operation
 	listBatchSpecs          *observation.Operation
+	listBatchSpecRepoIDs    *observation.Operation
 	deleteExpiredBatchSpecs *observation.Operation
 
 	getBulkOperation        *observation.Operation
@@ -318,6 +319,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			getBatchSpec:            op("GetBatchSpec"),
 			getNewestBatchSpec:      op("GetNewestBatchSpec"),
 			listBatchSpecs:          op("ListBatchSpecs"),
+			listBatchSpecRepoIDs:    op("ListBatchSpecRepoIDs"),
 			deleteExpiredBatchSpecs: op("DeleteExpiredBatchSpecs"),
 
 			getBulkOperation:        op("GetBulkOperation"),

@@ -465,7 +465,17 @@ ON
 	)
 }
 
-func (s *Store) ListBatchSpecRepoIDs(ctx context.Context, id int64) ([]api.RepoID, error) {
+// ListBatchSpecRepoIDs lists the repo IDs associated with changeset specs
+// within the batch spec.
+//
+// 🚨 SECURITY: Repos that the current user (based on the context) does not have
+// access to will be filtered out.
+func (s *Store) ListBatchSpecRepoIDs(ctx context.Context, id int64) (ids []api.RepoID, err error) {
+	ctx, _, endObservation := s.operations.listBatchSpecRepoIDs.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int64("ID", id)},
+	})
+	defer endObservation(1, observation.Args{})
+
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s))
 	if err != nil {
 		return nil, errors.Wrap(err, "ListBatchSpecRepoIDs generating authz query conds")
@@ -477,7 +487,7 @@ func (s *Store) ListBatchSpecRepoIDs(ctx context.Context, id int64) ([]api.RepoI
 		authzConds,
 	)
 
-	ids := []api.RepoID{}
+	ids = make([]api.RepoID, 0)
 	if err := s.query(ctx, q, func(s dbutil.Scanner) (err error) {
 		var id api.RepoID
 		if err := s.Scan(&id); err != nil {
@@ -494,8 +504,8 @@ func (s *Store) ListBatchSpecRepoIDs(ctx context.Context, id int64) ([]api.RepoI
 }
 
 const listBatchSpecRepoIDsQueryFmtstr = `
-SELECT
-	DISTINCT repo.id
+-- source: enterprise/internal/batches/store/batch_specs.go:ListBatchSpecRepoIDs
+SELECT DISTINCT repo.id
 FROM repo
 LEFT JOIN changeset_specs ON repo.id = changeset_specs.repo_id
 LEFT JOIN batch_specs ON changeset_specs.batch_spec_id = batch_specs.id
