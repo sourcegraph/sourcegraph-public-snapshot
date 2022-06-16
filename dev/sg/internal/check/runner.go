@@ -204,7 +204,6 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 			categoriesSkipped[i] = err
 			// Mark as done
 			progress.StatusBarCompletef(i, "Category skipped: %s", err.Error())
-			r.logEvent(ctx, []string{category.Name}, start, "skipped")
 			continue
 		}
 
@@ -224,10 +223,10 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 				checksWg.Add(1)
 				go func(check *Check[Args]) {
 					var event string
-					defer updateChecksProgress()
-					defer checksWg.Done()
 					defer func() {
-						r.logEvent(ctx, []string{category.Name, check.Name}, start, event)
+						updateChecksProgress()
+						r.logEvent(ctx, []string{"check", category.Name, check.Name}, start, event)
+						checksWg.Done()
 					}()
 
 					if err := check.IsEnabled(ctx, args); err != nil {
@@ -458,6 +457,7 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 	r.Output.SetVerbose()
 	defer r.Output.UnsetVerbose()
 
+	start := time.Now()
 	r.Output.WriteLine(output.Styledf(output.StylePending, "Trying my hardest to fix %q automatically...", category.Name))
 
 	// Make sure to call this with a final message before returning!
@@ -494,6 +494,10 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 
 	// now go through the real dependencies
 	for _, c := range category.Checks {
+		logEvent := func(event string) {
+			r.logEvent(ctx, []string{"fix", category.Name, c.Name}, start, event)
+		}
+
 		// If category is fixed, we are good to go
 		if c.IsSatisfied() {
 			continue
@@ -503,6 +507,7 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 		if err := c.IsEnabled(ctx, args); err != nil {
 			r.Output.WriteLine(output.Linef(output.EmojiQuestionMark, output.CombineStyles(output.StyleGrey, output.StyleBold),
 				"%q skipped: %s", c.Name, err.Error()))
+			logEvent("skipped")
 			continue
 		}
 
@@ -510,6 +515,7 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 		if c.Fix == nil {
 			r.Output.WriteLine(output.Linef(output.EmojiShrug, output.CombineStyles(output.StyleWarning, output.StyleBold),
 				"%q cannot be fixed automatically.", c.Name))
+			logEvent("unfixable")
 			continue
 		}
 
@@ -524,6 +530,7 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 		if err != nil {
 			r.Output.WriteLine(output.Linef(output.EmojiWarning, output.CombineStyles(output.StyleFailure, output.StyleBold),
 				"Failed to fix %q: %s", c.Name, err.Error()))
+			logEvent("failed")
 			continue
 		}
 
@@ -539,9 +546,11 @@ func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx
 		if err != nil {
 			r.Output.WriteLine(output.Styledf(output.CombineStyles(output.StyleWarning, output.StyleBold),
 				"Check %q still failing: %s", c.Name, err.Error()))
+			logEvent("unfixed")
 		} else {
 			r.Output.WriteLine(output.Styledf(output.CombineStyles(output.StyleSuccess, output.StyleBold),
 				"Check %q is satisfied now!", c.Name))
+			logEvent("success")
 		}
 	}
 
