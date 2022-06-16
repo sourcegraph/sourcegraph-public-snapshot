@@ -1,6 +1,6 @@
 WITH event_log_stats AS (
     SELECT
-        NULLIF(COUNT(*) FILTER (WHERE name IN ('ViewCodeMonitoringPage', 'CodeMonitoringViewed')), 0) :: INT AS code_monitoring_page_views,
+        NULLIF(COUNT(*) FILTER (WHERE name IN ('ViewCodeMonitoringPage', 'CodeMonitoringPageViewed')), 0) :: INT AS code_monitoring_page_views,
         NULLIF(COUNT(*) FILTER (WHERE name IN ('ViewCreateCodeMonitorPage', 'CreateCodeMonitorPageViewed')), 0) :: INT AS create_code_monitor_page_views,
         NULLIF(COUNT(*) FILTER (WHERE name IN ('ViewCreateCodeMonitorPage', 'CreateCodeMonitorPageViewed') AND (argument->>'hasTriggerQuery')::bool), 0) :: INT AS create_code_monitor_page_views_with_trigger_query,
         NULLIF(COUNT(*) FILTER (WHERE name IN ('ViewCreateCodeMonitorPage', 'CreateCodeMonitorPageViewed') AND NOT (argument->>'hasTriggerQuery')::bool), 0) :: INT AS create_code_monitor_page_views_without_trigger_query,
@@ -16,7 +16,7 @@ WITH event_log_stats AS (
     WHERE
         name IN (
             -- The events that share a line are events that changed names and are aliases of each other
-            'ViewCodeMonitoringPage', 'CodeMonitoringViewed',
+            'ViewCodeMonitoringPage', 'CodeMonitoringPageViewed',
             'ViewCreateCodeMonitorPage', 'CreateCodeMonitorPageViewed',
             'ViewManageCodeMonitorPage', 'ManageCodeMonitorPageViewed',
             'CodeMonitorEmailLinkClicked',
