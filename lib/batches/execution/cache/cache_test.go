@@ -520,6 +520,41 @@ func TestKeyer_Key_Mount(t *testing.T) {
 				string(modDateVal),
 			),
 		},
+		{
+			name: "StepsCacheKeyWithGlobalEnv single file",
+			keyer: &StepsCacheKeyWithGlobalEnv{
+				StepsCacheKey: &StepsCacheKey{
+					ExecutionKey: &ExecutionKey{
+						Repository: batches.Repository{
+							ID:          "my-repo",
+							Name:        "github.com/sourcegraph/src-cli",
+							BaseRef:     "refs/heads/f00b4r",
+							BaseRev:     "c0mmit",
+							FileMatches: []string{"baz.go"},
+						},
+						Steps: []batches.Step{
+							{
+								Run: "foo",
+								Mount: []batches.Mount{
+									{
+										Path:       sampleScriptPath,
+										Mountpoint: "/tmp/sample.sh",
+									},
+								},
+								Env: stepEnv,
+							},
+						},
+					},
+					StepIndex: 0,
+				},
+				GlobalEnv: []string{"SOME_ENV=FOO", "FAZ=BAZ"},
+			},
+			expectedRaw: fmt.Sprintf(`{"Repository":{"ID":"my-repo","Name":"github.com/sourcegraph/src-cli","BaseRef":"refs/heads/f00b4r","BaseRev":"c0mmit","FileMatches":["baz.go"]},"Path":"","OnlyFetchWorkspace":false,"Steps":[{"run":"foo","env":["SOME_ENV"],"mount":[{"mountpoint":"/tmp/sample.sh","path":"%s"}]}],"BatchChangeAttributes":null,"Environments":[{"SOME_ENV":"FOO"}],"MountsMetadata":[{"Path":"%s","Size":0,"Modified":%s}]}`,
+				sampleScriptPath,
+				sampleScriptPath,
+				string(modDateVal),
+			),
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
