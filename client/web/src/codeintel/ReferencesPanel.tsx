@@ -8,7 +8,6 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import { MemoryRouter, useHistory, useLocation } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
@@ -93,14 +92,13 @@ interface ReferencesPanelProps
 export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<
     React.PropsWithChildren<ReferencesPanelProps>
 > = props => (
+    // TODO: this won't be working with Router V6
     <MemoryRouter
         // Force router to remount the Panel when external location changes
         key={`${props.externalLocation.pathname}${props.externalLocation.search}${props.externalLocation.hash}`}
         initialEntries={[props.externalLocation]}
     >
-        <CompatRouter>
-            <ReferencesPanel {...props} />
-        </CompatRouter>
+        <ReferencesPanel {...props} />
     </MemoryRouter>
 )
 

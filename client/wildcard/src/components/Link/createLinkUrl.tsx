@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 export interface URLComponents {
     pathname?: string
     search?: string
@@ -24,12 +23,3 @@ export const createLinkUrl = (location: URLComponents): string => {
 
     return components.join('')
 }
-=======
-import { createPath, Location } from 'react-router-dom-v5-compat'
-
-/**
- * Convenience method provided for translating Location objects
- * into strings that are accepted by the RouterLink component.
- */
-export const createLinkUrl = (location: Partial<Location<unknown>>): string => createPath(location)
->>>>>>> 57f70fbfef (Revert Revert "WIP Router V6 migration: update Link component (#36285)" (#37267)")
