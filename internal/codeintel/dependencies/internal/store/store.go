@@ -127,26 +127,19 @@ func (s *store) LockfileDependencies(ctx context.Context, opts LockfileDependenc
 
 	resolutionID := fmt.Sprintf("resolution-%s-%s", opts.RepoName, opts.Commit)
 
-	var q *sqlf.Query
-	if !opts.IncludeTransitive {
-		q = sqlf.Sprintf(
-			lockfileDependenciesQuery,
-			opts.RepoName,
-			dbutil.CommitBytea(opts.Commit),
-			resolutionID,
-		)
-	} else {
-		const maxLevel = 9999
-		q = sqlf.Sprintf(
-			recursiveLockfileDependenciesQuery,
-			maxLevel,
-			opts.RepoName,
-			dbutil.CommitBytea(opts.Commit),
-			resolutionID,
-		)
+	maxDependencyLevel := 0
+	if opts.IncludeTransitive {
+		// TODO: We should improve SQL here to falsify instead of using this limit
+		maxDependencyLevel = 9999
 	}
 
-	deps, err = scanPackageDependencies(tx.db.Query(ctx, q))
+	deps, err = scanPackageDependencies(tx.db.Query(ctx, sqlf.Sprintf(
+		lockfileDependenciesQuery,
+		maxDependencyLevel,
+		opts.RepoName,
+		dbutil.CommitBytea(opts.Commit),
+		resolutionID,
+	)))
 	if err != nil {
 		return nil, false, err
 	}
@@ -169,24 +162,6 @@ func (s *store) LockfileDependencies(ctx context.Context, opts LockfileDependenc
 
 const lockfileDependenciesQuery = `
 -- source: internal/codeintel/dependencies/internal/store/store.go:LockfileDependencies
-SELECT
-	repository_name,
-	revspec,
-	package_scheme,
-	package_name,
-	package_version
-FROM codeintel_lockfile_references
-WHERE id IN (
-	SELECT DISTINCT unnest(codeintel_lockfile_reference_ids) AS id
-	FROM codeintel_lockfiles
-	WHERE repository_id = (SELECT id FROM repo WHERE name = %s)
-	AND commit_bytea = %s
-	AND resolution_id = %s
-)
-ORDER BY repository_name, revspec
-`
-
-const recursiveLockfileDependenciesQuery = `
 WITH RECURSIVE dependencies(id, depends_on, resolution_id, level, max_level) AS (
   SELECT
     id, depends_on, resolution_id, 0 AS level, %s::int AS max_level
