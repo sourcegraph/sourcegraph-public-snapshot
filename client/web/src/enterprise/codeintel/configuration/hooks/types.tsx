@@ -38,5 +38,6 @@ export const defaultCodeIntelligenceConfigurationPolicyFieldsFragment = gql`
         indexingEnabled
         indexCommitMaxAgeHours
         indexIntermediateCommits
+        lockfileIndexingEnabled
     }
 `
