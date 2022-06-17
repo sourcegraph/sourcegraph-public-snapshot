@@ -26,6 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 - A new [templating](https://docs.sourcegraph.com/campaigns/references/batch_spec_templating) variable, `batch_change_link` has been added for more control over where the "Created by Sourcegraph batch change ..." message appears in the published changeset description. [#491](https://github.com/sourcegraph/sourcegraph/pull/35319)
 - Batch specs can now mount local files in the Docker container when using [Sourcegraph CLI](https://docs.sourcegraph.com/cli). [#31790](https://github.com/sourcegraph/sourcegraph/issues/31790)
 - Code Monitoring: Notifications via Slack and generic webhooks are now enabled for everyone by default as a beta feature. [#37037](https://github.com/sourcegraph/sourcegraph/pull/37037)
+- Code Insights: Sort and limit filters have been added to capture group insights. This gives users more control over which series are displayed. [#34611](https://github.com/sourcegraph/sourcegraph/pull/34611)
 
 ### Changed
 
