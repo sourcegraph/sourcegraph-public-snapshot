@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { ComponentType } from 'react'
 
 import MDIIcon from '@mdi/react'
 
@@ -44,6 +44,6 @@ export const IconV2 = React.forwardRef(({ children, className, ...props }, refer
     const { as: IconComponent = 'svg', ...attributes } = props
 
     return <IconStyle as={IconComponent} ref={reference} className={className} {...attributes} />
-}) as ForwardReferenceComponent<'svg', IconProps>
+}) as ForwardReferenceComponent<ComponentType | 'svg', IconProps>
 
 IconV2.displayName = 'IconV2'
