@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -65,7 +65,7 @@ func TestAddCodeMonitorHook(t *testing.T) {
 	})
 
 	t.Run("no errors on allowed queries", func(t *testing.T) {
-		var log log.Logger
+		log := logtest.Scoped(t)
 
 		test := func(t *testing.T, input string) {
 			plan, err := query.Pipeline(query.InitRegexp(input))

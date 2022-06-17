@@ -533,6 +533,7 @@ func TestEvaluateAnd(t *testing.T) {
 			zoektMatches: 5,
 			filesSkipped: 0,
 			wantAlert:    false,
+			log:          logtest.Scoped(t),
 		},
 		{
 			name:         "zoekt returns enough matches, not exhausted",
@@ -540,6 +541,7 @@ func TestEvaluateAnd(t *testing.T) {
 			zoektMatches: 50,
 			filesSkipped: 1,
 			wantAlert:    false,
+			log:          logtest.Scoped(t),
 		},
 	}
 
@@ -589,6 +591,7 @@ func TestEvaluateAnd(t *testing.T) {
 				db:           db,
 				SearchInputs: searchInputs,
 				zoekt:        z,
+				log:          logtest.Scoped(t),
 			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
