@@ -106,6 +106,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                 if (!parsedData.isFetchingHistoricalData) {
                     stopPolling()
                 }
+                setSelectedSeriesIds([])
                 setInsightData(parsedData)
             },
         }
