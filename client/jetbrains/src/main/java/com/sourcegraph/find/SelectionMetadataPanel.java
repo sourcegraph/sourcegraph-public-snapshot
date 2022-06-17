@@ -27,6 +27,7 @@ public class SelectionMetadataPanel extends JPanel {
         String altEnterShortcutText = KeymapUtil.getShortcutText(altEnterShortcut);
         openShortcutLabel = new JLabel(altEnterShortcutText);
         openShortcutLabel.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 0));
+        openShortcutLabel.setEnabled(false);
         openShortcutLabel.setVisible(false);
 
         add(selectionMetadataLabel);
