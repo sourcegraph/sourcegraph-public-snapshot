@@ -173,7 +173,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         // eslint-disable-next-line react/forbid-elements
         <form ref={ref} onSubmit={handleSubmit} className={className}>
             <header className={styles.header}>
-                <H4 className={classNames(styles.heading, styles.headingWithExpandedContent)}>Filter & sort</H4>
+                <H4 className={classNames(styles.heading, styles.headingWithExpandedContent)}>Filters</H4>
 
                 <Button
                     disabled={!hasActiveFilters(values) && !hasSeriesDisplayOptionsChanged}
