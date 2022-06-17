@@ -45,13 +45,10 @@ func NewGitHubWebhook(store *store.Store) *GitHubWebhook {
 
 // Register registers this webhook handler to handle events with the passed webhook router
 func (h *GitHubWebhook) Register(router *webhooks.GitHubWebhook) {
-	fmt.Println("v1 Register...")
-	fmt.Printf("h:%+v\n", h.Webhook)
 	router.Register(
 		h.handleGitHubWebhook,
 		githubEvents...,
 	)
-	fmt.Printf("router:%+v\n", router)
 }
 
 // handleGithubWebhook is the entry point for webhooks from the webhook router, see the events
