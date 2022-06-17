@@ -4,10 +4,14 @@ import (
 	"context"
 	"fmt"
 	"runtime"
+	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func aptGetInstall(pkg string, preinstall ...string) check.FixAction[CheckArgs] {
@@ -172,6 +176,173 @@ var Ubuntu = []category{
 						return err
 					}
 					return root.Run(usershell.Command(ctx, "asdf install rust")).StreamLines(cio.Verbose)
+				},
+			},
+		},
+	},
+	{
+		Name:      "Postgres database",
+		DependsOn: []string{depsBaseUtilities},
+		Checks: []*dependency{
+			{
+				Name:  "Install Postgres",
+				Check: checkAction(check.Combine(check.InPath("psql"), check.InPath("pg_ctl"))),
+				Fix:   aptGetInstall("postgresql postgresql-contrib"),
+			},
+			{
+				Name: "Start Postgres",
+				// In the eventuality of the user using a non standard configuration and having
+				// set it up appropriately in its configuration, we can bypass the standard postgres
+				// check and directly check for the sourcegraph database.
+				//
+				// Because only the latest error is returned, it's better to finish with the real check
+				// for error message clarity.
+				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
+					if err := checkSourcegraphDatabase(ctx, out, args); err == nil {
+						return nil
+					}
+					return checkPostgresConnection(ctx)
+				},
+				Description: `Sourcegraph requires the PostgreSQL database to be running.
+
+We recommend installing it with Homebrew and starting it as a system service.
+If you know what you're doing, you can also install PostgreSQL another way.
+For example: you can use https://postgresapp.com/
+
+If you're not sure: use the recommended commands to install PostgreSQL.`,
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if err := usershell.Command(ctx, "sudo systemctl enable --now postgresql").Run().StreamLines(cio.Verbose); err != nil {
+						return err
+					}
+					if err := usershell.Command(ctx, "sudo -u postgres createuser --superuser $USER").Run().StreamLines(cio.Verbose); err != nil {
+						return err
+					}
+
+					// Wait for startup
+					time.Sleep(5 * time.Second)
+
+					// Doesn't matter if this succeeds
+					_ = usershell.Cmd(ctx, "createdb").Run()
+					return nil
+				},
+			},
+			{
+				Name:        "Connection to 'sourcegraph' database",
+				Check:       checkSourcegraphDatabase,
+				Description: `Once PostgreSQL is installed and running, we need to set up Sourcegraph database itself and a specific user.`,
+				Fix: cmdFixes(
+					"createuser --superuser sourcegraph || true",
+					`psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"`,
+					`createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph`,
+				),
+			},
+		},
+	},
+	{
+		Name:      "Redis database",
+		DependsOn: []string{depsHomebrew},
+		Checks: []*dependency{
+			{
+				Name:  "Install Redis",
+				Check: checkAction(check.InPath("redic-cli")),
+				Fix:   aptGetInstall("redis-server"),
+			},
+			{
+				Name: "Start Redis",
+				Description: `Sourcegraph requires the Redis database to be running.
+We recommend installing it with Homebrew and starting it as a system service.`,
+				Check: checkAction(check.Retry(checkRedisConnection, 5, 500*time.Millisecond)),
+				Fix:   cmdFix("sudo systemctl enable --now redis-server.service"),
+			},
+		},
+	},
+	{
+		Name:      "sourcegraph.test development proxy",
+		DependsOn: []string{depsBaseUtilities},
+		Checks: []*dependency{
+			{
+				Name: "/etc/hosts contains sourcegraph.test",
+				Description: `Sourcegraph should be reachable under https://sourcegraph.test:3443.
+To do that, we need to add sourcegraph.test to the /etc/hosts file.`,
+				Check: checkAction(check.FileContains("/etc/hosts", "sourcegraph.test")),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					return root.Run(usershell.Command(ctx, `./dev/add_https_domain_to_hosts.sh`)).StreamLines(cio.Verbose)
+				},
+			},
+			{
+				Name: "Caddy root certificate is trusted by system",
+				Description: `In order to use TLS to access your local Sourcegraph instance, you need to
+trust the certificate created by Caddy, the proxy we use locally.
+
+YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
+				Enabled: disableInCI(), // Can't seem to get this working
+				Check:   checkAction(checkCaddyTrusted),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					return root.Run(usershell.Command(ctx, `./dev/caddy.sh trust`)).StreamLines(cio.Verbose)
+				},
+			},
+		},
+	},
+	categoryAdditionalSGConfiguration(),
+	{
+		Name:      "Cloud services",
+		DependsOn: []string{depsBaseUtilities},
+		Enabled:   enableForTeammatesOnly(),
+		Checks: []*dependency{
+			dependencyGcloud(),
+			{
+				Name:  "1password",
+				Check: checkAction(check1password()),
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if err := usershell.Run(ctx, "curl -sS https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg").StreamLines(cio.Verbose); err != nil {
+						return err
+					}
+					if err := usershell.Run(ctx, `echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/$(dpkg --print-architecture) stable main" |  sudo tee /etc/apt/sources.list.d/1password.list`).StreamLines(cio.Verbose); err != nil {
+						return err
+					}
+					if err := usershell.Run(ctx, `sudo mkdir -p /etc/debsig/policies/AC2D62742012EA22/`).StreamLines(cio.Verbose); err != nil {
+						return err
+					}
+					if err := usershell.Run(ctx, `curl -sS https://downloads.1password.com/linux/debian/debsig/1password.pol | sudo tee /etc/debsig/policies/AC2D62742012EA22/1password.pol`).StreamLines(cio.Verbose); err != nil {
+						return err
+					}
+					if err := usershell.Run(ctx, `sudo mkdir -p /usr/share/debsig/keyrings/AC2D62742012EA22`).StreamLines(cio.Verbose); err != nil {
+						return err
+					}
+					if err := usershell.Run(ctx, `curl -ss https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/debsig/keyrings/ac2d62742012ea22/debsig.gpg`).StreamLines(cio.Verbose); err != nil {
+						return err
+					}
+					if err := usershell.Run(ctx, `sudo apt update && sudo apt install 1password-cli`).StreamLines(cio.Verbose); err != nil {
+						return err
+					}
+					// phew
+
+					if cio.Input == nil {
+						return errors.New("interactive input required")
+					}
+
+					cio.Write("Enter secret key:")
+					var key string
+					if _, err := fmt.Fscan(cio.Input, &key); err != nil {
+						return err
+					}
+					cio.Write("Enter account email:")
+					var email string
+					if _, err := fmt.Fscan(cio.Input, &email); err != nil {
+						return err
+					}
+					cio.Write("Enter account password:")
+					var password string
+					if _, err := fmt.Fscan(cio.Input, &password); err != nil {
+						return err
+					}
+
+					return usershell.Command(ctx,
+						"op account add --signin --address team-sourcegraph.1password.com --email", email).
+						Env(map[string]string{"OP_SECRET_KEY": key}).
+						Input(strings.NewReader(password)).
+						Run().
+						StreamLines(cio.Verbose)
 				},
 			},
 		},
