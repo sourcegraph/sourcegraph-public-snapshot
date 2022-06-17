@@ -17,14 +17,16 @@ public class SelectionMetadataPanel extends JPanel {
     private final JLabel openShortcutLabel;
 
     public SelectionMetadataPanel() {
-        super(new FlowLayout(FlowLayout.LEFT, 5, 10));
+        super(new FlowLayout(FlowLayout.LEFT, 0, 8));
 
         selectionMetadataLabel = new JLabel();
+        selectionMetadataLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
         externalLinkLabel = new JLabel("", AllIcons.Ide.External_link_arrow, SwingConstants.LEFT);
         externalLinkLabel.setVisible(false);
         KeyboardShortcut altEnterShortcut = new KeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.ALT_DOWN_MASK), null);
         String altEnterShortcutText = KeymapUtil.getShortcutText(altEnterShortcut);
         openShortcutLabel = new JLabel(altEnterShortcutText);
+        openShortcutLabel.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 0));
         openShortcutLabel.setVisible(false);
 
         add(selectionMetadataLabel);
