@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -67,6 +68,9 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 				Webhooks: []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
 			}),
 		}
+		fmt.Println()
+		fmt.Printf("extSvc:%+v\n", extSvc)
+		fmt.Println()
 
 		err := esStore.Upsert(ctx, extSvc)
 		if err != nil {
@@ -82,11 +86,13 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		fmt.Println("githubRepo:", githubRepo)
 
 		err = repoStore.Create(ctx, githubRepo)
 		if err != nil {
 			t.Fatal(err)
 		}
+		fmt.Println("githubRepoAFTER:", githubRepo)
 
 		s := store.NewWithClock(db, &observation.TestContext, nil, clock)
 		sourcer := sources.NewSourcer(cf)
@@ -98,6 +104,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
+		fmt.Printf("spec:%+v\n", spec)
 
 		batchChange := &btypes.BatchChange{
 			Name:            "Test batch changes",
@@ -108,6 +115,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			LastAppliedAt:   clock(),
 			BatchSpecID:     spec.ID,
 		}
+		fmt.Printf("batchChange:%+v\n", batchChange)
 
 		err = s.CreateBatchChange(ctx, batchChange)
 		if err != nil {
@@ -140,10 +148,20 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		fmt.Println()
+		fmt.Printf("changeset BEFORE:%+v\n", changeset)
+
 		err = syncer.SyncChangeset(ctx, s, src, githubRepo, changeset)
+		// this file accesses enterprise/internal/batches/github.go
+		// which in turn accesses internal/extsvc/github/common.go
+		// which in turn accesses internal/extsvc/github/v4.go
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		fmt.Println()
+		fmt.Printf("changeset AFTER:%+v\n", changeset)
 
 		hook := NewGitHubWebhook(s)
 
@@ -163,6 +181,9 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
+						fmt.Println()
+						fmt.Println("name:", name)
+
 						handler := webhooks.GitHubWebhook{
 							ExternalServices: esStore,
 						}
@@ -172,6 +193,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 						if err != nil {
 							t.Fatal(err)
 						}
+						fmt.Println("u:", u)
 
 						req, err := http.NewRequest("POST", u, bytes.NewReader(event.Data))
 						if err != nil {
@@ -181,11 +203,13 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 						req.Header.Set("X-Hub-Signature", sign(t, event.Data, []byte(secret)))
 
 						rec := httptest.NewRecorder()
-						handler.ServeHTTP(rec, req)
+						handler.ServeHTTP(rec, req) // 3 different webhook files for github why???
+
 						resp := rec.Result()
+						fmt.Printf("RESP:%+v\n", resp)
 
 						if resp.StatusCode != http.StatusOK {
-							t.Fatalf("Non 200 code: %v", resp.StatusCode)
+							t.Fatalf("Non 200 code: %v", resp.StatusCode) // sm work just to ensure 200 status code? no yaml?
 						}
 					}
 				}
@@ -215,6 +239,16 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 				if diff := cmp.Diff(tc.ChangesetEvents, have, opts...); diff != "" {
 					t.Error(diff)
 				}
+
+				fmt.Println()
+				csEvents := tc.ChangesetEvents
+				for _, csEvent := range csEvents {
+					fmt.Printf("csEvent:%+v\n", csEvent)
+				}
+				for _, h := range have {
+					fmt.Printf("h:%+v\n", h)
+				}
+				fmt.Println()
 			})
 		}
 
