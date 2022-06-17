@@ -9,6 +9,7 @@ import { FuzzyModal } from './FuzzyModal'
 
 const filenames = [
     'babel.config.js',
+    'babel12.config.js',
     'client/README.md',
     'client/branded/.eslintignore',
     'client/branded/.eslintrc.js',

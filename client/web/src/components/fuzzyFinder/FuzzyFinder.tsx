@@ -91,8 +91,8 @@ export const FuzzyFinder: React.FunctionComponent<React.PropsWithChildren<FuzzyF
  * The fuzzy finder modal is implemented as a state machine with the following transitions:
  *
  * ```
- *   ╭────[cached]───────────────────────╮  ╭──╮
- *   │                                   v  │  v
+ *                                          ╭──╮
+ *                                          │  v
  * Empty ─[uncached]───> Downloading ──> Indexing ──> Ready
  *                       ╰──────────────────────> Failed
  * ```

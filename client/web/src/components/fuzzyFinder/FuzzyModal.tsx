@@ -237,7 +237,12 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
         >
             <div className={styles.content}>
                 <div className={styles.header}>
-                    <H3 className="mb-0">Find file</H3>
+                    <H3 className="mb-0">Repos</H3>
+                    <H3 className="mb-0">Revisions</H3>
+                    <H3 className="mb-0">Files</H3>
+                    <H3 className="mb-0">Symbols</H3>
+                    <H3 className="mb-0">Actions</H3>
+                    <H3 className="mb-0">Lines</H3>
                     <Button variant="icon" onClick={() => props.onClose()} aria-label="Close">
                         <Icon className={styles.closeIcon} as={CloseIcon} aria-hidden={true} />
                     </Button>

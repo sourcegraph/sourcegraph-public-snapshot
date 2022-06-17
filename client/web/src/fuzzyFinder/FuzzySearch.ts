@@ -14,6 +14,11 @@ export interface FuzzySearchResult {
     falsePositiveRatio?: number
 }
 
+export interface FuzzyDB {
+    filenames: SearchValue[]
+    repos: SearchValue[]
+}
+
 export interface SearchValue {
     text: string
 }
