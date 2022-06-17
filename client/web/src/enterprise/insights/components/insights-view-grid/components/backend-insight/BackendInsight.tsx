@@ -20,6 +20,7 @@ import { BackendInsight, BackendInsightData, CodeInsightsBackendContext, Insight
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend/gql/GetInsightView'
 import { createBackendInsightData } from '../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../core/backend/gql-backend/utils/insight-polling'
+import { SeriesDisplayOptionsInputRequired } from '../../../../core/types/insight/common'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
@@ -107,6 +108,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                 if (!parsedData.isFetchingHistoricalData) {
                     stopPolling()
                 }
+                seriesToggleState.setSelectedSeriesIds([])
                 setInsightData(parsedData)
             },
         }
@@ -172,6 +174,11 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
 
     const shareableUrl = `${window.location.origin}/insights/insight/${insight.id}`
 
+    const handleSeriesDisplayOptionsChange = (options: SeriesDisplayOptionsInputRequired): void => {
+        setSeriesDisplayOptions(options)
+        seriesToggleState.setSelectedSeriesIds([])
+    }
+
     return (
         <InsightCard
             {...otherProps}
@@ -203,7 +210,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                             originalSeriesDisplayOptions={parseSeriesDisplayOptions(
                                 insight.defaultSeriesDisplayOptions
                             )}
-                            onSeriesDisplayOptionsChange={setSeriesDisplayOptions}
+                            onSeriesDisplayOptionsChange={handleSeriesDisplayOptionsChange}
                         />
                         <InsightContextMenu
                             insight={insight}

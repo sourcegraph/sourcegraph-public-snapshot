@@ -41,11 +41,12 @@ Navigate to your site configuration (e.g. https://sourcegraph.com/site-admin/con
     "username": "test@domain.com",
     "password": "<YOUR SECRET>",
     "host": "smtp-relay.gmail.com",
-    "port": 587
+    "port": 587,
+    "domain": "domain.com"
   },
 ```
 
-Make sure that `test@domain.com` in both places of the configuration matches the email address of the account you created, and that `<YOUR SECRET>` is replaced with the account password.
+Make sure that `test@domain.com` in both places of the configuration matches the email address of the account you created, and that `<YOUR SECRET>` is replaced with the account password or app password when 2FA enabled.
 
 [Send a test email](#sending-a-test-email) to verify it is configured properly.
 

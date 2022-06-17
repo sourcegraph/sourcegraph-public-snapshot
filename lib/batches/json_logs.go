@@ -63,10 +63,6 @@ func (l *LogEvent) UnmarshalJSON(data []byte) error {
 		l.Metadata = new(ExecutingTaskMetadata)
 	case LogEventOperationTaskBuildChangesetSpecs:
 		l.Metadata = new(TaskBuildChangesetSpecsMetadata)
-	case LogEventOperationTaskDownloadingArchive:
-		l.Metadata = new(TaskDownloadingArchiveMetadata)
-	case LogEventOperationTaskInitializingWorkspace:
-		l.Metadata = new(TaskInitializingWorkspaceMetadata)
 	case LogEventOperationTaskSkippingSteps:
 		l.Metadata = new(TaskSkippingStepsMetadata)
 	case LogEventOperationTaskStepSkipped:
@@ -93,28 +89,26 @@ func (l *LogEvent) UnmarshalJSON(data []byte) error {
 type LogEventOperation string
 
 const (
-	LogEventOperationParsingBatchSpec          LogEventOperation = "PARSING_BATCH_SPEC"
-	LogEventOperationResolvingNamespace        LogEventOperation = "RESOLVING_NAMESPACE"
-	LogEventOperationPreparingDockerImages     LogEventOperation = "PREPARING_DOCKER_IMAGES"
-	LogEventOperationDeterminingWorkspaceType  LogEventOperation = "DETERMINING_WORKSPACE_TYPE"
-	LogEventOperationResolvingRepositories     LogEventOperation = "RESOLVING_REPOSITORIES"
-	LogEventOperationDeterminingWorkspaces     LogEventOperation = "DETERMINING_WORKSPACES"
-	LogEventOperationCheckingCache             LogEventOperation = "CHECKING_CACHE"
-	LogEventOperationExecutingTasks            LogEventOperation = "EXECUTING_TASKS"
-	LogEventOperationLogFileKept               LogEventOperation = "LOG_FILE_KEPT"
-	LogEventOperationUploadingChangesetSpecs   LogEventOperation = "UPLOADING_CHANGESET_SPECS"
-	LogEventOperationCreatingBatchSpec         LogEventOperation = "CREATING_BATCH_SPEC"
-	LogEventOperationApplyingBatchSpec         LogEventOperation = "APPLYING_BATCH_SPEC"
-	LogEventOperationBatchSpecExecution        LogEventOperation = "BATCH_SPEC_EXECUTION"
-	LogEventOperationExecutingTask             LogEventOperation = "EXECUTING_TASK"
-	LogEventOperationTaskBuildChangesetSpecs   LogEventOperation = "TASK_BUILD_CHANGESET_SPECS"
-	LogEventOperationTaskDownloadingArchive    LogEventOperation = "TASK_DOWNLOADING_ARCHIVE"
-	LogEventOperationTaskInitializingWorkspace LogEventOperation = "TASK_INITIALIZING_WORKSPACE"
-	LogEventOperationTaskSkippingSteps         LogEventOperation = "TASK_SKIPPING_STEPS"
-	LogEventOperationTaskStepSkipped           LogEventOperation = "TASK_STEP_SKIPPED"
-	LogEventOperationTaskPreparingStep         LogEventOperation = "TASK_PREPARING_STEP"
-	LogEventOperationTaskStep                  LogEventOperation = "TASK_STEP"
-	LogEventOperationCacheAfterStepResult      LogEventOperation = "CACHE_AFTER_STEP_RESULT"
+	LogEventOperationParsingBatchSpec         LogEventOperation = "PARSING_BATCH_SPEC"
+	LogEventOperationResolvingNamespace       LogEventOperation = "RESOLVING_NAMESPACE"
+	LogEventOperationPreparingDockerImages    LogEventOperation = "PREPARING_DOCKER_IMAGES"
+	LogEventOperationDeterminingWorkspaceType LogEventOperation = "DETERMINING_WORKSPACE_TYPE"
+	LogEventOperationResolvingRepositories    LogEventOperation = "RESOLVING_REPOSITORIES"
+	LogEventOperationDeterminingWorkspaces    LogEventOperation = "DETERMINING_WORKSPACES"
+	LogEventOperationCheckingCache            LogEventOperation = "CHECKING_CACHE"
+	LogEventOperationExecutingTasks           LogEventOperation = "EXECUTING_TASKS"
+	LogEventOperationLogFileKept              LogEventOperation = "LOG_FILE_KEPT"
+	LogEventOperationUploadingChangesetSpecs  LogEventOperation = "UPLOADING_CHANGESET_SPECS"
+	LogEventOperationCreatingBatchSpec        LogEventOperation = "CREATING_BATCH_SPEC"
+	LogEventOperationApplyingBatchSpec        LogEventOperation = "APPLYING_BATCH_SPEC"
+	LogEventOperationBatchSpecExecution       LogEventOperation = "BATCH_SPEC_EXECUTION"
+	LogEventOperationExecutingTask            LogEventOperation = "EXECUTING_TASK"
+	LogEventOperationTaskBuildChangesetSpecs  LogEventOperation = "TASK_BUILD_CHANGESET_SPECS"
+	LogEventOperationTaskSkippingSteps        LogEventOperation = "TASK_SKIPPING_STEPS"
+	LogEventOperationTaskStepSkipped          LogEventOperation = "TASK_STEP_SKIPPED"
+	LogEventOperationTaskPreparingStep        LogEventOperation = "TASK_PREPARING_STEP"
+	LogEventOperationTaskStep                 LogEventOperation = "TASK_STEP"
+	LogEventOperationCacheAfterStepResult     LogEventOperation = "CACHE_AFTER_STEP_RESULT"
 )
 
 type LogEventStatus string
@@ -202,15 +196,6 @@ type ExecutingTaskMetadata struct {
 }
 
 type TaskBuildChangesetSpecsMetadata struct {
-	TaskID string `json:"taskID,omitempty"`
-}
-
-type TaskDownloadingArchiveMetadata struct {
-	TaskID string `json:"taskID,omitempty"`
-	Error  string `json:"error,omitempty"`
-}
-
-type TaskInitializingWorkspaceMetadata struct {
 	TaskID string `json:"taskID,omitempty"`
 }
 

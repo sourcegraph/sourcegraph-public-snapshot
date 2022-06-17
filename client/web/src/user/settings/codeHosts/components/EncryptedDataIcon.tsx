@@ -3,16 +3,18 @@ import React from 'react'
 import classNames from 'classnames'
 import ShieldCheckIcon from 'mdi-react/ShieldCheckIcon'
 
-import { ForwardReferenceComponent, Icon, IconProps } from '@sourcegraph/wildcard'
+import { Icon } from '@sourcegraph/wildcard'
 
 import styles from './EncryptedDataIcon.module.scss'
 
-export const EncryptedDataIcon = React.forwardRef(({ className, ...rest }, reference) => (
+export const EncryptedDataIcon: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({
+    className,
+    ...rest
+}) => (
     <Icon
         as={ShieldCheckIcon}
         className={classNames('text-muted', styles.iconInside, className)}
-        {...rest}
-        ref={reference}
         aria-label="Encrypted Data"
+        {...rest}
     />
-)) as ForwardReferenceComponent<'svg', IconProps>
+)

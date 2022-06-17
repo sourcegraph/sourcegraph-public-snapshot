@@ -362,26 +362,28 @@ func (s *Server) Handler() http.Handler {
 	})
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/archive", s.handleArchive)
-	mux.HandleFunc("/exec", s.handleExec)
-	mux.HandleFunc("/search", s.handleSearch)
-	mux.HandleFunc("/batch-log", s.handleBatchLog)
-	mux.HandleFunc("/p4-exec", s.handleP4Exec)
-	mux.HandleFunc("/list", s.handleList)
-	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
-	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
-	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
-	mux.HandleFunc("/repos", s.handleRepoInfo)
-	mux.HandleFunc("/repos-stats", s.handleReposStats)
-	mux.HandleFunc("/repo-clone-progress", s.handleRepoCloneProgress)
-	mux.HandleFunc("/delete", s.handleRepoDelete)
-	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
-	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
-	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/archive", trace.WithRouteName("archive", s.handleArchive))
+	mux.HandleFunc("/exec", trace.WithRouteName("exec", s.handleExec))
+	mux.HandleFunc("/search", trace.WithRouteName("search", s.handleSearch))
+	mux.HandleFunc("/batch-log", trace.WithRouteName("batch-log", s.handleBatchLog))
+	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", s.handleP4Exec))
+	mux.HandleFunc("/list", trace.WithRouteName("list", s.handleList))
+	mux.HandleFunc("/list-gitolite", trace.WithRouteName("list-gitolite", s.handleListGitolite))
+	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", s.handleIsRepoCloneable))
+	mux.HandleFunc("/is-repo-cloned", trace.WithRouteName("is-repo-cloned", s.handleIsRepoCloned))
+	mux.HandleFunc("/repos", trace.WithRouteName("repos", s.handleRepoInfo))
+	mux.HandleFunc("/repos-stats", trace.WithRouteName("repos-stats", s.handleReposStats))
+	mux.HandleFunc("/repo-clone-progress", trace.WithRouteName("repo-clone-progress", s.handleRepoCloneProgress))
+	mux.HandleFunc("/delete", trace.WithRouteName("delete", s.handleRepoDelete))
+	mux.HandleFunc("/repo-update", trace.WithRouteName("repo-update", s.handleRepoUpdate))
+	mux.HandleFunc("/create-commit-from-patch", trace.WithRouteName("create-commit-from-patch", s.handleCreateCommitFromPatch))
+	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-	})
+	}))
 
-	mux.Handle("/git/", http.StripPrefix("/git", s.gitServiceHandler()))
+	mux.HandleFunc("/git/", trace.WithRouteName("git", func(rw http.ResponseWriter, r *http.Request) {
+		http.StripPrefix("/git", s.gitServiceHandler()).ServeHTTP(rw, r)
+	}))
 
 	// Migration to hexagonal architecture starting here:
 
@@ -401,7 +403,7 @@ func (s *Server) Handler() http.Handler {
 		return getObjectService.GetObject(ctx, repo, objectName)
 	})
 
-	mux.HandleFunc("/commands/get-object", handleGetObject(getObjectFunc))
+	mux.HandleFunc("/commands/get-object", trace.WithRouteName("commands/get-object", handleGetObject(getObjectFunc)))
 
 	return mux
 }

@@ -194,7 +194,7 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 		// handle request
 		m := httpsnoop.CaptureMetrics(next, rw, r.WithContext(ctx))
 
-		// get root name, which is set after request is handled
+		// get route name, which is set after request is handled
 		if routeName == "graphql" {
 			// We use the query to denote the type of a GraphQL request, e.g. /.api/graphql?Repositories
 			if r.URL.RawQuery != "" {
@@ -348,5 +348,12 @@ func SetRequestErrorCause(ctx context.Context, err error) {
 func SetRouteName(r *http.Request, routeName string) {
 	if p, ok := r.Context().Value(routeNameKey).(*string); ok {
 		*p = routeName
+	}
+}
+
+func WithRouteName(name string, next http.HandlerFunc) http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		SetRouteName(r, name)
+		next(rw, r)
 	}
 }

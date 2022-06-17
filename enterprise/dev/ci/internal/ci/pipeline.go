@@ -152,7 +152,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addClientLintersForAllFiles,
 			addVsceIntegrationTests,
 			wait,
-			addVsceReleaseSteps(buildOptions))
+			addVsceReleaseSteps)
 
 	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and

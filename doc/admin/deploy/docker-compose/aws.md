@@ -141,15 +141,7 @@ docker ps --filter="name=sourcegraph-frontend-0"
 
 ## Update your Sourcegraph version
 
-To update to the most recent version of Sourcegraph (X.Y.Z), SSH into your instance:
-
-```bash
-cd /home/ec2-user/deploy-sourcegraph-docker/docker-compose
-```
-
-And refer to the [Upgrade section](index.md#upgrade) of the Docker Compose deployment docs.
-
----
+Refer to the [Docker Compose upgrade docs](../../updates/upgrade_docker-compose.md).
 
 ## Storage and Backups
 
