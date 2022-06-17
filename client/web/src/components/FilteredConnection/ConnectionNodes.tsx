@@ -175,7 +175,6 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
 
     return (
         <>
-            {/* {pageHeading ? pageHeading : <></>} */}
             {pageHeading}
             <SummaryContainer compact={compact} centered={withCenteredSummary} className={summaryClassName}>
                 {connectionQuery && summary}
