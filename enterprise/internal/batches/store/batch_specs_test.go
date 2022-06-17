@@ -818,7 +818,8 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 func TestStore_ListBatchSpecRepoIDs(t *testing.T) {
 	ctx := context.Background()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	s := New(db, &observation.TestContext, nil)
 
 	// Create two repos, one of which will be visible to everyone, and one which
