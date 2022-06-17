@@ -33,7 +33,7 @@ function cluster_cleanup() {
 function cluster_setup() {
   gcloud container clusters get-credentials default-buildkite --zone=us-central1-c --project=sourcegraph-ci
 
-  kubectl create ns "$NAMESPACE" -oyaml --dry-run | kubectl apply -f -
+  kubectl create ns "$NAMESPACE" -oyaml --dry-run=client | kubectl apply -f -
   trap cluster_cleanup exit
   kubectl apply -f "$test_dir/storageClass.yaml"
   kubectl config set-context --current --namespace="$NAMESPACE"
