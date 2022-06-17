@@ -78,11 +78,4 @@ describe('useSeriesToggle', () => {
         expect(screen.getByText('baz is selected')).toBeInTheDocument()
         expect(screen.queryByText('Selected series: foo,bar,baz')).not.toBeInTheDocument()
     })
-
-    it('renders that something is selected', () => {
-        render(<UseSeriesToggleExample />)
-        userEvent.click(screen.getByRole('button', { name: 'foo' }))
-
-        expect(screen.getByText('Something is selected.')).toBeInTheDocument()
-    })
 })
