@@ -1,4 +1,4 @@
-import { FunctionComponent } from 'react'
+import { FunctionComponent, useEffect } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -14,6 +14,10 @@ interface SmartStandaloneInsightProps extends TelemetryProps {
 
 export const SmartStandaloneInsight: FunctionComponent<SmartStandaloneInsightProps> = props => {
     const { insight, telemetryService, className } = props
+
+    useEffect(() => {
+        telemetryService.logPageView('Insights')
+    }, [telemetryService, insight.id])
 
     if (isBackendInsight(insight)) {
         return <StandaloneBackendInsight insight={insight} telemetryService={telemetryService} className={className} />
