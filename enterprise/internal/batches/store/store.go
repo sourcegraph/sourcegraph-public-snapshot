@@ -165,6 +165,7 @@ func (s *Store) queryCount(ctx context.Context, q *sqlf.Query) (int, error) {
 
 type operations struct {
 	createBatchChange      *observation.Operation
+	upsertBatchChange      *observation.Operation
 	updateBatchChange      *observation.Operation
 	deleteBatchChange      *observation.Operation
 	countBatchChanges      *observation.Operation
@@ -297,6 +298,7 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		singletonOperations = &operations{
 			createBatchChange:      op("CreateBatchChange"),
+			upsertBatchChange:      op("UpsertBatchChange"),
 			updateBatchChange:      op("UpdateBatchChange"),
 			deleteBatchChange:      op("DeleteBatchChange"),
 			countBatchChanges:      op("CountBatchChanges"),
