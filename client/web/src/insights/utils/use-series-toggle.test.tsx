@@ -7,13 +7,7 @@ import { useSeriesToggle } from './use-series-toggle'
 
 const UseSeriesToggleExample: React.FunctionComponent = () => {
     const availableSeriesIds = ['foo', 'bar', 'baz']
-    const {
-        toggle,
-        selectedSeriesIds,
-        isSeriesHovered,
-        isSeriesSelected,
-        setHoveredId,
-    } = useSeriesToggle()
+    const { toggle, selectedSeriesIds, isSeriesHovered, isSeriesSelected, setHoveredId } = useSeriesToggle()
 
     return (
         <div>
