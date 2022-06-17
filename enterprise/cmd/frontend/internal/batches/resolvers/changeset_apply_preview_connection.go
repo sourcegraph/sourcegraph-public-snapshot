@@ -110,6 +110,7 @@ type changesetApplyPreviewConnectionStatsResolver struct {
 	sleep        int32
 	detach       int32
 	archive      int32
+	reattach     int32
 
 	added    int32
 	modified int32
@@ -152,6 +153,9 @@ func (r *changesetApplyPreviewConnectionStatsResolver) Detach() int32 {
 func (r *changesetApplyPreviewConnectionStatsResolver) Archive() int32 {
 	return r.archive
 }
+func (r *changesetApplyPreviewConnectionStatsResolver) Reattach() int32 {
+	return r.reattach
+}
 func (r *changesetApplyPreviewConnectionStatsResolver) Added() int32 {
 	return r.added
 }
@@ -175,7 +179,7 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 		res := mappings.Resolver(mapping)
 		var ops []string
 		if _, ok := res.ToHiddenChangesetApplyPreview(); ok {
-			// Hidden ones never perform operations.
+			// Hidden ones never perform operations.
 			continue
 		}
 
@@ -225,6 +229,8 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 				stats.detach++
 			case string(btypes.ReconcilerOperationArchive):
 				stats.archive++
+			case string(btypes.ReconcilerOperationReattach):
+				stats.reattach++
 			}
 		}
 	}
