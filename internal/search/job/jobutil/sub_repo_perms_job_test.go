@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -68,6 +69,7 @@ func TestApplySubRepoFiltering(t *testing.T) {
 					},
 				},
 			},
+			log: logtest.Scoped(t),
 		},
 		{
 			name: "read for user with sub-repo perms",
@@ -88,6 +90,7 @@ func TestApplySubRepoFiltering(t *testing.T) {
 					},
 				},
 			},
+			log: logtest.Scoped(t),
 		},
 		{
 			name: "drop match due to auth for user with sub-repo perms",
@@ -113,6 +116,7 @@ func TestApplySubRepoFiltering(t *testing.T) {
 					},
 				},
 			},
+			log: logtest.Scoped(t),
 		},
 		{
 			name: "drop match due to auth for user with sub-repo perms and error",
@@ -139,6 +143,7 @@ func TestApplySubRepoFiltering(t *testing.T) {
 				},
 			},
 			wantErr: "subRepoFilterFunc",
+			log:     logtest.Scoped(t),
 		},
 		{
 			name: "repo matches should be ignored",
@@ -157,6 +162,7 @@ func TestApplySubRepoFiltering(t *testing.T) {
 					ID:   1,
 				},
 			},
+			log: logtest.Scoped(t),
 		},
 		{
 			name: "should filter commit matches",
@@ -169,6 +175,7 @@ func TestApplySubRepoFiltering(t *testing.T) {
 				},
 			},
 			wantMatches: []result.Match{},
+			log:         logtest.Scoped(t),
 		},
 	}
 

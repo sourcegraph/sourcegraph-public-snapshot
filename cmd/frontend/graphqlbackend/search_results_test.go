@@ -650,6 +650,7 @@ func TestSubRepoFiltering(t *testing.T) {
 				})
 				return checker
 			},
+			log: logtest.Scoped(t),
 		},
 	}
 
@@ -699,6 +700,7 @@ func TestSubRepoFiltering(t *testing.T) {
 				SearchInputs: searchInputs,
 				zoekt:        mockZoekt,
 				db:           db,
+				log:          logtest.Scoped(t),
 			}
 
 			ctx := context.Background()
