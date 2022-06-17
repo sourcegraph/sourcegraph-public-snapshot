@@ -14,6 +14,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 public class JSToJavaBridgeRequestHandler {
     private final Project project;
@@ -65,18 +68,45 @@ public class JSToJavaBridgeRequestHandler {
                     lastSearchAsJson.addProperty("patternType", lastSearch.getPatternType());
                     lastSearchAsJson.addProperty("selectedSearchContextSpec", lastSearch.getSelectedSearchContextSpec());
                     return createSuccessResponse(lastSearchAsJson);
+                case "previewLoading":
+                    arguments = request.getAsJsonObject("arguments");
+                    // Wait a bit to avoid flickering in case of a fast network
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(300);
+                        } catch (InterruptedException ignored) {
+                        }
+                        ApplicationManager.getApplication().invokeLater(() -> {
+                            Date previewLoadingDate = Date.from(Instant.from(
+                                DateTimeFormatter.ISO_INSTANT.parse(arguments.get("timeAsISOString").getAsString())));
+                            if (findPopupPanel.getLastPreviewUpdate().before(previewLoadingDate)) {
+                                findPopupPanel.setLastPreviewUpdate(previewLoadingDate);
+                                findPopupPanel.indicateLoading();
+                            }
+                        });
+                    }).start();
+                    return createSuccessResponse(null);
                 case "preview":
                     arguments = request.getAsJsonObject("arguments");
                     previewContent = PreviewContent.fromJson(project, arguments);
                     ApplicationManager.getApplication().invokeLater(() -> {
-                        findPopupPanel.setPreviewContent(previewContent);
-                        findPopupPanel.setSelectionMetadataLabel(previewContent);
+                        if (findPopupPanel.getLastPreviewUpdate().before(previewContent.getReceivedDateTime())) {
+                            findPopupPanel.setLastPreviewUpdate(previewContent.getReceivedDateTime());
+                            findPopupPanel.setPreviewContent(previewContent);
+                            findPopupPanel.setSelectionMetadataLabel(previewContent);
+                        }
                     });
                     return createSuccessResponse(null);
                 case "clearPreview":
+                    arguments = request.getAsJsonObject("arguments");
                     ApplicationManager.getApplication().invokeLater(() -> {
-                        findPopupPanel.clearPreviewContent();
-                        findPopupPanel.clearSelectionMetadataLabel();
+                        Date clearPreviewDate = Date.from(Instant.from(
+                            DateTimeFormatter.ISO_INSTANT.parse(arguments.get("timeAsISOString").getAsString())));
+                        if (findPopupPanel.getLastPreviewUpdate().before(clearPreviewDate)) {
+                            findPopupPanel.setLastPreviewUpdate(clearPreviewDate);
+                            findPopupPanel.clearPreviewContent();
+                            findPopupPanel.clearSelectionMetadataLabel();
+                        }
                     });
                     return createSuccessResponse(null);
                 case "open":
