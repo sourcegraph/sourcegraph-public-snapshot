@@ -1,4 +1,4 @@
-import React, { useContext, useRef, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
@@ -104,6 +104,10 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
             },
         }
     )
+
+    useEffect(() => {
+        telemetryService.logPageView('StandaloneBackendInsight')
+    }, [telemetryService, insight.id])
 
     const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
         telemetryService,
