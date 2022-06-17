@@ -2,8 +2,6 @@ import * as React from 'react'
 
 import * as H from 'history'
 
-import { H1 } from '@sourcegraph/wildcard'
-
 import { Connection } from './ConnectionType'
 import { ConnectionList, ShowMoreButton, SummaryContainer, ConnectionSummary } from './ui'
 import { hasID, hasNextPage, hasDisplayName } from './utils'
@@ -177,7 +175,8 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
 
     return (
         <>
-            {pageHeading ? <H1>{pageHeading}</H1> : <></>}
+            {/* {pageHeading ? pageHeading : <></>} */}
+            {pageHeading}
             <SummaryContainer compact={compact} centered={withCenteredSummary} className={summaryClassName}>
                 {connectionQuery && summary}
             </SummaryContainer>
