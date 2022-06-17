@@ -97,6 +97,7 @@ export interface SearchContextMenuProps
     authenticatedUser: AuthenticatedUser | null
     closeMenu: (isEscapeKey?: boolean) => void
     selectSearchContextSpec: (spec: string) => void
+    className?: string
 }
 
 interface PageInfo {
@@ -128,6 +129,7 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
     showSearchContextManagement,
     platformContext,
     telemetryService,
+    className,
 }) => {
     const inputElement = useRef<HTMLInputElement | null>(null)
 
@@ -301,7 +303,7 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
 
     return (
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-        <div onKeyDown={onMenuKeyDown}>
+        <div onKeyDown={onMenuKeyDown} className={classNames(styles.container, className)}>
             <div className={styles.title}>
                 <small>Choose search context</small>
                 <Button

@@ -10,49 +10,39 @@ import (
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func hadolint() lint.Runner {
-	const header = "Hadolint"
+func hadolint() *linter {
 	const hadolintVersion = "v2.10.0"
 	hadolintBinary := fmt.Sprintf("./.bin/hadolint-%s", hadolintVersion)
 
-	runHadolint := func(ctx context.Context, files []string) *lint.Report {
-		out, err := run.Cmd(ctx, "xargs "+hadolintBinary).
+	runHadolint := func(ctx context.Context, out *std.Output, files []string) error {
+		return run.Cmd(ctx, "xargs "+hadolintBinary).
 			Input(strings.NewReader(strings.Join(files, "\n"))).
 			Run().
-			Lines()
-
-		return &lint.Report{
-			Header: header,
-			Output: strings.Join(out, "\n"),
-			Err:    err,
-		}
+			StreamLines(out.Verbose)
 	}
 
-	return func(ctx context.Context, s *repo.State) *lint.Report {
-		diff, err := s.GetDiff("**/*Dockerfile*")
+	return runCheck("Hadolint", func(ctx context.Context, out *std.Output, state *repo.State) error {
+		diff, err := state.GetDiff("**/*Dockerfile*")
 		if err != nil {
-			return &lint.Report{Header: header, Err: err}
+			return err
 		}
 		var dockerfiles []string
 		for f := range diff {
 			dockerfiles = append(dockerfiles, f)
 		}
 		if len(dockerfiles) == 0 {
-			return &lint.Report{
-				Header: header,
-				Output: "No Dockerfiles changed",
-			}
+			out.Verbose("no dockerfiles changed")
+			return nil
 		}
 
 		// If our binary is already here, just go!
 		if _, err := os.Stat(hadolintBinary); err == nil {
-			return runHadolint(ctx, dockerfiles)
+			return runHadolint(ctx, out, dockerfiles)
 		}
 
 		// https://github.com/hadolint/hadolint/releases for downloads
@@ -79,12 +69,9 @@ func hadolint() lint.Runner {
 		os.MkdirAll("./.bin", os.ModePerm)
 		std.Out.WriteNoticef("Downloading hadolint from %s", url)
 		if err := download.Executable(ctx, url, hadolintBinary); err != nil {
-			return &lint.Report{
-				Header: header,
-				Err:    errors.Wrap(err, "downloading hadolint"),
-			}
+			return errors.Wrap(err, "downloading hadolint")
 		}
 
-		return runHadolint(ctx, dockerfiles)
-	}
+		return runHadolint(ctx, out, dockerfiles)
+	})
 }

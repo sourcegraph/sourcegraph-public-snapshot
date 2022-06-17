@@ -1,11 +1,13 @@
-// This file is a fork from SearachBox.tsx and contains JetBrains specific UI changes
+// This file is a fork from SearchBox.tsx and contains JetBrains specific UI changes
 /* eslint-disable no-restricted-imports */
 
 import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
+import * as Monaco from 'monaco-editor'
 
-import { SearchContextInputProps, QueryState, SubmitSearchProps } from '@sourcegraph/search'
+import { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/search'
+import { DEFAULT_MONACO_OPTIONS } from '@sourcegraph/search-ui'
 import {
     IEditor,
     LazyMonacoQueryInput,
@@ -68,6 +70,14 @@ export interface JetBrainsSearchBoxProps
     onEditorCreated?: (editor: IEditor) => void
 }
 
+const MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
+    ...DEFAULT_MONACO_OPTIONS,
+
+    // Reset to default value to avoid suggestion box shrinking.
+    // Related issue: https://github.com/microsoft/monaco-editor/issues/3147
+    suggestLineHeight: undefined,
+}
+
 export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren<JetBrainsSearchBoxProps>> = props => {
     const { queryState, onEditorCreated: onEditorCreatedCallback, onChange } = props
 
@@ -99,10 +109,12 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                 {props.searchContextsEnabled && props.showSearchContext && (
                     <>
                         <SearchContextDropdown
+                            /* eslint-disable-next-line no-restricted-syntax */
                             {...props}
                             query={queryState.query}
                             submitSearch={props.submitSearchOnSearchContextChange}
                             className={styles.searchBoxContextDropdown}
+                            menuClassName={styles.searchBoxContextMenu}
                             onEscapeMenuClose={focusEditor}
                         />
                         <div className={styles.searchBoxSeparator} />
@@ -117,11 +129,13 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         <Search />
                     </div>
                     <LazyMonacoQueryInput
+                        /* eslint-disable-next-line no-restricted-syntax */
                         {...props}
                         onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                         className={styles.searchBoxInput}
                         onEditorCreated={onEditorCreated}
                         placeholder="Enter search query..."
+                        editorOptions={MONACO_OPTIONS}
                     />
                     <JetBrainsToggles
                         patternType={props.patternType}

@@ -169,6 +169,7 @@ const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSear
                 style={{ top: '1rem', right: '1rem' }}
                 onClick={props.onComplete}
                 as={CloseIcon}
+                aria-label="Close"
             />
             <Form onSubmit={handleSubmit}>
                 <Container className={styles.container}>

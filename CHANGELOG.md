@@ -34,6 +34,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Gitserver: we disable automatic git-gc for invocations of git-fetch to avoid corruption of repositories by competing git-gc processes. [#36274](https://github.com/sourcegraph/sourcegraph/pull/36274)
 - Commit and diff search: The hard limit of 50 repositories has been removed, and long-running searches will continue running until the timeout is hit. [#36486](https://github.com/sourcegraph/sourcegraph/pull/36486)
 - The Postgres DBs `frontend` and `codeintel-db` are now given 1 hour to begin accepting connections before Kubernetes restarts the containers. [#4136](https://github.com/sourcegraph/deploy-sourcegraph/pull/4136)
+- The internal git command forwarder has been deprecated and will be removed in 3.42 [#37320](https://github.com/sourcegraph/sourcegraph/pull/37320)
 
 ### Fixed
 

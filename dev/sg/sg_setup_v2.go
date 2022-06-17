@@ -45,10 +45,12 @@ var setupCommandV2 = &cli.Command{
 		}
 
 		setup := dependencies.Setup(cmd.App.Reader, std.Out, dependencies.OS(currentOS))
-		setup.SetDescription(func(out *std.Output) {
+		setup.AnalyticsCategory = "setup"
+		setup.RenderDescription = func(out *std.Output) {
 			printSgSetupWelcomeScreen(out)
 			out.WriteAlertf("                INFO: You can quit any time by typing ctrl-c.\n")
-		})
+		}
+		setup.RunPostFixChecks = true
 
 		args := dependencies.CheckArgs{
 			Teammate:            !cmd.Bool("oss"),

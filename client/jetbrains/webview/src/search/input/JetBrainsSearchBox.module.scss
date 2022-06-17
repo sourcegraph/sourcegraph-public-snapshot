@@ -85,6 +85,11 @@
         }
     }
 
+    &__context-menu {
+        // On JetBrains, the menu always appears under the context button with a top positon of 40px
+        max-height: calc(100vh - 40px);
+    }
+
     &__separator {
         // stylelint-disable-next-line declaration-property-unit-allowed-list
         width: 1px;
@@ -135,6 +140,27 @@
             flex-direction: row-reverse;
             margin-top: 0.5rem;
             float: right;
+        }
+    }
+
+    /* 
+        As we use the default `suggestLineHeight` value for the Monaco editor rendered by
+        the JetBrains SearchBox, override styles defined by MonacoQueryInput to ensure that
+        suggestion item content fits the container.
+    */
+    :global(.monaco-editor)
+        :global(.suggest-widget)
+        :global(.monaco-list)
+        :global(.monaco-list-row):global(.focused):global(.string-label)
+        > :global(.contents)
+        > :global(.main) {
+        max-height: 100%;
+
+        > :global(.right) {
+            &::after {
+                height: 100%;
+                margin-top: 0;
+            }
         }
     }
 }

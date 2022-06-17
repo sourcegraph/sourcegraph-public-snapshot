@@ -9076,6 +9076,16 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
+          "Name": "finished_at_insights_query_runner_jobs_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX finished_at_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (finished_at)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "insights_query_runner_jobs_cost_idx",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -9112,6 +9122,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX insights_query_runner_jobs_state_btree ON insights_query_runner_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "process_after_insights_query_runner_jobs_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX process_after_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (process_after)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }

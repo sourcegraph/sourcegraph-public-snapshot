@@ -171,6 +171,7 @@ func (s *Store) queryCount(ctx context.Context, q *sqlf.Query) (int, error) {
 
 type operations struct {
 	createBatchChange      *observation.Operation
+	upsertBatchChange      *observation.Operation
 	updateBatchChange      *observation.Operation
 	deleteBatchChange      *observation.Operation
 	countBatchChanges      *observation.Operation
@@ -192,6 +193,7 @@ type operations struct {
 	getBatchSpecDiffStat    *observation.Operation
 	getNewestBatchSpec      *observation.Operation
 	listBatchSpecs          *observation.Operation
+	listBatchSpecRepoIDs    *observation.Operation
 	deleteExpiredBatchSpecs *observation.Operation
 
 	getBulkOperation        *observation.Operation
@@ -264,9 +266,6 @@ type operations struct {
 	getBatchSpecResolutionJob    *observation.Operation
 	listBatchSpecResolutionJobs  *observation.Operation
 
-	setBatchSpecWorkspaceExecutionJobAccessToken   *observation.Operation
-	resetBatchSpecWorkspaceExecutionJobAccessToken *observation.Operation
-
 	listBatchSpecExecutionCacheEntries     *observation.Operation
 	markUsedBatchSpecExecutionCacheEntries *observation.Operation
 	createBatchSpecExecutionCacheEntry     *observation.Operation
@@ -305,6 +304,7 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		singletonOperations = &operations{
 			createBatchChange:      op("CreateBatchChange"),
+			upsertBatchChange:      op("UpsertBatchChange"),
 			updateBatchChange:      op("UpdateBatchChange"),
 			deleteBatchChange:      op("DeleteBatchChange"),
 			countBatchChanges:      op("CountBatchChanges"),
@@ -326,6 +326,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			getBatchSpecDiffStat:    op("GetBatchSpecDiffStat"),
 			getNewestBatchSpec:      op("GetNewestBatchSpec"),
 			listBatchSpecs:          op("ListBatchSpecs"),
+			listBatchSpecRepoIDs:    op("ListBatchSpecRepoIDs"),
 			deleteExpiredBatchSpecs: op("DeleteExpiredBatchSpecs"),
 
 			getBulkOperation:        op("GetBulkOperation"),
@@ -397,9 +398,6 @@ func newOperations(observationContext *observation.Context) *operations {
 			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
 			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
 			listBatchSpecResolutionJobs:  op("ListBatchSpecResolutionJobs"),
-
-			setBatchSpecWorkspaceExecutionJobAccessToken:   op("SetBatchSpecWorkspaceExecutionJobAccessToken"),
-			resetBatchSpecWorkspaceExecutionJobAccessToken: op("ResetBatchSpecWorkspaceExecutionJobAccessToken"),
 
 			listBatchSpecExecutionCacheEntries:     op("ListBatchSpecExecutionCacheEntries"),
 			markUsedBatchSpecExecutionCacheEntries: op("MarkUsedBatchSpecExecutionCacheEntries"),

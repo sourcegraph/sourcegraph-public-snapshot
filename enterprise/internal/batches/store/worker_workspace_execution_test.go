@@ -68,10 +68,9 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 	}
 
 	executionStore := &batchSpecWorkspaceExecutionWorkerStore{
-		Store:                   workStore,
-		observationContext:      &observation.TestContext,
-		logger:                  logtest.Scoped(t),
-		accessTokenDeleterForTX: func(tx *Store) accessTokenHardDeleter { return tx.DatabaseDB().AccessTokens().HardDeleteByID },
+		Store:              workStore,
+		observationContext: &observation.TestContext,
+		logger:             logtest.Scoped(t),
 	}
 	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
 
@@ -80,18 +79,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
 		job.WorkerHostname = opts.WorkerHostname
 		ct.UpdateJobState(t, ctx, s, job)
-	}
-
-	attachAccessToken := func(t *testing.T, job *btypes.BatchSpecWorkspaceExecutionJob) int64 {
-		t.Helper()
-		tokenID, _, err := db.AccessTokens().CreateInternal(ctx, user.ID, []string{"user:all"}, "testing", user.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, job.ID, tokenID); err != nil {
-			t.Fatal(err)
-		}
-		return tokenID
 	}
 
 	assertJobState := func(t *testing.T, job *btypes.BatchSpecWorkspaceExecutionJob, want btypes.BatchSpecWorkspaceExecutionJobState) {
@@ -153,7 +140,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 	t.Run("success", func(t *testing.T) {
 		job, workspace := setupEntities(t)
 		setProcessing(t, job)
-		tokenID := attachAccessToken(t, job)
 
 		ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
 		if !ok || err != nil {
@@ -210,29 +196,11 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 				t.Fatalf("wrong diff extracted")
 			}
 		}
-
-		_, err = db.AccessTokens().GetByID(ctx, tokenID)
-		if err != database.ErrAccessTokenNotFound {
-			t.Fatalf("access token was not deleted")
-		}
-	})
-
-	t.Run("no token set", func(t *testing.T) {
-		job, _ := setupEntities(t)
-		setProcessing(t, job)
-
-		ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
-		if !ok || err != nil {
-			t.Fatalf("MarkComplete failed. ok=%t, err=%s", ok, err)
-		}
-
-		assertJobState(t, job, btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
 	})
 
 	t.Run("worker hostname mismatch", func(t *testing.T) {
 		job, _ := setupEntities(t)
 		setProcessing(t, job)
-		tokenID := attachAccessToken(t, job)
 
 		opts := opts
 		opts.WorkerHostname = "DOESNT-MATCH"
@@ -243,46 +211,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		}
 
 		assertJobState(t, job, btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
-
-		assertWorkspaceChangesets(t, job, []int64{})
-
-		_, err = db.AccessTokens().GetByID(ctx, tokenID)
-		if err == database.ErrAccessTokenNotFound {
-			t.Fatalf("access token was deleted")
-		} else if err != nil {
-			t.Fatal(err)
-		}
-
-		assertNoChangesetSpecsCreated(t)
-	})
-
-	t.Run("token set but deletion fails", func(t *testing.T) {
-		job, _ := setupEntities(t)
-		setProcessing(t, job)
-		tokenID := attachAccessToken(t, job)
-
-		accessTokens := database.NewMockAccessTokenStore()
-		accessTokens.HardDeleteByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) error {
-			if id != tokenID {
-				t.Fatalf("wrong token deleted")
-			}
-			return errors.New("internal database error")
-		})
-
-		prevDeleter := executionStore.accessTokenDeleterForTX
-		executionStore.accessTokenDeleterForTX = func(tx *Store) accessTokenHardDeleter {
-			return accessTokens.HardDeleteByID
-		}
-		t.Cleanup(func() {
-			executionStore.accessTokenDeleterForTX = prevDeleter
-		})
-
-		ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
-		if !ok || err != nil {
-			t.Fatalf("MarkComplete failed. ok=%t, err=%s", ok, err)
-		}
-
-		assertJobState(t, job, btypes.BatchSpecWorkspaceExecutionJobStateFailed)
 
 		assertWorkspaceChangesets(t, job, []int64{})
 
@@ -349,10 +277,9 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 	}
 
 	executionStore := &batchSpecWorkspaceExecutionWorkerStore{
-		Store:                   workStore,
-		observationContext:      &observation.TestContext,
-		logger:                  logtest.Scoped(t),
-		accessTokenDeleterForTX: func(tx *Store) accessTokenHardDeleter { return tx.DatabaseDB().AccessTokens().HardDeleteByID },
+		Store:              workStore,
+		observationContext: &observation.TestContext,
+		logger:             logtest.Scoped(t),
 	}
 	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
 	errMsg := "this job was no good"
@@ -362,18 +289,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
 		job.WorkerHostname = opts.WorkerHostname
 		ct.UpdateJobState(t, ctx, s, job)
-	}
-
-	attachAccessToken := func(t *testing.T) int64 {
-		t.Helper()
-		tokenID, _, err := db.AccessTokens().CreateInternal(ctx, user.ID, []string{"user:all"}, "testing", user.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, job.ID, tokenID); err != nil {
-			t.Fatal(err)
-		}
-		return tokenID
 	}
 
 	assertJobState := func(t *testing.T, want btypes.BatchSpecWorkspaceExecutionJobState) {
@@ -390,7 +305,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 
 	t.Run("success", func(t *testing.T) {
 		setProcessing(t)
-		tokenID := attachAccessToken(t)
 
 		ok, err := executionStore.MarkFailed(context.Background(), int(job.ID), errMsg, opts)
 		if !ok || err != nil {
@@ -431,11 +345,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 				t.Fatalf("wrong diff extracted")
 			}
 		}
-
-		_, err = db.AccessTokens().GetByID(ctx, tokenID)
-		if err != database.ErrAccessTokenNotFound {
-			t.Fatalf("access token was not deleted")
-		}
 	})
 
 	t.Run("no token set", func(t *testing.T) {
@@ -451,7 +360,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 
 	t.Run("worker hostname mismatch", func(t *testing.T) {
 		setProcessing(t)
-		tokenID := attachAccessToken(t)
 
 		opts := opts
 		opts.WorkerHostname = "DOESNT-MATCH"
@@ -462,42 +370,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		}
 
 		assertJobState(t, btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
-
-		_, err = db.AccessTokens().GetByID(ctx, tokenID)
-		if err == database.ErrAccessTokenNotFound {
-			t.Fatalf("access token was deleted")
-		} else if err != nil {
-			t.Fatal(err)
-		}
-	})
-
-	t.Run("token set but deletion fails", func(t *testing.T) {
-		setProcessing(t)
-		tokenID := attachAccessToken(t)
-
-		accessTokens := database.NewMockAccessTokenStore()
-		accessTokens.HardDeleteByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) error {
-			if id != tokenID {
-				t.Fatalf("wrong token deleted")
-			}
-			return errors.New("internal database error")
-		})
-
-		prevDeleter := executionStore.accessTokenDeleterForTX
-		executionStore.accessTokenDeleterForTX = func(tx *Store) accessTokenHardDeleter {
-			return accessTokens.HardDeleteByID
-		}
-		t.Cleanup(func() {
-			executionStore.accessTokenDeleterForTX = prevDeleter
-		})
-
-		ok, err := executionStore.MarkFailed(context.Background(), int(job.ID), errMsg, opts)
-		if !ok || err != nil {
-			t.Fatalf("MarkFailed failed. ok=%t, err=%s", ok, err)
-		}
-
-		// It should still be "failed".
-		assertJobState(t, btypes.BatchSpecWorkspaceExecutionJobStateFailed)
 	})
 }
 
@@ -550,28 +422,14 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 	}
 
 	executionStore := &batchSpecWorkspaceExecutionWorkerStore{
-		Store:                   workStore,
-		observationContext:      &observation.TestContext,
-		accessTokenDeleterForTX: func(tx *Store) accessTokenHardDeleter { return tx.DatabaseDB().AccessTokens().HardDeleteByID },
+		Store:              workStore,
+		observationContext: &observation.TestContext,
 	}
 	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
-
-	attachAccessToken := func(t *testing.T) int64 {
-		t.Helper()
-		tokenID, _, err := db.AccessTokens().CreateInternal(ctx, user.ID, []string{"user:all"}, "testing", user.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, job.ID, tokenID); err != nil {
-			t.Fatal(err)
-		}
-		return tokenID
-	}
 
 	job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
 	job.WorkerHostname = opts.WorkerHostname
 	ct.UpdateJobState(t, ctx, s, job)
-	tokenID := attachAccessToken(t)
 
 	ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
 	if !ok || err != nil {
@@ -597,11 +455,6 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		if len(entries) != 1 {
 			t.Fatal("cache entry not found")
 		}
-	}
-
-	_, err = db.AccessTokens().GetByID(ctx, tokenID)
-	if err != database.ErrAccessTokenNotFound {
-		t.Fatalf("access token was not deleted")
 	}
 }
 

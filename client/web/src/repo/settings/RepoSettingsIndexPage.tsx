@@ -47,6 +47,10 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<GQL.IRepo
                                     displayName
                                     url
                                 }
+                                skippedIndexed {
+                                    count
+                                    query
+                                }
                                 indexed
                                 current
                                 indexedCommit {
@@ -102,6 +106,15 @@ const TextSearchIndexedReference: React.FunctionComponent<
                         </LinkOrSpan>
                     </Code>{' '}
                     {indexedRef.current ? '(up to date)' : '(index update in progress)'}
+                    {indexedRef.skippedIndexed && indexedRef.skippedIndexed.count > 0 ? (
+                        <span>
+                            .&nbsp;
+                            <Link to={'/search?q=' + encodeURIComponent(indexedRef.skippedIndexed.query)}>
+                                {indexedRef.skippedIndexed.count} files were not indexed
+                            </Link>
+                            .
+                        </span>
+                    ) : null}
                 </span>
             ) : (
                 <span>&nbsp;&mdash; initial indexing in progress</span>

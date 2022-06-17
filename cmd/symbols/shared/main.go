@@ -8,6 +8,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	sentrylib "github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
@@ -44,7 +45,8 @@ func Main(setup SetupFunc) {
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySink())
+	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+
 	defer liblog.Sync()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(conf.DefaultClient())
