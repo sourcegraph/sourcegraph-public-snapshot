@@ -89,7 +89,7 @@ func (r *Resolver) Insights(ctx context.Context, args *graphqlbackend.InsightsAr
 		workerBaseStore:      r.workerBaseStore,
 		insightMetadataStore: r.insightMetadataStore,
 		ids:                  idList,
-		orgStore:             database.NewDB(r.workerBaseStore.Handle().DB()).Orgs(),
+		orgStore:             database.NewDBWith(r.workerBaseStore).Orgs(),
 	}, nil
 }
 

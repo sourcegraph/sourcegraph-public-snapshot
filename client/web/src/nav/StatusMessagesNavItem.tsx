@@ -423,8 +423,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     data-tooltip={codeHostMessage}
                     as={CloudOffOutlineIcon}
                     size="md"
-                    aria-hidden={this.state.isOpen}
-                    aria-label={codeHostMessage}
+                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
                 />
             )
         }
@@ -438,8 +437,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     data-tooltip={codeHostMessage}
                     as={CloudAlertIconRefresh}
                     size="md"
-                    aria-hidden={this.state.isOpen}
-                    aria-label={codeHostMessage}
+                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
                 />
             )
         }
@@ -450,8 +448,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     data-tooltip={codeHostMessage}
                     as={CloudSyncIconRefresh}
                     size="md"
-                    aria-hidden={this.state.isOpen}
-                    aria-label={codeHostMessage}
+                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
                 />
             )
         }
@@ -461,8 +458,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 data-tooltip={codeHostMessage}
                 as={CloudCheckIconRefresh}
                 size="md"
-                aria-hidden={this.state.isOpen}
-                aria-label={codeHostMessage}
+                {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
             />
         )
     }

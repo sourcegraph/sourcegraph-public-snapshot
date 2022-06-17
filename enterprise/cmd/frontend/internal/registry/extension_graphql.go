@@ -39,7 +39,7 @@ func (r *extensionDBResolver) ExtensionIDWithoutRegistry() string {
 }
 
 func (r *extensionDBResolver) Publisher(ctx context.Context) (graphqlbackend.RegistryPublisher, error) {
-	return getRegistryPublisher(ctx, database.NewDB(r.db), r.v.Publisher)
+	return getRegistryPublisher(ctx, r.db, r.v.Publisher)
 }
 
 func (r *extensionDBResolver) Name() string { return r.v.Name }

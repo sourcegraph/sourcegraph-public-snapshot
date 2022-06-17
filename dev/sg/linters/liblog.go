@@ -4,15 +4,13 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // lintLoggingLibraries enforces that only usages of github.com/sourcegraph/log are added
-func lintLoggingLibraries() lint.Runner {
-	const header = "Logging library linter"
-
+func lintLoggingLibraries() *linter {
 	var (
 		bannedImports = []string{
 			// No standard log library
@@ -52,27 +50,16 @@ func lintLoggingLibraries() lint.Runner {
 		return nil
 	}
 
-	return func(ctx context.Context, state *repo.State) *lint.Report {
+	return runCheck("Logging library linter", func(ctx context.Context, out *std.Output, state *repo.State) error {
 		diffs, err := state.GetDiff("**/*.go")
 		if err != nil {
-			return &lint.Report{
-				Header: header,
-				Err:    err,
-			}
+			return err
 		}
 
 		errs := diffs.IterateHunks(checkHunk)
-
-		return &lint.Report{
-			Header: header,
-			Output: func() string {
-				if errs != nil {
-					return strings.TrimSpace(errs.Error()) +
-						"\n\nLearn more about logging and why some libraries are banned: https://docs.sourcegraph.com/dev/how-to/add_logging"
-				}
-				return ""
-			}(),
-			Err: errs,
+		if errs != nil {
+			out.Write("Learn more about logging and why some libraries are banned: https://docs.sourcegraph.com/dev/how-to/add_logging")
 		}
-	}
+		return errs
+	})
 }

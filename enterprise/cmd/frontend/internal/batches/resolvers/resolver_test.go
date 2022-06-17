@@ -43,7 +43,7 @@ func TestNullIDResilience(t *testing.T) {
 	db := database.NewDB(dbtest.NewDB(t))
 	sr := New(store.New(db, &observation.TestContext, nil))
 
-	s, err := newSchema(database.NewDB(db), sr)
+	s, err := newSchema(db, sr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +150,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -316,7 +316,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -432,7 +432,7 @@ func TestApplyBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -547,7 +547,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -621,6 +621,73 @@ mutation($namespace: ID!, $name: String!){
 }
 ` + fragmentBatchChange
 
+func TestUpsertEmptyBatchChange(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+
+	cstore := store.New(db, &observation.TestContext, nil)
+
+	r := &Resolver{store: cstore}
+	s, err := newSchema(db, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	userID := ct.CreateTestUser(t, db, true).ID
+	namespaceID := relay.MarshalID("User", userID)
+
+	input := map[string]any{
+		"namespace": namespaceID,
+		"name":      "my-batch-change",
+	}
+
+	var response struct{ UpsertEmptyBatchChange apitest.BatchChange }
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	// First time should work because no batch change exists, so new one is created
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationUpsertEmptyBatchChange)
+
+	if response.UpsertEmptyBatchChange.ID == "" {
+		t.Fatalf("expected batch change to be created, but was not")
+	}
+
+	// Second time should return existing batch change
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationUpsertEmptyBatchChange)
+
+	if response.UpsertEmptyBatchChange.ID == "" {
+		t.Fatalf("expected existing batch change, but was not")
+	}
+
+	badInput := map[string]any{
+		"namespace": "bad_namespace-id",
+		"name":      "my-batch-change",
+	}
+
+	errors := apitest.Exec(actorCtx, t, s, badInput, &response, mutationUpsertEmptyBatchChange)
+
+	if len(errors) != 1 {
+		t.Fatalf("expected single errors")
+	}
+
+	wantError := "invalid ID \"bad_namespace-id\" for namespace"
+
+	if have, want := errors[0].Message, wantError; have != want {
+		t.Fatalf("wrong error. want=%q, have=%q", want, have)
+	}
+}
+
+const mutationUpsertEmptyBatchChange = `
+mutation($namespace: ID!, $name: String!){
+	upsertEmptyBatchChange(namespace: $namespace, name: $name) {
+		...batchChange
+	}
+}
+` + fragmentBatchChange
+
 func TestCreateBatchChange(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -647,7 +714,7 @@ func TestCreateBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -718,7 +785,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -910,7 +977,7 @@ func TestMoveBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1180,7 +1247,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1328,7 +1395,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1411,7 +1478,7 @@ func TestCreateChangesetComments(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1519,7 +1586,7 @@ func TestReenqueueChangesets(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1629,7 +1696,7 @@ func TestMergeChangesets(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1739,7 +1806,7 @@ func TestCloseChangesets(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1865,7 +1932,7 @@ func TestPublishChangesets(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1963,7 +2030,7 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2058,7 +2125,7 @@ func TestListBatchSpecs(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := newSchema(database.NewDB(db), r)
+	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
 	}

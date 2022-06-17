@@ -82,8 +82,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		Metrics: metrics,
 	})
 
-	db := workerBaseStore.Handle().DB()
-	repoStore := database.NewDB(db).Repos()
+	repoStore := database.NewDBWith(workerBaseStore).Repos()
 
 	iterator := discovery.NewAllReposIterator(
 		dbcache.NewIndexableReposLister(repoStore),
@@ -170,7 +169,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 		}
 	}
 
-	frontend := database.NewDB(s.workerBaseStore.Handle().DB())
+	frontend := database.NewDBWith(s.workerBaseStore)
 	iterator, err := discovery.NewScopedRepoIterator(ctx, repositories, frontend.Repos())
 	if err != nil {
 		return errors.Wrap(err, "NewScopedRepoIterator")
@@ -235,8 +234,7 @@ func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer 
 }
 
 func globalBackfiller(workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store) *historicalEnqueuer {
-	db := workerBaseStore.Handle().DB()
-	dbConn := database.NewDB(db)
+	dbConn := database.NewDBWith(workerBaseStore)
 
 	statistics := make(statistics)
 
@@ -631,7 +629,7 @@ func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesC
 	}
 
 	// Construct the search query that will generate data for this repository and time (revision) tuple.
-	modifiedQuery, err := querybuilder.SingleRepoQuery(query, repoName, revision)
+	modifiedQuery, err := querybuilder.SingleRepoQuery(query, repoName, revision, querybuilder.CodeInsightsQueryDefaults(len(bctx.series.Repositories) == 0))
 	if err != nil {
 		err = errors.Append(err, errors.Wrap(err, "SingleRepoQuery"))
 		return

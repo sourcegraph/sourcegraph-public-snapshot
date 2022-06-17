@@ -310,6 +310,7 @@ $ sg lint --help
 Flags:
 
 * `--annotations`: Write helpful output to annotations directory
+* `--fix, -f`: Try to fix any lint issues
 
 ### sg lint urls
 
@@ -692,7 +693,8 @@ Manipulate secrets stored in memory and in file.
 # List all secrets stored in your local configuration.
 $ sg secret list
 
-# Remove the secrets associated with buildkite (sg ci build)
+# Remove the secrets associated with buildkite (sg ci build) - supports autocompletion for
+# ease of use
 $ sg secret reset buildkite
 ```
 
