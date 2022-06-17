@@ -76,13 +76,8 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         return previewPanel;
     }
 
-    @Override
-    public void dispose() {
-        if (browser != null) {
-            browser.dispose();
-        }
-
-        previewPanel.dispose();
+    public void setBrowserVisible(boolean visible) {
+        browserAndLoadingPanel.setBrowserVisible(visible);
     }
 
     public void indicateLoadingIfInTime(@NotNull Date date) {
@@ -109,7 +104,12 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         }
     }
 
-    public void setBrowserVisible(boolean visible) {
-        browserAndLoadingPanel.setBrowserVisible(visible);
+    @Override
+    public void dispose() {
+        if (browser != null) {
+            browser.dispose();
+        }
+
+        previewPanel.dispose();
     }
 }
