@@ -661,6 +661,23 @@ func TestUpsertEmptyBatchChange(t *testing.T) {
 	if response.UpsertEmptyBatchChange.ID == "" {
 		t.Fatalf("expected existing batch change, but was not")
 	}
+
+	badInput := map[string]any{
+		"namespace": "bad_namespace-id",
+		"name":      "my-batch-change",
+	}
+
+	errors := apitest.Exec(actorCtx, t, s, badInput, &response, mutationUpsertEmptyBatchChange)
+
+	if len(errors) != 1 {
+		t.Fatalf("expected single errors")
+	}
+
+	wantError := "invalid ID \"bad_namespace-id\" for namespace"
+
+	if have, want := errors[0].Message, wantError; have != want {
+		t.Fatalf("wrong error. want=%q, have=%q", want, have)
+	}
 }
 
 const mutationUpsertEmptyBatchChange = `
