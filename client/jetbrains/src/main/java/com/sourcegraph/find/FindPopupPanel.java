@@ -58,6 +58,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         BorderLayoutPanel topPanel = new BorderLayoutPanel();
         topPanel.setBorder(JBUI.Borders.empty(0, 4, 5, 4));
         topPanel.add(browserAndLoadingPanel, BorderLayout.CENTER);
+        topPanel.setMinimumSize(JBUI.size(750, 200));
 
         splitter.setFirstComponent(topPanel);
         splitter.setSecondComponent(bottomPanel);
