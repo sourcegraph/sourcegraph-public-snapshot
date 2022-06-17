@@ -110,6 +110,9 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		case btypes.ReconcilerOperationArchive:
 			e.archiveChangeset()
 
+		case btypes.ReconcilerOperationReattach:
+			e.reattachChangeset()
+
 		default:
 			err = errors.Errorf("executor operation %q not implemented", op)
 		}
@@ -401,6 +404,10 @@ func (e *executor) sleep() {
 	if !e.noSleepBeforeSync {
 		time.Sleep(3 * time.Second)
 	}
+}
+
+func (e *executor) reattachChangeset() {
+	fmt.Println("reattaching changeset...")
 }
 
 func (e *executor) changesetSource(ctx context.Context) (sources.ChangesetSource, error) {
