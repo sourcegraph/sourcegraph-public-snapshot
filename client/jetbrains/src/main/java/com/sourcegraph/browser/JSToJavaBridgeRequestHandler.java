@@ -93,7 +93,6 @@ public class JSToJavaBridgeRequestHandler {
                         if (findPopupPanel.getLastPreviewUpdate().before(previewContent.getReceivedDateTime())) {
                             findPopupPanel.setLastPreviewUpdate(previewContent.getReceivedDateTime());
                             findPopupPanel.setPreviewContent(previewContent);
-                            findPopupPanel.setSelectionMetadataLabel(previewContent);
                         }
                     });
                     return createSuccessResponse(null);
@@ -105,7 +104,6 @@ public class JSToJavaBridgeRequestHandler {
                         if (findPopupPanel.getLastPreviewUpdate().before(clearPreviewDate)) {
                             findPopupPanel.setLastPreviewUpdate(clearPreviewDate);
                             findPopupPanel.clearPreviewContent();
-                            findPopupPanel.clearSelectionMetadataLabel();
                         }
                     });
                     return createSuccessResponse(null);
