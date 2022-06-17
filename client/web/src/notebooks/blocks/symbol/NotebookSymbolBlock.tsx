@@ -35,6 +35,7 @@ import { useModifierKeyLabel } from '../useModifierKeyLabel'
 import { NotebookSymbolBlockInput } from './NotebookSymbolBlockInput'
 
 import styles from './NotebookSymbolBlock.module.scss'
+import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 
 interface NotebookSymbolBlockProps
     extends BlockProps<SymbolBlock>,
@@ -151,6 +152,10 @@ export const NotebookSymbolBlock: React.FunctionComponent<
             [symbolOutput, extensionsController, input]
         )
 
+        const logEventOnCopy = useCallback(() => {
+            telemetryService.log(...codeCopiedEvent('notebook-symbols'))
+        }, [telemetryService])
+
         const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
 
         return (
@@ -217,6 +222,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                             fetchHighlightedFileRangeLines={() => of([])}
                             hoverifier={hoverifier}
                             viewerUpdates={viewerUpdates}
+                            onCopy={logEventOnCopy}
                         />
                     </div>
                 )}
