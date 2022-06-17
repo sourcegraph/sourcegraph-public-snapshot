@@ -1,8 +1,12 @@
 package com.sourcegraph.find;
 
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.KeyboardShortcut;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.keymap.KeymapUtil;
+import com.intellij.openapi.project.DumbAwareAction;
+import com.intellij.ui.components.AnActionLink;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -12,14 +16,27 @@ import java.awt.event.KeyEvent;
 import java.util.Objects;
 
 public class SelectionMetadataPanel extends JPanel {
-    private final JLabel selectionMetadataLabel;
+    private final AnActionLink selectionMetadataLabel;
     private final JLabel externalLinkLabel;
     private final JLabel openShortcutLabel;
+    private PreviewContent previewContent;
 
     public SelectionMetadataPanel() {
         super(new FlowLayout(FlowLayout.LEFT, 0, 8));
 
-        selectionMetadataLabel = new JLabel();
+        selectionMetadataLabel = new AnActionLink("", new DumbAwareAction() {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
+                if (previewContent != null) {
+                    try {
+                        previewContent.openInEditorOrBrowser();
+                    } catch (Exception e) {
+                        Logger logger = Logger.getInstance(SelectionMetadataPanel.class);
+                        logger.error("Error opening file in editor: \"" + selectionMetadataLabel.getText() + "\"", e);
+                    }
+                }
+            }
+        });
         selectionMetadataLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
         externalLinkLabel = new JLabel("", AllIcons.Ide.External_link_arrow, SwingConstants.LEFT);
         externalLinkLabel.setVisible(false);
@@ -36,12 +53,14 @@ public class SelectionMetadataPanel extends JPanel {
     }
 
     public void clearSelectionMetadataLabel() {
+        previewContent = null;
         selectionMetadataLabel.setText("");
         externalLinkLabel.setVisible(false);
         openShortcutLabel.setVisible(false);
     }
 
     public void setSelectionMetadataLabel(@NotNull PreviewContent previewContent) {
+        this.previewContent = previewContent;
         String metadataText = getMetadataText(previewContent);
         selectionMetadataLabel.setText(metadataText);
         externalLinkLabel.setVisible(!previewContent.opensInEditor());
