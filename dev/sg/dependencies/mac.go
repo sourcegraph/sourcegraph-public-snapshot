@@ -16,6 +16,8 @@ import (
 const (
 	depsHomebrew      = "Homebrew"
 	depsBaseUtilities = "Base utilities"
+	depsDocker        = "Docker"
+	depsCloneRepo     = "Clone repositories"
 )
 
 // Mac declares Mac dependencies.

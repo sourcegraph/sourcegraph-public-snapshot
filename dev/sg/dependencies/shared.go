@@ -17,7 +17,7 @@ import (
 
 func categoryCloneRepositories() category {
 	return category{
-		Name:      "Clone repositories",
+		Name:      depsCloneRepo,
 		DependsOn: []string{depsBaseUtilities},
 		Checks: []*dependency{
 			{
