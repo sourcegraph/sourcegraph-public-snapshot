@@ -126,7 +126,7 @@ func TestDependencies(t *testing.T) {
 			api.RevSpec("deadbeef6"): struct{}{},
 		},
 	}
-	dependencies, notFound, err := service.Dependencies(ctx, repoRevs)
+	dependencies, notFound, err := service.Dependencies(ctx, repoRevs, false)
 	if err != nil {
 		t.Fatalf("unexpected error querying dependencies: %s", err)
 	}
@@ -237,7 +237,7 @@ func TestDependencies(t *testing.T) {
 		}
 
 		// TODO: Ignoring notFound here for now
-		dependencies, _, err := service.Dependencies(ctx, repoRevs)
+		dependencies, _, err := service.Dependencies(ctx, repoRevs, false)
 		if err != nil {
 			t.Fatalf("unexpected error querying dependencies: %s", err)
 		}
