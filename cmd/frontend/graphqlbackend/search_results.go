@@ -649,6 +649,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		JApproximateResultCount: v.ApproximateResultCount(),
 		JSparkline:              sparkline,
 		sr:                      r,
+		log:                     log.Scoped("searchResultsStats", ""),
 	}
 
 	// Store in the cache if we got non-zero results. If we got zero results,

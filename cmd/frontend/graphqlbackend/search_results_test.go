@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -262,7 +263,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	id := 42
 	repoName := "reponame-foobar"
 	fileName := "foobar.go"
-	var log log.Logger
+	log := logtest.Scoped(t)
 
 	repoWithIDs := &types.Repo{
 		ID:   api.RepoID(id),
@@ -348,6 +349,7 @@ func TestSearchResultsHydration(t *testing.T) {
 		db:           db,
 		SearchInputs: searchInputs,
 		zoekt:        z,
+		log:          logtest.Scoped(t),
 	}
 	results, err := resolver.Results(ctx)
 	if err != nil {

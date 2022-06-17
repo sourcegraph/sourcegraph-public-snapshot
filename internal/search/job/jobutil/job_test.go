@@ -7,7 +7,7 @@ import (
 	"github.com/hexops/autogold"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -21,7 +21,6 @@ func TestNewPlanJob(t *testing.T) {
 		protocol   search.Protocol
 		searchType query.SearchType
 		want       autogold.Value
-		log        log.Logger
 	}{{
 		query:      `foo context:@userA`,
 		protocol:   search.Streaming,
@@ -348,7 +347,7 @@ func TestNewPlanJob(t *testing.T) {
 				OnSourcegraphDotCom: true,
 			}
 
-			j, err := NewPlanJob(tc.log, inputs, plan)
+			j, err := NewPlanJob(logtest.Scoped((t)), inputs, plan)
 			require.NoError(t, err)
 
 			tc.want.Equal(t, "\n"+PrettySexp(j))
@@ -357,7 +356,6 @@ func TestNewPlanJob(t *testing.T) {
 }
 
 func TestToEvaluateJob(t *testing.T) {
-	var slog log.Logger
 	test := func(input string, protocol search.Protocol) string {
 		q, _ := query.ParseLiteral(input)
 		inputs := &run.SearchInputs{
@@ -368,7 +366,7 @@ func TestToEvaluateJob(t *testing.T) {
 		}
 
 		b, _ := query.ToBasicQuery(q)
-		j, _ := toFlatJobs(slog, inputs, b)
+		j, _ := toFlatJobs(logtest.Scoped(t), inputs, b)
 		return "\n" + PrettySexp(j) + "\n"
 	}
 

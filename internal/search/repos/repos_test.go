@@ -12,6 +12,8 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -368,7 +370,7 @@ func TestResolverPaginate(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := Resolver{Opts: tc.opts, DB: db}
+			r := Resolver{Opts: tc.opts, DB: db, log: logtest.Scoped(t)}
 
 			var pages []Resolved
 			err := r.Paginate(ctx, func(page *Resolved) error {
