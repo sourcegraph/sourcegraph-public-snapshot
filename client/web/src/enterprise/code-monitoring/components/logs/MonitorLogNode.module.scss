@@ -12,11 +12,10 @@
     height: 1rem;
 }
 
-.separator {
-    // Make it full width in the current row.
-    grid-column: 1 / -1;
+.container {
     border-top: 1px solid var(--border-color-2);
-    margin: 1rem 0;
+    margin-top: 1rem;
+    padding-top: 1rem;
 }
 
 .expanded-row {

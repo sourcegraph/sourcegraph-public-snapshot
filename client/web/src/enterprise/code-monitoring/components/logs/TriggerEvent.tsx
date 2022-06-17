@@ -10,6 +10,7 @@ import { pluralize } from '@sourcegraph/common'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
+import { ConnectionList } from '../../../../components/FilteredConnection/ui'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import {
     EventStatus,
@@ -59,7 +60,7 @@ export const TriggerEvent: React.FunctionComponent<
     }
 
     return (
-        <>
+        <li>
             <Button onClick={toggleExpanded} className={classNames('btn-icon d-block', styles.expandButton)}>
                 <Icon aria-hidden={true} className="mr-2" as={expanded ? ChevronDownIcon : ChevronRightIcon} />
 
@@ -87,7 +88,7 @@ export const TriggerEvent: React.FunctionComponent<
             </Button>
 
             {expanded && (
-                <>
+                <ConnectionList>
                     <CollapsibleDetailsWithStatus
                         status={triggerEvent.status}
                         message={getTriggerEventMessage()}
@@ -117,9 +118,9 @@ export const TriggerEvent: React.FunctionComponent<
                             )}
                         </>
                     ))}
-                </>
+                </ConnectionList>
             )}
-        </>
+        </li>
     )
 }
 
